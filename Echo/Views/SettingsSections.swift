@@ -21,9 +21,11 @@ struct AppearanceSettings: View {
     #if DEBUG
     @State private var showThemes = false
     @State private var showColors = DevHooks.value("-echo.settingsAnchor") == "appearance"
+    @State private var showFonts = DevHooks.value("-echo.settingsAnchor") == "fonts"
     #else
     @State private var showThemes = false
     @State private var showColors = false
+    @State private var showFonts = false
     #endif
 
     var body: some View {
@@ -85,6 +87,38 @@ struct AppearanceSettings: View {
                             .overlay(Circle().strokeBorder(.quaternary))
                     }
                     .accessibilityHidden(true)
+                }
+            }
+
+            DisclosureGroup(isExpanded: $showFonts) {
+                ForEach(ChatFont.allCases) { font in
+                    Button { settings.chatFont = font } label: {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                // Each face in itself; the theme's own row in the theme's face.
+                                Text(font.label)
+                                    .font(font == .theme ? settings.theme.messageFont : font.preview)
+                                    .foregroundStyle(.primary)
+                                if font == .theme {
+                                    Text("What \(settings.theme.label) sets its replies in.")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                            if settings.chatFont == font {
+                                Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold)
+                            }
+                        }
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(settings.chatFont == font ? .isSelected : [])
+                }
+                Text("Replies and your messages. Code keeps its monospaced face.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } label: {
+                DisclosureSummary(title: String(localized: "Font", comment: "Settings → Appearance: the face of the conversation")) {
+                    Text(settings.chatFont.label)
                 }
             }
 
@@ -554,6 +588,13 @@ struct AgentSettings<Details: View>: View {
         Section {
             // All of the day's at once (`AheadOfYourDay`, asked 2026-10-30): the one-step sheet.
             AheadOfYourDayRow()
+            // What the agents will do on their own in the next day (2.4): Agent Activity's first tab.
+            NavigationLink { AgentActivityView(tab: .comingUp) } label: { Label("Coming Up", systemImage: "clock.arrow.circlepath") }
+            // Goals (2.4): every goal, and New Goal.
+            NavigationLink { GoalsListView() } label: {
+                Label { Text("Goals", comment: "The chat list's section of the person's goals, and its page in Settings") } icon: { Image(systemName: "flag.checkered") }
+            }
+            .disabled(!canReachGateway)
             NavigationLink { DailyJobView(daily: MorningIdeas.job) } label: { Label("Morning Ideas", systemImage: "lightbulb") }
                 .disabled(!canReachGateway)
             NavigationLink { DailyJobView(daily: HeadsUps.job) } label: { Label("Heads-Ups", systemImage: "bell.badge") }
@@ -594,6 +635,10 @@ struct AgentSettings<Details: View>: View {
         }
 
         Section {
+            // Email (2.4): the accounts on the Hermes, the Inbox, the rules.
+            NavigationLink { MailSettingsView() } label: {
+                Label { Text("Email", comment: "Settings › Agent › Email") } icon: { Image(systemName: "envelope") }
+            }
             NavigationLink { PhoneToolsSettingsView() } label: {
                 LabeledContent {
                     Settings.shared.phoneTools.on ? Text("On") : Text("Off")
@@ -661,6 +706,8 @@ struct AgentSettings<Details: View>: View {
         .id("agentFiles")
 
         Section {
+            // What it remembers, entry by entry (2.4): the files below, readable.
+            NavigationLink { MemoryView() } label: { Label("What Your Agent Remembers", systemImage: "brain.head.profile") }
             NavigationLink {
                 ContextFileEditorView(title: "MEMORY.md", file: "memories/MEMORY.md",
                                       purpose: String(localized: "The agent's own notes: things it decided to remember across conversations. Injected into every system prompt."))
@@ -694,6 +741,19 @@ struct AgentSettings<Details: View>: View {
             Text("A shell on your Hermes server over SSH, signed in with a key made on this iPhone. Also in a chat's More menu, in the chat's folder.")
         }
         #endif
+
+        // Usage and spend across every conversation (2.4): Hermes's analytics over the Dashboard
+        // login (every bot), else the Hermes API's list of sessions.
+        Section {
+            NavigationLink { UsageView(model: UsageModel(source: .current(dashboard: canEditFiles))) } label: {
+                Label("Usage", systemImage: "chart.bar")
+            }
+            .disabled(!canReachGateway)
+        } footer: {
+            canEditFiles
+                ? Text("What your agents used and what it cost: by day, bot, model and conversation.")
+                : Text("What your agent used and what it cost: by day, model and conversation. The Hermes Dashboard login adds every bot.")
+        }
 
         Section {
             NavigationLink { GatewayView() } label: { Label("Gateway", systemImage: "gearshape.2") }

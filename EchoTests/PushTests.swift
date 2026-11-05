@@ -718,3 +718,27 @@ struct UnopenedNoteTests {
         #expect(h.center.added.isEmpty)
     }
 }
+
+/// Pairing again with the same Hermes replaces the old pairing (2026-11-04: an iPhone paired on
+/// Oct 7 and Nov 2 got every note twice).
+struct RepairingTests {
+    private func pairing(_ id: String, server: String? = nil, host: String = "", accepted: Bool = true) -> PushPairing {
+        var made = PushPairing(id: id, sendKey: "s", key: Data(repeating: 1, count: 32), relay: "https://relay.example")
+        made.server = server
+        made.host = host
+        made.accepted = accepted
+        return made
+    }
+
+    @Test func theSameServerOrAnUnnotedOneOnTheSameMachineIsReplaced() {
+        let new = pairing("new", server: "A", host: "dchermes")
+        let kept = [pairing("sameServer", server: "A", host: "renamed"), pairing("oldSameHost", host: "dchermes"),
+                    pairing("otherServer", server: "B", host: "dchermes"), pairing("oldOtherHost", host: "studio"),
+                    pairing("unfinished", server: "A", accepted: false)]
+        #expect(PushService.replaced(by: new, in: kept).map(\.id) == ["sameServer", "oldSameHost"])
+    }
+
+    @Test func aPairingFromACodeReplacesNothing() {
+        #expect(PushService.replaced(by: pairing("new", host: "dchermes"), in: [pairing("old", host: "dchermes")]).isEmpty)
+    }
+}

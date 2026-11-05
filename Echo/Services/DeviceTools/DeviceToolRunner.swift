@@ -50,6 +50,12 @@ nonisolated struct DeviceToolRunner: Sendable {
         #else
         case .peopleCall, .peopleMessage: throw DeviceToolError("This Mac has no alarms or calls; that tool is the iPhone's.")
         #endif
+        // What may be read is what `phone_info` says is shared, which the settings decide.
+        case .healthRead:
+            try await DeviceHealth.read(args, shared: (info["health_shared"]?.array ?? []).compactMap { $0.string.flatMap(HealthKind.init) })
+        case .homeList: try await DeviceHome.list(args)
+        case .homeSet: try await DeviceHome.set(args)
+        case .homeScene: try await DeviceHome.scene(args)
         }
     }
 }
@@ -150,6 +156,37 @@ nonisolated struct DeviceAsk: Equatable, Sendable {
             title = String(localized: "Write a message for you to send")
             let to = args["to"]?.array?.compactMap(\.string).joined(separator: ", ") ?? args["to"]?.string ?? ""
             detail = to.isEmpty ? "" : String(localized: "To “\(String(to.prefix(80)))”", comment: "Who a message is for")
+        case .homeList:
+            title = String(localized: "Look at your Apple Home")
+            detail = quoted("query") ?? quoted("room") ?? String(localized: "Its accessories and scenes", comment: "What the agent reads from Apple Home")
+        case .homeSet:
+            let target = quoted("target") ?? ""
+            // What could let someone in, said as it is: "Unlock “Front Door”".
+            if let lock = args["lock"]?.string?.lowercased() {
+                title = lock == "unlock" ? String(localized: "Unlock \(target)", comment: "Apple Home: unlock a lock, named in quotes")
+                    : String(localized: "Lock \(target)", comment: "Apple Home: lock a lock, named in quotes")
+            } else if let door = args["door"]?.string?.lowercased() {
+                title = door == "open" ? String(localized: "Open \(target)", comment: "Apple Home: open a garage door, named in quotes")
+                    : String(localized: "Close \(target)", comment: "Apple Home: close a garage door, named in quotes")
+            } else if let security = args["security"]?.string?.lowercased() {
+                title = security == "off" ? String(localized: "Turn off the alarm", comment: "Apple Home: disarm the security system")
+                    : String(localized: "Set the alarm to \(security)", comment: "Apple Home: arm the security system: home, away or night")
+            } else if let on = args["on"]?.bool, args["brightness"] == nil {
+                title = on ? String(localized: "Turn on \(target)", comment: "Apple Home: turn an accessory on, named in quotes")
+                    : String(localized: "Turn off \(target)", comment: "Apple Home: turn an accessory off, named in quotes")
+            } else if let position = args["position"]?.int {
+                title = String(localized: "Set \(target) to \(position)% open", comment: "Apple Home: blinds, a window or a door, named in quotes")
+            } else {
+                title = String(localized: "Change \(target)", comment: "Apple Home: change an accessory, named in quotes")
+            }
+            detail = String(localized: "In Apple Home", comment: "Where a phone tool's change happens")
+        case .homeScene:
+            title = String(localized: "Run the scene \(quoted("scene") ?? "")", comment: "Apple Home: run a scene, named in quotes")
+            detail = String(localized: "In Apple Home", comment: "Where a phone tool's change happens")
+        case .healthRead:
+            title = String(localized: "Read your Health data")
+            let kind = args["type"]?.string.flatMap { HealthKind(rawValue: $0.lowercased()) }
+            detail = [kind?.label ?? args["type"]?.string, span(inside: true)].compactMap { $0?.nilIfEmpty }.joined(separator: ", ")
         }
     }
 }

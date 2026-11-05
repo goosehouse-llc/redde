@@ -13,6 +13,7 @@ struct AheadOfYourDayView: View {
     @State private var pairing = false
     @State private var pairingByCode = false
     @State private var confirmingOff = false
+    @State private var newWatch: WatchTemplate.Kind?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
 
@@ -30,6 +31,31 @@ struct AheadOfYourDayView: View {
                         }
                     } footer: {
                         Text("Each has its own page in Settings → Agent, to change its time or turn it off.", comment: "Ahead of Your Day: under the list of features")
+                    }
+                    // Run On (2026-11-03): the quick jobs on a small model, offered once.
+                    QuickJobsOffer()
+                    // The watch templates that need a number or a link (2.4): New Watch, filled in there.
+                    Section {
+                        ForEach([WatchTemplate.Kind.package, .priceDrop]) { kind in
+                            Button { newWatch = kind } label: {
+                                Label { Text(kind.title).foregroundStyle(.primary) } icon: { Image(systemName: kind.symbol).foregroundStyle(theme.accent) }
+                            }
+                            .disabled(setup.phase == .running)
+                        }
+                    } header: {
+                        Text("More Watches", comment: "Ahead of Your Day: watch templates that open New Watch")
+                    } footer: {
+                        Text("Your agent keeps an eye on a parcel or a product's price and tells you only when it changes. All of them are in Settings → Agent → Watches & Follow-ups.", comment: "Ahead of Your Day: under More Watches")
+                    }
+                    // Email (2.4): the inbox sorted on the Hermes, and the email watches above can read it.
+                    Section {
+                        NavigationLink { MailSettingsView() } label: {
+                            Label { Text("Connect Your Email", comment: "Ahead of Your Day: set up email").foregroundStyle(.primary) } icon: { Image(systemName: "envelope").foregroundStyle(theme.accent) }
+                        }
+                    } header: {
+                        Text("Email", comment: "Ahead of Your Day: the email section")
+                    } footer: {
+                        Text("Your inbox sorted into what's important, what needs a reply and what can wait, with one-tap archive, snooze and unsubscribe. Gmail, iCloud, Fastmail, Yahoo or any IMAP account.", comment: "Ahead of Your Day: under Email")
                     }
                     Section {
                         if wantsJobs { connectionRow }
@@ -74,6 +100,7 @@ struct AheadOfYourDayView: View {
             }
             #endif
         }
+        .sheet(item: $newWatch) { kind in NewWatchView(text: "", template: kind) }
         .sheet(isPresented: $pairing, onDismiss: { setup.pairingChanged() }) {
             PushPairingSheet(offer: nil, server: serverName)
         }
@@ -145,6 +172,11 @@ struct AheadOfYourDayView: View {
                 DatePicker(selection: $setup.morningTime, displayedComponents: .hourAndMinute) {
                     Text("Time").padding(.leading, 44)
                 }
+            case .schoolMessages:
+                TextField(text: $setup.schoolFrom) {
+                    Text("From (a school or a teacher; optional)", comment: "New Watch, School Messages: whose messages")
+                }
+                .padding(.leading, 44)
             case .leaveBy:
                 Picker(selection: $setup.way) {
                     Text("By Car").tag(LeaveTime.Mode.driving)
@@ -286,6 +318,7 @@ struct AheadOfYourDayView: View {
         let plan = setup.plan
         switch row {
         case .part(let part):
+            if setup.picked.contains(part), plan.parts[part] == .skip(.needsEmail) { return .needsYou(WatchTemplate.needsEmailHint) }
             guard setup.situation.on.contains(part) else { return nil }
             if let job = setup.found[part], let daily = part.job, let at = DailyJob.time(of: job) {
                 return .skipped(AheadOfYourDay.when(daily, hour: at.hour, minute: at.minute))
@@ -335,12 +368,14 @@ struct AheadOfYourDayView: View {
         case .wrapUp: String(localized: "Evening Wrap-up")
         case .weekAhead: String(localized: "Week Ahead")
         case .routines: String(localized: "Routine Suggestions")
+        case .urgentEmail: String(localized: "Urgent Emails", comment: "A watch template: emails that can't wait")
+        case .schoolMessages: String(localized: "School Messages", comment: "A watch template: messages from a child's school")
         }
     }
 
     private func symbol(_ part: Part) -> String {
         if part == .leaveBy { return setup.way == .transit ? "tram" : setup.way == .walking ? "figure.walk" : "car" }
-        return part.job?.symbol ?? "sparkles"
+        return part.job?.symbol ?? part.template?.symbol ?? "sparkles"
     }
 
     private func blurb(_ part: Part) -> String {
@@ -351,6 +386,8 @@ struct AheadOfYourDayView: View {
         case .wrapUp: String(localized: "What got done, what's waiting on you, what carries over. At 9 PM.", comment: "Ahead of Your Day: the Evening Wrap-up in a line")
         case .weekAhead: String(localized: "The week to come, each Sunday evening.", comment: "Ahead of Your Day: the Week Ahead in a line")
         case .routines: String(localized: "Things you ask again and again, offered as routines. Weekly.", comment: "Ahead of Your Day: Routine Suggestions in a line")
+        case .urgentEmail: String(localized: "Told only about email that can't wait. Needs an email connection on your Hermes.", comment: "Ahead of Your Day: the Urgent Emails watch in a line")
+        case .schoolMessages: String(localized: "What the school asks of you, with any dates. Needs an email connection on your Hermes.", comment: "Ahead of Your Day: the School Messages watch in a line")
         }
     }
 }
@@ -430,7 +467,11 @@ struct AheadOfYourDayRow: View {
         if picked.contains(where: \.isJob) {
             guard let backend = CronBackend.current(), let jobs = try? await backend.list() else { return nil }
             let names = Set(jobs.map(\.name))
-            on.formUnion(AheadOfYourDay.Part.allCases.filter { $0.job.map { names.contains($0.name) } == true })
+            on.formUnion(AheadOfYourDay.Part.allCases.filter { part in
+                if let daily = part.job { return names.contains(daily.name) }
+                if let kind = part.template { return WatchTemplate.find(kind, in: jobs) != nil }
+                return false
+            })
         }
         return AheadOfYourDay.isOn(picked: picked, on: on)
     }

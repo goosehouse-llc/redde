@@ -230,6 +230,12 @@ struct BotEditor: View {
                         } label: {
                             Text("Plugins")
                         }
+                        // What it remembers (2.4), its own as a profile's memory is.
+                        NavigationLink {
+                            MemoryView(profile: editing.name, owner: isMain ? mainName : title.nilIfEmpty ?? editing.label(mainName: mainName))
+                        } label: {
+                            Text("Memory")
+                        }
                     }
                 } footer: {
                     if isMain {

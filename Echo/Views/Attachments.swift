@@ -9,6 +9,8 @@ import UniformTypeIdentifiers
 /// Pending attachments above the composer: thumbnails for images, chips for files, each removable.
 struct AttachmentStrip: View {
     let attachments: [Attachment]
+    /// Draw over a pending photo (iPhone and iPad), from its tile's menu (touch and hold).
+    var markUp: ((Attachment) -> Void)? = nil
     let remove: (UUID) -> Void
 
     var body: some View {
@@ -17,6 +19,12 @@ struct AttachmentStrip: View {
                 ForEach(attachments) { att in
                     ZStack(alignment: .topTrailing) {
                         AttachmentTile(attachment: att, size: 64)
+                            .contextMenu {
+                                if let markUp, att.kind == .image {
+                                    Button("Mark Up", systemImage: "pencil.tip.crop.circle") { markUp(att) }
+                                }
+                                Button("Remove", systemImage: "trash", role: .destructive) { remove(att.id) }
+                            }
                         Button { remove(att.id) } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .chatFont(.body)

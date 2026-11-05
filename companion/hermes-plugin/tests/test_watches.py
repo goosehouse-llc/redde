@@ -52,6 +52,20 @@ class WatchTests(RoutinesTests):
             self.assertTrue(watches.quiet(answer), answer)
         self.assertFalse(watches.quiet("Nothing new on the kettle, but the toaster dropped to $20."[:0] + "The toaster dropped."))
 
+    def test_an_answer_that_opens_with_no_change_is_quiet(self):
+        # 2026-11-05: a GTA 6 watch on Kapitsa, sent twice in a morning.
+        gta = ("Based on my research, here's the current status:\n\n**No price changes. GTA 6 remains at $79.99 "
+               "(Standard) and $99.99 (Ultimate) across all major retailers.**\n\nBoth Amazon and Best Buy list "
+               "the game at $79.99 with preorder price guarantees (if the price drops before release, you pay less).")
+        for answer in (gta, "No changes since the last check.", "Nothing has changed. The kettle is $49.",
+                       "Still the same.", "**No new updates.**\n\nThe page reads as it did.", "Prices are unchanged."):
+            self.assertTrue(watches.quiet(answer), answer)
+        for answer in ("No price changes, but it's back in stock at Target.",
+                       "No price changes. Target is now out of stock, though.",
+                       "Based on my research, here's the current status:\n\nIt dropped to $59.99 at Best Buy.",
+                       "The price dropped. No changes elsewhere.", "No changes to the price at Amazon; Walmart has it for $69."):
+            self.assertFalse(watches.quiet(answer), answer)
+
 
 class FollowUpTests(unittest.TestCase):
     def setUp(self):

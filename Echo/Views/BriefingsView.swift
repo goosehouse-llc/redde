@@ -67,6 +67,46 @@ final class BriefingsInbox {
 
     var unread: [AgentBriefing] { briefings.filter { !$0.read } }
 
+    /// The deck: each job once, its newest run not read yet, less the ones over (2026-11-05).
+    var deck: [AgentBriefing] { AgentBriefing.deck(briefings).map(\.briefing) }
+    /// How many earlier runs of each card's job are unread under it, by the card's id.
+    var earlierUnread: [String: Int] {
+        Dictionary(AgentBriefing.deck(briefings).map { ($0.briefing.id, $0.earlier) }, uniquingKeysWith: { a, _ in a })
+    }
+
+    /// The same job's other runs kept here, newest first.
+    func earlier(than briefing: AgentBriefing) -> [AgentBriefing] {
+        AgentBriefing.all().filter { $0.jobKey == briefing.jobKey && $0.id != briefing.id && $0.at <= briefing.at }
+            .sorted { $0.at > $1.at }
+    }
+
+    /// The list's rows: each job once, its newest run, with how many it has.
+    var byJob: [(briefing: AgentBriefing, runs: Int)] {
+        var at: [String: Int] = [:]
+        var out: [(briefing: AgentBriefing, runs: Int)] = []
+        for briefing in briefings {
+            if let i = at[briefing.jobKey] { out[i].runs += 1 } else { at[briefing.jobKey] = out.count; out.append((briefing, 1)) }
+        }
+        return out
+    }
+
+    /// How this job's runs reach the person, and the plugin told of a hidden one.
+    func notice(_ briefing: AgentBriefing) -> JobNotices.Choice { JobNotices.choice(for: briefing.jobKey) }
+
+    func setNotice(_ choice: JobNotices.Choice, for briefing: AgentBriefing) {
+        JobNotices.set(choice, for: briefing.jobKey, title: briefing.heading)
+        if choice == .hidden { AgentBriefing.markJobRead(briefing.jobKey) }
+        Mutes.publish()
+        reload()
+    }
+
+    /// A hidden job shown again (the list's Hidden Jobs).
+    func showAgain(_ jobKey: String) {
+        JobNotices.set(.notify, for: jobKey, title: "")
+        Mutes.publish()
+        reload()
+    }
+
     #if DEBUG
     /// A made-up daily brief for today, in the shape the first real one came in: the model's
     /// working line, a rule, then tables, one event in two of them.
@@ -126,6 +166,8 @@ final class BriefingsInbox {
         #if DEBUG
         if DevHooks.has("-echo.demoBriefings") || DemoDay.on { briefings.removeAll { $0.id == briefing.id }; return }
         #endif
+        // The job's earlier runs go with it: the card comes back as one.
+        for run in earlier(than: briefing) where !run.read { AgentBriefing.markRead(run.id) }
         AgentBriefing.snooze(briefing.id, until: until)
         LaterReminder.briefing(briefing, at: until)
         reload()
@@ -133,6 +175,7 @@ final class BriefingsInbox {
 
     func show(_ briefing: AgentBriefing) {
         AgentBriefing.markRead(briefing.id)
+        AgentBriefing.markJobRead(briefing.jobKey)   // (its earlier runs are in its sheet)
         reload()
         open = briefings.first { $0.id == briefing.id } ?? briefing
     }
@@ -148,9 +191,24 @@ final class BriefingsInbox {
         reload()
     }
 
+    /// Done with a card: every run of its job read.
+    func markJobRead(_ briefing: AgentBriefing) {
+        AgentBriefing.markJobRead(briefing.jobKey)
+        reload()
+    }
+
     func remove(_ briefing: AgentBriefing) {
         AgentBriefing.remove(briefing.id)
         LaterReminder.cancel(briefing.id)
+        reload()
+    }
+
+    /// Every run of a job, gone (the list's Delete on a job's row).
+    func removeJob(_ briefing: AgentBriefing) {
+        for run in AgentBriefing.all() where run.jobKey == briefing.jobKey {
+            AgentBriefing.remove(run.id)
+            LaterReminder.cancel(run.id)
+        }
         reload()
     }
 }
@@ -161,6 +219,15 @@ extension AgentBriefing {
         if title == EveningWrapUp.title { return "moon.stars" }
         if dayBrief != nil { return "calendar" }
         return "doc.text"
+    }
+
+    /// About the person's day (Today in the deck): a heads-up, a daily brief, the wrap-up, the week
+    /// ahead, or a job named for a day's look; anything else (a check, a monitor, a goal's) is
+    /// one of the Updates (2026-11-05).
+    var isAboutTheDay: Bool {
+        if isHeadsUp || dayBrief != nil || week != nil || [EveningWrapUp.title, WeekAhead.title].contains(title) { return true }
+        let words = Set(title.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init))
+        return !words.isDisjoint(with: ["brief", "briefing", "morning", "evening", "daily", "today", "tonight", "agenda", "wrap", "schedule", "calendar"])
     }
 
     /// What the person's word on it is about, for the jobs that make them (`AgentFeedback`): a
@@ -179,6 +246,16 @@ struct BriefingMenu: View {
     @State private var inbox = BriefingsInbox.shared
 
     var body: some View {
+        Section {
+            Picker(selection: Binding(get: { inbox.notice(briefing) }, set: { inbox.setNotice($0, for: briefing); noted() })) {
+                Label("Notify Me", systemImage: "bell").tag(JobNotices.Choice.notify)
+                Label("Drawer Only", systemImage: "tray").tag(JobNotices.Choice.drawerOnly)
+                Label("Don't Show", systemImage: "eye.slash").tag(JobNotices.Choice.hidden)
+            } label: {
+                Label { Text("Notifications", comment: "A briefing's menu: how this job's runs reach the person (Notify Me, Drawer Only, Don't Show)") } icon: { Image(systemName: "bell.badge") }
+            }
+            .pickerStyle(.menu)
+        }
         Section("Later") {
             ForEach(Later.choices(), id: \.0) { choice, when in
                 Button { inbox.later(briefing, until: when) } label: { Label { Text(choice.label) } icon: { Image(systemName: choice.symbol) } }
@@ -204,8 +281,42 @@ struct BriefingMenu: View {
 /// it is read. Read, they leave the deck and stay in All Briefings.
 struct BriefingsSection: View {
     @State private var inbox = BriefingsInbox.shared
+    @State private var mail = MailCenter.shared
     @State private var noted = 0
+    /// Bumped when the email page is put away, so the deck reads again.
+    @State private var mailDone = 0
     @Environment(\.theme) private var theme
+
+    /// Today or Updates (2026-11-05), when there are both.
+    @State private var showing: Shelf = .today
+    enum Shelf: Hashable { case today, updates }
+
+    /// The briefings not read yet, each job once, with the email page first while something waits
+    /// on him (2.4), in Today.
+    private var all: (today: [AgentBriefing], updates: [AgentBriefing]) {
+        _ = mailDone
+        let cards = inbox.deck
+        return ((MailBriefPage.item(mail.brief).map { [$0] } ?? []) + cards.filter(\.isAboutTheDay), cards.filter { !$0.isAboutTheDay })
+    }
+
+    private var deck: [AgentBriefing] {
+        let all = all
+        if all.today.isEmpty { return all.updates }
+        if all.updates.isEmpty { return all.today }
+        return showing == .today ? all.today : all.updates
+    }
+
+    private func read(_ briefing: AgentBriefing) {
+        if MailBriefPage.isMail(briefing) { MailBriefPage.open(); mailDone += 1 } else { inbox.show(briefing) }
+    }
+
+    private func done(_ briefing: AgentBriefing) {
+        if MailBriefPage.isMail(briefing) { MailBriefPage.done(); mailDone += 1 } else { inbox.markJobRead(briefing) }
+    }
+
+    private func later(_ briefing: AgentBriefing) {
+        if MailBriefPage.isMail(briefing) { MailBriefPage.done(); mailDone += 1 } else { inbox.later(briefing, until: Later.soon()) }
+    }
 
     /// "Read" as a thing to do (open it to read), not "Read" as done, which the catalog's own is.
     private var readIt: String {
@@ -213,25 +324,45 @@ struct BriefingsSection: View {
     }
 
     var body: some View {
-        if !inbox.unread.isEmpty {
+        let deck = deck
+        let all = all
+        let earlier = inbox.earlierUnread
+        if !deck.isEmpty {
             Section {
+                if !all.today.isEmpty, !all.updates.isEmpty {
+                    Picker("Briefings", selection: $showing) {
+                        Text("Today · \(all.today.count)", comment: "The briefings deck's tab for the day's (heads-ups, daily brief, wrap-up), with how many").tag(Shelf.today)
+                        Text("Updates · \(all.updates.count)", comment: "The briefings deck's tab for other jobs' answers (checks, monitors), with how many").tag(Shelf.updates)
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 0, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
                 SwipeDeck(
-                    items: inbox.unread,
+                    items: deck,
                     height: 214,
-                    right: .init(stamp: readIt, color: .green, act: { inbox.show($0) }),
-                    left: .init(stamp: String(localized: "Done"), color: .blue, act: { inbox.markRead($0) }),
-                    buttons: [.init(symbol: "checkmark", label: String(localized: "Done"), color: .blue, fly: -1, act: { inbox.markRead($0) }),
-                              .init(symbol: "book.fill", label: readIt, color: .green, size: 64, fly: 1, act: { inbox.show($0) }),
-                              .init(symbol: "clock", label: String(localized: "Later"), color: .indigo, fly: -1, act: { inbox.later($0, until: Later.soon()) })],
-                    tap: { inbox.show($0) },
+                    right: .init(stamp: readIt, color: .green, act: { read($0) }),
+                    left: .init(stamp: String(localized: "Done"), color: .blue, act: { done($0) }),
+                    buttons: [.init(symbol: "checkmark", label: String(localized: "Done"), color: .blue, fly: -1, act: { done($0) }),
+                              .init(symbol: "book.fill", label: readIt, color: .green, size: 64, fly: 1, act: { read($0) }),
+                              .init(symbol: "clock", label: String(localized: "Later"), color: .indigo, fly: -1, act: { later($0) })],
+                    tap: { read($0) },
                     face: { briefing, isTop, moved in
-                        BriefingCard(briefing: briefing, isTop: isTop, moved: moved).deckCard(DeckCard.face(profile: briefing.profile), theme: theme)
+                        if MailBriefPage.isMail(briefing), let brief = mail.brief {
+                            MailBriefCard(brief: brief, isTop: isTop, moved: moved).deckCard(DeckCard.face(profile: "default"), theme: theme)
+                        } else {
+                            BriefingCard(briefing: briefing, isTop: isTop, moved: moved, earlier: earlier[briefing.id] ?? 0)
+                                .deckCard(DeckCard.face(profile: briefing.profile), theme: theme)
+                        }
                     },
-                    menu: { BriefingMenu(briefing: $0, noted: { noted += 1 }) },
+                    menu: { briefing in
+                        if !MailBriefPage.isMail(briefing) { BriefingMenu(briefing: briefing, noted: { noted += 1 }) }
+                    },
                     footer: {
                         HStack(spacing: 6) {
-                            if inbox.unread.count > 1 {
-                                Text("\(1) of \(inbox.unread.count) · Tap to read, hold for more").monospacedDigit()
+                            if deck.count > 1 {
+                                Text("\(1) of \(deck.count) · Tap to read, hold for more").monospacedDigit()
                             } else {
                                 Text("Tap to read, hold for more")
                             }
@@ -241,6 +372,7 @@ struct BriefingsSection: View {
                             }
                         }
                     })
+                .id(all.today.isEmpty || all.updates.isEmpty ? nil : showing)
                 .sensoryFeedback(.success, trigger: noted)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
                 .listRowBackground(Color.clear)
@@ -258,6 +390,8 @@ struct BriefingCard: View {
     let briefing: AgentBriefing
     var isTop = true
     var moved: CGFloat = 0
+    /// Earlier runs of its job not read yet, under it (2026-11-05).
+    var earlier = 0
 
     var body: some View {
         let week = briefing.week
@@ -295,6 +429,11 @@ struct BriefingCard: View {
     }
 
     private var subtitle: Text {
+        guard earlier > 0 else { return kind }
+        return Text("\(kind) · \(earlier) earlier", comment: "On a briefing's card: what it is and when, then how many earlier runs of the same job wait under it (\"briefing · 9:00 AM · 2 earlier\")")
+    }
+
+    private var kind: Text {
         let when = briefing.at.formatted(date: .omitted, time: .shortened)
         if briefing.isHeadsUp { return Text("heads-up · \(when)", comment: "Under an agent's name on a heads-up's card") }
         if briefing.week != nil || briefing.title == WeekAhead.title { return Text("your week ahead · \(when)", comment: "Under an agent's name on the Week Ahead's card") }
@@ -424,6 +563,9 @@ extension AgentBriefing {
 struct BriefingRow: View {
     let briefing: AgentBriefing
     var lines = 3
+    /// How many runs of its job are kept (the list's), and whether they come to the drawer only.
+    var runs = 1
+    var quiet = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -434,6 +576,12 @@ struct BriefingRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(briefing.heading).chatFont(.body, weight: briefing.read ? .regular : .semibold).lineLimit(1)
+                    if quiet { Image(systemName: "tray").chatFont(.caption).foregroundStyle(.secondary).accessibilityLabel(Text("Drawer only")) }
+                    if runs > 1 {
+                        Text(verbatim: "\(runs)").chatFont(.caption2, weight: .semibold).monospacedDigit()
+                            .padding(.horizontal, 6).padding(.vertical, 1).background(.quaternary, in: .capsule)
+                            .accessibilityLabel(Text("\(runs) runs", comment: "All Briefings: how many runs of a job are kept"))
+                    }
                     Spacer(minLength: 6)
                     Text(briefing.at, format: .dateTime.hour().minute()).chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                 }
@@ -469,6 +617,20 @@ struct BriefingSheet: View {
                         if let starts = briefing.startsAt { EventCard(briefing: briefing, starts: starts) }
                         MarkdownView(text: briefing.shownText, selectable: true)
                         if let found = briefing.mapPlace { AddressMapCard(found: found) }
+                    }
+                    let earlier = BriefingsInbox.shared.earlier(than: briefing)
+                    if !earlier.isEmpty {
+                        Text("Earlier", comment: "In a briefing's sheet: the same job's earlier runs, under the newest").chatFont(.headline).padding(.top, 8)
+                        ForEach(earlier) { run in
+                            DisclosureGroup {
+                                MarkdownView(text: run.shownText, selectable: true).padding(.top, 4)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(run.at.formatted(.dateTime.weekday().hour().minute())).chatFont(.subheadline, weight: .semibold)
+                                    Text(run.plainText).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                                }
+                            }
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -516,11 +678,28 @@ struct BriefingsList: View {
                     Text("Your agent's briefings come here: the Evening Wrap-up, heads-ups before events, and any daily brief you ask it for. Set them up in Settings, Agent.")
                         .chatFont(.footnote).foregroundStyle(.secondary)
                 }
-                ForEach(inbox.briefings) { briefing in
-                    Button { inbox.markRead(briefing); open = briefing } label: { BriefingRow(briefing: briefing, lines: 2) }
+                // Each job once, its newest run; the earlier ones in its sheet (2026-11-05).
+                ForEach(inbox.byJob, id: \.briefing.id) { briefing, runs in
+                    Button { inbox.markJobRead(briefing); open = briefing } label: { BriefingRow(briefing: briefing, lines: 2, runs: runs, quiet: inbox.notice(briefing) == .drawerOnly) }
                         .buttonStyle(.plain)
-                        .swipeActions { Button("Delete", systemImage: "trash", role: .destructive) { inbox.remove(briefing) } }
+                        .swipeActions { Button("Delete", systemImage: "trash", role: .destructive) { inbox.removeJob(briefing) } }
                         .contextMenu { BriefingMenu(briefing: briefing) }
+                }
+                let hidden = JobNotices.hidden().sorted { $0.value.title < $1.value.title }
+                if !hidden.isEmpty {
+                    Section {
+                        ForEach(hidden, id: \.key) { key, entry in
+                            HStack {
+                                Text(entry.title.isEmpty ? String(localized: "A scheduled job") : entry.title).lineLimit(1)
+                                Spacer()
+                                Button("Show Again") { inbox.showAgain(key) }.buttonStyle(.borderless)
+                            }
+                        }
+                    } header: {
+                        Text("Hidden Jobs", comment: "All Briefings: jobs whose runs the person chose Don't Show for")
+                    } footer: {
+                        Text("Their runs aren't kept or shown, and your Hermes is asked not to send them.")
+                    }
                 }
             }
             .navigationTitle("Briefings")

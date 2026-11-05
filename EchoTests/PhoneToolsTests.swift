@@ -121,6 +121,8 @@ struct PhoneToolsTests {
                 let held = asked.filter { $0 != "none" && pluginKnows?.contains($0) != false }
                 return "redde-push device areas " + (held.isEmpty ? "none" : held.joined(separator: ","))
             }
+            if arguments == "device ahead off" { return "redde-push device ahead off" }
+            if arguments.hasPrefix("device ahead ") { return "redde-push device ahead calendar,reminders" }
             return "redde-push device done"
         }
 
@@ -482,5 +484,31 @@ struct PhoneToolsTests {
         #expect(DeviceTool.allCases.filter(\.changes).map(\.rawValue).sorted()
             == ["phone_alarms_cancel", "phone_alarms_set", "phone_calendar_add_event", "phone_files_delete", "phone_files_write",
                 "phone_reminders_add", "phone_reminders_complete"])
+    }
+
+    /// Send Ahead for Scheduled Jobs (2026-11-04, Reddit: Morning Ideas couldn't read the calendar
+    /// with Redde closed): off, nothing goes; on, the week's events and the reminders go, read
+    /// with no one asked, and not again for ten minutes; off again, the copy is taken back.
+    @Test func sendAheadSendsTheWeekOnlyWhenTurnedOn() async throws {
+        let h = Harness(on: true, [.calendar: .ask, .reminders: .allow])
+        #expect(await h.service.sendAhead() == nil)
+        #expect(!h.world.commands.contains { $0.hasPrefix("device ahead") })
+
+        h.settings.phoneTools.sendAhead = true
+        #expect(await h.service.sendAhead() == [.calendar, .reminders])
+        let sent = try #require(h.world.commands.last { $0.hasPrefix("device ahead ") })
+        let copy = try JSONValue.parse(try #require(Data(base64Encoded: String(sent.dropFirst("device ahead ".count)))))
+        #expect(copy["calendar"] != nil && copy["reminders"] != nil && copy["time_zone"]?.string == TimeZone.current.identifier)
+        #expect(h.world.ran == [.calendarEvents, .remindersList])
+        #expect(h.world.asked.isEmpty, "turning it on was the asking, \"ask each time\" included")
+        #expect(await h.service.sendAhead(now: .now.addingTimeInterval(60)) == nil, "not again within ten minutes")
+        #expect(await h.service.sendAhead(now: .now.addingTimeInterval(60), force: true) != nil, "Send Now sends anyway")
+        #expect(h.service.aheadSentAt != nil)
+
+        h.settings.phoneTools.sendAhead = false
+        #expect(await h.service.sendAhead() == [])
+        #expect(h.world.commands.last == "device ahead off")
+        #expect(h.service.aheadSentAt == nil)
+        #expect(await h.service.sendAhead() == nil, "taken back once")
     }
 }

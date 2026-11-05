@@ -234,6 +234,16 @@ final class HermesServeClient {
         }
     }
 
+    #if DEBUG
+    /// Tests: the socket drops now (as when Hermes closes a client that fell behind, or the phone
+    /// loses the network) and isn't tried again for `seconds`.
+    private var reconnectHeldUntil: Date?
+    func dropForTesting(holdingReconnectFor seconds: TimeInterval) {
+        reconnectHeldUntil = Date().addingTimeInterval(seconds)
+        socket?.cancel(with: .goingAway, reason: nil)
+    }
+    #endif
+
     /// Called when the app returns to the foreground: pick the link back up if we had one.
     func reconnectIfNeeded() {
         guard wantsConnection, state != .connected else { return }
@@ -258,6 +268,9 @@ final class HermesServeClient {
             var attempt = 0
             var delay: Double = 1
             while let self, wantsConnection, !Task.isCancelled {
+                #if DEBUG
+                if let until = reconnectHeldUntil, until > .now { try? await Task.sleep(for: .seconds(until.timeIntervalSinceNow)) }
+                #endif
                 attempt += 1
                 state = .reconnecting(attempt: attempt)
                 log.info("reconnecting to hermes serve (attempt \(attempt))")
@@ -642,6 +655,18 @@ final class HermesServeClient {
         guard let baseURL else { throw TransportError.badURL }
         let pass = try await socketPass()
         guard let url = Self.socketURL(baseURL: baseURL, path: path, query: query, pass: pass) else { throw TransportError.badURL }
+        let task = session.webSocketTask(with: url)
+        task.maximumMessageSize = Self.maxFrameBytes
+        task.resume()
+        return task
+    }
+
+    /// Bot Screen's picture stream (`/api/display/ws`, Hermes 0.21.5+): raw RFB as binary frames,
+    /// opened with the single-use ticket `display.observe` minted on this connection's `/api/ws`.
+    /// The ticket alone lets it in, so no login pass rides along; the session's own headers (a
+    /// Pangolin token) do, which a web view's socket couldn't send. The caller owns the task.
+    func openDisplaySocket(path: String, ticket: String) throws -> URLSessionWebSocketTask {
+        guard let baseURL, let url = BotScreen.socketURL(baseURL: baseURL, path: path, ticket: ticket) else { throw TransportError.badURL }
         let task = session.webSocketTask(with: url)
         task.maximumMessageSize = Self.maxFrameBytes
         task.resume()
@@ -1182,6 +1207,15 @@ final class HermesServeClient {
         struct Envelope: Decodable { var sessions: [HermesSessionsAPI.SessionSummary]? ; var data: [HermesSessionsAPI.SessionSummary]? }
         let env = try JSONDecoder().decode(Envelope.self, from: data)
         return env.sessions ?? env.data ?? []
+    }
+
+    /// One stored session as the Dashboard keeps it (`GET /api/sessions/{id}`, its database row:
+    /// tokens, cost and its status, billing, folder, the model's settings), for the chat's
+    /// Session Details. In the profile named, else the one the session was listed in.
+    func sessionDetail(stored: String, profile: String?) async throws -> JSONValue {
+        var path = "api/sessions/" + (stored.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? stored)
+        if let profile, let name = profile.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) { path += "?profile=\(name)" }
+        return try JSONValue.parse(try await rest("GET", path, body: nil, about: stored))
     }
 
     /// Every profile's sessions at once, each with its profile, newest first

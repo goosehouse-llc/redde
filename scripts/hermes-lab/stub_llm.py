@@ -48,6 +48,10 @@ with Bot Mode's own tool (`message_agent`): "Which trailhead for Lost Lake?".
 And shapes (LAB_SHAPE): how the model words a `tool_call` (see `bridged` below), for the check
 that a patched Hermes repairs the ones the local Qwen gets wrong (sam-patch tool-call-shape).
 
+And for goals (lab.sh goals): a goal's check-in (a message with "[redde-goal:") is answered with
+a PROGRESS line, "1/2", and whether the turn was told the goal's steps; a watch tagged
+"[redde-watch:lab-mail]" answers "NO EMAIL ACCESS".
+
 And one for attachments: a message with "lab:file" in it is answered "[file seen]" when what
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
 or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
@@ -71,6 +75,7 @@ TARGET = os.environ.get("LAB_TARGET", "")
 TODO = ("todo_list", "todo")
 #: What a message makes the model call: the tool (or the names it may go by) and its arguments.
 CALLS = {
+    "lab:tooldrip": (TODO, {"todos": [{"id": "1", "content": "Look it up", "status": "in_progress"}]}),
     "lab:todo": (TODO, {"todos": [{"id": "1", "content": "Export the posts", "status": "in_progress"},
                                    {"id": "2", "content": "Import them", "status": "pending"},
                                    {"id": "3", "content": "Check the feed", "status": "pending"}]}),
@@ -307,6 +312,8 @@ class Handler(BaseHTTPRequestHandler):
                                 "redde_note": "[Redde: asked about" in last_user,
                                 # Calls (lab.sh calls): the plugin's word on a turn asking to be called.
                                 "call_note": "[Redde: to ring the user's iPhone" in last_user,
+                                # A reminder's run (lab.sh routines): the plugin answers it, so the model is never asked.
+                                "reminder": "Tell the person in one line" in last_user,
                                 # What the last tool answered, when the model is shown one.
                                 "tool_said": text_of(messages[-1])[:300] if messages and messages[-1].get("role") == "tool" else None}) + "\n")
         text, call = f"[{NAME}:{model}]", None
@@ -362,6 +369,13 @@ class Handler(BaseHTTPRequestHandler):
             dm = re.search(r"lab:dm:([a-z0-9][a-z0-9_-]*)", just_said)
             if dm and planned is None and "message_agent" in offered:
                 planned = ("message_agent", {"target": dm.group(1), "message": "Which trailhead for Lost Lake?"})
+            # Goals and email watches (lab.sh goals): a goal's check-in answers with its progress
+            # line, saying whether its turn was told the goal's steps; a lab watch on email can't read any.
+            if "[redde-goal:" in just_said:
+                text = ("PROGRESS: 1/2 | Lab goal moving | Lab step two\n\nLab check-in"
+                        + (", told its steps." if "Steps: 1. " in just_said else ", not told its steps."))
+            if "[redde-watch:lab-mail]" in just_said:
+                text = "NO EMAIL ACCESS"
             if "lab:file" in just_said:
                 text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
             if messages[-1].get("role") == "tool":
@@ -407,9 +421,22 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.flush()
 
         chunk({"role": "assistant", "content": ""})
+        # "lab:tooldrip": a line, a tool call (the to-do tool), then the answer a word a second, as
+        # Sol answered on 2026-11-05 when two replies ran together in Redde (lab.sh, HermesLabQueuedTests).
+        sent = body.get("messages") or []
+        asked_last = next((m.get("content") for m in reversed(sent) if m.get("role") == "user"), "")
+        tooldrip = "lab:tooldrip" in json.dumps(asked_last)
+        if call and tooldrip:
+            chunk({"content": "Let me look.\n\n"})
         if call:
             chunk({"tool_calls": [call]})
             chunk({}, "tool_calls", {"usage": usage})
+        elif tooldrip and sent and sent[-1].get("role") == "tool":
+            for i in range(8):
+                chunk({"content": f"word{i} "})
+                time.sleep(1)
+            chunk({"content": "[tooldrip done]"})
+            chunk({}, "stop", {"usage": usage})
         elif last.get("role") == "user" and "lab:drip" in json.dumps(last.get("content")):
             # A reply that streams as a model's does, a word a second, so Hermes writes to its
             # client all along: what it does when that client has gone (lab.sh switch).

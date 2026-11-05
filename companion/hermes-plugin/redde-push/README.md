@@ -226,6 +226,33 @@ Also from 1.9.0, things the agent does for you on its own time, each a Hermes cr
 
 The tools are offered once a phone is paired.
 
+## Goals and skipping a run
+
+From 1.15.0 (Redde 2.4):
+
+- **Goals**: something you want to reach over days or weeks. When a message sounds like one ("I
+  want to run a 10K by March", "help me save for the trip"), and only then, the agent is told it
+  can propose a plan and, once you agree, call `redde_goal` (toolset `redde_ideas`; actions `set`,
+  `update`, `status`, `end`). A goal is kept in the profile's `redde-push/goals.json`; each step
+  becomes a Kanban card in triage under tenant `redde-goal-<id>`, so no worker starts on it until
+  you approve it in Redde (on a Hermes with no board, the steps are kept in the file alone); and a
+  job named `[redde-goal:<id>] …` checks in, by default Mondays at 9:00, or every other day at
+  9:00 when the goal is under two weeks away. Each check-in is told the goal's steps and how each
+  stands, and starts its answer with `PROGRESS: <done>/<steps> | <how it's going> | <next>`;
+  that comes to the phones as a briefing carrying the goal's id and progress. Anything that needs
+  your say comes as an idea card. Unrelated to Hermes's own `/goal` command.
+- **Skipping a run**: Redde's Coming Up skips a repeating job's next run by adding
+  ` [redde-skip:<when>]` to its name (the one change the Hermes API can make to a job besides
+  pausing it). Every half minute, phone paired or not, the plugin moves such a job's next run on
+  to the one after with Hermes's own schedule arithmetic and takes the mark off. Over the
+  Dashboard, `/redde-push skip <profile> <job> <when>` does it at once.
+- **Watches on email** (Redde's watch templates) answer `NO EMAIL ACCESS` where the agent has no
+  tool that reads email; the phone is told once, and the watch is paused.
+
+`/redde-push goals list` gives the app every agent's goals, with their steps and latest progress;
+`/redde-push goals end <profile> <goal>` ends one. A goal's check-in job is the truth: delete it
+(over either connection) and the goal is ended; change its schedule and the goal's follows.
+
 ## Leave-By Alerts' traffic re-check
 
 From 1.11.0. Redde's Leave-By Alerts (Settings, Agent) work out on the device, with Apple Maps,
@@ -353,3 +380,24 @@ subject and its words, and anything else as rows. Without a kind it goes by the 
 (To and Subject, an email). A checklist's items each take a `section` (or `group`), or come in
 `sections` (or `groups`) each with its `items`; an item may have a short `note` ("×2"), and the
 list a `subtitle` ("Nov 7 – 8") and a `verb` ("packed": "3 of 8 packed"). All optional.
+
+## Email (1.16.0)
+
+Redde's inbox for the person's own email, for any provider with IMAP and an app password (Gmail,
+iCloud, Fastmail, Yahoo, others), added in the Redde app, which puts `REDDE_MAIL_ADDRESS`,
+`REDDE_MAIL_PASSWORD` and `REDDE_MAIL_PROVIDER` in the main profile's .env through Keys Asked For
+(`REDDE_MAIL_IMAP_HOST`/`_PORT` and `REDDE_MAIL_SMTP_HOST`/`_PORT` for another provider; more
+accounts with `REDDE_MAIL_ACCOUNTS=WORK` and `REDDE_MAIL_WORK_*`). Never `EMAIL_*`: those are
+Hermes's own email platform's, which answers mail as a chat and marks everything read. A Hermes
+with the google-workspace skill's Gmail sign-in gets that account over the Gmail API as well.
+
+- Every few minutes (3 by default) the schedules' thread looks for new mail: sender, subject, a
+  short snippet and flags only. Rules sort it first (Gmail's categories, list headers, receipts);
+  the rest goes to the model a few at a time, as data. The person's own rules (archive, mark
+  read, label, move, tell me) run with no model, each logged and undoable.
+- The agent gets `redde_mail`. Reading an email gives its text as data, never instructions.
+  Replies are drafts shown as a card in Redde and sent only unchanged after the person approves;
+  trashing and the agent's unsubscribing are approved too. While an account is set up, other ways
+  of sending mail (himalaya, the google-workspace script, the Nous Gmail connector) are blocked.
+- State: `redde-push/mail/` under the main home (the inbox's small index, rules, the log, drafts,
+  settings). The app's command is `/redde-push mail …` (see the repository's tmp/mail-contract.md).

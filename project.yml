@@ -105,6 +105,9 @@ targets:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
         com.apple.developer.healthkit.background-delivery: true
+        # Phone tools › Apple Home (DeviceHome): the agent sees and controls HomeKit accessories,
+        # off until turned on. HomeKit is enabled on the App ID for this.
+        com.apple.developer.homekit: true
     info:
       path: Echo/Info.plist
       properties:
@@ -180,8 +183,10 @@ targets:
         NSFaceIDUsageDescription: Redde uses Face ID to unlock the app, which holds your Hermes credentials.
         NSLocalNetworkUsageDescription: Redde connects to the Hermes gateway or model server you configure, which is often on your local network.
         # Health-Aware Days (Settings → Agent → Health), off until turned on.
-        NSHealthShareUsageDescription: With Health-Aware Days turned on, Redde reads last night's sleep, your steps and your workouts so your agent's morning ideas and evening wrap-up take your day into account. Only a one-line summary goes to your own server.
-        NSHealthUpdateUsageDescription: Redde doesn't save anything to Health. With Health-Aware Days turned on, it only reads your sleep, steps and workouts.
+        NSHealthShareUsageDescription: Redde reads only the Health data you turn on. With Health-Aware Days, last night's sleep, your steps and your workouts shape your agent's morning ideas and evening wrap-up. With Phone Tools › Health, your agent can read the kinds you choose when it asks. It goes only to your own server.
+        # Phone tools › Apple Home, off until turned on.
+        NSHomeKitUsageDescription: With Phone Tools › Apple Home on, your agent can see your accessories and scenes and control them when you ask. Locks, garage doors, doors, windows and the alarm always ask you first. What it reads goes only to your own server.
+        NSHealthUpdateUsageDescription: Redde doesn't save anything to Health. It only reads the Health data you turn on, for Health-Aware Days and Phone Tools.
         # Lets Siri accept "Hey Siri, ask Hermes" in addition to "ask Echo".
         INAlternativeAppNames:
           - INAlternativeAppName: Hermes
@@ -202,7 +207,7 @@ targets:
         # Redde Face (the bot face on Matte Mist) is the default; Matte Graphite, the glass Graphite
         # (AppIcon) and the rest are alternates.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIconFaceMist
-        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIcon AppIconGraphiteBlock AppIconSteelBlock AppIconMist AppIconGraphiteFlat AppIconGraphiteBlockFlat AppIconSteelFlat AppIconMistFlat AppIconNavyBlock AppIconInk AppIconPaperNavy AppIconGold AppIconClassic"
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIconBubbleGreen AppIconBubblePurple AppIconBubbleOrange AppIconBubblePink AppIconBubbleGraphite AppIconBubbleYellow AppIconBubbleGold AppIconStarMist AppIconStarGreen AppIconStarPurple AppIconStarOrange AppIconStarPink AppIconStarGraphite AppIconStarYellow AppIconStarGold AppIconGhostBlue AppIconGhostGreen AppIconGhostPurple AppIconGhostOrange AppIconGhostPink AppIconGhostGraphite AppIconGhostYellow AppIconGhostGold AppIcon AppIconGraphiteBlock AppIconSteelBlock AppIconMist AppIconGraphiteFlat AppIconGraphiteBlockFlat AppIconSteelFlat AppIconMistFlat AppIconNavyBlock AppIconInk AppIconPaperNavy AppIconGold AppIconClassic"
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SWIFT_APPROACHABLE_CONCURRENCY: true
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
@@ -228,6 +233,7 @@ targets:
       - path: Echo/Models/Message.swift
       - path: Echo/Models/ReplyCards.swift
       - path: Echo/Models/ReplyCardsMore.swift
+      - path: Echo/Models/MailModels.swift
       - path: Echo/Models/WatchChats.swift
       # The complication's look and its link, shared with the extension that draws it.
       - path: WatchWidgets/AskComplication.swift
@@ -366,6 +372,7 @@ targets:
       # The agent's ideas, and what its watches saw, kept as they arrive with Redde closed.
       - path: Shared/AgentIdeas.swift
       - path: Shared/AgentWatches.swift
+      - path: Shared/AgentGoals.swift
       - path: Shared/AgentBriefings.swift
       - path: Shared/DayBrief.swift
       - path: Shared/WeekPlan.swift
@@ -417,6 +424,7 @@ targets:
       - path: Shared/MutedChats.swift
       - path: Shared/AgentIdeas.swift
       - path: Shared/AgentWatches.swift
+      - path: Shared/AgentGoals.swift
       - path: Shared/AgentBriefings.swift
       - path: Shared/DayBrief.swift
       - path: Shared/WeekPlan.swift

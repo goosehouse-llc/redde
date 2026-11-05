@@ -25,10 +25,33 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
     var snoozedUntil: Date?
     /// Whose it is ("default", the main agent), for its face on the card.
     var profile: String?
+    /// The job it came from (the note's `i`): its runs are one card in the deck (2026-11-05).
+    var job: String?
 
     private static let key = "agentBriefings"
     static let most = 40
     static let keptFor: TimeInterval = 7 * 86_400
+    /// The runs of one job kept: a job that runs every few hours doesn't push the others out.
+    static let runsKept = 5
+    /// How long a briefing stays in the deck when nothing newer replaces it: a day; a heads-up's
+    /// until a little after its event starts; the week ahead's, its week (2026-11-05).
+    static let inDeckFor: TimeInterval = 86_400
+    static let headsUpAfterStart: TimeInterval = 30 * 60
+
+    /// Which job's runs these are: whose, and the job's id ("default|1a2b3c"). One kept from before
+    /// 2026-11-05 has its job's id ahead of the "/" in its own.
+    var jobKey: String {
+        let id = job ?? (self.id.range(of: "/", options: .backwards).map { String(self.id[..<$0.lowerBound]) } ?? self.id)
+        return "\(profile ?? "default")|\(id)"
+    }
+
+    /// Out of the deck by now, left to All Briefings: a heads-up once its event is under way, the
+    /// week ahead after its week, any other after a day.
+    func isOver(at now: Date = .now) -> Bool {
+        if let eventAt { return now > eventAt.addingTimeInterval(Self.headsUpAfterStart) }
+        if title == "Week ahead" || title == "Week Ahead" { return now.timeIntervalSince(shownAt) > Self.keptFor }
+        return now.timeIntervalSince(shownAt) > Self.inDeckFor
+    }
 
     /// What a heads-up's name starts with (`headsup.py`), less Redde's tag.
     static let headsUpPrefix = "Heads-up: "
@@ -44,15 +67,24 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
     /// A briefing's note: kept, ahead of the ones before. False for any other note.
     @discardableResult
     static func take(_ note: PushNote, now: Date = .now, in defaults: UserDefaults? = NeedsYou.shared) -> Bool {
-        guard note.kind == .routine, note.x == "brief" else { return false }
+        // A goal's check-in is the goal's (`GoalReport`), on its card, not a briefing as well.
+        guard note.kind == .routine, note.x == "brief", note.o == nil else { return false }
         let at = note.at.map { Date(timeIntervalSince1970: $0) } ?? now
         var briefing = AgentBriefing(id: "\(note.i ?? UUID().uuidString)/\(Int(at.timeIntervalSince1970))", title: note.t ?? "",
                                      agent: note.d ?? "", text: note.b ?? "", at: at, failed: note.w == "failed")
         briefing.eventAt = note.u.flatMap { ISO8601DateFormatter().date(from: $0) }
         briefing.place = note.r.flatMap { $0.isEmpty ? nil : $0 }
         briefing.profile = note.p
-        let before = all(in: defaults, now: now).filter { $0.id != briefing.id }
+        briefing.job = note.i.flatMap { $0.isEmpty ? nil : $0 }
+        // A job the person said not to show (`JobNotices`): not kept at all.
+        if JobNotices.choice(for: briefing.jobKey, in: defaults) == .hidden { return false }
+        var before = all(in: defaults, now: now).filter { $0.id != briefing.id }
+        // At most `runsKept` of one job: its oldest go.
+        let same = before.filter { $0.jobKey == briefing.jobKey }.sorted { $0.at > $1.at }
+        let dropped = Set(same.dropFirst(runsKept - 1).map(\.id))
+        before.removeAll { dropped.contains($0.id) }
         save(Array(([briefing] + before).prefix(most)), in: defaults)
+        JobNotices.name(briefing.jobKey, briefing.heading, in: defaults)
         return true
     }
 
@@ -95,6 +127,35 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
         save(kept, in: defaults)
     }
 
+    /// Every run of that job read: its card leaves the deck whole.
+    static func markJobRead(_ jobKey: String, in defaults: UserDefaults? = NeedsYou.shared) {
+        var kept = all(in: defaults)
+        var changed = false
+        for i in kept.indices where kept[i].jobKey == jobKey && !kept[i].read {
+            kept[i].read = true
+            changed = true
+        }
+        if changed { save(kept, in: defaults) }
+    }
+
+    /// The deck: the newest run of each job not read yet and not over (`isOver`), newest first,
+    /// with how many earlier runs of it are unread under it. Pure, for the tests.
+    static func deck(_ briefings: [AgentBriefing], now: Date = .now) -> [(briefing: AgentBriefing, earlier: Int)] {
+        var seen: [String: Int] = [:]
+        var out: [(briefing: AgentBriefing, earlier: Int)] = []
+        for briefing in briefings.sorted(by: { $0.shownAt > $1.shownAt }) where !briefing.read && briefing.showing(at: now) {
+            if let at = seen[briefing.jobKey] {
+                if at >= 0 { out[at].earlier += 1 }
+            } else if !briefing.isOver(at: now) {
+                seen[briefing.jobKey] = out.count
+                out.append((briefing, 0))
+            } else {
+                seen[briefing.jobKey] = -1   // its newest is over: so are the earlier ones
+            }
+        }
+        return out
+    }
+
     static func remove(_ id: String, in defaults: UserDefaults? = NeedsYou.shared) {
         save(all(in: defaults).filter { $0.id != id }, in: defaults)
     }
@@ -107,4 +168,64 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
 /// The Up Next widget's (`EchoControls/UpNextWidget.swift`): reloaded when a briefing or ideas arrive.
 nonisolated enum UpNext {
     static let widgetKind = "com.goosehouse.echo.upnext"
+}
+
+/// How one job's runs reach the person (a briefing's menu, Notifications; 2026-11-05): with a
+/// notification (the default), in the drawer only (its notification delivered quietly, in the
+/// list, no sound or banner: `MutedChats.quiet`), or not at all: not kept, and the plugin told to
+/// send nothing for it (`Mutes.publish`, a "j:<job key>" mute) where it can be. Kept in the app
+/// group, where the notification extension reads it, by the job's key (`AgentBriefing.jobKey`).
+nonisolated enum JobNotices {
+    enum Choice: String, Codable, CaseIterable, Sendable {
+        case notify, drawerOnly, hidden
+    }
+
+    struct Entry: Codable, Equatable, Sendable {
+        var choice: Choice
+        /// The job's name, for the list of hidden ones.
+        var title: String
+    }
+
+    private static let key = "jobNotices"
+
+    static func load(_ defaults: UserDefaults? = NeedsYou.shared) -> [String: Entry] {
+        guard let data = defaults?.data(forKey: key), let saved = try? JSONDecoder().decode([String: Entry].self, from: data) else { return [:] }
+        return saved
+    }
+
+    private static func save(_ entries: [String: Entry], _ defaults: UserDefaults?) {
+        if entries.isEmpty { defaults?.removeObject(forKey: key) } else { defaults?.set(try? JSONEncoder().encode(entries), forKey: key) }
+    }
+
+    static func choice(for jobKey: String, in defaults: UserDefaults? = NeedsYou.shared) -> Choice {
+        load(defaults)[jobKey]?.choice ?? .notify
+    }
+
+    static func set(_ choice: Choice, for jobKey: String, title: String, in defaults: UserDefaults? = NeedsYou.shared) {
+        var entries = load(defaults)
+        entries[jobKey] = choice == .notify ? nil : Entry(choice: choice, title: title)
+        save(entries, defaults)
+    }
+
+    /// A job's newest name, where a choice is kept for it.
+    static func name(_ jobKey: String, _ title: String, in defaults: UserDefaults? = NeedsYou.shared) {
+        var entries = load(defaults)
+        guard let entry = entries[jobKey], entry.title != title, !title.isEmpty else { return }
+        entries[jobKey] = Entry(choice: entry.choice, title: title)
+        save(entries, defaults)
+    }
+
+    /// The jobs not shown, by key, for their mutes and the list to show them again.
+    static func hidden(in defaults: UserDefaults? = NeedsYou.shared) -> [String: Entry] {
+        load(defaults).filter { $0.value.choice == .hidden }
+    }
+
+    /// The key a note's job has (a briefing's, `x` "brief" with its job's id in `i`), or nil.
+    static func jobKey(of note: PushNote) -> String? {
+        guard note.x == "brief", let job = note.i, !job.isEmpty else { return nil }
+        return "\(note.p ?? "default")|\(job)"
+    }
+
+    /// The plugin's name for a hidden job's mute.
+    static func muteKey(_ jobKey: String) -> String { "j:" + jobKey }
 }

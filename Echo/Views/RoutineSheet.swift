@@ -7,6 +7,8 @@ import SwiftUI
 /// to write, with its skill tool: the Hermes API has no other way to make one.
 struct RoutineSheet: View {
     let conversation: Conversation
+    /// From a reply's ⋯ menu (asked 2026-11-04): that reply, whose request becomes the routine.
+    var reply: UUID? = nil
 
     enum Often: String, CaseIterable, Identifiable {
         case asked, daily, weekdays, weekly
@@ -81,8 +83,19 @@ struct RoutineSheet: View {
                         .disabled(saving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .onAppear { if name.isEmpty { name = conversation.title } }
+            .onAppear { if name.isEmpty { name = asked.map(Self.name(from:)) ?? conversation.title } }
         }
+    }
+
+    /// What was asked for the reply it was opened from.
+    private var asked: String? { reply.flatMap(conversation.asked(before:)) }
+
+    /// A name from a request: its first line, cut at a word within 40 characters.
+    nonisolated static func name(from asked: String) -> String {
+        let line = asked.split(separator: "\n").first.map(String.init) ?? asked
+        guard line.count > 40 else { return line }
+        let cut = line.prefix(40)
+        return String(cut[..<(cut.lastIndex(of: " ") ?? cut.endIndex)]).trimmingCharacters(in: .punctuationCharacters.union(.whitespaces))
     }
 
     /// The cron schedule, and how it reads to the agent.
@@ -117,7 +130,14 @@ struct RoutineSheet: View {
                 return
             }
         }
-        conversation.makeRoutine(name: name, skill: skill, when: scheduled?.words)
+        conversation.makeRoutine(name: name, skill: skill, when: scheduled?.words, asked: asked)
         dismiss()
     }
+}
+
+/// Make This a Routine from a reply's ⋯ menu: the reply it was asked from, for ContentView's sheet.
+@Observable
+final class RoutineAsk {
+    static let shared = RoutineAsk()
+    var reply: UUID?
 }

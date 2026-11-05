@@ -85,6 +85,27 @@ struct LeaveByTests {
 
     // MARK: The plan
 
+    /// Coming Up's Skip (2.4): a skipped alert is set no more (one pending is taken away), isn't
+    /// the next, and comes back when the skip is taken back.
+    @Test func aSkippedAlertIsNotSetUntilTheSkipIsTakenBack() throws {
+        let dentist = event(in: 120)
+        let skipped = LeaveBy.plan(events: [dentist], worked: [dentist.alertID: worked(dentist)], headsUps: [],
+                                   pending: [dentist.alertID], skipped: [dentist.alertID], now: now)
+        #expect(skipped.alerts.isEmpty)
+        #expect(skipped.remove == [dentist.alertID])
+        #expect(skipped.worked[dentist.alertID]?.alertAt == nil)
+        #expect(LeaveBy.next(in: skipped.worked, now: now) == nil)
+        let back = LeaveBy.plan(events: [dentist], worked: skipped.worked, headsUps: [], pending: [], now: now)
+        #expect(back.alerts.map(\.id) == [dentist.alertID])
+
+        let store = UserDefaults(suiteName: "leave-skip-\(UUID().uuidString)")!
+        LeaveTime.setSkipped(dentist.alertID, true, in: store, now: now)
+        LeaveTime.setSkipped(LeaveBy.alertID(event: "old", start: now.addingTimeInterval(-2 * 86_400)), true, in: store, now: now)
+        #expect(LeaveTime.skipped(in: store) == [dentist.alertID], "one for an event days gone is let go")
+        LeaveTime.setSkipped(dentist.alertID, false, in: store, now: now)
+        #expect(LeaveTime.skipped(in: store).isEmpty)
+    }
+
     @Test func anAlertAtTheLeavingTimeAndNoneForAnEventGone() throws {
         let dentist = event(in: 120)
         let plan = LeaveBy.plan(events: [dentist], worked: [dentist.alertID: worked(dentist), "gone": worked(event("Gone"))],

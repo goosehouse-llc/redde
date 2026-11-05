@@ -53,6 +53,17 @@ struct ReminderCard: View {
             if let answered {
                 AnsweredLine(text: answered.contains("tapped Cancel") ? String(localized: "Asked to cancel", comment: "Under a reminder card once Cancel was tapped")
                              : String(localized: "Asked to change it", comment: "Under a reminder card once a change was sent"))
+            } else if !card.isSet {
+                // Nothing behind it: say so, and offer to set it for real (2026-11-03).
+                Label(String(localized: "Nothing was set: this is only a card", comment: "Under a reminder card that no tool set"),
+                      systemImage: "exclamationmark.triangle.fill")
+                    .chatFont(.footnote, weight: .semibold).foregroundStyle(.orange)
+                if let answerer, !pinned {
+                    Button { setIt(answerer) } label: { TintedCapsule(title: String(localized: "Set It", comment: "A reminder card's button when nothing was set: asks the agent to set it for real")) }
+                        .buttonStyle(.plain)
+                        .disabled(answerer.busy)
+                        .accessibilityHint(Text("Asks your agent to set it for real", comment: "VoiceOver hint: a reminder card's Set It"))
+                }
             } else if let answerer, !pinned {
                 if changing { changeField(answerer) } else { buttons(answerer) }
             }
@@ -130,12 +141,28 @@ struct ReminderCard: View {
         answerer.answer(whole, message.shown, message.said)
     }
 
+    private func setIt(_ answerer: CardAnswerer) {
+        let message = Self.setForReal(card)
+        answerer.answer(whole, message.shown, message.said)
+    }
+
     private func cancel(_ answerer: CardAnswerer) {
         let message = Self.cancel(card)
         answerer.answer(whole, message.shown, message.said)
     }
 
     // MARK: Words
+
+    /// "Set the reminder “Call dentist” for 3:30 PM for real.": a card no tool set.
+    static func setForReal(_ card: ReplyCard.Reminder, now: Date = .now) -> (shown: String, said: String) {
+        let time = card.at.map { Calendar.current.isDate($0, inSameDayAs: now) ? $0.formatted(date: .omitted, time: .shortened)
+                                                                               : $0.formatted(date: .abbreviated, time: .shortened) } ?? card.when ?? ""
+        let shown = time.isEmpty ? String(localized: "Set the reminder “\(card.title)” for real.", comment: "The message a reminder card's Set It sends, with no time")
+                                 : String(localized: "Set the reminder “\(card.title)” for \(time) for real.", comment: "The message a reminder card's Set It sends, with its time")
+        return (shown, "the reminder card for \(card.kind.rawValue) \(named(card)) was only a card: nothing was set. Set it now with your cron tool "
+                + "(a job named '[redde-notify] \(card.title)', one run) or the phone's alarm tool, then show a fresh 'reminder' card with its job id; "
+                + "if that time has passed, ask")
+    }
 
     static func cancel(_ card: ReplyCard.Reminder) -> (shown: String, said: String) {
         let shown = switch card.kind {

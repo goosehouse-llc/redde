@@ -41,15 +41,38 @@ final class CalendarService {
         }
     }
 
+    /// Not on the never_show list in settings.json: by title, id or account name.
+    static func isShown(_ cal: EKCalendar?, never: Set<String> = ServerSettings.neverShow) -> Bool {
+        guard let cal else { return false }
+        return !matches(cal, never)
+    }
+
+    /// Not on the read_only list in settings.json (the agent sees it but can't add to it).
+    static func isWritable(_ cal: EKCalendar, readOnly: Set<String> = ServerSettings.readOnly) -> Bool {
+        cal.allowsContentModifications && !matches(cal, readOnly)
+    }
+
+    /// A calendar or list named in a settings list by title, id or account name.
+    static func matches(_ cal: EKCalendar, _ names: Set<String>) -> Bool {
+        guard !names.isEmpty else { return false }
+        return [cal.title, cal.calendarIdentifier, cal.source?.title ?? ""].contains { names.contains($0.lowercased()) }
+    }
+
+    /// Every event calendar the agent may see. Call on `queue`.
+    private func shownCalendars() -> [EKCalendar] {
+        let never = ServerSettings.neverShow
+        return store.calendars(for: .event).filter { Self.isShown($0, never: never) }
+    }
+
     func calendars() throws -> [[String: Any]] {
         try requireAccess()
         return queue.sync {
-            store.calendars(for: .event).map { cal in
+            shownCalendars().map { cal in
                 [
                     "id": cal.calendarIdentifier,
                     "title": cal.title,
                     "account": cal.source.title,
-                    "allows_changes": cal.allowsContentModifications,
+                    "allows_changes": Self.isWritable(cal),
                     "subscribed": cal.type == .subscription || cal.type == .birthday,
                     "hidden_from_agenda": Self.isBackground(cal),
                     "is_default": cal.calendarIdentifier == store.defaultCalendarForNewEvents?.calendarIdentifier,
@@ -60,7 +83,7 @@ final class CalendarService {
 
     private func resolveCalendars(_ ids: [String]?) throws -> [EKCalendar]? {
         guard let ids, !ids.isEmpty else { return nil }
-        let all = store.calendars(for: .event)
+        let all = shownCalendars()
         let chosen = all.filter { ids.contains($0.calendarIdentifier) || ids.contains($0.title) }
         guard !chosen.isEmpty else { throw ToolError("None of those calendars exist. Use list_calendars for ids.") }
         return chosen
@@ -73,7 +96,8 @@ final class CalendarService {
             throw ToolError("The range can be at most \(Self.maxRangeDays) days.")
         }
         return try queue.sync {
-            let calendars = try resolveCalendars(calendarIDs)
+            let calendars = try resolveCalendars(calendarIDs) ?? shownCalendars()
+            guard !calendars.isEmpty else { return [] }
             let predicate = store.predicateForEvents(withStart: start, end: end, calendars: calendars)
             return store.events(matching: predicate).sorted { $0.startDate < $1.startDate }
         }
@@ -81,7 +105,7 @@ final class CalendarService {
 
     func event(id: String) throws -> EKEvent {
         try requireAccess()
-        guard let event = queue.sync(execute: { store.event(withIdentifier: id) }) else {
+        guard let event = queue.sync(execute: { store.event(withIdentifier: id) }), Self.isShown(event.calendar) else {
             throw ToolError("No event with that id.")
         }
         return event
@@ -89,7 +113,7 @@ final class CalendarService {
 
     var defaultCalendarTitle: String? {
         guard hasReadAccess else { return nil }
-        return queue.sync { store.defaultCalendarForNewEvents?.title }
+        return queue.sync { store.defaultCalendarForNewEvents.flatMap { Self.isShown($0) ? $0.title : nil } }
     }
 
     /// Adds an event. There is deliberately no edit or delete anywhere in this server. Returns the
@@ -102,7 +126,7 @@ final class CalendarService {
         return try queue.sync {
             let target: EKCalendar
             if let calendarID {
-                let all = store.calendars(for: .event)
+                let all = shownCalendars()
                 guard let cal = all.first(where: { $0.calendarIdentifier == calendarID })
                         ?? all.first(where: { $0.title.caseInsensitiveCompare(calendarID) == .orderedSame }) else {
                     throw ToolError("No calendar called \(calendarID). list_calendars shows the names.")
@@ -110,9 +134,12 @@ final class CalendarService {
                 target = cal
             } else {
                 guard let cal = store.defaultCalendarForNewEvents else { throw ToolError("No default calendar is set.") }
+                guard Self.isShown(cal) else { throw ToolError("The default calendar isn't one you can use. Pass calendar_id; list_calendars shows the names.") }
                 target = cal
             }
-            guard target.allowsContentModifications else { throw ToolError("\(target.title) is read-only.") }
+            guard Self.isWritable(target) else {
+                throw ToolError("\(target.title) is read-only: nothing can be added to it here. Ask which other calendar to use.")
+            }
 
             let window = store.predicateForEvents(withStart: start.addingTimeInterval(-60), end: start.addingTimeInterval(60), calendars: [target])
             if let existing = store.events(matching: window).first(where: {

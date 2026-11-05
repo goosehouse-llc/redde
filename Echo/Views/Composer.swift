@@ -11,6 +11,8 @@ struct ComposerButton: View {
     let size: CGFloat
     /// The app's own waveform in its resting shape, still, instead of a symbol (the Talk button).
     var waveform = false
+    /// The glyph's colour; nil → the theme's glyph on its accent (`userText`).
+    var glyph: Color? = nil
     let action: () -> Void
     @Environment(\.theme) private var theme
 
@@ -18,11 +20,11 @@ struct ComposerButton: View {
         Button(action: action) {
             Group {
                 if waveform {
-                    WaveformPulse(color: theme.userText, height: size * 0.56, spacing: 2.5, shape: [0.38, 0.66, 1.0, 0.66, 0.38], still: true)
+                    WaveformPulse(color: glyph ?? theme.userText, height: size * 0.56, spacing: 2.5, shape: [0.38, 0.66, 1.0, 0.66, 0.38], still: true)
                 } else {
                     Image(systemName: symbol)
                         .font(.system(size: size * 0.42, weight: .semibold))
-                        .foregroundStyle(theme.userText)
+                        .foregroundStyle(glyph ?? theme.userText)
                 }
             }
             .frame(width: size, height: size)

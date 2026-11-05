@@ -279,8 +279,9 @@ struct CronJobDetail: View {
                     if let n = job.nextRunAt { LabeledContent("Next run") { Text(n, format: .dateTime.weekday().hour().minute()) } }
                     if let l = job.lastRunAt { LabeledContent("Last run") { Text("\(l.relativeLabel) · \(job.lastStatus ?? "")") } }
                     if let d = job.deliver, !d.isEmpty { LabeledContent("Deliver to", value: d) }
-                    if let m = job.model, !m.isEmpty { LabeledContent("Model", value: m) }
                 }
+                // Which model it runs on (Run On, 2026-11-03).
+                RunOnSection(job: job)
                 Section("Prompt") {
                     Text(job.prompt).chatFont(.callout).textSelection(.enabled)
                 }

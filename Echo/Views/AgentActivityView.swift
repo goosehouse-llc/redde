@@ -111,7 +111,42 @@ nonisolated enum AgentActivity {
     }
 }
 
+/// Settings → Agent → Agent Activity: two tabs (2.4, his pick 2026-11-02), what the agents will
+/// do on their own (Coming Up, first) and what they did (Done). Each tab reads when first shown.
 struct AgentActivityView: View {
+    enum Tab: String, Hashable { case comingUp, done }
+
+    @State private var tab: Tab
+
+    init(tab: Tab = .comingUp) { _tab = State(initialValue: tab) }
+
+    var body: some View {
+        Group {
+            switch tab {
+            case .comingUp: ComingUpList()
+            case .done: AgentActivityDone()
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Picker("Show", selection: $tab) {
+                Text("Coming Up", comment: "Agent Activity's first tab: what the agents will do on their own").tag(Tab.comingUp)
+                Text("Done", comment: "Agent Activity's second tab: what the agents did on their own").tag(Tab.done)
+            }
+            .adaptiveSegmented()
+            .labelsHidden()
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .frame(maxWidth: 560)
+            .frame(maxWidth: .infinity)
+            .background(.bar)
+        }
+        .navigationTitle("Agent Activity")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Agent Activity's Done tab: the last week, newest first.
+struct AgentActivityDone: View {
     @State private var entries: [ActivityEntry] = []
     @State private var loading = true
     @State private var problem: String?
@@ -136,6 +171,8 @@ struct AgentActivityView: View {
             if let problem {
                 Label(problem, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.orange)
             }
+            // What rules, taps and the agent did to the mail, each with its Undo (2.4 email).
+            MailActivitySection()
             ForEach(days, id: \.day) { day in
                 Section {
                     ForEach(day.entries) { row($0) }
@@ -148,8 +185,6 @@ struct AgentActivityView: View {
                 Text("Hermes keeps what its scheduled jobs ran and what the board's workers did; this iPhone keeps what reached it. Over the Hermes API, each job shows only its last run.")
             }
         }
-        .navigationTitle("Agent Activity")
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // The whole week as text, to paste into a chat or a note (asked 2026-10-30).
             ToolbarItem(placement: .primaryAction) {

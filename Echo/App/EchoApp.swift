@@ -108,6 +108,7 @@ struct EchoApp: App {
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
                     IdeasInbox.shared.reload()   // ideas that came while Redde was closed
                     BriefingsInbox.shared.reload()   // and briefings
+                    GoalsInbox.shared.reload()   // and goals' check-ins
                     HeldNote.seen()   // what came in quiet hours is here to see: no digest of it later
                     FeedbackFold.cameForward()   // a word on ideas or briefings that didn't reach the jobs yet
                     // With Current Location on, where the person is, for their next place question;
@@ -120,7 +121,7 @@ struct EchoApp: App {
                     #endif
                     // Which phone tools the agent is offered is this phone's to say, and the
                     // server may have been restarted, or reached for the first time, since it did.
-                    if Settings.shared.phoneTools.on { Task { await DeviceToolsService.shared.publish() } }
+                    if Settings.shared.phoneTools.on || DeviceToolsService.aheadOnServer { Task { await DeviceToolsService.shared.publish() } }
                     // Cards on or off, and with them on this phone's time zone (which travels with
                     // it), said again in case this server hasn't heard.
                     Task { await ReplyCardsSwitch.publish() }

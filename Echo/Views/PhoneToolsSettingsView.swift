@@ -13,6 +13,8 @@ struct PhoneToolsSettingsView: View {
     @State private var alarmsShow = true
     @Environment(\.scenePhase) private var scenePhase
     @State private var confirmingInstall = false
+    /// Send Now didn't reach the plugin.
+    @State private var aheadFailed = false
     @Environment(\.openURL) private var openURL
 
     private static var server: any PushPluginManaging {
@@ -23,16 +25,18 @@ struct PhoneToolsSettingsView: View {
     }
 
     var body: some View {
+        ScrollViewReader { scroller in
         Form {
             Section {
                 Toggle("Phone tools", isOn: Binding(get: { settings.phoneTools.on }, set: { settings.phoneTools.on = $0 }))
             } footer: {
-                Text("Lets your agent ask Redde for things on this \(device): your calendar, reminders, contacts, photos, a folder of files, alarms, a widget it can write on, and calls and messages. It is asked each time it wants to add, change or delete something. It can't go into other apps; iOS allows no app that.")
+                Text("Lets your agent ask Redde for things on this \(device): your calendar, reminders, contacts, photos, a folder of files, alarms, a widget it can write on, calls and messages, the Health data you choose, and Apple Home. It is asked each time it wants to add, change or delete something, except in Apple Home, where you choose. It can't go into other apps; iOS allows no app that.")
             }
 
             if settings.phoneTools.on {
                 Section {
-                    ForEach(DeviceArea.allCases) { area in
+                    // A Mac has no HomeKit for Redde: Apple Home is the iPhone's and the iPad's.
+                    ForEach(DeviceArea.allCases.filter { $0 != .home || DeviceHome.available }) { area in
                         VStack(alignment: .leading, spacing: 4) {
                             Picker(selection: access(area)) {
                                 Text("Off").tag(PhoneToolsSettings.Access.off)
@@ -41,6 +45,8 @@ struct PhoneToolsSettingsView: View {
                             } label: {
                                 Label(area.label, systemImage: area.symbol)
                             }
+                            // A Mac has no Apple Health: Health is read on the iPhone.
+                            .disabled(area == .health && !DeviceHealth.available)
                             Text(area.blurb).font(.footnote).foregroundStyle(.secondary)
                             if area == .photos {
                                 Text(Self.photosNote(on: device)).font(.footnote).foregroundStyle(.secondary)
@@ -49,19 +55,11 @@ struct PhoneToolsSettingsView: View {
                                         .font(.footnote).foregroundStyle(.secondary)
                                 }
                             }
-                            // Which calendars it reads and adds to (`CalendarChoice`, asked on Reddit 2026-11-02).
-                            if area == .calendar, settings.phoneTools.access(.calendar) != .off {
-                                NavigationLink { CalendarsSettingsView() } label: {
-                                    Text(settings.agendaCalendars.isEmpty
-                                         ? String(localized: "Calendars it can see: all of them")
-                                         : String(localized: "Calendars it can see: \(settings.agendaCalendars.formatted(.list(type: .and)))"))
-                                }
-                                .font(.footnote)
-                            }
                             if area == .alarms, settings.phoneTools.access(.alarms) != .off, !alarmsShow {
                                 Button("Live Activities are off for Redde, and iOS neither shows nor sounds an alarm without them. Open Settings…") {
                                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                                 }
+                                .buttonStyle(.borderless)
                                 .font(.footnote)
                                 .foregroundStyle(.red)
                             }
@@ -74,14 +72,56 @@ struct PhoneToolsSettingsView: View {
                                 Button("iOS doesn't allow Redde this. Open Settings…") {
                                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                                 }
+                                .buttonStyle(.borderless)
                                 .font(.footnote)
                             }
+                        }
+                        // Links in rows of their own (11-04): in the picker's row, a tap on one
+                        // opened the picker instead, so Health's kinds couldn't be chosen.
+                        if area == .health { healthRow }
+                        // Which calendars it reads and adds to (`CalendarChoice`, asked on Reddit 2026-11-02).
+                        if area == .calendar, settings.phoneTools.access(.calendar) != .off {
+                            NavigationLink { CalendarsSettingsView() } label: {
+                                Text(settings.agendaCalendars.isEmpty
+                                     ? String(localized: "Calendars it can see: all of them")
+                                     : String(localized: "Calendars it can see: \(settings.agendaCalendars.formatted(.list(type: .and)))"))
+                            }
+                            .font(.footnote)
                         }
                     }
                 } header: {
                     Text("What it may use")
                 } footer: {
-                    Text("“Ask each time” puts every request to you first. “Allow reading” lets it look things up without asking; adding, changing and deleting are still put to you, and deleting photos is put to you by iOS with the photos shown. Files are Redde's folder in the Files app, under On My \(device). The widget is Redde's own, “From Your Agent”, which you add to your Home Screen: allowed, your agent writes on it without asking, also while Redde is closed if this \(device) is paired for notifications. A call is put to you by iOS before it goes out, and a message is written for you to send: Redde asks about neither, and can send nothing.")
+                    Text("“Ask each time” puts every request to you first. “Allow reading” lets it look things up without asking; adding, changing and deleting are still put to you, and deleting photos is put to you by iOS with the photos shown. Files are Redde's folder in the Files app, under On My \(device). The widget is Redde's own, “From Your Agent”, which you add to your Home Screen: allowed, your agent writes on it without asking, also while Redde is closed if this \(device) is paired for notifications. A call is put to you by iOS before it goes out, and a message is written for you to send: Redde asks about neither, and can send nothing. In Apple Home, “Allow” lets it change things too, except locks, garage doors, doors, windows and the alarm, which it always asks about.")
+                }
+
+                // For the jobs that run while Redde is closed (asked on Reddit 2026-11-04).
+                if settings.phoneTools.access(.calendar) != .off || settings.phoneTools.access(.reminders) != .off {
+                    Section {
+                        Toggle("Send Ahead for Scheduled Jobs", isOn: Binding(get: { settings.phoneTools.sendAhead },
+                                                                              set: { settings.phoneTools.sendAhead = $0 }))
+                        if settings.phoneTools.sendAhead {
+                            Button {
+                                Task { aheadFailed = await service.sendAhead(force: true) == nil }
+                            } label: {
+                                HStack {
+                                    Text("Send Now")
+                                    Spacer()
+                                    if service.isSendingAhead { ProgressView() }
+                                }
+                            }
+                            .disabled(service.isSendingAhead)
+                            if aheadFailed {
+                                Text("Your Hermes couldn't be reached, or its Redde plugin is older than 1.17.0.")
+                                    .font(.footnote).foregroundStyle(.red)
+                            } else if let sent = service.aheadSentAt {
+                                Text("Last sent \(sent.formatted(.relative(presentation: .named)))")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                            }
+                        }
+                    } footer: {
+                        Text(Self.sendAheadNote(on: device))
+                    }
                 }
 
                 Section {
@@ -112,6 +152,16 @@ struct PhoneToolsSettingsView: View {
                 }
             }
         }
+        #if DEBUG
+        // `-echo.phoneToolsAnchor home`: scrolled to that area, for screenshots.
+        .task {
+            if let area = DevHooks.value("-echo.phoneToolsAnchor").flatMap(DeviceArea.init) {
+                try? await Task.sleep(for: .milliseconds(500))
+                scroller.scrollTo(area.id, anchor: .top)
+            }
+        }
+        #endif
+        }
         .navigationTitle("Phone Tools")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("\(plugin.installTitle) on your Hermes?", isPresented: $confirmingInstall, titleVisibility: .visible) {
@@ -126,6 +176,13 @@ struct PhoneToolsSettingsView: View {
         #endif
         .task(id: settings.phoneTools) { await service.publish() }
         .onChange(of: settings.phoneTools.access(.photos), initial: true) { looking.resume() }
+    }
+
+    /// Why Send Ahead is needed, and what it sends where: said under the switch.
+    static func sendAheadNote(on device: String) -> String {
+        String(localized: "Morning Ideas, briefings and other scheduled jobs run on your Hermes while Redde is closed. Redde reads your calendar and reminders only while it is open, so those jobs can't see them.")
+            + " " + String(localized: "With this on, each time you open Redde it sends your Hermes a copy of the next seven days of events and your open reminders, in place of the last copy, at most every ten minutes, and your jobs read that.")
+            + " " + String(localized: "The copy goes to your Hermes and nowhere else, keeps to the calendars you chose, and is deleted when you turn this off. Without it, scheduled jobs go on without your calendar and reminders.")
     }
 
     /// How far Redde has got with looking at the pictures, which is what a search by what they
@@ -178,6 +235,31 @@ struct PhoneToolsSettingsView: View {
         case .alarms: false   // a Mac has no alarms for Redde to set
         #endif
         case .widget, .people: true
+        // iOS is asked kind by kind, as each is chosen (`HealthShareView`).
+        case .health: DeviceHealth.available
+        case .home: await DeviceHome.allowed()
+        }
+    }
+
+    /// Under Health: what is shared, or why it can't be here.
+    @ViewBuilder
+    private var healthRow: some View {
+        if !DeviceHealth.available {
+            Text("This \(device) has no Apple Health. Turn Health on in Redde on your iPhone, and your agent reads it there.")
+                .font(.footnote).foregroundStyle(.secondary)
+        } else if settings.phoneTools.access(.health) != .off {
+            let shared = settings.phoneTools.sharedHealth.count
+            NavigationLink {
+                HealthShareView()
+            } label: {
+                Text(shared == 0 ? String(localized: "Choose What to Share")
+                     : String(localized: "\(shared) of \(HealthKind.allCases.count) shared", comment: "How many kinds of Apple Health data the agent may read"))
+                    .font(.footnote)
+            }
+            if shared == 0 {
+                Text("Nothing is shared yet: choose each kind of data your agent may read.")
+                    .font(.footnote).foregroundStyle(.red)
+            }
         }
     }
 

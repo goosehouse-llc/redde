@@ -143,6 +143,7 @@ struct ReddeMacApp: App {
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
                     IdeasInbox.shared.reload()   // ideas that came while Redde was closed (`EchoPushMac`)
                     BriefingsInbox.shared.reload()   // and briefings
+                    GoalsInbox.shared.reload()   // and goals' check-ins
                     HeldNote.seen()   // what came in quiet hours is here to see: no digest of it later
                     FeedbackFold.cameForward()   // a word on ideas or briefings that didn't reach the jobs yet
                     // With Current Location on, where the Mac is, for the next place question; with

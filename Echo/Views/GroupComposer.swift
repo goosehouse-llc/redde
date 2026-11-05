@@ -23,6 +23,10 @@ struct GroupComposer: View {
     @State private var photoSelection: [PhotosPickerItem] = []
     @State private var showFileImporter = false
     @State private var showCamera = false
+    /// Add → Scan Document and Add → Drawing (iPhone and iPad). A room's files go to the server,
+    /// so a scan is always one PDF here.
+    @State private var showScanner = false
+    @State private var showDrawing = false
 
     private var hasDraft: Bool { !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !attachments.isEmpty }
 
@@ -46,11 +50,11 @@ struct GroupComposer: View {
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
                 } else if !hasDraft, let talk {
                     // As under a conversation: an empty field offers to talk instead.
-                    ComposerButton(symbol: "waveform", label: String(localized: "Talk"), tint: .accentColor, size: 44, waveform: true) { talk() }
+                    ComposerButton(symbol: "waveform", label: String(localized: "Talk"), tint: theme.actionTint, size: 44, waveform: true, glyph: theme.actionGlyph) { talk() }
                         .accessibilityHint("Talk with the group: what you say goes to the bots, and their replies are read to you")
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
                 } else {
-                    ComposerButton(symbol: "arrow.up", label: String(localized: "Send"), tint: .accentColor, size: 44) { send() }
+                    ComposerButton(symbol: "arrow.up", label: String(localized: "Send"), tint: theme.actionTint, size: 44, glyph: theme.actionGlyph) { send() }
                         .disabled(!hasDraft)
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
                 }
@@ -82,6 +86,29 @@ struct GroupComposer: View {
             }
             .ignoresSafeArea()
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $showScanner) {
+            DocumentScanner { pages in
+                showScanner = false
+                guard let pages, !pages.isEmpty else { return }
+                let images = pages.compactMap(\.cgImage)
+                Task {
+                    let made = await Task.detached(priority: .userInitiated) { Result { try ScannedDocument.pdfAttachment(pages: images) } }.value
+                    switch made {
+                    case let .success(pdf): attachments.append(pdf)
+                    case let .failure(error): problem = error.localizedDescription
+                    }
+                }
+            }
+            .ignoresSafeArea()
+        }
+        .fullScreenCover(isPresented: $showDrawing) {
+            DrawingSheet { drawing in
+                showDrawing = false
+                if let drawing { attachments.append(drawing) }
+            }
+        }
+        #endif
         // Pictures only: a bot can look at a picture on the server, not watch a video.
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoSelection, maxSelectionCount: 4, matching: .images)
         .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
@@ -116,6 +143,12 @@ struct GroupComposer: View {
                 if CameraPicker.isAvailable {
                     Button("Camera", systemImage: "camera") { showCamera = true }
                 }
+                #if os(iOS)
+                if DocumentScanner.isAvailable {
+                    Button("Scan Document", systemImage: "doc.viewfinder") { showScanner = true }
+                }
+                Button("Drawing", systemImage: "pencil.tip.crop.circle") { showDrawing = true }
+                #endif
             } label: {
                 Image(systemName: "plus")
                     .font(.title3.weight(.medium))

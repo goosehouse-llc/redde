@@ -202,6 +202,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let task = info[PushNote.taskKey] as? String
         let bot = info[PushNote.botKey] as? String
         let keyRequest = info[PushNote.keyRequestKey] as? String
+        let kind = info[PushNote.kindKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         let leaveTitle = info[LeaveTime.eventTitleKey] as? String
         let leaveAt = (info[LeaveBy.latitudeKey] as? Double).flatMap { lat in (info[LeaveBy.longitudeKey] as? Double).map { (lat, $0) } }
@@ -214,9 +215,16 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                 handled()
                 return
             }
+            // A mail note (a rule he made said "tell me"): the Inbox.
+            if kind == PushNote.Kind.mail.rawValue, action == UNNotificationDefaultActionIdentifier {
+                MailCenter.shared.showingInbox = true
+                handled()
+                return
+            }
             let work = self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
                                   userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest,
-                                  questionDigest: asked, room: room, task: task, bot: bot, keyRequest: keyRequest)
+                                  questionDigest: asked, room: room, task: task, bot: bot, keyRequest: keyRequest,
+                                  kind: kind)
             // The app may have been started just for this: iOS keeps it running until it is told.
             await work?.value
             handled()
@@ -272,6 +280,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         StatusWidgets.heard(note)   // as the extension does, for the "Needs you" widget
         AgentIdea.take(note)
         WatchReport.take(note)
+        if GoalReport.take(note) { GoalsInbox.shared.reload() }
         if AgentBriefing.take(note) { BriefingsInbox.shared.reload() }
         AgentActivityNote.take(note)
         let content = UNMutableNotificationContent()
@@ -296,14 +305,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         // Quiet hours: what an agent sent on its own goes to the list, not over the screen.
         if QuietHours.waits(kind: PushNote.Kind(rawValue: kind)), QuietHours.load().covers(.now) {
             if PushNote.Kind(rawValue: kind) == .ideas { IdeasInbox.shared.reload() }
-            if PushNote.Kind(rawValue: kind) == .routine { BriefingsInbox.shared.reload() }
+            if PushNote.Kind(rawValue: kind) == .routine { BriefingsInbox.shared.reload(); GoalsInbox.shared.reload() }
             return [.list]
         }
         // Ideas: on the chat list now (the extension kept them), and said in a banner.
         if PushNote.Kind(rawValue: kind) == .ideas { IdeasInbox.shared.reload() }
         // A key asked for: the list in Settings is fetched afresh (the banner opens its card).
         if PushNote.Kind(rawValue: kind) == .key { Task { await KeyRequests.shared.reload() } }
-        if PushNote.Kind(rawValue: kind) == .routine { BriefingsInbox.shared.reload() }
+        if PushNote.Kind(rawValue: kind) == .routine { BriefingsInbox.shared.reload(); GoalsInbox.shared.reload() }
         return shown
     }
 
@@ -319,7 +328,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     func route(action: String, requestID: String?, questionID: String?,
                approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil,
                approvalDigest: String? = nil, questionDigest: String? = nil, room: String? = nil, task: String? = nil,
-               bot: String? = nil, keyRequest: String? = nil) -> Task<Void, Never>? {
+               bot: String? = nil, keyRequest: String? = nil, kind: String? = nil) -> Task<Void, Never>? {
         // A bot asks for a key: its card, to paste it into (`KeyRequests`).
         if let keyRequest, !keyRequest.isEmpty, action == UNNotificationDefaultActionIdentifier {
             KeyRequests.shared.show(id: keyRequest)
@@ -328,6 +337,12 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         // A briefing (a `[redde-notify]` job's answer): opened whole, over the chat list.
         if task == "brief", room == nil, action == UNNotificationDefaultActionIdentifier {
             BriefingsInbox.shared.showNewest()
+            return nil
+        }
+        // A watch saw something change: the Watches list, its update beside the watch. It had no
+        // place to go before 2.3.3, so a tap opened Redde on whatever was last on screen.
+        if PushNote.Kind(rawValue: kind ?? "") == .watch, room == nil, action == UNNotificationDefaultActionIdentifier {
+            WatchDraft.shared.showingWatches = true
             return nil
         }
         // A bot's schedule ran: its chat, where its answer is.

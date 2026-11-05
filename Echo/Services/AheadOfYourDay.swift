@@ -14,7 +14,18 @@ enum AheadOfYourDay {
     /// What the sheet lists, in its order.
     enum Part: String, CaseIterable, Identifiable, Sendable {
         case morningIdeas, headsUps, leaveBy, wrapUp, weekAhead, routines
+        /// Watch templates (2.4), off until ticked; they read email.
+        case urgentEmail, schoolMessages
         var id: String { rawValue }
+
+        /// The watch template behind it.
+        var template: WatchTemplate.Kind? {
+            switch self {
+            case .urgentEmail: .urgentEmail
+            case .schoolMessages: .schoolMessages
+            default: nil
+            }
+        }
 
         /// The Hermes job behind it; Leave-By Alerts are worked out on this device.
         var job: DailyJob? {
@@ -24,7 +35,7 @@ enum AheadOfYourDay {
             case .wrapUp: EveningWrapUp.job
             case .weekAhead: WeekAhead.job
             case .routines: RoutineSuggestions.job
-            case .leaveBy: nil
+            case .leaveBy, .urgentEmail, .schoolMessages: nil
             }
         }
 
@@ -50,6 +61,9 @@ enum AheadOfYourDay {
         var restartPending = false
         /// On already: the jobs found by name, and Leave-By Alerts.
         var on: Set<Part> = []
+        /// The Hermes can read email (an email MCP server, seen over the Dashboard); nil, can't be
+        /// told (the Hermes API alone: the email watches look at once and say).
+        var email: Bool?
     }
 
     /// Why a step isn't done.
@@ -69,6 +83,8 @@ enum AheadOfYourDay {
         case alreadyPaired
         /// Pairing needs the plugin running: after Hermes restarts.
         case waitsForRestart
+        /// An email watch, on a Hermes with no way to read email.
+        case needsEmail
     }
 
     enum Action: Equatable, Sendable {
@@ -98,6 +114,7 @@ enum AheadOfYourDay {
             parts[part] = if !picked.contains(part) { .skip(.notPicked) }
                 else if situation.on.contains(part) { .skip(.alreadyOn) }
                 else if part.isJob, !situation.jobs { .skip(.needsConnection) }
+                else if part.template?.needsEmail == true, situation.email == false { .skip(.needsEmail) }
                 else { .run }
         }
         let jobsWanted = picked.contains { $0.isJob }
@@ -170,6 +187,14 @@ protocol AheadOfYourDayHost: AnyObject {
     /// Allow for turn off if wanted"): a daily job taken off the server, Leave-By Alerts off.
     func removeJob(_ job: CronJob) async throws
     func turnOffLeaveBy() async
+    /// Watch templates (2.4): whether the Hermes can read email (nil, can't be told), and setting one up.
+    func emailAccess() async -> Bool?
+    func setWatch(_ template: WatchTemplate, emailKnown: Bool?) async throws
+}
+
+extension AheadOfYourDayHost {
+    func emailAccess() async -> Bool? { nil }
+    func setWatch(_ template: WatchTemplate, emailKnown: Bool?) async throws {}
 }
 
 /// The real one: the active server's cron, the Redde plugin over the Dashboard, this device's
@@ -217,6 +242,12 @@ final class LiveAheadHost: AheadOfYourDayHost {
         Settings.shared.leaveByAlerts = false
         await LeaveByAlerts.shared.turned(on: false)
     }
+
+    func emailAccess() async -> Bool? { await WatchTemplate.emailAccess() }
+
+    func setWatch(_ template: WatchTemplate, emailKnown: Bool?) async throws {
+        try await WatchTemplate.create(template, emailKnown: emailKnown)
+    }
 }
 
 /// The sheet's state while it is open: what is picked, what is on, and each row's progress.
@@ -248,6 +279,8 @@ final class AheadOfYourDaySetup {
     var picked: Set<Part>
     var morningTime: Date
     var way: LeaveTime.Mode
+    /// School Messages: whose (a school's or a teacher's name); empty, any school.
+    var schoolFrom = ""
     private(set) var phase = Phase.loading
     /// The running phase is Turn Off's, not Turn On's.
     private(set) var turningOff = false
@@ -309,9 +342,15 @@ final class AheadOfYourDaySetup {
                 if let daily = part.job, let job = jobs.first(where: { $0.name == daily.name }) {
                     found[part] = job
                     situation.on.insert(part)
+                } else if let kind = part.template, let job = WatchTemplate.find(kind, in: jobs) {
+                    found[part] = job
+                    situation.on.insert(part)
                 } else {
                     found[part] = nil
                 }
+            }
+            if picked.contains(where: { $0.template?.needsEmail == true }) || situation.on.contains(where: { $0.template?.needsEmail == true }) {
+                situation.email = await host.emailAccess()
             }
         }
         if host.leaveByOn { situation.on.insert(.leaveBy) }
@@ -365,6 +404,8 @@ final class AheadOfYourDaySetup {
                 status[.part(part)] = .working(nil)
                 if let daily = part.job {
                     status[.part(part)] = await make(daily, part)
+                } else if let kind = part.template {
+                    status[.part(part)] = await watch(kind, part)
                 } else {
                     missing = await host.turnOnLeaveBy(way)
                     situation.on.insert(.leaveBy)
@@ -376,6 +417,8 @@ final class AheadOfYourDaySetup {
                 status[.part(part)] = .skipped(found[part].flatMap { job in
                     part.job.flatMap { daily in DailyJob.time(of: job).map { AheadOfYourDay.when(daily, hour: $0.hour, minute: $0.minute) } }
                 } ?? String(localized: "Already on.", comment: "Ahead of Your Day: a feature that was on before"))
+            case .skip(.needsEmail):
+                status[.part(part)] = .needsYou(WatchTemplate.needsEmailHint)
             case .skip(.needsConnection):
                 status[.part(part)] = .failed(listProblem != nil ? String(localized: "Not made: your Hermes didn't list its jobs.", comment: "Ahead of Your Day: a daily job not made because the server's jobs couldn't be read")
                     : String(localized: "Needs the Hermes Dashboard login or the Hermes API key.", comment: "Ahead of Your Day: a daily job that can't be made over this connection"))
@@ -402,7 +445,7 @@ final class AheadOfYourDaySetup {
         status = [:]
         for part in Part.allCases where situation.on.contains(part) {
             status[.part(part)] = .working(nil)
-            if part.job != nil {
+            if part.job != nil || part.template != nil {
                 guard let job = found[part] else { continue }
                 do {
                     try await host.removeJob(job)
@@ -433,6 +476,25 @@ final class AheadOfYourDaySetup {
             try await host.setJob(daily, hour: hour, minute: minute, replacing: found[part])
             situation.on.insert(part)
             return .done(AheadOfYourDay.when(daily, hour: hour, minute: minute))
+        } catch {
+            return .failed(error.localizedDescription)
+        }
+    }
+
+    /// A watch template set up: on the Dashboard, said plainly; over the Hermes API, an email one
+    /// looks at once and says whether it can read email.
+    private func watch(_ kind: WatchTemplate.Kind, _ part: Part) async -> Status {
+        let template: WatchTemplate = switch kind {
+        case .urgentEmail: .urgentEmail
+        case .schoolMessages: .schoolMessages(from: schoolFrom.trimmingCharacters(in: .whitespacesAndNewlines))
+        case .package, .priceDrop: .urgentEmail   // not in the sheet: they need a number or a link (New Watch)
+        }
+        do {
+            try await host.setWatch(template, emailKnown: situation.email)
+            situation.on.insert(part)
+            return situation.email == nil
+                ? .done(String(localized: "On. It looks now, to see whether your Hermes can read your email.", comment: "Ahead of Your Day: an email watch set up over the Hermes API"))
+                : .done(String(localized: "On.", comment: "Ahead of Your Day: a feature now on"))
         } catch {
             return .failed(error.localizedDescription)
         }

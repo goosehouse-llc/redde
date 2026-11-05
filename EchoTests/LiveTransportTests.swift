@@ -1836,8 +1836,9 @@ struct HermesLabBotsTests {
         HermesLabApprovalTests.report(!compressed.isEmpty, "/compress in a bot's chat is answered", compressed)
 
         guard let current = try await client.bots().bots.first(where: { $0.name == "pip" }) else { return }
+        let made: (aside: String?, new: String)
         do {
-            try await client.startFresh(current)
+            made = try await client.startFresh(current)
         } catch BotChat.Problem.cantStartFresh {
             // Hermes before 0.22: said so, and the chat left as it was.
             let still = try await client.botChat(for: current)
@@ -1847,7 +1848,9 @@ struct HermesLabBotsTests {
         guard let after = try await client.bots().bots.first(where: { $0.name == "pip" }) else { return }
         let fresh = try await client.botChat(for: after)
         let history = try await client.history(stored: fresh.stored)
-        HermesLabApprovalTests.report(after.chatID == nil && fresh.isNew && fresh.stored != first.stored && history.isEmpty,
+        // The new chat is made in the same go (2026-11-04), so the roster names it already.
+        HermesLabApprovalTests.report(after.chatID == made.new && fresh.stored == made.new && made.aside == first.stored
+                                      && fresh.stored != first.stored && history.isEmpty,
                                       "Start Fresh: the bot gets a new, empty chat", "chat \(after.chatID ?? "none"), \(fresh), \(history.count) rows")
         client.noteProfile("pip", forStored: first.stored)
         let old = try await client.history(stored: first.stored)

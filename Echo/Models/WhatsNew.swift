@@ -30,6 +30,26 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "2.4", items: [
+            Item(symbol: "flag.checkered", title: String(localized: "Goals"),
+                 detail: String(localized: "Tell your agent something you want to get done, in any chat or with New Goal (hold the New Conversation button). It makes a plan of steps on your Kanban board for you to approve, checks in on a schedule, and the goal's card at the top of your chats shows how far along you are. It takes the Redde plugin 1.15 on your Hermes.")),
+            Item(symbol: "clock.arrow.circlepath", title: String(localized: "Coming Up"),
+                 detail: String(localized: "The first tab of Agent Activity: everything your agents plan to do on their own in the next day, heads-ups, leave times, routines, watches and follow-ups. Skip one once, or pause it.")),
+            Item(symbol: "eye", title: String(localized: "Watches in one tap"),
+                 detail: String(localized: "Urgent emails, school messages, a package or a price drop, from Ahead of Your Day or New Watch. The email ones need an email connection on your Hermes, and Redde tells you if it has none.")),
+            Item(symbol: "info.circle", title: String(localized: "Session Details"),
+                 detail: String(localized: "In any chat's menu, or tap the context ring: the model, how full the context is, tokens, what it cost, and every tool it used.")),
+            Item(symbol: "chart.bar", title: String(localized: "Usage"),
+                 detail: String(localized: "Settings → Usage: what your agents spent and used by day, by bot and by model. An estimate is called an estimate, and a model with no price is named, never counted as free.")),
+            Item(symbol: "doc.viewfinder", title: String(localized: "Scan and draw"),
+                 detail: String(localized: "In the + menu: scan a document into one PDF, or draw something to send. Hold a photo you're sending to mark it up.")),
+            Item(symbol: "heart.text.square", title: String(localized: "Health for your agent"),
+                 detail: String(localized: "Settings → Agent → Phone tools → Health: choose each kind your agent may read, as totals and averages, never every sample. Off until you turn it on, and only to your own Hermes.")),
+            Item(symbol: "macwindow", title: String(localized: "Watch your agent work"),
+                 detail: String(localized: "While it browses, see the page it's on and what its commands print. With Bot Screen on a Linux Hermes, watch its screen live and take over at a login, then hand it back.")),
+            Item(symbol: "textformat", title: String(localized: "Paper White, and your font"),
+                 detail: String(localized: "A new Paper White theme, Paper redone as real paper, and a font of your choice for every chat in Settings → Appearance → Font.")),
+        ]),
         Release(version: "2.3", items: [
             Item(symbol: "sunrise", title: String(localized: "Ahead of your day"),
                  detail: String(localized: "Morning Ideas to swipe, a Week Ahead, an Evening Wrap-up, and heads-ups before events with what to bring. Turn them on in Settings → Agent. They take the Redde plugin 1.10 on your Hermes."),

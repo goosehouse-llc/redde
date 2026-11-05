@@ -59,7 +59,8 @@ struct PluginUpdatesView: View {
     }
 
     private func row(_ check: PluginUpdateCheck) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        HStack(alignment: .center, spacing: 12) {
+            PluginIcon(name: check.plugin.name, catalogName: check.plugin.catalogName)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(check.plugin.name)

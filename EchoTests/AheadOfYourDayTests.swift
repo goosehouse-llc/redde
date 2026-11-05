@@ -26,7 +26,8 @@ struct AheadOfYourDayTests {
     @Test func theCoreSetIsTickedAndRoutinesAreNot() {
         #expect(Set(AheadOfYourDay.core) == [.morningIdeas, .headsUps, .leaveBy, .wrapUp, .weekAhead])
         #expect(AheadOfYourDay.picked(in: defaults()) == Set(AheadOfYourDay.core))
-        #expect(Part.allCases.filter { $0.job == nil } == [.leaveBy], "every other part is a Hermes job")
+        #expect(Part.allCases.filter { $0.job == nil && $0.template == nil } == [.leaveBy], "every other part is a Hermes job or a watch")
+        #expect(!AheadOfYourDay.core.contains(.urgentEmail) && !AheadOfYourDay.core.contains(.schoolMessages), "the email watches are off until ticked")
         // The jobs are the pages' own, found again by their names.
         #expect(Part.morningIdeas.job?.name == MorningIdeas.name && Part.weekAhead.job?.name == WeekAhead.name)
     }
@@ -218,4 +219,44 @@ private final class FakeHost: AheadOfYourDayHost {
     }
 
     func turnOffLeaveBy() async { leaveByWay = nil }
+
+    var email: Bool?
+    var watched: [(WatchTemplate, Bool?)] = []
+
+    func emailAccess() async -> Bool? { email }
+
+    func setWatch(_ template: WatchTemplate, emailKnown: Bool?) async throws { watched.append((template, emailKnown)) }
+}
+
+/// Watch templates in the sheet (2.4): the email ones wait on an email connection the Dashboard can
+/// see; over the Hermes API they're made, and look at once.
+extension AheadOfYourDayTests {
+    @Test func anEmailWatchNeedsAWayToReadEmail() {
+        var noEmail = situation(plugin: current)
+        noEmail.email = false
+        let plan = AheadOfYourDay.plan(picked: [.urgentEmail, .schoolMessages, .morningIdeas], situation: noEmail)
+        #expect(plan.parts[.urgentEmail] == .skip(.needsEmail) && plan.parts[.schoolMessages] == .skip(.needsEmail))
+        #expect(plan.parts[.morningIdeas] == .run)
+        var unknown = situation(dashboard: false, plugin: nil)
+        unknown.email = nil
+        #expect(AheadOfYourDay.plan(picked: [.urgentEmail], situation: unknown).parts[.urgentEmail] == .run, "can't be told: made, and it looks at once")
+    }
+
+    @Test func turnOnSetsTheEmailWatchesAndFindsThemAgain() async throws {
+        let host = FakeHost()
+        host.email = true
+        let setup = AheadOfYourDaySetup(host: host, defaults: defaults())
+        setup.picked = [.urgentEmail, .schoolMessages]
+        setup.schoolFrom = "Lakeside Elementary"
+        await setup.load()
+        #expect(setup.situation.email == true)
+        await setup.turnOn()
+        #expect(host.watched.map(\.0) == [.urgentEmail, .schoolMessages(from: "Lakeside Elementary")])
+        #expect(host.watched.allSatisfy { $0.1 == true })
+        guard case .done = setup.status[.part(.urgentEmail)] else { Issue.record("not made"); return }
+        // Found again by their fixed ids.
+        host.existing = [try #require(CronJob(.object(["id": .string("w"), "name": .string("[redde-watch:t-urgentmail] Urgent emails"), "schedule": .string("*/15 * * * *")])))]
+        await setup.load()
+        #expect(setup.situation.on.contains(.urgentEmail) && !setup.situation.on.contains(.schoolMessages))
+    }
 }

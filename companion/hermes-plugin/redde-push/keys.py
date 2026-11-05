@@ -309,10 +309,34 @@ def answer(main: Path, words: list[str], now: float | None = None) -> str:
     return f"redde-push keys set {req['name']}"
 
 
+#: What the app itself may ask for (1.16.0): email's settings and password, for the main profile only.
+APP_ASKS = re.compile(r"^REDDE_MAIL_[A-Z0-9_]+$")
+
+
+def app_ask(main: Path, words: list[str], now: float | None = None) -> str:
+    """`keys ask <NAME> <profile> <why…>`: a request the app makes for the person (email's
+    settings, nothing else), answered as `keys list` gives one, then set by the usual sealed
+    `keys set`. "redde-push keys refused name|profile|why|busy" otherwise."""
+    if len(words) < 3:
+        return "redde-push keys refused what"
+    name, profile, why = words[0], words[1], " ".join(words[2:])
+    if not APP_ASKS.fullmatch(name) or not NAME.fullmatch(name):
+        return "redde-push keys refused name"
+    if profile != "default":
+        return "redde-push keys refused profile"     # (Redde's email lives in the main .env)
+    made = ask(main, None, "redde-app", "Redde", name, why, profile, now=now)
+    if made.get("error"):
+        return "redde-push keys refused " + ("busy" if "last hour" in made["error"] else "why")
+    found = next((r for r in pending(main, now) if r["i"] == made["id"]), None)
+    return "redde-push keys " + json.dumps(found, separators=(",", ":")) if found else "redde-push keys gone"
+
+
 def slash(main: Path, words: list[str]) -> str:
-    """`/redde-push keys`, the app's: `list`, `set …`, `decline …`."""
+    """`/redde-push keys`, the app's: `list`, `set …`, `decline …`, and (1.16.0) `ask …` for email."""
     if words[:1] == ["list"] or not words:
         return "redde-push keys " + json.dumps(pending(main), separators=(",", ":"))
+    if words[:1] == ["ask"]:
+        return app_ask(main, words[1:])
     return answer(main, words)
 
 

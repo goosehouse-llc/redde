@@ -797,9 +797,9 @@ extension Conversation {
                     {"date": "\(day(6))", "high": 24, "low": 16, "condition": "clear"}]}
         """
         let newest = ["recipe", "delivery", "flight", "show", "conversion", "stock"]
-        let only = only.flatMap { (["weather", "places", "purchase", "home", "reminder", "compare", "score"] + newest).contains($0) ? $0 : nil }   // else the next launch flag
+        let only = only.flatMap { (["weather", "places", "purchase", "home", "homekit", "reminder", "compare", "score"] + newest).contains($0) ? $0 : nil }   // else the next launch flag
         if only == "purchase" { seedPurchaseDemo(); return }
-        if let only, ["home", "reminder", "compare", "score"].contains(only) { seedMoreCardsDemo(only); return }
+        if let only, ["home", "homekit", "reminder", "compare", "score"].contains(only) { seedMoreCardsDemo(only); return }
         if let only, newest.contains(only) { seedNewestCardsDemo(only); return }
         let shown = switch only ?? "" {
         case "weather": [weather]
@@ -902,6 +902,19 @@ extension Conversation {
             """#, "home")
             messages = [Message(role: .user, text: "Is everything shut downstairs? And set the house to 70."),
                         reply("The garage is closed and the front door is locked. The kitchen and porch lights are still on, and the thermostat is at 70°.", home)]
+        case "homekit":
+            // Apple Home's, as phone_home_list gives them (`-echo.demoHome` answers its controls).
+            let home = card(#"""
+            {"cards": [{"type": "home", "title": "Office and kitchen", "devices": [
+              {"name": "Ceiling Light", "area": "Office", "kind": "light", "state": "on", "brightness": 80, "entity": "homekit:light:L1"},
+              {"name": "Desk Lamp", "area": "Office", "kind": "light", "state": "off", "brightness": 40, "entity": "homekit:light:L2"},
+              {"name": "Pendant", "area": "Kitchen", "kind": "light", "state": "on", "brightness": 100, "entity": "homekit:light:L3"},
+              {"name": "Thermostat", "area": "Hall", "kind": "climate", "state": "heat", "temperature": 69, "target": 70, "unit": "°F", "entity": "homekit:thermostat:T1"},
+              {"name": "Garage Door", "area": "Garage", "kind": "cover", "state": "closed", "entity": "homekit:garage:G1"},
+              {"name": "Front Door", "area": "Entry", "kind": "lock", "state": "locked", "entity": "homekit:lock:K1"}]}]}
+            """#, "home")
+            messages = [Message(role: .user, text: "What's on in the office and kitchen?"),
+                        reply("The office ceiling light and the kitchen pendant are on, the house is heating to 70°, and the garage and front door are shut.", home)]
         case "reminder":
             let monday = calendar.nextDate(after: .now, matching: DateComponents(hour: 9, minute: 0, weekday: 2), matchingPolicy: .nextTime)
             let vet = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: calendar.date(byAdding: .day, value: 1, to: .now) ?? .now)

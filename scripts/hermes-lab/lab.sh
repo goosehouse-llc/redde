@@ -15,6 +15,8 @@
 #   scripts/hermes-lab/lab.sh push [tag ...]       the push plugin: pairing, and a note for everything it announces
 #   scripts/hermes-lab/lab.sh grouppush [tag ...]  the push plugin's group chat notes: bots' messages and waits
 #   scripts/hermes-lab/lab.sh leave [tag ...]      Leave-By Alerts' traffic re-check: wakes said over the Dashboard, sent to one device
+#   scripts/hermes-lab/lab.sh goals [tag ...]      goals (Kanban cards in triage, check-ins with progress), skipping a run, email watches
+#   scripts/hermes-lab/lab.sh runon [tag ...]      a job's own model (Run On): set over the Dashboard, by the plugin from a mark, and back
 #   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
 #   scripts/hermes-lab/lab.sh device [tag ...]     phone tools: the agent calls one, a stand-in phone answers, on both connections
 #   scripts/hermes-lab/lab.sh device --app [tag ...] the same, then the app's own service carries one out
@@ -691,6 +693,38 @@ leave() {
   echo "\nAll checks passed."
 }
 
+# Goals, skipping a run and email watches (goals_check.py, Redde 2.4, plugin 1.15.0): a goal's job
+# and its Kanban cards in triage, its check-in told its steps and sent as a briefing with its
+# progress; a repeating job marked skipped moved on to the run after, which sticks; the Dashboard's
+# skip at once; an email watch with no email paused. The push scenario, in a home of the lab's own.
+# About six minutes a release.
+goals() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / goals and skips"
+    if ! LAB_OWN_HOME=1 up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" goals_check.py "$LAB_HOME/hermes-$tag/.venv/bin/hermes") || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
+# Run On (runon_check.py): a scheduled job's own model, set by the Dashboard's job update, by the
+# plugin from a mark in its name (the Hermes API's way), and back to the main model by its command;
+# each run reaches the stub on the model it should. The push scenario (the plugin, two models).
+runon() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / run on"
+    if ! LAB_OWN_HOME=1 up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" runon_check.py) || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Calls from the agent (calls_check.py): a stand-in phone with an address for calls lets a bot
 # call it; the bot's call_user reaches "Apple" as a VoIP push through the relay, a second within
 # five minutes is refused, the main agent, not let, rings nothing. The push scenario.
@@ -860,6 +894,8 @@ case "${1:-}" in
   plugins) shift; plugins "$@" ;;
   routines) shift; routines "$@" ;;
   leave) shift; leave "$@" ;;
+  goals) shift; goals "$@" ;;
+  runon) shift; runon "$@" ;;
   calls) shift; calls "$@" ;;
   apibots) shift; apibots "$@" ;;
   search) shift; search "$@" ;;

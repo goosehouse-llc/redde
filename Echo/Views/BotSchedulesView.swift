@@ -203,6 +203,8 @@ struct RoutineEditor: View {
                     }
                 }
                 if let job {
+                    // Which model it runs on (Run On, 2026-11-03), in the bot's own store.
+                    RunOnSection(job: { var mine = job; mine.profile = mine.profile ?? bot.name; return mine }(), changed: onDone)
                     Section {
                         if let last = job.lastRunAt {
                             LabeledContent("Last run", value: last.formatted(date: .abbreviated, time: .shortened))

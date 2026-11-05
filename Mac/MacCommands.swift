@@ -8,6 +8,7 @@ struct ChatCommands {
     var voice: () -> Void
     var focusComposer: () -> Void
     var chooseModel: () -> Void
+    var sessionDetails: (() -> Void)?
     var find: (() -> Void)?
     var stop: (() -> Void)?
     var export: (() -> Void)?
@@ -60,6 +61,9 @@ struct ReddeCommands: Commands {
             Button("Choose Model…") { chat?.chooseModel() }
                 .keyboardShortcut("m", modifiers: [.command, .shift])
                 .disabled(chat == nil)
+            Button("Session Details") { chat?.sessionDetails?() }
+                .keyboardShortcut("i")
+                .disabled(chat?.sessionDetails == nil)
             Divider()
             Button("Stop Reply") { chat?.stop?() }
                 .keyboardShortcut(".")

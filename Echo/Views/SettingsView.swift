@@ -14,6 +14,10 @@ struct SettingsView: View {
     @State private var secretSaved = false
     /// The page open over the first screen, if any.
     @State private var path: [SettingsPage] = []
+    #if DEBUG
+    /// `-echo.settingsAnchor plugins|catalog|tools` (`PluginsDemo`).
+    @State private var demoPage: String?
+    #endif
 
     static var versionLine: String {
         let info = Bundle.main.infoDictionary
@@ -61,17 +65,19 @@ struct SettingsView: View {
             // Dev hooks: `-echo.settingsAnchor` opens Agent on the context and memory files,
             // `-echo.settingsAnchor icloud` scrolls to Sync with iCloud and `-echo.settingsAnchor
             // plugin` to the Redde Plugin row, `voice` opens Voice, `appearance` Appearance with its
-            // colors open, `location` Agent on Current Location, `leaveBy` on Leave-By Alerts; `-echo.expandAppIcons`
+            // colors open (`fonts` with its Font list open), `location` Agent on Current Location, `leaveBy` on Leave-By Alerts; `-echo.expandAppIcons`
             // opens Appearance on the app icons (screenshots).
             .task {
                 if DevHooks.expandAppIcons { path = [.appearance] }
                 guard DevHooks.settingsAnchor else { return }
                 try? await Task.sleep(for: .milliseconds(600))
-                if let anchor = DevHooks.value("-echo.settingsAnchor"), ["icloud", "plugin"].contains(anchor) {
+                if let anchor = DevHooks.value("-echo.settingsAnchor"), ["plugins", "catalog", "tools", "mcp"].contains(anchor) {
+                    demoPage = anchor
+                } else if let anchor = DevHooks.value("-echo.settingsAnchor"), ["icloud", "plugin"].contains(anchor) {
                     proxy.scrollTo(anchor, anchor: anchor == "plugin" ? .center : .top)
                 } else if DevHooks.value("-echo.settingsAnchor") == "voice" {
                     path = [.voice]
-                } else if DevHooks.value("-echo.settingsAnchor") == "appearance" {
+                } else if ["appearance", "fonts"].contains(DevHooks.value("-echo.settingsAnchor") ?? "") {
                     path = [.appearance]
                 } else {
                     path = [.agent]
@@ -83,6 +89,11 @@ struct SettingsView: View {
                 SettingsPageForm(page: page) { pageContent(page) }
             }
             .sheet(isPresented: $showSetup) { SetupView() }
+            #if DEBUG
+            .sheet(isPresented: Binding(get: { demoPage != nil }, set: { if !$0 { demoPage = nil } })) {
+                if let demoPage { PluginsDemo.Screen(page: demoPage) }
+            }
+            #endif
             // Keychain reads once when the screen appears, not per parent render.
             .task { await access.check() }
             .navigationTitle("Settings")

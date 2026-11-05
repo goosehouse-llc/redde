@@ -101,6 +101,10 @@ struct ConversationsList: View {
     @AppStorage("sessions.showScheduled") private var showScheduled = false
     @State private var shareItem: ShareItem?
     @State private var selecting = false
+    /// The New Goal sheet (2.4), from holding New Conversation.
+    @State private var addingGoal = false
+    /// A goal's page (2.4), from its card.
+    @State private var shownGoal: GoalReport?
     /// The Bots section being put in order: only its bots and group chats show, with handles.
     @State private var arrangingBots = false
     @State private var selected: Set<String> = []
@@ -111,6 +115,8 @@ struct ConversationsList: View {
     /// Pinned first, then most recent; filtered by the search field. Cached: the body reads it
     /// several times per pass and every keystroke in the search field would repeat the sort.
     @State private var visibleLedger: [HermesSessionsAPI.SessionSummary] = []
+    /// The bots' chats listed among the conversations (asked 2026-11-04), by their chat's id.
+    @State private var botChatRows: [String: HermesBot] = [:]
     /// Conversations with a message matching the search, from the server (`MessageSearch`).
     @State private var messageHits: [MessageSearchHit] = []
     @State private var searchingMessages = false
@@ -132,20 +138,21 @@ struct ConversationsList: View {
         case move(HermesSessionsAPI.SessionSummary)
     }
 
-    /// Sessions, scheduled jobs, the kanban board (the two live on the gateway), or what the
-    /// agents made (from the replies on this device).
+    /// Sessions, what is planned, the kanban board (the two live on the gateway), or what the
+    /// agents made (from the replies on this device). Planned took Cron's place on 2026-11-03 (his
+    /// pick): its raw value stays "cron" so a list left on Cron opens on Planned.
     enum Tab: String, CaseIterable, Identifiable {
-        case sessions, cron, kanban, made
+        case sessions, planned = "cron", kanban, made
         var id: String { rawValue }
         var title: String {
             switch self {
             case .sessions: String(localized: "Chats")
-            case .cron: String(localized: "Cron", comment: "The list's section of scheduled jobs (cron jobs)")
+            case .planned: String(localized: "Planned", comment: "The list's section of what the agents will do: scheduled jobs, reminders, alarms and the rest")
             case .kanban: String(localized: "Kanban", comment: "The list's section with the kanban board")
             case .made: String(localized: "Made", comment: "The list's section with the pages, pictures and files the agents made")
             }
         }
-        var icon: String { switch self { case .sessions: "bubble.left.and.bubble.right"; case .cron: "clock"; case .kanban: "rectangle.split.3x1"; case .made: "square.stack" } }
+        var icon: String { switch self { case .sessions: "bubble.left.and.bubble.right"; case .planned: "calendar.badge.clock"; case .kanban: "rectangle.split.3x1"; case .made: "square.stack" } }
     }
     /// Chats, Cron or Kanban: kept across launches, and shared with the iPad's detail pane.
     @AppStorage(Self.sectionKey) private var section: Tab = .sessions
@@ -216,7 +223,7 @@ struct ConversationsList: View {
             switch wideDetail ? .sessions : section {
             case .sessions: sessionsList
             // Rebuilt on a server or profile switch, so nothing (or no live socket) carries over.
-            case .cron: CronView(topRow: AnyView(topRow), isShowing: isShowing).id(settings.connectionKey)
+            case .planned: ComingUpList(planned: true, topRow: AnyView(topRow), isShowing: isShowing).id(settings.connectionKey)
             case .kanban:
                 // Gone once the panel has slid out (not as it starts to), taking its live socket along.
                 if !panelParked { KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey) } else { Color.clear }
@@ -231,7 +238,9 @@ struct ConversationsList: View {
         .navigationBarTitleDisplayMode(section == .sessions || wideDetail ? .large : .inline)
         #if DEBUG
         // Dev hook: `-echo.section cron|kanban` opens on that tab (screenshots).
-        .onAppear { if let tab = DevHooks.value("-echo.section").flatMap(Tab.init(rawValue:)) { section = tab } }
+        .onAppear {
+            if let name = DevHooks.value("-echo.section"), let tab = name == "planned" ? .planned : Tab(rawValue: name) { section = tab }
+        }
         #endif
         .sheet(isPresented: $showSettings) { SettingsView() }
         // Group chats, from the Bots section: here, not on the section, which a list builds lazily.
@@ -276,7 +285,7 @@ struct ConversationsList: View {
         .background {
             Group {
                 Button("Sessions") { section = .sessions }.keyboardShortcut("1", modifiers: .command)
-                Button("Cron") { section = .cron }.keyboardShortcut("2", modifiers: .command)
+                Button("Planned") { section = .planned }.keyboardShortcut("2", modifiers: .command)
                 Button("Kanban") { section = .kanban }.keyboardShortcut("3", modifiers: .command)
                 Button("Made") { section = .made }.keyboardShortcut("4", modifiers: .command)
             }
@@ -418,6 +427,7 @@ struct ConversationsList: View {
         // one treats a row tap as selection and swallows the NavigationLink, so project folders
         // never push on iPad.
         List(selection: selecting ? $selected : nil) {
+            Group {
             if arrangingBots {
                 botsSection
             } else {
@@ -425,6 +435,8 @@ struct ConversationsList: View {
                 if query.isEmpty, !selecting {
                     waitingNotesSection
                     PinnedCardsSection()
+                    InboxSection(open: { MailCenter.shared.showingInbox = true })
+                    GoalsSection(open: { shownGoal = $0 }, add: { addingGoal = true })
                     IdeasSection(take: takeIdea)
                     BriefingsSection()
                 }
@@ -439,12 +451,18 @@ struct ConversationsList: View {
                     localSection
                 }
             }
+            }
+            // Every row on the theme's page (nil: the system's rows, as before).
+            .listRowBackground(settings.theme.listPage)
         }
         #if os(macOS)
         .listStyle(.sidebar)   // the Mac's sidebar: its translucent material, its rows
         #else
         .listStyle(.plain)
         #endif
+        // The theme's page behind the chats (2.4: Paper and Paper White looked half done on the
+        // system's white); a theme that leaves the page to the system keeps the list as it was.
+        .themedPage(settings.theme.listPage)
         .navigationDestination(for: ProjectRoute.self) { route in
             if let project = projects.first(where: { $0.id == route.id }) {
                 ProjectSessionsView(project: project, open: load, currentID: conversation.serverSessionID,
@@ -477,7 +495,14 @@ struct ConversationsList: View {
                         Button("Select", systemImage: "checkmark.circle") { selecting = true }
                     }
                     #if os(iOS)
-                    Button("New conversation", systemImage: "square.and.pencil") {
+                    // Held: New Goal (2.4) too.
+                    Menu {
+                        Button { addingGoal = true } label: {
+                            Label { Text("New Goal", comment: "Button: opens the sheet to set a new goal") } icon: { Image(systemName: "flag.checkered") }
+                        }
+                    } label: {
+                        Label("New conversation", systemImage: "square.and.pencil")
+                    } primaryAction: {
                         conversation.reset()
                         opened()
                     }
@@ -501,6 +526,13 @@ struct ConversationsList: View {
             usesLedger ? Text("They are removed from the Redde ledger for every client.") : Text("This only removes them from this phone.")
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
+        .sheet(isPresented: $addingGoal) { NewGoalSheet() }
+        .sheet(item: $shownGoal) { goal in
+            NavigationStack {
+                GoalView(goalID: goal.id)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { shownGoal = nil } } }
+            }
+        }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
         .modifier(ListSearchCarry(query: $query, wide: wide))
         // Keyed on the server and profile: a switch reloads the list (and the iPad sidebar,
@@ -525,7 +557,7 @@ struct ConversationsList: View {
                                    openID: conversation.serverSessionID, watch: watchActivity, opened: openChanged))
         .onChange(of: query, initial: true) { filterLedger() }
         .task(id: "\(query)|\(settings.connectionKey)") { await searchMessages() }
-        .onChange(of: ledger) { filterLedger() }
+        .onChange(of: ledgerInputs) { filterLedger() }
         .sheet(item: $usageFor) { SessionUsageView(session: $0) }
         .modifier(GroupRenameAlert(room: $renamingRoom, text: $roomRenameText, save: rename))
         .alert("Rename session", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
@@ -557,6 +589,13 @@ struct ConversationsList: View {
         }
     }
 
+    /// What the list of conversations is made from: the server's, and the bots' chats.
+    private struct LedgerInputs: Equatable {
+        let ledger: [HermesSessionsAPI.SessionSummary]
+        let bots: [HermesBot]
+    }
+    private var ledgerInputs: LedgerInputs { LedgerInputs(ledger: ledger, bots: listedBots) }
+
     private func filterLedger() {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
         // Incognito chats aren't listed, here or (hidden on the Dashboard) by any app, until they go.
@@ -564,7 +603,21 @@ struct ConversationsList: View {
             .union(conversation.isIncognito ? [conversation.serverSessionID].compactMap(\.self) : [])
         // A bot's chat is its bot's, in the Bots section, never a row: on the Dashboard it is hidden,
         // and one made over the Hermes API before 2026-10-29 isn't.
-        let listed = ledger.filter { !incognito.contains($0.id) && $0.title != BotChat.title }
+        var listed = ledger.filter { !incognito.contains($0.id) && $0.title != BotChat.title }
+        // The bots' chats come in among them too, by when they were last used, labelled (asked
+        // 2026-11-04): from the roster, which has each one's last line and time.
+        var bots: [String: HermesBot] = [:]
+        let seen = Set(listed.map(\.id))
+        for bot in listedBots where !bot.isDefault {
+            guard let chat = bot.chatID, let when = bot.lastActive, !seen.contains(chat), !incognito.contains(chat) else { continue }
+            var row = HermesSessionsAPI.SessionSummary(id: chat)
+            row.title = bot.label(mainName: settings.headerTitle)
+            row.preview = bot.preview
+            row.last_active = when.timeIntervalSince1970
+            bots[chat] = bot
+            listed.append(row)
+        }
+        botChatRows = bots
         let filtered = q.isEmpty ? listed : listed.filter {
             $0.displayTitle.lowercased().contains(q) || ($0.preview ?? "").lowercased().contains(q) || $0.sourceLabel.lowercased().contains(q)
         }
@@ -895,7 +948,8 @@ struct ConversationsList: View {
     /// A bot's row while the bots are put in order: its creature, its name and its chat's last
     /// line, marked as a conversation's row is (at work, waiting on the person, or something not
     /// yet seen).
-    private func botRow(_ bot: HermesBot, face: BotFace) -> some View {
+    /// `labelled`: among the conversations, marked as a bot's chat.
+    private func botRow(_ bot: HermesBot, face: BotFace, labelled: Bool = false) -> some View {
         let name = bot.label(mainName: settings.headerTitle)
         let isOpen = groups.open == nil && conversation.bot?.profile == bot.name
         // Muted: no unread dot (at work, or waiting on the person, still shows).
@@ -921,6 +975,7 @@ struct ConversationsList: View {
                     }
                     HStack(spacing: 6) {
                         if marks.kind == .needsYou { NeedsYouTag() }
+                        if labelled { BotChatLabel(face: face) }
                         Text(BotMessages.rowPreview(bot.preview, roster: roster, mainName: settings.headerTitle)
                              ?? bot.description.nilIfEmpty ?? tag)
                             .lineLimit(1)
@@ -934,7 +989,7 @@ struct ConversationsList: View {
         .buttonStyle(.plain)
         .unreadDot(marks.unread)
         .opensConversation()
-        .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+        .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : Settings.shared.theme.listPage)
         .disabled(opening != nil || openingBot != nil)
         .contextMenu { botMenu(bot, unread: marks.unread, isOpen: isOpen) }
         .accessibilityElement(children: .combine)
@@ -978,7 +1033,7 @@ struct ConversationsList: View {
         }
         .buttonStyle(.plain)
         .unreadDot(marks.unread)
-        .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+        .listRowBackground(isOpen ? Settings.shared.resolvedTheme.accent.opacity(0.08) : Settings.shared.theme.listPage)
         .contextMenu {
             if !isOpen, room.activityMark != nil {
                 if marks.unread {
@@ -1182,9 +1237,10 @@ struct ConversationsList: View {
         .accessibilityAddTraits(.isHeader)
     }
 
-    /// Ids of the rows currently shown, for select-all and bulk actions: folded runs aren't.
+    /// Ids of the rows currently shown, for select-all and bulk actions: folded runs aren't, nor
+    /// the bots' chats (each is its bot's, changed from the bot's menu).
     private var visibleIDs: Set<String> {
-        usesLedger ? Set(visibleLedger.filter { showScheduled || !Self.isFoldable($0) }.map(\.id))
+        usesLedger ? Set(visibleLedger.filter { (showScheduled || !Self.isFoldable($0)) && botChatRows[$0.id] == nil }.map(\.id))
                    : Set(visibleLocal.map { $0.id.uuidString })
     }
 
@@ -1455,7 +1511,9 @@ struct ConversationsList: View {
 
     private func ledgerButton(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
         Group {
-            if let server = session.otherServer {
+            if let bot = botChatRows[session.id] {
+                botRow(bot, face: botDirectory.roster?.faces[bot.name] ?? BotFace(seed: bot.name), labelled: true)
+            } else if let server = session.otherServer {
                 remoteButton(session, on: server, hasDraft: hasDraft)
             } else {
                 ownButton(session, hasDraft: hasDraft)
@@ -1485,7 +1543,7 @@ struct ConversationsList: View {
             .buttonStyle(.plain)
             .opensConversation()
             .tag(session.id)
-            .listRowBackground(groups.open == nil && session.id == conversation.serverSessionID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+            .listRowBackground(groups.open == nil && session.id == conversation.serverSessionID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : Settings.shared.theme.listPage)
             .disabled(opening != nil)
             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                 if canMark {
@@ -2015,7 +2073,7 @@ struct ConversationsList: View {
                     Button { openSaved(copy) } label: { savedRow(copy) }
                         .buttonStyle(.plain)
                         .opensConversation()
-                        .listRowBackground(copy.id == conversation.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+                        .listRowBackground(copy.id == conversation.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : Settings.shared.theme.listPage)
                 }
             } header: {
                 groupHeader(String(localized: "On this iPhone"))
@@ -2070,7 +2128,7 @@ struct ConversationsList: View {
             .buttonStyle(.plain)
             .opensConversation()
             .tag(record.id.uuidString)
-            .listRowBackground(record.id == conversation.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+            .listRowBackground(record.id == conversation.id ? Settings.shared.resolvedTheme.accent.opacity(0.08) : Settings.shared.theme.listPage)
             .contextMenu {
                 Button("Export as Markdown", systemImage: "square.and.arrow.up") {
                     Task {
@@ -2255,7 +2313,7 @@ struct ProjectSessionsView: View {
                                 .buttonStyle(.plain)
                                 .opensConversation()
                                 .disabled(opening != nil)
-                                .listRowBackground(session.id == currentID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : nil)
+                                .listRowBackground(session.id == currentID ? Settings.shared.resolvedTheme.accent.opacity(0.08) : Settings.shared.theme.listPage)
                         }
                     } header: {
                         if lanes.count > 1 || lane.label != "main" {
@@ -2273,6 +2331,7 @@ struct ProjectSessionsView: View {
         #else
         .listStyle(.plain)
         #endif
+        .themedPage(Settings.shared.theme.listPage)
         .navigationTitle(project.label)
         .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
@@ -2556,5 +2615,38 @@ private struct GroupRenameAlert: ViewModifier {
             Button("Save") { if let room { save(room, text) } }
             Button("Cancel", role: .cancel) { room = nil }
         }
+    }
+}
+
+extension Theme {
+    /// The chat list's page: the theme's own, never a picked wallpaper's colour (the list stays
+    /// off the wallpaper, 2026-10-28); nil leaves the system's list as it was.
+    var listPage: Color? { palette.background }
+}
+
+extension View {
+    /// A list on the theme's page: its own background hidden and the page behind it, or the list
+    /// untouched when the theme has no page colour of its own.
+    @ViewBuilder func themedPage(_ page: Color?) -> some View {
+        if let page {
+            scrollContentBackground(.hidden).background { page.ignoresSafeArea() }
+        } else {
+            self
+        }
+    }
+}
+
+/// "Bot Chat", in the bot's colour: a bot's chat among the conversations.
+struct BotChatLabel: View {
+    let face: BotFace
+    var body: some View {
+        let colour = BotAvatar.colors(of: face, theme: Settings.shared.resolvedTheme).deep
+        Text("Bot Chat", comment: "Marks a bot's chat in the list of conversations")
+            .chatFont(.caption2, weight: .semibold)
+            .foregroundStyle(colour)
+            .padding(.horizontal, 6).padding(.vertical, 1)
+            .background(colour.opacity(0.14), in: .capsule)
+            .lineLimit(1)
+            .fixedSize()
     }
 }

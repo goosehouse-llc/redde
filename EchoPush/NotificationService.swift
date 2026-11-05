@@ -29,10 +29,17 @@ final class NotificationService: UNNotificationServiceExtension {
             // And ideas it offered, for the chat list to show when Redde opens.
             if AgentIdea.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind) }
             WatchReport.take(note)   // and what a watch saw, for the Watches list
+            GoalReport.take(note)    // and a goal's check-in, for its card atop the chat list
             // And a briefing's whole text; a heads-up's with when to leave for its event.
             if AgentBriefing.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind) }
             // Its banner without the model's narration ahead of the brief, as Redde shows it.
             if note.x == "brief" { content.body = DayBrief.withoutNarration(content.body) }
+            // One job's notifications together in the list, and quiet for a job the person keeps
+            // to the drawer, or hides (Hermes's plugin, told, sends none; an older one still does).
+            if let job = JobNotices.jobKey(of: note) {
+                content.threadIdentifier = "brief." + job
+                if JobNotices.choice(for: job) != .notify { MutedChats.quiet(content) }
+            }
             if note.u != nil, note.r != nil, AgentBriefing.all().contains(where: { $0.title == note.t }) {
                 headsUp = AgentBriefing.all().first { $0.title == note.t && $0.eventAt != nil }
             }

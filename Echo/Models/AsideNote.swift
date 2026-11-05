@@ -72,8 +72,11 @@ nonisolated enum RoutineNote {
     }
 
     /// `when`: how often it will run, in words ("every day at 07:30"), or nil for only when asked.
-    static func note(name: String, skill: String, when: String?) -> String {
-        opening + "\"\(name)\". Save what you did in this conversation as a skill named \"\(skill)\" with your skill tool "
+    /// `asked`: from a reply's menu (2026-11-04), what the user asked for that reply; the routine
+    /// is what was done for it, not the whole conversation.
+    static func note(name: String, skill: String, when: String?, asked: String? = nil) -> String {
+        let what = asked.map { "what you did to answer their request \"\($0)\"" } ?? "what you did in this conversation"
+        return opening + "\"\(name)\". Save \(what) as a skill named \"\(skill)\" with your skill tool "
             + "(skill_manage; find it with tool_search if it isn't among your tools): the steps to do it again on your own, "
             + "which tools and sources you used, and what to give back at the end; leave out the details that change each time. "
             + "Don't do the task again now. Then say in one line that it is saved"

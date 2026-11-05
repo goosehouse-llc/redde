@@ -50,6 +50,15 @@ struct ToolsView: View {
     }
 
     private func row(_ set: HermesSessionsAPI.Toolset) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            ItemIconView(brand: set.name == "homeassistant" ? BrandIcons.icon("homeassistant") : nil, symbol: ItemIcon.symbol(toolset: set.name), name: set.name)
+                .opacity(set.enabled == true ? 1 : 0.55)
+                .padding(.top, 2)
+            toolsetDetails(set)
+        }
+    }
+
+    private func toolsetDetails(_ set: HermesSessionsAPI.Toolset) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(set.label ?? set.name).font(.body)
@@ -82,6 +91,19 @@ struct ToolsView: View {
     }
 
     private func load() async {
+        #if DEBUG
+        // `-echo.demoPlugins`: Hermes 0.22's toolsets, for the icon screenshots.
+        if PluginsDemo.on {
+            let rows = ["web", "browser", "terminal", "file", "vision", "image_gen", "tts", "memory", "cronjob", "kanban", "homeassistant", "delegation", "skills", "todo"]
+            toolsets = rows.enumerated().map { i, name in
+                HermesSessionsAPI.Toolset(name: name, label: name.replacingOccurrences(of: "_", with: " ").capitalized, description: nil,
+                                          enabled: i < 11, configured: true, tools: nil)
+            }
+            canToggle = true
+            loading = false
+            return
+        }
+        #endif
         canToggle = await HermesServeClient.shared.canUse()
         do {
             if canToggle {
@@ -140,7 +162,7 @@ struct SkillsView: View {
                         .listRowSeparator(.hidden)
                 }
                 ForEach(byCategory, id: \.category) { group in
-                    Section("\(group.category.capitalized) · \(group.skills.count)") {
+                    Section {
                         ForEach(group.skills) { skill in
                             HStack {
                                 NavigationLink {
@@ -162,6 +184,9 @@ struct SkillsView: View {
                                 }
                             }
                         }
+                    } header: {
+                        // A skill group's symbol (2026-11-03: icons wherever they fit).
+                        Label("\(group.category.capitalized) · \(group.skills.count)", systemImage: ItemIcon.symbol(skillCategory: group.category))
                     }
                 }
             }

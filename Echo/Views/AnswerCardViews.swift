@@ -126,6 +126,9 @@ struct ReviewCard: View {
     @State private var editing = false
     @FocusState private var focused: Int?
     @State private var answers = CardAnswers.shared
+    /// A drafted email going out through the plugin (`card.draft`), and what went wrong if it didn't.
+    @State private var sending = false
+    @State private var sendProblem: String?
     @Environment(\.answerCard) private var answerer
     @Environment(\.theme) private var theme
     @Environment(\.colorScheme) private var scheme
@@ -160,6 +163,9 @@ struct ReviewCard: View {
                 }
                 .chatFont(.caption)
                 .foregroundStyle(.secondary)
+            }
+            if let sendProblem {
+                Label(sendProblem, systemImage: "exclamationmark.triangle").chatFont(.caption).foregroundStyle(.red)
             }
             if let answered {
                 AnsweredLine(text: answered.hasPrefix("cancelled") ? String(localized: "Cancelled") : String(localized: "Done: \(card.action)"))
@@ -289,7 +295,7 @@ struct ReviewCard: View {
         }
         .chatFont(.subheadline, weight: .semibold)
         .buttonBorderShape(.capsule)
-        .disabled(answerer.busy)
+        .disabled(answerer.busy || sending)
     }
 
     private func value(_ index: Int) -> String { values.indices.contains(index) ? values[index] : card.fields[index].value }
@@ -303,10 +309,38 @@ struct ReviewCard: View {
 
     private func go(_ answerer: CardAnswerer) {
         editing = false
+        if let draft = card.draft {
+            send(draft, answerer)
+            return
+        }
         let changed = card.fields.indices.contains { value($0) != card.fields[$0].value }
         let details = card.fields.indices.map { "\(card.fields[$0].label): \(value($0))" }.joined(separator: "; ")
         let said = "the user tapped \"\(card.action)\" on \"\(card.title)\"\(changed ? ", after changing it" : ""). Go ahead with exactly this — \(details)"
         answerer.answer(.review(card), String(localized: "\(card.action): \(card.title)", comment: "The message a review card's button sends: its button, then its title"), said)
+    }
+
+    /// A drafted email: the plugin sends exactly what the card shows (changed first if he edited
+    /// it), then the agent is told it went, so it doesn't send it again.
+    private func send(_ draft: MailDraft, _ answerer: CardAnswerer) {
+        let layout = card.layout
+        var edited = draft
+        if let to = layout.to { edited.to = MailDraft.addresses(.string(value(to))) }
+        if let cc = card.fields.firstIndex(where: { $0.label.lowercased() == "cc" }) { edited.cc = MailDraft.addresses(.string(value(cc))) }
+        if let subject = layout.subject { edited.subject = value(subject) }
+        if let body = layout.body { edited.body = value(body) }
+        sending = true
+        sendProblem = nil
+        Task {
+            defer { sending = false }
+            do {
+                try await MailCenter.shared.send(draft, edited: edited == draft ? nil : edited)
+                let said = "the user approved \"\(card.title)\"\(edited == draft ? "" : ", after changing it"), and Redde sent it (draft \(draft.id)) "
+                    + "to \(edited.to.joined(separator: ", ")). It is sent: don't send it again."
+                answerer.answer(.review(card), String(localized: "Sent: \(card.title)", comment: "The message a drafted email's Send leaves in the chat"), said)
+            } catch {
+                sendProblem = error.localizedDescription
+            }
+        }
     }
 
     private func cancel(_ answerer: CardAnswerer) {

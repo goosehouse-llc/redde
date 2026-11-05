@@ -104,6 +104,7 @@ final class SpeechRecognizer {
     /// `chosen` is read once by the caller, so a language picked meanwhile can't mix into this one.
     static func prepareAssets(for chosen: Locale = Settings.shared.speechLocale,
                               with kind: Transcriber.Kind = .onThisDevice) async throws {
+        let kind = await kind.serving(chosen)
         let locale = try await Self.locale(for: chosen, kind)
         let probe = try await Self.makeTranscriber(for: chosen, with: kind)
         let installed = await kind.installedLocales
@@ -129,8 +130,18 @@ final class SpeechRecognizer {
 
     /// The languages this device can listen for, and those whose model is already on it. For the
     /// picker in Settings.
-    static var supportedLocales: [Locale] { get async { await Transcriber.Kind.onThisDevice.supportedLocales } }
-    static var installedLocales: [Locale] { get async { await Transcriber.Kind.onThisDevice.installedLocales } }
+    /// Where SpeechTranscriber runs, dictation's languages count too (`Transcriber.Kind.serving`).
+    static var supportedLocales: [Locale] { get async { await both { await $0.supportedLocales } } }
+    static var installedLocales: [Locale] { get async { await both { await $0.installedLocales } } }
+    private static func both(_ list: (Transcriber.Kind) async -> [Locale]) async -> [Locale] {
+        let kind = Transcriber.Kind.onThisDevice
+        var out = await list(kind)
+        guard kind == .speech else { return out }
+        let languages = Set(out.compactMap { $0.language.languageCode?.identifier })
+        // Only languages SpeechTranscriber lacks: where it has a language, it listens, not dictation.
+        out += await list(.dictation).filter { $0.language.languageCode.map { !languages.contains($0.identifier) } ?? false }
+        return out
+    }
 
     // MARK: - Shared setup
 
@@ -144,6 +155,7 @@ final class SpeechRecognizer {
     /// Same module configuration the live path uses, so file-based tests exercise the real thing.
     static func makeTranscriber(for chosen: Locale = Settings.shared.speechLocale,
                                 with kind: Transcriber.Kind = .onThisDevice) async throws -> Transcriber {
+        let kind = await kind.serving(chosen)
         let locale = try await Self.locale(for: chosen, kind)
         // Allocate the locale for this app. Without it the framework warns
         // "Cannot use modules with unallocated locales" and AssetInventory refuses downloads.

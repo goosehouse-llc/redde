@@ -16,12 +16,44 @@ nonisolated struct PhoneToolsSettings: Codable, Equatable, Sendable {
     /// The whole thing. Off until turned on.
     var on = false
     var areas: [String: Access] = [:]
+    /// The kinds of Apple Health data the agent may read (`HealthKind` ids), each chosen on its
+    /// own in Settings → Phone tools → Health. None until chosen.
+    var health: [String] = []
+    /// Send Ahead for Scheduled Jobs (2026-11-04, asked on Reddit): a copy of the coming week's
+    /// events and the open reminders goes to the person's Hermes each time Redde opens, for the
+    /// jobs that run while it is closed. Off until turned on.
+    var sendAhead = false
 
     func access(_ area: DeviceArea) -> Access { on ? areas[area.rawValue] ?? .off : .off }
     mutating func set(_ area: DeviceArea, _ access: Access) { areas[area.rawValue] = access }
 
     /// The areas the agent is shown tools for.
     var open: [DeviceArea] { DeviceArea.allCases.filter { access($0) != .off } }
+
+    /// The Health kinds shared, in the order Settings lists them; none while Health is off.
+    var sharedHealth: [HealthKind] {
+        access(.health) == .off ? [] : HealthKind.allCases.filter { health.contains($0.rawValue) }
+    }
+    mutating func share(_ kind: HealthKind, _ shared: Bool) {
+        health.removeAll { $0 == kind.rawValue }
+        if shared { health.append(kind.rawValue) }
+    }
+}
+
+nonisolated extension PhoneToolsSettings {
+    private enum CodingKeys: String, CodingKey { case on, areas, health, sendAhead }
+
+    /// Read as kept, a setting kept before a field was added included: what is missing is its default.
+    init(from decoder: any Decoder) throws {
+        let kept = try decoder.container(keyedBy: CodingKeys.self)
+        on = try kept.decodeIfPresent(Bool.self, forKey: .on) ?? false
+        areas = try kept.decodeIfPresent([String: Access].self, forKey: .areas) ?? [:]
+        health = try kept.decodeIfPresent([String].self, forKey: .health) ?? []
+        sendAhead = try kept.decodeIfPresent(Bool.self, forKey: .sendAhead) ?? false
+    }
+
+    /// The areas a copy is sent ahead of: calendar and reminders, while on.
+    var sentAhead: [DeviceArea] { sendAhead ? [.calendar, .reminders].filter { access($0) != .off } : [] }
 }
 
 /// The phone's side of phone tools: it learns that the agent has called one, asks the plugin on
@@ -79,6 +111,8 @@ final class DeviceToolsService {
     @ObservationIgnored private let ask: (Question) async -> Answer
     /// Whether Redde is on the phone's screen, where a question can be put.
     @ObservationIgnored private let onScreen: () -> Bool
+    /// Whether an Apple Home change touches what could let someone in (`DeviceHome.sensitive`).
+    @ObservationIgnored private let homeSensitive: (DeviceTool, JSONValue) async -> Bool
     @ObservationIgnored private var handled: Set<String> = []
     /// Puts a picture in front of the person, in the reply the agent's call belongs to: what is
     /// handed to the agent is shown as it goes. Given by the conversation with the cue.
@@ -97,7 +131,8 @@ final class DeviceToolsService {
          command: ((String) async throws -> String)? = nil,
          run: ((DeviceTool, JSONValue, JSONValue) async throws -> JSONValue)? = nil,
          ask: ((Question) async -> Answer)? = nil,
-         onScreen: @escaping () -> Bool = { AppState.isActive }) {
+         onScreen: @escaping () -> Bool = { AppState.isActive },
+         homeSensitive: ((DeviceTool, JSONValue) async -> Bool)? = nil) {
         self.settings = settings
         self.defaults = defaults
         self.command = command ?? PushService.command(over: HermesServeClient.shared)
@@ -105,6 +140,9 @@ final class DeviceToolsService {
         self.run = run ?? { try await runner.run($0, $1, info: $2) }
         self.ask = ask ?? { await DeviceToolsService.alert($0) }
         self.onScreen = onScreen
+        self.homeSensitive = homeSensitive ?? { await DeviceHome.sensitive($0, $1) }
+        let sentAt = defaults.double(forKey: Self.aheadAtKey)
+        aheadSentAt = sentAt > 0 ? Date(timeIntervalSince1970: sentAt) : nil
         log = defaults.data(forKey: Self.logKey).flatMap { try? JSONDecoder().decode([Entry].self, from: $0) } ?? []
     }
 
@@ -191,13 +229,20 @@ final class DeviceToolsService {
                 access = settings.phoneTools.access(area)
                 guard access != .off else { throw DeviceToolError.areaOff(area) }
             }
+            // Apple Home answers only with Redde on the screen (HomeKit's rule for apps).
+            if tool.area == .home, !onScreen() {
+                throw DeviceToolError("Apple Home works only while Redde is open on the iPhone's screen. Ask the person to open Redde and try again.")
+            }
+            // Apple Home: allowed, a change goes ahead unasked, unless it could let someone in
+            // (a lock, a garage door, a door, a window, the alarm), which is asked every time.
+            let asksHome = tool.changesHome ? await homeSensitive(tool, request.arguments) : false
             // Changes are asked about every time; reads where the area says ask. A delete of
             // photos is put to the person by iOS, with the photos shown: not by Redde as well.
-            if tool.changes || (access == .ask && !tool.asksItself) {
+            if tool.changes || asksHome || (access == .ask && !tool.asksItself) {
                 guard onScreen() else {
                     throw DeviceToolError("This needs a yes on the iPhone, and Redde isn't on its screen. Ask the person to open Redde and try again.")
                 }
-                switch await ask(Question(ask: question, offersAlways: !tool.changes, area: tool.area)) {
+                switch await ask(Question(ask: question, offersAlways: !tool.changes && tool.area != .home, area: tool.area)) {
                 case .deny: throw DeviceToolError.denied
                 case .always: if let area = tool.area, !tool.changes { settings.phoneTools.set(area, .allow) }
                 case .allow: break
@@ -230,11 +275,22 @@ final class DeviceToolsService {
             case .ask: "on; the person is asked each time"
             case .allow where area == .people: "on; iOS asks the person before a call goes out, and a message is theirs to send"
             case .allow where area == .widget: "on; written on without asking"
+            case .allow where area == .health: "on; read without asking"
+            case .allow where area == .home: "on; changes go ahead without asking, except locks, garage doors, doors, windows and the alarm, which the person is asked about"
             case .allow: "on; reading needs no asking, changes are asked about"
             }
             areas[area.rawValue] = .string(state)
         }
-        return .object([
+        var health: [String: JSONValue] = [:]
+        if settings.phoneTools.access(.health) != .off {
+            // What phone_health_read may be asked for: only these, and only on a device with Health.
+            health["health_shared"] = .array(settings.phoneTools.sharedHealth.map { .string($0.rawValue) })
+            if !DeviceHealth.available { health["health_note"] = .string("This device has no Apple Health: Health is read on the user's iPhone.") }
+        }
+        if settings.phoneTools.access(.home) != .off, !DeviceHome.available {
+            health["home_note"] = .string("Apple Home is on the user's iPhone: this Mac can't reach it.")
+        }
+        return .object(health.merging([
             "device": .string(Self.deviceName),
             "system": .string(Self.systemName),
             "app": .string(app),
@@ -243,7 +299,7 @@ final class DeviceToolsService {
             "locale": .string(Locale.current.identifier),
             "areas": .object(areas),
             "note": .string("Phone tools work only while Redde is open on the phone and following this conversation."),
-        ])
+        ], uniquingKeysWith: { mine, _ in mine }))
     }
 
     // MARK: - What the agent is offered
@@ -259,7 +315,72 @@ final class DeviceToolsService {
         let named = reply.dropFirst("redde-push device areas".count).split(whereSeparator: { $0 == " " || $0 == "," })
         let held = named.compactMap { DeviceArea(rawValue: String($0)) }
         unoffered = open.filter { !held.contains($0) }
+        await sendAhead()
         return held
+    }
+
+    // MARK: - Sent ahead, for scheduled jobs
+
+    /// What was last sent ahead and when, so that a copy goes at most every ten minutes unless
+    /// something it depends on changed.
+    @ObservationIgnored private var aheadSaid: (what: String, at: Date)?
+    private static let aheadKey = "phoneTools.aheadOnServer"
+    private static let aheadAtKey = "phoneTools.aheadSentAt"
+    /// A copy sent ahead is on the server, still to be taken back if the setting goes off.
+    static var aheadOnServer: Bool { UserDefaults.standard.bool(forKey: aheadKey) }
+
+    /// With Send Ahead on, the coming week's events and the open reminders go to the plugin,
+    /// which answers a scheduled job's calls from them; with it off, a copy sent before is
+    /// taken back. Returns the areas the plugin kept, or nil when nothing was said.
+    /// When a copy last reached the server, for Settings; nil while none is there.
+    private(set) var aheadSentAt: Date?
+    /// A copy is on its way (Send Now).
+    private(set) var isSendingAhead = false
+
+    /// `force` (Send Now): sent whatever was sent a moment ago.
+    @discardableResult
+    func sendAhead(now: Date = .now, force: Bool = false) async -> [DeviceArea]? {
+        let areas = settings.phoneTools.sentAhead
+        guard !areas.isEmpty else {
+            guard defaults.bool(forKey: Self.aheadKey) else { return nil }
+            guard (try? await command("device ahead off"))?.hasPrefix("redde-push device ahead off") == true else { return nil }
+            defaults.set(false, forKey: Self.aheadKey)
+            aheadSaid = nil
+            aheadSentAt = nil
+            defaults.removeObject(forKey: Self.aheadAtKey)
+            return []
+        }
+        let what = areas.map(\.rawValue).joined(separator: ",") + "|" + CalendarChoice.chosen.joined(separator: ",")
+        if !force, let said = aheadSaid, said.what == what, now.timeIntervalSince(said.at) < 600 { return nil }
+        isSendingAhead = true
+        defer { isSendingAhead = false }
+        let start = Calendar.current.startOfDay(for: now)
+        let end = start.addingTimeInterval(8 * 86400)
+        var copy: [String: JSONValue] = [
+            "made": .string(DeviceDates.string(now)), "time_zone": .string(TimeZone.current.identifier),
+            "from": .string(DeviceDates.string(start)), "until": .string(DeviceDates.string(end)),
+        ]
+        if areas.contains(.calendar), let found = try? await read(.calendarEvents, ["start": .string(DeviceDates.string(start)),
+                                                                                      "end": .string(DeviceDates.string(end)), "limit": .number(200)]) {
+            copy["calendar"] = found["events"] ?? .array([])
+        }
+        if areas.contains(.reminders), let found = try? await read(.remindersList, ["limit": .number(200)]) {
+            copy["reminders"] = found["reminders"] ?? .array([])
+        }
+        guard copy["calendar"] != nil || copy["reminders"] != nil, let data = try? JSONEncoder().encode(JSONValue.object(copy)),
+              let reply = try? await command("device ahead " + data.base64EncodedString()),
+              reply.hasPrefix("redde-push device ahead") else { return nil }   // an older plugin says it doesn't know this
+        defaults.set(true, forKey: Self.aheadKey)
+        defaults.set(now.timeIntervalSince1970, forKey: Self.aheadAtKey)
+        aheadSaid = (what, now)
+        aheadSentAt = now
+        let named = reply.dropFirst("redde-push device ahead".count).split(whereSeparator: { $0 == " " || $0 == "," })
+        return named.compactMap { DeviceArea(rawValue: String($0)) }
+    }
+
+    /// A read for the copy: the tool's own, with no one asked (turning Send Ahead on was the asking).
+    private func read(_ tool: DeviceTool, _ args: [String: JSONValue]) async throws -> JSONValue {
+        try await run(tool, .object(args), info())
     }
 
     func clearLog() { log = [] }

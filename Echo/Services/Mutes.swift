@@ -102,7 +102,9 @@ enum Mutes {
             guard let bot = summary.bot, let session = summary.serverSessionID else { return nil }
             return (bot.profile, session)
         }
-        let keys = keys(muted: settings.mutesHere, now: .now, botChats: botChats, kept: kept)
+        var keys = keys(muted: settings.mutesHere, now: .now, botChats: botChats, kept: kept)
+        // And the jobs whose runs the person said not to show (`JobNotices`), until shown again.
+        for job in JobNotices.hidden().keys { keys[JobNotices.muteKey(job)] = .distantFuture }
         MutedChats.save(keys)
         PushService.shared.sayMutes(keys, client: .shared, server: settings.connectionKey)
     }

@@ -428,9 +428,14 @@ final class Settings: ServeEndpoint {
     var themeColors: [String: ThemeColors] {
         didSet { store(try? JSONEncoder().encode(themeColors), forKey: Keys.themeColors) }
     }
+    /// Settings → Appearance → Font (asked 2026-11-02): the face of replies and your messages,
+    /// or the theme's own. Code blocks and the app's chrome keep theirs.
+    var chatFont: ChatFont {
+        didSet { store(chatFont.rawValue, forKey: Keys.chatFont) }
+    }
     /// The active theme with your colors applied: what the app renders.
     var resolvedTheme: ResolvedTheme { resolved(theme) }
-    func resolved(_ theme: Theme) -> ResolvedTheme { theme.resolved(with: themeColors[theme.rawValue]) }
+    func resolved(_ theme: Theme) -> ResolvedTheme { theme.resolved(with: themeColors[theme.rawValue], font: chatFont) }
     /// Light / dark / follow the system, for the Default theme (the others fix their own).
     enum Appearance: String, CaseIterable, Identifiable {
         case system, light, dark
@@ -940,6 +945,7 @@ final class Settings: ServeEndpoint {
         static let botColors = "botColors"
         static let eventColor = "eventColor"
         static let cardColor = "cardColor"
+        static let chatFont = "chatFont"
         static let agendaCalendars = CalendarChoice.key
         static let currentLocation = CurrentLocation.key
         static let leaveByAlerts = LeaveBy.key
@@ -1053,6 +1059,7 @@ final class Settings: ServeEndpoint {
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
         eventColor = EventColor(rawValue: defaults.string(forKey: Keys.eventColor) ?? "") ?? .byCalendar
         cardColor = CardColor(rawValue: defaults.string(forKey: Keys.cardColor) ?? "") ?? .plain
+        chatFont = ChatFont(rawValue: defaults.string(forKey: Keys.chatFont) ?? "") ?? .theme
         agendaCalendars = defaults.stringArray(forKey: Keys.agendaCalendars) ?? []
         currentLocation = defaults.bool(forKey: Keys.currentLocation)
         leaveByAlerts = defaults.bool(forKey: Keys.leaveByAlerts)
@@ -1128,7 +1135,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.newChatsUseServerModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
@@ -1158,6 +1165,7 @@ final class Settings: ServeEndpoint {
         case Keys.botColors: botColors = flag(true)
         case Keys.eventColor: eventColor = pick(EventColor.byCalendar)
         case Keys.cardColor: cardColor = pick(CardColor.plain)
+        case Keys.chatFont: chatFont = pick(ChatFont.theme)
         case Keys.agendaCalendars: agendaCalendars = value as? [String] ?? []
         case Keys.linkPreviews: linkPreviews = flag()
         case Keys.addressMaps: addressMaps = flag(true)
@@ -1460,6 +1468,7 @@ final class Settings: ServeEndpoint {
         notificationSound = true
         returnSends = false
         chatTextSize = 0
+        chatFont = .theme
         botColors = true
         eventColor = .byCalendar
         cardColor = .plain

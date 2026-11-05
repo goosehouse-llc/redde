@@ -20,9 +20,26 @@ nonisolated struct CronJob: Identifiable, Equatable, Sendable {
     var lastError: String?
     var deliver: String?
     var model: String?
+    /// The provider of its own model (Run On): with `model`, what it runs on.
+    var provider: String?
+    /// Run On's choice still waiting in its name for the Redde plugin (on the Hermes API, which
+    /// can't set a job's model: `RunOn`), taken off `name`.
+    var askedModel: RunOn.Pick?
     /// The profile whose store it is in, as the Dashboard lists every profile's (`?profile=all`);
     /// nil for the one the server runs as, or a backend that doesn't say.
     var profile: String?
+    /// Coming Up's Skip (2026-11-02): the next run, by its time, that the Redde plugin is to pass
+    /// over (`ComingUp.skipTag` at the end of the job's name, which is taken off `name`).
+    var skipping: Date?
+    /// How many runs it has left, when it was made to run a number of times (Hermes's `repeat`);
+    /// nil for one that runs on until stopped.
+    var runsLeft: Int?
+
+    /// It runs once (a follow-up, a heads-up, a reminder): skipping it is cancelling it.
+    var isOneOff: Bool {
+        runsLeft == 1 || schedule.lowercased().hasPrefix("once") || name.hasPrefix(ComingUp.followUpTag)
+            || name.hasPrefix(ComingUp.headsUpTag)
+    }
 
     /// A bot's schedule (`BotRoutines`): its answer goes into a bot's Bot Chat.
     var isBotRoutine: Bool { deliver?.hasPrefix("bot-chat") == true }
@@ -32,7 +49,15 @@ nonisolated struct CronJob: Identifiable, Equatable, Sendable {
     init?(_ j: JSONValue) {
         guard let id = j["id"]?.string ?? j["job_id"]?.string else { return nil }
         self.id = id
-        name = j["name"]?.string ?? ""
+        // The marks the app adds for the plugin (a model, a skipped run), each taken off the name.
+        let (unmodeled, asked) = RunOn.unmarked(j["name"]?.string ?? "")
+        askedModel = asked
+        (name, skipping) = ComingUp.unmarked(unmodeled)
+        if let times = j["repeat"]?["times"]?.int, times > 0 {
+            runsLeft = max(0, times - (j["repeat"]?["completed"]?.int ?? 0))
+        } else if let times = j["repeat"]?.int, times > 0 {
+            runsLeft = times
+        }
         prompt = j["prompt"]?.string ?? j["prompt_preview"]?.string ?? ""
         schedule = j["schedule_display"]?.string ?? j["schedule"]?.string ?? j["schedule"]?["display"]?.string ?? ""
         enabled = j["enabled"]?.bool ?? true
@@ -44,7 +69,8 @@ nonisolated struct CronJob: Identifiable, Equatable, Sendable {
         lastStatus = j["last_status"]?.string
         lastError = j["last_error"]?.string
         deliver = j["deliver"]?.string
-        model = j["model"]?.string
+        model = j["model"]?.string?.nilIfEmpty
+        provider = j["provider"]?.string?.nilIfEmpty
         profile = j["profile"]?.string?.nilIfEmpty
     }
 
@@ -199,10 +225,12 @@ enum CronBackend {
         _ = try await HermesServeClient.shared.restJSON("POST", "api/cron/blueprints/instantiate", body: body)
     }
 
-    /// Makes a job; on the Dashboard, in `profile`'s store when one is named (a bot's).
-    func create(name: String, schedule: String, prompt: String, deliver: String? = nil, profile: String? = nil) async throws {
+    /// Makes a job; on the Dashboard, in `profile`'s store when one is named (a bot's). `runs`: how
+    /// many times it runs before Hermes lets it go (a watch template's days); nil, until stopped.
+    func create(name: String, schedule: String, prompt: String, deliver: String? = nil, profile: String? = nil, runs: Int? = nil) async throws {
         var fields: [String: JSONValue] = ["name": .string(name), "schedule": .string(schedule), "prompt": .string(prompt)]
         if let deliver, !deliver.isEmpty { fields["deliver"] = .string(deliver) }
+        if let runs, runs > 0 { fields["repeat"] = .number(Double(runs)) }
         let body: JSONValue = .object(fields)
         switch self {
         case .serve: _ = try await HermesServeClient.shared.restJSON("POST", Self.scoped("api/cron/jobs", profile), body: body)
@@ -217,6 +245,55 @@ enum CronBackend {
         switch self {
         case .serve: _ = try await HermesServeClient.shared.restJSON("PUT", Self.scoped("api/cron/jobs/\(id)", profile), body: .object(["updates": fields]))
         case let .apiServer(api): _ = try await api.requestJSON("PATCH", "api/jobs/\(id)", body: fields)
+        }
+    }
+
+    /// Renames a job and changes nothing else (both backends take a name alone).
+    func rename(_ id: String, to name: String, profile: String? = nil) async throws {
+        let fields: JSONValue = .object(["name": .string(name)])
+        switch self {
+        case .serve: _ = try await HermesServeClient.shared.restJSON("PUT", Self.scoped("api/cron/jobs/\(id)", profile), body: .object(["updates": fields]))
+        case let .apiServer(api): _ = try await api.requestJSON("PATCH", "api/jobs/\(id)", body: fields)
+        }
+    }
+
+    /// Coming Up's Skip for a job that repeats: its next run, marked in its name for the Redde plugin
+    /// (1.15) to pass over. Neither backend lets a client set a job's next run; the plugin moves it
+    /// with Hermes's own schedule arithmetic and takes the mark off (`ComingUp.skipTag`).
+    func markSkip(_ job: CronJob, run: Date) async throws {
+        try await rename(job.id, to: ComingUp.marked(job.name, skipping: run), profile: job.profile)
+    }
+
+    /// Takes a skip mark off again (one the plugin never took up).
+    func unmarkSkip(_ job: CronJob) async throws {
+        try await rename(job.id, to: job.name, profile: job.profile)
+    }
+
+    /// Run On: the job's own model, or the main model again. On the Dashboard at once (true); on the
+    /// Hermes API as a mark in its name the Redde plugin takes up within half a minute (false). A
+    /// skip still waiting keeps its mark.
+    @discardableResult
+    func setModel(_ job: CronJob, _ pick: RunOn.Pick) async throws -> Bool {
+        switch self {
+        case .serve:
+            let fields: JSONValue = .object(["model": .string(pick.model), "provider": .string(pick.isMain ? "" : pick.provider)])
+            _ = try await HermesServeClient.shared.restJSON("PUT", Self.scoped("api/cron/jobs/\(job.id)", job.profile), body: .object(["updates": fields]))
+            return true
+        case .apiServer:
+            let base = job.skipping.map { ComingUp.marked(job.name, skipping: $0) } ?? job.name
+            guard let name = RunOn.marked(base, pick) else {
+                throw TransportError.malformed(String(localized: "That model's name can't be set on a job over the Hermes API."))
+            }
+            try await rename(job.id, to: name, profile: job.profile)
+            return false
+        }
+    }
+
+    /// The server's models, as the model picker lists them (the Dashboard's, else the Hermes API's).
+    func modelOptions() async throws -> [ModelChoice] {
+        switch self {
+        case .serve: try await HermesServeClient.shared.modelOptions()
+        case let .apiServer(api): try await api.modelOptions()
         }
     }
 

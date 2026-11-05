@@ -21,6 +21,20 @@ struct GatewayView: View {
     }
 
     var body: some View {
+        ScrollViewReader { proxy in
+            page
+                #if DEBUG
+                // `-echo.settingsAnchor mcp` (`PluginsDemo`): down to the MCP servers, for screenshots.
+                .task(id: model.servers.count) {
+                    guard DevHooks.value("-echo.settingsAnchor") == "mcp", !model.servers.isEmpty else { return }
+                    try? await Task.sleep(for: .milliseconds(400))
+                    proxy.scrollTo("mcpServers", anchor: .top)
+                }
+                #endif
+        }
+    }
+
+    private var page: some View {
         List {
             if let status = model.status {
                 if let problem = model.problem {
@@ -29,7 +43,7 @@ struct GatewayView: View {
                 }
                 statusSection(status)
                 if !status.platforms.isEmpty { connectionsSection(status) }
-                serversSection
+                serversSection.id("mcpServers")
                 Section {
                     NavigationLink { GatewayLogView(source: model.source) } label: { Label("Logs", systemImage: "text.alignleft") }
                 }
@@ -121,41 +135,50 @@ struct GatewayView: View {
                 Text("No MCP servers are set up on this Hermes.").foregroundStyle(.secondary)
             }
             ForEach(model.servers) { server in
-                VStack(alignment: .leading, spacing: 5) {
-                    HStack {
-                        Text(server.name)
-                        Spacer()
-                        if server.plugin == nil {
-                            Toggle(server.name, isOn: Binding(get: { server.enabled }, set: { on in Task { await model.setServer(server, enabled: on) } }))
-                                .labelsHidden()
-                                .disabled(model.busy.contains(server.name))
-                        }
-                    }
-                    if !server.target.isEmpty {
-                        Text(server.target).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
-                    }
-                    if let plugin = server.plugin {
-                        Text("From the plugin \(plugin); switched with it.").font(.caption).foregroundStyle(.secondary)
-                    }
-                    HStack(spacing: 8) {
-                        Button("Test") { Task { await model.test(server) } }
-                            .buttonStyle(.borderless)
-                            .font(.footnote.weight(.medium))
-                            .disabled(model.busy.contains(server.name))
-                            .accessibilityLabel("Test \(server.name)")
-                        if model.busy.contains(server.name) { ProgressView().controlSize(.mini) }
-                        if let probe = model.probes[server.name] {
-                            Text(probe.summary).font(.footnote).foregroundStyle(probe.ok ? Color.secondary : Color.orange).lineLimit(3)
-                        }
-                    }
+                HStack(alignment: .top, spacing: 12) {
+                    ItemIconView(brand: BrandIcons.forName(server.name), symbol: ItemIcon.symbol(mcpServer: server.name), name: server.name)
+                        .opacity(server.enabled ? 1 : 0.55)
+                        .padding(.top, 2)
+                    serverDetails(server)
                 }
-                .padding(.vertical, 2)
             }
         } header: {
             Text("MCP servers")
         } footer: {
             Text("A switch changes Hermes's config, as the Dashboard's own does. It takes effect in new conversations. Test has Hermes connect to the server and list its tools.")
         }
+    }
+
+    private func serverDetails(_ server: MCPServer) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text(server.name)
+                Spacer()
+                if server.plugin == nil {
+                    Toggle(server.name, isOn: Binding(get: { server.enabled }, set: { on in Task { await model.setServer(server, enabled: on) } }))
+                        .labelsHidden()
+                        .disabled(model.busy.contains(server.name))
+                }
+            }
+            if !server.target.isEmpty {
+                Text(server.target).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+            }
+            if let plugin = server.plugin {
+                Text("From the plugin \(plugin); switched with it.").font(.caption).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 8) {
+                Button("Test") { Task { await model.test(server) } }
+                    .buttonStyle(.borderless)
+                    .font(.footnote.weight(.medium))
+                    .disabled(model.busy.contains(server.name))
+                    .accessibilityLabel("Test \(server.name)")
+                if model.busy.contains(server.name) { ProgressView().controlSize(.mini) }
+                if let probe = model.probes[server.name] {
+                    Text(probe.summary).font(.footnote).foregroundStyle(probe.ok ? Color.secondary : Color.orange).lineLimit(3)
+                }
+            }
+        }
+        .padding(.vertical, 2)
     }
 
     // MARK: Restart and update

@@ -5,6 +5,24 @@ import Testing
 /// Watches and follow-ups (asked 2026-10-28): the jobs Redde makes are found again by their tags,
 /// their prompt carries the tag the plugin looks for, and what a watch saw is kept per watch.
 struct WatchesTests {
+    /// A watch's settings (a hold on its row, 2026-11-05) read its words back from its prompt and
+    /// put new ones in, keeping what a template added after them; the way it reports, rewritten.
+    @Test func aWatchsSettingsRewriteItsPromptAndKeepATemplatesAdditions() throws {
+        let extra = " Also: answer NO EMAIL ACCESS if you can't read mail."
+        let prompt = Watches.prompt("ab12cd34", what: "the UniFi G4 Instant below $97") + extra
+        let job = try #require(CronJob(.object(["id": .string("j"), "name": .string("[redde-watch:ab12cd34] UniFi G4 Instant"),
+                                                "schedule": .string("0 */4 * * *"), "prompt": .string(prompt), "deliver": .string("local")])))
+        #expect(WatchSettingsView.what(in: job.prompt) == "the UniFi G4 Instant below $97")
+        #expect(WatchSettingsView.then(of: job, takers: []) == .tell)
+        let new = WatchSettingsView.prompt(for: job, id: "ab12cd34", what: "the UniFi G4 Instant below $90", then: .call, was: .tell)
+        #expect(new == Watches.prompt("ab12cd34", what: "the UniFi G4 Instant below $90", then: .call) + extra)
+        var called = job
+        called.prompt = new
+        #expect(WatchSettingsView.then(of: called, takers: []) == .call)
+        #expect(WatchSettingsView.what(in: "Something else entirely") == nil, "a prompt it can't read is left as it is")
+        #expect(FollowUpSettingsView.schedule(Date(timeIntervalSince1970: 0)).count == "2026-11-05T09:00".count)
+    }
+
     @Test func aWatchsPromptCarriesItsTagAndTheRule() {
         let prompt = Watches.prompt("ab12cd34", what: "the price of the blue kettle")
         #expect(prompt.hasPrefix("[redde-watch:ab12cd34] Watch, for the user: the price of the blue kettle."))

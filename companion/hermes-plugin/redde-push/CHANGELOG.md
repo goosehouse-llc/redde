@@ -3,6 +3,159 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.17.0 (2026-11-04)
+
+- A card whose list came as JSON text (a review's "fields" written as a string) is drawn: the
+  text is read as the list it is. Before, the check took its letters for labels, told the agent
+  the card was shown, and the phone drew nothing (2026-11-05, a calendar copy Sol asked about).
+- A watch whose answer opens by saying nothing changed stays quiet too (2026-11-05: a GTA 6 watch
+  sent "Based on my research, here's the current status: **No price changes.** …" to the phone
+  twice in a morning). A lead-in ending in a colon is skipped; a "but", "however" or "back in
+  stock" in that opening paragraph still sends it.
+- A quiet scheduled run stays quiet on the phone (issue 55). Hermes's records of runs that said
+  nothing ("**Status:** silent (wakeAgent=false)", "silent (empty output)", a monitor's
+  "no_change", a script gate's "agent skipped") have no "## Response", so the whole record came
+  back as the answer and a note with the job's header went out; and under Notify All a cron
+  turn's [SILENT] or NOTHING NEW was pushed as a reply. Both are dropped now, as are Hermes's
+  bare SILENT / NO_REPLY; a run that says something, or fails, still comes through.
+- Email: a rule's switch and Add Tagging Rule work. Redde sent the rules wrapped in an object and
+  `mail rules set` takes a list, so every save was turned down ("Rules are a list."); both are
+  taken now, and Redde sends the list (2026-11-05).
+- Email: `act group <ids> <important|needs_reply|fyi|newsletters>` puts an email in another of
+  Redde's groups (an email's hold menu in Redde), kept there through later syncs, its Redde/…
+  label in Gmail changed with it. Nothing moves on the mail server.
+- Email: more receipts are spotted: "Your Amazon.com order of …", "Order shipped", and mail from
+  auto-confirm@, shipment-tracking@, order-update@ and the like.
+- A job the phone hides (Redde's Don't Show on a briefing, a "j:<profile>|<job>" mute) sends
+  nothing.
+- A job with nothing new stays quiet. Sol's Strata check said "No change" to the phone every four
+  hours (2026-11-05): its own prompt asked for that, over Hermes's [SILENT]. An answer whose last
+  paragraph only says nothing changed ("No change.", "Nothing new", "No updates since the last
+  check") now sends nothing, and Sol is told, when it makes a job for the phone, to have the prompt
+  answer [SILENT] when nothing is new and to keep nothing in files between runs (scheduled runs
+  can't write them).
+- Scheduled jobs can read the calendar and reminders. Morning Ideas and other jobs run while Redde
+  is closed, when the phone can't be asked (asked on Reddit). With Send Ahead for Scheduled Jobs
+  on in Redde (Settings › Phone Tools, off by default), the phone leaves a copy of the next seven
+  days of events and the open reminders here each time Redde opens, replacing the last one. A job's
+  calendar and reminders calls are answered from it, with a word on when it was copied; so is a
+  chat's call when the phone doesn't answer. Nothing is changed from a job. The copy goes when the
+  setting or the area is turned off, and a copy over eight days old isn't used.
+
+## 1.16.1 (2026-11-04)
+
+- A reminder goes off on time and says what it is. "Remind me to stretch" made the right job, but
+  each run asked the model again, with every tool: the 7:58 one looked up the time and the weather
+  first and finished at 8:00:15; the 8:05 one set out to put a phone alarm at 7:00, waited four
+  minutes for a phone that wasn't listening, and said "I'm unable to set the alarm right now". Now
+  a reminder's run (a [redde-notify] job whose prompt is "Tell the person in one line: <what>")
+  never reaches the model: the plugin answers it ("Reminder: stretch."), with no tools, through
+  Hermes's llm_execution middleware (0.22+), and the notification goes out as the run starts. The
+  schedules' reader doesn't send it a second time. Older Hermes runs reminders on the model, as
+  before.
+- A setter call that failed (Hermes turning the job down, the phone not answering) no longer lets a
+  'reminder' card through.
+- Phone tools answer at once in a scheduled job's run: "The iPhone can't be reached from a scheduled
+  job … go on without it". No phone follows a job's run, so each call used to wait two minutes for
+  nothing, and Morning Ideas tried again and again until Hermes stopped it (2026-11-04).
+
+## 1.16.0 (2026-11-03)
+
+For Redde's email (asked 2026-11-03: "clear and smart email inbox control", for every Redde user,
+not only Gmail).
+
+- Email accounts over IMAP and SMTP with an app password (Gmail, iCloud, Fastmail, Yahoo, others;
+  Outlook only where Microsoft still allows it), kept as `REDDE_MAIL_*` in the main .env through
+  Redde's Keys Asked For; extra accounts with `REDDE_MAIL_ACCOUNTS`. A Hermes with the
+  google-workspace skill's Gmail sign-in gets that account on the Gmail API too. Hermes's hosted
+  Gmail connector is named, not used.
+- The inbox is looked at every few minutes (2 to 30, 3 by default) from the schedules' thread:
+  sender, subject, a 120-character snippet and flags, never whole emails. Sorted into important,
+  needs reply, FYI and newsletters (receipts there, marked) by rules first (Gmail's categories,
+  list and bulk headers, receipts); only what is left goes to the model, eight at a time, sender,
+  subject and snippet only, as data. `mail settings` turns the model's part off.
+- The person's rules (archive, mark read, label, move, tell me) run on every new email with no
+  model; every action is logged and undoable (`mail log`, `mail act undo`). Rules never delete.
+- `/redde-push mail …` for the app: status, list, read, act (archive, read, flag, trash, move,
+  label, snooze, unsubscribe, undo), draft-edit, draft-send, rules, log, setup-check, settings.
+  One-click unsubscribe (RFC 8058) on the person's tap. Snoozed email comes back by itself.
+- `redde_mail` for the agent, offered once an account works: reading is data, never instructions;
+  replies are drafts shown as an email review card, sent only unchanged (by hash) and after
+  Hermes's approval; trashing and an agent's unsubscribe are approved too. While an account is set
+  up, other ways of sending mail (himalaya, google_api.py gmail send/reply, the Nous Gmail
+  connector's send, trash and delete) are blocked and pointed at `redde_mail`.
+- Setting up from the app: `/redde-push keys ask <REDDE_MAIL_…> default <why>` opens a Keys Asked
+  For request (only email's names, only the main profile), `mail setup <json>` writes the settings
+  that aren't secret, and a key set counts at once, no restart. `mail brief` (also in `mail
+  status`): the counts and who waits on a reply, for the morning briefing's email page.
+- An `inbox` card for `redde_show`; asked about email, the agent is told how (that turn only);
+  briefings get the inbox's counts and who waits on a reply.
+- Run On: a scheduled job can run on a model of its own. Over the Hermes API, Redde marks the job's
+  name ` [redde-model:<model>|<provider>]` (` [redde-model:|]` for the main model); every half minute,
+  phone paired or not, the plugin gives the job that model and takes the mark off. New Dashboard
+  command `/redde-push job-model <profile> <job> <model|-> <provider|->`. Job names read without the
+  mark everywhere.
+- Remember that… / Forget that…: a short note on those messages only, so the agent keeps one clean
+  entry in its memory, or removes it, and says so in a line.
+- Imported memories can go to long-term memory: your memory provider (through the agent), Basic
+  Memory or the memory graph (written directly, no model call), or a notes file
+  (`/redde-push memory stores|save`).
+- Phone tools: Apple Home. With Apple Home on in Redde (Settings › Phone tools), your agent can list
+  your HomeKit accessories and scenes, change them and run scenes: `phone_home_list`,
+  `phone_home_set`, `phone_home_scene`, offered only while it is on. Locks, garage doors, doors,
+  windows and the alarm are always put to you on the phone.
+- Gmail shows Redde's sorting, per account and off until turned on: each sorted email gets
+  `Redde/Important`, `Redde/Needs Reply`, `Redde/FYI` or `Redde/Newsletters` (moved between groups,
+  it loses the old one). Only labels are added; nothing is archived, moved or deleted for this.
+  Gmail only (the Gmail API, or IMAP to Gmail with X-GM-LABELS); other providers have folders, which
+  would mean copies of each email, so they aren't offered.
+- Tagging rules: `do: "label"` with conditions on from, domain, to, cc, subject, the email's first
+  lines, group, receipt and attachment (any, PDF, image), all of them or any one, on mail newer
+  than 30 days unless set; an account of their own; "also archive" only when set. Run on new mail
+  with no model, logged in Agent Activity and undoable (the label off, back in the inbox). The
+  ready-made "Receipts with attachments → Paperless" rule is offered first, off, for Paperless-ngx's
+  mail rule.
+- `mail labels list <account>` (the account's labels to pick from), `mail labels backfill
+  <account>` (the last 30 days, at most 2,000 emails, 100 a half minute) and `mail labels remove
+  <account> groups|all` (takes off only labels Redde added, by what it wrote down; a label the
+  person put on stays). `mail settings {"labels": {account: {"groups": true}}}`.
+- Suggested rules, per account and off until turned on: patterns found with no model in what Redde
+  already keeps (the same sender archived, deleted or labelled 3 times this month, newsletters left
+  unread over two weeks, receipts or PDFs from one sender, people replied to again and again), each
+  a proposed rule with a line of why, at most daily and five open. Kept apart from the rules and
+  never run: nothing is labelled, archived or told about until the person accepts one (as it is or
+  changed). A dismissed pattern isn't suggested again. New suggestions can come as one Morning Ideas
+  card a week. `mail suggest list|refresh|accept|dismiss <account> [id] [json]`.
+- A reminder card is a reminder set (also in 1.14.6). The reminder note says how (a
+  `cronjob_manage` job named "[redde-notify] <what>" at the person's time, repeat 1; an alarm or a
+  timer is `phone_alarms_set`; changing is `update` of that job, cancelling `remove`; a time already
+  past today is asked about), and `redde_show` refuses a 'reminder' card in a turn where no tool set,
+  changed, cancelled or listed one. The job's id goes onto the card (`job`).
+
+## 1.15.0 (2026-11-02)
+
+For Redde 2.4: goals, Coming Up and watch templates.
+
+- Goals: `redde_goal` (set, update, status, end). A plan's steps become Kanban cards in triage
+  (tenant `redde-goal-<id>`), waiting for the person's approval in Redde; a `[redde-goal:<id>]`
+  job checks in (Mondays at 9:00, or every other day when the goal is under two weeks away). Each
+  check-in is told its goal's steps and answers with a `PROGRESS: n/m | … | …` line, kept in
+  `redde-push/goals.json` and sent as a briefing with the goal's id (`o`) and progress (`q`).
+  A message that sounds like a goal gets a short note; no other turn does.
+- Skipping one run of a repeating job: the app marks its name ` [redde-skip:<when>]`, and the
+  plugin moves the job on to the run after (Hermes's `compute_next_run`) and takes the mark off,
+  every half minute, with or without a paired phone. `/redde-push skip <profile> <job> <when>`
+  does it at once over the Dashboard. The schedules' reader now runs with no phone paired too.
+- A watch whose run answers `NO EMAIL ACCESS` (Redde's email watch templates on a Hermes with no
+  email MCP) is a watch note with `w` "noemail", sent once: the watch is paused.
+- `/redde-push goals list`: every agent's goals for the app, as JSON; `/redde-push goals end
+  <profile> <goal>` ends one (its job deleted). A goal's check-in job is the truth: a goal whose
+  job is gone counts as ended, and its schedule is the job's.
+- Phone tools: Health. With Health turned on in Redde (Settings › Phone tools › Health), your agent
+  can read the Apple Health data you chose, read only: steps, heart rate, sleep nights, workouts and
+  21 more kinds, as totals or averages by day, week or month. New tool `phone_health_read`, offered
+  only while Health is on.
+
 ## 1.14.5 (2026-11-02)
 
 - A share asked about by its ticker or its company gets the stock note: "How is nvda today",

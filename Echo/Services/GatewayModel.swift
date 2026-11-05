@@ -189,7 +189,10 @@ final class GatewayModel {
 final class DemoGateway: GatewayAdministering {
     var servers = [MCPServer(name: "home-assistant", transport: "http", target: "http://homelab.local:8123/mcp", enabled: true),
                    MCPServer(name: "basic-memory", transport: "stdio", target: "uvx basic-memory mcp", enabled: true),
-                   MCPServer(name: "github", transport: "http", target: "https://api.githubcopilot.com/mcp/", enabled: false)]
+                   MCPServer(name: "github", transport: "http", target: "https://api.githubcopilot.com/mcp/", enabled: false),
+                   MCPServer(name: "notion", transport: "http", target: "https://mcp.notion.com/mcp", enabled: true),
+                   MCPServer(name: "google-calendar", transport: "stdio", target: "npx @cocal/google-calendar-mcp", enabled: true),
+                   MCPServer(name: "linear", transport: "http", target: "https://mcp.linear.app/sse", enabled: false)]
     var version = "0.21.5"
     private var polls = 0
 

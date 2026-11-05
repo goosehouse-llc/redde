@@ -139,8 +139,9 @@ struct SidePanel<Content: View, Panel: View>: View {
                     // To the screen's edges, under the status bar and the home indicator too, in the
                     // list's own colour (a plain list's, whatever the theme): the theme's page is a
                     // wallpaper's colour when one is picked, and showed above and below the list as
-                    // a band of it (2026-10-28).
-                    .background(Self.panelColor.ignoresSafeArea())
+                    // a band of it (2026-10-28). A theme with a page of its own (Paper, Paper White)
+                    // has its list on that page, so the band is that page too (2.4).
+                    .background((Settings.shared.theme.listPage ?? Self.panelColor).ignoresSafeArea())
                     .overlay(alignment: .trailing) { Rectangle().fill(.separator).frame(width: 0.5).ignoresSafeArea() }
                     .offset(x: shown - width)
                     .opacity(parked ? 0 : 1)

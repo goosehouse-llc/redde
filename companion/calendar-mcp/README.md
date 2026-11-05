@@ -44,6 +44,30 @@ The file is read on every call, so edits apply without a restart. The agenda rep
 events it left out, and `include_hidden: true` brings them back. `list_events` and
 `search_events` never hide anything.
 
+## Calendars the agent never sees
+
+Some calendars shouldn't reach the agent at all, such as a work calendar. List them under
+`never_show` in the same file, by title, id or account name; an account name covers every calendar
+and reminder list in that account:
+
+```json
+{ "never_show": ["Work", "me@work.example"] }
+```
+
+These calendars and lists are left out of every tool: `list_calendars`, the agenda, `list_events`,
+`search_events`, `get_event` (by id too), free time, the reminder tools, and `create_event` and
+`create_reminder`, which can't write to them, even as the Mac's default. `include_hidden` doesn't
+bring them back. Like `hide_calendars`, the file is read on every call.
+
+To let the agent see a calendar but never add to it, list it under `read_only` instead, matched the
+same way. `create_event` and `create_reminder` refuse it (even as the Mac's default),
+`complete_reminder` leaves its reminders alone, and `list_calendars` shows it with
+`allows_changes: false`. Nothing here can edit or delete an event in any calendar anyway.
+
+```json
+{ "read_only": ["Work", "me@work.example"] }
+```
+
 ## Safety
 
 - **Read-only by default.** `create_event` doesn't exist unless you opt in.

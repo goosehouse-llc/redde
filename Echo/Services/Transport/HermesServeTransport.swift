@@ -29,6 +29,8 @@ nonisolated struct HermesServeTransport: HermesTransport {
         /// Non-nil while a turn is being joined and its session's id isn't known yet: the events
         /// that arrive meanwhile.
         var early: [HermesServeClient.Event]?
+        /// The socket dropped during the turn: what came meanwhile wasn't heard (`settleGap`).
+        var gapped = false
         init(runtime: String, stored: String) { self.runtime = runtime; self.stored = stored }
     }
 
@@ -107,6 +109,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     // Stop ends this loop by cancellation, which `for await` reports as a plain
                     // end of stream; without this the turn reads as done and the agent runs on.
                     try Task.checkCancellation()
+                    await Self.settleGap(turn, client: client, continuation: continuation)
                     continuation.yield(.done)
                     continuation.finish()
                 } catch is CancellationError {
@@ -156,6 +159,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
         let p = event.payload
         switch event.type {
         case "connection.lost":
+            turn.gapped = true
             guard !turn.recovering else { return }
             turn.recovering = true
             continuation.yield(.status(String(localized: "connection lost, reconnecting…", comment: "Status under a reply")))
@@ -300,6 +304,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     break
                 }
                 try Task.checkCancellation()
+                await Self.settleGap(turn, client: client, continuation: continuation)
                 continuation.yield(.done)
                 continuation.finish()
             } catch is CancellationError {
@@ -339,6 +344,30 @@ nonisolated struct HermesServeTransport: HermesTransport {
                             multiSelect: p["multi_select"]?.bool ?? false)], isBatch: false)
     }
 
+    /// A turn whose socket dropped on the way: the reply as the host recorded it, when that has
+    /// more than was heard. 2026-11-05 on Marta a reply stopped mid-word ("…the ElevenLabs on") for
+    /// good: the host closes a client that falls behind, and the turn ended before the phone was
+    /// back. What was heard then was the line before a tool step and part of the answer after it,
+    /// and the host keeps those as two messages, so the old fill-in (the last one, if it began with
+    /// all that was heard) never matched. The turn's messages since its question make the reply.
+    @MainActor
+    static func settleGap(_ turn: TurnState, client: HermesServeClient,
+                          continuation: AsyncThrowingStream<TurnEvent, Error>.Continuation) async {
+        guard turn.gapped, let rows = try? await client.history(stored: turn.stored) else { return }
+        guard let text = recordedReply(Conversation.messages(fromServeRows: rows)), text.count > turn.streamed.count else { return }
+        turn.streamed = text
+        continuation.yield(.textFinal(text))
+    }
+
+    /// The last turn's reply in a transcript: its answers since the last question, in one.
+    nonisolated static func recordedReply(_ messages: [Message]) -> String? {
+        guard messages.last?.role == .assistant else { return nil }
+        let start = (messages.lastIndex { $0.role == .user && !$0.isAside }).map { $0 + 1 } ?? 0
+        let said = messages[start...].filter { $0.role == .assistant && !$0.isAside }
+            .map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        return said.isEmpty ? nil : said.joined(separator: "\n\n")
+    }
+
     /// After a drop: wait for the socket, re-attach, then continue or backfill.
     @MainActor
     private static func recover(_ turn: TurnState, client: HermesServeClient,
@@ -360,13 +389,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                 turn.underWay = true
                 return // still generating; events now arrive under the new runtime id
             }
-            // The turn finished while we were away: fill in whatever we missed.
-            if let last = info["messages"]?.array?.last(where: { $0["role"]?.string == "assistant" }),
-               let text = last["text"]?.string ?? last["content"]?.string, text.count > turn.streamed.count,
-               text.hasPrefix(turn.streamed) {
-                continuation.yield(.textDelta(String(text.dropFirst(turn.streamed.count))))
-                turn.streamed = text
-            }
+            // The turn finished while we were away: what was missed is filled in as it ends (`settleGap`).
             finished.yield(.success(()))
         } catch {
             finished.yield(.failure(error))

@@ -40,10 +40,16 @@ final class ReminderService {
         }
     }
 
+    /// Every reminder list the agent may see (settings.json's never_show applies here too). Call on `queue`.
+    private func shownLists() -> [EKCalendar] {
+        let never = ServerSettings.neverShow
+        return store.calendars(for: .reminder).filter { CalendarService.isShown($0, never: never) }
+    }
+
     func lists() throws -> [[String: Any]] {
         try requireAccess()
         return queue.sync {
-            store.calendars(for: .reminder).map { list in
+            shownLists().map { list in
                 [
                     "id": list.calendarIdentifier,
                     "title": list.title,
@@ -56,7 +62,7 @@ final class ReminderService {
 
     private func resolveLists(_ ids: [String]?) throws -> [EKCalendar]? {
         guard let ids, !ids.isEmpty else { return nil }
-        let chosen = store.calendars(for: .reminder).filter { ids.contains($0.calendarIdentifier) || ids.contains($0.title) }
+        let chosen = shownLists().filter { ids.contains($0.calendarIdentifier) || ids.contains($0.title) }
         guard !chosen.isEmpty else { throw ToolError("None of those reminder lists exist. list_reminders with no filter shows every list's name.") }
         return chosen
     }
@@ -77,14 +83,16 @@ final class ReminderService {
 
     func incomplete(listIDs: [String]?) throws -> [EKReminder] {
         try requireAccess()
-        let lists = try queue.sync { try resolveLists(listIDs) }
+        let lists = try queue.sync { try resolveLists(listIDs) ?? shownLists() }
+        guard !lists.isEmpty else { return [] }
         let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: lists)
         return fetch(predicate)
     }
 
     func completedRecently(days: Int, listIDs: [String]?) throws -> [EKReminder] {
         try requireAccess()
-        let lists = try queue.sync { try resolveLists(listIDs) }
+        let lists = try queue.sync { try resolveLists(listIDs) ?? shownLists() }
+        guard !lists.isEmpty else { return [] }
         let start = Date().addingTimeInterval(-Double(days) * 86400)
         let predicate = store.predicateForCompletedReminders(withCompletionDateStarting: start, ending: Date(), calendars: lists)
         return fetch(predicate)
@@ -109,12 +117,16 @@ final class ReminderService {
             reminder.title = title
             reminder.notes = notes
             if let listID {
-                guard let list = store.calendars(for: .reminder).first(where: { $0.calendarIdentifier == listID || $0.title == listID }) else {
+                guard let list = shownLists().first(where: { $0.calendarIdentifier == listID || $0.title == listID }) else {
                     throw ToolError("No reminder list named \(listID).")
                 }
+                guard CalendarService.isWritable(list) else { throw ToolError("\(list.title) is read-only: nothing can be added to it here.") }
                 reminder.calendar = list
             } else {
-                reminder.calendar = store.defaultCalendarForNewReminders()
+                guard let list = store.defaultCalendarForNewReminders(), CalendarService.isShown(list), CalendarService.isWritable(list) else {
+                    throw ToolError("The default reminder list isn't one you can use. Pass list; list_reminders shows the lists.")
+                }
+                reminder.calendar = list
             }
             if let due {
                 var units: Set<Calendar.Component> = [.year, .month, .day]
@@ -141,6 +153,9 @@ final class ReminderService {
             throw ToolError("Pass an id or a title.")
         }
         guard let reminder = match else { throw ToolError("No open reminder matches that. list_reminders shows what's open.") }
+        if let list = reminder.calendar, !CalendarService.isWritable(list) {
+            throw ToolError("\(list.title) is read-only: its reminders can't be changed here.")
+        }
         return try queue.sync {
             reminder.isCompleted = true
             try store.save(reminder, commit: true)

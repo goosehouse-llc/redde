@@ -210,13 +210,20 @@ nonisolated enum LeaveBy {
     /// alert is not set (its time is kept, so it never goes off later as well); otherwise the
     /// heads-up's goes. A leaving time already gone by goes off at once if it is less than
     /// `lateBy` gone and the event hasn't started; one further gone is let go.
-    static func plan(events: [Event], worked: [String: Worked], headsUps: [LeaveTime.Reminder], pending: Set<String>, now: Date) -> Plan {
+    /// `skipped`: alerts skipped from Coming Up (`LeaveTime.skipped`): none is set (one pending is
+    /// taken away) and nothing is said to have gone off, so taking the skip back sets it again.
+    static func plan(events: [Event], worked: [String: Worked], headsUps: [LeaveTime.Reminder], pending: Set<String>,
+                     skipped: Set<String> = [], now: Date) -> Plan {
         var plan = Plan()
         for event in events {
             guard var kept = worked[event.alertID] else { continue }
             kept.title = event.title
             defer { plan.worked[event.alertID] = kept }
             if kept.done(at: now) { continue }
+            if skipped.contains(event.alertID) {
+                kept.alertAt = nil
+                continue
+            }
             let mine = LeaveTime.Reminder(id: event.alertID, title: event.title, start: event.start, fireAt: kept.leave, worked: kept.at)
             if let theirs = headsUps.first(where: { LeaveTime.sameEvent($0, mine) }) {
                 if (theirs.worked, theirs.id) > (kept.at, mine.id) {

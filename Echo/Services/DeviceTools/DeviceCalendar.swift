@@ -88,6 +88,8 @@ nonisolated enum DeviceCalendar {
                                   : "None of the calendars chosen in Redde's Settings → Agent → Calendars can be added to on this iPhone.")
         }
         do { try store.save(event, span: .thisEvent) } catch { throw DeviceToolError("The event couldn't be saved: \(error.localizedDescription)") }
+        // Planned shows what the agent added.
+        PhoneMade.note(.init(kind: .event, id: event.eventIdentifier ?? "", title: title, at: start, added: .now))
         return .object(["added": describe(event)])
     }
 
@@ -165,6 +167,8 @@ nonisolated enum DeviceCalendar {
             if !dayOnly { reminder.addAlarm(EKAlarm(absoluteDate: due)) }
         }
         do { try store.save(reminder, commit: true) } catch { throw DeviceToolError("The reminder couldn't be saved: \(error.localizedDescription)") }
+        PhoneMade.note(.init(kind: .reminder, id: reminder.calendarItemIdentifier, title: title,
+                             at: reminder.dueDateComponents.flatMap { Calendar.current.date(from: $0) }, added: .now))
         return .object(["added": describe(reminder)])
     }
 

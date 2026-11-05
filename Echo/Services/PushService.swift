@@ -384,12 +384,13 @@ final class PushService {
     /// pairing counts at once (`accepted`). Whether its notes reach this phone is still worth
     /// seeing (`waitUntilConfirmed`).
     @discardableResult
-    func pairDirectly(through plugin: PluginCommand = PushService.command(over: .shared)) async throws -> PushPairing {
+    func pairDirectly(through plugin: PluginCommand = PushService.command(over: .shared),
+                      server: String? = Settings.shared.activeServerID.uuidString) async throws -> PushPairing {
         guard await allowed() else { throw PushError.notAllowed }
         let words = try await plugin("offer").split(separator: " ").map(String.init)
         guard words.count == 4, words[0] == "redde-push", words[1] == "offer",
               let offered = PushSeal.data(base64URL: words[2]), offered.count == 32 else { throw PushError.oldPlugin }
-        return try await pair(offered: offered, relayAsked: Settings.normalizedBase(words[3])?.absoluteString ?? words[3]) { answer, _, _, _ in
+        return try await pair(offered: offered, relayAsked: Settings.normalizedBase(words[3])?.absoluteString ?? words[3], server: server) { answer, _, _, _ in
             let reply = try await plugin("accept \(words[2]) \(answer.pub) \(answer.box)")
             guard reply.hasPrefix("redde-push paired") else {
                 throw PushError.refused(reply.hasPrefix("redde-push refused: ") ? String(reply.dropFirst("redde-push refused: ".count)) : String(localized: "an unexpected reply", comment: "Completes \"Your Hermes didn't take the pairing: …\""))
@@ -401,7 +402,7 @@ final class PushService {
     /// What both ways of pairing share: this phone registers at the relay under a fresh secret
     /// and makes its answer; `deliver` gets the answer to the plugin, and returns the machine's
     /// name when the plugin has confirmed in so many words.
-    private func pair(offered: Data, relayAsked: String?,
+    private func pair(offered: Data, relayAsked: String?, server: String? = nil,
                       deliver: (_ answer: (pub: String, box: String), _ relay: PushRelay, _ id: String, _ sendKey: String) async throws -> String?) async throws -> PushPairing {
         if let relayAsked, relayAsked != relayURL {
             throw PushError.otherRelay(URL(string: relayAsked)?.host() ?? relayAsked)
@@ -418,6 +419,7 @@ final class PushService {
             let answer = try PushSeal.answer(to: offered, deviceID: id, sendKey: sendKey, name: AppState.deviceName, kind: Self.kind)
             let host = try await deliver((answer.pub, answer.box), relay, id, sendKey)
             pairing = PushPairing(id: id, sendKey: sendKey, key: answer.noteKey, relay: relayURL)
+            pairing.server = server
             if let host {
                 pairing.host = host
                 pairing.accepted = true
@@ -427,15 +429,28 @@ final class PushService {
             throw (error as? PushError) ?? PushError.relay(String(localized: "that isn't a pairing code Redde can use", comment: "Completes \"The notification relay refused: …\""))
         }
         // Pairing again with the same Hermes makes a new registration; a leftover from an
-        // attempt that never finished goes.
-        let stale = pairings.filter { !$0.isPaired }
-        guard vault.save(pairings.filter(\.isPaired) + [pairing]) else {
+        // attempt that never finished goes, and so does the pairing it replaces.
+        let replaced = Self.replaced(by: pairing, in: pairings)
+        let stale = pairings.filter { !$0.isPaired } + replaced
+        guard vault.save(pairings.filter { $0.isPaired && !replaced.contains($0) } + [pairing]) else {
             try? await relay.remove(id: id, sendKey: sendKey)
             throw PushError.relay(String(localized: "the pairing couldn't be saved on this device", comment: "Completes \"The notification relay refused: …\""))
         }
         reload()
         for old in stale { try? await PushRelay(base: URL(string: old.relay) ?? base, session: session).remove(id: old.id, sendKey: old.sendKey) }
         return pairing
+    }
+
+    /// The pairings a new one replaces: those made over the same server, and one from before
+    /// servers were noted that names the same machine. 2026-11-04: an iPhone paired with the same
+    /// Hermes on Oct 7 and Nov 2 got every note twice. The plugin forgets an old one when the
+    /// relay turns its next note away. A pairing from a code says no server and replaces nothing.
+    nonisolated static func replaced(by new: PushPairing, in kept: [PushPairing]) -> [PushPairing] {
+        guard new.isPaired, let server = new.server else { return [] }
+        return kept.filter { old in
+            old.id != new.id && old.isPaired && old.relay == new.relay
+                && (old.server == server || (old.server == nil && !old.host.isEmpty && old.host == new.host))
+        }
     }
 
     /// Waits for the plugin's first note to arrive and open, which the notification extension

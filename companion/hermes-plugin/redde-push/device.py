@@ -1,8 +1,9 @@
 """Phone tools: things on the person's iPhone that the agent can ask the Redde app to do, because
 iOS lets an app do them with its owner's permission. The calendar, reminders, contacts, the photo
-library, one folder of files, alarms, a widget of Redde's that the agent writes on, and starting
-a call or a message for the person to send. Nothing here reaches into other apps: iOS allows no
-app that.
+library, one folder of files, alarms, a widget of Redde's that the agent writes on, starting a
+call or a message for the person to send, reading the Apple Health data they chose to share
+(read only, each kind shared on its own), and Apple Home (HomeKit) on the phone. Nothing here reaches into other apps: iOS allows no app
+that.
 
 How a call travels. The agent calls a tool here; the call is written down as a small file in the
 Hermes home and the tool waits. The Redde app, which is following the turn, sees the tool start,
@@ -29,14 +30,30 @@ import re
 import threading
 import time
 import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 TOOLSET = "redde_phone"
 #: How long a call waits for the phone, in seconds: a person may have to say yes on it.
 WAIT = 120.0
+#: A scheduled job's run: cron_<job id>_<date>_<time>. Phone tools answer at once there.
+SCHEDULED_RUN = re.compile(r"^cron_[A-Za-z0-9]+_\d{8}_\d{6}")
+NO_PHONE_IN_A_JOB = ("The iPhone can't be reached from a scheduled job: Redde answers phone tools only while it's open in a "
+                     "chat. Go on without it, and don't call phone tools again in this run.")
 #: A request nobody collected, or a saved file nobody needs any more, is cleared out after this.
 STALE = 600.0
-AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget", "people")
+#: The tools a copy sent ahead can answer (Send Ahead for Scheduled Jobs, 2026-11-04), and how
+#: old a copy may be before it is no use: the app sends a fresh one each time it is opened.
+AHEAD_TOOLS = {"phone_calendar_events": "calendar", "phone_reminders_list": "reminders"}
+AHEAD_KEEP = 8 * 86400.0
+AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget", "people", "health", "home")
+#: The kinds of Apple Health data `phone_health_read` knows (the app's `HealthKind`); the person
+#: shares each on its own, and phone_info says which.
+HEALTH_TYPES = ("steps", "walking_running_distance", "active_energy", "exercise_minutes", "stand_hours", "flights_climbed",
+                "weight", "bmi", "body_fat", "heart_rate", "resting_heart_rate", "heart_rate_variability", "blood_pressure",
+                "vo2_max", "sleep", "respiratory_rate", "blood_oxygen", "body_temperature", "water", "caffeine",
+                "dietary_energy", "protein", "mindful_minutes", "workouts", "menstrual_flow")
 #: How long a call for the widget waits for a phone that is following the turn, before what was
 #: written is sent to the phone as a notification instead.
 WIDGET_WAIT = 10.0
@@ -174,7 +191,34 @@ TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
         "text": _text("The message, as it should be sent."),
         "label": _text("Which of the contact's numbers, like mobile or work, or its last four digits when two share a label."),
     }, ["to", "text"]),
-    "phone_widget_clear": ("widget", "Runs on the user's iPhone, through the Redde app: takes everything off Redde's \"From Your "
+    "phone_health_read": ("health", _WHERE + "Reads the user's Apple Health data, read only, and only the types they share "
+                          "(phone_info lists them as health_shared). Gives numbers with units: by day, week or month, or a "
+                          "total; sleep as nights, workouts as a list. " + _WHEN, {
+        "type": {"type": "string", "enum": list(HEALTH_TYPES), "description": "What to read."},
+        "start": _text("From when. Default: 7 days ago (14 for workouts)."), "end": _text("Until when. Default: now."),
+        "stat": {"type": "string", "enum": ["sum", "average", "min", "max", "latest"],
+                 "description": "Default: sum for amounts (steps), average for measurements (weight)."},
+        "by": {"type": "string", "enum": ["day", "week", "month", "total"], "description": "Default: day."},
+    }, ["type"]),
+    "phone_home_list": ("home", _WHERE + "The user's Apple Home (HomeKit) accessories: name, room, kind, state, "
+                        "brightness, temperature and target (in unit), and scenes. To show them, pass the rows as a 'home' "
+                        "card's devices as they are, entity included: its controls then work on the phone directly.", {
+        "room": _text("Only this room."), "query": _text("Only accessories matching these words, like 'office light'."),
+    }, []),
+    "phone_home_set": ("home", _WHERE + "Changes an Apple Home accessory. Locks, garage doors, doors, windows and the security "
+                       "system always ask the user first; the rest may not. Give only what changes.", {
+        "target": _text("The accessory, by name with its room if needed ('office light'), or its entity."),
+        "all": {"type": "boolean", "description": "Every match, like all the kitchen lights."},
+        "on": {"type": "boolean"}, "brightness": _count("0-100."), "color_temperature": _count("Kelvin, 2000-6500."),
+        "color": _text("A colour as #RRGGBB."), "target_temperature": {"type": "number", "description": "In the unit phone_home_list gives."},
+        "mode": {"type": "string", "enum": ["heat", "cool", "auto", "off"]}, "fan_speed": _count("0-100."),
+        "position": _count("Blinds, windows, doors: 0 closed to 100 open."),
+        "lock": {"type": "string", "enum": ["lock", "unlock"]}, "door": {"type": "string", "enum": ["open", "close"]},
+        "security": {"type": "string", "enum": ["home", "away", "night", "off"]},
+    }, ["target"]),
+    "phone_home_scene": ("home", _WHERE + "Runs an Apple Home scene by name. One that unlocks or opens something asks the "
+                         "user first.", {"scene": _text("The scene's name.")}, ["scene"]),
+    "phone_widget_clear": ("widget","Runs on the user's iPhone, through the Redde app: takes everything off Redde's \"From Your "
                            "Agent\" widget, what was set for later included. Works with Redde closed too, as phone_widget_set "
                            "does.", {}, []),
 }
@@ -228,7 +272,76 @@ class Phone:
     def set_areas(self, areas: list[str]) -> list[str]:
         self._folder("requests")
         self._write(self.dir / "areas.json", {"areas": [a for a in AREAS if a in areas], "at": time.time()})
+        # What was sent ahead of an area turned off goes with it.
+        copy = self._read(self.dir / "ahead.json")
+        if isinstance(copy, dict) and any(area in copy and area not in areas for area in AHEAD_TOOLS.values()):
+            kept = {key: value for key, value in copy.items() if key not in AHEAD_TOOLS.values() or key in areas}
+            if any(area in kept for area in AHEAD_TOOLS.values()):
+                self._write(self.dir / "ahead.json", kept)
+            else:
+                self.drop_ahead()
         return self.areas()
+
+    # ---- the copy sent ahead, for scheduled jobs
+
+    def keep_ahead(self, copy: dict) -> list[str]:
+        """Keeps the calendar and reminders the phone sent ahead, in place of what it sent before,
+        and says which it kept. Only what is in an area that is on is kept."""
+        on = self.areas()
+        kept = {area: copy[area] for area in AHEAD_TOOLS.values() if area in on and isinstance(copy.get(area), list)}
+        if not kept:
+            self.drop_ahead()
+            return []
+        for key in ("from", "until", "time_zone", "made"):
+            if isinstance(copy.get(key), str):
+                kept[key] = copy[key][:64]
+        kept["at"] = time.time()
+        self._folder("requests")
+        self._write(self.dir / "ahead.json", kept)
+        return [area for area in AHEAD_TOOLS.values() if area in kept]
+
+    def drop_ahead(self) -> None:
+        try:
+            (self.dir / "ahead.json").unlink()
+        except OSError:
+            pass
+
+    def from_ahead(self, tool: str, args: dict, now: float | None = None) -> str | None:
+        """The answer to a calendar or reminders call out of the copy sent ahead, or None when
+        there is none to use: no copy, an area turned off, or a copy too old."""
+        area = AHEAD_TOOLS.get(tool)
+        copy = self._read(self.dir / "ahead.json")
+        now = time.time() if now is None else now
+        if not area or not isinstance(copy, dict) or not isinstance(copy.get(area), list) or not self.offers(area):
+            return None
+        if now - float(copy.get("at") or 0) > AHEAD_KEEP:
+            return None
+        copied = str(copy.get("made") or "")
+        note = (f"A copy Redde sent ahead from the iPhone at {copied or 'its last opening'}, because Redde can't be asked "
+                "from a scheduled job; what changed on the phone since isn't in it.")
+        limit = _limit(args)
+        if area == "reminders":
+            wanted = str(args.get("list") or "").strip().lower()
+            found = [r for r in copy[area] if isinstance(r, dict) and (not wanted or str(r.get("list") or "").lower() == wanted)]
+            return json.dumps({"reminders": found[:limit], "more": max(0, len(found) - limit), "note": note})
+        zone = _zone(copy.get("time_zone"))
+        start = _moment(args.get("start"), zone) or datetime.fromtimestamp(now, zone)
+        end = _moment(args.get("end"), zone, day_end=True) or start + timedelta(days=7)
+        query = str(args.get("query") or "").strip().lower()
+        found = []
+        for event in copy[area]:
+            if not isinstance(event, dict):
+                continue
+            begins, ends = _moment(event.get("start"), zone), _moment(event.get("end"), zone)
+            if begins is None or begins >= end or (ends or begins) < start:
+                continue
+            if query and not any(query in str(event.get(key) or "").lower() for key in ("title", "location", "notes")):
+                continue
+            found.append(event)
+        until = _moment(copy.get("until"), zone)
+        if until is not None and end > until:
+            note += f" It reaches only to {copy.get('until')}."
+        return json.dumps({"events": found[:limit], "more": max(0, len(found) - limit), "note": note})
 
     def offers(self, area: str | None) -> bool:
         on = self.areas()
@@ -242,6 +355,18 @@ class Phone:
         area = TOOLS[tool][0]
         if not self.offers(area):
             return json.dumps({"error": "Phone tools for this are turned off in Redde on the iPhone (Settings, Phone tools)."})
+        if SCHEDULED_RUN.match(session or ""):
+            # No phone follows a scheduled job's run, so nothing would ever collect the request
+            # (2026-11-04: Morning Ideas waited two minutes a call and tried again and again).
+            copied = self.from_ahead(tool, args or {})
+            if copied is not None:
+                return copied
+            if otherwise is not None:
+                return otherwise()
+            if tool in AHEAD_TOOLS:
+                return json.dumps({"error": NO_PHONE_IN_A_JOB + " (With Send Ahead for Scheduled Jobs on in Redde's Settings, "
+                                            "Phone Tools, the phone leaves a copy of its calendar and reminders here for jobs.)"})
+            return json.dumps({"error": NO_PHONE_IN_A_JOB})
         request = uuid.uuid4().hex[:16]
         asked = self._folder("requests") / f"{request}.json"
         answered = self._folder("answers") / f"{request}.json"
@@ -258,6 +383,9 @@ class Phone:
                 time.sleep(0.15)
             if otherwise is not None:
                 return otherwise()
+            copied = self.from_ahead(tool, args or {})
+            if copied is not None:
+                return copied
             return json.dumps({"error": "The phone didn't answer. Phone tools work while Redde is open on the iPhone and following "
                                         "this conversation, and some need the user to tap Allow there. Say so, and try again when they are ready."})
         finally:
@@ -328,6 +456,17 @@ def slash(phone: Phone, words: list[str]) -> str:
     if words[:1] == ["areas"] and len(words) == 2:
         on = phone.set_areas([] if words[1] == "none" else words[1].split(","))
         return "redde-push device areas " + (",".join(on) or "none")
+    if words == ["ahead", "off"]:
+        phone.drop_ahead()
+        return "redde-push device ahead off"
+    if words[:1] == ["ahead"] and len(words) == 2:
+        try:
+            copy = json.loads(base64.b64decode(words[1], validate=True))
+        except ValueError:
+            return "redde-push device refused: that copy can't be read"
+        if not isinstance(copy, dict):
+            return "redde-push device refused: that copy can't be read"
+        return "redde-push device ahead " + (",".join(phone.keep_ahead(copy)) or "none")
     if words == ["status"]:
         return "redde-push device status " + (",".join(phone.areas()) or "none")
     if words == ["next"]:
@@ -382,6 +521,37 @@ def _watch(path_of, every: float = 2.0) -> None:
                 pass
         seen, first = stamp, False
         time.sleep(every)
+
+
+def _limit(args: dict) -> int:
+    try:
+        return max(1, min(200, int(args.get("limit") or 50)))
+    except (TypeError, ValueError):
+        return 50
+
+
+def _zone(name):
+    try:
+        return ZoneInfo(str(name)) if name else timezone.utc
+    except (ValueError, ZoneInfoNotFoundError):
+        return timezone.utc
+
+
+def _moment(text, zone, day_end: bool = False):
+    """A date as the phone writes it, or the agent: with an offset, or in the phone's own zone.
+    A day alone is its first moment, or with `day_end` the first moment of the next."""
+    text = str(text or "").strip()
+    if not text:
+        return None
+    try:
+        moment = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=zone)
+    if day_end and re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        moment += timedelta(days=1)
+    return moment
 
 
 def _readable(when: str) -> bool:

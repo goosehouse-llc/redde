@@ -156,10 +156,12 @@ extension UIResponder {
 #endif
 
 /// A ring that fills as the conversation fills the model's context window, with the share
-/// beside it; tapped, it says how many tokens that is.
+/// beside it; tapped, it says how many tokens that is, or opens the chat's Session Details when
+/// given `open` (the chat's header).
 struct ContextRing: View {
     let used: Int
     let window: Int
+    var open: (() -> Void)? = nil
     @State private var showDetail = false
     @Environment(\.theme) private var theme
 
@@ -168,7 +170,7 @@ struct ContextRing: View {
     private var tint: Color { share >= 0.9 ? .red : share >= 0.75 ? .orange : theme.accent }
 
     var body: some View {
-        Button { showDetail = true } label: {
+        Button { if let open { open() } else { showDetail = true } } label: {
             HStack(spacing: 4) {
                 ZStack {
                     Circle().stroke(Color.secondary.opacity(0.25), lineWidth: 2)
@@ -184,7 +186,7 @@ struct ContextRing: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Context")
         .accessibilityValue(Self.sentence(used: used, window: window))
-        .accessibilityHint("Shows how much of the model's context this conversation uses")
+        .accessibilityHint(open == nil ? Text("Shows how much of the model's context this conversation uses") : Text("Opens the session's details"))
         .popover(isPresented: $showDetail) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Context").font(.headline)

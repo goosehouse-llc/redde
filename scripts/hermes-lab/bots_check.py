@@ -20,6 +20,8 @@ Run against a lab that is up with the approval scenario.
 import asyncio
 import json
 import time
+from pathlib import Path
+import os
 
 import check
 from check import HITS, Dashboard, report
@@ -61,6 +63,52 @@ async def lookup(dash, profile):
     return next((r for r in rows if r.get("title") == "Bot Chat"), None)
 
 
+async def comes_back(dash):
+    """Start Fresh took a second tap every time (2026-11-04, "Couldn't start fresh" after 10 s): the
+    bot's chat had ended the way Redde's do (superseded by a resume, or reaped when the app's socket
+    went), which Hermes counts as an accident, so `profiles.list` un-archives it at once
+    (`_resurrect_recoverable_canonical`). Shown here, and the way round it: the new chat made in the
+    same breath, before any roster read, takes the title, and the old one stays aside."""
+    import sqlite3
+    db = Path(os.environ["HERMES_HOME"]) / "profiles" / BOT / "state.db"
+
+    async def chat_ended_as_reddes():
+        made = await dash.call("session.create", {"profile": BOT, "title": "Bot Chat", "hidden": True, "follow_profile_config": True,
+                                                  "source": "desktop", "close_on_disconnect": False})
+        await dash.call("session.title", {"session_id": made.get("session_id"), "title": "Bot Chat"})
+        await turn(dash, made.get("session_id"), "hello again")
+        stored = made.get("stored_session_id") or made.get("session_id")
+        with sqlite3.connect(db) as conn:
+            conn.execute("UPDATE sessions SET end_reason = 'superseded_by_resume', ended_at = ? WHERE id = ?", (time.time(), stored))
+        return stored
+
+    async def named():
+        roster = (await dash.call("profiles.list", {})).get("profiles") or []
+        chat = next((p for p in roster if p.get("name") == BOT), {}).get("canonical_session") or {}
+        return chat.get("id")
+
+    # Whatever is the bot's chat now goes first, for a clean start.
+    if (current := await lookup(dash, BOT)) is not None:
+        await dash.call("session.archive", {"session_id": current["id"], "profile": BOT, "archived": True})
+    old = await chat_ended_as_reddes()
+    await dash.call("session.archive", {"session_id": old, "profile": BOT, "archived": True})
+    print(f"  info  archived, then the roster read: it names {'the archived chat again' if await named() == old else 'no old chat'}")
+    found = await lookup(dash, BOT)
+    print(f"  info  and the title lookup finds {'the archived chat, un-archived' if found and found.get('id') == old else repr(found)}")
+
+    old = await chat_ended_as_reddes() if found is None or found.get("id") != old else old
+    await dash.call("session.archive", {"session_id": old, "profile": BOT, "archived": True})
+    made = await dash.call("session.create", {"profile": BOT, "title": "Bot Chat", "hidden": True, "follow_profile_config": True,
+                                              "source": "desktop", "close_on_disconnect": False})
+    titled = await dash.call("session.title", {"session_id": made.get("session_id"), "title": "Bot Chat"})
+    new = made.get("stored_session_id") or made.get("session_id")
+    now = await named()
+    found = await lookup(dash, BOT)
+    report(now == new and found is not None and found.get("id") == new,
+           "Start Fresh with the new chat made at once: the roster and the lookup name the new one, the old stays aside",
+           f"roster {now!r}, lookup {(found or {}).get('id')!r}, new {new!r}, old {old!r}, title {json.dumps(titled)[:80]}")
+
+
 async def earlier_chats(dash, opener, old):
     """A bot's earlier chats (Redde's Earlier Chats, 2026-10-29): Start Fresh archives the chat
     (`session.archive`), the new one takes the title "Bot Chat" (Hermes clears it off the archived
@@ -72,6 +120,14 @@ async def earlier_chats(dash, opener, old):
     except Exception as error:
         print(f"  info  earlier chats: no session.archive here ({str(error)[:80]}), skipped")
         return
+    # What Redde reads right after (2026-11-04: Start Fresh took two taps): does the roster still
+    # name the chat just archived? Said, not judged.
+    for wait in (0, 1, 3):
+        await asyncio.sleep(wait)
+        roster = (await dash.call("profiles.list", {})).get("profiles") or []
+        named = (next((p for p in roster if p.get("name") == BOT), {}).get("canonical_session") or {})
+        named = named.get("resolved_id") or named.get("id")
+        print(f"  info  {wait}s after the archive, the roster names {'the archived chat' if named == old else repr(named)}")
     made = await dash.call("session.create", {"profile": BOT, "title": "Bot Chat", "hidden": True, "follow_profile_config": True,
                                               "source": "desktop", "close_on_disconnect": False})
     await dash.call("session.title", {"session_id": made.get("session_id"), "title": "Bot Chat"})
@@ -184,6 +240,7 @@ async def main():
            "an ordinary conversation on the same profile has neither", json.dumps(first))
 
     await earlier_chats(fresh, opener, stored)
+    await comes_back(fresh)
 
     # Leave the lab as it was found: the next check starts with no bots.
     await fresh.call("profiles.configure", {"name": "default", "ui_meta": {"hermes-bots": None}})

@@ -72,9 +72,11 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>Redde uses Face ID to unlock the app, which holds your Hermes credentials.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>With Health-Aware Days turned on, Redde reads last night's sleep, your steps and your workouts so your agent's morning ideas and evening wrap-up take your day into account. Only a one-line summary goes to your own server.</string>
+	<string>Redde reads only the Health data you turn on. With Health-Aware Days, last night's sleep, your steps and your workouts shape your agent's morning ideas and evening wrap-up. With Phone Tools › Health, your agent can read the kinds you choose when it asks. It goes only to your own server.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Redde doesn't save anything to Health. With Health-Aware Days turned on, it only reads your sleep, steps and workouts.</string>
+	<string>Redde doesn't save anything to Health. It only reads the Health data you turn on, for Health-Aware Days and Phone Tools.</string>
+	<key>NSHomeKitUsageDescription</key>
+	<string>With Phone Tools › Apple Home on, your agent can see your accessories and scenes and control them when you ask. Locks, garage doors, doors, windows and the alarm always ask you first. What it reads goes only to your own server.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Redde connects to the Hermes gateway or model server you configure, which is often on your local network.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

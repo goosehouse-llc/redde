@@ -822,6 +822,24 @@ struct BotsTests {
         #expect(RoutineNote.jobPrompt(name: "Morning Report", skill: "morning-report").contains(#"skill "morning-report""#))
     }
 
+    /// From a reply's ⋯ menu (asked 2026-11-04): the routine is that reply's request, named from it.
+    @Test func aRoutineFromAReplyIsThatRequest() async throws {
+        let note = RoutineNote.note(name: "Weather", skill: "weather", when: nil, asked: "What's the weather for my run?")
+        #expect(note.contains(#"what you did to answer their request "What's the weather for my run?""#))
+        #expect(RoutineNote.note(name: "W", skill: "w", when: nil).contains("what you did in this conversation"))
+        #expect(RoutineSheet.name(from: "Check the three news sites and sum them up for me please, short") == "Check the three news sites and sum them")
+        #expect(RoutineSheet.name(from: "Weather?\nAnd more") == "Weather?")
+        let settings = Settings(defaults: UserDefaults(suiteName: "routine-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "routine-\(UUID().uuidString)"))
+        let transport = RecordingTransport()
+        let conversation = Conversation(settings: settings, store: store, transportOverride: transport)
+        conversation.reset()
+        _ = try await ask(conversation, transport, "Check the three news sites.")
+        let reply = try #require(conversation.messages.last { $0.role == .assistant })
+        #expect(conversation.asked(before: reply.id) == "Check the three news sites.")
+    }
+
     @Test func asidesNotYetToldSurviveAReloadFromTheHost() {
         var asked = Message(role: .user, text: "@scout hi", createdAt: Date(timeIntervalSince1970: 100))
         asked.delivered = Delivered(kind: .asked, profile: "scout", name: "Scout")

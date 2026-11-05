@@ -75,6 +75,18 @@ struct MoreCardsTests {
         #expect(ReplyCards.parse(try JSONValue.parse(Data(#"{"type": "reminder", "at": "2026-11-02T09:00:00-05:00"}"#.utf8))).isEmpty, "no title: no card")
     }
 
+    /// 2026-11-03: Sol drew reminder cards with nothing set; a card names its job (plugin 1.14.6's `job`)
+    /// or it says it's only a card and offers Set It.
+    @Test func aReminderWithNothingBehindItSaysSo() throws {
+        guard case let .reminder(bare) = try card(#"{"type": "reminder", "kind": "reminder", "title": "Call dentist", "at": "2026-11-03T15:30:00-05:00"}"#),
+              case let .reminder(backed) = try card(#"{"type": "reminder", "title": "Call dentist", "at": "2026-11-03T15:30:00-05:00", "job": "a1b2c3d4"}"#)
+        else { Issue.record("not reminders"); return }
+        #expect(!bare.isSet && backed.isSet && backed.id == "a1b2c3d4")
+        let asked = ReminderCard.setForReal(bare, now: ISO8601DateFormatter().date(from: "2026-11-03T17:00:00Z")!)
+        #expect(asked.shown.hasPrefix("Set the reminder “Call dentist” for ") && asked.shown.hasSuffix(" for real."), "\(asked.shown)")
+        #expect(asked.said.contains("[redde-notify] Call dentist") && asked.said.contains("nothing was set"))
+    }
+
     @Test func aReminderIsSaidAndAnsweredInWords() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/New_York")!

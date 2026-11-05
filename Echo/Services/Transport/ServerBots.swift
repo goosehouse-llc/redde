@@ -294,7 +294,7 @@ extension HermesServeClient {
     /// Returns the chat put aside, if there was one.
     @discardableResult
     func bringBack(_ earlier: String, for bot: HermesBot) async throws -> String? {
-        let current = try await startFresh(bot)
+        let current = try await putAside(bot)
         noteProfile(bot.name, forStored: earlier)
         try await updateSession(stored: earlier, title: BotChat.title, archived: false)
         return current
@@ -530,6 +530,11 @@ extension HermesServeClient {
             return (found, false)
         }
         if bot.chatID != nil { throw BotChat.Problem.unconfirmed(bot.label()) }
+        return try await makeBotChat(bot)
+    }
+
+    /// Makes the bot's chat: hidden, titled at once. Another app's made meanwhile wins.
+    private func makeBotChat(_ bot: HermesBot) async throws -> (stored: String, isNew: Bool) {
         let made = try await call("session.create", params: .object([
             "profile": .string(bot.name), "title": .string(BotChat.title), "hidden": .bool(true),
             // The chat runs on the bot's own model and settings as they are now, not as they were
@@ -568,8 +573,22 @@ extension HermesServeClient {
     /// a bot's chat: its title is what makes it the bot's.) What the bot saved to its memory stays.
     /// Nothing to do if it has none. Read the roster again before opening the bot: the old one
     /// still names the chat put aside.
+    ///
+    /// The new chat is made at once, before anything reads the roster (2026-11-04: it took a second
+    /// tap every time). A bot's chat ends the way Redde's do, superseded by a resume or reaped when
+    /// the app's socket goes, and Hermes counts those as accidents: the next `profiles.list`
+    /// un-archived the chat put aside (`_resurrect_recoverable_canonical`), which then opened
+    /// again. Made at once, the new one takes the title "Bot Chat", and the old one stays aside
+    /// (lab: `lab.sh bots`). Returns the chat put aside, if any, and the new one.
+    func startFresh(_ bot: HermesBot) async throws -> (aside: String?, new: String) {
+        let aside = try await putAside(bot)
+        return (aside, try await makeBotChat(bot).stored)
+    }
+
+    /// The bot's chat archived, and no new one made: what bringing an earlier one back needs, which
+    /// gives that one the title at once. The chat put aside, or nil when it had none.
     @discardableResult
-    func startFresh(_ bot: HermesBot) async throws -> String? {
+    func putAside(_ bot: HermesBot) async throws -> String? {
         try await ensureConnected()
         let result = try await call("session.list", params: .object([
             "profile": .string(bot.name), "title": .string(BotChat.title), "include_hidden": .bool(true), "limit": .number(200)]))

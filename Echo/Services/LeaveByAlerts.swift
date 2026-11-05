@@ -113,6 +113,14 @@ final class LeaveByAlerts {
         soon(after: .seconds(1.5), force: false)
     }
 
+    /// Coming Up's Skip (2.4): this alert goes off no more, or (`skipped` false) is set again. Its
+    /// pending request goes at once; the run after takes its wake back from the Hermes too.
+    func skip(_ alertID: String, _ skipped: Bool = true) async {
+        LeaveTime.setSkipped(alertID, skipped)
+        if skipped { UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [alertID]) }
+        await run(force: true)
+    }
+
     /// A heads-up arrived: its reminder and this alert for the same event become one.
     func headsUpArrived() {
         guard LeaveBy.isOn else { return }
@@ -223,7 +231,7 @@ final class LeaveByAlerts {
         }
         let pending = await Self.pendingLeave()
         let plan = LeaveBy.plan(events: events, worked: worked, headsUps: pending.headsUps,
-                                pending: Set(pending.mine.keys), now: .now)
+                                pending: Set(pending.mine.keys), skipped: LeaveTime.skipped(), now: .now)
         if !plan.remove.isEmpty { UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: plan.remove) }
         for alert in plan.alerts where alert.now || pending.mine[alert.id] != Self.signature(alert) {
             await Self.set(alert)

@@ -104,7 +104,10 @@ nonisolated enum LeaveCheck {
     static func run(wake: String, center: UNUserNotificationCenter = .current(), defaults: UserDefaults? = NeedsYou.shared,
                     now: Date = .now) async -> UNMutableNotificationContent {
         let pending = await center.pendingNotificationRequests()
+        // One skipped from Coming Up is gone as far as the check goes: it sets nothing again.
+        let skipped = LeaveTime.skipped(in: defaults)
         guard let request = pending.first(where: { $0.identifier.hasPrefix(LeaveTime.alertPrefix) && id(of: $0.identifier) == wake }),
+              !skipped.contains(request.identifier),
               let alert = LeaveTime.reminder(request), let was = alert.fireAt, was > now, alert.start > now else {
             return content(.gone, title: "", leave: now, travel: nil, mode: .driving)
         }

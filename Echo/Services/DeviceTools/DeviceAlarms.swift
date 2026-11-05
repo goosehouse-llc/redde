@@ -92,6 +92,9 @@ nonisolated struct DeviceAlarms: Sendable {
         return .object(["cancelled": describe(kept)])
     }
 
+    /// The ones yet to ring, for Planned (`PhoneMade`).
+    func upcoming() throws -> [Kept] { try waiting() }
+
     /// What Redde set and iOS still holds. One that has rung, or was stopped on the phone, is
     /// gone from iOS, and is forgotten here.
     private func waiting() throws -> [Kept] {

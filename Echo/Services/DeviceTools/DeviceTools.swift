@@ -2,8 +2,9 @@ import Foundation
 
 /// Phone tools: things on this iPhone that the agent can ask Redde to do for it, because Apple
 /// lets an app do them with the person's permission. The calendar, reminders, contacts, the
-/// photo library, a folder of files, alarms, a widget of Redde's that the agent writes on, and
-/// starting a call or a message for the person to send. Nothing here reaches into another app:
+/// photo library, a folder of files, alarms, a widget of Redde's that the agent writes on,
+/// starting a call or a message for the person to send, and reading the Apple Health data the
+/// person chose to share, and Apple Home's accessories and scenes. Nothing here reaches into another app:
 /// iOS has no way to do that, for any app.
 ///
 /// The tools are declared to the agent by Redde's plugin on the Hermes server
@@ -15,7 +16,7 @@ import Foundation
 /// A tool belongs to an area, and an area is off until it is turned on in Settings → Phone
 /// tools, which is also when iOS is asked for its permission.
 nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiable {
-    case calendar, reminders, contacts, photos, files, alarms, widget, people
+    case calendar, reminders, contacts, photos, files, alarms, widget, people, health, home
 
     var id: String { rawValue }
 
@@ -29,6 +30,8 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .alarms: String(localized: "Alarms", comment: "A phone tools area (Settings → Phone tools)")
         case .widget: String(localized: "Widget", comment: "A phone tools area (Settings → Phone tools)")
         case .people: String(localized: "Calls and Messages", comment: "A phone tools area (Settings → Phone tools)")
+        case .health: String(localized: "Health", comment: "A phone tools area (Settings → Phone tools): Apple Health")
+        case .home: String(localized: "Apple Home", comment: "A phone tools area (Settings → Phone tools): HomeKit's accessories and scenes")
         }
     }
 
@@ -43,6 +46,8 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .alarms: "Alarms"
         case .widget: "Widget"
         case .people: "Calls and Messages"
+        case .health: "Health"
+        case .home: "Apple Home"
         }
     }
 
@@ -56,6 +61,8 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .alarms: "alarm"
         case .widget: "text.bubble"
         case .people: "phone.bubble"
+        case .health: "heart"
+        case .home: "homekit"
         }
     }
 
@@ -70,6 +77,8 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .alarms: String(localized: "Set an alarm or a timer, see the ones it set, and cancel one. They ring like the Clock app's.")
         case .widget: String(localized: "Write a few lines on Redde's “From Your Agent” widget, for now or for later in the day.")
         case .people: String(localized: "Start a call or a FaceTime, and write a message for you to send. iOS asks before a call goes out, and sending a message is your tap.")
+        case .health: String(localized: "Read the Apple Health data you choose below: totals, averages and nights. It can't write to Health.")
+        case .home: String(localized: "See and control your Apple Home: lights, plugs, the thermostat, blinds and scenes. Locks, garage doors, doors, windows and the alarm always ask you first.")
         }
     }
 
@@ -81,7 +90,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
     /// area but the widget's, which is only written on.
     var allowLabel: String {
         self == .people ? String(localized: "On", comment: "A phone tools area's setting: switched on")
-            : self == .widget ? String(localized: "Allow", comment: "A phone tools area's setting: the agent goes ahead unasked")
+            : self == .widget || self == .home ? String(localized: "Allow", comment: "A phone tools area's setting: the agent goes ahead unasked")
             : String(localized: "Allow reading", comment: "A phone tools area's setting: the agent reads unasked")
     }
     /// The same, as the button on a question that offers it.
@@ -112,6 +121,10 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
     case widgetClear = "phone_widget_clear"
     case peopleCall = "phone_people_call"
     case peopleMessage = "phone_people_message"
+    case healthRead = "phone_health_read"
+    case homeList = "phone_home_list"
+    case homeSet = "phone_home_set"
+    case homeScene = "phone_home_scene"
 
     /// Every phone tool's name starts with this: how a turn's tool is told from the agent's own.
     static let prefix = "phone_"
@@ -128,6 +141,8 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
         case .alarmsSet, .alarmsList, .alarmsCancel: .alarms
         case .widgetSet, .widgetClear: .widget
         case .peopleCall, .peopleMessage: .people
+        case .healthRead: .health
+        case .homeList, .homeSet, .homeScene: .home
         }
     }
 
@@ -141,6 +156,10 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
         default: false
         }
     }
+
+    /// It changes something in Apple Home: with the area allowed it goes ahead unasked, except
+    /// what could let someone in (`DeviceHome.sensitive`), which is put to the person every time.
+    var changesHome: Bool { self == .homeSet || self == .homeScene }
 
     /// iOS puts it to the person itself, on the screen: its own question before photos are
     /// deleted or a call goes out, and the Messages sheet, where sending is their tap. Redde

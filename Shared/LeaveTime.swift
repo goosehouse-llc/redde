@@ -61,6 +61,28 @@ nonisolated enum LeaveTime {
         defaults?.set(mode.rawValue, forKey: modeKey)
     }
 
+    // MARK: Skipped
+
+    /// Leave-By Alerts skipped from Coming Up (2.4), by identifier, in the app group: the app sets
+    /// none for them, and the notification extension's traffic re-check moves none (`LeaveCheck`).
+    static let skippedKey = "leaveSkipped"
+
+    static func skipped(in defaults: UserDefaults? = NeedsYou.shared) -> Set<String> {
+        Set(defaults?.stringArray(forKey: skippedKey) ?? [])
+    }
+
+    /// Skips an alert, or takes the skip back. Ones for events a day gone are let go (an alert's
+    /// identifier ends with its event's start, `LeaveBy.alertID`).
+    static func setSkipped(_ id: String, _ skipped: Bool, in defaults: UserDefaults? = NeedsYou.shared, now: Date = .now) {
+        var all = self.skipped(in: defaults)
+        if skipped { all.insert(id) } else { all.remove(id) }
+        all = all.filter { kept in
+            guard let start = kept.split(separator: ".").last.flatMap({ Double($0) }) else { return true }
+            return start > now.timeIntervalSince1970 - 86_400
+        }
+        defaults?.set(all.sorted(), forKey: skippedKey)
+    }
+
     // MARK: Where the phone is
 
     static func remember(_ location: CLLocation, in defaults: UserDefaults? = NeedsYou.shared) {

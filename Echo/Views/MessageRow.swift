@@ -74,6 +74,8 @@ struct MessageRow: View, Equatable {
     @State private var fullDetail: ToolDetail?
     /// The transcript's toast; absent in voice mode, which has no actions to announce.
     @Environment(Toaster.self) private var toaster: Toaster?
+    /// For "Remember This": absent outside a transcript (voice mode), and so is the item.
+    @Environment(Conversation.self) private var conversation: Conversation?
 
     var body: some View {
         // What the person asked a tagged bot is theirs, a bubble like any (`BotAsides`).
@@ -93,6 +95,15 @@ struct MessageRow: View, Equatable {
                     if !message.reasoning.isEmpty { thinkingFold }
                     if !message.tools.isEmpty { stepsFold }
                 }
+            }
+            // Watching the agent work: its browser's page and its processes' output while it works,
+            // "Browsed 4 pages" after.
+            if message.role == .assistant, isLive || message.tools.contains(where: { AgentBrowsing.isBrowsing($0.name) }) {
+                AgentWorkStrip(tools: message.tools, isLive: isLive)
+            }
+            // "Remember that…" kept, "forget that…" done: a chip to the Memory page (2.4).
+            if message.role == .assistant, !isLive, let change = AgentMemory.change(in: message.tools) {
+                MemoryChip(change: change, profile: fileSource?.profile)
             }
             // The agent's own task list, as this reply left it.
             if message.role == .assistant, let todos = message.todos, !todos.isEmpty {
@@ -534,6 +545,13 @@ struct MessageRow: View, Equatable {
         ShareLink(item: message.text) { Label("Share…", systemImage: "square.and.arrow.up") }
         Button("Select text", systemImage: "text.cursor") { selecting = true }
         Button("Watch This…", systemImage: "eye") { WatchDraft.shared.start(PlainText.display(message.text)) }
+        if let conversation, !isLive {
+            Button("Remember This", systemImage: "brain.head.profile") { conversation.send(AgentMemory.rememberMessage(PlainText.display(message.text))) }
+            // What was done for this reply, kept to do again (asked 2026-11-04): the chat menu's, for one reply.
+            if conversation.connection.hasLedger, !conversation.isIncognito, !conversation.isWorkerTranscript, !conversation.isStreaming {
+                Button("Make This a Routine…", systemImage: "repeat") { RoutineAsk.shared.reply = message.id }
+            }
+        }
         if let onRegenerate {
             Divider()
             Button("Regenerate", systemImage: "arrow.clockwise", action: onRegenerate).disabled(isLive)
@@ -551,6 +569,9 @@ struct MessageRow: View, Equatable {
             Button("Edit & resend", systemImage: "pencil", action: onEdit).disabled(isLive)
         }
         Button("Watch This…", systemImage: "eye") { WatchDraft.shared.start(message.text) }
+        if let conversation, !isLive, message.role == .user {
+            Button("Remember This", systemImage: "brain.head.profile") { conversation.send(AgentMemory.rememberMessage(message.text)) }
+        }
         Divider()
         Text(message.createdAt.formatted(date: .abbreviated, time: .shortened))
     }

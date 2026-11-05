@@ -142,6 +142,18 @@ final class LaunchRouter {
         return pendingBot
     }
 
+    /// A goal to set up (`NewGoalSheet`): its agent's chat, with the ask sent.
+    private(set) var pendingGoalChat: GoalChatRequest?
+
+    func requestGoalChat(profile: String, message: String) {
+        pendingGoalChat = GoalChatRequest(profile: profile, message: message, issuedAt: .now)
+    }
+
+    func consumeGoalChat() -> GoalChatRequest? {
+        defer { pendingGoalChat = nil }
+        return pendingGoalChat
+    }
+
     /// A group chat's notification was tapped: open that room.
     private(set) var pendingRoom: String?
 

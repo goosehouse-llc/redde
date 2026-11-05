@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: transparent; overflow: hidden;
+               -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  #screen { position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+<div id="screen"></div>
+<!-- The Agent's Screen in Redde (BotScreenView): noVNC draws Bot Desktop's RFB stream. The app
+     owns the socket (its URLSession carries the server's headers) and hands the bytes across;
+     noVNC gets a WebSocket-shaped channel, which it accepts in place of a URL. -->
+<script type="module">
+/*NOVNC*/
+
+const post = (message) => window.webkit.messageHandlers.screen.postMessage(message);
+
+function toBase64(u8) {
+  if (u8.toBase64) return u8.toBase64();
+  let s = "";
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+function fromBase64(b64) {
+  if (Uint8Array.fromBase64) return Uint8Array.fromBase64(b64);
+  const s = atob(b64), u8 = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i);
+  return u8;
+}
+
+// What noVNC's Websock needs of a channel (core/websock.js rawChannelProps).
+class Channel {
+  constructor() {
+    this.binaryType = "arraybuffer";
+    this.protocol = "";
+    this.readyState = 1;  // already open: the app opened the socket
+    this.onopen = null; this.onmessage = null; this.onclose = null; this.onerror = null;
+  }
+  send(data) {
+    if (this.readyState !== 1) return;
+    const u8 = data instanceof Uint8Array ? data : new Uint8Array(data);
+    post({ t: "send", b: toBase64(u8) });
+  }
+  close() {
+    if (this.readyState >= 2) return;
+    this.readyState = 2;
+    post({ t: "close" });
+  }
+}
+
+let rfb = null, channel = null;
+
+const KEYS = { Return: 0xff0d, BackSpace: 0xff08, Tab: 0xff09, Escape: 0xff1b,
+               Left: 0xff51, Up: 0xff52, Right: 0xff53, Down: 0xff54 };
+
+window.reddeScreen = {
+  open(opts) {
+    channel = new Channel();
+    rfb = new RFB(document.getElementById("screen"), channel, { shared: true });
+    rfb.scaleViewport = true;
+    rfb.resizeSession = false;
+    rfb.focusOnClick = false;
+    rfb.background = "transparent";
+    rfb.showDotCursor = true;
+    rfb.qualityLevel = opts.quality;
+    rfb.compressionLevel = opts.compression;
+    rfb.viewOnly = !!opts.viewOnly;
+    rfb.addEventListener("connect", () => post({ t: "connected" }));
+    rfb.addEventListener("disconnect", (e) => { post({ t: "disconnected", clean: !!(e.detail && e.detail.clean) }); rfb = null; });
+  },
+  feed(b64) {
+    if (channel && channel.readyState === 1 && channel.onmessage) channel.onmessage({ data: fromBase64(b64).buffer });
+  },
+  closed(code, reason) {
+    if (!channel || channel.readyState === 3) return;
+    channel.readyState = 3;
+    if (channel.onclose) channel.onclose({ code, reason: reason || "", wasClean: code === 1000 || code === 1001 });
+  },
+  setViewOnly(on) { if (rfb) rfb.viewOnly = !!on; },
+  setQuality(quality, compression) { if (rfb) { rfb.qualityLevel = quality; rfb.compressionLevel = compression; } },
+  // Typed text as key presses (the screen's keyboard is US English; Xvnc presses Shift itself).
+  type(text) {
+    if (!rfb) return;
+    for (const ch of text) {
+      const cp = ch.codePointAt(0);
+      const keysym = cp === 10 ? KEYS.Return : (cp < 0x100 ? cp : (0x01000000 | cp));
+      rfb.sendKey(keysym, null);
+    }
+  },
+  key(name) { if (rfb && KEYS[name]) rfb.sendKey(KEYS[name], null); },
+  // Puts text on the screen's clipboard, for a paste there.
+  clipboard(text) { if (rfb) rfb.clipboardPasteFrom(text); },
+  disconnect() { if (rfb) rfb.disconnect(); },
+};
+
+post({ t: "ready" });
+</script>
+</body>
+</html>

@@ -53,7 +53,7 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// One of a bot's schedules ran (`p` the bot's profile, `d` its name, `t` the schedule's,
         /// `b` what it came up with; `w` "failed" when it didn't finish). Its answer is in the
         /// bot's chat; a `[redde-notify]` job's, `x` "brief" and `i` the job, is a briefing,
-        /// kept by `AgentBriefing`.
+        /// kept by `AgentBriefing`; a goal's check-in, with `o` and `q`, is kept by `GoalReport`.
         case routine
         /// An agent is calling (`p` its profile, `d` its name, `b` what it says first, `s` the
         /// conversation it called from, `i` the call's id). It comes as a VoIP push, to the app
@@ -74,6 +74,9 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// Time to check the traffic for a Leave-By Alert (`i` the alert's opaque id, `t` the
         /// event's title): the extension asks Apple Maps again and moves it (`LeaveCheck`).
         case leave
+        /// Email (Redde's plugin 1.16, `mail.py`): `x` "rule", a rule he made to be told matched
+        /// (`t` the title, `b` who and what, `i` the rule or the log entry). Tapped, the Inbox.
+        case mail
     }
 
     var v = 1
@@ -110,6 +113,10 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     var i: String?
     /// On ideas: each one's heading (`t`), why now (`w`) and the request it would carry out (`r`).
     var y: [Idea]?
+    /// On a goal's check-in (a `routine` note, Redde's plugin 1.15): the goal (`GoalReport`) and
+    /// how far along it is, steps done of all of them ("3/7").
+    var o: String?
+    var q: String?
 
     nonisolated struct Idea: Codable, Equatable, Sendable {
         var t: String?
@@ -141,6 +148,10 @@ nonisolated struct PushPairing: Codable, Equatable, Identifiable, Sendable {
     /// answer, so it has the key, whether or not a note has got through yet. Optional so a
     /// pairing saved before this existed still reads.
     var accepted: Bool?
+    /// Which of Redde's servers it was made over (`Settings.activeServerID`), when made over the
+    /// Dashboard: pairing that server again replaces this one. Nil for one made from a code, or
+    /// saved before 2026-11-04.
+    var server: String?
 
     /// The plugin has this phone: by its own word, or by a note that proves it.
     var isPaired: Bool { confirmed || accepted == true }
@@ -452,6 +463,10 @@ nonisolated extension PushNote {
             content.body = String(PlainText.display(b ?? "").prefix(300))
             content.threadIdentifier = "redde.group.\(g ?? "")"
             if let g, !g.isEmpty { content.categoryIdentifier = Self.groupRepliedCategory }
+        case .mail:
+            content.title = t.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "New email", comment: "Notification: an email rule matched")
+            content.body = String(PlainText.display(b ?? "").prefix(300))
+            content.threadIdentifier = "redde.mail"
         case .routine:
             let name = t.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "A schedule", comment: "Notification: a bot's scheduled job, when it has no name")
             content.title = w == "failed" ? String(localized: "\(name) didn't finish", comment: "Notification: a bot's scheduled job, by its name, failed") : name

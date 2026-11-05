@@ -33,6 +33,7 @@ struct ReplyCardsView: View {
                 case let .show(shows): ShowCard(card: shows, whole: card)
                 case let .conversion(conversion): ConversionCard(card: conversion)
                 case let .stock(quotes): StockCard(card: quotes, whole: card)
+                case let .inbox(inbox): InboxCardView(card: inbox)
                 }
             }
         }

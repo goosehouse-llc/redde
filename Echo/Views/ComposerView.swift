@@ -43,6 +43,12 @@ struct ComposerView: View {
     @State private var showFileImporter = false
     @State private var showPhotoPicker = false
     @State private var showCamera = false
+    /// Add → Scan Document, Add → Drawing, and Mark Up on a pending photo (iPhone and iPad).
+    @State private var showScanner = false
+    @State private var showDrawing = false
+    @State private var markingUp: Attachment?
+    /// A scan being made into a PDF or pictures; a long one takes a moment.
+    @State private var preparingScan = false
     @State private var attachmentError: String?
     /// What the draft mentions that can be attached (`ComposerContext`), minus what was
     /// dismissed or already attached for this draft.
@@ -102,7 +108,7 @@ struct ComposerView: View {
                 .id(editing.id)
             }
             if !stripAttachments.isEmpty {
-                AttachmentStrip(attachments: stripAttachments) { id in
+                AttachmentStrip(attachments: stripAttachments, markUp: markUpAction) { id in
                     pendingAttachments.removeAll { $0.id == id }
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -111,6 +117,13 @@ struct ComposerView: View {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.mini)
                     Text("Preparing the video…")
+                }
+                .chatFont(.caption).foregroundStyle(.secondary)
+            }
+            if preparingScan {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text("Preparing the scan…")
                 }
                 .chatFont(.caption).foregroundStyle(.secondary)
             }
@@ -192,6 +205,29 @@ struct ComposerView: View {
             }
             .ignoresSafeArea()
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $showScanner) {
+            DocumentScanner { pages in
+                showScanner = false
+                if let pages, !pages.isEmpty { Task { await attachScan(pages) } }
+            }
+            .ignoresSafeArea()
+        }
+        .fullScreenCover(isPresented: $showDrawing) {
+            DrawingSheet { drawing in
+                showDrawing = false
+                if let drawing { pendingAttachments.append(drawing) }
+            }
+        }
+        .fullScreenCover(item: $markingUp) { photo in
+            DrawingSheet(photo: UIImage(data: photo.data), photoName: photo.filename) { marked in
+                if let marked, let index = pendingAttachments.firstIndex(where: { $0.id == photo.id }) {
+                    pendingAttachments[index] = marked
+                }
+                markingUp = nil
+            }
+        }
+        #endif
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoSelection, maxSelectionCount: 4, matching: .any(of: [.images, .videos]))
         .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
             switch result {
@@ -227,6 +263,41 @@ struct ComposerView: View {
             }
         }
     }
+
+    /// Mark Up on a pending photo's tile; the iPhone's and iPad's (the Mac has no PencilKit canvas).
+    private var markUpAction: ((Attachment) -> Void)? {
+        #if os(iOS)
+        { markingUp = $0 }
+        #else
+        nil
+        #endif
+    }
+
+    #if os(iOS)
+    /// A scan goes as one PDF where this chat takes files (the Dashboard, or the Hermes API with
+    /// the Dashboard's login, which puts it on the server), and as its pages' pictures where it
+    /// takes only pictures. Made off the main thread: a long scan is a lot of pixels.
+    private func attachScan(_ pages: [UIImage]) async {
+        let images = pages.compactMap(\.cgImage)
+        let takesFiles = conversation.connection == .hermesServe
+            || (conversation.connection == .hermesSessions && HermesServeClient.shared.hasCredentials)
+        preparingScan = true
+        defer { preparingScan = false }
+        let made: Result<[Attachment], Error> = await Task.detached(priority: .userInitiated) {
+            takesFiles ? Result { [try ScannedDocument.pdfAttachment(pages: images)] }
+                       : .success(ScannedDocument.pictureAttachments(pages: images))
+        }.value
+        switch made {
+        case let .success(attachments):
+            pendingAttachments.append(contentsOf: attachments)
+            if !takesFiles, images.count > ScannedDocument.pictureLimit {
+                attachmentError = String(localized: "Only the first \(ScannedDocument.pictureLimit) pages were attached, as pictures: this connection takes pictures, not PDFs.")
+            }
+        case let .failure(error):
+            attachmentError = error.localizedDescription
+        }
+    }
+    #endif
 
     /// A video goes in as it is when it fits, and smaller when it doesn't; that can take a while.
     private func attachVideo(_ url: URL, named name: String, removing: Bool = false) async {
@@ -446,6 +517,12 @@ struct ComposerView: View {
                     if CameraPicker.isAvailable {
                         Button("Camera", systemImage: "camera") { showCamera = true }
                     }
+                    #if os(iOS)
+                    if DocumentScanner.isAvailable {
+                        Button("Scan Document", systemImage: "doc.viewfinder") { showScanner = true }
+                    }
+                    Button("Drawing", systemImage: "pencil.tip.crop.circle") { showDrawing = true }
+                    #endif
                     #if os(macOS)
                     // A Mac's text field turns Paste down when the clipboard has a picture and no
                     // text; here it is taken as the iPhone's field takes it (`ComposerPaste`).
@@ -551,13 +628,13 @@ struct ComposerView: View {
                     .transition(Self.buttonSwap)
                 }
             } else if hasDraft {
-                ComposerButton(symbol: "arrow.up", label: String(localized: "Send"), tint: theme.accent, size: buttonSize) {
+                ComposerButton(symbol: "arrow.up", label: String(localized: "Send"), tint: theme.actionTint, size: buttonSize, glyph: theme.actionGlyph) {
                     send()
                 }
                 .transition(Self.buttonSwap)
             } else {
                 ComposerButton(symbol: "waveform", label: settings.handsFreeByDefault ? String(localized: "Talk hands-free") : String(localized: "Talk"),
-                               tint: theme.accent, size: buttonSize, waveform: true) {
+                               tint: theme.actionTint, size: buttonSize, waveform: true, glyph: theme.actionGlyph) {
                     openHandsFree()
                 }
                 .accessibilityHint(settings.handsFreeByDefault ? String(localized: "Opens voice mode and keeps listening after each reply")

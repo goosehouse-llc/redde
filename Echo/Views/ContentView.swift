@@ -38,6 +38,7 @@ struct ContentView: View {
     @State private var showRename = false
     /// ··· → Make This a Routine… (`RoutineSheet`).
     @State private var makingRoutine = false
+    @State private var routineAsk = RoutineAsk.shared
     @State private var renameText = ""
     @State private var renameError: String?
     /// "Add to Project" from the header's menu: the New Project prompt, and what went wrong.
@@ -75,7 +76,11 @@ struct ContentView: View {
     @State private var focusLostAt: Date?
     @State private var showSearch = false
     @State private var showTerminal = false
+    /// ··· → Agent's Screen: the chat's agent's Bot Desktop (`BotScreenView`, the Dashboard's).
+    @State private var showAgentScreen = false
     @State private var showModelPicker = false
+    /// The chat's Session Details, from its menu, the context ring or ⌘I.
+    @State private var showSessionDetails = false
     /// "Edit & resend": the message being replaced; sending truncates the transcript from it.
     @State private var editing: Message?
     @State private var pendingAttachments: [Attachment] = []
@@ -96,7 +101,8 @@ struct ContentView: View {
     /// `-echo.screen botGallery`: every bot creature, large, to look them over.
     @State private var showBotGallery = false
     @State private var showDemoPatch = false
-    /// `-echo.screen activity|pluginUpdates|triggers|watches`: that page, in a sheet (the day's video, `DemoDay`).
+    /// `-echo.screen activity|pluginUpdates|triggers|watches`: that page, in a sheet (the day's video, `DemoDay`);
+    /// `goal` and `goals` (with `-echo.demoGoals`) a goal's page and the list, for screenshots.
     @State private var demoDayPage: String?
     /// `-echo.screen aheadOfYourDay`: Ahead of Your Day's sheet (screenshots; `-echo.demoAhead` for a made-up server).
     @State private var showAheadOfYourDay = false
@@ -147,7 +153,14 @@ struct ContentView: View {
         }
         .focusedSceneValue(\.chatCommands, chatCommands)
         #endif
-        .sheet(isPresented: $showModelPicker) { NavigationStack { ModelPickerView() }.presentationDetents([.medium, .large]) }
+        .sheet(isPresented: $showModelPicker) {
+            NavigationStack { ModelPickerView() }
+                .presentationDetents([.medium, .large])
+                #if os(macOS)
+                // A Mac sheet takes its content's size, and a list has none: it came up a sliver (11-03).
+                .frame(minWidth: 460, idealWidth: 520, minHeight: 560, idealHeight: 680)
+                #endif
+        }
         .sheet(isPresented: $showSetup, onDismiss: { WatchLink.shared.push() }) { SetupView() }
         .sheet(item: $setupCode, onDismiss: {
             // A first run the code didn't finish goes back to setup.
@@ -155,8 +168,10 @@ struct ContentView: View {
         }) { SetupCodeSheet(offer: $0) }
         .sheet(item: $pushOffer) { PushPairingSheet(offer: $0) }
         .sheet(item: $whatsNew) { WhatsNewView(release: $0, wide: sizeClass == .regular) }
-        #if DEBUG
-        .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
+        .modifier(MailSheets())   // the Inbox and email setup, over everything (a mail note, Ahead of Your Day)
+        // In every build (11-04): these five sat inside the DEBUG block below since they were added,
+        // so a Release build never opened a briefing, a key asked for, a pinned card, a watch draft
+        // or Make This a Routine.
         .modifier(WatchDraftSheet())
         .modifier(BriefingSheets())
         .modifier(KeyRequestSheets())
@@ -165,7 +180,13 @@ struct ContentView: View {
             if id != conversation.id, !conversation.isStreaming, let record = conversation.storeForContext.record(id: id) { conversation.load(record) }
             setDrawer(open: false)
         })
-        .sheet(isPresented: $makingRoutine) { RoutineSheet(conversation: conversation) }
+        .sheet(isPresented: $makingRoutine, onDismiss: { routineAsk.reply = nil }) {
+            RoutineSheet(conversation: conversation, reply: routineAsk.reply)
+        }
+        // From a reply's ⋯ menu: the same sheet, for that reply.
+        .onChange(of: routineAsk.reply) { _, reply in if reply != nil { makingRoutine = true } }
+        #if DEBUG
+        .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
         .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
         .sheet(isPresented: $showPush) { NavigationStack { PushSettingsView() } }
@@ -176,11 +197,29 @@ struct ContentView: View {
         .sheet(isPresented: Binding(get: { demoDayPage != nil }, set: { if !$0 { demoDayPage = nil } })) {
             NavigationStack {
                 switch demoDayPage {
-                case "activity": AgentActivityView()
+                case "activity": AgentActivityView(tab: .done)
+                case "comingUp": AgentActivityView(tab: .comingUp)   // with -echo.demoComingUp for its made-up day
                 case "pluginUpdates": PluginUpdatesView(agents: DemoDay.on ? DemoDay.pluginAgents : PluginUpdatesView.everyAgent())
                 case "calendars": CalendarsSettingsView()
                 case "headsUps": DailyJobView(daily: HeadsUps.job)
+                case "wrapUp": DailyJobView(daily: EveningWrapUp.job)   // with -echo.demoRunOn
                 case "watches": WatchesView()
+                case "goal": GoalView(goalID: "g10k")   // with -echo.demoGoals
+                case "goals": GoalsListView()
+                case "phoneTools": PhoneToolsSettingsView()
+                case "health": HealthShareView()
+                case "usage": UsageView(model: .demo)   // -echo.demoUsage's made-up month
+                case "memory": MemoryView()   // with -echo.demoMemory
+                case "memoryImport": MemoryImportView(profile: nil, model: AgentMemoryModel(demo: true))
+                case "memoryManifest": MemoryImportView(profile: nil, model: AgentMemoryModel(demo: true), showingManifest: true)
+                case "inbox": InboxView()   // with -echo.demoInbox
+                case "mailSetup": MailSettingsView()
+                case "mailAdd": MailAccountSetup(done: {})
+                case "mailRules": MailRulesView()
+                case "mailLabels": MailTaggingView(accountID: "main")   // with -echo.demoInbox
+                case "mailReader": MailReaderView(thread: MailDemo.readerThread)
+                case "inboxCard": ScrollView { ReplyCardsView(cards: MailDemo.cards).padding() }
+                case "mailBrief": List { InboxSection(open: {}); BriefingsSection() }   // the deck's email page
                 default: TriggersView()
                 }
             }
@@ -278,6 +317,7 @@ struct ContentView: View {
         .onChange(of: router.pendingSession) { handlePushRequests() }
         .onChange(of: router.pendingRoom) { handlePushRequests() }
         .onChange(of: router.pendingBot) { handlePushRequests() }
+        .onChange(of: router.pendingGoalChat) { handleGoalChat() }
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
             if !locked { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests(); handleCallScreen() }
@@ -381,9 +421,16 @@ struct ContentView: View {
             .onChange(of: sizeClass) { _, now in layoutChanged(wide: now == .regular) }
             .onChange(of: composerFocused) { _, focused in if !focused { focusLostAt = .now } }
             .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
+            .sheet(isPresented: $showSessionDetails) { sessionDetails }
             #if os(iOS)
             .fullScreenCover(isPresented: $showTerminal) { TerminalScreen(folderLookup: terminalFolder) }
             #endif
+            .sheet(isPresented: $showAgentScreen) {
+                BotScreenView(profile: conversation.fileSource.profile) { _ = conversation.send(AgentWorkStrip.continueWord) }
+                    #if os(macOS)
+                    .frame(minWidth: 720, minHeight: 520)
+                    #endif
+            }
             .alert("Rename conversation", isPresented: $showRename) {
                 TextField("Name", text: $renameText)
                     // Return on the keyboard saves, like the button.
@@ -466,6 +513,8 @@ struct ContentView: View {
             .environment(\.sendFromPage, PageSender(conversation: conversation.id, send: conversation.sendFromPage))
             .environment(\.answerCard, conversation.isWorkerTranscript ? nil
                          : CardAnswerer(answer: conversation.answerCard, busy: conversation.isStreaming))
+            .environment(\.sayToAgent, conversation.isWorkerTranscript ? nil
+                         : AgentSayer { [conversation] text in _ = conversation.send(text) })
             .chatTextSize()
             .background(theme.pageColor)
             .foregroundStyle(theme.textColor)
@@ -493,6 +542,12 @@ struct ContentView: View {
             .chatDropTarget(draft: $draft, attachments: $pendingAttachments) { composerFocused = true }
             .navigationTitle(headerTitle)
             .navigationBarTitleDisplayMode(.inline)
+            #if os(macOS)
+            // The Mac's toolbar is glass: replies scrolled under the name and model showed through
+            // and covered them (11-03). The page's own colour behind it there.
+            .toolbarBackground(theme.pageColor, for: .windowToolbar)
+            .toolbarBackgroundVisibility(.visible, for: .windowToolbar)
+            #endif
             .toolbar {
                 // The conversation on top; the agent and model beneath, tap to pick the model —
                 // the /model sheet without typing /model.
@@ -559,7 +614,7 @@ struct ContentView: View {
                                     .accessibilityHint("Change it in the model menu")
                             }
                             if let context = conversation.contextUsage {
-                                ContextRing(used: context.used, window: context.window)
+                                ContextRing(used: context.used, window: context.window) { showSessionDetails = true }
                             }
                         }
                     }
@@ -579,63 +634,82 @@ struct ContentView: View {
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
-                        Button("Find in conversation", systemImage: "magnifyingglass") { withAnimation { showSearch.toggle() } }
-                            .disabled(!conversation.hasMessages)
-                        // A bot's chat goes by its bot.
-                        if conversation.bot == nil, !conversation.isIncognito {
-                            Button("Rename", systemImage: "pencil") {
-                                renameText = conversation.name ?? conversation.title
-                                showRename = true
+                        // Asked 2026-11-03 ("too long and too many items"): the conversation's three
+                        // as one row of icons, the bot's own in a menu named after it, new chats in one.
+                        ControlGroup {
+                            Button("Find", systemImage: "magnifyingglass") { withAnimation { showSearch.toggle() } }
+                                .disabled(!conversation.hasMessages)
+                            Button("Details", systemImage: "info.circle") { showSessionDetails = true }
+                                .disabled(conversation.isWorkerTranscript)
+                            Button("Export", systemImage: "square.and.arrow.up") {
+                                if let url = try? TranscriptExporter.file(title: conversation.title, messages: conversation.messages) {
+                                    shareItem = ShareItem(url: url)
+                                }
                             }
                             .disabled(!conversation.hasMessages)
                         }
-                        Button("Export as Markdown", systemImage: "square.and.arrow.up") {
-                            if let url = try? TranscriptExporter.file(title: conversation.title, messages: conversation.messages) {
-                                shareItem = ShareItem(url: url)
+                        if let bot = conversation.bot {
+                            Menu {
+                                // (A bot added for the Hermes API alone has its settings and face on the Dashboard.)
+                                if let roster = chatBot, !roster.viaAPI {
+                                    Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = roster }
+                                    Button("Change Face…", systemImage: "face.smiling") { facingBot = roster }
+                                }
+                                if let roster = chatBot, !roster.isDefault {
+                                    Button("Voice…", systemImage: "waveform") { voicingBot = roster }
+                                    if !roster.viaAPI {
+                                        Button("Schedules…", systemImage: "clock") { schedulingBot = roster }
+                                    }
+                                } else {
+                                    Button("Voice…", systemImage: "waveform") { voicingMain = true }
+                                }
+                                if !conversation.isIncognito {
+                                    MuteMenu(item: "bot:" + bot.profile)
+                                }
+                            } label: {
+                                Label(chatBot?.title ?? chatBot?.displayName ?? bot.name, systemImage: "face.smiling")
                             }
+                        } else {
+                            if !conversation.isIncognito {
+                                Button("Rename", systemImage: "pencil") {
+                                    renameText = conversation.name ?? conversation.title
+                                    showRename = true
+                                }
+                                .disabled(!conversation.hasMessages)
+                            }
+                            // The Dashboard's projects, for a conversation on the server.
+                            if settings.transport == .hermesServe, conversation.serverSessionID != nil, !conversation.isIncognito {
+                                ChatProjectMenu(naming: $namingProject, problem: $projectProblem)
+                            }
+                            // The main agent's voice is the app's (asked 2026-10-25).
+                            Button("Voice…", systemImage: "waveform") { voicingMain = true }
                         }
-                        .disabled(!conversation.hasMessages)
                         if conversation.connection.hasLedger, !conversation.isIncognito, !conversation.isWorkerTranscript {
                             Button("Make This a Routine…", systemImage: "repeat") { makingRoutine = true }
                                 .disabled(!conversation.hasMessages || conversation.isStreaming)
                         }
-                        // The Dashboard's projects, for a conversation on the server (a bot's chat is its bot's).
-                        if settings.transport == .hermesServe, conversation.serverSessionID != nil, conversation.bot == nil, !conversation.isIncognito {
-                            ChatProjectMenu(naming: $namingProject, problem: $projectProblem)
+                        // Watching the agent work: its Bot Desktop, on the Dashboard (the view says why not elsewhere).
+                        if settings.transport.hasLedger, !conversation.isIncognito {
+                            Button("Agent's Screen", systemImage: "display") { showAgentScreen = true }
                         }
-                        // (A bot added for the Hermes API alone has its settings and face on the Dashboard.)
-                        if let bot = chatBot, !bot.viaAPI {
-                            Button("Edit Bot…", systemImage: "slider.horizontal.3") { editingBot = bot }
-                            Button("Change Face…", systemImage: "face.smiling") { facingBot = bot }
-                        }
-                        // The main agent's voice is the app's (asked 2026-10-25: "Sol's three dot drop
-                        // down does not have voice in it").
-                        if chatBot?.isDefault ?? (conversation.bot == nil) {
-                            Button("Voice…", systemImage: "waveform") { voicingMain = true }
-                        }
-                        if let bot = chatBot, !bot.isDefault {
-                            Button("Voice…", systemImage: "waveform") { voicingBot = bot }
-                            if !bot.viaAPI {
-                                Button("Schedules…", systemImage: "clock") { schedulingBot = bot }
+                        Menu {
+                            // A bot's chat: Start Fresh has the toolbar's button, and a new conversation
+                            // with the agent is here.
+                            if conversation.bot != nil {
+                                Button("Conversation with \(settings.headerTitle)", systemImage: "square.and.pencil") { conversation.reset() }
                             }
+                            if !conversation.isIncognito {
+                                Button("Incognito Chat", systemImage: "eyeglasses") { conversation.startIncognito() }
+                                    .keyboardShortcut("n", modifiers: [.command, .shift])
+                            }
+                            #if os(iOS)
+                            if settings.transport.hasLedger {
+                                Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
+                            }
+                            #endif
+                        } label: {
+                            Label("New", systemImage: "plus")
                         }
-                        if let bot = conversation.bot, !conversation.isIncognito {
-                            MuteMenu(item: "bot:" + bot.profile)
-                        }
-                        // A bot's chat: Start Fresh has the toolbar's button, and a new conversation
-                        // with the agent is here.
-                        if conversation.bot != nil {
-                            Button("New Conversation with \(settings.headerTitle)", systemImage: "square.and.pencil") { conversation.reset() }
-                        }
-                        if !conversation.isIncognito {
-                            Button("New Incognito Chat", systemImage: "eyeglasses") { conversation.startIncognito() }
-                                .keyboardShortcut("n", modifiers: [.command, .shift])
-                        }
-                        #if os(iOS)
-                        if settings.transport.hasLedger {
-                            Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
-                        }
-                        #endif
                         Divider()
                         Button("Settings", systemImage: "gearshape") { showSettings = true }
                     } label: {
@@ -680,8 +754,8 @@ struct ContentView: View {
         switch section {
         case .sessions:
             chatScreen(showListButton: false)
-        case .cron:
-            NavigationStack { CronView().navigationTitle("Cron").navigationBarTitleDisplayMode(.inline) }
+        case .planned:
+            NavigationStack { ComingUpList(planned: true).navigationTitle("Planned").navigationBarTitleDisplayMode(.inline) }
                 .id(settings.connectionKey)
         case .kanban:
             NavigationStack { KanbanView().navigationTitle("Kanban").navigationBarTitleDisplayMode(.inline) }
@@ -758,6 +832,7 @@ struct ContentView: View {
             voice: { openVoice(fromOutside: false) },
             focusComposer: { composerFocused = true },
             chooseModel: { showModelPicker = true },
+            sessionDetails: conversation.isWorkerTranscript ? nil : { showSessionDetails = true },
             find: conversation.hasMessages ? { withAnimation { showSearch.toggle() } } : nil,
             stop: conversation.isStreaming ? { conversation.cancel() } : nil,
             export: conversation.hasMessages ? {
@@ -776,6 +851,8 @@ struct ContentView: View {
             Button("Find in conversation") { withAnimation { showSearch.toggle() } }.keyboardShortcut("f", modifiers: .command)
                 .disabled(!conversation.hasMessages)
             Button("Stop reply") { conversation.cancel() }.keyboardShortcut(".", modifiers: .command).disabled(!conversation.isStreaming)
+            Button("Session Details") { showSessionDetails = true }.keyboardShortcut("i", modifiers: .command)
+                .disabled(conversation.isWorkerTranscript)
             Button("Export as Markdown") {
                 if let url = try? TranscriptExporter.file(title: conversation.title, messages: conversation.messages) { shareItem = ShareItem(url: url) }
             }
@@ -821,7 +898,7 @@ struct ContentView: View {
     /// this screen, and keeps the theme's.)
     private var chatTheme: ResolvedTheme {
         guard settings.botColors, let colors = (botFace ?? BotDirectory.shared.mainFace).chatColors else { return theme }
-        return settings.theme.resolved(with: colors)
+        return settings.theme.resolved(with: colors, font: settings.chatFont)
     }
 
     /// Another profile's chat (opened with All Profiles on) says whose it is where the agent's
@@ -834,6 +911,77 @@ struct ContentView: View {
         if let bot = conversation.bot { return bot.name }
         if conversation.isIncognito { return IncognitoNote.title }
         return !conversation.hasMessages && conversation.outbox.isEmpty ? String(localized: "New conversation") : conversation.title
+    }
+
+    /// The chat's Session Details page, read from its own connection when it opens. Another
+    /// sheet from it (Rename, Export) waits for this one to go.
+    private var sessionDetails: some View {
+        NavigationStack {
+            #if DEBUG
+            if DevHooks.has("-echo.demoSessionDetails") {
+                SessionDetailsView(info: sessionInfo(demo: true), activity: SessionDetailsModel.demoActivity, source: nil, model: .demo)
+            } else {
+                detailsPage
+            }
+            #else
+            detailsPage
+            #endif
+        }
+    }
+
+    private var detailsPage: some View {
+        let renames = conversation.bot == nil && !conversation.isIncognito && conversation.hasMessages
+        return SessionDetailsView(
+            info: sessionInfo(demo: false), activity: SessionActivity.from(conversation.messages), source: sessionDetailsSource,
+            rename: renames ? {
+                renameText = conversation.name ?? conversation.title
+                Task { try? await Task.sleep(for: .milliseconds(450)); showRename = true }
+            } : nil,
+            export: {
+                guard let url = try? TranscriptExporter.file(title: conversation.title, messages: conversation.messages) else { return }
+                Task { try? await Task.sleep(for: .milliseconds(450)); shareItem = ShareItem(url: url) }
+            },
+            model: SessionDetailsModel())
+    }
+
+    /// Where the page reads the session: the conversation's own connection (a bot's chat, the
+    /// bot's profile); nil on the fast lane, which keeps no session.
+    private var sessionDetailsSource: SessionDetailsSource? {
+        switch conversation.connection {
+        case .hermesServe: .dashboard(.shared, profile: conversation.routeProfile)
+        case .hermesSessions: conversation.ledgerAPI().map(SessionDetailsSource.api)
+        case .chatCompletions: nil
+        }
+    }
+
+    private func sessionInfo(demo: Bool) -> SessionChatInfo {
+        let picked = conversation.turnModel
+        let choice: String? = if settings.transport == .chatCompletions {
+            nil
+        } else if conversation.ownModel != nil {
+            String(localized: "Picked in this conversation", comment: "Session Details: how the model was chosen")
+        } else if picked != nil {
+            String(localized: "Picked in Redde", comment: "Session Details: how the model was chosen")
+        } else if conversation.bot != nil {
+            String(localized: "The bot's own model", comment: "Session Details: how the model was chosen")
+        } else {
+            String(localized: "Set on your server", comment: "Session Details: how the model was chosen")
+        }
+        return SessionChatInfo(
+            title: demo ? "Move the blog to the new site" : headerTitle,
+            agent: conversation.bot?.name ?? settings.headerTitle,
+            face: botFace,
+            server: settings.transport.hasLedger ? settings.activeServer?.name.nilIfEmpty : nil,
+            connection: conversation.connection,
+            model: demo ? "qwen36-kapitsa" : modelChipLabel,
+            modelChoice: demo ? String(localized: "Set on your server", comment: "Session Details: how the model was chosen") : choice,
+            provider: picked?.provider?.nilIfEmpty,
+            reasoningEffort: settings.transport.hasLedger ? settings.reasoningEffort.nilIfEmpty : nil,
+            context: demo ? ContextUsage(used: 84_600, window: 128_000) : conversation.contextUsage,
+            project: projectName,
+            sessionID: demo ? "20261102_081544_9f3c2a" : (conversation.isIncognito ? nil : conversation.serverSessionID),
+            isIncognito: conversation.isIncognito,
+            startedHere: conversation.createdAt)
     }
 
     /// What the title chip shows: the model this conversation's turns ask for (Redde's pick, or
@@ -917,6 +1065,29 @@ struct ContentView: View {
             if !text.isEmpty { draft = draft.isEmpty ? text : draft + "\n\n" + text }
             pendingAttachments += payload.attachments
             composerFocused = true
+        }
+    }
+
+    /// A goal to set up, from the New Goal sheet (`Goals`): its agent's chat (a new conversation
+    /// for the main agent, a bot's Bot Chat), with the written-out ask sent, as taking an idea does.
+    private func handleGoalChat() {
+        guard !lock.isLocked, let request = router.consumeGoalChat() else { return }
+        showSettings = false
+        showVoice = false
+        setDrawer(open: false)
+        Task {
+            do {
+                if request.profile != "default", let bot = BotDirectory.shared.roster?.bots.first(where: { $0.name == request.profile }) {
+                    try await conversation.openBot(bot, mainName: settings.headerTitle)
+                } else if request.profile != (settings.profileName ?? ProfileCatalog.defaultID) {
+                    ProfileCatalog.startConversation(on: request.profile, conversation: conversation, settings: settings)
+                } else if conversation.bot != nil || conversation.elsewhere != nil || conversation.hasMessages || !conversation.outbox.isEmpty {
+                    conversation.reset()
+                }
+                conversation.send(request.message)
+            } catch {
+                Logger(subsystem: "com.goosehouse.echo", category: "goals").error("couldn't open the goal's chat: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -1248,12 +1419,21 @@ struct ContentView: View {
         #if DEBUG
         case "botGallery": showBotGallery = true
         case "patch": showDemoPatch = true
-        case "activity", "pluginUpdates", "triggers", "calendars", "headsUps", "watches": demoDayPage = DevHooks.value("-echo.screen")
+        case "activity", "comingUp", "pluginUpdates", "triggers", "calendars", "headsUps", "wrapUp", "watches", "goal", "goals", "phoneTools", "health", "usage", "memory", "memoryImport", "memoryManifest", "inbox", "mailSetup", "mailAdd", "mailRules", "mailLabels", "mailReader", "inboxCard", "mailBrief": demoDayPage = DevHooks.value("-echo.screen")
         case "aheadOfYourDay": showAheadOfYourDay = true
         #endif
         default: break
         }
+        #if DEBUG
+        // `-echo.demoBotScreen [you|other]`: the Agent's Screen over a made-up desktop (screenshots).
+        if DevHooks.has("-echo.demoBotScreen") { showAgentScreen = true }
+        #endif
         // `-echo.demoDay routine`: Make This a Routine over the chat it seeded (`DemoDay`).
+        #if DEBUG
+        if DevHooks.has("-echo.demoSessionDetails") {
+            Task { try? await Task.sleep(for: .seconds(1)); showSessionDetails = true }
+        }
+        #endif
         if DemoDay.scene == "routine" {
             Task { try? await Task.sleep(for: .seconds(1.5)); makingRoutine = true }
         }

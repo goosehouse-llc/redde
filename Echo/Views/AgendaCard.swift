@@ -952,11 +952,13 @@ extension AgendaCard {
         return parts.joined(separator: ", ")
     }
 
-    /// Each calendar's own colour, the same every time it is named; the theme's tint with no name.
+    /// Each calendar's own colour: Calendar's on this device (`CalendarTints`), or for a calendar
+    /// it hasn't, one of ours, the same every time it is named; the theme's tint with no name.
     /// Or every event in the one colour picked in Settings (Calendar Events).
-    static func color(of calendar: String?) -> AnyShapeStyle {
+    static func color(of calendar: String?, tints: CalendarTints = .shared) -> AnyShapeStyle {
         if let picked = Settings.shared.eventColor.color { return AnyShapeStyle(picked) }
         guard let calendar, !calendar.isEmpty else { return AnyShapeStyle(.tint) }
+        if let own = tints.color(of: calendar) { return AnyShapeStyle(own) }
         let colors: [Color] = [.blue, .orange, .green, .purple, .pink, .teal, .red, .indigo, .brown, .mint]
         var hash: UInt64 = 0xcbf29ce484222325
         for byte in calendar.lowercased().utf8 { hash = (hash ^ UInt64(byte)) &* 0x100000001b3 }

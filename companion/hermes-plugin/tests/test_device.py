@@ -95,6 +95,61 @@ class PhoneTools(unittest.TestCase):
         self.phone.answer(waiting(self.phone)[0]["id"], {"ok": False, "error": "The person said no on the iPhone."})
         self.assertEqual(call.done(), {"error": "The person said no on the iPhone."})
 
+    def test_a_scheduled_jobs_run_is_told_at_once_that_the_phone_cant_be_reached(self):
+        """2026-11-04: Morning Ideas asked the phone from its run, waited two minutes a call, tried again."""
+        self.phone.set_areas(["calendar"])
+        started = time.monotonic()
+        result = json.loads(self.phone.ask("phone_calendar_events", {}, session="cron_925a79849c90_20261104_073012"))
+        self.assertLess(time.monotonic() - started, 1)
+        self.assertIn("scheduled job", result["error"])
+        self.assertIn("don't call phone tools again", result["error"])
+        self.assertEqual(self.phone.waiting(), [], "no request is left for a phone that never comes")
+        # One with a way round it takes that way (the widget, by notification).
+        self.assertEqual(self.phone.ask("phone_calendar_events", {}, session="cron_925a79849c90_20261104_073012",
+                                        otherwise=lambda: "by note"), "by note")
+        # A chat's turn still waits for the phone.
+        self.assertIn("didn't answer", json.loads(self.phone.ask("phone_calendar_events", {}, session="20261104_073012_ab12cd", wait=0.3))["error"])
+
+    def test_a_scheduled_job_reads_the_copy_sent_ahead(self):
+        """2026-11-04 (Reddit): Morning Ideas couldn't read the calendar with Redde closed. With
+        Send Ahead on, the phone leaves a copy that a job's calls are answered from."""
+        job = "cron_925a79849c90_20261104_073012"
+        self.phone.set_areas(["calendar", "reminders"])
+        copy = {"made": "2026-11-04T06:50:00-05:00", "time_zone": "America/New_York",
+                "from": "2026-11-04T00:00:00-05:00", "until": "2026-11-11T00:00:00-05:00",
+                "calendar": [{"title": "Dentist", "start": "2026-11-04T09:00:00-05:00", "end": "2026-11-04T10:00:00-05:00"},
+                             {"title": "Run club", "start": "2026-11-06T18:00:00-05:00", "end": "2026-11-06T19:00:00-05:00", "location": "Park"}],
+                "reminders": [{"title": "Stretch", "list": "Health"}, {"title": "Milk", "list": "Groceries"}]}
+        self.assertEqual(device.slash(self.phone, ["ahead", b64(copy)]), "redde-push device ahead calendar,reminders")
+        day = json.loads(self.phone.ask("phone_calendar_events", {"start": "2026-11-04", "end": "2026-11-04"}, session=job))
+        self.assertEqual([e["title"] for e in day["events"]], ["Dentist"])
+        self.assertIn("sent ahead", day["note"])
+        park = json.loads(self.phone.ask("phone_calendar_events", {"start": "2026-11-04T00:00", "query": "park"}, session=job))
+        self.assertEqual([e["title"] for e in park["events"]], ["Run club"])
+        health = json.loads(self.phone.ask("phone_reminders_list", {"list": "health"}, session=job))
+        self.assertEqual([r["title"] for r in health["reminders"]], ["Stretch"])
+        # A change still can't be made from a job.
+        self.assertIn("scheduled job", json.loads(self.phone.ask("phone_reminders_add", {"title": "x"}, session=job))["error"])
+        # Turning reminders off takes their copy with it; turning it all off, the rest.
+        self.phone.set_areas(["calendar"])
+        self.assertNotIn("reminders", json.loads((self.phone.dir / "ahead.json").read_text()))
+        self.assertIn("events", json.loads(self.phone.ask("phone_calendar_events", {"start": "2026-11-04"}, session=job)))
+        self.assertEqual(device.slash(self.phone, ["ahead", "off"]), "redde-push device ahead off")
+        self.assertFalse((self.phone.dir / "ahead.json").exists())
+
+    def test_a_job_with_no_copy_is_told_how_to_have_one(self):
+        self.phone.set_areas(["calendar"])
+        result = json.loads(self.phone.ask("phone_calendar_events", {}, session="cron_925a79849c90_20261104_073012"))
+        self.assertIn("Send Ahead for Scheduled Jobs", result["error"])
+
+    def test_a_copy_too_old_is_not_used(self):
+        self.phone.set_areas(["reminders"])
+        self.phone.keep_ahead({"reminders": [{"title": "Stretch"}]})
+        self.assertIsNotNone(self.phone.from_ahead("phone_reminders_list", {}))
+        self.assertIsNone(self.phone.from_ahead("phone_reminders_list", {}, now=time.time() + 9 * 86400))
+        self.assertEqual(device.slash(self.phone, ["ahead", b64({"calendar": []})]), "redde-push device ahead none",
+                         "an area that is off keeps nothing")
+
     def test_a_phone_that_does_not_answer_is_said_so(self):
         self.phone.set_areas(["calendar"])
         result = json.loads(self.phone.ask("phone_calendar_events", {}, wait=0.4))
@@ -278,6 +333,42 @@ class PhoneTools(unittest.TestCase):
         self.assertIn("query", properties)
         self.assertEqual(required, [], "by date alone, as before")
         self.assertIn("not_looked_at", description)
+
+    def test_health_is_read_only_offered_alone_and_small(self):
+        area, description, properties, required = device.TOOLS["phone_health_read"]
+        self.assertEqual(area, "health")
+        self.assertEqual(required, ["type"])
+        self.assertEqual(properties["type"]["enum"], list(device.HEALTH_TYPES))
+        self.assertIn("read only", description)
+        self.assertIn("health_shared", description)
+        # Offered only with Health on, and then its schema rides on every prompt: kept small.
+        schema = {"name": "phone_health_read", "description": description,
+                  "parameters": {"type": "object", "properties": properties, "required": required}}
+        self.assertLess(len(json.dumps(schema)), 1500)
+        self.phone.set_areas(["health"])
+        self.assertTrue(self.phone.offers("health"))
+        self.assertFalse(self.phone.offers("calendar"))
+        # The kinds are the app's, in its order.
+        app = HERE.parent.parent.parent / "Echo" / "Services" / "DeviceTools" / "DeviceHealth.swift"
+        if app.exists():
+            body = app.read_text().split("nonisolated enum HealthKind", 1)[1].split("var id: String", 1)[0]
+            kinds = [raw or name for name, raw in re.findall(r'case (\w+)(?: = "(\w+)")?', body)]
+            self.assertEqual(tuple(kinds), device.HEALTH_TYPES)
+
+    def test_apple_home_is_offered_alone_and_small(self):
+        names = ("phone_home_list", "phone_home_set", "phone_home_scene")
+        for name in names:
+            self.assertEqual(device.TOOLS[name][0], "home")
+        # Offered only with Apple Home on, and then all three ride on every prompt: kept small.
+        size = sum(len(json.dumps({"name": n, "description": device.TOOLS[n][1], "parameters": {
+            "type": "object", "properties": device.TOOLS[n][2], "required": device.TOOLS[n][3]}})) for n in names)
+        self.assertLess(size, 2600)
+        # The guard is the phone's, and the agent is told of it.
+        self.assertIn("Locks, garage doors", device.TOOLS["phone_home_set"][1])
+        self.assertIn("entity", device.TOOLS["phone_home_list"][1])
+        self.phone.set_areas(["home"])
+        self.assertTrue(self.phone.offers("home"))
+        self.assertFalse(self.phone.offers("health"))
 
     def test_the_names_are_the_ones_the_app_and_the_manifest_know(self):
         manifest = (HERE / "plugin.yaml").read_text()

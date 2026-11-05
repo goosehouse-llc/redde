@@ -14,7 +14,9 @@ over the Hermes API), `rooms <device,...> <room,...>` which group chats it follo
 `mutes <device,...> <key=until,...>` which chats it has muted, `calls <device,...> <profile,...>`
 which agents may ring it (`calls.py`), `leave set <device> <wakes>` when to wake it for Leave-By
 Alerts' traffic re-check (`leave.py`), and `offer` then `accept <offer> <key> <box>` pair it
-without a code.
+without a code. From 1.15.0, `skip <profile> <job> <when>` skips a repeating job's next run
+(`routines.py`), `goals list` lists every agent's goals and `goals end <profile> <goal>` ends
+one (`goals.py`). From 1.16.0, `mail …` is the app's inbox (`mail.py`).
 
 And cards (`cards.py`): `redde_show`, a map, places, the weather or the time the app draws under a reply;
 the weather and the time are looked up (`forecast.py`, Open-Meteo).
@@ -34,7 +36,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, headsup, ideas, keys, leave, qr, rooms, routines, watches
+from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, longterm, mail, qr, remember, remind, rooms, routines, watches
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -84,6 +86,25 @@ def _to_widget(title: str, text: str, start: str = "", end: str = "") -> int:
     return pusher.send(devices, core.widget_note(title, text, start, end))
 
 
+def _main_home() -> Path:
+    return calls.caller(_home())[1]
+
+
+def _remind(profile: str, home: Path, job: dict, text: str) -> int:
+    """A reminder's notification, as its run starts (remind.py): the same note the reader of the
+    schedules would send after the run, to the same phones. To how many it went."""
+    root = _main_home()
+    store = _store_in(root)
+    targets = store.unmuted(store.unmuted(store.devices, "b:" + profile), routines.job_mute(profile, str(job.get("id") or "")))
+    if not targets:
+        return 0
+    main, pusher = _state()
+    sender = pusher if store is main else core.Pusher(store, title_of=_title)
+    title = routines.untagged(remind.plain(str(job.get("name") or "")))
+    made = core.routine_note(profile, routines.Stores(root).name(home, profile), title, text, brief=str(job.get("id") or ""))
+    return sender.send(targets, made)
+
+
 _stores: dict[str, core.Store] = {}
 
 
@@ -123,7 +144,8 @@ def _group_chats() -> rooms.Rooms:
 
 def _watch_schedules() -> None:
     """The bots' schedules on this machine, read for runs (`routines.py`). Only from the main
-    profile's home, whose store has the phones."""
+    profile's home, whose store has the phones. From 1.15.0 read with no phone paired too: runs
+    Redde asked to skip are moved on whether or not a phone can hear of the rest."""
     global _routines
     try:
         home = _home()
@@ -132,8 +154,7 @@ def _watch_schedules() -> None:
         if _routines is None:
             store, pusher = _state()
             _routines = routines.Routines(store, pusher.send, routines.Stores(home))
-        if _routines.store.devices:
-            _routines.start()
+        _routines.start()
     except Exception:
         log.debug("redde-push: couldn't start reading the schedules", exc_info=True)
 
@@ -198,6 +219,11 @@ def _on_reply(session_id: str = "", assistant_response: str = "", platform: str 
         turns, waiting = _watchers()
         turns.ended(session_id)
         waiting.forget(session_id)
+        # A scheduled run's quiet answer ([SILENT], a watch's NOTHING NEW, "No change."), which
+        # Hermes doesn't deliver, isn't pushed as a reply either, under Notify All (issue 55).
+        if platform == "cron" and isinstance(assistant_response, str) and (
+                routines.settle(assistant_response)[1] or watches.quiet(assistant_response)):
+            return
         if isinstance(assistant_response, str) and assistant_response.strip():
             # A reply nobody asked for just now, in a conversation whose handed-off task just
             # came back: Hermes started this turn itself, to say what came of the task.
@@ -220,6 +246,10 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
             _watchers()[0].began(session_id, turn_id)
     except Exception:
         log.debug("redde-push: turn hook failed", exc_info=True)
+    try:
+        cards.turn_began(session_id)   # a reminder card needs this turn's setter (1.14.6)
+    except Exception:
+        log.debug("redde-push: card turn start failed", exc_info=True)
     notes = []
     try:
         cards.announce()   # its calls told to the Dashboard's clients as they happen (issue 35)
@@ -255,6 +285,29 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     except Exception:
         log.debug("redde-push: follow-up note failed", exc_info=True)
     try:
+        # Something that sounds like a goal: that one can be set (goals.py); a goal's check-in:
+        # its steps and how to answer.
+        notes.append(goals.turn_note(user_message, platform))
+        notes.append(goals.checkin_note(_home(), user_message, platform))
+    except Exception:
+        log.debug("redde-push: goal note failed", exc_info=True)
+    try:
+        # Asked about email (mail.py, 1.16.0): redde_mail, email as data, the inbox card; and a
+        # briefing's run: the inbox as sorted.
+        root = calls.caller(_home())[1]
+        notes.append(mail.turn_note(root, user_message, platform))
+        notes.append(mail.brief_note(root, user_message, platform))
+    except Exception:
+        log.debug("redde-push: mail note failed", exc_info=True)
+    try:
+        # "Remember that…" / "Forget that…" (remember.py): how to use the memory tool, so Redde's
+        # Memory page shows one clean entry and a forget really removes it.
+        notes.append(remember.turn_note(user_message, platform))
+        # The app's "Save to long-term memory:" (longterm.py): exactly those, with the provider's tool.
+        notes.append(longterm.turn_note(user_message, platform, _config()))
+    except Exception:
+        log.debug("redde-push: memory note failed", exc_info=True)
+    try:
         # A key it asked for (keys.py): set or declined since, said once.
         notes.append(keys.turn_note(_home()))
     except Exception:
@@ -283,6 +336,11 @@ def _on_answer(session_id: str = "", platform: str = "", assistant_message=None,
     when a plugin's `pre_tool_call` is still busy with another call, and no notification is
     worth a refused tool."""
     try:
+        # A reminder card counts only after its reminder is set (1.14.6): seen here, before the tools run.
+        cards.saw_calls(session_id, core.tool_calls(assistant_message))
+    except Exception:
+        log.debug("redde-push: card setter watch failed", exc_info=True)
+    try:
         turns, waiting = _watchers()
         turns.moved(session_id)
         platform = platform or _platforms.get(session_id, "")
@@ -304,6 +362,15 @@ def _on_answer(session_id: str = "", platform: str = "", assistant_message=None,
             waiting.watch(session_id)
     except Exception:
         log.debug("redde-push: answer hook failed", exc_info=True)
+
+
+def _on_tool_done(tool_name: str = "", args=None, result=None, session_id: str = "", **_) -> None:
+    """`post_tool_call`: a reminder, timer, alarm or job tool finished; its job id goes onto the
+    reminder card that follows (1.14.6). Nothing else, and quickly: it runs after every tool."""
+    try:
+        cards.saw_result(session_id, tool_name, args, result)
+    except Exception:
+        log.debug("redde-push: tool result watch failed", exc_info=True)
 
 
 def _on_request_error(session_id: str = "", platform: str = "", retryable=None, reason: str = "", status_code=None, error=None, **_) -> None:
@@ -431,10 +498,33 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["keys"]:
         # Keys a bot asked for (keys.py): the app lists them, and answers one with the key sealed
         # to that request alone, or declines it. Kept in the main home.
-        return keys.slash(calls.caller(_home())[1], words[1:])
+        said = keys.slash(calls.caller(_home())[1], words[1:])
+        if said.startswith("redde-push keys set REDDE_MAIL_"):
+            mail._usable_cache.clear()   # (read from .env each time: counts at once, no restart)
+        return said
     if words[:1] == ["calls"]:
         # Which agents may ring the phone (calls.py): kept in the main home, with the phones.
         return calls.slash(_store_in(calls.caller(_home())[1]), words[1:])
+    if words[:1] == ["job-model"]:
+        # A job's own model at once (routines.py, Run On): `job-model <profile> <job> <model|-> <provider|->`.
+        return _job_model_slash(words[1:])
+    if words[:1] == ["skip"]:
+        # Skip a repeating job's next run at once (routines.py): `skip <profile> <job> <when>`.
+        return _skip_slash(words[1:])
+    if words[:2] == ["goals", "list"]:
+        # Every agent's goals, with their steps and latest progress (goals.py), as JSON.
+        import json
+        return "redde-push goals " + json.dumps(goals.listing(routines.Stores(calls.caller(_home())[1])), ensure_ascii=False)
+    if words[:2] == ["goals", "end"]:
+        # End a goal: its check-in job deleted, the goal marked ended (goals.py).
+        return _end_goal_slash(words[2:])
+    if words[:1] == ["memory"]:
+        # An import's facts to long-term memory (longterm.py): which store, and a memory MCP server
+        # written to with no model call.
+        return longterm.slash(words[1:], raw_args, _config(), _tool_names(), _dispatch, _tool_schema)
+    if words[:1] == ["mail"]:
+        # Email (mail.py, 1.16.0): the app's inbox, its taps, drafts, rules, the log; JSON answers.
+        return mail.slash(mail.Inbox(calls.caller(_home())[1]), words[1:], raw_args)
     if words[:1] == ["leave"]:
         # When to wake a device for Leave-By Alerts' traffic re-check (leave.py): kept in the main
         # home, with the phones; the schedules' thread sends each at its time.
@@ -482,6 +572,53 @@ def _slash(raw_args: str = "") -> str:
         threading.Thread(target=pusher.send, args=([device], core.note("paired")), name="redde-push-paired", daemon=True).start()
         return f"redde-push paired {core.host_name()}"
     return "redde-push: this command is for the Redde app. In a terminal: hermes redde-push pair"
+
+
+def _end_goal_slash(words: list[str], remove=None) -> str:
+    """`/redde-push goals end <profile> <goal>`: "redde-push goals ended <goal>", or "redde-push
+    goals unknown"."""
+    if len(words) != 2 or not calls.PROFILE.fullmatch(words[0]) or not goals.goal_id(f"[redde-goal:{words[1]}]"):
+        return "redde-push goals: this command is for the Redde app."
+    root = calls.caller(_home())[1]
+    said = goals.end(root if words[0] == "default" else root / "profiles" / words[0], words[1], remove)
+    return f"redde-push goals ended {words[1]}" if "ended" in said else "redde-push goals unknown"
+
+
+def _skip_slash(words: list[str], cron=None) -> str:
+    """`/redde-push skip <profile> <job> <when>`: "redde-push skipped <job> <next run>", or
+    "redde-push skip <outcome>" (gone, waiting, failed, unknown)."""
+    if len(words) != 3 or not words[2].isdigit() or not calls.PROFILE.fullmatch(words[0]):
+        return "redde-push skip: this command is for the Redde app."
+    root = calls.caller(_home())[1]
+    home = root if words[0] == "default" else root / "profiles" / words[0]
+    stores = routines.Stores(root)
+    job = next((j for j in stores.jobs(home) if str(j.get("id")) == words[1]), None)
+    if job is None:
+        return "redde-push skip unknown"
+    outcome = routines.skip(home, job, int(words[2]), cron)
+    if outcome != "skipped":
+        return f"redde-push skip {outcome}"
+    moved = next((j for j in stores.jobs(home) if str(j.get("id")) == words[1]), {})
+    return f"redde-push skipped {words[1]} {moved.get('next_run_at') or ''}".rstrip()
+
+
+def _job_model_slash(words: list[str], cron=None) -> str:
+    """`/redde-push job-model <profile> <job> <model|-> <provider|->`: "redde-push job-model set
+    <job> <model>" ("-": the main model again), or "redde-push job-model <outcome>" (unknown, failed)."""
+    if len(words) != 4 or not calls.PROFILE.fullmatch(words[0]) or not all(words[1:]) \
+            or any(c in w for w in words[2:] for c in "]|\n"):
+        return "redde-push job-model: this command is for the Redde app."
+    root = calls.caller(_home())[1]
+    home = root if words[0] == "default" else root / "profiles" / words[0]
+    job = next((j for j in routines.Stores(root).jobs(home) if str(j.get("id")) == words[1]), None)
+    if job is None:
+        return "redde-push job-model unknown"
+    model = "" if words[2] == "-" else words[2]
+    provider = "" if words[3] == "-" else words[3]
+    outcome = routines.set_model(home, job, model, provider, cron)
+    if outcome != "set":
+        return f"redde-push job-model {outcome}"
+    return f"redde-push job-model set {words[1]} {model or '-'}"
 
 
 # ---- hermes redde-push, for a person at the terminal -------------------------------------------
@@ -574,13 +711,49 @@ def _pair(store: core.Store, pusher: core.Pusher, relay: str, wait: int) -> None
     print("Restart Hermes if it was running before the plugin was enabled.")
 
 
+_plugin_ctx = None
+
+
+def _config() -> dict:
+    try:
+        from hermes_cli.config import load_config
+        return load_config() or {}
+    except Exception:
+        return {}
+
+
+def _tool_names() -> list[str]:
+    try:
+        from tools.registry import registry
+        return registry.get_all_tool_names()
+    except Exception:
+        return []
+
+
+def _tool_schema(name: str):
+    try:
+        from tools.registry import registry
+        return registry.get_schema(name)
+    except Exception:
+        return None
+
+
+def _dispatch(name: str, args: dict) -> str:
+    if _plugin_ctx is None:
+        raise RuntimeError("the plugin isn't registered")
+    return _plugin_ctx.dispatch_tool(name, args)
+
+
 def register(ctx) -> None:
+    global _plugin_ctx
+    _plugin_ctx = ctx
     ctx.register_hook("on_session_start", _remember_platform)
     ctx.register_hook("pre_llm_call", _on_turn)
     ctx.register_hook("pre_approval_request", _on_approval)
     ctx.register_hook("post_llm_call", _on_reply)
     ctx.register_hook("pre_api_request", _on_request)
     ctx.register_hook("post_api_request", _on_answer)
+    ctx.register_hook("post_tool_call", _on_tool_done)
     ctx.register_hook("api_request_error", _on_request_error)
     ctx.register_hook("on_session_end", _on_turn_end)
     ctx.register_hook("subagent_stop", _on_task_done)
@@ -591,6 +764,10 @@ def register(ctx) -> None:
         known = False
     if known:
         ctx.register_hook("agent_loop_stopped", _on_stopped)
+    # A reminder's run answered here, with no model (remind.py, 1.16.1; Hermes 0.22+ has middleware).
+    register_middleware = getattr(ctx, "register_middleware", None)
+    if callable(register_middleware):
+        register_middleware("llm_execution", remind.Reminders(_main_home, lambda: _store_in(_main_home()), _remind).turn)
     ctx.register_command("redde-push", _slash, description="Used by the Redde app to follow a conversation",
                          args_hint="watch <session> <device> | rooms <device> <room,...>")
     # Phone tools (device.py): offered to the agent only for what the phone has turned on.
@@ -607,6 +784,10 @@ def register(ctx) -> None:
     headsup.register(ctx, _home, _store_in)
     # Watches the agent sets itself (watches.py): "let me know when…".
     watches.register(ctx, _home, _store_in)
+    # Goals (goals.py): a plan on the Kanban board, check-ins, progress on the phone.
+    goals.register(ctx, _home)
+    # Email (mail.py): redde_mail while an account is set up, and one way to send.
+    mail.register(ctx, _home)
     # Keys a bot asks for (keys.py): pasted into a card in Redde, straight into the profile's .env.
     keys.register(ctx, _home, _store_in, lambda home, profile: routines.Stores(calls.caller(home)[1]).name(home, profile))
     ctx.register_cli_command("redde-push", "Notifications on your iPhone, iPad or Mac from Redde", _cli_setup, _cli)

@@ -50,6 +50,8 @@ import WidgetKit
 /// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
 /// - `-echo.demoPhoneShot`: a short conversation in which the agent has used the phone four
 ///   times (the Phone tools store screenshot).
+/// - `-echo.demoHome`: Apple Home is a made-up house (`DemoHome`) and Phone tools › Apple Home is
+///   allowed: with `-echo.demoCards homekit`, the home card's Apple Home rows answer from it.
 /// - `-echo.demoPhone [settings]`: Phone tools switched on, each area set (in these settings
 ///   only: nothing of iOS's is asked for), and the agent using the phone played live: the
 ///   calendar, a reminder that Phone tools asks about for real, a photo found by what it
@@ -64,6 +66,10 @@ import WidgetKit
 /// - `-echo.demoDocument`: a reply that came with a Markdown file (a tile that opens in QuickLook),
 ///   then one that names its files by path (links that open them).
 /// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
+/// - `-echo.demoBrowsing`: watching the agent work: a finished reply that browsed three pages, then
+///   one still browsing, with its terminal printing (`AgentWorkStrip`); `-echo.demoBrowsing history`
+///   opens the finished reply's steps (`AgentBrowsingHistory`). `-echo.demoBotScreen
+///   [you|other]`: the Agent's Screen over a made-up desktop, watched, driven by you, or by someone else.
 /// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
 ///   `-echo.demoCards weather` (or `places`): that card alone. `-echo.demoCards purchase`: headphones to buy, as a purchase
 ///   card (`PurchaseCard`); its pictures are drawn on the phone, and show with `-linkPreviews YES`. `home`, `reminder`,
@@ -95,6 +101,8 @@ import WidgetKit
 ///   `-echo.demoWidgets clear` empties them again.
 /// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips|push|gateway|files`: open that
 ///   screen at launch (the last two want `-echo.demoGateway` and `-echo.demoFiles` without a server).
+/// - `-echo.screen comingUp`: Agent Activity on its Coming Up tab (2.4); with `-echo.demoComingUp`,
+///   a made-up day around now instead of the server's jobs (`ComingUpDemo`).
 /// - `-echo.pushLink <link>`: open a pairing link for notifications, as the Camera would.
 ///   `-push.relay <url>` points the app at another push relay (the lab's, on this Mac).
 /// - `-echo.demoNotify [seconds]`: ask to send notifications, then post one that many seconds
@@ -108,7 +116,8 @@ import WidgetKit
 ///   logs what is pending once the calendar's change has been followed, and turns the switch off.
 ///   `-echo.settingsAnchor leaveBy` opens Settings → Agent on Leave-By Alerts; `-echo.screen headsUps`
 ///   the Heads-Ups page, where they are too.
-/// - `-echo.section cron|kanban`: open the conversation list on that tab.
+/// - `-echo.section planned|kanban|made` (`cron` still means Planned): open the conversation list on that tab.
+/// - `-echo.demoPlanned`: Planned (and Coming Up) with a made-up week, phone alarms and reminders included.
 /// - `-echo.settingsAnchor [icloud|plugin|location]`: scroll Settings to the context and memory files, to iCloud,
 ///   to the Redde Plugin row, or (Agent) to Current Location.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
@@ -267,12 +276,22 @@ enum DevHooks {
         if has("-echo.incognito") { conversation.startIncognito() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
         if has("-echo.demoPhoneShot") { conversation.seedPhoneShotDemo() }
+        if has("-echo.demoHome") {
+            DeviceHome.layer = DemoHome()
+            var tools = settings.phoneTools
+            tools.on = true
+            tools.set(.home, .allow)
+            settings.phoneTools = tools
+        }
         if has("-echo.demoPhone") {
             var tools = PhoneToolsSettings()
             tools.on = true
             for (area, access) in [(DeviceArea.calendar, PhoneToolsSettings.Access.allow), (.reminders, .ask), (.contacts, .ask), (.photos, .allow), (.files, .ask),
-                                   (.alarms, .ask), (.widget, .allow), (.people, .allow)] {
+                                   (.alarms, .ask), (.widget, .allow), (.people, .allow), (.health, .allow), (.home, .allow)] {
                 tools.set(area, access)
+            }
+            for kind in [HealthKind.steps, .distance, .activeEnergy, .exerciseMinutes, .restingHeartRate, .heartRateVariability, .sleep, .workouts] {
+                tools.share(kind, true)
             }
             settings.phoneTools = tools
             if value("-echo.demoPhone") != "settings" { conversation.streamPhoneDemo(reach: value("-echo.demoPhone") == "reach") }
@@ -294,6 +313,7 @@ enum DevHooks {
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }
         if has("-echo.demoPage") { conversation.seedPageDemo() }
         if has("-echo.demoCards") { conversation.seedCardsDemo(only: value("-echo.demoCards")) }
+        if has("-echo.demoBrowsing") { conversation.seedBrowsingDemo() }
         if has("-echo.demoAgenda") { conversation.seedAgendaDemo(tomorrowOnly: value("-echo.demoAgenda") == "tomorrow") }
         // A key a bot asked for, its card open over the app, answered by nothing (screenshots).
         if has("-echo.demoKeyRequest") { KeyRequests.shared.showDemo() }

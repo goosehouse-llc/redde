@@ -330,6 +330,24 @@ class Store:
         with self._lock:
             self._write("routine-runs.json", {"runs": runs})
 
+    def reminders_told(self) -> dict[str, float]:
+        """Reminders ("<profile>|<job>") told as their run started (`remind.py`), and when."""
+        with self._lock:
+            return {k: float(t) for k, t in (self._read("reminders-told.json").get("told") or {}).items()}
+
+    def tell_reminder(self, key: str) -> None:
+        with self._lock:
+            now = time.time()
+            told = {k: t for k, t in self.reminders_told().items() if t > now - 86400}
+            told[key] = now
+            self._write("reminders-told.json", {"told": told})
+
+    def untell_reminder(self, key: str) -> None:
+        with self._lock:
+            told = self.reminders_told()
+            if told.pop(key, None) is not None:
+                self._write("reminders-told.json", {"told": told})
+
     def leave_wakes(self) -> dict[str, list[dict]]:
         """Leave-By Alerts' traffic re-checks (`leave.py`): device id -> its wakes, each `i` the
         alert's opaque id, `t` the event's title, `w` when (seconds since 1970)."""
@@ -563,14 +581,19 @@ def room_note(kind: str, room: str, name: str = "", body: str = "", detail: str 
 
 
 def routine_note(profile: str, bot: str, title: str, body: str = "", failed: bool = False, brief: str = "",
-                 starts: str = "", where: str = "") -> dict:
+                 starts: str = "", where: str = "", goal: str = "", progress: str = "") -> dict:
     """One of a bot's schedules ran (`routines.py`): `p` the bot's profile, `d` what it is called,
     `t` the schedule's name, `b` what it came up with (or why it didn't finish, `w` "failed"). A
     `[redde-notify]` job's, whose answer has no chat to be in, is a briefing the phone keeps: `x`
-    "brief", `i` the job's id (`brief`)."""
+    "brief", `i` the job's id (`brief`). A goal's check-in (`goals.py`, from 1.15.0) is a briefing
+    too, with `o` the goal's id and `q` its progress ("3/7"), which an older Redde leaves unread."""
     made = {"v": 1, "k": "routine", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64)}
     if brief:
         made["x"], made["i"] = "brief", clipped(brief, 40)
+    if goal:
+        made["o"] = clipped(goal, 40)
+    if progress:
+        made["q"] = clipped(progress, 9)
     # A heads-up's event: when it starts (`u`) and where (`r`), for the phone's widget and leave time.
     if starts:
         made["u"] = clipped(starts, 40)
@@ -588,16 +611,17 @@ def routine_note(profile: str, bot: str, title: str, body: str = "", failed: boo
     return made
 
 
-def watch_note(profile: str, name: str, title: str, body: str, watch: str, failed: bool = False) -> dict:
+def watch_note(profile: str, name: str, title: str, body: str, watch: str, failed: bool = False, why: str = "") -> dict:
     """A watch saw something change (`watches.py`): `p` the agent's profile, `d` what it is called,
     `t` what is watched, `b` what it says changed (or why it couldn't look, `w` "failed"), `i` the
-    watch's id."""
+    watch's id. From 1.15.0, `w` "noemail": a watch on email where the agent has no way to read
+    any (no email MCP); the watch is paused."""
     made = {"v": 1, "k": "watch", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64)}
     for key, value, limit in (("d", name, 80), ("t", title, 80), ("i", watch, 40)):
         if value:
             made[key] = clipped(value, limit)
-    if failed:
-        made["w"] = "failed"
+    if failed or why:
+        made["w"] = clipped(why, 20) if why else "failed"
     if body:
         made["b"] = clipped(body, BODY_LIMIT, lines=True)
     while len(json.dumps(made, ensure_ascii=False).encode()) > NOTE_LIMIT and len(made.get("b", "")) > 20:
@@ -630,6 +654,19 @@ def ideas_note(profile: str, name: str, ideas: list[dict], offer: str = "") -> d
     made["y"] = list(ideas)
     while len(json.dumps(made, ensure_ascii=False).encode()) > NOTE_LIMIT and len(made["y"]) > 1:
         made["y"] = made["y"][:-1]
+    return made
+
+
+def mail_note(title: str, body: str, entry: str, why: str = "rule") -> dict:
+    """Something in the person's email they asked to hear of (`mail.py`, 1.16.0): `t` what, `b` the
+    line, `i` the log entry, `x` why ("rule": one of their rules said to tell them). An older
+    Redde leaves `k` "mail" unread."""
+    made = {"v": 1, "k": "mail", "at": int(time.time()), "n": host_name(), "p": "default", "x": clipped(why, 12)}
+    for key, value, limit in (("t", title, 80), ("i", entry, 40)):
+        if value:
+            made[key] = clipped(value, limit)
+    if body:
+        made["b"] = clipped(body, BODY_LIMIT, lines=True)
     return made
 
 

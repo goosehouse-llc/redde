@@ -1755,20 +1755,12 @@ final class Conversation {
         guard let current = try await client.bots().bots.first(where: { $0.name == ref.profile }) else {
             throw TransportError.malformed(String(localized: "\(ref.name) isn't on this server any more"))
         }
-        if let aside = try await client.startFresh(current) { EarlierBotChats.remember(aside, profile: ref.profile, server: server) }
-        // Read again: the roster no longer names the chat put aside, so the bot gets a new one.
-        // Just after, Hermes could still list the old one, which then opened again, as if nothing
-        // had happened: a new chat is waited for, a few seconds at most.
-        for attempt in 0 ..< 5 {
-            let roster = try await BotDirectory.shared.refresh()
-            guard let fresh = roster.bots.first(where: { $0.name == ref.profile }) else {
-                throw TransportError.malformed(String(localized: "\(ref.name) isn't on this server any more"))
-            }
-            try await openBot(fresh, mainName: mainName)
-            if serverSessionID != old { return }
-            if attempt < 4 { try await Task.sleep(for: .milliseconds(700)) }
-        }
-        throw TransportError.malformed(String(localized: "Hermes hasn't put the old chat aside yet. Try again in a moment."))
+        // The old chat put aside and the new one made in one go (`HermesServeClient.startFresh`):
+        // the new one is opened as it is, and the roster read after, for the list.
+        let (aside, new) = try await client.startFresh(current)
+        if let aside { EarlierBotChats.remember(aside, profile: ref.profile, server: server) }
+        try await loadServeSession(HermesSessionsAPI.SessionSummary(id: new), bot: ref, isNew: true)
+        Task { _ = try? await BotDirectory.shared.refresh() }
     }
 
     /// A bot's earlier chats (`EarlierBotChats`), newest first: on the Dashboard every one the
@@ -1875,12 +1867,20 @@ final class Conversation {
     private var pendingNote: String?
 
     /// "Make This a Routine": a message asking the agent to keep what it did here as a skill.
-    func makeRoutine(name: String, skill: String, when: String?) {
-        pendingNote = RoutineNote.note(name: name, skill: skill, when: when)
+    func makeRoutine(name: String, skill: String, when: String?, asked: String? = nil) {
+        pendingNote = RoutineNote.note(name: name, skill: skill, when: when, asked: asked)
         _ = send(String(localized: "Make this a routine: “\(name)”.", comment: "The message a chat's Make This a Routine sends, with the routine's name"))
     }
 
     /// A card answered with a tap: `shown` as the person's message, `said` in its note.
+    /// What the user asked for a reply: their message just before it, in plain words, clipped.
+    func asked(before reply: UUID) -> String? {
+        guard let index = messages.firstIndex(where: { $0.id == reply }) else { return nil }
+        guard let mine = messages[..<index].last(where: { $0.role == .user }) else { return nil }
+        let text = RoutineNote.strip(mine.text).trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : String(text.prefix(300))
+    }
+
     func answerCard(_ card: ReplyCard, shown: String, said: String) {
         CardAnswers.shared.record(card.key, said: said)
         pendingNote = CardNote.note(key: card.key, said: said)

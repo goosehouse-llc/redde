@@ -7,6 +7,9 @@ import SwiftUI
 /// the agent does it with its own Home Assistant tools: Redde never talks to Home Assistant itself.
 /// The row says so while the agent is at it, and what was asked after. Unlocking a door or opening
 /// a garage asks here first. With several lights on, "All off" asks for them all.
+///
+/// A row from Apple Home (`homekit:` entities, from the phone tools, asked 2026-11-03) is done
+/// here on the phone, in Apple Home, with no message to the agent; the row says when it is done.
 struct HomeCard: View {
     let card: ReplyCard.Home
     let whole: ReplyCard
@@ -16,6 +19,8 @@ struct HomeCard: View {
     @State private var drafts: [Int: Double] = [:]
     @State private var waiting: Task<Void, Never>?
     @State private var confirming: Confirm?
+    /// Apple Home rows changed here: being done, done, or what went wrong.
+    @State private var direct: [Int: Direct] = [:]
     @Environment(\.answerCard) private var answerer
     @Environment(\.pinnedCard) private var pinned
 
@@ -24,6 +29,8 @@ struct HomeCard: View {
         /// Where a switch now stands.
         var on: Bool?
     }
+
+    enum Direct: Equatable { case working, done, failed(String) }
 
     struct Confirm: Identifiable {
         var index: Int
@@ -68,7 +75,11 @@ struct HomeCard: View {
                 Button(Self.verb(confirming.action), role: .destructive) { send(confirming.action, to: confirming.index) }
             }
         } message: {
-            Text("Your agent will do it with Home Assistant.", comment: "Under the question before a home card unlocks a door or opens a garage")
+            if let confirming, card.devices[confirming.index].homeKit != nil {
+                Text("Redde will do it in Apple Home.", comment: "Under the question before a home card unlocks an Apple Home door or opens its garage")
+            } else {
+                Text("Your agent will do it with Home Assistant.", comment: "Under the question before a home card unlocks a door or opens a garage")
+            }
         }
         .onDisappear { waiting?.cancel() }
     }
@@ -88,7 +99,9 @@ struct HomeCard: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(device.name).chatFont(.subheadline, weight: .semibold).lineLimit(1)
-                    if let pending {
+                    if let done = direct[index], let pending {
+                        DirectLine(state: done, label: pending.label)
+                    } else if let pending {
                         HStack(spacing: 5) {
                             if answerer?.busy == true { ProgressView().controlSize(.mini) } else { Image(systemName: "checkmark.circle.fill").imageScale(.small) }
                             Text(answerer?.busy == true ? String(localized: "\(pending.label)…", comment: "A home card's device while the agent is asked to change it, e.g. Turn off…")
@@ -128,7 +141,7 @@ struct HomeCard: View {
 
     @ViewBuilder
     private func control(_ device: ReplyCard.Home.Device, index: Int) -> some View {
-        let busy = answerer == nil || answerer?.busy == true
+        let busy = isBusy(index)
         switch device.kind {
         case .light, .switch, .fan:
             Toggle(device.name, isOn: Binding(get: { isOn(index) }, set: { ask(.power($0), index) }))
@@ -209,7 +222,7 @@ struct HomeCard: View {
             round("plus", action: up)
         }
         .padding(.vertical, -6)
-        .disabled(answerer == nil || answerer?.busy == true)
+        .disabled(isBusy(index))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
         .accessibilityValue(value)
@@ -219,6 +232,11 @@ struct HomeCard: View {
     // MARK: Asking
 
     private func isOn(_ index: Int) -> Bool { asked[index]?.on ?? card.devices[index].isOn }
+
+    /// A control can't be used: the agent is at it, or Apple Home is.
+    private func isBusy(_ index: Int) -> Bool {
+        card.devices[index].homeKit != nil ? direct[index] == .working : (answerer == nil || answerer?.busy == true)
+    }
 
     private func ask(_ action: Action, _ index: Int) {
         if Self.isRisky(action, card.devices[index]) { confirming = Confirm(index: index, action: action) } else { send(action, to: index) }
@@ -238,22 +256,53 @@ struct HomeCard: View {
     }
 
     private func send(_ action: Action, to index: Int) {
-        guard let answerer else { return }
         let device = card.devices[index]
-        let message = Self.message(action, device)
         var now: Bool?
         switch action {
         case let .power(on), let .open(on), let .play(on): now = on
         case let .lock(locked): now = !locked
         case .brightness, .target: now = nil
         }
+        // Apple Home's: done here, in Apple Home.
+        if let home = device.homeKit, let change = Self.change(action, device) {
+            asked[index] = Ask(label: Self.verb(action), on: now)
+            direct[index] = .working
+            let thing = HomeThing(id: home.id, name: device.name, room: device.area, kind: home.kind)
+            Task {
+                do {
+                    try await DeviceHome.layer.apply(change, to: thing)
+                    direct[index] = .done
+                } catch {
+                    direct[index] = .failed((error as? DeviceToolError)?.message ?? error.localizedDescription)
+                    asked[index] = Ask(label: Self.verb(action), on: nil)
+                }
+            }
+            return
+        }
+        guard let answerer else { return }
+        let message = Self.message(action, device)
         asked[index] = Ask(label: Self.verb(action), on: now)
         answerer.answer(whole, message.shown, message.said)
     }
 
+    /// A control as an Apple Home change; nil for what Apple Home can't do from here (media).
+    static func change(_ action: Action, _ device: ReplyCard.Home.Device) -> HomeChange? {
+        switch action {
+        case let .power(on): HomeChange(on: on)
+        case let .brightness(percent): HomeChange(brightness: percent)
+        case let .target(degrees): HomeChange(targetTemperature: device.unit?.contains("F") == true ? (degrees - 32) * 5 / 9 : degrees)
+        case let .open(open): HomeChange(openDoor: open)
+        case let .lock(lock): HomeChange(lock: lock)
+        case .play: nil
+        }
+    }
+
     private func allOff(_ answerer: CardAnswerer) {
-        let lights = lightsOn.map { card.devices[$0] }
-        for index in lightsOn { asked[index] = Ask(label: Self.verb(.power(false)), on: false) }
+        // Apple Home's lights are turned off here; any others are asked of the agent.
+        for index in lightsOn where card.devices[index].homeKit != nil { send(.power(false), to: index) }
+        guard lightsOn.contains(where: { card.devices[$0].homeKit == nil }) else { return }
+        let lights = lightsOn.filter { card.devices[$0].homeKit == nil }.map { card.devices[$0] }
+        for index in lightsOn where card.devices[index].homeKit == nil { asked[index] = Ask(label: Self.verb(.power(false)), on: false) }
         let message = Self.allOff(lights)
         answerer.answer(whole, message.shown, message.said)
     }
@@ -432,4 +481,34 @@ struct HomeCard: View {
         case .fan, .switch, .media, .sensor: .teal
         }
     }
+}
+
+
+/// An Apple Home row's line once it was changed here: at it, done, or what Apple Home said.
+private struct DirectLine: View {
+    let state: HomeCard.Direct
+    let label: String
+
+    var body: some View {
+        HStack(spacing: 5) {
+            switch state {
+            case .working:
+                ProgressView().controlSize(.mini)
+                Text(String(localized: "\(label)…", comment: "A home card's device while Apple Home changes it, e.g. Turn off…"))
+            case .done:
+                Image(systemName: "checkmark.circle.fill").imageScale(.small)
+                Text(String(localized: "Done: \(label)", comment: "A home card's device once Apple Home changed it, e.g. Done: Turn off"))
+            case let .failed(why):
+                Image(systemName: "exclamationmark.triangle.fill").imageScale(.small)
+                Text(why)
+            }
+        }
+        .chatFont(.caption, weight: .medium)
+        .foregroundStyle(state.isFailure ? AnyShapeStyle(.red) : AnyShapeStyle(.tint))
+        .lineLimit(2)
+    }
+}
+
+private extension HomeCard.Direct {
+    var isFailure: Bool { if case .failed = self { true } else { false } }
 }

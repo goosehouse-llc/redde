@@ -60,6 +60,29 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
     case conversion(Conversion)
     /// A share's price, or a few, as the agent looked them up: Redde never buys or sells.
     case stock(Quotes)
+    /// The inbox as the plugin sorted it (2.4 email): piles with their counts and a few emails
+    /// each; a tap opens the email in the app, read from the server then.
+    case inbox(InboxCard)
+
+    nonisolated struct InboxCard: Codable, Equatable, Sendable {
+        var account: String?
+        var title: String?
+        var buckets: [Pile]
+
+        nonisolated struct Pile: Codable, Equatable, Sendable {
+            var bucket: MailBucket
+            var count: Int
+            var threads: [Row]
+        }
+
+        nonisolated struct Row: Codable, Equatable, Hashable, Sendable {
+            var id: String
+            var from: String
+            var subject: String
+            var summary: String?
+            var unread: Bool
+        }
+    }
 
     /// Products the agent recommends: each with its price, rating, store and page, as it looked
     /// them up. The card opens a product's page in the browser; it never buys anything.
@@ -236,6 +259,9 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         var kind: Kind? = nil
         /// A line under its title, when the agent gives one ("From your Gmail · as you").
         var subtitle: String? = nil
+        /// An email the Redde plugin drafted (2.4): Send has the plugin send exactly this, by its
+        /// hash (`mail draft-send`), rather than telling the agent to.
+        var draft: MailDraft? = nil
 
         nonisolated enum Kind: String, Codable, Sendable, CaseIterable {
             case email, message, event, purchase, other
@@ -383,7 +409,7 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         // A purchase card's chips, a home's controls, a reminder's Change and Cancel, a score's Refresh.
         // From 2026-10-31: a recipe's, a delivery's, a flight's, a show's and a stock's chips.
         case .review, .choice, .checklist, .form, .purchase, .home, .reminder, .score, .recipe, .delivery, .flight, .show, .stock: true
-        case .map, .places, .weather, .time, .agenda, .key, .compare, .conversion: false
+        case .map, .places, .weather, .time, .agenda, .key, .compare, .conversion, .inbox: false
         }
     }
 
@@ -710,7 +736,20 @@ nonisolated enum ReplyCards {
             return conversion(value).map(ReplyCard.conversion)
         case "stock", "stocks", "quote", "quotes", "ticker":
             return quotes(value).map(ReplyCard.stock)
+        case "inbox", "email_inbox", "mail":
+            return inbox(value).map(ReplyCard.inbox)
         case "review", "confirm":
+            // An email the plugin drafted: its parts are the fields, if the agent gave none.
+            if let draft = MailDraft(json: value["draft"]), (value["fields"]?.array ?? []).isEmpty {
+                var fields: [ReplyCard.Field] = [.init(label: "To", value: draft.to.joined(separator: ", "), long: false)]
+                if !draft.cc.isEmpty { fields.append(.init(label: "Cc", value: draft.cc.joined(separator: ", "), long: false)) }
+                fields += [.init(label: "Subject", value: String(draft.subject.prefix(300)), long: false),
+                           .init(label: "Message", value: String(draft.body.prefix(4000)), long: true)]
+                let title = text(value["title"]).map { String($0.prefix(120)) } ?? String(localized: "Email to send", comment: "A drafted email's card, when the agent gave it no title")
+                return .review(.init(title: title, action: text(value["action"]).map { String($0.prefix(24)) } ?? String(localized: "Send"),
+                                     fields: fields, note: text(value["note"]).map { String($0.prefix(300)) }, kind: .email,
+                                     subtitle: text(value["subtitle"]).map { String($0.prefix(80)) }, draft: draft))
+            }
             let fields: [ReplyCard.Field] = (value["fields"]?.array ?? []).prefix(maxFields).compactMap { f in
                 guard let label = text(f["label"] ?? f["name"]) else { return nil }
                 let value = text(f["value"]) ?? ""
@@ -720,7 +759,8 @@ nonisolated enum ReplyCards {
             guard let title = text(value["title"]), !fields.isEmpty else { return nil }
             return .review(.init(title: String(title.prefix(120)), action: text(value["action"]).map { String($0.prefix(24)) } ?? String(localized: "Do It"),
                                  fields: fields, note: text(value["note"]).map { String($0.prefix(300)) },
-                                 kind: .init(lenient: text(value["kind"])), subtitle: text(value["subtitle"]).map { String($0.prefix(80)) }))
+                                 kind: .init(lenient: text(value["kind"])), subtitle: text(value["subtitle"]).map { String($0.prefix(80)) },
+                                 draft: MailDraft(json: value["draft"])))
         case "choice", "choose", "options":
             let options: [ReplyCard.Option] = (value["options"]?.array ?? []).prefix(maxOptions).compactMap { o in
                 if let plain = o.string?.nilIfEmpty { return .init(title: String(plain.prefix(120))) }
@@ -1093,6 +1133,22 @@ nonisolated enum ReplyCards {
 
     /// A field as text: words as written, a number as its figures (a whole one without a decimal
     /// point or an exponent, however long: an identifier written as a number). Not a number that isn't finite.
+    /// An inbox card (`mail.py`'s): at most 4 piles of 5 emails, as `mail list` gives them.
+    static func inbox(_ value: JSONValue) -> ReplyCard.InboxCard? {
+        let piles: [ReplyCard.InboxCard.Pile] = (value["buckets"]?.array ?? []).prefix(4).compactMap { b in
+            guard let bucket = MailBucket(rawValue: text(b["bucket"]) ?? "") else { return nil }
+            let rows: [ReplyCard.InboxCard.Row] = (b["threads"]?.array ?? []).prefix(5).compactMap { t in
+                guard let id = text(t["id"]) else { return nil }
+                return .init(id: id, from: text(t["from"]).map { String($0.prefix(80)) } ?? "",
+                             subject: text(t["subject"]).map { String($0.prefix(160)) } ?? String(localized: "(no subject)", comment: "An email with no subject"),
+                             summary: text(t["summary"]).map { String($0.prefix(240)) }, unread: t["unread"]?.bool ?? false)
+            }
+            return .init(bucket: bucket, count: b["count"]?.int ?? rows.count, threads: rows)
+        }
+        guard !piles.isEmpty else { return nil }
+        return .init(account: text(value["account"]), title: text(value["title"]).map { String($0.prefix(120)) }, buckets: piles)
+    }
+
     static func text(_ value: JSONValue?) -> String? {
         if let s = value?.string?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty { return s }
         if let n = value?.number, n.isFinite { return n == n.rounded() ? n.wholeFigures : String(n) }
@@ -1183,7 +1239,11 @@ nonisolated extension ReplyCard {
                     .contains((state ?? "").lowercased())
             }
             /// Opening it would let someone in: Redde asks first.
-            var risky: Bool { kind == .lock || (kind == .cover && [entity ?? "", name].joined(separator: " ").lowercased().contains("garage")) }
+            /// An Apple Home door or window (`homekit:door:…`) counts as well.
+            var risky: Bool {
+                let said = [entity ?? "", name].joined(separator: " ").lowercased()
+                return kind == .lock || (kind == .cover && (said.contains("garage") || said.hasPrefix("homekit:door:") || said.hasPrefix("homekit:window:")))
+            }
         }
 
         /// A kind as Home Assistant's domains and agents name it.
@@ -1218,6 +1278,10 @@ nonisolated extension ReplyCard {
         var id: String?
         /// A timer's length, for its ring.
         var duration: TimeInterval?
+
+        /// Backed by something a tool set: its job's or its alarm's id. Sol drew cards with
+        /// nothing set behind them (2026-11-03); plugin 1.14.6 names the job (`job`).
+        var isSet: Bool { id != nil }
     }
 
     nonisolated struct Comparison: Codable, Equatable, Sendable {
@@ -1322,7 +1386,7 @@ nonisolated extension ReplyCards {
         return .init(title: String(title.prefix(120)), kind: kind, at: at, when: at == nil ? written.map { String($0.prefix(80)) } : nil,
                      repeats: text(value["repeat"] ?? value["repeats"] ?? value["recurrence"]).map { String($0.prefix(80)) },
                      place: text(value["where"] ?? value["place"] ?? value["location"]).map { String($0.prefix(60)) },
-                     id: text(value["id"] ?? value["job_id"]).map { String($0.prefix(80)) }, duration: duration)
+                     id: text(value["job"] ?? value["id"] ?? value["job_id"]).map { String($0.prefix(80)) }, duration: duration)
     }
 
     /// Seconds: 1200, "20 min", "1h 30m", "00:20:00".

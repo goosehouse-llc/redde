@@ -48,10 +48,60 @@ def title(name: str) -> str:
     return name.split("]", 1)[1].strip() if name.startswith(TAG) and "]" in name else name
 
 
+#: A lead-in ahead of the answer ("Based on my research, here's the current status:").
+_LEAD_IN = re.compile(r"^(based on|after (checking|looking)|i (checked|looked)|here'?s|here is|let me|now|ok(ay)?|"
+                      r"good|great|alright)\b.{0,160}:$", re.IGNORECASE)
+#: A first sentence that only says nothing changed ("No price changes.", "Nothing has changed since the
+#: last check.", "Still the same."): 2026-11-05, a GTA 6 watch on Kapitsa sent "Based on my research,
+#: here's the current status: **No price changes. GTA 6 remains at $79.99…**" twice in a morning.
+_NO_CHANGE = re.compile(
+    r"((there (are|have been|were) )?no ((new|real|notable|significant|price|stock|status) )*"
+    r"(changes?|updates?|news|movement)|nothing (new|has changed|changed|to report)|"
+    r"(it'?s |it is |everything is |the price is |prices are )?(still )?(the same|unchanged))"
+    r"( (in|to|on|for|since|from|at|across) [^,;]{0,60})?", re.IGNORECASE)
+#: Words that turn a "no change" into news ("No price changes, but it's back in stock.").
+_BUT = re.compile(r"\b(but|however|except|although|though|now (in|out of) stock|back in stock|sold out)\b",
+                  re.IGNORECASE)
+
+
 def quiet(answer: str) -> bool:
-    """The run found nothing worth telling."""
+    """The run found nothing worth telling: NOTHING NEW or [SILENT], or a first paragraph that opens
+    by saying only that nothing changed (after any lead-in) and doesn't turn it with a "but"."""
     said = answer.strip()
-    return said.upper().startswith(SILENT) or said.strip(".!*_ ").upper().startswith(QUIET)
+    if said.upper().startswith(SILENT) or said.strip(".!*_ ").upper().startswith(QUIET):
+        return True
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", said) if p.strip()]
+    while paragraphs and _LEAD_IN.match(paragraphs[0].strip("*_#> ")):
+        paragraphs = paragraphs[1:]
+    if not paragraphs:
+        return False
+    opening = paragraphs[0].lstrip("*_#> ")
+    first = re.split(r"(?<=[.!])\s+", opening, maxsplit=1)[0]
+    first = first.strip().strip("*_` ").rstrip(".!").strip("*_` ")
+    return bool(_NO_CHANGE.fullmatch(first)) and not _BUT.search(opening)
+
+
+#: What a watch on email answers where the agent has no tool that reads email (Redde 2.4's watch
+#: templates ask for exactly this), and what the person is told then.
+NO_EMAIL = "NO EMAIL ACCESS"
+NO_EMAIL_SAID = ("This Hermes can't read email yet, so the watch is paused. Add an email MCP server to it "
+                 "(Gmail, Fastmail, IMAP…), then resume the watch in Redde.")
+
+
+def no_email(answer: str) -> bool:
+    """The run answered that it can't read email."""
+    return (answer or "").strip().strip(".!*_` ").upper().startswith(NO_EMAIL)
+
+
+def pause(home: Path, job_id: str, cron=None) -> bool:
+    """Pauses a watch's job in its own store (Hermes's `cron.jobs`, a stand-in in tests)."""
+    try:
+        if cron is None:
+            from cron import jobs as cron
+        with cron.use_cron_store(home):
+            return bool(cron.pause_job(job_id, reason="Redde: no email access"))
+    except Exception:
+        return False
 
 
 def last_told(home: Path, job_id: str) -> tuple[str, float] | None:
