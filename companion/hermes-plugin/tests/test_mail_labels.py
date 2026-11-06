@@ -19,7 +19,7 @@ ALL = "[Gmail]/All Mail"
 def gmail_raw(uid, sender="Ana Ruiz <ana@example.com>", subject="Lunch Thursday?", body="Are you free for lunch on Thursday?",
               pdf=False, image=False, cc=None, date=None):
     msg = EmailMessage()
-    msg["From"], msg["To"], msg["Subject"] = sender, "sam@example.com", subject
+    msg["From"], msg["To"], msg["Subject"] = sender, "alex@example.com", subject
     if cc:
         msg["Cc"] = cc
     msg["Date"] = date or time.strftime("%a, %d %b %Y %H:%M:%S -0000", time.gmtime(time.time() - 3600))
@@ -147,7 +147,7 @@ class GmailLabelTests(Base):
 
     # conditions
     def test_conditions_case_domain_attachments_any_and_age(self):
-        meta = {"from": "Ana Ruiz", "address": "ana@mail.shop.example.com", "subject": "Your ORDER #12", "to": ["sam@example.com"],
+        meta = {"from": "Ana Ruiz", "address": "ana@mail.shop.example.com", "subject": "Your ORDER #12", "to": ["alex@example.com"],
                 "cc": ["lea@example.com"], "attachment_kinds": ["pdf"], "has_attachments": True, "date": time.time(), "account": "main",
                 "bucket": "newsletters", "receipt": True, "snippet": ""}
         m = mail.Inbox.matches
@@ -385,7 +385,7 @@ class SuggestionTests(Base):
         self.assertEqual(self.box.refresh_suggestions(self.box.account(), self.now), [])
 
     def test_every_account_gets_suggestions_but_only_labels_where_gmail(self):
-        (self.root / ".env").write_text("REDDE_MAIL_ADDRESS=sam@icloud.com\nREDDE_MAIL_PASSWORD='app-pass'\nREDDE_MAIL_PROVIDER=icloud\n")
+        (self.root / ".env").write_text("REDDE_MAIL_ADDRESS=alex@icloud.com\nREDDE_MAIL_PASSWORD='app-pass'\nREDDE_MAIL_PROVIDER=icloud\n")
         mail._usable_cache.clear()
         self.box.state.save_settings({"labels": {"main": {"suggest": True}}})
         self.log("archive", "news@paper.example.com", 4)

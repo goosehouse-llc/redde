@@ -19,7 +19,7 @@ mail, cards, core = plugin.mail, plugin.cards, plugin.core
 def raw(uid, sender="Ana Ruiz <ana@example.com>", subject="Lunch Thursday?", body="Are you free for lunch on Thursday?",
         headers=None, html=None):
     msg = EmailMessage()
-    msg["From"], msg["To"], msg["Subject"] = sender, "sam@example.com", subject
+    msg["From"], msg["To"], msg["Subject"] = sender, "alex@example.com", subject
     msg["Date"] = "Mon, 03 Nov 2026 09:%02d:00 -0500" % (uid % 60)
     msg["Message-ID"] = f"<m{uid}@example.com>"
     for k, v in (headers or {}).items():
@@ -185,7 +185,7 @@ class MailTests(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
         self.root = Path(self.dir.name)
-        (self.root / ".env").write_text("OTHER=1\nREDDE_MAIL_ADDRESS=sam@example.com\nREDDE_MAIL_PASSWORD='app-pass'\n"
+        (self.root / ".env").write_text("OTHER=1\nREDDE_MAIL_ADDRESS=alex@example.com\nREDDE_MAIL_PASSWORD='app-pass'\n"
                                          "REDDE_MAIL_PROVIDER=fastmail\n")
         self.server = FakeServer()
         self.sorted_calls = []
@@ -220,7 +220,7 @@ class MailTests(unittest.TestCase):
 
     def test_extra_accounts_and_never_email_platform_secrets(self):
         (self.root / ".env").write_text("EMAIL_ADDRESS=bot@example.com\nEMAIL_PASSWORD=x\n"
-                                         "REDDE_MAIL_ACCOUNTS=WORK\nREDDE_MAIL_WORK_ADDRESS=sam@work.com\nREDDE_MAIL_WORK_PASSWORD=p\n"
+                                         "REDDE_MAIL_ACCOUNTS=WORK\nREDDE_MAIL_WORK_ADDRESS=alex@work.com\nREDDE_MAIL_WORK_PASSWORD=p\n"
                                          "REDDE_MAIL_WORK_PROVIDER=other\nREDDE_MAIL_WORK_IMAP_HOST=imap.work.com\nREDDE_MAIL_WORK_SMTP_HOST=smtp.work.com\n"
                                          "REDDE_MAIL_WORK_SMTP_PORT=587\n")
         found = mail.accounts(self.root)
@@ -551,7 +551,7 @@ class MailTests(unittest.TestCase):
     # setting up from the app
     def test_the_app_asks_only_for_email_keys_and_a_set_key_counts_at_once(self):
         keys = plugin.keys
-        (self.root / ".env").write_text("REDDE_MAIL_ADDRESS=sam@example.com\nREDDE_MAIL_PROVIDER=fastmail\n")
+        (self.root / ".env").write_text("REDDE_MAIL_ADDRESS=alex@example.com\nREDDE_MAIL_PROVIDER=fastmail\n")
         mail._usable_cache.clear()
         self.assertFalse(mail.usable(self.root))
         self.assertEqual(keys.slash(self.root, ["ask", "OPENAI_API_KEY", "default", "x"]), "redde-push keys refused name")
@@ -582,7 +582,7 @@ class MailTests(unittest.TestCase):
     def test_setup_writes_settings_but_never_a_password(self):
         (self.root / ".env").write_text("")
         box = self.inbox()
-        said = json.loads(mail.slash(box, ["setup", "x"], 'mail setup {"address": "sam@icloud.com", "provider": "iCloud"}').split(" ", 2)[2])
+        said = json.loads(mail.slash(box, ["setup", "x"], 'mail setup {"address": "alex@icloud.com", "provider": "iCloud"}').split(" ", 2)[2])
         self.assertEqual(said["written"], ["REDDE_MAIL_ADDRESS", "REDDE_MAIL_PROVIDER"])
         self.assertEqual(said["status"]["accounts"][0]["provider"], "icloud")
         self.assertIn("app password", said["status"]["accounts"][0]["problem"])
@@ -590,7 +590,7 @@ class MailTests(unittest.TestCase):
         self.assertEqual(refused["error"], "not_allowed")
         bad = json.loads(mail.slash(box, ["setup", "x"], 'mail setup {"imap_host": "a\\nREDDE_MAIL_PASSWORD=x"}').split(" ", 2)[2])
         self.assertEqual(bad["error"], "bad_args")
-        work = json.loads(mail.slash(box, ["setup", "x"], 'mail setup {"account": "work", "address": "sam@work.com", "provider": "other"}').split(" ", 2)[2])
+        work = json.loads(mail.slash(box, ["setup", "x"], 'mail setup {"account": "work", "address": "alex@work.com", "provider": "other"}').split(" ", 2)[2])
         self.assertIn("REDDE_MAIL_ACCOUNTS", work["written"])
         self.assertEqual(mail.env_values(self.root)["REDDE_MAIL_ACCOUNTS"], "WORK")
         self.assertTrue(json.loads(mail.slash(box, ["status"]).split(" ", 2)[2])["setup"]["command"])
@@ -616,18 +616,18 @@ class MailTests(unittest.TestCase):
         return json.loads(mail.slash(box, words).split(" ", 2)[2])
 
     def test_removing_the_main_account_keeps_every_other_line(self):
-        (self.root / ".env").write_text("# keys\nOTHER=1\nexport REDDE_MAIL_ADDRESS=sam@example.com\nREDDE_MAIL_PASSWORD='app-pass'\n"
-                                         "REDDE_MAIL_PROVIDER=fastmail\nAPI_SERVER_KEY=abc # note\nREDDE_MAIL_WORK_ADDRESS=sam@work.com\n"
+        (self.root / ".env").write_text("# keys\nOTHER=1\nexport REDDE_MAIL_ADDRESS=alex@example.com\nREDDE_MAIL_PASSWORD='app-pass'\n"
+                                         "REDDE_MAIL_PROVIDER=fastmail\nAPI_SERVER_KEY=abc # note\nREDDE_MAIL_WORK_ADDRESS=alex@work.com\n"
                                          "REDDE_MAIL_WORK_PASSWORD=wp\nREDDE_MAIL_ACCOUNTS=WORK\nLAST=x")
         box = self.inbox()
         self.server.add(1)
         box.sync(box.account())
         draft = box.draft(to=["ana@example.com"], subject="Hi", body="x")
-        mail.set_rules(box.state, [{"when": {"to": "sam@example.com"}, "do": "archive"}, {"when": {"from": "x@y.com"}, "do": "read"}])
+        mail.set_rules(box.state, [{"when": {"to": "alex@example.com"}, "do": "archive"}, {"when": {"from": "x@y.com"}, "do": "read"}])
         box.act("archive", [next(iter(box.state.account("main")["messages"]))])
         self.assertEqual(self._said(box, ["remove", "main"]), {"removed": "main"})
         text = (self.root / ".env").read_text()
-        self.assertEqual(text, "# keys\nOTHER=1\nAPI_SERVER_KEY=abc # note\nREDDE_MAIL_WORK_ADDRESS=sam@work.com\n"
+        self.assertEqual(text, "# keys\nOTHER=1\nAPI_SERVER_KEY=abc # note\nREDDE_MAIL_WORK_ADDRESS=alex@work.com\n"
                                "REDDE_MAIL_WORK_PASSWORD=wp\nREDDE_MAIL_ACCOUNTS=WORK\nLAST=x")
         self.assertEqual([a.id for a in mail.accounts(self.root)], ["work"])
         self.assertFalse((self.root / "redde-push" / "mail" / "acct-main.json").exists())
@@ -639,25 +639,25 @@ class MailTests(unittest.TestCase):
             box.undo(logged[0]["id"])
 
     def test_removing_an_extra_account_and_the_list_of_them(self):
-        (self.root / ".env").write_text("OTHER=1\nREDDE_MAIL_ADDRESS=sam@example.com\nREDDE_MAIL_PASSWORD=p\n"
-                                         "REDDE_MAIL_WORK_ADDRESS=sam@work.com\nREDDE_MAIL_WORK_PASSWORD=wp\n"
-                                         "REDDE_MAIL_HOME_ADDRESS=sam@home.com\nREDDE_MAIL_ACCOUNTS=WORK,HOME\n")
+        (self.root / ".env").write_text("OTHER=1\nREDDE_MAIL_ADDRESS=alex@example.com\nREDDE_MAIL_PASSWORD=p\n"
+                                         "REDDE_MAIL_WORK_ADDRESS=alex@work.com\nREDDE_MAIL_WORK_PASSWORD=wp\n"
+                                         "REDDE_MAIL_HOME_ADDRESS=alex@home.com\nREDDE_MAIL_ACCOUNTS=WORK,HOME\n")
         box = self.inbox()
         self.assertEqual(self._said(box, ["remove", "work"]), {"removed": "work"})
-        self.assertEqual((self.root / ".env").read_text(), "OTHER=1\nREDDE_MAIL_ADDRESS=sam@example.com\nREDDE_MAIL_PASSWORD=p\n"
-                                                            "REDDE_MAIL_HOME_ADDRESS=sam@home.com\nREDDE_MAIL_ACCOUNTS=HOME\n")
+        self.assertEqual((self.root / ".env").read_text(), "OTHER=1\nREDDE_MAIL_ADDRESS=alex@example.com\nREDDE_MAIL_PASSWORD=p\n"
+                                                            "REDDE_MAIL_HOME_ADDRESS=alex@home.com\nREDDE_MAIL_ACCOUNTS=HOME\n")
         self.assertEqual(self._said(box, ["remove", "home"]), {"removed": "home"})
-        self.assertEqual((self.root / ".env").read_text(), "OTHER=1\nREDDE_MAIL_ADDRESS=sam@example.com\nREDDE_MAIL_PASSWORD=p\n")
+        self.assertEqual((self.root / ".env").read_text(), "OTHER=1\nREDDE_MAIL_ADDRESS=alex@example.com\nREDDE_MAIL_PASSWORD=p\n")
 
     def test_a_removed_account_stays_gone_from_the_process_environment(self):
-        os.environ["REDDE_MAIL_ADDRESS"] = "sam@example.com"
+        os.environ["REDDE_MAIL_ADDRESS"] = "alex@example.com"
         os.environ["REDDE_MAIL_PASSWORD"] = "app-pass"
         box = self.inbox()
         self._said(box, ["remove", "main"])
         self.assertNotIn("REDDE_MAIL_PASSWORD", os.environ)
         os.environ["REDDE_MAIL_PASSWORD"] = "app-pass"   # another process of this Hermes still has it
         self.assertEqual(mail.accounts(self.root), [])
-        mail.slash(box, ["setup", "x"], 'mail setup {"address": "sam@example.com", "provider": "fastmail"}')
+        mail.slash(box, ["setup", "x"], 'mail setup {"address": "alex@example.com", "provider": "fastmail"}')
         (self.root / ".env").write_text((self.root / ".env").read_text() + "REDDE_MAIL_PASSWORD=new\n")
         self.assertEqual([a.password for a in mail.accounts(self.root)], ["new"], "set up again from .env")
 

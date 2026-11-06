@@ -15,7 +15,7 @@ struct SessionDetailsTests {
         let row = try json("""
         {"id": "s1", "source": "desktop", "profile": "ops", "model": "qwen36-kapitsa", "billing_provider": "custom:paloma",
          "model_config": "{\\"reasoning_config\\": {\\"effort\\": \\"high\\"}, \\"max_iterations\\": 90}",
-         "started_at": 1793600000.5, "last_activity_at": 1793603600, "cwd": "/home/sam/blog", "git_branch": "main",
+         "started_at": 1793600000.5, "last_activity_at": 1793603600, "cwd": "/home/alex/blog", "git_branch": "main",
          "message_count": 12, "tool_call_count": 7, "api_call_count": 9, "input_tokens": 120000, "output_tokens": 3400,
          "cache_read_tokens": 90000, "reasoning_tokens": 800, "estimated_cost_usd": 0.12, "actual_cost_usd": null, "cost_status": "estimated"}
         """)
@@ -26,7 +26,7 @@ struct SessionDetailsTests {
         #expect(facts.reasoningEffort == "high", "from the model's settings, kept as a string")
         #expect(facts.startedAt == Date(timeIntervalSince1970: 1793600000.5))
         #expect(facts.lastActive == Date(timeIntervalSince1970: 1793603600))
-        #expect(facts.folder == "/home/sam/blog" && facts.branch == "main")
+        #expect(facts.folder == "/home/alex/blog" && facts.branch == "main")
         #expect(facts.messageCount == 12 && facts.toolCallCount == 7 && facts.apiCallCount == 9)
         #expect(facts.inputTokens == 120000 && facts.cacheReadTokens == 90000 && facts.reasoningTokens == 800)
         #expect(SessionCost(facts) == .estimated(0.12))
