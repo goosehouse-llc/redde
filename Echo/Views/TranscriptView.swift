@@ -251,6 +251,8 @@ struct TranscriptView: View {
                 .frame(maxWidth: .infinity)
                 // The rows as scroll targets, so the one at the top can be noted (`topRow`).
                 .scrollTargetLayout()
+                // Swipe left: each message's time.
+                .swipeForTimes()
             }
             .defaultScrollAnchor(conversation.messages.isEmpty ? .top : .bottom, for: .initialOffset)
             // A blanket bottom anchor also re-aims on every content-size change. Scrolling back
@@ -429,6 +431,8 @@ struct TranscriptView: View {
                    isReading: reading,
                    highlight: highlight(for: message.id))
             .equatable()
+            // Its time, seen with a swipe left (`swipeForTimes`).
+            .overlay(alignment: .topTrailing) { MessageTime(date: message.createdAt) }
             // Just sent: it rises out of the composer (and the reply's row waits a beat for it).
             .modifier(MessageArrival(kind: MessageArrival.kind(for: message, isLive: live), leading: theme.promptPrefix != nil))
             .siriMessage(conversationID: conversation.id, messageID: message.id)

@@ -95,7 +95,14 @@ struct GroupChatView: View {
                             .frame(maxWidth: .infinity)
                         }
                         if feed.events.isEmpty, feed.sending.isEmpty { opening }
-                        ForEach(page.shown) { row($0).id($0.id) }
+                        ForEach(page.shown) { event in
+                            row(event)
+                                // Its time, seen with a swipe left (`swipeForTimes`).
+                                .overlay(alignment: .topTrailing) {
+                                    if event.kind.hasPrefix("message.") { MessageTime(date: event.createdAt) }
+                                }
+                                .id(event.id)
+                        }
                         ForEach(feed.sending) { mine($0.text, files: $0.files, id: $0.id, waiting: true, when: .distantPast) }
                         // Replies being written, under their bots, until the room has them.
                         ForEach(feed.drafts.filter { !$0.text.isEmpty }) { writing($0) }
@@ -116,6 +123,7 @@ struct GroupChatView: View {
                         Color.clear.frame(height: 1).id("bottom")
                     }
                     .padding()
+                    .swipeForTimes()
                 }
                 // Opened at the latest, as a chat is. A blanket bottom anchor would also re-aim on
                 // every change of size, pulling the page about while reading back.
