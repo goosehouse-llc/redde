@@ -838,6 +838,9 @@ final class MailCenter {
     private(set) var threads: [String: [MailThread]] = [:]
     private(set) var more: [String: Bool] = [:]
     private(set) var rules: [MailRule] = []
+    /// The label Paperless-ngx takes mail from: the ready-made Paperless rule's, else "Paperless"
+    /// ("an easy way to label or tag emails to be sent to paperless", 2026-11-06).
+    var paperlessLabel: String { rules.first { $0.id == "paperless" }?.arg ?? "Paperless" }
     private(set) var log: [MailLogEntry] = []
     private(set) var loading = false
     /// Something that went wrong, said where the list would be.

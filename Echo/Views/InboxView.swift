@@ -88,6 +88,12 @@ struct InboxView: View {
             pickPile()
             await center.refresh(bucket)
             pickPile()
+            // For Send to Paperless's label, when the Paperless rule names another; quietly.
+            if center.rules.isEmpty {
+                let problem = center.problem
+                await center.loadRules()
+                center.problem = problem
+            }
         }
         .onChange(of: bucket) { _, now in
             selected = []
@@ -209,6 +215,10 @@ struct InboxView: View {
         Button { Task { await center.act(.archive, on: [thread.id]) } } label: {
             Label { Text("Archive", comment: "Email swipe action") } icon: { Image(systemName: "archivebox") }
         }
+        // Labelled for Paperless-ngx's mail rule to take (asked 2026-11-06).
+        Button { Task { await center.act(.label(center.paperlessLabel), on: [thread.id]) } } label: {
+            Label { Text("Send to Paperless", comment: "Email action: label it for Paperless-ngx") } icon: { Image(systemName: "doc.text.magnifyingglass") }
+        }
         Button { snoozing = thread } label: {
             Label { Text("Snooze", comment: "Email swipe action") } icon: { Image(systemName: "clock") }
         }
@@ -279,6 +289,9 @@ struct InboxView: View {
                 }
                 Button { snoozingSelected = true } label: {
                     Label { Text("Snooze", comment: "Email swipe action") } icon: { Image(systemName: "clock") }
+                }
+                Button { actOnSelected(.label(center.paperlessLabel)) } label: {
+                    Label { Text("Send to Paperless", comment: "Email action: label it for Paperless-ngx") } icon: { Image(systemName: "doc.text.magnifyingglass") }
                 }
                 if !leaving.isEmpty {
                     Button { actOnSelected(.unsubscribe, only: leaving.map(\.id)) } label: {
@@ -831,6 +844,9 @@ struct MailReaderView: View {
                 Button(String(localized: "Mark Unread", comment: "Email action"), systemImage: "envelope.badge") { act(.unread) }
             }
             Button(String(localized: "Flag", comment: "Email action"), systemImage: "flag") { act(.flag) }
+            Button(String(localized: "Send to Paperless", comment: "Email action: label it for Paperless-ngx"), systemImage: "doc.text.magnifyingglass") {
+                act(.label(center.paperlessLabel))
+            }
             Section {
                 Button(String(localized: "Always Archive from This Sender", comment: "Email: make a rule"), systemImage: "archivebox") { addRule(.archive) }
                 Button(String(localized: "Always Label from This Sender…", comment: "Email: make a rule"), systemImage: "tag") { ruleName = ""; ruleLabel = .label }

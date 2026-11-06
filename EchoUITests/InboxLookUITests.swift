@@ -64,4 +64,17 @@ final class InboxLookUITests: XCTestCase {
         XCTAssertTrue(last.waitForExistence(timeout: 3), "The email's last line isn't there")
         // (Its frames are the page's before it's fitted, so the picture is the check of the fit.)
     }
+
+    /// Hold an email: Send to Paperless labels it for Paperless-ngx (asked 2026-11-06).
+    func testHoldSendsAnEmailToPaperless() {
+        let app = launch()
+        let first = app.text(containing: "Priya Nair")
+        XCTAssertTrue(first.waitForExistence(timeout: 15), "No demo mail")
+        first.press(forDuration: 1.0)
+        let send = app.buttons["Send to Paperless"]
+        XCTAssertTrue(send.waitForExistence(timeout: 3), "No Send to Paperless in the hold menu")
+        shot(app, "hold-menu")
+        send.tap()
+        XCTAssertTrue(app.text(containing: "Labelled Paperless").waitForExistence(timeout: 5), "No toast for the label")
+    }
 }
