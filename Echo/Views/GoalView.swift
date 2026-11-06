@@ -86,10 +86,13 @@ struct GoalView: View {
                     }
                 }
                 .padding(.vertical, 2)
-                if let next = goal.next {
+                // A check-in kept by Redde before 2026-11-06 has its whole report run into the
+                // next step: shown as the report it is, not as a step.
+                let runOn = goal.details == nil && (goal.next?.count ?? 0) > 160
+                if let next = goal.next, !runOn {
                     nextStep(next, color: BotAvatar.colors(of: face, theme: theme).deep)
                 }
-                if let details = goal.details {
+                if let details = goal.details ?? (runOn ? goal.next : nil) {
                     MarkdownView(text: details).fixedSize(horizontal: false, vertical: true).padding(.vertical, 4)
                 }
             } header: {

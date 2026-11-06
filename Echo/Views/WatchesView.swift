@@ -158,6 +158,8 @@ struct WatchesView: View {
     @State private var loading = true
     @State private var problem: String?
     @State private var adding = false
+    /// A template tapped on the empty page.
+    @State private var starting: WatchTemplate.Kind?
     /// A watch's or a follow-up's settings, from a hold on its row.
     @State private var settingsFor: CronJob?
 
@@ -174,8 +176,15 @@ struct WatchesView: View {
         List {
             Section {
                 if watches.isEmpty, unlisted.isEmpty, !loading {
-                    Text("Ask your agent to keep an eye on something: a price, a parcel, a page, a pull request, a sensor at home. It looks on a schedule and tells you only when it changes.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                    EmptyHint(symbol: "eye", title: String(localized: "Nothing Watched Yet", comment: "Watches: none set up"),
+                              text: String(localized: "Ask your agent to keep an eye on something: a price, a parcel, a page, a pull request, a sensor at home. It looks on a schedule and tells you only when it changes."))
+                    // The templates, to start from in a tap (11-06: the empty page was two
+                    // paragraphs and a button).
+                    ForEach(WatchTemplate.Kind.allCases) { kind in
+                        Button { starting = kind } label: {
+                            Label { Text(kind.title) } icon: { Image(systemName: kind.symbol) }
+                        }
+                    }
                 }
                 ForEach(watches) { watchRow($0) }
                 if !loading { ForEach(unlisted, id: \.id) { reportRow($0) } }
@@ -183,8 +192,8 @@ struct WatchesView: View {
             } header: { Text("Watches") }
             Section {
                 if followUps.isEmpty, !loading {
-                    Text("When you mention something to do later (\u{201C}I'll call the plumber tomorrow\u{201D}), your agent can set a follow-up: it comes back to you then as an idea card.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                    EmptyHint(symbol: "arrow.uturn.backward.circle", title: String(localized: "No Follow-ups", comment: "Watches: no follow-ups"),
+                              text: String(localized: "When you mention something to do later (\u{201C}I'll call the plumber tomorrow\u{201D}), your agent can set a follow-up: it comes back to you then as an idea card."))
                 }
                 ForEach(followUps) { followUpRow($0) }
             } header: { Text("Follow-ups") }
@@ -207,6 +216,7 @@ struct WatchesView: View {
         }
         #endif
         .sheet(isPresented: $adding, onDismiss: { Task { await load() } }) { NewWatchView(text: "") }
+        .sheet(item: $starting, onDismiss: { Task { await load() } }) { NewWatchView(text: "", template: $0) }
         .sheet(item: $settingsFor) { job in
             if job.name.hasPrefix(Watches.watchTag) {
                 WatchSettingsView(job: job) { Task { await load() } }
@@ -716,5 +726,27 @@ struct FollowUpSettingsView: View {
             defer { saving = false }
             do { try await work(backend); changed(); dismiss() } catch { problem = error.localizedDescription }
         }
+    }
+}
+
+/// An empty section's word: a symbol, a line in bold and what would be here.
+struct EmptyHint: View {
+    let symbol: String
+    let title: String
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbol)
+                .font(.title3).foregroundStyle(.tint)
+                .frame(width: 36, height: 36)
+                .background(.tint.opacity(0.12), in: .circle)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.subheadline.weight(.semibold))
+                Text(text).font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 }

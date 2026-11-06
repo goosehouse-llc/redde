@@ -28,9 +28,13 @@ struct PhoneToolsSettingsView: View {
         ScrollViewReader { scroller in
         Form {
             Section {
+                if !settings.phoneTools.on {
+                    // Off, what it would reach, as a grid (11-06: a lone switch over a long paragraph).
+                    areaGrid
+                }
                 Toggle("Phone tools", isOn: Binding(get: { settings.phoneTools.on }, set: { settings.phoneTools.on = $0 }))
             } footer: {
-                Text("Lets your agent ask Redde for things on this \(device): your calendar, reminders, contacts, photos, a folder of files, alarms, a widget it can write on, calls and messages, the Health data you choose, and Apple Home. It is asked each time it wants to add, change or delete something, except in Apple Home, where you choose. It can't go into other apps; iOS allows no app that.")
+                Text("Your agent asks Redde for things on this \(device). Each area is off until you choose, and adding, changing or deleting is put to you first, except in Apple Home, where you choose. It can't go into other apps; iOS allows no app that.", comment: "Phone tools: what turning them on does")
             }
 
             if settings.phoneTools.on {
@@ -210,6 +214,32 @@ struct PhoneToolsSettingsView: View {
     }
 
     private var device: String { UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone" }
+
+    /// Every area the tools reach, a symbol and a word each.
+    private var areaGrid: some View {
+        let areas = DeviceArea.allCases.filter { $0 != .home || DeviceHome.available }
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("Let your agent use this \(device)", comment: "Phone tools, off: the heading over what they reach")
+                .font(.headline)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6, alignment: .top), count: 5), spacing: 12) {
+                ForEach(areas) { area in
+                    VStack(spacing: 5) {
+                        Image(systemName: area.symbol)
+                            .font(.body).foregroundStyle(.tint)
+                            .frame(width: 40, height: 40)
+                            .background(.tint.opacity(0.12), in: .rect(cornerRadius: 10))
+                        Text(area.label)
+                            .font(.caption2).foregroundStyle(.secondary)
+                            .lineLimit(2).multilineTextAlignment(.center)
+                            .minimumScaleFactor(0.8)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .top)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
+    }
 
     /// An area's setting. Turned on, iOS is asked for its permission there and then; refused,
     /// the area stays off and says why.

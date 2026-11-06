@@ -4,8 +4,6 @@ import SwiftUI
 struct MailSettingsView: View {
     @State private var center = MailCenter.shared
     @State private var adding = false
-    @State private var checking: String?
-    @State private var checked: [String: MailCheck] = [:]
     /// Asked to remove, waiting on his yes.
     @State private var removing: MailAccount?
     @State private var removingNow: String?
@@ -19,47 +17,14 @@ struct MailSettingsView: View {
                     Text("No email connected yet.", comment: "Email settings: nothing set up").foregroundStyle(.secondary)
                 }
                 ForEach(center.accounts) { account in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Label {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(account.name)
-                                    Text(account.address).font(.caption).foregroundStyle(.secondary)
-                                }
-                            } icon: {
-                                Image(systemName: MailProvider(rawValue: account.provider)?.symbol ?? "envelope")
-                            }
-                            Spacer()
-                            if checking == account.id { ProgressView() } else if account.usable {
-                                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                                    .accessibilityLabel(Text("Working", comment: "VoiceOver: an email account that works"))
-                            }
-                        }
-                        Text(via(account)).font(.caption).foregroundStyle(.secondary)
-                        if let problem = checked[account.id]?.problem ?? account.problem {
-                            Text(problem).font(.caption).foregroundStyle(.red)
-                        }
-                        if account.canLabel {
-                            // Gmail: the sorting as labels, and tagging rules (11-03).
-                            NavigationLink { MailTaggingView(accountID: account.id) } label: {
-                                Label { Text("Gmail Labels and Tagging Rules", comment: "Email settings: an account's labels page") } icon: { Image(systemName: "tag") }
-                                    .font(.subheadline)
-                            }
-                        }
-                        if account.via != "nous" {
-                            HStack(spacing: 16) {
-                                Button { Task { await check(account.id) } } label: { Text("Test Connection", comment: "Email settings: try the login") }
-                                if MailCenter.removable(account) {
-                                    Button(role: .destructive) { removing = account } label: {
-                                        Text("Remove Account…", comment: "Email settings: take an account out of Redde")
-                                    }
-                                    .disabled(removingNow != nil)
-                                }
-                            }
-                            .font(.caption)
-                            .buttonStyle(.borderless)
-                        }
+                    // One row an account, as in Settings › Mail (11-06: the row had grown labels,
+                    // a test and a remove crammed under it); all of that is on its own page now.
+                    NavigationLink {
+                        MailAccountView(accountID: account.id, remove: { await remove($0) })
+                    } label: {
+                        accountRow(account)
                     }
+                    .disabled(removingNow == account.id)
                     .swipeActions {
                         if MailCenter.removable(account) {
                             Button(role: .destructive) { removing = account } label: {
@@ -125,7 +90,29 @@ struct MailSettingsView: View {
         .refreshable { await center.refreshStatus() }
     }
 
-    private func via(_ account: MailAccount) -> String {
+    private func accountRow(_ account: MailAccount) -> some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(account.name)
+                Text(account.address).font(.caption).foregroundStyle(.secondary)
+                if let problem = account.problem {
+                    Text(problem).font(.caption).foregroundStyle(.red).lineLimit(2)
+                }
+            }
+        } icon: {
+            Image(systemName: MailProvider(rawValue: account.provider)?.symbol ?? "envelope")
+        }
+        .badge(Text(Self.state(account)))
+    }
+
+    /// The word at a row's end: Working, or what's wrong in one word.
+    static func state(_ account: MailAccount) -> String {
+        if account.via == "nous" { return String(localized: "Not usable", comment: "Email settings: an account Redde can't read") }
+        return account.usable ? String(localized: "Working", comment: "Email settings: an account that works")
+                              : String(localized: "Not working", comment: "Email settings: an account that fails")
+    }
+
+    static func via(_ account: MailAccount) -> String {
         switch account.via {
         case "gmail_api": String(localized: "Connected through your Hermes's Google sign-in", comment: "Email account: how it's reached")
         case "nous": String(localized: "Your Hermes has Nous's Gmail connector, which Redde's Inbox can't use. Add the account here with an app password instead.", comment: "Email account: Nous's connector")
@@ -151,21 +138,150 @@ struct MailSettingsView: View {
         defer { removingNow = nil }
         do {
             try await center.removeAccount(account.id)
-            checked[account.id] = nil
             removed = MailProvider(rawValue: account.provider).map { (account.name, $0) }
         } catch {
             center.problem = error.localizedDescription
         }
     }
 
-    private func check(_ id: String) async {
-        checking = id
-        defer { checking = nil }
+}
+
+/// One email account's page: how it's reached and whether it works, a test of the login, its
+/// Gmail labels, and removing it. Removing goes back to the list, which tells where the app
+/// password can be revoked.
+struct MailAccountView: View {
+    let accountID: String
+    let remove: (MailAccount) async -> Void
+    @State private var center = MailCenter.shared
+    @State private var checking = false
+    @State private var result: MailCheck?
+    @State private var problem: String?
+    @State private var confirming = false
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        if let account = center.accounts.first(where: { $0.id == accountID }) {
+            form(account)
+        } else {
+            ContentUnavailableView { Label { Text("Account Removed", comment: "Email account page: gone") } icon: { Image(systemName: "envelope") } }
+        }
+    }
+
+    private func form(_ account: MailAccount) -> some View {
+        Form {
+            Section {
+                HStack(spacing: 14) {
+                    Image(systemName: MailProvider(rawValue: account.provider)?.symbol ?? "envelope")
+                        .font(.title2).foregroundStyle(.tint)
+                        .frame(width: 44, height: 44)
+                        .background(.tint.opacity(0.12), in: .rect(cornerRadius: 10))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(account.name).font(.headline)
+                        Text(account.address).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            } footer: {
+                Text(MailSettingsView.via(account))
+            }
+
+            if account.via != "nous" {
+                Section {
+                    LabeledContent {
+                        status(account.usable && result.map(\.ok) != false)
+                    } label: {
+                        Text("Status", comment: "Email account page: does it work")
+                    }
+                    if let result, account.via == "imap" {
+                        LabeledContent { status(result.imap == "ok") } label: {
+                            Text("Receiving", comment: "Email account page: the IMAP login")
+                        }
+                        if result.smtp != "skipped" {
+                            LabeledContent { status(result.smtp == "ok") } label: {
+                                Text("Sending", comment: "Email account page: the SMTP login")
+                            }
+                        }
+                    }
+                    if let lastSync = account.lastSync {
+                        LabeledContent {
+                            Text(lastSync, format: .relative(presentation: .named))
+                        } label: {
+                            Text("Last Checked", comment: "Email account page: when the Hermes last read the mailbox")
+                        }
+                    }
+                    Button { Task { await check() } } label: {
+                        HStack {
+                            Text("Test Connection", comment: "Email settings: try the login")
+                            Spacer()
+                            if checking { ProgressView() }
+                        }
+                    }
+                    .disabled(checking)
+                } header: {
+                    Text("Connection", comment: "Email account page: section")
+                } footer: {
+                    if let text = result?.problem ?? account.problem ?? problem {
+                        Text(text).foregroundStyle(.red)
+                    }
+                }
+            }
+
+            if account.canLabel {
+                Section {
+                    // Gmail: the sorting as labels, and tagging rules (11-03).
+                    NavigationLink { MailTaggingView(accountID: account.id) } label: {
+                        Label { Text("Gmail Labels and Tagging Rules", comment: "Email settings: an account's labels page") } icon: { Image(systemName: "tag") }
+                    }
+                }
+            }
+
+            if MailCenter.removable(account) {
+                Section {
+                    Button(role: .destructive) { confirming = true } label: {
+                        Text("Remove Account…", comment: "Email settings: take an account out of Redde")
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+            }
+        }
+        .navigationTitle(Text(verbatim: account.name))
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .confirmationDialog(Text("Remove \(account.name)?", comment: "Email settings: confirm removing an account"),
+                            isPresented: $confirming, titleVisibility: .visible) {
+            Button(role: .destructive) {
+                dismiss()
+                Task { await remove(account) }
+            } label: {
+                Text("Remove Account", comment: "Email settings: confirm removing an account")
+            }
+            Button(role: .cancel) {} label: { Text("Cancel") }
+        } message: {
+            Text(MailSettingsView.removalMessage(account))
+        }
+    }
+
+    private func status(_ ok: Bool) -> some View {
+        Label {
+            ok ? Text("Working", comment: "Email settings: an account that works")
+               : Text("Not working", comment: "Email settings: an account that fails")
+        } icon: {
+            Image(systemName: ok ? "checkmark.circle.fill" : "xmark.circle.fill").foregroundStyle(ok ? .green : .red)
+        }
+        .labelStyle(.titleAndIcon)
+        .foregroundStyle(.secondary)
+    }
+
+    private func check() async {
+        checking = true
+        problem = nil
+        defer { checking = false }
         do {
-            checked[id] = try await center.check(id)
+            result = try await center.check(accountID)
             await center.refreshStatus()
         } catch {
-            center.problem = error.localizedDescription
+            problem = error.localizedDescription
         }
     }
 }
