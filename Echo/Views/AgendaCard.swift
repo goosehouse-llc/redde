@@ -176,7 +176,7 @@ private struct DaySection: View {
             Button { toggle(event) } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "clock")
-                        .foregroundStyle(AgendaCard.color(of: event.calendar))
+                        .foregroundStyle(AgendaCard.color(of: event.calendar, given: event.color))
                     Text("All day", comment: "An agenda card: an event without a time")
                         .fontWeight(.semibold)
                     Text(event.title)
@@ -286,7 +286,7 @@ private struct DaySection: View {
     private func block(_ event: Event, height: CGFloat) -> some View {
         let isOpen = open.contains(event)
         let over = (event.end ?? event.start) < AgendaCard.now()
-        let color = AgendaCard.color(of: event.calendar)
+        let color = AgendaCard.color(of: event.calendar, given: event.color)
         let shape = RoundedRectangle(cornerRadius: 10)
         return VStack(alignment: .leading, spacing: 2) {
             Button { toggle(event) } label: {
@@ -956,17 +956,27 @@ extension AgendaCard {
         return parts.joined(separator: ", ")
     }
 
-    /// Each calendar's own colour: Calendar's on this device (`CalendarTints`), or for a calendar
-    /// it hasn't, one of ours, the same every time it is named; the theme's tint with no name.
-    /// Or every event in the one colour picked in Settings (Calendar Events).
-    static func color(of calendar: String?, tints: CalendarTints = .shared) -> AnyShapeStyle {
+    /// Each calendar's own colour: the one the calendar tool gave with the event (`given`, the
+    /// calendar's colour on the device that read it, so an iPad or a Mac that can't see the
+    /// calendar draws it as the iPhone does; 2026-11-06: yellow there, orange on the iPad), else
+    /// Calendar's on this device (`CalendarTints`), or for a calendar it hasn't, one of ours, the
+    /// same every time it is named; the theme's tint with no name. Or every event in the one
+    /// colour picked in Settings (Calendar Events).
+    static func color(of calendar: String?, given: String? = nil, tints: CalendarTints = .shared) -> AnyShapeStyle {
         if let picked = Settings.shared.eventColor.color { return AnyShapeStyle(picked) }
+        if let given = given.flatMap(rgb) { return AnyShapeStyle(given) }
         guard let calendar, !calendar.isEmpty else { return AnyShapeStyle(.tint) }
         if let own = tints.color(of: calendar) { return AnyShapeStyle(own) }
         let colors: [Color] = [.blue, .orange, .green, .purple, .pink, .teal, .red, .indigo, .brown, .mint]
         var hash: UInt64 = 0xcbf29ce484222325
         for byte in calendar.lowercased().utf8 { hash = (hash ^ UInt64(byte)) &* 0x100000001b3 }
         return AnyShapeStyle(colors[Int(hash % UInt64(colors.count))])
+    }
+
+    /// "#F7C204" as a colour.
+    static func rgb(_ hex: String) -> Color? {
+        guard let hex = ReplyCard.Agenda.hexColor(hex), let value = UInt32(hex.dropFirst(), radix: 16) else { return nil }
+        return Color(red: Double(value >> 16 & 0xFF) / 255, green: Double(value >> 8 & 0xFF) / 255, blue: Double(value & 0xFF) / 255)
     }
 
     /// Calendar opened on the day (`calshow:` at its start), on the iPhone and iPad; on the Mac,

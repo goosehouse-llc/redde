@@ -3,6 +3,12 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.19.4 (2026-11-06)
+
+- A calendar card's events carry their calendar's colour (`color`, as the phone's calendar tool
+  and Redde's calendar server now give it), so an iPad or a Mac that can't see that calendar
+  draws it the colour it is on the iPhone.
+
 ## 1.19.3 (2026-11-06)
 
 - An email's preview in the Inbox is its words: the start of the message read and decoded, not

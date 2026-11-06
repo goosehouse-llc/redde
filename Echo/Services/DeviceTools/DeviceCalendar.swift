@@ -1,3 +1,4 @@
+import CoreGraphics
 import EventKit
 import Foundation
 
@@ -93,6 +94,14 @@ nonisolated enum DeviceCalendar {
         return .object(["added": describe(event)])
     }
 
+    /// A colour as "#RRGGBB" in sRGB.
+    static func hex(_ color: CGColor) -> String? {
+        guard let srgb = CGColorSpace(name: CGColorSpace.sRGB),
+              let parts = color.converted(to: srgb, intent: .defaultIntent, options: nil)?.components, parts.count >= 3 else { return nil }
+        let byte = { (v: CGFloat) in Int((min(max(v, 0), 1) * 255).rounded()) }
+        return String(format: "#%02X%02X%02X", byte(parts[0]), byte(parts[1]), byte(parts[2]))
+    }
+
     private static func describe(_ event: EKEvent) -> JSONValue {
         var fields: [String: JSONValue] = [
             "id": .string(event.eventIdentifier ?? ""),
@@ -102,6 +111,9 @@ nonisolated enum DeviceCalendar {
             "all_day": .bool(event.isAllDay),
             "calendar": .string(event.calendar?.title ?? ""),
         ]
+        // The calendar's colour here, for the agent to put on a calendar card: an iPad or a Mac
+        // that can't see this calendar then draws it as this phone does.
+        if let color = event.calendar?.cgColor.flatMap(hex) { fields["color"] = .string(color) }
         if let location = event.location?.nilIfEmpty { fields["location"] = .string(location) }
         if let notes = event.notes?.nilIfEmpty { fields["notes"] = .string(String(notes.prefix(600))) }
         return .object(fields)

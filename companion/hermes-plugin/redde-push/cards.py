@@ -124,8 +124,8 @@ SCHEMA = {
         "they can edit, 'action' the button, e.g. Send), then stop and act only on their answer; 'choice' ('options'), "
         "'checklist' ('items', each with a 'section' and a short 'note'; an 'emoji'), 'form' ('fields', each with a "
         "'kind'). Their answer is their next message. "
-        "'agenda': calendar events by day ('events' as your calendar tool gave them: 'title', 'start' as ISO with its "
-        "offset or a date for all day, 'end', 'location', 'calendar'; 'date' or 'dates' asked about, so a free day "
+        "'agenda': events by day ('events' as your calendar tool gave them: 'title', 'start' as ISO with "
+        "offset or a date for all day, 'end', 'location', 'calendar', 'color'; 'date' or 'dates' asked about, so a free day "
         "shows). Also 'purchase' (whenever you suggest things to buy: a card, never a table), 'home' (smart-home devices), 'reminder' (a reminder, timer, alarm "
         "or scheduled message you set), 'compare' (2-4 things side by side), 'score' (games), 'recipe', 'delivery' (a "
         "package), 'flight', 'show' (films, series), 'conversion' (units, currency), 'stock' (a share's price: a card, never a table), 'inbox' (email): their fields are in the "
@@ -166,15 +166,16 @@ SCHEMA = {
                             "text": {"type": "string"}, "done": {"type": "boolean"}, "section": {"type": "string"},
                             "note": {"type": "string", "description": "e.g. ×2"}}}},
                         "emoji": {"type": "string"},
-                        "events": {"type": "array", "description": "agenda: the events, from your calendar tool", "items": {
+                        "events": {"type": "array", "description": "agenda: events from your calendar tool", "items": {
                             "type": "object", "properties": {
                                 "title": {"type": "string"},
                                 "start": {"type": "string", "description": "2026-10-30T09:30:00-04:00, or 2026-10-30 for all day"},
                                 "end": {"type": "string"}, "all_day": {"type": "boolean"}, "location": {"type": "string"},
-                                "calendar": {"type": "string"}, "notes": {"type": "string"}},
+                                "calendar": {"type": "string"}, "notes": {"type": "string"},
+                                "color": {"type": "string"}},
                             "required": ["title", "start"]}},
-                        "date": {"type": "string", "description": "agenda: the day asked about, e.g. 2026-10-30"},
-                        "dates": {"type": "array", "items": {"type": "string"}, "description": "agenda: the days asked about"},
+                        "date": {"type": "string", "description": "agenda: the day asked about"},
+                        "dates": {"type": "array", "items": {"type": "string"}, "description": "agenda: days asked about"},
                         "note": {"type": "string"},
                         "devices": {"type": "array", "items": {"type": "object"}},
                         "games": {"type": "array", "items": {"type": "object"}},
@@ -843,7 +844,7 @@ _PUTS_ON_CALENDAR = re.compile(
     r"|\bschedule (?:a|an|the|me|it|that|this|my)\b|\bremind me\b", re.IGNORECASE)
 AGENDA_NOTE = (f"[Redde: asked what's on the calendar. Look the events up with the calendar tool first, then show them "
                f"with {TOOL} as an 'agenda' card ('events' with title, start and end as the tool gave them, location, "
-               "calendar; 'date' for each day asked about, so a free day shows too), then answer in a line: don't list the "
+               "calendar, and its color as the tool gave it (#F7C204); 'date' for each day asked about, so a free day shows too), then answer in a line: don't list the "
                "events again in words. If they're not on the calendar but you found them in an email, a file or a page, "
                "put those on the card with 'source' saying where (e.g. From your email): never an empty day for one that "
                "has them.]")

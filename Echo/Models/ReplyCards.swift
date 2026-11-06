@@ -192,6 +192,9 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
             var location: String?
             var calendar: String?
             var notes: String?
+            /// Its calendar's colour as the calendar tool gave it ("#F7C204"): what that calendar
+            /// looks like on the device that read it, for a device that can't see the calendar.
+            var color: String? = nil
         }
 
         /// The days to draw in order, each with its events: all-day ones first, then by start.
@@ -209,6 +212,15 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         func byDay(showing calendars: [String]) -> [(day: String, events: [Event])] {
             guard !calendars.isEmpty else { return byDay }
             return byDay.map { ($0.day, $0.events.filter { CalendarChoice.shows($0.calendar, among: calendars) }) }
+        }
+
+        /// A calendar's colour as a tool writes it, "#F7C204" or "F7C204", upper case; nil for
+        /// anything else.
+        static func hexColor(_ written: String) -> String? {
+            let digits = written.trimmingCharacters(in: .whitespaces).uppercased()
+            let hex = digits.hasPrefix("#") ? String(digits.dropFirst()) : digits
+            guard hex.count == 6, hex.allSatisfy(\.isHexDigit) else { return nil }
+            return "#" + hex
         }
 
         /// A start or an end as an agent writes it: "2026-10-30T09:30:00-04:00" (or with Z, or
@@ -823,7 +835,8 @@ nonisolated enum ReplyCards {
             return .init(title: String(title.prefix(160)), start: start.date, end: end.flatMap { $0 > start.date ? $0 : nil }, allDay: allDay,
                          day: start.day, location: text(e["location"] ?? e["where"] ?? e["place"]).map { String($0.prefix(200)) },
                          calendar: text(e["calendar"] ?? e["calendar_name"]).map { String($0.prefix(60)) },
-                         notes: text(e["notes"] ?? e["description"]).map { String($0.prefix(600)) })
+                         notes: text(e["notes"] ?? e["description"]).map { String($0.prefix(600)) },
+                         color: text(e["color"] ?? e["calendar_color"]).flatMap(ReplyCard.Agenda.hexColor))
         }
         var days: [String] = []
         for written in [value["date"]].compactMap({ $0 }) + (value["dates"]?.array ?? []) {

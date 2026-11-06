@@ -162,6 +162,8 @@ enum Markdown {
 
     private static func bullet(time: String, _ item: [String: Any], showID: Bool = true) -> String {
         var parts = ["**\(time)**", inline(item["title"], limit: 160, empty: "Untitled"), "_\(inline(item["calendar"], limit: 60))_"]
+        let color = inline(item["color"], limit: 7)
+        if !color.isEmpty { parts.append("color \(color)") }
         let location = inline(item["location"], limit: 120)
         if !location.isEmpty { parts.append(location) }
         if let attendees = item["attendees"] as? Int, attendees > 0 { parts.append(count(attendees, "attendee")) }

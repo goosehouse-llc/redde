@@ -30,6 +30,19 @@ struct AgendaCardTests {
         #expect(!lunch.allDay && lunch.end!.timeIntervalSince(lunch.start) == 3600, "no offset: this phone's own time")
     }
 
+    /// 2026-11-06: yellow on the iPhone, orange on the iPad, which can't see the calendar. The
+    /// colour comes with the event now, and the card draws it.
+    @Test func anEventKeepsItsCalendarsColour() throws {
+        let card = try #require(agenda("""
+        {"type": "agenda", "events": [
+          {"title": "Block", "start": "2026-10-30T09:00:00-04:00", "calendar": "Work", "color": "#f7c204"},
+          {"title": "Flight", "start": "2026-10-30T10:00:00-04:00", "calendar_color": "A2845E"},
+          {"title": "Lunch", "start": "2026-10-30T12:00:00-04:00", "color": "yellow"}]}
+        """))
+        #expect(card.events.map(\.color) == ["#F7C204", "#A2845E", nil])
+        #expect(AgendaCard.rgb("#F7C204") != nil && AgendaCard.rgb("#F7C2") == nil)
+    }
+
     @Test func aTimeGivenInAnotherZoneLandsOnThisPhonesDay() throws {
         // 11 PM in Los Angeles is 2 AM the next day in New York.
         let card = try #require(agenda(#"{"type": "agenda", "events": [{"title": "Red-eye", "start": "2026-10-30T23:00:00-07:00"}]}"#))

@@ -287,6 +287,7 @@ final class CalendarTools {
 
     private func agendaItem(_ event: EKEvent, dayStart: Date, dayEnd: Date) -> [String: Any] {
         var item: [String: Any] = ["title": event.title ?? "", "calendar": event.calendar?.title ?? "", "id": event.eventIdentifier ?? ""]
+        if let color = event.calendar.flatMap(CalendarService.color) { item["color"] = color }
         if event.isAllDay {
             item["time"] = "all day"
         } else {

@@ -1,3 +1,4 @@
+import CoreGraphics
 import EventKit
 import Foundation
 
@@ -192,6 +193,15 @@ final class CalendarService {
         return hidden.contains(cal.title.lowercased()) || hidden.contains(cal.calendarIdentifier.lowercased())
     }
 
+    /// A calendar's colour as "#RRGGBB" (sRGB), for Redde's calendar card: an iPad or a Mac that
+    /// can't see the calendar draws its events in it.
+    static func color(_ calendar: EKCalendar) -> String? {
+        guard let cg = calendar.cgColor, let srgb = CGColorSpace(name: CGColorSpace.sRGB),
+              let parts = cg.converted(to: srgb, intent: .defaultIntent, options: nil)?.components, parts.count >= 3 else { return nil }
+        let byte = { (v: CGFloat) in Int((min(max(v, 0), 1) * 255).rounded()) }
+        return String(format: "#%02X%02X%02X", byte(parts[0]), byte(parts[1]), byte(parts[2]))
+    }
+
     /// The short form for lists: enough to answer "what's on my calendar", without notes and attendees.
     static func summarize(_ event: EKEvent) -> [String: Any] {
         var out: [String: Any] = [
@@ -200,6 +210,7 @@ final class CalendarService {
             "start": DateCodec.string(event.startDate),
             "end": DateCodec.string(event.endDate),
             "calendar": event.calendar?.title ?? "",
+            "color": event.calendar.flatMap(Self.color) ?? "",
         ]
         if event.isAllDay { out["all_day"] = true }
         if let location = event.location, !location.isEmpty { out["location"] = String(location.prefix(120)) }
@@ -216,6 +227,7 @@ final class CalendarService {
             "end": DateCodec.string(event.endDate),
             "all_day": event.isAllDay,
             "calendar": event.calendar?.title ?? "",
+            "color": event.calendar.flatMap(Self.color) ?? "",
             "calendar_id": event.calendar?.calendarIdentifier ?? "",
             "recurring": event.hasRecurrenceRules,
         ]
