@@ -64,13 +64,23 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
         return ((try? JSONDecoder().decode([AgentBriefing].self, from: data)) ?? []).filter { now.timeIntervalSince($0.shownAt) < keptFor }
     }
 
+    /// One run's id: its job's, and when it ran, to the second.
+    static func id(job: String, at: TimeInterval) -> String { "\(job)/\(Int(at))" }
+
+    /// The briefing a note is kept as, for its notification to open that one (GitHub #63: a tap
+    /// opened the newest). Nil for a note with no job or time, whose id is made up on arrival.
+    static func id(of note: PushNote) -> String? {
+        guard note.kind == .routine, note.x == "brief", note.o == nil, let job = note.i, !job.isEmpty, let at = note.at else { return nil }
+        return id(job: job, at: at)
+    }
+
     /// A briefing's note: kept, ahead of the ones before. False for any other note.
     @discardableResult
     static func take(_ note: PushNote, now: Date = .now, in defaults: UserDefaults? = NeedsYou.shared) -> Bool {
         // A goal's check-in is the goal's (`GoalReport`), on its card, not a briefing as well.
         guard note.kind == .routine, note.x == "brief", note.o == nil else { return false }
         let at = note.at.map { Date(timeIntervalSince1970: $0) } ?? now
-        var briefing = AgentBriefing(id: "\(note.i ?? UUID().uuidString)/\(Int(at.timeIntervalSince1970))", title: note.t ?? "",
+        var briefing = AgentBriefing(id: id(job: note.i ?? UUID().uuidString, at: at.timeIntervalSince1970), title: note.t ?? "",
                                      agent: note.d ?? "", text: note.b ?? "", at: at, failed: note.w == "failed")
         briefing.eventAt = note.u.flatMap { ISO8601DateFormatter().date(from: $0) }
         briefing.place = note.r.flatMap { $0.isEmpty ? nil : $0 }

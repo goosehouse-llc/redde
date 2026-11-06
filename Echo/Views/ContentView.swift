@@ -335,7 +335,10 @@ struct ContentView: View {
             if !open { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
         }
         .onChange(of: conversation.isStreaming) { was, now in
-            if was, !now { replyFinished() }
+            if was, !now {
+                replyFinished()
+                handlePushRequests()   // a tap that waited for this reply (fast lane)
+            }
             // A reply started (Ask Redde about a card, Siri, a share): show the chat it lands in.
             if now, !was {
                 if sizeClass == .regular { section = .sessions } else if showConversations { setDrawer(open: false) }
@@ -344,6 +347,10 @@ struct ContentView: View {
         // Another conversation opened (Siri, a notification, the list): it takes the group chat's place.
         .onChange(of: conversation.id) { groups.open = nil }
         .onChange(of: settings.connectionKey) { groups.open = nil }
+        // A chat opened (a notification, the list): its notifications go; the others stay.
+        .onChange(of: conversation.serverSessionID) { clearChatsNotifications() }
+        .onChange(of: conversation.id) { clearChatsNotifications() }
+        .onChange(of: groups.open?.id) { clearChatsNotifications() }
         .onChange(of: conversation.id) {
             // A fresh conversation: have llama-swap load its model before the first message.
             if conversation.messages.isEmpty { ModelWarmer.warm(conversation) }
@@ -368,7 +375,7 @@ struct ContentView: View {
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             consumeControlRequest()
-            Notifier.shared.clearDelivered()
+            clearChatsNotifications()
             ReadState.markConversationRead(conversation.id)
             conversation.noteSeen()   // and on the host, for the chat list's Unread
             HermesServeClient.shared.reconnectIfNeeded()
@@ -413,6 +420,15 @@ struct ContentView: View {
             .onChange(of: groups.open?.id) { _, open in
                 if showGroupVoice, groupVoice?.feed.room.id != open { showGroupVoice = false }
             }
+    }
+
+    /// The notifications about the chat on screen go, as in Messages; every other chat's stay in
+    /// Notification Center. Coming back to Redde cleared them all, so a notification glanced at
+    /// and not tapped was gone (GitHub #63).
+    private func clearChatsNotifications() {
+        guard scenePhase == .active else { return }
+        Notifier.shared.clearDelivered(session: conversation.serverSessionID, conversation: conversation.id.uuidString,
+                                       room: groups.open?.id)
     }
 
     /// The chat's sheets and dialogs (its menu's, the toolbar's): on the root, not on the chat
@@ -1122,15 +1138,21 @@ struct ContentView: View {
                 pushOffer = offer
             }
         }
-        if let session = router.consumeSession(), !conversation.isStreaming {
+        // A tap while a reply streams (GitHub #61: it was taken and dropped): on a Hermes connection
+        // the reply carries on there when the chat is left, as from the list, so it opens now; on
+        // the fast lane, which would lose it, the tap waits for the reply's end (`isStreaming`).
+        let canLeave = !conversation.isStreaming || conversation.connection.hasLedger
+        if canLeave, let session = router.consumeSession() {
             if sizeClass != .regular, showConversations { setDrawer(open: false) }
             // Also when it is the conversation already on screen: what is here may be from before
             // the app was closed, without the reply or the question the notification is about.
             // A conversation on another server than the one the app is on can't be fetched: the
-            // app then stays where it was.
-            Task { try? await conversation.open(serverSession: session) }
+            // app then stays where it was. The one streaming now is here already, live.
+            if !(conversation.isStreaming && conversation.serverSessionID == session) {
+                Task { try? await conversation.open(serverSession: session) }
+            }
         }
-        if let profile = router.consumeBot(), !conversation.isStreaming {
+        if canLeave, let profile = router.consumeBot() {
             if sizeClass != .regular, showConversations { setDrawer(open: false) }
             // Its chat, where the schedule's answer is; read again first when the app was started for it.
             Task {

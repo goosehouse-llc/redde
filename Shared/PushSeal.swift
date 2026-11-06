@@ -400,6 +400,8 @@ nonisolated extension PushNote {
     static let taskKey = "task"
     /// On a key request's notification: the request, whose card a tap opens.
     static let keyRequestKey = "keyRequest"
+    /// On a briefing's: the briefing it was kept as, which a tap opens.
+    static let briefingKey = "briefing"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
 
@@ -545,6 +547,7 @@ nonisolated extension PushNote {
         if kind == .call, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
         if let x, !x.isEmpty { info[Self.taskKey] = x }
         if kind == .key, let i, !i.isEmpty { info[Self.keyRequestKey] = i }
+        if let briefing = AgentBriefing.id(of: self) { info[Self.briefingKey] = briefing }
         content.userInfo = info
         return true
     }

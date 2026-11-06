@@ -181,9 +181,12 @@ final class BriefingsInbox {
     }
 
     /// A briefing's notification, tapped: the newest one, opened.
-    func showNewest() {
+    /// The one a notification was about, by its id; the newest when that one is gone (or the
+    /// notification came before 2.4, without one).
+    func showNewest(id: String? = nil) {
         reload()
-        if let newest = briefings.first { show(newest) } else { showingAll = true }
+        if let id, let that = briefings.first(where: { $0.id == id }) { show(that) }
+        else if let newest = briefings.first { show(newest) } else { showingAll = true }
     }
 
     func markRead(_ briefing: AgentBriefing) {

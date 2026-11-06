@@ -143,6 +143,32 @@ struct TranscriptView: View {
         withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) }
     }
 
+    /// Opened from a reply's notification, and its chat's messages are in (`readFromReply`).
+    private var readsFromReply: Bool {
+        guard let wanted = conversation.readFromReply else { return false }
+        return (wanted == conversation.serverSessionID || wanted == conversation.id.uuidString)
+            && conversation.messages.last?.role == .assistant
+    }
+
+    /// The newest reply from its first line, where the notification's words begin: a long one
+    /// opened at its end, and read as something else than the notification said (GitHub #63).
+    /// Again a moment later, for rows still growing as they load, unless the reader moved.
+    private func startAtReply(_ proxy: ScrollViewProxy) {
+        conversation.readFromReply = nil
+        guard let position = conversation.messages.lastIndex(where: { $0.role == .assistant }) else { return }
+        let id = conversation.messages[position].id
+        page.reveal(position, in: conversation.messages)
+        following = false
+        Task {
+            for wait in [60, 200, 500] {
+                try? await Task.sleep(for: .milliseconds(wait))
+                guard scrollPhase == .idle, conversation.messages.last?.id == id else { return }
+                following = false
+                proxy.scrollTo(id, anchor: .top)
+            }
+        }
+    }
+
     private func scrollToBottom(_ proxy: ScrollViewProxy, force: Bool = false) {
         guard force || following else { return }
         proxy.scrollTo("bottom", anchor: .bottom)
@@ -360,6 +386,7 @@ struct TranscriptView: View {
             .onChange(of: readingID) { noteForLayout() }
             .onChange(of: following) { noteForLayout() }
             .onChange(of: conversation.id) { settlePage(reset: true); following = true; recomputeDayLabels(); recomputeMatches(); scrollToBottom(proxy, force: true) }
+            .onChange(of: readsFromReply, initial: true) { _, ready in if ready { startAtReply(proxy) } }
             .onChange(of: conversation.messages.count, initial: true) {
                 // Earlier messages the reader loaded stay; otherwise the page is sized afresh.
                 settlePage()

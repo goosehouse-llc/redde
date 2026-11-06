@@ -104,6 +104,24 @@ struct AgentBriefingsTests {
         #expect(content.title == "Evening wrap-up")
     }
 
+    /// And names the run it was kept as, for a tap to open that one, not the newest (GitHub #63).
+    @Test func itsNotificationNamesTheBriefingItIs() throws {
+        let store = defaults()
+        let older = try note("Morning brief", "Rain.", at: 1_800_000_000, job: "morning")
+        AgentBriefing.take(older, now: Date(timeIntervalSince1970: 1_800_000_100), in: store)
+        AgentBriefing.take(try note("Backups", "All fine.", at: 1_800_000_050, job: "backups"), now: Date(timeIntervalSince1970: 1_800_000_100), in: store)
+        let content = UNMutableNotificationContent()
+        #expect(older.fill(content))
+        let id = try #require(content.userInfo[PushNote.briefingKey] as? String)
+        let kept = AgentBriefing.all(in: store, now: Date(timeIntervalSince1970: 1_800_000_100))
+        #expect(kept.first?.title == "Backups", "the newest is another")
+        #expect(kept.first { $0.id == id }?.title == "Morning brief")
+        // A bot's schedule (no briefing) names none.
+        let plain = UNMutableNotificationContent()
+        #expect(try note("What to wear", "A coat.", brief: false).fill(plain))
+        #expect(plain.userInfo[PushNote.briefingKey] == nil)
+    }
+
     /// A page's choice is kept in its job's prompt, and read back from it.
     @Test func aHeadsUpsLeadIsReadBackFromItsJob() throws {
         let daily = HeadsUps.job

@@ -19,7 +19,7 @@ import WidgetKit
 ///   `-echo.demoStream [seconds]` plays the first exchange live, thinking and all (the promo
 ///   video); with a number, from an empty conversation, the question sent after that long.
 /// - `-echo.demoHeavy [turns]`: a thread of long replies (32 turns of about 10,000 characters by
-///   default), for measuring. `-echo.pageBudget <characters>` overrides how much of a thread the
+///   default), for measuring; with `-echo.fromReply`, opened as a reply's notification opens it. `-echo.pageBudget <characters>` overrides how much of a thread the
 ///   transcript lays out (`TranscriptPage`); 0 lifts the limit.
 /// - `-echo.hitches`: log every frame the main thread made late (`FrameMonitor`). With `-echo.tour device`
 ///   the tour sends nothing, changes no setting and deletes the conversations the launch seeded. With
@@ -342,6 +342,8 @@ enum DevHooks {
             WidgetCenter.shared.reloadAllTimelines()
         }
         if has("-echo.demoHeavy") { conversation.seedHeavyDemo(turns: value("-echo.demoHeavy").flatMap(Int.init) ?? 32) }
+        // As a tap on the newest reply's notification opens it: from the reply's first line.
+        if has("-echo.fromReply") { conversation.readFromReply = conversation.id.uuidString }
         if has("-echo.demoBoard") {
             AgentBoard.clear()
             if value("-echo.demoBoard") != "clear" {

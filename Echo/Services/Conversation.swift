@@ -53,6 +53,11 @@ final class Conversation {
     /// Words to find once this conversation is on screen: set when a message search opens it,
     /// taken by the transcript, which opens Find on them (`TranscriptView`).
     var findRequest: String?
+    /// Opened from a reply's notification: the transcript starts at the top of the newest reply,
+    /// where the notification's words begin, not at its end (GitHub #63). The id of the session
+    /// (or of this conversation) the notification was about, so another chat on screen meanwhile
+    /// doesn't take it; taken by the transcript once that chat's messages are in.
+    var readFromReply: String?
     /// API-server run id of the turn in flight (sessions transport).
     private(set) var currentRunID: String?
 
@@ -531,7 +536,7 @@ final class Conversation {
                 }
                 let incognito = isIncognito
                 Notifier.shared.notify(.replied, title: String(localized: "Redde replied"), body: incognito ? IncognitoNote.replied : PlainText.display(replyText),   // autoclosure: only stripped when a banner will post
-                                       category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString],
+                                       category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString], session: serverSessionID,
                                        messageEntityID: SiriID.message(self.id, replyID))
                 persist()
                 outcome = .completed
@@ -740,7 +745,7 @@ final class Conversation {
             } else if case let .clarify(request) = interrupt {
                 Notifier.shared.notifyClarify(request)
             } else {
-                Notifier.shared.notify(.interrupt, title: Self.interruptTitle(interrupt), body: Self.interruptBody(interrupt))
+                Notifier.shared.notify(.interrupt, title: Self.interruptTitle(interrupt), body: Self.interruptBody(interrupt), session: serverSessionID)
             }
         case let .interruptExpired(id):
             if pendingInterrupt?.interrupt.id == id { pendingInterrupt = nil; statusLine = String(localized: "request expired", comment: "Status under a reply: the agent's question or approval timed out") }
@@ -904,7 +909,7 @@ final class Conversation {
                 let replyText = messages.last { $0.id == replyID }?.text ?? ""
                 TurnActivity.shared.finish(reply: replyText)
                 Notifier.shared.notify(.replied, title: String(localized: "Redde replied"), body: PlainText.display(replyText),
-                                       category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString],
+                                       category: Notifier.repliedCategory, userInfo: [Notifier.conversationKey: self.id.uuidString], session: serverSessionID,
                                        messageEntityID: SiriID.message(self.id, replyID))
                 persist()
                 noteSeen(onlyOnScreen: true)
@@ -2415,7 +2420,7 @@ final class Conversation {
         flushDeltas()
         lastError = description
         TurnActivity.shared.fail(description)
-        Notifier.shared.notify(.failed, title: String(localized: "Redde couldn't reply"), body: description)
+        Notifier.shared.notify(.failed, title: String(localized: "Redde couldn't reply"), body: description, session: serverSessionID)
         // A paired Hermes will say so too, minutes later: that note then arrives quietly.
         if let serverSessionID { ToldAlready.failed(session: serverSessionID) }
         update(id) { message in

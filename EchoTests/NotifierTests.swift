@@ -128,18 +128,59 @@ struct NotifierTests {
     @Test func localBannerSweepsARecentRelayPush() async throws {
         let h = Harness()
         h.center.deliveredList = [
-            .init(id: "apns-1", isRelayPush: true, date: .now.addingTimeInterval(-2)),
-            .init(id: "apns-old", isRelayPush: true, date: .now.addingTimeInterval(-300)),
+            .init(id: "apns-1", isRelayPush: true, date: .now.addingTimeInterval(-2), session: "s1"),
+            .init(id: "apns-old", isRelayPush: true, date: .now.addingTimeInterval(-300), session: "s1"),
+            .init(id: "apns-other", isRelayPush: true, date: .now.addingTimeInterval(-2), session: "s2"),
             .init(id: "redde.failed", isRelayPush: false, date: .now.addingTimeInterval(-2)),
         ]
-        h.notifier.notify(.replied, title: "t", body: "the reply")
+        h.notifier.notify(.replied, title: "t", body: "the reply", session: "s1")
         let deadline = Date().addingTimeInterval(2)
         while !h.center.removedIDs.contains("apns-1") {
             if Date() > deadline { Issue.record("sweep never removed the relay push"); break }
             try await Task.sleep(for: .milliseconds(10))
         }
         #expect(h.center.removedIDs == ["apns-1"], "only the relay push from this event's window goes")
-        #expect(h.center.deliveredList.map(\.id).sorted() == ["apns-old", "redde.failed"])
+        #expect(h.center.deliveredList.map(\.id).sorted() == ["apns-old", "apns-other", "redde.failed"],
+                "another chat's push in the same window is no duplicate (GitHub #63)")
+    }
+
+    @Test func aBannerWithNoSessionSweepsNothing() async throws {
+        let h = Harness()
+        h.center.deliveredList = [.init(id: "apns-1", isRelayPush: true, date: .now, session: "s1")]
+        h.notifier.notify(.replied, title: "t", body: "b")
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(h.center.removedIDs.isEmpty)
+    }
+
+    // MARK: Clearing on return (GitHub #63)
+
+    @Test func comingBackClearsOnlyTheChatOnScreen() async throws {
+        let h = Harness()
+        let open = UUID().uuidString
+        h.center.deliveredList = [
+            .init(id: "this-push", isRelayPush: true, date: .now, session: "s1"),
+            .init(id: "other-push", isRelayPush: true, date: .now, session: "s2"),
+            .init(id: "redde.replied", isRelayPush: false, date: .now, conversation: open),
+            .init(id: "redde.replied.elsewhere", isRelayPush: false, date: .now, conversation: UUID().uuidString),
+            .init(id: "room-push", isRelayPush: false, date: .now, room: "r1"),
+            .init(id: "redde.leave.1", isRelayPush: false, date: .now),
+        ]
+        h.notifier.clearDelivered(session: "s1", conversation: open, room: nil)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(Set(h.center.removedIDs) == ["this-push", "redde.replied"])
+        #expect(h.center.clearedDelivered == 0, "not everything")
+    }
+
+    @Test func aGroupChatOnScreenClearsOnlyItsRoom() async throws {
+        let h = Harness()
+        h.center.deliveredList = [
+            .init(id: "room-push", isRelayPush: true, date: .now, session: "s9", room: "r1"),
+            .init(id: "other-room", isRelayPush: true, date: .now, session: "s9", room: "r2"),
+            .init(id: "chat-push", isRelayPush: true, date: .now, session: "s1"),
+        ]
+        h.notifier.clearDelivered(session: "s1", conversation: UUID().uuidString, room: "r1")
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(h.center.removedIDs == ["room-push"])
     }
 
     @Test func suppressedBannerRunsNoSweep() async throws {
@@ -541,9 +582,10 @@ struct NotifierTests {
 
     @Test func aLocalBannerStillSweepsThePushedTwinOfTheSameEvent() async throws {
         let h = Harness()
-        h.center.deliveredList = [.init(id: "pushed", isRelayPush: true, date: .now), .init(id: "older", isRelayPush: true, date: .now.addingTimeInterval(-120)),
+        h.center.deliveredList = [.init(id: "pushed", isRelayPush: true, date: .now, session: "s1"),
+                                  .init(id: "older", isRelayPush: true, date: .now.addingTimeInterval(-120), session: "s1"),
                                   .init(id: "local", isRelayPush: false, date: .now)]
-        h.notifier.notify(.replied, title: "Redde", body: "Done.")
+        h.notifier.notify(.replied, title: "Redde", body: "Done.", session: "s1")
         try await Task.sleep(for: .milliseconds(200))
         #expect(h.center.removedIDs == ["pushed"])
     }

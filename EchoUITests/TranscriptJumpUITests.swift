@@ -15,6 +15,19 @@ final class TranscriptJumpUITests: XCTestCase {
         return app
     }
 
+    /// Opened from a reply's notification: at the reply's first line, not its end (GitHub #63),
+    /// with Jump to latest for the rest.
+    func testOpenedFromAReplyStartsAtItsTop() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoHeavy", "3", "-echo.fromReply"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        let jump = app.buttons["Jump to the newest message"]
+        XCTAssertTrue(jump.waitForExistence(timeout: 15), "It opened at the end of the reply")
+        let asked = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Turn 3'")).firstMatch
+        XCTAssertTrue(asked.exists && asked.frame.maxY < app.frame.midY, "The question the reply answers isn't just above it")
+    }
+
     func testJumpToLatestReachesTheEndAtRest() {
         let app = launchLongDemo()
         let end = app.staticTexts["End of the long demo."]

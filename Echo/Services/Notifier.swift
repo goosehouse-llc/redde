@@ -32,9 +32,14 @@ extension UNUserNotificationCenter: NotificationCentering {
             // A notification that came through a push relay carries a top-level "session" key
             // (the notification extension writes it, as the household relay does); local banners
             // never set one, so its presence marks a remote push.
-            Notifier.DeliveredBanner(id: $0.request.identifier,
-                                     isRelayPush: $0.request.content.userInfo[PushNote.sessionKey] != nil,
-                                     date: $0.date)
+            let info = $0.request.content.userInfo
+            return Notifier.DeliveredBanner(id: $0.request.identifier,
+                                            isRelayPush: info[PushNote.sessionKey] != nil,
+                                            date: $0.date,
+                                            session: info[PushNote.sessionKey] as? String,
+                                            conversation: info[Notifier.conversationKey] as? String,
+                                            room: info[PushNote.roomKey] as? String,
+                                            category: $0.request.content.categoryIdentifier)
         }
     }
     func removeDelivered(ids: [String]) { removeDeliveredNotifications(withIdentifiers: ids) }
@@ -57,13 +62,24 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         self.isAppActive = isAppActive
     }
 
-    enum Kind: String { case interrupt, replied, failed }
+    enum Kind: String, CaseIterable { case interrupt, replied, failed }
 
-    /// A delivered banner as the relay-duplicate sweep sees it.
+    /// A delivered banner as the relay-duplicate sweep and the clearing on return see it: which
+    /// chat it is about (a Hermes session, the app's own conversation, a group chat).
     struct DeliveredBanner: Sendable {
         var id: String
         var isRelayPush: Bool
         var date: Date
+        var session: String?
+        var conversation: String?
+        var room: String?
+        var category: String = ""
+
+        /// One of the app's own banners for a turn (`notify`): a reply, a failure, an approval or
+        /// a question. Without a conversation they are the open one's (`Notifier.conversation`).
+        var isTurnBanner: Bool {
+            !isRelayPush && Kind.allCases.contains { id.hasPrefix("redde.\($0.rawValue)") }
+        }
     }
 
     /// The conversation that owns the pending approval; set once at launch.
@@ -203,6 +219,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let bot = info[PushNote.botKey] as? String
         let keyRequest = info[PushNote.keyRequestKey] as? String
         let kind = info[PushNote.kindKey] as? String
+        let briefing = info[PushNote.briefingKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         let leaveTitle = info[LeaveTime.eventTitleKey] as? String
         let leaveAt = (info[LeaveBy.latitudeKey] as? Double).flatMap { lat in (info[LeaveBy.longitudeKey] as? Double).map { (lat, $0) } }
@@ -224,7 +241,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             let work = self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
                                   userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest,
                                   questionDigest: asked, room: room, task: task, bot: bot, keyRequest: keyRequest,
-                                  kind: kind)
+                                  kind: kind, briefing: briefing)
             // The app may have been started just for this: iOS keeps it running until it is told.
             await work?.value
             handled()
@@ -328,7 +345,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     func route(action: String, requestID: String?, questionID: String?,
                approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil,
                approvalDigest: String? = nil, questionDigest: String? = nil, room: String? = nil, task: String? = nil,
-               bot: String? = nil, keyRequest: String? = nil, kind: String? = nil) -> Task<Void, Never>? {
+               bot: String? = nil, keyRequest: String? = nil, kind: String? = nil, briefing: String? = nil) -> Task<Void, Never>? {
         // A bot asks for a key: its card, to paste it into (`KeyRequests`).
         if let keyRequest, !keyRequest.isEmpty, action == UNNotificationDefaultActionIdentifier {
             KeyRequests.shared.show(id: keyRequest)
@@ -336,7 +353,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         }
         // A briefing (a `[redde-notify]` job's answer): opened whole, over the chat list.
         if task == "brief", room == nil, action == UNNotificationDefaultActionIdentifier {
-            BriefingsInbox.shared.showNewest()
+            BriefingsInbox.shared.showNewest(id: briefing)
             return nil
         }
         // A watch saw something change: the Watches list, its update beside the watch. It had no
@@ -361,7 +378,17 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         }
         // A tap on a notification a paired Hermes sent: open the conversation it is about.
         if action == UNNotificationDefaultActionIdentifier, let sessionID {
+            // A reply's or a finished task's: read from the start of the reply it showed.
+            if PushNote.Kind(rawValue: kind ?? "").map({ $0 == .reply || $0 == .task }) == true {
+                conversation?.readFromReply = sessionID
+            }
             LaunchRouter.shared.requestSession(sessionID)
+            return nil
+        }
+        // A tap on the app's own reply banner: its conversation, from the start of the reply.
+        if action == UNNotificationDefaultActionIdentifier, let conversationID, requestID == nil,
+           let conversation, conversation.id.uuidString == conversationID {
+            conversation.readFromReply = conversationID
             return nil
         }
         // Approve or Deny on an approval a paired Hermes announced.
@@ -647,9 +674,10 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 
     /// Posts only when the app isn't the active scene; in front, the UI already shows it.
     /// `messageEntityID` (a reply's `SiriID`) tags the banner for Siri and marks the reply unread.
+    /// `session`, the chat's on Hermes: the relay's push of the same event is taken away.
     /// `body` is an autoclosure: the reply's Markdown strip is only paid when a banner will post.
     func notify(_ kind: Kind, title: String, body: @autoclosure () -> String, category: String? = nil,
-                userInfo: [String: String] = [:], messageEntityID: String? = nil) {
+                userInfo: [String: String] = [:], session: String? = nil, messageEntityID: String? = nil) {
         guard isEnabled, !isAppActive() else { return }
         if holdsReplies, kind == .replied || kind == .failed { return }
         let body = body()
@@ -672,7 +700,9 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         center.add(request) { [weak self] error in
             if let error { Task { @MainActor in self?.log.error("notify failed: \(error.localizedDescription)") } }
         }
-        sweepRelayDuplicates(around: .now)
+        // The same event's push, when the relay sends one: of this chat's session only (the open
+        // conversation's, for a question or an approval the app asks about itself).
+        if let session = session ?? conversation?.serverSessionID { sweepRelayDuplicates(of: session, around: .now) }
     }
 
     private var sweepTask: Task<Void, Never>?
@@ -681,28 +711,58 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     /// case where the push relay ALSO delivers the same event as a remote banner moments later
     /// (or moments earlier, when the webhook outruns the stream). Keep the local banner (it has
     /// the reply text and the action buttons) and remove relay pushes from the same window, in
-    /// a few passes because APNs delivery lags the webhook by a couple of seconds.
-    private func sweepRelayDuplicates(around posted: Date) {
+    /// a few passes because APNs delivery lags the webhook by a couple of seconds. Only the same
+    /// session's: another chat's push in that window is no duplicate (GitHub #63, it went too).
+    private func sweepRelayDuplicates(of session: String, around posted: Date) {
         sweepTask?.cancel()
         sweepTask = Task { [weak self] in
             for delay in [0.0, 2.0, 8.0] {
                 if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
                 guard let self, !Task.isCancelled else { return }
                 let stale = await self.center.delivered()
-                    .filter { $0.isRelayPush && $0.date >= posted.addingTimeInterval(-30) }
+                    .filter { $0.isRelayPush && $0.session == session && $0.date >= posted.addingTimeInterval(-30) }
                     .map(\.id)
                 if !stale.isEmpty, !Task.isCancelled { self.center.removeDelivered(ids: stale) }
             }
         }
     }
 
-    /// Clear anything still showing once the user is back in the app. Only ours: delivered
-    /// banners, plus the one-off clarify categories that are no longer needed.
+    /// Every notification gone, and the one-off question categories with them: Erase Everything.
     func clearDelivered() {
         center.removeAllDeliveredNotifications()
         if !adHocCategories.isEmpty {
             adHocCategories.removeAll()
             center.setNotificationCategories(fixedCategories)
+        }
+    }
+
+    private var clearTask: Task<Void, Never>?
+
+    /// Back in the app, or a chat opened: the notifications about the chat on screen go, as in
+    /// Messages; every other stays in Notification Center until it is tapped or its chat opened.
+    /// Opening Redde used to clear them all, so one glanced at and not tapped was lost (GitHub #63).
+    /// The one-off question categories go once no notification shows their buttons.
+    func clearDelivered(session: String?, conversation: String?, room: String?) {
+        clearTask?.cancel()
+        clearTask = Task { [weak self] in
+            guard let self else { return }
+            let delivered = await self.center.delivered()
+            guard !Task.isCancelled else { return }
+            let open = self.conversation?.id.uuidString
+            let about = delivered.filter { banner in
+                if let room { return banner.room == room }
+                if let session, banner.session == session, banner.room == nil { return true }
+                guard banner.isTurnBanner else { return false }
+                return (banner.conversation ?? open) == conversation
+            }
+            if !about.isEmpty { self.center.removeDelivered(ids: about.map(\.id)) }
+            let gone = Set(about.map(\.id))
+            let left = Set(delivered.filter { !gone.contains($0.id) }.map(\.category))
+            let stale = self.adHocCategories.keys.filter { !left.contains($0) }
+            if !stale.isEmpty {
+                for id in stale { self.adHocCategories[id] = nil }
+                self.center.setNotificationCategories(self.fixedCategories.union(self.adHocCategories.values))
+            }
         }
     }
 }
