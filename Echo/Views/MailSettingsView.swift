@@ -50,6 +50,14 @@ struct MailSettingsView: View {
                     NavigationLink { MailRulesView() } label: {
                         Label { Text("Rules", comment: "Email settings: the rules page") } icon: { Image(systemName: "line.3.horizontal.decrease.circle") }
                     }
+                    if center.accounts.count > 1 {
+                        // What the Inbox opens on, kept until changed here or in its menu (11-06).
+                        Picker(selection: Binding(get: { center.inbox?.id ?? "" }, set: { center.accountID = $0 })) {
+                            MailboxChoices()
+                        } label: {
+                            Label { Text("Inbox Shows", comment: "Email settings: which account the Inbox shows") } icon: { Image(systemName: "tray.2") }
+                        }
+                    }
                     Toggle(isOn: Binding(get: { center.status?.triage != "off" }, set: { on in Task { await center.setTriage(on) } })) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Sort New Mail", comment: "Email settings: the agent sorts the inbox")
@@ -105,10 +113,14 @@ struct MailSettingsView: View {
         .badge(Text(Self.state(account)))
     }
 
+    /// "Working" as an account that works: its own key, since "Working" is also the chat list's
+    /// busy mark, and that one's translations say busy.
+    static var working: String { String(localized: "mail.working", defaultValue: "Working", comment: "Email settings: an account whose login works (not \"busy\")") }
+
     /// The word at a row's end: Working, or what's wrong in one word.
     static func state(_ account: MailAccount) -> String {
         if account.via == "nous" { return String(localized: "Not usable", comment: "Email settings: an account Redde can't read") }
-        return account.usable ? String(localized: "Working", comment: "Email settings: an account that works")
+        return account.usable ? working
                               : String(localized: "Not working", comment: "Email settings: an account that fails")
     }
 
@@ -264,7 +276,7 @@ struct MailAccountView: View {
 
     private func status(_ ok: Bool) -> some View {
         Label {
-            ok ? Text("Working", comment: "Email settings: an account that works")
+            ok ? Text(verbatim: MailSettingsView.working)
                : Text("Not working", comment: "Email settings: an account that fails")
         } icon: {
             Image(systemName: ok ? "checkmark.circle.fill" : "xmark.circle.fill").foregroundStyle(ok ? .green : .red)

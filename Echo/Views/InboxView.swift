@@ -35,7 +35,9 @@ struct InboxView: View {
         }
         .navigationTitle(selecting && !selected.isEmpty
                          ? Text("\(selected.count) Selected", comment: "The Inbox's title while emails are picked; the count")
-                         : Text("Inbox", comment: "The email inbox's title"))
+                         : center.accounts.count > 1 && center.inbox != nil
+                           ? Text(verbatim: center.inbox?.name ?? "")   // which mailbox, with several (11-06)
+                           : Text("Inbox", comment: "The email inbox's title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -50,11 +52,12 @@ struct InboxView: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     if center.accounts.count > 1 {
-                        Picker(selection: Binding(get: { center.account?.id ?? "" }, set: { id in
+                        Picker(selection: Binding(get: { center.inbox?.id ?? "" }, set: { id in
                             center.accountID = id
+                            selected = []
                             Task { await center.load(bucket) }
                         })) {
-                            ForEach(center.accounts) { Text($0.name).tag($0.id) }
+                            MailboxChoices()
                         } label: { Text("Account", comment: "Inbox menu: which email account") }
                     }
                     Button("Rules", systemImage: "line.3.horizontal.decrease.circle") { showRules = true }
@@ -107,7 +110,7 @@ struct InboxView: View {
     /// Opened on a pile with mail in it (11-06: it opened on an empty Important with FYI and News
     /// full), until he picks one himself.
     private func pickPile() {
-        guard !picked, let account = center.account, account.count(bucket) == 0,
+        guard !picked, let account = center.inbox, account.count(bucket) == 0,
               let first = MailBucket.shown.first(where: { account.count($0) > 0 }), first != bucket else { return }
         bucket = first
     }
@@ -121,7 +124,7 @@ struct InboxView: View {
 
     private var list: some View {
         List(selection: $selected) {
-            PileBar(bucket: Binding(get: { bucket }, set: { bucket = $0; picked = true }), counts: { center.account?.count($0) ?? 0 })
+            PileBar(bucket: Binding(get: { bucket }, set: { bucket = $0; picked = true }), counts: { center.inbox?.count($0) ?? 0 })
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 10, trailing: 0))
@@ -129,7 +132,7 @@ struct InboxView: View {
             if let problem = center.problem {
                 notice(problem, symbol: "exclamationmark.triangle")
             }
-            if let account = center.account, let problem = account.problem {
+            if let account = center.inbox, let problem = account.problem {
                 notice(problem, symbol: "key")
             }
             ForEach(shown) { thread in
@@ -155,7 +158,7 @@ struct InboxView: View {
                 .listRowSeparator(.hidden)
                 .selectionDisabled()
             }
-            if !shown.isEmpty, let synced = center.account?.lastSync {
+            if !shown.isEmpty, let synced = center.inbox?.lastSync {
                 Text("Checked \(synced.formatted(.relative(presentation: .named))) on your Hermes.", comment: "Inbox: when the server last looked at the mail")
                     .font(.caption).foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity)
@@ -943,7 +946,7 @@ struct InboxSection: View {
     @State private var center = MailCenter.shared
 
     var body: some View {
-        if center.isSetUp, let account = center.account {
+        if center.isSetUp, let account = center.inbox {
             Section {
                 Button(action: open) {
                     HStack(spacing: 12) {
@@ -991,5 +994,18 @@ struct MailSheets: ViewModifier {
         content
             .sheet(isPresented: $center.showingInbox) { NavigationStack { InboxView().doneButton() } }
             .sheet(isPresented: $center.showingSetup) { NavigationStack { MailSettingsView().doneButton() } }
+    }
+}
+
+/// The Inbox's choices of what to show: All Mailboxes (with more than one working account), then
+/// each account. Tagged with `MailCenter.accountID`'s values.
+struct MailboxChoices: View {
+    @State private var center = MailCenter.shared
+
+    var body: some View {
+        if center.accounts.filter(\.usable).count > 1 {
+            Text("All Mailboxes", comment: "Inbox: every email account together").tag(MailCenter.all)
+        }
+        ForEach(center.accounts) { Text($0.name).tag($0.id) }
     }
 }

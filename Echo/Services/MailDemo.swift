@@ -8,6 +8,23 @@ import Foundation
 enum MailDemo {
     static var on: Bool { DevHooks.has("-echo.demoInbox") }
     static var empty: Bool { DevHooks.value("-echo.demoInbox") == "setup" }
+    /// `-echo.demoInbox two`: a second account, Work, for All Mailboxes.
+    static var two: Bool { DevHooks.value("-echo.demoInbox") == "two" }
+
+    static let workThreads: [[String: Any]] = [
+        work("w1", "Lena Fischer", "lena@work.example.com", "Q4 plan review", "Can you look over the Q4 plan before Monday?",
+             "needs_reply", "Lena asks you to review the Q4 plan before Monday.", minutes: 25, unread: true),
+        work("w2", "IT Desk", "it@work.example.com", "Laptop update tonight", "Your laptop will restart for updates at 10 PM…",
+             "important", "Your work laptop restarts for updates at 10 PM tonight.", minutes: 200, unread: true),
+    ]
+
+    private static func work(_ id: String, _ from: String, _ address: String, _ subject: String, _ snippet: String, _ bucket: String,
+                             _ summary: String, minutes: Double, unread: Bool) -> [String: Any] {
+        var t = thread(id, from, address, subject, snippet, bucket, summary, minutes: minutes, unread: unread)
+        t["id"] = "work:INBOX:\(id)"
+        t["thread"] = "work:t:\(id)"
+        return t
+    }
 
     static func install(in center: MailCenter) {
         center.reachable = { true }
@@ -98,6 +115,14 @@ enum MailDemo {
         return ReplyCards.parse(json)
     }
 
+    private static var workAccount: [String: Any] {
+        var counts: [String: Int] = [:]
+        for t in workThreads { counts[t["bucket"] as! String, default: 0] += 1 }
+        return ["id": "work", "name": "Work", "address": "me@work.example.com", "provider": "fastmail", "via": "imap",
+                "usable": true, "problem": NSNull(), "last_sync": Int(now - 300),
+                "unread": workThreads.filter { $0["unread"] as! Bool }.count, "buckets": counts]
+    }
+
     static var brief: [String: Any] {
         ["accounts": [["id": "main", "name": "Home", "unread": 6, "important": 2, "needs_reply": 2, "newsletters": 3, "as_of": Int(now - 600),
                        "top": [threads[2], threads[3], threads[0], threads[1]]]]]
@@ -118,7 +143,8 @@ enum MailDemo {
                                         "can_label": true, "labels": ["groups": true], "labelled": 46,
                                         "backfill": ["state": "running", "done": 300, "total": 840],
                                         "suggest": true, "suggestions": suggestions.map { ["id": $0["id"]!, "why": $0["why"]!] },
-                                        "unread": threads.filter { $0["unread"] as! Bool }.count, "buckets": counts]],
+                                        "unread": threads.filter { $0["unread"] as! Bool }.count, "buckets": counts]]
+                          + (two ? [workAccount] : []),
                           "triage": "auto", "sync_minutes": 3, "setup": ["command": true], "brief": brief])
         case "brief":
             return reply(["brief": brief])
@@ -126,8 +152,9 @@ enum MailDemo {
             return reply(["written": ["REDDE_MAIL_ADDRESS", "REDDE_MAIL_PROVIDER"], "status": ["accounts": [], "setup": ["command": true]]])
         case "list":
             let bucket = parts.count > 2 ? parts[2].split(separator: " ").first.map(String.init) ?? "all" : "all"
-            let listed = threads.filter { bucket == "all" || $0["bucket"] as! String == bucket }
-            return reply(["account": "main", "bucket": bucket, "page": 0, "more": false, "threads": listed])
+            let account = words.hasSuffix(" work") ? "work" : "main"
+            let listed = (account == "work" ? workThreads : threads).filter { bucket == "all" || $0["bucket"] as! String == bucket }
+            return reply(["account": account, "bucket": bucket, "page": 0, "more": false, "threads": listed])
         case "read":
             let id = parts.count > 2 ? parts[2] : ""
             guard let t = threads.first(where: { $0["id"] as! String == id }) else { return reply(["error": "unknown_id", "message": "No such email."]) }

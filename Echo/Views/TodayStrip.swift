@@ -18,7 +18,7 @@ struct TodayStrip: View {
     static let tileHeight: CGFloat = 124
 
     var body: some View {
-        let account = ChatListCard.inbox.isShown && mail.isSetUp ? mail.account : nil
+        let account = ChatListCard.inbox.isShown && mail.isSetUp ? mail.inbox : nil
         let deck = ChatListCard.briefings.isShown ? briefings.deck : []
         let goalList = ChatListCard.goals.isShown ? goals.onList : []
         let count = (account == nil ? 0 : 1) + deck.count + goalList.count

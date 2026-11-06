@@ -845,8 +845,14 @@ final class MailCenter {
     private(set) var loading = false
     /// Something that went wrong, said where the list would be.
     var problem: String?
-    /// The account the Inbox shows.
-    var accountID: String?
+    /// The account the Inbox shows, or `MailCenter.all` for every one together. Kept (2026-11-06:
+    /// "make whatever is selected sticky"), so the Inbox opens on the last pick.
+    var accountID: String? = UserDefaults.standard.string(forKey: "mail.inboxAccount") {
+        didSet { UserDefaults.standard.set(accountID, forKey: "mail.inboxAccount") }
+    }
+    /// "All Mailboxes": every working account's mail in one list, newest first, as Apple Mail's
+    /// All Inboxes (asked 2026-11-06). Merged here, so any plugin version gives it.
+    static let all = "*"
     /// The toast at the bottom of the Inbox, with its Undo.
     var toast: Toast?
     /// Opened over the app (a mail note's notification, Ahead of Your Day).
@@ -883,18 +889,32 @@ final class MailCenter {
 
     var accounts: [MailAccount] { status?.accounts ?? [] }
     var account: MailAccount? { accounts.first { $0.id == accountID } ?? accounts.first(where: \.usable) ?? accounts.first }
+    /// All Mailboxes is picked and there is more than one account to put together.
+    var showsAll: Bool { accountID == Self.all && accounts.filter(\.usable).count > 1 }
+    /// What the Inbox shows: the account picked, or every working account added up.
+    var inbox: MailAccount? {
+        guard showsAll else { return account }
+        let usable = accounts.filter(\.usable)
+        var counts: [String: Int] = [:]
+        for one in usable { counts.merge(one.counts, uniquingKeysWith: +) }
+        return MailAccount(id: Self.all, name: String(localized: "All Mailboxes", comment: "Inbox: every email account together"),
+                           address: "", provider: "", via: "all", usable: true, problem: nil,
+                           lastSync: usable.compactMap(\.lastSync).min(), unread: usable.reduce(0) { $0 + $1.unread }, counts: counts)
+    }
+    /// The accounts the Inbox's list is made of.
+    private var inboxAccounts: [MailAccount] { showsAll ? accounts.filter(\.usable) : account.map { [$0] } ?? [] }
     /// There's something to show: the chat list's row appears.
     var isSetUp: Bool { accounts.contains(where: \.usable) }
 
     private func key(_ account: String, _ bucket: String) -> String { "\(account)/\(bucket)" }
 
     func threads(in bucket: MailBucket?, account: String? = nil) -> [MailThread] {
-        guard let id = account ?? self.account?.id else { return [] }
+        guard let id = account ?? inbox?.id else { return [] }
         return threads[key(id, bucket?.rawValue ?? "all")] ?? []
     }
 
     func hasMore(in bucket: MailBucket?, account: String? = nil) -> Bool {
-        guard let id = account ?? self.account?.id else { return false }
+        guard let id = account ?? inbox?.id else { return false }
         return more[key(id, bucket?.rawValue ?? "all")] ?? false
     }
 
@@ -918,7 +938,9 @@ final class MailCenter {
             let fresh = MailStatus(json: try await ask("status"))
             status = fresh
             problem = nil
-            if accountID == nil || !fresh.accounts.contains(where: { $0.id == accountID }) { accountID = fresh.usable.first?.id ?? fresh.accounts.first?.id }
+            if accountID == nil || (accountID != Self.all && !fresh.accounts.contains(where: { $0.id == accountID })) {
+                accountID = fresh.usable.first?.id ?? fresh.accounts.first?.id
+            }
             remember()
             return fresh
         } catch {
@@ -927,17 +949,28 @@ final class MailCenter {
         }
     }
 
-    /// A pile's first page (or the next, `page`), for the account shown.
+    /// A pile's first page (or the next, `page`), for the account shown; for All Mailboxes, that
+    /// page of each account, put together newest first.
     func load(_ bucket: MailBucket?, page: Int = 0) async {
-        guard let account = account?.id else { return }
+        let accounts = inboxAccounts
+        guard !accounts.isEmpty else { return }
+        let pile = bucket?.rawValue ?? "all"
         loading = true
         defer { loading = false }
         do {
-            let json = try await ask("list \(bucket?.rawValue ?? "all") \(page) \(account)")
-            let listed = MailPage(json: json)
-            let k = key(account, bucket?.rawValue ?? "all")
-            threads[k] = page == 0 ? listed.threads : (threads[k] ?? []) + listed.threads.filter { t in !(threads[k] ?? []).contains { $0.id == t.id } }
-            more[k] = listed.more
+            for account in accounts {
+                let k = key(account.id, pile)
+                // Past the end of a shorter account's mail: nothing more to ask it for.
+                if page > 0, accounts.count > 1, more[k] != true { continue }
+                let listed = MailPage(json: try await ask("list \(pile) \(page) \(account.id)"))
+                threads[k] = page == 0 ? listed.threads : (threads[k] ?? []) + listed.threads.filter { t in !(threads[k] ?? []).contains { $0.id == t.id } }
+                more[k] = listed.more
+            }
+            if showsAll {
+                let k = key(Self.all, pile)
+                threads[k] = accounts.flatMap { threads[key($0.id, pile)] ?? [] }.sorted { $0.date > $1.date }
+                more[k] = accounts.contains { more[key($0.id, pile)] == true }
+            }
             problem = nil
             remember()
         } catch {
@@ -1005,12 +1038,15 @@ final class MailCenter {
             }
             mark(ids: ids) { $0.bucket = bucket }
             if moved.isEmpty { moved = threads.values.flatMap { $0 }.filter { ids.contains($0.id) } }
-            if let account = account?.id, var list = threads[key(account, bucket.rawValue)] {
-                for var thread in moved where !list.contains(where: { $0.id == thread.id }) {
+            // Into each loaded list of that pile its account's (All Mailboxes' takes every one).
+            for k in threads.keys where k.hasSuffix("/" + bucket.rawValue) {
+                let owner = String(k.dropLast(bucket.rawValue.count + 1))
+                guard var list = threads[k] else { continue }
+                for var thread in moved where (owner == Self.all || thread.id.hasPrefix(owner + ":")) && !list.contains(where: { $0.id == thread.id }) {
                     thread.bucket = bucket
                     list.append(thread)
                 }
-                threads[key(account, bucket.rawValue)] = list.sorted { $0.date > $1.date }
+                threads[k] = list.sorted { $0.date > $1.date }
             }
             return
         }
