@@ -225,6 +225,18 @@ class GoalTests(RoutinesTests):
                          ("routine", "brief", "job1", "g1", "2/5", "Run a 10K"))
         self.assertEqual(made["b"], "Two runs this week\nNext: Run 5K Saturday\nThe knee is fine now.")
         self.assertEqual(goals.load(self.root)[0]["progress"]["headline"], "Two runs this week")
+        self.assertEqual(goals.load(self.root)[0]["progress"]["details"], "The knee is fine now.")
+
+    def test_a_check_ins_report_keeps_its_lines(self):
+        goals.save(self.root, [{"id": "g1", "title": "Run a 10K", "steps": []}])
+        home = self.goal_job(last="2026-11-02T09:00:00")
+        self.watch.look()
+        report = "| Run | km |\n|---|---|\n| Tue | 4 |\n| Sun | 6 |\n\n- **Rest** tomorrow"
+        self.output(home, "## Response\n\nPROGRESS: 2/5 | Two runs | Book the race\n\n" + report)
+        self.goal_job(last="2026-11-09T09:00:00")
+        self.watch.look()
+        self.assertEqual(self.sent[0][1]["b"], "Two runs\nNext: Book the race\n" + report)
+        self.assertEqual(goals.load(self.root)[0]["progress"]["details"], report)
 
     def test_a_check_in_without_a_progress_line_still_says_what_it_said(self):
         goals.save(self.root, [{"id": "g1", "title": "Run a 10K", "steps": []}])

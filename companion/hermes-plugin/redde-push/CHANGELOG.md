@@ -3,6 +3,13 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.19.3 (2026-11-06)
+
+- An email's preview in the Inbox is its words: the start of the message read and decoded, not
+  the raw parts of a multipart email (boundaries, headers, `=20`, base64, stylesheets).
+- A goal's check-in keeps the rest of its report (a table, a list) with the goal, lines and all,
+  for the goal's page in Redde.
+
 ## 1.19.2 (2026-11-06)
 
 - An email read in Redde comes with its HTML too, so the reader shows it as its sender laid it

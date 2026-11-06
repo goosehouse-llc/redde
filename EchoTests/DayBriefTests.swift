@@ -58,6 +58,28 @@ struct DayBriefTests {
         #expect(brief.rows.first?.place == nil, "a dash is nothing")
     }
 
+    /// Under the card, only what it doesn't show (asked 2026-11-06), in the shape of his brief.
+    @Test func theWordsUnderTheCardLeaveOutItsSchedule() {
+        let brief = """
+            ## Today, Friday, November 6
+
+            | Time | Title | Attendees | Zoom |
+            |---|---|---|---|
+            | All day | Sam PTO | 2 | — |
+            | 12:30 – 1:00 PM | Stand-up | 4 | — |
+            | 5:00 – 6:00 PM | Weekly Review | 33 | [Join](https://zoom.us/j/5550100) |
+
+            **Conflict:** Dentist and Weekly Review, 5:00–6:00 PM (overlap).
+            """
+        #expect(DayBrief.withoutSchedule(brief) == "**Conflict:** Dentist and Weekly Review, 5:00–6:00 PM (overlap).")
+        let shown = DayBrief.withoutSchedule(DayBrief.withoutNarration(tabled))
+        #expect(!shown.contains("| Climbing |") && !shown.contains("Design review"), "both tables go")
+        #expect(shown.contains("**Scheduling conflicts:**") && shown.contains("Have a good weekend"), "the rest stays")
+        #expect(!shown.contains("Morning Meeting Brief") && !shown.contains("Meetings from 9:00 AM"), "headings over the schedule, or naming the day, go")
+        #expect(DayBrief.withoutSchedule("- 9:00 AM Stand-up\n- All day: Rent") == "", "a list of times and nothing else: nothing")
+        #expect(DayBrief.withoutSchedule("Bring the slides.") == "Bring the slides.")
+    }
+
     @Test func aBulletListUnderACalendarTitleReadsAsTomorrow() throws {
         let text = """
             Here's what's on tomorrow.

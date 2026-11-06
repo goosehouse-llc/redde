@@ -483,7 +483,8 @@ class Routines:
                         found, rest = goals.progress(words) if not failed else (None, words)
                         goal = goals.goal_id(name) or ""
                         if found:
-                            goals.remember(home, goal, found)
+                            # The rest of the report too, as written (a table, a list), for the goal's page.
+                            goals.remember(home, goal, {**found, "details": rest[:goals.DETAILS_LIMIT]} if rest else found)
                         body = rest if failed or not found else "\n".join(
                             line for line in ([found["headline"], f"Next: {found['next']}" if found["next"] else ""] + [rest]) if line)
                         if not body and not found:

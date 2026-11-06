@@ -41,6 +41,12 @@ final class InboxLookUITests: XCTestCase {
         XCTAssertTrue(app.text(containing: "Priya Nair").waitForExistence(timeout: 15), "No demo mail")
         let news = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Newsletters")).firstMatch
         XCTAssertTrue(news.waitForExistence(timeout: 3), "No Newsletters tab")
+        // The tabs scroll sideways (asked 2026-11-06): Newsletters is past the screen's edge.
+        let row = news.frame.midY / app.frame.height
+        for _ in 0 ..< 3 where news.frame.maxX > app.frame.maxX {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: row))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: row)))
+        }
         news.tap()
         let lumen = app.text(containing: "Lumen Coffee")
         XCTAssertTrue(lumen.waitForExistence(timeout: 5), "No newsletter")

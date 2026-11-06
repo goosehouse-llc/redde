@@ -71,25 +71,29 @@ extension View {
 
 /// Settings → Appearance → Cards on a card: its ground, and on a solid card (white, off-white,
 /// graphite, black) the card's own content drawn in that card's appearance, so its text reads on it
-/// whatever the phone's is.
+/// whatever the phone's is; with Card Appearance light or dark, every card drawn so.
 private struct CardSurface: ViewModifier {
     var cornerRadius: CGFloat
     var raised: Bool
     @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
-        let solid = Settings.shared.cardColor.solid
-        let drawn = content.environment(\.colorScheme, solid ?? scheme)
-        if raised {
-            drawn
-                .background {
-                    CardFill(cornerRadius: cornerRadius)
-                        .shadow(color: .black.opacity(solid == .light && scheme == .dark ? 0.3 : 0.08), radius: 12, y: 4)
-                }
-                .overlay { RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
-        } else {
-            drawn.background { CardFill(cornerRadius: cornerRadius) }
+        // A solid colour's appearance, else Card Appearance's, else the app's: the card, its
+        // ground and its edge all in it.
+        let drawnIn = Settings.shared.cardScheme ?? scheme
+        Group {
+            if raised {
+                content
+                    .background {
+                        CardFill(cornerRadius: cornerRadius)
+                            .shadow(color: .black.opacity(drawnIn == .light && scheme == .dark ? 0.3 : 0.08), radius: 12, y: 4)
+                    }
+                    .overlay { RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
+            } else {
+                content.background { CardFill(cornerRadius: cornerRadius) }
+            }
         }
+        .environment(\.colorScheme, drawnIn)
     }
 }
 

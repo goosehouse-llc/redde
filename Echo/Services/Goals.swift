@@ -92,6 +92,7 @@ enum Goals {
             return GoalReport(id: id, title: g["title"]?.string ?? "", agent: name,
                               profile: agent.isEmpty ? nil : agent, done: min(done, total), total: total,
                               headline: progress?["headline"]?.string ?? "", next: progress?["next"]?.string?.nilIfEmpty,
+                              details: progress?["details"]?.string?.nilIfEmpty,
                               at: CronJob.date(progress?["at"]) ?? .distantPast, failed: false, job: g["job"]?.string,
                               target: date(g["target"]), steps: steps.isEmpty ? nil : steps)
         }
@@ -151,6 +152,18 @@ enum Goals {
     static let demoGoals: [GoalReport] = [
         GoalReport(id: "g10k", title: "Run a 10K by March", agent: "Sol", profile: "default", done: 3, total: 7,
                    headline: "Three runs this week, the long one at 6 km.", next: "Book the Riverside 10K before early entry closes Friday",
+                   details: """
+                   Your pace is coming down on the easy runs, and Thursday's hills felt **easier** than last week's.
+
+                   | Run | Distance | Pace |
+                   |---|---|---|
+                   | Tuesday | 4 km | 6:12 /km |
+                   | Thursday | 4.5 km, hills | 6:30 /km |
+                   | Sunday | 6 km | 6:05 /km |
+
+                   - Rest day tomorrow; your calves were tight on Sunday.
+                   - Early entry for the Riverside 10K is $35 until Friday, $45 after.
+                   """,
                    at: .now.addingTimeInterval(-3_600 * 5), failed: false, job: "jg10k",
                    target: Calendar.current.date(byAdding: .day, value: 118, to: .now),
                    steps: [.init(title: "Pick a 12-week plan", cardID: "k1", done: true),

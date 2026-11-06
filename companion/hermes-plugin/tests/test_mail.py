@@ -1,6 +1,7 @@
 """Email (`mail.py`, 1.16.0): python -m unittest discover -s companion/hermes-plugin/tests
 
 IMAP, SMTP and the Gmail API are stand-ins here: no network."""
+import email.policy
 import json
 import os
 import re
@@ -363,6 +364,30 @@ class MailTests(unittest.TestCase):
         self.assertIsNone(mail.html_of(plain_only), "no HTML part: the reader shows the text")
         with unittest.mock.patch.object(mail, "HTML_LIMIT", 10):
             self.assertIsNone(mail.html_of(msg), "too long: the text instead")
+
+    def test_previews_are_words_not_mime(self):
+        msg = EmailMessage()
+        msg["Subject"] = "Security alert"
+        msg.set_content("A new sign-in on your account from a Mac.")
+        msg.add_alternative("<html><head><style>/** webfonts */ body { color: red }</style></head><body><p>A new sign-in</p></body></html>", subtype="html")
+        raw = msg.as_bytes(policy=email.policy.SMTP)
+        head, _, body = raw.partition(b"\r\n\r\n")
+        self.assertEqual(mail.start_text(head, body[:4000]).strip(), "A new sign-in on your account from a Mac.")
+        # Base64 text, cut off part-way, as IMAP's first 4 KB can be.
+        b64 = EmailMessage()
+        b64.set_content("Your Google Account was signed in on a new device. " * 40, cte="base64")
+        head, _, body = b64.as_bytes(policy=email.policy.SMTP).partition(b"\r\n\r\n")
+        self.assertTrue(mail.start_text(head, body[:600]).startswith("Your Google Account was signed in"))
+        # HTML cut off inside its <style>, quoted-printable.
+        qp = EmailMessage()
+        qp.set_content("<html><head><style>/** Google webfonts */ @font-face { font-family: Inter }</style></head><body>Limits raised</body></html>",
+                       subtype="html", cte="quoted-printable")
+        head, _, body = qp.as_bytes(policy=email.policy.SMTP).partition(b"\r\n\r\n")
+        self.assertNotIn("webfonts", mail.start_text(head, body[:60]))
+        # Previews kept before: tidied as they're listed.
+        self.assertEqual(mail.snippet_of('--000000000000183c70065f697a19 Content-Type: text/plain; charset="UTF-8"; format=flowed; delsp=yes Hello'), "Hello")
+        self.assertEqual(mail.snippet_of("=20 Limits raised /** * Google webfonts */ @font-face { font-family: x }"), "Limits raised")
+        self.assertEqual(mail.snippet_of("Lunch at 1? The place on 5th."), "Lunch at 1? The place on 5th.")
 
     def test_several_unsubscribes_from_the_inbox_each_go(self):
         self.server.add(3, sender="News <news@paper.com>", subject="Headlines",

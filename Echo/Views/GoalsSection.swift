@@ -80,7 +80,7 @@ struct GoalCard: View {
                     .chatFont(.headline, weight: .bold, design: .rounded)
                     .lineLimit(2)
                 if !goal.headline.isEmpty {
-                    Text(goal.headline).chatFont(.subheadline).opacity(goal.failed ? 0.6 : 0.8).lineLimit(2)
+                    Text(GoalReport.plain(goal.headline)).chatFont(.subheadline).opacity(goal.failed ? 0.6 : 0.8).lineLimit(2)
                 } else {
                     Text("No check-in yet", comment: "A goal's card before its agent first checked in").chatFont(.subheadline).opacity(0.6)
                 }
@@ -257,7 +257,7 @@ struct GoalsListView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(goal.title).lineLimit(2)
                                 if !goal.headline.isEmpty {
-                                    Text(goal.headline).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    Text(GoalReport.plain(goal.headline)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                                 }
                             }
                         }

@@ -118,7 +118,7 @@ struct InboxView: View {
             PileBar(bucket: Binding(get: { bucket }, set: { bucket = $0; picked = true }), counts: { center.account?.count($0) ?? 0 })
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
+                .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 10, trailing: 0))
                 .selectionDisabled()
             if let problem = center.problem {
                 notice(problem, symbol: "exclamationmark.triangle")
@@ -139,7 +139,8 @@ struct InboxView: View {
                     }
                 }
                 .tag(thread.id)
-                .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 16))
+                .listRowInsets(EdgeInsets(top: 9, leading: 0, bottom: 9, trailing: 16))
+                .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] + 66 }
             }
             if center.hasMore(in: bucket) {
                 Button { Task { await center.load(bucket, page: shown.count / 30) } } label: {
@@ -334,52 +335,60 @@ private struct SelectionBarLabel: View {
     }
 }
 
-/// The four piles, each its colour: the one shown says its name, the others their count.
+/// The four piles, each its colour, its name and its count, in a row that swipes sideways
+/// (asked 11-06: "allow for swipe scrolling on email categories"); the one shown is filled and
+/// kept in view.
 struct PileBar: View {
     @Binding var bucket: MailBucket
     let counts: (MailBucket) -> Int
-    @Namespace private var pill
 
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(MailBucket.shown) { pile in
-                let on = pile == bucket
-                let count = counts(pile)
-                Button {
-                    withAnimation(.snappy) { bucket = pile }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: on ? pile.symbol + ".fill" : pile.symbol)
-                            .symbolRenderingMode(.hierarchical)
-                        if on {
-                            Text(pile.tab).lineLimit(1).fixedSize()
-                        }
-                        if count > 0 {
-                            Text(count, format: .number).monospacedDigit()
-                                .font(.caption.weight(.semibold))
-                                .opacity(on ? 0.85 : 1)
-                        }
+        ScrollViewReader { scroller in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(MailBucket.shown) { pile in
+                        chip(pile)
+                            .id(pile)
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(on ? AnyShapeStyle(.white) : AnyShapeStyle(pile.tint))
-                    .padding(.horizontal, 12)
-                    .frame(height: 38)
-                    .frame(maxWidth: on ? .infinity : nil)
-                    .background {
-                        if on {
-                            Capsule().fill(pile.tint.gradient).matchedGeometryEffect(id: "pill", in: pill)
-                        } else {
-                            Capsule().fill(pile.tint.opacity(0.14))
-                        }
-                    }
-                    .contentShape(.capsule)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(count > 0 ? "\(pile.label), \(count)" : pile.label))
-                .accessibilityAddTraits(on ? .isSelected : [])
+                .padding(.horizontal, 16)
+                .padding(.vertical, 2)
             }
+            .scrollClipDisabled()
+            .onChange(of: bucket) { _, now in
+                withAnimation(.snappy) { scroller.scrollTo(now, anchor: .center) }
+            }
+            .onAppear { scroller.scrollTo(bucket, anchor: .center) }
         }
-        .frame(maxWidth: .infinity)
+    }
+
+    private func chip(_ pile: MailBucket) -> some View {
+        let on = pile == bucket
+        let count = counts(pile)
+        return Button {
+            withAnimation(.snappy) { bucket = pile }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: on ? pile.symbol + ".fill" : pile.symbol)
+                    .symbolRenderingMode(.hierarchical)
+                Text(pile.label).lineLimit(1)
+                if count > 0 {
+                    Text(count, format: .number).monospacedDigit()
+                        .font(.caption.weight(.bold))
+                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .background(on ? AnyShapeStyle(.white.opacity(0.25)) : AnyShapeStyle(pile.tint.opacity(0.18)), in: .capsule)
+                }
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(on ? AnyShapeStyle(.white) : AnyShapeStyle(pile.tint))
+            .padding(.horizontal, 14)
+            .frame(height: 36)
+            .background(on ? AnyShapeStyle(pile.tint.gradient) : AnyShapeStyle(pile.tint.opacity(0.12)), in: .capsule)
+            .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(count > 0 ? "\(pile.label), \(count)" : pile.label))
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
 
@@ -436,36 +445,40 @@ struct SenderAvatar: View {
     }
 }
 
-/// One email in the Inbox: who, the subject, the agent's line, when.
+/// One email in the Inbox: who, the subject, the agent's line, when. Styled as Mail's list
+/// (his pick, 11-06): the name always bold, a 15-point subject and two lines under it, a grey
+/// date with a chevron, the unread dot in its own column.
 struct MailRow: View {
     let thread: MailThread
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            SenderAvatar(name: thread.from, address: thread.address)
-                .overlay(alignment: .topLeading) {
-                    if thread.unread {
-                        Circle().fill(Color.accentColor)
-                            .frame(width: 11, height: 11)
-                            .overlay(Circle().strokeBorder(.background, lineWidth: 2))
-                            .offset(x: -2, y: -2)
-                    }
-                }
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .top, spacing: 0) {
+            Circle()
+                .fill(thread.unread ? Color.accentColor : .clear)
+                .frame(width: 9, height: 9)
+                .frame(width: 18)
+                .padding(.top, 15)
+                .accessibilityHidden(true)
+            SenderAvatar(name: thread.from, address: thread.address, size: 38)
+                .padding(.trailing, 10)
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(thread.from)
-                        .font(.body.weight(thread.unread ? .semibold : .regular))
+                        .font(.headline)
                         .lineLimit(1)
-                    Spacer(minLength: 4)
-                    if thread.flagged { Image(systemName: "flag.fill").font(.caption2).foregroundStyle(.orange).accessibilityHidden(true) }
-                    if thread.hasAttachments { Image(systemName: "paperclip").font(.caption2).foregroundStyle(.secondary).accessibilityHidden(true) }
+                    Spacer(minLength: 6)
+                    if thread.flagged { Image(systemName: "flag.fill").font(.caption).foregroundStyle(.orange).accessibilityHidden(true) }
+                    if thread.hasAttachments { Image(systemName: "paperclip").font(.caption).foregroundStyle(.secondary).accessibilityHidden(true) }
                     Text(thread.date, format: Self.when(thread.date))
-                        .font(.footnote)
-                        .foregroundStyle(thread.unread ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
                 }
                 Text(thread.subject)
-                    .font(.subheadline.weight(thread.unread ? .medium : .regular))
-                    .foregroundStyle(thread.unread ? .primary : .secondary)
+                    .font(.subheadline)
                     .lineLimit(1)
                 if !thread.line.isEmpty {
                     Text(thread.line)
@@ -624,7 +637,7 @@ struct MailReaderView: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(message?.subject ?? thread.subject)
-                        .font(.title2.weight(.bold))
+                        .font(.title3.weight(.semibold))
                         .textSelection(.enabled)
                     header
                     if let summary = thread.summary {

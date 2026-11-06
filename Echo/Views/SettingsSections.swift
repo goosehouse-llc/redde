@@ -166,6 +166,18 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            Picker(selection: $settings.cardAppearance) {
+                ForEach(Settings.Appearance.allCases) { Text($0 == .system ? String(localized: "Automatic", comment: "Card Appearance: cards light or dark as the app is") : $0.label).tag($0) }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Card Appearance", comment: "Settings → Appearance: cards drawn light or dark")
+                    Text(settings.cardColor.solid == nil
+                         ? String(localized: "Calendar and other cards light or dark, whatever the app is.", comment: "Card Appearance's note")
+                         : String(localized: "This card color keeps its own look.", comment: "Card Appearance's note with White, Black and the like picked"))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .disabled(settings.cardColor.solid != nil)
             Toggle(isOn: $settings.botColors) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Bot colors in their chats")

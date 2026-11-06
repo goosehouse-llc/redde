@@ -303,6 +303,62 @@ nonisolated struct DayBrief: Equatable, Sendable {
         String(title.lowercased().unicodeScalars.filter(CharacterSet.alphanumerics.contains).map(Character.init))
     }
 
+    // MARK: The words under the card
+
+    /// A day's brief under its calendar card: without the schedule the card already shows (asked
+    /// 2026-11-06: "No need to display this in the daily morning brief if the calendar card is
+    /// already there"): its tables with a time column, its lines that start with a time or "All
+    /// day", and the headings over them, or naming the day, or left with nothing under. What else it says (a conflict, what to
+    /// prepare) stays. For showing only.
+    static func withoutSchedule(_ text: String) -> String {
+        let lines = text.components(separatedBy: .newlines)
+        let trimmed = lines.map { $0.trimmingCharacters(in: .whitespaces) }
+        var gone = Set<Int>()
+        var i = 0
+        while i < trimmed.count {
+            if trimmed[i].hasPrefix("|"), i + 1 < trimmed.count, isDivider(trimmed[i + 1]),
+               columns(cells(trimmed[i]).map { $0.lowercased() }) != nil {
+                var end = i + 2
+                while end < trimmed.count, trimmed[end].hasPrefix("|") { end += 1 }
+                gone.formUnion(i ..< end)
+                i = end
+                continue
+            }
+            if !lineRows([trimmed[i]]).isEmpty { gone.insert(i) }
+            i += 1
+        }
+        guard !gone.isEmpty else { return text }
+        // A heading whose section is now empty: from the last heading up, so a heading over only
+        // emptied headings goes too.
+        func isHeading(_ line: String) -> Bool { line.hasPrefix("#") || (line.hasPrefix("**") && line.hasSuffix("**") && line.count > 4) }
+        for h in trimmed.indices.reversed() where isHeading(trimmed[h]) {
+            let level = trimmed[h].prefix { $0 == "#" }.count
+            var j = h + 1, empty = true
+            while j < trimmed.count {
+                let line = trimmed[j]
+                if isHeading(line) {
+                    let deeper = line.hasPrefix("#") && level > 0 && line.prefix { $0 == "#" }.count > level
+                    if !deeper { break }
+                }
+                if !line.isEmpty, !gone.contains(j) { empty = false; break }
+                j += 1
+            }
+            // A heading that names the day ("Today, Friday, November 6", "Morning Brief — Friday,
+            // November 6"): the card's own title says it. One that led into the schedule
+            // ("Meetings from 9:00 AM onwards:"): what it introduced is gone.
+            let namesTheDay = date(in: trimmed[h], near: .now) != nil
+            let ledIn = trimmed[(h + 1)...].firstIndex { !$0.isEmpty }.map { gone.contains($0) } ?? false
+            if empty || namesTheDay || ledIn { gone.insert(h) }
+        }
+        var kept: [String] = []
+        for (n, line) in lines.enumerated() where !gone.contains(n) {
+            let blank = line.trimmingCharacters(in: .whitespaces).isEmpty
+            if blank, kept.last.map({ $0.trimmingCharacters(in: .whitespaces).isEmpty }) ?? true { continue }
+            kept.append(line)
+        }
+        return kept.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     // MARK: The model's own words before it
 
     /// The text to show for a briefing: without the model's narration ahead of the brief itself

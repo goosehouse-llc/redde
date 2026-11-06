@@ -916,8 +916,6 @@ extension AgendaCard {
         let twelve = DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: locale)?.contains("a") ?? true
         var full = Date.FormatStyle.dateTime.hour().locale(locale)
         full.timeZone = calendar.timeZone
-        var bare = Date.FormatStyle.dateTime.hour(.defaultDigits(amPM: .omitted)).locale(locale)
-        bare.timeZone = calendar.timeZone
         // Two-digit minutes (UAT 2.3.1: `.minute()` read "09:0" in German, French, Russian and en_GB).
         var clock = Date.FormatStyle.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits).locale(locale)
         clock.timeZone = calendar.timeZone
@@ -927,7 +925,8 @@ extension AgendaCard {
             guard twelve else { return date.formatted(clock) }
             if hour == 12 { return String(localized: "Noon", comment: "An agenda card's hour rail: 12 PM") }
             let named = index == 0 || hour == 13 || hour % 24 == 0 || (hour > 12 && hours[index - 1] < 12)
-            return date.formatted(named ? full : bare)
+            // The bare hour by hand: `.defaultDigits(amPM: .omitted)` came out "02" for 2 PM (2026-11-06).
+            return named ? date.formatted(full) : (hour % 12 == 0 ? 12 : hour % 12).formatted(.number.grouping(.never).locale(locale))
         }
     }
 

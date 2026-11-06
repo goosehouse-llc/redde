@@ -627,13 +627,44 @@ def html_text(markup: str) -> tuple[str, list[dict]]:
             links.append({"text": html.unescape(label)[:80], "url": url[:500]})
         return label
     markup = _TAGS.sub("", markup or "")
+    markup = re.sub(r"<(?:script|style|head)\b.*$", "", markup, flags=re.S | re.I)   # cut off inside one
     markup = _ANCHOR.sub(anchor, markup)
     markup = _BREAKS.sub("\n", markup)
     return html.unescape(re.sub(r"<[^>]+>", "", markup)), links
 
 
 def snippet_of(text: str) -> str:
-    return plain(" ".join((text or "").split()), SNIPPET)
+    return plain(" ".join(tidy(text or "").split()), SNIPPET)
+
+
+def start_text(header: bytes, start: bytes) -> str:
+    """The words at the start of an email, from its first few KB as IMAP hands them over: still
+    in their MIME parts, quoted-printable or base64, perhaps HTML cut off in its <style> (11-06:
+    previews read "--000000000000183c… Content-Type: text/plain…" and "=20 … Google webfonts")."""
+    try:
+        msg = email.message_from_bytes(header.rstrip(b"\r\n") + b"\r\n\r\n" + start, policy=email.policy.default)
+        text = body_of(msg)[0]
+    except Exception:
+        text = ""
+    if not text.strip():
+        text = start.decode("utf-8", "replace")
+        if "<html" in text.lower() or "<div" in text.lower():
+            text = html_text(text)[0]
+    return tidy(text)
+
+
+_MIME_LEFTOVERS = re.compile(r"--[\w'()+,./:=?-]{12,}(?:--)?|\bContent-(?:Type|Transfer-Encoding|Disposition|ID):\s*[^\s;]+(?:;\s*[\w-]+=(?:\"[^\"]*\"|[^\s;]+))*;?"
+                             r"|\b[\w-]+=\"[^\"]*\";?|=(?:\r?\n|20\b)|(?<![\w/.:])[A-Za-z0-9+/]{32,}={0,2}(?![\w/.])", re.I)
+_CSS_LEFTOVERS = re.compile(r"/\*.*?(?:\*/|$)|[@.#]?[\w-]+(?:\s*[,>]\s*[\w.#-]+)*\s*\{[^}]*(?:\}|$)", re.S)
+
+
+def tidy(text: str) -> str:
+    """What's left of a MIME part's wrapping or a page's CSS taken out of a preview. Previews kept
+    before 1.19.2 have them; new ones are made from the decoded text."""
+    if not text or not ("Content-" in text or "{" in text or "/*" in text or "=20" in text or text.lstrip().startswith("--")
+                        or re.search(r"[A-Za-z0-9+/]{32,}", text)):
+        return text
+    return _CSS_LEFTOVERS.sub(" ", _MIME_LEFTOVERS.sub(" ", text))
 
 
 def body_of(msg) -> tuple[str, list[dict], list[dict]]:
@@ -915,7 +946,7 @@ class Imap:
         """Sender, subject, date, flags, list headers and the first lines of each: no whole bodies."""
         if not uids:
             return []
-        wanted = "(UID FLAGS RFC822.SIZE BODYSTRUCTURE BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE MESSAGE-ID LIST-UNSUBSCRIBE LIST-UNSUBSCRIBE-POST LIST-ID PRECEDENCE AUTO-SUBMITTED CONTENT-TYPE)] BODY.PEEK[TEXT]<0.1500>)"
+        wanted = "(UID FLAGS RFC822.SIZE BODYSTRUCTURE BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE MESSAGE-ID LIST-UNSUBSCRIBE LIST-UNSUBSCRIBE-POST LIST-ID PRECEDENCE AUTO-SUBMITTED CONTENT-TYPE CONTENT-TRANSFER-ENCODING)] BODY.PEEK[TEXT]<0.4000>)"
         if self.gmail:
             wanted = wanted.replace("(UID FLAGS", "(UID FLAGS X-GM-LABELS X-GM-THRID")
         typ, data = self.conn.uid("FETCH", ",".join(map(str, uids)), wanted)
@@ -952,9 +983,7 @@ class Imap:
                 when = int(parsedate_to_datetime(head.get("Date")).timestamp())
             except Exception:
                 when = int(time.time())
-            text = (raw["text"] or b"").decode("utf-8", "replace")
-            if "<html" in text.lower() or "<div" in text.lower():
-                text = html_text(text)[0]
+            text = start_text(raw["header"] or b"", raw["text"] or b"")
             precedence = str(head.get("Precedence", "")).lower()
             out.append({
                 "uid": uid, "from": _decode(name) or address, "address": address.lower(),
@@ -1816,7 +1845,7 @@ class Inbox:
     @staticmethod
     def row(m: dict) -> dict:
         return {"id": m["id"], "thread": m.get("thread"), "from": m.get("from"), "address": m.get("address"),
-                "subject": m.get("subject"), "snippet": m.get("snippet"), "date": m.get("date"), "unread": m.get("unread", False),
+                "subject": m.get("subject"), "snippet": snippet_of(m.get("snippet") or ""), "date": m.get("date"), "unread": m.get("unread", False),
                 "bucket": m.get("bucket"), "summary": m.get("summary"), "has_attachments": m.get("has_attachments", False),
                 "can_unsubscribe": m.get("unsubscribe") == "one_click", "receipt": m.get("receipt", False),
                 "flagged": m.get("flagged", False)}

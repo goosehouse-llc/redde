@@ -75,21 +75,41 @@ struct GoalView: View {
                 }
             }
             .padding(.vertical, 4)
-            if !goal.headline.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(goal.headline)
-                    if let next = goal.next {
-                        Label { Text(next) } icon: { Image(systemName: "arrow.forward.circle.fill") }
-                            .font(.subheadline.weight(.semibold))
-                    }
+        }
+        if !goal.headline.isEmpty {
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(GoalReport.plain(goal.headline)).font(.body.weight(.semibold))
+                        .foregroundStyle(goal.failed ? .secondary : .primary)
                     if goal.at > .distantPast {
                         Text(goal.at, format: .relative(presentation: .named)).font(.caption).foregroundStyle(.secondary)
                     }
                 }
+                .padding(.vertical, 2)
+                if let next = goal.next {
+                    nextStep(next, color: BotAvatar.colors(of: face, theme: theme).deep)
+                }
+                if let details = goal.details {
+                    MarkdownView(text: details).fixedSize(horizontal: false, vertical: true).padding(.vertical, 4)
+                }
+            } header: {
+                Text("Last Check-in", comment: "A goal's page: the section with what the agent last said about it")
             }
-        } header: {
-            Text("Last Check-in", comment: "A goal's page: the section with what the agent last said about it")
         }
+    }
+
+    /// The next step, set apart: a small "Next" over the step, its mark at the first line.
+    private func nextStep(_ step: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "arrow.forward.circle.fill").font(.title3).foregroundStyle(color).padding(.top, 2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Next", comment: "A goal's page: over the next step the agent named").font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary).textCase(.uppercase)
+                MarkdownView.styledInline(step, codeFont: .subheadline.monospaced(), accent: color)
+                    .font(.subheadline.weight(.medium))
+            }
+        }
+        .padding(.vertical, 2)
     }
 
     @ViewBuilder private func plan(_ goal: GoalReport) -> some View {

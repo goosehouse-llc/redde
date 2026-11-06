@@ -618,7 +618,9 @@ struct BriefingSheet: View {
                     } else {
                         if let day = briefing.dayBrief { DayBriefAgenda(brief: day) }
                         if let starts = briefing.startsAt { EventCard(briefing: briefing, starts: starts) }
-                        MarkdownView(text: briefing.shownText, selectable: true)
+                        // Under the day's card, only what it doesn't show already.
+                        let words = briefing.dayBrief == nil ? briefing.shownText : DayBrief.withoutSchedule(briefing.shownText)
+                        if !words.isEmpty { MarkdownView(text: words, selectable: true) }
                         if let found = briefing.mapPlace { AddressMapCard(found: found) }
                     }
                     let earlier = BriefingsInbox.shared.earlier(than: briefing)

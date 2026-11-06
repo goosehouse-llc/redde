@@ -696,7 +696,7 @@ enum PluginsDemo {
         ["name": "nvidia-app", "version": "0.3.0", "source": "git", "status": "enabled", "catalog_name": "nvidia-app", "catalog_tier": "verified"],
         ["name": "homeassistant", "version": "1.0.2", "source": "git", "status": "enabled", "catalog_name": "homeassistant", "catalog_tier": "official"],
         ["name": "markifact", "version": "0.4.1", "source": "git", "status": "enabled", "catalog_name": "markifact", "catalog_tier": "community"],
-        ["name": "redde-push", "version": "1.19.2", "source": "git", "status": "enabled"],
+        ["name": "redde-push", "version": "1.19.3", "source": "git", "status": "enabled"],
         ["name": "mermail", "version": "0.9.0", "source": "git", "status": "disabled", "catalog_name": "mermail", "catalog_tier": "community"],
     ].compactMap { fields in InstalledPlugin(.object(fields.mapValues { JSONValue.string($0) })) }
     #endif

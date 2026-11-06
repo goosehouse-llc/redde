@@ -41,6 +41,8 @@ SOON = timedelta(days=14)
 EVERY = {"weekly": WEEKLY, "other_day": OTHER_DAY, "daily": DAILY}
 _ID = re.compile(r"\[redde-goal:([A-Za-z0-9_-]{1,40})\]")
 #: The check-in's first line: "PROGRESS: 3/7 | Ran 5K on Saturday | Book the race".
+# How much of a check-in's report beyond its PROGRESS line is kept for the goal's page.
+DETAILS_LIMIT = 3000
 _PROGRESS = re.compile(r"^\W*progress\W*:?\s*(\d{1,3})\s*/\s*(\d{1,3})[*_\s]*(?:\|\s*([^|\n]*?)\s*)?(?:\|\s*([^\n]*?)\s*)?\W*$",
                        re.IGNORECASE | re.MULTILINE)
 

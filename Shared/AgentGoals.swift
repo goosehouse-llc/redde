@@ -19,6 +19,8 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
     /// What the last check-in said, in a line, and the next step.
     var headline: String
     var next: String?
+    /// The rest of what it said, as it wrote it (Markdown: a table, a list), when it said more.
+    var details: String?
     /// When the last check-in was (or the goal was first heard of).
     var at: Date
     /// The last check-in didn't finish, and `headline` says why.
@@ -70,16 +72,40 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
         return (min(done, total), total)
     }
 
-    /// A check-in's words: its first line is the headline, the rest the next step ("Next: …").
-    static func split(_ text: String) -> (headline: String, next: String?) {
-        let lines = text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        guard let first = lines.first else { return ("", nil) }
-        let rest = lines.dropFirst().joined(separator: " ")
-        var next = rest
-        for prefix in ["Next step:", "Next:", "Up next:"] where next.lowercased().hasPrefix(prefix.lowercased()) {
-            next = String(next.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+    /// A check-in's words: its first line is the headline, a "Next: …" line the next step, and
+    /// the rest its details, lines and all (2026-11-06: a report with a table came out as one
+    /// run-on "next step").
+    static func split(_ text: String) -> (headline: String, next: String?, details: String?) {
+        var lines = text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
+        guard let first = lines.firstIndex(where: { !$0.isEmpty }) else { return ("", nil, nil) }
+        let headline = plain(lines[first])
+        lines.removeSubrange(...first)
+        var next: String?
+        if let at = lines.firstIndex(where: { nextStep($0) != nil }) {
+            next = nextStep(lines[at])
+            lines.remove(at: at)
         }
-        return (first, next.isEmpty ? nil : next)
+        let details = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return (headline, next, details.isEmpty ? nil : details)
+    }
+
+    /// "Next: …" (or "**Next step:** …", "- Up next: …"): the step. Nil for any other line.
+    private static func nextStep(_ line: String) -> String? {
+        let bare = plain(line).drop { "-*• ".contains($0) }
+        for prefix in ["Next step:", "Next:", "Up next:"] where bare.lowercased().hasPrefix(prefix.lowercased()) {
+            let step = bare.dropFirst(prefix.count).trimmingCharacters(in: .whitespaces)
+            return step.isEmpty ? nil : step
+        }
+        return nil
+    }
+
+    /// A line without its Markdown marks: "## **Week 2**" is "Week 2".
+    static func plain(_ line: String) -> String {
+        var line = line.trimmingCharacters(in: .whitespaces)
+        while line.hasPrefix("#") { line.removeFirst() }
+        line = line.trimmingCharacters(in: .whitespaces)
+        guard let attributed = try? AttributedString(markdown: line, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)) else { return line }
+        return String(attributed.characters).trimmingCharacters(in: .whitespaces)
     }
 
     static func all(in defaults: UserDefaults? = NeedsYou.shared) -> [String: GoalReport] {
@@ -104,9 +130,10 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
         if let p = note.p, !p.isEmpty { report.profile = p }
         if let i = note.i, !i.isEmpty { report.job = i }
         if let (done, total) = progress(note.q) { report.done = done; report.total = total }
-        let (headline, next) = split(note.b ?? "")
+        let (headline, next, details) = split(note.b ?? "")
         report.headline = headline
         report.next = next
+        report.details = details
         report.failed = note.w == "failed"
         report.at = note.at.map { Date(timeIntervalSince1970: $0) } ?? now
         kept[id] = report
@@ -125,10 +152,13 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
                 if old.at > goal.at {
                     goal.headline = old.headline.isEmpty ? goal.headline : old.headline
                     goal.next = old.next ?? goal.next
+                    goal.details = old.details ?? goal.details
                     goal.failed = old.failed
                     goal.at = old.at
                 }
                 if goal.headline.isEmpty { goal.headline = old.headline }
+                // An older plugin's list has no details: the check-in's own, when it's the same one.
+                if goal.details == nil, goal.headline == old.headline { goal.details = old.details }
                 goal.job = goal.job ?? old.job
                 goal.profile = goal.profile ?? old.profile
                 if goal.agent.isEmpty { goal.agent = old.agent }
