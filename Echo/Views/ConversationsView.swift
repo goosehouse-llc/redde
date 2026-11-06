@@ -77,6 +77,12 @@ struct ConversationsList: View {
     @State private var openingBot: String?
     /// "Let bots message each other", being asked about.
     @State private var askingBotMessaging = false
+    /// Sections of the Bots (`BotSection`): one being named (new, filing a bot, or renamed), its
+    /// name as typed, one asked about deleting, and those folded away on this device.
+    @State private var namingSection: SectionNaming?
+    @State private var sectionNameText = ""
+    @State private var deletingSection: BotSection?
+    @AppStorage("bots.foldedSections") private var foldedSectionsRaw = ""
     /// The server's group chats (Hermes's bot rooms; the one open in the chat's place is
     /// `groups.open`), and a new one being made.
     @State private var groups = GroupDirectory.shared
@@ -676,9 +682,19 @@ struct ConversationsList: View {
                     // The bots as faces, five to a row (a Reddit suggestion, 2026-10-21: a line of
                     // context under each took a screen's worth), New Bot after them; the group
                     // chats under them.
-                    botGrid(items.compactMap { if case .bot(let bot) = $0 { bot } else { nil } }, faces: faces, hidden: hidden.count)
-                    ForEach(items.compactMap { if case .room(let room) = $0 { room } else { nil } }) { room in
-                        groupRow(room, faces: faces)
+                    // In sections when there are any (Hermes Desktop's, asked 2026-11-05): each a
+                    // folding row with its bots and group chats under it, those in none after.
+                    ForEach(BotSectioning.blocks(items, in: settings.botSectionsHere), id: \.key) { block in
+                        if let section = block.section {
+                            sectionRow(section, count: block.items.count)
+                            if !foldedSections.contains(section.id) {
+                                if !block.bots.isEmpty { botGrid(block.bots, faces: faces, hidden: 0, actions: false) }
+                                ForEach(block.rooms) { room in groupRow(room, faces: faces) }
+                            }
+                        } else {
+                            botGrid(block.bots, faces: faces, hidden: hidden.count)
+                            ForEach(block.rooms) { room in groupRow(room, faces: faces) }
+                        }
                     }
                     if hasRooms, groups.writable {
                         sectionAction(String(localized: "New Group Chat"), systemImage: "person.3",
@@ -702,6 +718,25 @@ struct ConversationsList: View {
             }
             .sheet(isPresented: $addingAPIBot) {
                 APIBotEditor { Task { _ = await botDirectory.refreshAPI() } }
+            }
+            // Sections made in Hermes Desktop, taken in as the bots carrying them are read.
+            .onChange(of: botDirectory.roster, initial: true) { adoptBotSections() }
+            .alert(namingSection?.title ?? "", isPresented: Binding(get: { namingSection != nil }, set: { if !$0 { namingSection = nil } })) {
+                TextField(String(localized: "Name", comment: "A bot section's name field"), text: $sectionNameText)
+                Button(namingSection?.isNew == false ? String(localized: "Save") : String(localized: "Create", comment: "Button: makes a new section of the bots")) {
+                    if let naming = namingSection { nameSection(naming, sectionNameText) }
+                }
+                Button("Cancel", role: .cancel) { namingSection = nil }
+            } message: {
+                if namingSection?.isNew == true {
+                    Text("Bots in a section are grouped in the chat list, here and in Hermes Desktop.", comment: "New Section alert")
+                }
+            }
+            .confirmationDialog(deletingSection.map { String(localized: "Delete \u{201C}\($0.name)\u{201D}?", comment: "Asks before deleting a section of the bots") } ?? "",
+                                isPresented: Binding(get: { deletingSection != nil }, set: { if !$0 { deletingSection = nil } }), titleVisibility: .visible) {
+                Button("Delete Section", role: .destructive) { if let section = deletingSection { deleteSection(section) } }
+            } message: {
+                Text("Its bots and group chats stay, out of any section.", comment: "Deleting a section of the bots")
             }
             .confirmationDialog("Let bots message each other?", isPresented: $askingBotMessaging, titleVisibility: .visible) {
                 Button("Let Them") { letBotsMessageEachOther() }
@@ -754,8 +789,9 @@ struct ConversationsList: View {
     /// (Add Bot on the Hermes API alone) and the hidden ones: every bot in sight, nothing to scroll
     /// sideways. More than six fold to one row, the first four and "more", open or folded as last
     /// left.
-    private func botGrid(_ bots: [HermesBot], faces: [String: BotFace], hidden: Int) -> some View {
-        let folds = bots.count > Self.foldsAfter
+    private func botGrid(_ bots: [HermesBot], faces: [String: BotFace], hidden: Int, actions: Bool = true) -> some View {
+        // A section's bots (`actions` off): all of them, nothing after them; the section folds instead.
+        let folds = actions && bots.count > Self.foldsAfter
         let shown = folds && !botsExpanded ? Array(bots.prefix(Self.gridColumns - 1)) : bots
         return VStack(spacing: 2) {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2, alignment: .top), count: Self.gridColumns), spacing: 6) {
@@ -767,6 +803,8 @@ struct ConversationsList: View {
                                systemImage: "chevron.down", hint: String(localized: "Shows all your bots")) {
                         withAnimation { botsExpanded = true }
                     }
+                } else if !actions {
+                    EmptyView()
                 } else if !botActionsShown {
                     // Folded away, one tile for them all, so they aren't always on screen.
                     gridAction(String(localized: "More"), systemImage: "ellipsis",
@@ -943,6 +981,7 @@ struct ConversationsList: View {
                 Button("Hide", systemImage: "eye.slash") { hide(bot) }
             }
         }
+        sectionMenu(.bot(bot))
         Divider()
         orderingBots
     }
@@ -1049,6 +1088,7 @@ struct ConversationsList: View {
                 Button("Rename", systemImage: "pencil") { roomRenameText = room.name; renamingRoom = room }
                 MuteMenu(item: "room:" + room.id)
             }
+            sectionMenu(.room(room))
             Divider()
             orderingBots
         }
@@ -1140,6 +1180,145 @@ struct ConversationsList: View {
         Keychain.delete(account: Keychain.profileAccount(bot.name, server: settings.activeServerID.uuidString))
         if conversation.bot?.profile == bot.name { conversation.reset() }
         Task { _ = await botDirectory.refreshAPI() }
+    }
+
+    // MARK: - Sections of the Bots
+
+    /// A section being named: a new one (filing the bot or group chat whose menu asked), or one renamed.
+    enum SectionNaming {
+        case new(BotListItem?)
+        case rename(BotSection)
+
+        var isNew: Bool { if case .new = self { true } else { false } }
+        var title: String {
+            switch self {
+            case .new: String(localized: "New Section", comment: "Alert title: makes a section of the bots")
+            case .rename: String(localized: "Rename Section", comment: "Alert title: renames a section of the bots")
+            }
+        }
+    }
+
+    private var foldedSections: Set<String> { Set(foldedSectionsRaw.split(separator: ",").map(String.init)) }
+
+    /// Every bot and group chat on the server, hidden ones too: what a rename or a delete goes through.
+    private var allBotItems: [BotListItem] {
+        (botDirectory.roster?.bots ?? []).map(BotListItem.bot) + (groups.key == settings.connectionKey ? groups.rooms.map(BotListItem.room) : [])
+    }
+
+    /// A section's row: its name, how many are in it while folded, and a tap to fold it; its menu
+    /// renames, moves or deletes it.
+    private func sectionRow(_ section: BotSection, count: Int) -> some View {
+        let folded = foldedSections.contains(section.id)
+        let sections = settings.botSectionsHere.sections
+        return Button {
+            withAnimation(.easeOut(duration: 0.2)) {
+                var set = foldedSections
+                if folded { set.remove(section.id) } else { set.insert(section.id) }
+                foldedSectionsRaw = set.sorted().joined(separator: ",")
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "folder").foregroundStyle(.secondary)
+                Text(section.name).chatFont(.subheadline, weight: .semibold).lineLimit(1)
+                if folded {
+                    Text("\(count)").chatFont(.caption2, weight: .semibold).monospacedDigit()
+                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .background(.quaternary, in: .capsule)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .chatFont(.caption, weight: .semibold).foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(folded ? 0 : 90))
+            }
+            .padding(.vertical, 2)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Rename…", systemImage: "pencil") { sectionNameText = section.name; namingSection = .rename(section) }
+            if sections.first != section {
+                Button("Move Up", systemImage: "arrow.up") { withAnimation { BotSectionActions.move(section, by: -1) } }
+            }
+            if sections.last != section {
+                Button("Move Down", systemImage: "arrow.down") { withAnimation { BotSectionActions.move(section, by: 1) } }
+            }
+            Button("Delete Section…", systemImage: "trash", role: .destructive) { deletingSection = section }
+        }
+        .accessibilityLabel(section.name)
+        .accessibilityValue(folded ? String(localized: "Folded, \(count) in it", comment: "VoiceOver: a folded section of the bots") : "")
+        .accessibilityHint(folded ? String(localized: "Shows this section's bots") : String(localized: "Folds this section's bots away"))
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    /// In a bot's or group chat's menu: the sections to put it in, a new one, or out of its own.
+    @ViewBuilder
+    private func sectionMenu(_ item: BotListItem) -> some View {
+        let here = settings.botSectionsHere
+        let current = BotSectioning.section(of: item, in: here)
+        Menu {
+            ForEach(here.sections) { section in
+                Button { fileBotItems([item], in: section) } label: {
+                    if current == section.id { Label(section.name, systemImage: "checkmark") } else { Text(section.name) }
+                }
+            }
+            if !here.sections.isEmpty { Divider() }
+            Button("New Section…", systemImage: "folder.badge.plus") { sectionNameText = ""; namingSection = .new(item) }
+            if current != nil {
+                Button("Remove from Section", systemImage: "folder.badge.minus") { fileBotItems([item], in: nil) }
+            }
+        } label: {
+            Label(String(localized: "Section", comment: "A bot's menu: the submenu that puts it in a section"), systemImage: "folder")
+        }
+    }
+
+    private func adoptBotSections() {
+        guard botDirectory.key == settings.connectionKey else { return }
+        BotSectionActions.adopt(botDirectory.roster)
+    }
+
+    /// After a write: the roster again, for the bots' own sections (nothing to read on the API alone).
+    private func sectionsChanged() async {
+        if !apiBotsOnly { _ = try? await botDirectory.refresh() }
+    }
+
+    private func fileBotItems(_ items: [BotListItem], in section: BotSection?) {
+        Task {
+            do {
+                try await BotSectionActions.file(items, in: section, roster: botDirectory.roster)
+            } catch {
+                ledgerError = String(localized: "Couldn't change the section: \(error.localizedDescription)", comment: "A bot's section couldn't be written")
+            }
+            await sectionsChanged()
+        }
+    }
+
+    private func nameSection(_ naming: SectionNaming, _ name: String) {
+        namingSection = nil
+        Task {
+            do {
+                switch naming {
+                case .new(let item):
+                    try await BotSectionActions.make(name, filing: item.map { [$0] } ?? [], roster: botDirectory.roster)
+                case .rename(let section):
+                    try await BotSectionActions.rename(section, to: name, items: allBotItems, roster: botDirectory.roster)
+                }
+            } catch {
+                ledgerError = String(localized: "Couldn't change the section: \(error.localizedDescription)", comment: "A bot's section couldn't be written")
+            }
+            await sectionsChanged()
+        }
+    }
+
+    private func deleteSection(_ section: BotSection) {
+        deletingSection = nil
+        Task {
+            do {
+                try await BotSectionActions.delete(section, items: allBotItems, roster: botDirectory.roster)
+            } catch {
+                ledgerError = String(localized: "Couldn't change the section: \(error.localizedDescription)", comment: "A bot's section couldn't be written")
+            }
+            await sectionsChanged()
+        }
     }
 
     private func hide(_ bot: HermesBot) {
@@ -2510,8 +2689,15 @@ extension ConversationsList {
                          "fixit": "gemma-4-12b"][bot.name]
             return bot
         } + extraDemoBots + claudeDemoBot
+        // `-echo.demoBotSections`: two of them in a "Work" section, as Hermes Desktop files them
+        // (taken in from the bots, as one made on the desktop is).
+        let filed = !DevHooks.has("-echo.demoBotSections") ? all : all.map { bot in
+            var bot = bot
+            if ["writer", "fixit"].contains(bot.name) { bot.sectionID = "sec-demo-work"; bot.sectionName = "Work" }
+            return bot
+        }
         // `-echo.demoBotCount 1`: the main profile alone.
-        return BotRoster(bots: DevHooks.value("-echo.demoBotCount") == "1" ? all.filter(\.isDefault) : all)
+        return BotRoster(bots: DevHooks.value("-echo.demoBotCount") == "1" ? filed.filter(\.isDefault) : filed)
     }
 
     /// `-echo.demoClaudeBot`: a coding bot that works through Claude Code, as the butler setup's (Topology).

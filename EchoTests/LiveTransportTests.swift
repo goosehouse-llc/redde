@@ -3172,3 +3172,60 @@ struct HermesLabLongBotTests {
                "the host's newest page ends with that reply", "\(page.count)")
     }
 }
+
+/// Sections of the Bots against a real Hermes (`lab.sh up <tag> approval`): a bot filed in one
+/// carries it in its profile.yaml as Hermes Desktop writes it, another phone takes the section in
+/// from the bot alone, a rename reaches the bot, and a delete takes it off and leaves the rest.
+@MainActor
+struct HermesLabBotSectionsTests {
+    @Test func aBotsSectionIsKeptOnTheServerAsDesktopKeepsIt() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, "Bot sections: \(what)", detail) }
+        func meta() async throws -> JSONValue? {
+            try await client.call("profiles.list", params: .object(["include_sessions": .bool(false)]))["profiles"]?.array?
+                .first { $0["is_default"]?.bool == true || $0["name"]?.string == "default" }?["ui_meta"]?["hermes-bots"]
+        }
+        guard let main = try await client.bots().bots.first(where: \.isDefault) else { report(false, "the roster has the main profile"); return }
+
+        // Filed: the id and the name on the bot, under Desktop's keys.
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-bot-sections-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let section = BotSection(id: BotSection.newID(), name: "Lab Clients")
+        settings.botSectionsHere.sections = [section]
+        try await client.setBotSection(main, section)
+        var roster = try await client.bots()
+        var found = roster.bots.first(where: \.isDefault)
+        var bot = try #require(found)
+        var look = try await meta()
+        report(bot.sectionID == section.id && bot.sectionName == "Lab Clients" && look?["sectionId"]?.string == section.id
+               && look?["sectionName"]?.string == "Lab Clients", "filed, the bot carries the section's id and name", "\(String(describing: look))")
+
+        // Another phone, with no list of its own: the section comes from the bot.
+        let elsewhere = BotSectioning.adopted(BotSectionsHere(), bots: roster.bots)
+        report(elsewhere.sections == [section], "another phone takes the section in from the bot", "\(elsewhere.sections)")
+        report(BotSectioning.blocks(roster.inChatList.map(BotListItem.bot), in: elsewhere).first?.items.map(\.id) == ["bot:" + main.name],
+               "and draws the bot in it")
+
+        // Renamed: given again to the bot. On a server where bots are set up, the write goes there.
+        try await BotSectionActions.rename(section, to: "Lab Customers", items: roster.bots.map(BotListItem.bot), roster: roster,
+                                           settings: settings, client: client)
+        roster = try await client.bots()
+        found = roster.bots.first(where: \.isDefault)
+        bot = try #require(found)
+        report(bot.sectionName == "Lab Customers" && settings.botSectionsHere.kept.isEmpty, "renamed, the bot carries the new name",
+               "\(String(describing: bot.sectionName)) \(settings.botSectionsHere.kept)")
+
+        // Deleted: off the bot, its other Bot Mode settings as they were.
+        let title = look?["title"]
+        let renamed = try #require(settings.botSectionsHere.sections.first)
+        try await BotSectionActions.delete(renamed, items: roster.bots.map(BotListItem.bot),
+                                           roster: roster, settings: settings, client: client)
+        roster = try await client.bots()
+        found = roster.bots.first(where: \.isDefault)
+        bot = try #require(found)
+        look = try await meta()
+        report(bot.sectionID == nil && look?["sectionId"] == nil && look?["sectionName"] == nil && look?["title"] == title
+               && settings.botSectionsHere.sections.isEmpty, "deleted, it is off the bot and the rest stays", "\(String(describing: look))")
+    }
+}

@@ -272,6 +272,21 @@ extension HermesServeClient {
         return .done
     }
 
+    /// Puts a bot in a section of the Bots (nil: in none), as Hermes Desktop does: the section's id
+    /// and name in its Bot Mode settings, so Desktop and every Redde on the server show it there.
+    func setBotSection(_ bot: HermesBot, _ section: BotSection?) async throws {
+        try await ensureConnected()
+        try await changeBotSettings(bot.name, name: bot.label()) { settings in
+            if let section {
+                settings["sectionId"] = .string(section.id)
+                settings["sectionName"] = .string(section.name)
+            } else {
+                settings["sectionId"] = nil
+                settings["sectionName"] = nil
+            }
+        }
+    }
+
     /// Deletes a bot from the server with its chats, memories and settings. Never the main profile.
     func deleteBot(_ bot: HermesBot) async throws {
         guard !bot.isDefault else { return }

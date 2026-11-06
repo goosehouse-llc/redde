@@ -43,6 +43,10 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
     /// Added on this phone for the Hermes API alone (`APIBot`): its chat goes by the API at
     /// /p/<profile>/, with the profile's own key, not by the Dashboard.
     var viaAPI = false
+    /// The section of the Bots it was put in, and that section's name, as Hermes Desktop keeps them
+    /// (`ui_meta['hermes-bots'].sectionId` / `.sectionName`; `BotSection`).
+    var sectionID: String?
+    var sectionName: String?
 
     var id: String { name }
 
@@ -111,6 +115,8 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
                   workerActive: (row["worker_session"]?["last_active"]?.number).flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil })
         hasPicture = row["has_avatar"]?.bool ?? false
         chatMessages = chat?["live_message_count"]?.int
+        sectionID = meta?["sectionId"]?.string?.nilIfEmpty
+        sectionName = meta?["sectionName"]?.string?.nilIfEmpty
     }
 }
 

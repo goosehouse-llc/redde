@@ -333,6 +333,11 @@ final class Settings: ServeEndpoint {
     var botOrder: [String: [String]] {
         didSet { store(try? JSONEncoder().encode(botOrder), forKey: Keys.botOrder) }
     }
+    /// The Bots section's sections, per server (its id): their order, and the memberships kept on
+    /// the phone (`BotSectionsHere`); a Dashboard bot's own is on the server.
+    var botSections: [String: BotSectionsHere] {
+        didSet { store(try? JSONEncoder().encode(botSections), forKey: Keys.botSections) }
+    }
     /// Bots added on this phone for the Hermes API alone, per server (its id): where there is no
     /// Dashboard login to list the server's, each by its profile and that profile's own API key
     /// (`Keychain.profileAccount`).
@@ -419,6 +424,11 @@ final class Settings: ServeEndpoint {
     var botOrderHere: [String] {
         get { botOrder[activeServerID.uuidString] ?? [] }
         set { botOrder[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
+    }
+    /// `botSections` for the server in use.
+    var botSectionsHere: BotSectionsHere {
+        get { botSections[activeServerID.uuidString] ?? BotSectionsHere() }
+        set { botSections[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
     }
     var theme: Theme {
         didSet { store(theme.rawValue, forKey: Keys.theme) }
@@ -920,6 +930,7 @@ final class Settings: ServeEndpoint {
         static let matchReplyLanguage = "matchReplyLanguage"
         static let spokenPrefixes = "spokenPrefixes"
         static let botOrder = "botOrder"
+        static let botSections = "botSections"
         static let apiBots = "apiBots"
         static let botVoices = "botVoices"
         static let mutes = "mutes"
@@ -1028,6 +1039,8 @@ final class Settings: ServeEndpoint {
             .flatMap { try? JSONDecoder().decode([SpokenPrefix].self, from: $0) } ?? []
         botOrder = defaults.data(forKey: Keys.botOrder)
             .flatMap { try? JSONDecoder().decode([String: [String]].self, from: $0) } ?? [:]
+        botSections = defaults.data(forKey: Keys.botSections)
+            .flatMap { try? JSONDecoder().decode([String: BotSectionsHere].self, from: $0) } ?? [:]
         apiBots = defaults.data(forKey: Keys.apiBots)
             .flatMap { try? JSONDecoder().decode([String: [APIBot]].self, from: $0) } ?? [:]
         botVoices = defaults.data(forKey: Keys.botVoices)
@@ -1150,7 +1163,7 @@ final class Settings: ServeEndpoint {
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
         Keys.replyVoice, Keys.kokoroURL,
         Keys.kokoroVoice, Keys.elevenLabsVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
-        Keys.botOrder, Keys.apiBots, Keys.botVoices, Keys.mutes, Keys.wakePhrases,
+        Keys.botOrder, Keys.botSections, Keys.apiBots, Keys.botVoices, Keys.mutes, Keys.wakePhrases,
     ]
 
     /// A synced setting as it is saved here, for `CloudSync` to send.
@@ -1225,6 +1238,7 @@ final class Settings: ServeEndpoint {
         case Keys.matchReplyLanguage: matchReplyLanguage = flag(true)
         case Keys.spokenPrefixes: spokenPrefixes = decoded([])
         case Keys.botOrder: botOrder = decoded([:])
+        case Keys.botSections: botSections = decoded([:])
         case Keys.apiBots: apiBots = decoded([:])
         case Keys.botVoices: botVoices = decoded([:])
         case Keys.mutes: mutes = decoded([:])
@@ -1452,6 +1466,7 @@ final class Settings: ServeEndpoint {
         matchReplyLanguage = true
         spokenPrefixes = []
         botOrder = [:]
+        botSections = [:]
         apiBots = [:]
         botVoices = [:]
         mutes = [:]
