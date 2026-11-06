@@ -135,7 +135,11 @@ struct SidePanel<Content: View, Panel: View>: View {
                     // Parked, no width: nothing is laid out, so nothing is left for VoiceOver to
                     // find. UIKit's lists and bars inside ignore accessibilityHidden and opacity.
                     .frame(width: parked ? 0 : width)
-                    .clipped()
+                    // Clipped at its sides only, to the screen's top and bottom: clipped to the
+                    // safe area, the list's search field cut off where iOS puts it, at the bottom
+                    // over the home indicator (2026-11-05, on Marta), and the list's last rows
+                    // stopped short of it.
+                    .mask { Rectangle().ignoresSafeArea(edges: .vertical) }
                     // To the screen's edges, under the status bar and the home indicator too, in the
                     // list's own colour (a plain list's, whatever the theme): the theme's page is a
                     // wallpaper's colour when one is picked, and showed above and below the list as
