@@ -664,6 +664,49 @@ def body_of(msg) -> tuple[str, list[dict], list[dict]]:
     return text, links, attachments
 
 
+HTML_LIMIT = 400_000        # an email's own HTML, for the reader; longer and the reader shows the text
+INLINE_LIMIT = 1_500_000    # its own pictures (cid:) put into it, in all, as data: links
+_UNSAFE = re.compile(r"<(script|iframe|object|applet|frameset)\b[^>]*>.*?</\1\s*>"
+                     r"|</?(?:script|iframe|object|embed|applet|frameset|frame)\b[^>]*>"
+                     r"|<meta\b[^>]*http-equiv\s*=\s*[\"']?refresh[^>]*>|<base\b[^>]*>", re.S | re.I)
+_CID = re.compile(r"""(["'(\s=])cid:([^"')\s>]+)""", re.I)
+
+
+def html_of(msg) -> str | None:
+    """The email as its sender laid it out (asked 2026-11-06: "the full content of the email,
+    including pictures"), for the reader alone: never the agent's. Scripts, frames and refreshes
+    taken out (the reader runs none and follows no link itself); pictures sent inside the email
+    (cid:) put in as data: links, up to INLINE_LIMIT; pictures on the web left as they are. None
+    when there is no HTML part, or it is too long."""
+    markup, images = "", {}
+    for part in msg.walk() if msg.is_multipart() else [msg]:
+        if part.is_multipart():
+            continue
+        ctype = part.get_content_type()
+        if ctype == "text/html" and not markup and (part.get_content_disposition() or "").lower() != "attachment":
+            try:
+                markup = str(part.get_content())
+            except Exception:
+                markup = (part.get_payload(decode=True) or b"").decode(part.get_content_charset() or "utf-8", "replace")
+        elif ctype.startswith("image/") and part.get("Content-ID"):
+            images[str(part.get("Content-ID")).strip().strip("<>")] = (ctype, part)
+    if not markup or len(markup) > HTML_LIMIT:
+        return None
+    markup = _UNSAFE.sub("", markup)
+    left = [INLINE_LIMIT]
+
+    def inline(m: re.Match) -> str:
+        found = images.get(urllib.parse.unquote(m.group(2)))
+        if not found:
+            return m.group(0)
+        data = found[1].get_payload(decode=True) or b""
+        if not data or len(data) > left[0]:
+            return m.group(0)
+        left[0] -= len(data)
+        return f"{m.group(1)}data:{found[0]};base64,{base64.b64encode(data).decode()}"
+    return _CID.sub(inline, markup) if images else markup
+
+
 def _decode(value) -> str:
     try:
         return str(email.header.make_header(email.header.decode_header(value or "")))
@@ -1815,7 +1858,7 @@ class Inbox:
                 "cc": [a for _, a in getaddresses([_decode(msg.get("Cc", ""))])][:20],
                 "subject": plain(_decode(msg.get("Subject", "")), 300), "date": when, "text": plain(text),
                 "links": links, "attachments": attachments, "can_unsubscribe": way is not None, "unsubscribe": way,
-                "message_id": str(msg.get("Message-ID", "")).strip()}
+                "message_id": str(msg.get("Message-ID", "")).strip(), "html": html_of(msg)}
 
     def search(self, query: str, account_id: str | None = None) -> dict:
         account = self.account(account_id)
@@ -1849,7 +1892,19 @@ class Inbox:
         if not messages:
             raise MailError("bad_args", "Which messages?")
         if action == "unsubscribe":
-            return self.unsubscribe(messages[0], by=by)
+            # Several from the Inbox's Select (2026-11-06), each on its own: one that can't be done
+            # (a web page or an email to send) is said, the rest still go.
+            done, failed, log_id = [], [], None
+            for message in list(dict.fromkeys(messages))[:100]:
+                try:
+                    said = self.unsubscribe(message, by=by)
+                    done += said["done"]
+                    log_id = log_id or said["log"]
+                except MailError as error:
+                    failed.append({"id": message, "error": error.code, "message": error.message})
+            if failed and not done:
+                raise MailError(failed[0]["error"], failed[0]["message"])
+            return {"done": done, "failed": failed, "log": log_id}
         if action == "group":
             return self.regroup(messages, str(arg or ""))
         groups: dict[tuple[str, str], list[str]] = {}
@@ -2602,6 +2657,7 @@ def handle(inbox: Inbox, args: dict) -> str:
             if len(ids) != 1:
                 raise MailError("bad_args", "Give one id to read.")
             said = inbox.read(ids[0])
+            said.pop("html", None)      # the reader's: the agent has the text
             said["note"] = DATA_NOTE
         elif action == "search":
             said = inbox.search(str(args.get("query") or ""), args.get("account"))

@@ -340,6 +340,44 @@ class MailTests(unittest.TestCase):
         html_text, links = mail.html_text('<p>Hi</p><a href="https://evil.example/x">click</a><script>alert(1)</script>')
         self.assertNotIn("alert", html_text)
         self.assertEqual(links, [{"text": "click", "url": "https://evil.example/x"}])
+        self.assertNotIn("html", said, "the agent gets the text, never the HTML")
+        shown = box.read("main:INBOX:1")["html"]
+        self.assertIn("<p>Hi</p>", shown, "the reader gets it as laid out")
+        self.assertNotIn("<script", shown)
+
+    def test_the_readers_html_has_its_own_pictures_in_it(self):
+        msg = EmailMessage()
+        msg["From"], msg["To"], msg["Subject"] = "Ana <ana@example.com>", "alex@example.com", "Photos"
+        msg.set_content("See the photo.")
+        msg.add_alternative('<p>See:</p><img src="cid:pic1@x"><img src="https://example.com/a.png">'
+                            '<iframe src="https://evil.example"></iframe><meta http-equiv="refresh" content="0;url=https://evil.example">',
+                            subtype="html")
+        msg.get_payload()[1].add_related(b"\x89PNG-bytes", maintype="image", subtype="png", cid="<pic1@x>")
+        shown = mail.html_of(msg)
+        self.assertIn("data:image/png;base64,", shown, "a picture sent in the email is put in")
+        self.assertIn("https://example.com/a.png", shown, "one on the web is left to load")
+        self.assertNotIn("iframe", shown.lower())
+        self.assertNotIn("refresh", shown.lower())
+        plain_only = EmailMessage()
+        plain_only.set_content("Just text.")
+        self.assertIsNone(mail.html_of(plain_only), "no HTML part: the reader shows the text")
+        with unittest.mock.patch.object(mail, "HTML_LIMIT", 10):
+            self.assertIsNone(mail.html_of(msg), "too long: the text instead")
+
+    def test_several_unsubscribes_from_the_inbox_each_go(self):
+        self.server.add(3, sender="News <news@paper.com>", subject="Headlines",
+                        headers={"List-Unsubscribe": "<https://paper.com/u>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"})
+        self.server.add(6, sender="Blog <hi@blog.com>", subject="New post", headers={"List-Unsubscribe": "<https://blog.com/leave>"})
+        box = self.inbox()
+        box.sync(box.account())
+
+        class Answer:
+            def close(self):
+                pass
+        with unittest.mock.patch("urllib.request.urlopen", lambda req, timeout: Answer()):
+            said = json.loads(mail.slash(box, ["act", "unsubscribe", "main:INBOX:3,main:INBOX:6"]).split(" ", 2)[2])
+        self.assertEqual(said["done"], ["main:INBOX:3"])
+        self.assertEqual([f["id"] for f in said["failed"]], ["main:INBOX:6"], "a web-page-only sender is said, the rest still go")
 
     def test_snooze_hides_and_brings_back(self):
         self.server.add(1)

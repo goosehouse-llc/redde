@@ -64,6 +64,20 @@ enum MailDemo {
          "rule": ["when": ["from": "orders@market.example.com", "receipt": true], "do": "label", "arg": "Receipts", "account": "main"]],
     ]
 
+    /// Lumen Coffee's email as its sender laid it out: a 600-point newsletter, so the reader has
+    /// to fit it, its picture made here (no network in a demo).
+    static let newsletter = """
+        <table width="600" align="center" cellpadding="0" cellspacing="0" style="font-family: Georgia, serif; background: #faf6f0">
+        <tr><td style="background: #3b2a20; color: #f5e6d3; padding: 28px; text-align: center; font-size: 30px; letter-spacing: 3px">LUMEN COFFEE</td></tr>
+        <tr><td><img width="600" height="260" alt="Autumn roast" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='260'><defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%23c2703d'/><stop offset='1' stop-color='%236b3e26'/></linearGradient></defs><rect width='600' height='260' fill='url(%23g)'/><circle cx='300' cy='130' r='70' fill='%23f5e6d3' opacity='.85'/><text x='300' y='142' font-size='34' text-anchor='middle' fill='%233b2a20' font-family='Georgia'>Autumn</text></svg>"></td></tr>
+        <tr><td style="padding: 28px 36px; color: #3b2a20; font-size: 18px; line-height: 1.5">
+        <h1 style="font-size: 28px; margin: 0 0 12px">Our autumn roast is back</h1>
+        <p>Caramel, baked apple and a little smoke. Roasted Monday, at your door by Thursday.</p>
+        <p style="text-align: center; margin: 28px 0"><a href="https://example.com/shop" style="background: #c2703d; color: #fff; padding: 14px 28px; border-radius: 30px; text-decoration: none; font-family: -apple-system, sans-serif; font-weight: 600">Take 20% off</a></p>
+        <p style="font-size: 13px; color: #8a7565; text-align: center">You signed up at lumen.example.com · <a href="https://example.com/unsubscribe" style="color: #8a7565">Unsubscribe</a></p>
+        </td></tr></table>
+        """
+
     /// The reader's email, for its screenshot.
     static var readerThread: MailThread {
         MailThread(json: (try? JSONValue.parse(JSONSerialization.data(withJSONObject: threads[2]))) ?? .null)
@@ -121,7 +135,8 @@ enum MailDemo {
                           "date": t["date"]!, "text": "\(t["snippet"]!)\n\nIf Thursday doesn't work, Friday at 1 is fine too. The menu is at the link below.\n\nSee you soon,\n\(t["from"]!)",
                           "links": [["text": "Menu", "url": "https://example.com/menu"]],
                           "attachments": (t["has_attachments"] as! Bool) ? [["name": "contract-signed.pdf", "size": 182_344]] : [],
-                          "can_unsubscribe": t["can_unsubscribe"]!, "unsubscribe": (t["can_unsubscribe"] as! Bool) ? "one_click" : NSNull()])
+                          "can_unsubscribe": t["can_unsubscribe"]!, "unsubscribe": (t["can_unsubscribe"] as! Bool) ? "one_click" : NSNull(),
+                          "html": id == "main:INBOX:d8" ? newsletter as Any : NSNull()])
         case "act":
             let ids = parts.count > 3 ? parts[3].split(separator: " ").first.map { $0.split(separator: ",").map(String.init) } ?? [] : []
             return reply(["done": ids, "failed": [], "log": "m\(Int(now))-1"])

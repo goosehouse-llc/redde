@@ -3,6 +3,15 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.19.2 (2026-11-06)
+
+- An email read in Redde comes with its HTML too, so the reader shows it as its sender laid it
+  out, pictures and all. Pictures sent inside the email are put in (up to 1.5 MB); pictures on
+  the web load in the reader. Scripts, frames and page refreshes are taken out; an email over
+  400 KB of HTML shows as text. The agent still gets the text alone.
+- Unsubscribe from the app takes several emails at once (the Inbox's Select); one that can't be
+  done is said, the rest still go.
+
 ## 1.19.1 (2026-11-06)
 
 - A tagging rule can add several labels, up to five: the first stays in `arg`, the rest go in

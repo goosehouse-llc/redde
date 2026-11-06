@@ -236,6 +236,9 @@ nonisolated struct MailMessage: Equatable, Sendable {
     var links: [(text: String, url: URL)]
     var attachments: [(name: String, size: Int)]
     var unsubscribe: Unsubscribe?
+    /// The email as its sender laid it out, its own pictures in it (plugin 1.19.2; nil before, or
+    /// for a plain-text email): the reader draws it, the agent never gets it.
+    var html: String?
 
     init?(json v: JSONValue) {
         guard let id = v["id"]?.string, !id.isEmpty else { return nil }
@@ -256,6 +259,7 @@ nonisolated struct MailMessage: Equatable, Sendable {
             a["name"]?.string.map { ($0, a["size"]?.int ?? 0) }
         }
         unsubscribe = (v["can_unsubscribe"]?.bool ?? false) ? v["unsubscribe"]?.string.flatMap(Unsubscribe.init(rawValue:)) : nil
+        html = v["html"]?.string?.nilIfEmpty
     }
 
     static func == (a: MailMessage, b: MailMessage) -> Bool { a.id == b.id && a.text == b.text && a.subject == b.subject }
@@ -961,7 +965,9 @@ final class MailCenter {
         do {
             let result = MailActResult(json: try await ask("act \(action.words) \(ids.joined(separator: ","))" + (action.arg.map { " " + $0 } ?? "")))
             if !result.failed.isEmpty, result.done.isEmpty { throw MailError.server(code: "failed", message: String(localized: "Your mail server didn't take it.")) }
-            toast = Toast(text: action.done, undo: result.log, before: before, account: account)
+            let count = result.done.count
+            toast = Toast(text: count > 1 ? String(localized: "\(action.done): \(count) emails", comment: "Toast after acting on several emails; what was done, how many") : action.done,
+                          undo: result.log, before: before, account: account)
             remember()
             return true
         } catch {

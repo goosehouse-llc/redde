@@ -4,14 +4,24 @@ import SwiftUI
 /// the agent wrote about it. A swipe archives, marks, snoozes or unsubscribes at once, with an Undo;
 /// a tap opens the email whole, fetched then and not before. Asked of the plugin when it opens and
 /// when pulled, never on a timer; the last list shows at once, from the app group.
+///
+/// Redrawn 11-06 ("redesign and refine this screen to look nicer"): the piles as coloured tabs,
+/// opened on one with mail in it, senders' initials, a proper empty pile; and Select, for several
+/// emails at once ("allow for multi select actions").
 struct InboxView: View {
     @State private var center = MailCenter.shared
     @State private var bucket: MailBucket = .important
+    /// The pile was picked by hand: an emptier one is never switched to for him.
+    @State private var picked = false
     @State private var open: MailThread?
     @State private var snoozing: MailThread?
     @State private var pickingDate: MailThread?
     @State private var showRules = false
     @State private var showSetup = false
+    @State private var selecting = false
+    @State private var selected: Set<String> = []
+    @State private var snoozingSelected = false
+    @State private var pickingSelectedDate = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
 
@@ -23,11 +33,20 @@ struct InboxView: View {
                 list
             }
         }
-        .navigationTitle(Text("Inbox", comment: "The email inbox's title"))
+        .navigationTitle(selecting && !selected.isEmpty
+                         ? Text("\(selected.count) Selected", comment: "The Inbox's title while emails are picked; the count")
+                         : Text("Inbox", comment: "The email inbox's title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                if center.isSetUp, !shown.isEmpty || selecting {
+                    Button { setSelecting(!selecting) } label: {
+                        selecting ? Text("Cancel", comment: "Inbox: stop picking emails") : Text("Select", comment: "Inbox: pick several emails")
+                    }
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     if center.accounts.count > 1 {
@@ -45,10 +64,12 @@ struct InboxView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .bottom) { if selecting { selectionBar } }
         .navigationDestination(item: $open) { MailReaderView(thread: $0) }
         .sheet(isPresented: $showRules) { NavigationStack { MailRulesView().doneButton() } }
         .sheet(isPresented: $showSetup) { NavigationStack { MailSettingsView().doneButton() } }
         .sheet(item: $pickingDate) { thread in SnoozeDatePicker { until in Task { await center.act(.snooze(until), on: [thread.id]) } } }
+        .sheet(isPresented: $pickingSelectedDate) { SnoozeDatePicker { until in actOnSelected(.snooze(until)) } }
         .confirmationDialog(Text("Snooze until", comment: "Email: when a snoozed email comes back"), isPresented: Binding(get: { snoozing != nil }, set: { if !$0 { snoozing = nil } }),
                             titleVisibility: .visible, presenting: snoozing) { thread in
             ForEach(SnoozeChoice.allCases) { choice in
@@ -56,110 +77,362 @@ struct InboxView: View {
             }
             Button(String(localized: "Pick a Date and Time…", comment: "Email snooze: choose the time yourself")) { pickingDate = thread }
         }
-        .overlay(alignment: .bottom) { UndoToast() }
-        .task { await center.refresh(bucket) }
-        .onChange(of: bucket) { _, now in Task { await center.load(now) } }
+        .confirmationDialog(Text("Snooze until", comment: "Email: when a snoozed email comes back"), isPresented: $snoozingSelected, titleVisibility: .visible) {
+            ForEach(SnoozeChoice.allCases) { choice in
+                Button(choice.label) { actOnSelected(.snooze(choice.date())) }
+            }
+            Button(String(localized: "Pick a Date and Time…", comment: "Email snooze: choose the time yourself")) { pickingSelectedDate = true }
+        }
+        .overlay(alignment: .bottom) { UndoToast().padding(.bottom, selecting ? 64 : 0) }
+        .task {
+            pickPile()
+            await center.refresh(bucket)
+            pickPile()
+        }
+        .onChange(of: bucket) { _, now in
+            selected = []
+            Task { await center.load(now) }
+        }
         .onChange(of: center.closeRequests) { dismiss() }
     }
 
+    private var shown: [MailThread] { center.threads(in: bucket) }
+
+    /// Opened on a pile with mail in it (11-06: it opened on an empty Important with FYI and News
+    /// full), until he picks one himself.
+    private func pickPile() {
+        guard !picked, let account = center.account, account.count(bucket) == 0,
+              let first = MailBucket.shown.first(where: { account.count($0) > 0 }), first != bucket else { return }
+        bucket = first
+    }
+
+    private func setSelecting(_ on: Bool) {
+        withAnimation(.snappy) {
+            selecting = on
+            selected = []
+        }
+    }
+
     private var list: some View {
-        List {
-            Section {
-                Picker(selection: $bucket) {
-                    ForEach(MailBucket.shown) { pile in
-                        let count = center.account?.count(pile) ?? 0
-                        Text(count > 0 ? "\(pile.tab) \(count)" : pile.tab).tag(pile)
-                            .accessibilityLabel(Text(count > 0 ? "\(pile.label), \(count)" : pile.label))
-                    }
-                } label: { Text("Pile", comment: "Inbox: which pile of email is shown") }
-                .adaptiveSegmented()
+        List(selection: $selected) {
+            PileBar(bucket: Binding(get: { bucket }, set: { bucket = $0; picked = true }), counts: { center.account?.count($0) ?? 0 })
                 .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-            }
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
+                .selectionDisabled()
             if let problem = center.problem {
-                Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary).font(.footnote) }
+                notice(problem, symbol: "exclamationmark.triangle")
             }
             if let account = center.account, let problem = account.problem {
-                Section { Label(problem, systemImage: "key").foregroundStyle(.secondary).font(.footnote) }
+                notice(problem, symbol: "key")
             }
-            let shown = center.threads(in: bucket)
-            Section {
-                ForEach(shown) { thread in
-                    Button { open = thread } label: { MailRow(thread: thread) }
-                        .buttonStyle(.plain)
-                        // Hold: into another group (asked 11-05), and the swipes' actions.
-                        .contextMenu {
-                            Section {
-                                ForEach(MailBucket.shown.filter { $0 != thread.bucket }) { pile in
-                                    Button { Task { await center.act(.group(pile), on: [thread.id]) } } label: {
-                                        Label { Text("Move to \(pile.label)", comment: "Email hold menu: into another of Redde's groups") } icon: { Image(systemName: pile.symbol) }
-                                    }
-                                }
-                            }
-                            Button { Task { await center.act(thread.unread ? .read : .unread, on: [thread.id]) } } label: {
-                                thread.unread
-                                    ? Label { Text("Mark Read", comment: "Email hold menu") } icon: { Image(systemName: "envelope.open") }
-                                    : Label { Text("Mark Unread", comment: "Email hold menu") } icon: { Image(systemName: "envelope.badge") }
-                            }
-                            Button { Task { await center.act(.archive, on: [thread.id]) } } label: {
-                                Label { Text("Archive", comment: "Email swipe action") } icon: { Image(systemName: "archivebox") }
-                            }
-                            Button { snoozing = thread } label: {
-                                Label { Text("Snooze", comment: "Email swipe action") } icon: { Image(systemName: "clock") }
-                            }
-                            Button(role: .destructive) { Task { await center.act(.trash, on: [thread.id]) } } label: {
-                                Label { Text("Delete", comment: "Email swipe action: move to the trash") } icon: { Image(systemName: "trash") }
-                            }
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button { Task { await center.act(.archive, on: [thread.id]) } } label: {
-                                Label { Text("Archive", comment: "Email swipe action") } icon: { Image(systemName: "archivebox") }
-                            }
-                            .tint(.indigo)
-                            // To the account's Trash, with Undo (asked 11-03: "how do I delete an email").
-                            Button(role: .destructive) { Task { await center.act(.trash, on: [thread.id]) } } label: {
-                                Label { Text("Delete", comment: "Email swipe action: move to the trash") } icon: { Image(systemName: "trash") }
-                            }
-                            .tint(.red)
-                            Button { snoozing = thread } label: {
-                                Label { Text("Snooze", comment: "Email swipe action") } icon: { Image(systemName: "clock") }
-                            }
-                            .tint(.orange)
-                            if thread.canUnsubscribe {
-                                // His pick: on his tap alone, no "are you sure".
-                                Button { Task { await center.act(.unsubscribe, on: [thread.id]) } } label: {
-                                    Label { Text("Unsubscribe", comment: "Email swipe action") } icon: { Image(systemName: "hand.raised") }
-                                }
-                                .tint(.gray)
-                            }
-                        }
-                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                            Button { Task { await center.act(thread.unread ? .read : .unread, on: [thread.id]) } } label: {
-                                thread.unread
-                                    ? Label { Text("Read", comment: "Email swipe action: mark read") } icon: { Image(systemName: "envelope.open") }
-                                    : Label { Text("Unread", comment: "Email swipe action: mark unread") } icon: { Image(systemName: "envelope.badge") }
-                            }
-                            .tint(theme.accent)
-                        }
-                }
-                if center.hasMore(in: bucket) {
-                    Button { Task { await center.load(bucket, page: shown.count / 30) } } label: {
-                        Text("Show More", comment: "Inbox: the next page of email")
+            ForEach(shown) { thread in
+                Group {
+                    if selecting {
+                        MailRow(thread: thread)
+                    } else {
+                        Button { open = thread } label: { MailRow(thread: thread) }
+                            .buttonStyle(.plain)
+                            .contextMenu { holdMenu(thread) }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) { trailingSwipes(thread) }
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) { leadingSwipe(thread) }
                     }
                 }
-            } footer: {
-                if shown.isEmpty, !center.loading {
-                    Text("Nothing here. New mail is sorted on your Hermes every few minutes.", comment: "Inbox: an empty pile")
-                } else if let synced = center.account?.lastSync {
-                    Text("Checked \(synced.formatted(.relative(presentation: .named))) on your Hermes.", comment: "Inbox: when the server last looked at the mail")
+                .tag(thread.id)
+                .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 16))
+            }
+            if center.hasMore(in: bucket) {
+                Button { Task { await center.load(bucket, page: shown.count / 30) } } label: {
+                    Text("Show More", comment: "Inbox: the next page of email").frame(maxWidth: .infinity)
+                }
+                .listRowSeparator(.hidden)
+                .selectionDisabled()
+            }
+            if !shown.isEmpty, let synced = center.account?.lastSync {
+                Text("Checked \(synced.formatted(.relative(presentation: .named))) on your Hermes.", comment: "Inbox: when the server last looked at the mail")
+                    .font(.caption).foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .selectionDisabled()
+            }
+        }
+        .listStyle(.plain)
+        #if os(iOS)
+        .environment(\.editMode, .constant(selecting ? .active : .inactive))
+        #endif
+        .refreshable { await center.refresh(bucket) }
+        .overlay {
+            if shown.isEmpty {
+                if center.loading {
+                    ProgressView()
+                } else if center.problem == nil {
+                    ContentUnavailableView {
+                        Label { Text(bucket.emptyTitle) } icon: { Image(systemName: bucket.symbol).foregroundStyle(bucket.tint) }
+                    } description: {
+                        Text("New mail is sorted on your Hermes every few minutes.", comment: "Inbox: under an empty pile")
+                    }
+                    .padding(.top, 60)
                 }
             }
         }
-        #if os(iOS)
-        .listStyle(.insetGrouped)
-        #endif
-        .refreshable { await center.refresh(bucket) }
-        .overlay { if center.loading, center.threads(in: bucket).isEmpty { ProgressView() } }
+        .animation(.snappy, value: shown.map(\.id))
+    }
+
+    private func notice(_ text: String, symbol: String) -> some View {
+        Label(text, systemImage: symbol)
+            .font(.footnote).foregroundStyle(.secondary)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.fill.tertiary, in: .rect(cornerRadius: 12))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .selectionDisabled()
+    }
+
+    // MARK: One email's swipes and hold menu
+
+    @ViewBuilder private func holdMenu(_ thread: MailThread) -> some View {
+        Section {
+            ForEach(MailBucket.shown.filter { $0 != thread.bucket }) { pile in
+                Button { Task { await center.act(.group(pile), on: [thread.id]) } } label: {
+                    Label { Text("Move to \(pile.label)", comment: "Email hold menu: into another of Redde's groups") } icon: { Image(systemName: pile.symbol) }
+                }
+            }
+        }
+        Button { Task { await center.act(thread.unread ? .read : .unread, on: [thread.id]) } } label: {
+            thread.unread
+                ? Label { Text("Mark Read", comment: "Email hold menu") } icon: { Image(systemName: "envelope.open") }
+                : Label { Text("Mark Unread", comment: "Email hold menu") } icon: { Image(systemName: "envelope.badge") }
+        }
+        Button { Task { await center.act(.archive, on: [thread.id]) } } label: {
+            Label { Text("Archive", comment: "Email swipe action") } icon: { Image(systemName: "archivebox") }
+        }
+        Button { snoozing = thread } label: {
+            Label { Text("Snooze", comment: "Email swipe action") } icon: { Image(systemName: "clock") }
+        }
+        Button { setSelecting(true); selected = [thread.id] } label: {
+            Label { Text("Select", comment: "Email hold menu: start picking several, this one first") } icon: { Image(systemName: "checkmark.circle") }
+        }
+        Button(role: .destructive) { Task { await center.act(.trash, on: [thread.id]) } } label: {
+            Label { Text("Delete", comment: "Email swipe action: move to the trash") } icon: { Image(systemName: "trash") }
+        }
+    }
+
+    @ViewBuilder private func trailingSwipes(_ thread: MailThread) -> some View {
+        Button { Task { await center.act(.archive, on: [thread.id]) } } label: {
+            Label { Text("Archive", comment: "Email swipe action") } icon: { Image(systemName: "archivebox") }
+        }
+        .tint(.indigo)
+        // To the account's Trash, with Undo (asked 11-03: "how do I delete an email").
+        Button(role: .destructive) { Task { await center.act(.trash, on: [thread.id]) } } label: {
+            Label { Text("Delete", comment: "Email swipe action: move to the trash") } icon: { Image(systemName: "trash") }
+        }
+        .tint(.red)
+        Button { snoozing = thread } label: {
+            Label { Text("Snooze", comment: "Email swipe action") } icon: { Image(systemName: "clock") }
+        }
+        .tint(.orange)
+        if thread.canUnsubscribe {
+            // His pick: on his tap alone, no "are you sure".
+            Button { Task { await center.act(.unsubscribe, on: [thread.id]) } } label: {
+                Label { Text("Unsubscribe", comment: "Email swipe action") } icon: { Image(systemName: "hand.raised") }
+            }
+            .tint(.gray)
+        }
+    }
+
+    @ViewBuilder private func leadingSwipe(_ thread: MailThread) -> some View {
+        Button { Task { await center.act(thread.unread ? .read : .unread, on: [thread.id]) } } label: {
+            thread.unread
+                ? Label { Text("Read", comment: "Email swipe action: mark read") } icon: { Image(systemName: "envelope.open") }
+                : Label { Text("Unread", comment: "Email swipe action: mark unread") } icon: { Image(systemName: "envelope.badge") }
+        }
+        .tint(theme.accent)
+    }
+
+    // MARK: Several at once
+
+    private var picks: [MailThread] { shown.filter { selected.contains($0.id) } }
+
+    /// The bar while picking: all or none, then what to do with them.
+    private var selectionBar: some View {
+        let picks = picks
+        let anyUnread = picks.contains(where: \.unread)
+        let leaving = picks.filter(\.canUnsubscribe)
+        return HStack(spacing: 0) {
+            SelectionBarButton(title: selected.count == shown.count && !shown.isEmpty
+                               ? String(localized: "None", comment: "Inbox Select bar: pick none")
+                               : String(localized: "All", comment: "Inbox Select bar: pick every email in the pile"),
+                               symbol: selected.count == shown.count && !shown.isEmpty ? "circle" : "checkmark.circle") {
+                selected = selected.count == shown.count ? [] : Set(shown.map(\.id))
+            }
+            SelectionBarButton(title: String(localized: "Archive", comment: "Email action"), symbol: "archivebox", disabled: picks.isEmpty) { actOnSelected(.archive) }
+            SelectionBarButton(title: anyUnread ? String(localized: "Read", comment: "Email swipe action: mark read") : String(localized: "Unread", comment: "Email swipe action: mark unread"),
+                               symbol: anyUnread ? "envelope.open" : "envelope.badge", disabled: picks.isEmpty) { actOnSelected(anyUnread ? .read : .unread) }
+            Menu {
+                ForEach(MailBucket.shown.filter { $0 != bucket }) { pile in
+                    Button { actOnSelected(.group(pile)) } label: {
+                        Label { Text("Move to \(pile.label)", comment: "Email hold menu: into another of Redde's groups") } icon: { Image(systemName: pile.symbol) }
+                    }
+                }
+                Button { snoozingSelected = true } label: {
+                    Label { Text("Snooze", comment: "Email swipe action") } icon: { Image(systemName: "clock") }
+                }
+                if !leaving.isEmpty {
+                    Button { actOnSelected(.unsubscribe, only: leaving.map(\.id)) } label: {
+                        Label { Text("Unsubscribe from \(leaving.count)", comment: "Inbox Select: unsubscribe from the picked senders that allow it; the count") } icon: { Image(systemName: "hand.raised") }
+                    }
+                }
+            } label: {
+                SelectionBarLabel(title: String(localized: "More", comment: "Inbox Select bar: more actions"), symbol: "ellipsis.circle")
+            }
+            .disabled(picks.isEmpty)
+            SelectionBarButton(title: String(localized: "Delete", comment: "Email action: move to the trash"), symbol: "trash", role: .destructive, disabled: picks.isEmpty) { actOnSelected(.trash) }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(.bar)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    private func actOnSelected(_ action: MailAction, only ids: [String]? = nil) {
+        let ids = ids ?? picks.map(\.id)
+        guard !ids.isEmpty else { return }
+        setSelecting(false)
+        Task { await center.act(action, on: ids) }
+    }
+}
+
+private struct SelectionBarButton: View {
+    let title: String
+    let symbol: String
+    var role: ButtonRole?
+    var disabled = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(role: role, action: action) { SelectionBarLabel(title: title, symbol: symbol) }
+            .buttonStyle(.plain)
+            .foregroundStyle(role == .destructive ? AnyShapeStyle(.red) : AnyShapeStyle(.tint))
+            .disabled(disabled)
+            .opacity(disabled ? 0.4 : 1)
+    }
+}
+
+private struct SelectionBarLabel: View {
+    let title: String
+    let symbol: String
+
+    var body: some View {
+        VStack(spacing: 3) {
+            Image(systemName: symbol).font(.body)
+            Text(title).font(.caption2).lineLimit(1).minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .contentShape(.rect)
+    }
+}
+
+/// The four piles, each its colour: the one shown says its name, the others their count.
+struct PileBar: View {
+    @Binding var bucket: MailBucket
+    let counts: (MailBucket) -> Int
+    @Namespace private var pill
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(MailBucket.shown) { pile in
+                let on = pile == bucket
+                let count = counts(pile)
+                Button {
+                    withAnimation(.snappy) { bucket = pile }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: on ? pile.symbol + ".fill" : pile.symbol)
+                            .symbolRenderingMode(.hierarchical)
+                        if on {
+                            Text(pile.tab).lineLimit(1).fixedSize()
+                        }
+                        if count > 0 {
+                            Text(count, format: .number).monospacedDigit()
+                                .font(.caption.weight(.semibold))
+                                .opacity(on ? 0.85 : 1)
+                        }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(on ? AnyShapeStyle(.white) : AnyShapeStyle(pile.tint))
+                    .padding(.horizontal, 12)
+                    .frame(height: 38)
+                    .frame(maxWidth: on ? .infinity : nil)
+                    .background {
+                        if on {
+                            Capsule().fill(pile.tint.gradient).matchedGeometryEffect(id: "pill", in: pill)
+                        } else {
+                            Capsule().fill(pile.tint.opacity(0.14))
+                        }
+                    }
+                    .contentShape(.capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(count > 0 ? "\(pile.label), \(count)" : pile.label))
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+extension MailBucket {
+    /// Each pile's colour, in the tabs and its empty page.
+    var tint: Color {
+        switch self {
+        case .important: .orange
+        case .needsReply: .blue
+        case .fyi: .purple
+        case .newsletters: .green
+        case .unsorted: .gray
+        }
+    }
+
+    var emptyTitle: String {
+        switch self {
+        case .important: String(localized: "Nothing Important", comment: "Inbox: the Important pile is empty")
+        case .needsReply: String(localized: "Nothing Waiting on a Reply", comment: "Inbox: the Needs Reply pile is empty")
+        case .fyi: String(localized: "No FYI Mail", comment: "Inbox: the FYI pile is empty")
+        case .newsletters: String(localized: "No Newsletters", comment: "Inbox: the Newsletters pile is empty")
+        case .unsorted: String(localized: "Nothing Waiting to Be Sorted", comment: "Inbox: the unsorted pile is empty")
+        }
+    }
+}
+
+/// A sender as a circle of their initials, its colour theirs every time.
+struct SenderAvatar: View {
+    let name: String
+    let address: String
+    var size: CGFloat = 40
+
+    private static let colors: [Color] = [.blue, .indigo, .purple, .pink, .orange, .teal, .green, .cyan, .mint, .brown]
+
+    var body: some View {
+        Text(initials)
+            .font(.system(size: size * 0.38, weight: .semibold, design: .rounded))
+            .foregroundStyle(.white)
+            .frame(width: size, height: size)
+            .background(color.gradient, in: .circle)
+            .accessibilityHidden(true)
+    }
+
+    private var initials: String {
+        let letters = ReplyCard.Review.initials(name.isEmpty ? address : name)
+        return letters.isEmpty ? "?" : letters
+    }
+
+    /// The same sender, the same colour: from the address, not Swift's hash (it changes per launch).
+    private var color: Color {
+        let key = (address.isEmpty ? name : address).lowercased()
+        let sum = key.unicodeScalars.reduce(UInt32(5381)) { ($0 &* 33) &+ $1.value }
+        return Self.colors[Int(sum % UInt32(Self.colors.count))]
     }
 }
 
@@ -168,26 +441,40 @@ struct MailRow: View {
     let thread: MailThread
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Circle()
-                .fill(thread.unread ? Color.accentColor : .clear)
-                .frame(width: 8, height: 8)
-                .padding(.top, 6)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(thread.from).font(.subheadline.weight(thread.unread ? .semibold : .regular)).lineLimit(1)
-                    Spacer(minLength: 6)
-                    if thread.hasAttachments { Image(systemName: "paperclip").font(.caption).foregroundStyle(.secondary).accessibilityHidden(true) }
-                    Text(thread.date, format: Self.when(thread.date)).font(.caption).foregroundStyle(.secondary)
+        HStack(alignment: .top, spacing: 12) {
+            SenderAvatar(name: thread.from, address: thread.address)
+                .overlay(alignment: .topLeading) {
+                    if thread.unread {
+                        Circle().fill(Color.accentColor)
+                            .frame(width: 11, height: 11)
+                            .overlay(Circle().strokeBorder(.background, lineWidth: 2))
+                            .offset(x: -2, y: -2)
+                    }
                 }
-                Text(thread.subject).font(.subheadline).lineLimit(1)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(thread.from)
+                        .font(.body.weight(thread.unread ? .semibold : .regular))
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    if thread.flagged { Image(systemName: "flag.fill").font(.caption2).foregroundStyle(.orange).accessibilityHidden(true) }
+                    if thread.hasAttachments { Image(systemName: "paperclip").font(.caption2).foregroundStyle(.secondary).accessibilityHidden(true) }
+                    Text(thread.date, format: Self.when(thread.date))
+                        .font(.footnote)
+                        .foregroundStyle(thread.unread ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                }
+                Text(thread.subject)
+                    .font(.subheadline.weight(thread.unread ? .medium : .regular))
+                    .foregroundStyle(thread.unread ? .primary : .secondary)
+                    .lineLimit(1)
                 if !thread.line.isEmpty {
-                    Text(thread.line).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
+                    Text(thread.line)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
             }
         }
-        .padding(.vertical, 2)
         .contentShape(.rect)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(accessibility))
@@ -313,9 +600,10 @@ struct MailNotSetUp: View {
 
 // MARK: - One email
 
-/// An email whole, asked for when he opens it (the plugin marks it read): plain text, its links as
-/// links, no pictures, and what he can do with it. The text is the email's, shown and never acted
-/// on: Reply with Agent and Ask hand the agent the email as data in a chat he sees.
+/// An email whole, asked for when he opens it (the plugin marks it read): as its sender laid it
+/// out, pictures and all (`EmailBody`, 11-06), or its plain text where it has no HTML, and what he
+/// can do with it. The email is shown and never acted on: Reply with Agent and Ask hand the agent
+/// the email's text as data in a chat he sees.
 struct MailReaderView: View {
     let thread: MailThread
     @State private var center = MailCenter.shared
@@ -333,52 +621,80 @@ struct MailReaderView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(message?.subject ?? thread.subject).font(.title3.weight(.semibold)).textSelection(.enabled)
-                header
-                if let summary = thread.summary {
-                    Label { Text(summary) } icon: { Image(systemName: "sparkles") }
-                        .font(.footnote).foregroundStyle(.secondary)
-                        .padding(10)
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(message?.subject ?? thread.subject)
+                        .font(.title2.weight(.bold))
+                        .textSelection(.enabled)
+                    header
+                    if let summary = thread.summary {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Image(systemName: "sparkles").foregroundStyle(thread.bucket.tint)
+                            Text(summary)
+                        }
+                        .font(.subheadline)
+                        .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.fill.tertiary, in: .rect(cornerRadius: 10))
+                        .background(thread.bucket.tint.opacity(0.1), in: .rect(cornerRadius: 14))
+                    }
                 }
-                Divider()
+                .padding(.horizontal)
                 if let message {
-                    Text(message.text).font(.body).textSelection(.enabled)
-                    if !message.links.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Links", comment: "Email reader: the email's links").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-                            ForEach(Array(message.links.enumerated()), id: \.offset) { _, link in
-                                Button { openURL(link.url) } label: {
-                                    VStack(alignment: .leading, spacing: 0) {
-                                        Text(link.text).font(.subheadline)
-                                        Text(link.url.host() ?? link.url.absoluteString).font(.caption).foregroundStyle(.secondary)
+                    if let html = message.html {
+                        // As the sender laid it out, on its own white page (11-06).
+                        EmailBody(html: html)
+                            .clipShape(.rect(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+                            .padding(.horizontal, 8)
+                    } else {
+                        Text(message.text).font(.body).textSelection(.enabled).padding(.horizontal)
+                        if !message.links.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Links", comment: "Email reader: the email's links").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                                ForEach(Array(message.links.enumerated()), id: \.offset) { _, link in
+                                    Button { openURL(link.url) } label: {
+                                        Label {
+                                            VStack(alignment: .leading, spacing: 0) {
+                                                Text(link.text).font(.subheadline)
+                                                Text(link.url.host() ?? link.url.absoluteString).font(.caption).foregroundStyle(.secondary)
+                                            }
+                                        } icon: { Image(systemName: "link") }
                                     }
+                                    .buttonStyle(.plain)
+                                    .foregroundStyle(.tint)
                                 }
-                                .buttonStyle(.plain)
-                                .foregroundStyle(.tint)
                             }
+                            .padding(.horizontal)
                         }
                     }
                     if !message.attachments.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 8) {
                             Text("Attachments", comment: "Email reader: its attachments").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                             ForEach(Array(message.attachments.enumerated()), id: \.offset) { _, a in
-                                Label("\(a.name) · \(a.size.formatted(.byteCount(style: .file)))", systemImage: "paperclip").font(.footnote)
+                                HStack(spacing: 10) {
+                                    Image(systemName: Self.symbol(for: a.name)).font(.title3).foregroundStyle(.tint).frame(width: 28)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(a.name).font(.subheadline).lineLimit(1).truncationMode(.middle)
+                                        Text(a.size.formatted(.byteCount(style: .file))).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(10)
+                                .background(.fill.tertiary, in: .rect(cornerRadius: 12))
                             }
                             Text("Ask your agent about an attachment; Redde doesn't download them.", comment: "Email reader: under the attachments")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
+                        .padding(.horizontal)
                     }
                 } else if let problem {
-                    Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
+                    Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary).padding(.horizontal)
                 } else {
-                    ProgressView().frame(maxWidth: .infinity)
+                    ProgressView().frame(maxWidth: .infinity).padding(.top, 30)
                 }
             }
-            .padding()
-            .frame(maxWidth: 720, alignment: .leading)
+            .padding(.vertical)
+            .frame(maxWidth: 760, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
         .safeAreaInset(edge: .bottom) { actions }
@@ -431,15 +747,24 @@ struct MailReaderView: View {
     /// The sender's address: the list's, or the email's own once read (an inbox card has none).
     private var sender: String { message?.address.nilIfEmpty ?? thread.address }
 
+    /// An attachment's picture, by its kind.
+    static func symbol(for name: String) -> String {
+        switch (name as NSString).pathExtension.lowercased() {
+        case "pdf": "doc.richtext"
+        case "jpg", "jpeg", "png", "heic", "gif", "webp": "photo"
+        case "ics": "calendar"
+        case "zip": "doc.zipper"
+        case "csv", "xls", "xlsx", "numbers": "tablecells"
+        case "doc", "docx", "pages", "txt", "rtf": "doc.text"
+        default: "paperclip"
+        }
+    }
+
     private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text(ReplyCard.Review.initials(thread.from))
-                .font(.caption.weight(.bold)).foregroundStyle(.white)
-                .frame(width: 34, height: 34)
-                .background(Color.accentColor, in: .circle)
-                .accessibilityHidden(true)
+        HStack(alignment: .top, spacing: 12) {
+            SenderAvatar(name: thread.from, address: sender, size: 44)
             VStack(alignment: .leading, spacing: 2) {
-                Text(thread.from).font(.subheadline.weight(.semibold))
+                Text(thread.from).font(.headline)
                 Text(sender).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                 if let to = message?.to, !to.isEmpty {
                     Text("To \(to.formatted(.list(type: .and)))", comment: "Email reader: who it was sent to").font(.caption).foregroundStyle(.secondary)
