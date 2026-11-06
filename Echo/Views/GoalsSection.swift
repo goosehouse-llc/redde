@@ -127,6 +127,8 @@ struct GoalRing: View {
     let total: Int
     let color: Color
     var size: CGFloat = 52
+    /// "3/7" inside; off for a ring too small to read it (the Today strip's).
+    var showsCount = true
 
     var body: some View {
         let fraction = total > 0 ? min(1, Double(done) / Double(total)) : 0
@@ -136,12 +138,12 @@ struct GoalRing: View {
                 .trim(from: 0, to: fraction)
                 .stroke(color, style: StrokeStyle(lineWidth: size * 0.12, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-            if total > 0 {
+            if total > 0, showsCount {
                 Text(verbatim: "\(done)/\(total)")
                     .font(.system(size: size * 0.27, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .minimumScaleFactor(0.6)
-            } else {
+            } else if total == 0 {
                 Image(systemName: "flag.fill").font(.system(size: size * 0.3)).foregroundStyle(color)
             }
         }

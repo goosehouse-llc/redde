@@ -241,7 +241,9 @@ struct ConversationsList: View {
         .accessibilityHidden(panelParked)
         .navigationTitle(listTitle)
         .toolbarVisibility(panelParked ? .hidden : .automatic, for: .navigationBar)
-        .navigationBarTitleDisplayMode(section == .sessions || wideDetail ? .large : .inline)
+        // Inline on the iPhone, its title the agent picker (`pickerInTitle`): a large title over the
+        // search, the picker and the tabs left the chats off the first screen (2026-11-06).
+        .navigationBarTitleDisplayMode(wideDetail ? .large : .inline)
         #if DEBUG
         // Dev hook: `-echo.section cron|kanban` opens on that tab (screenshots).
         .onAppear {
@@ -348,7 +350,20 @@ struct ConversationsList: View {
     /// Which profile's chats the list shows: all of them, or one, which is then the one new chats
     /// start in (the app's profile, as Settings → Profile picks it). One tap from the list, not
     /// a trip to Settings (a Reddit report, 2026-10-22: moving between profiles was clunky).
-    private var profileMenu: some View {
+    /// The agent picker as the chat list's title, on the iPhone's Chats (2026-11-06).
+    private var pickerInTitle: Bool {
+        #if os(iOS)
+        !wideDetail && section == .sessions && showsProfileMenu
+        #else
+        false
+        #endif
+    }
+
+    private var showsProfileMenu: Bool { settings.transport != .chatCompletions && (allProfiles || menuProfiles.count > 1) }
+
+    private var profileMenu: some View { profileMenu(inTitle: false) }
+
+    private func profileMenu(inTitle: Bool) -> some View {
         let current = settings.profileName ?? ProfileCatalog.defaultID
         // With All Profiles on, where new chats start still shows when it isn't the main agent:
         // the app was left on another profile once and nothing said so (2026-10-29).
@@ -370,13 +385,21 @@ struct ConversationsList: View {
                 }
             }
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: allProfiles ? "rectangle.stack" : "person.crop.circle")
-                Text(title).lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down").chatFont(.caption2, weight: .semibold)
+            if inTitle {
+                HStack(spacing: 4) {
+                    Text(title).lineLimit(1).font(.headline)
+                    Image(systemName: "chevron.down").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                }
+                .foregroundStyle(.primary)
+            } else {
+                HStack(spacing: 6) {
+                    Image(systemName: allProfiles ? "rectangle.stack" : "person.crop.circle")
+                    Text(title).lineLimit(1)
+                    Image(systemName: "chevron.up.chevron.down").chatFont(.caption2, weight: .semibold)
+                }
+                .chatFont(.subheadline, weight: .medium)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .chatFont(.subheadline, weight: .medium)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityLabel("Profile")
         .accessibilityValue(title)
@@ -397,7 +420,7 @@ struct ConversationsList: View {
         VStack(spacing: 8) {
             // Not on the OpenAI-compatible connection, which belongs to no server (as in Settings).
             if settings.servers.count > 1, settings.transport != .chatCompletions { serverMenu }
-            if settings.transport != .chatCompletions, allProfiles || menuProfiles.count > 1 { profileMenu }
+            if showsProfileMenu, !pickerInTitle { profileMenu }
             sectionPicker
         }
         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
@@ -442,11 +465,10 @@ struct ConversationsList: View {
                     waitingNotesSection
                     // The cards at the top, each as the person chose (`ChatListCard`; read for redraws).
                     let _ = settings.hiddenChatListCards
+                    // The inbox, briefings and goals as one row of tiles (`TodayStrip`, 2026-11-06).
+                    TodayStrip(openGoal: { shownGoal = $0 })
                     if ChatListCard.pinned.isShown { PinnedCardsSection() }
-                    if ChatListCard.inbox.isShown { InboxSection(open: { MailCenter.shared.showingInbox = true }) }
-                    if ChatListCard.goals.isShown { GoalsSection(open: { shownGoal = $0 }, add: { addingGoal = true }) }
                     if ChatListCard.ideas.isShown { IdeasSection(take: takeIdea) }
-                    if ChatListCard.briefings.isShown { BriefingsSection() }
                 }
                 if usesLedger {
                     if query.isEmpty, !selecting {
@@ -479,6 +501,11 @@ struct ConversationsList: View {
         }
         .environment(\.editMode, .constant(selecting || arrangingBots ? .active : .inactive))
         .toolbar {
+            #if os(iOS)
+            if pickerInTitle, !selecting, !arrangingBots {
+                ToolbarItem(placement: .principal) { profileMenu(inTitle: true).tint(.primary) }
+            }
+            #endif
             ToolbarItem(placement: .topBarLeading) {
                 if selecting {
                     Button("Cancel") { selecting = false; selected = [] }

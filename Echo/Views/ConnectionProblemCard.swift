@@ -120,14 +120,11 @@ struct ConnectionProblemCard: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
             }
-            HStack(spacing: 8) {
-                Button(action: retry) { Text("Try again").frame(maxWidth: .infinity) }
-                if canUseFastLane {
-                    Button { settings.transport = .chatCompletions } label: { Text("Use the model directly").frame(maxWidth: .infinity) }
-                        .accessibilityHint("Talks to the model directly, without the gateway")
-                } else if !needsSettings {
-                    Button(action: openSettings) { Text("Settings").frame(maxWidth: .infinity) }
-                }
+            // Side by side when both fit on a line, else one over the other (2026-11-06: "Use the
+            // model directly" wrapped to three lines beside Try again).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { fallbacks }
+                VStack(spacing: 8) { fallbacks }
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
@@ -147,5 +144,15 @@ struct ConnectionProblemCard: View {
         .background(theme.surfaceColor, in: .rect(cornerRadius: 20))
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
+    }
+
+    @ViewBuilder private var fallbacks: some View {
+        Button(action: retry) { Text("Try again").lineLimit(1).fixedSize().frame(maxWidth: .infinity) }
+        if canUseFastLane {
+            Button { settings.transport = .chatCompletions } label: { Text("Use the model directly").lineLimit(1).fixedSize().frame(maxWidth: .infinity) }
+                .accessibilityHint("Talks to the model directly, without the gateway")
+        } else if !needsSettings {
+            Button(action: openSettings) { Text("Settings").lineLimit(1).fixedSize().frame(maxWidth: .infinity) }
+        }
     }
 }
