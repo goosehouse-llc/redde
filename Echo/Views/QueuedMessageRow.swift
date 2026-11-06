@@ -6,6 +6,12 @@ struct QueuedMessageRow: View {
     let item: OutboxItem
     /// Only the first message in line can be sent; the rest follow it.
     let isFirst: Bool
+    /// A reply is under way and this message can join it as a steer (`Conversation.canSteer(_:)`):
+    /// Send Now adds it to that reply (GitHub issue 60).
+    var joinsReply = false
+    /// A reply is under way that this message can't join: it goes when that ends, and Send Now
+    /// would do nothing more.
+    var waitsForReply = false
     let onSend: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -34,7 +40,12 @@ struct QueuedMessageRow: View {
                 Label(statusText, systemImage: statusSymbol)
                     .chatFont(.caption)
                     .foregroundStyle(.secondary)
-                if isFirst, item.state != .queued {
+                if isFirst, joinsReply {
+                    Button(String(localized: "Add to reply", comment: "A queued message's button while a reply is under way: sends it into that reply"), action: onSend)
+                        .chatFont(.caption, weight: .semibold)
+                        .buttonStyle(.bordered)
+                        .controlSize(.mini)
+                } else if isFirst, item.state != .queued, !waitsForReply {
                     Button("Send now", action: onSend)
                         .chatFont(.caption, weight: .semibold)
                         .buttonStyle(.bordered)
@@ -44,7 +55,12 @@ struct QueuedMessageRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
         .contextMenu {
-            if isFirst { Button("Send now", systemImage: "arrow.up.circle", action: onSend) }
+            if isFirst, joinsReply {
+                Button(String(localized: "Add to This Reply", comment: "A queued message's menu while a reply is under way: sends it into that reply"),
+                       systemImage: "arrow.turn.down.right", action: onSend)
+            } else if isFirst, !waitsForReply {
+                Button("Send now", systemImage: "arrow.up.circle", action: onSend)
+            }
             Button("Edit", systemImage: "pencil", action: onEdit)
             Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = item.message.text }
             Divider()
@@ -53,7 +69,8 @@ struct QueuedMessageRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Not sent yet: \(item.message.text). \(statusText)")
         .accessibilityActions {
-            if isFirst { Button("Send now", action: onSend) }
+            if isFirst, joinsReply { Button(String(localized: "Add to This Reply"), action: onSend) }
+            else if isFirst, !waitsForReply { Button("Send now", action: onSend) }
             Button("Edit", action: onEdit)
             Button("Delete", action: onDelete)
         }

@@ -3,8 +3,15 @@ import SwiftUI
 /// Which model answers, and how hard it thinks. Lists come from the active backend: the
 /// gateway's model options for the Hermes transports, llama-swap's loaded models for the fast lane.
 struct ModelPickerView: View {
+    /// Opened from Settings rather than a conversation: on Hermes, where each conversation has its
+    /// own model (GitHub issue 58), only the reasoning effort and where models are picked.
+    var fromSettings = false
     @Environment(Conversation.self) private var conversation
     @State private var settings = Settings.shared
+    /// Make This the Default: the pick asked about, then Hermes's own question for an expensive one.
+    @State private var makingDefault: ModelChoice?
+    @State private var hermesAsks: (choice: ModelChoice, question: String)?
+    @State private var savingDefault = false
     @State private var choices: [ModelChoice] = []
     @State private var error: String?
     @State private var loading = true
@@ -74,16 +81,49 @@ struct ModelPickerView: View {
             }
             .onChange(of: settings.reasoningEffort) { _, effort in applyEffortToOpenConversation(effort) }
 
-            if let stored = controlledSession {
+            if !fromSettings, let stored = controlledSession {
                 ChatControlsSection(stored: stored, source: ChatControlsSection.defaultSource,
                                     offersAutoApprove: conversation.connection != .hermesSessions)
             }
 
+            if fromSettings, !isFastLane {
+                Section {
+                    Label {
+                        Text("Each conversation has its own model: pick one from the conversation's menu. Without one, a conversation runs on the model your server is set to, and a bot's chat on the bot's own, which Edit Bot changes.",
+                             comment: "Settings › Model: where models are picked now that each conversation has its own")
+                    } icon: { Image(systemName: "bubble.left.and.text.bubble.right") }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                } header: {
+                    Text("Model")
+                }
+            } else {
+                modelSections
+            }
+        }
+        .navigationTitle("Model")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { if !fromSettings || isFastLane { await load() } }
+        .refreshable { await load() }
+        .confirmationDialog(makeDefaultQuestion, isPresented: Binding(get: { makingDefault != nil }, set: { if !$0 { makingDefault = nil } }),
+                            titleVisibility: .visible, presenting: makingDefault) { choice in
+            Button(String(localized: "Make It the Default", comment: "Model picker: confirms making a model a bot's or the server's default")) { makeDefault(choice, confirmed: false) }
+        } message: { _ in
+            Text(makeDefaultDetail)
+        }
+        .confirmationDialog(hermesAsks?.question ?? "", isPresented: Binding(get: { hermesAsks != nil }, set: { if !$0 { hermesAsks = nil } }),
+                            titleVisibility: .visible, presenting: hermesAsks) { asked in
+            Button(String(localized: "Use It", comment: "Model picker: says yes to Hermes's question about an expensive model")) { makeDefault(asked.choice, confirmed: true) }
+        }
+    }
+
+    @ViewBuilder
+    private var modelSections: some View {
             Section {
                 Button { select(nil) } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(isFastLane ? Settings.defaultFastLaneModel : String(localized: "Gateway default"))
+                            Text(isFastLane ? Settings.defaultFastLaneModel : defaultTitle)
                             defaultSubtitle.font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
@@ -96,6 +136,23 @@ struct ModelPickerView: View {
                 Text("Model")
             } footer: {
                 if !isFastLane { modelFooter }
+            }
+
+            // This conversation's pick as its bot's model, or the server's, from now on.
+            if let candidate = defaultCandidate {
+                Section {
+                    Button { makingDefault = candidate } label: {
+                        HStack {
+                            Label(String(localized: "Make \(candidate.name) \(ownerName)'s Default", comment: "Model picker: makes the picked model a bot's (or the server's) default, e.g. Make GLM 5 Sol's Default"),
+                                  systemImage: "pin")
+                            if savingDefault { Spacer(); ProgressView() }
+                        }
+                    }
+                    .disabled(savingDefault)
+                } footer: {
+                    Text("\(ownerName)'s other conversations without a pick of their own move to it too, and so do new ones.",
+                         comment: "Model picker: under Make … the Default; the bot's name, or “your server”")
+                }
             }
 
             if let error {
@@ -131,11 +188,6 @@ struct ModelPickerView: View {
                     .buttonStyle(.plain)
                 }
             }
-        }
-        .navigationTitle("Model")
-        .navigationBarTitleDisplayMode(.inline)
-        .task { await load() }
-        .refreshable { await load() }
     }
 
     @ViewBuilder
@@ -170,39 +222,91 @@ struct ModelPickerView: View {
     /// Hermes connections mark it so, as the model list is asked for without a session.
     private var serverDefault: ModelChoice? { choices.first(where: \.isCurrent) }
 
-    /// Under "Gateway default": the model that means, once the server has said.
+    /// Who a conversation without a pick takes its model from: its bot, or the server.
+    private var ownerName: String {
+        conversation.bot?.name ?? String(localized: "your server", comment: "Model picker: whose model a normal conversation runs on without a pick, as in “your server's model”")
+    }
+
+    /// The row that clears the conversation's pick.
+    private var defaultTitle: String {
+        if let bot = conversation.bot {
+            return String(localized: "\(bot.name)'s Model", comment: "Model picker: the row for a bot chat's default, the bot's own model, e.g. Sol's Model")
+        }
+        return String(localized: "Server Default", comment: "Model picker: the row for the model the Hermes server is set to use")
+    }
+
+    /// Under the default row: the model that means, once the server has said.
     private var defaultSubtitle: Text {
         if isFastLane { return Text("llama-swap's configured default") }
         guard let model = serverDefault?.model else {
-            return Text("The model your server is set to use", comment: "Model picker: under Gateway default, before the server says which model that is")
+            return conversation.bot != nil
+                ? Text("The model the bot is set to use", comment: "Model picker: under a bot's default, before the server says which model that is")
+                : Text("The model your server is set to use", comment: "Model picker: under Gateway default, before the server says which model that is")
         }
-        return Text("\(model), set on your server", comment: "Model picker: under Gateway default, the model the Hermes server is set to use, e.g. zai-glm-5-3-flash")
+        return conversation.bot != nil
+            ? Text("\(model), set for the bot", comment: "Model picker: under a bot's default, the bot's model, e.g. zai-glm-5-3-flash")
+            : Text("\(model), set on your server", comment: "Model picker: under Gateway default, the model the Hermes server is set to use, e.g. zai-glm-5-3-flash")
     }
 
-    /// Which model a new conversation starts on, and what a pick here changes.
+    /// What a pick here changes.
     private var modelFooter: Text {
-        let model = serverDefault?.model
-        if settings.newChatsUseServerModel {
-            guard let model else {
-                return Text("New conversations start on your server's model. A pick here changes this conversation only.",
-                            comment: "Model picker footer with New Chats Use the Server's Model on, before the server says which model that is")
-            }
-            return Text("New conversations start on your server's model, \(model). A pick here changes this conversation only.",
-                        comment: "Model picker footer with New Chats Use the Server's Model on; the model, e.g. zai-glm-5-3-flash")
+        guard let model = serverDefault?.model else {
+            return Text("A pick here changes this conversation only.", comment: "Model picker footer, before the server says which model is the default")
         }
-        guard let starting = settings.gatewayModel.nilIfEmpty ?? model else {
-            return Text("New conversations start on your server's model. A pick here applies to them and to this conversation.",
-                        comment: "Model picker footer: no model picked, before the server says which model it is set to")
-        }
-        return Text("New conversations start on \(starting). A pick here applies to them and to this conversation.",
-                    comment: "Model picker footer: the model new conversations start on, e.g. zai-glm-5-3-flash")
+        return Text("A pick here changes this conversation only. Without one, it runs on \(ownerName)'s model, \(model).",
+                    comment: "Model picker footer: whose model a conversation without a pick runs on (a bot's name or “your server”), and the model")
     }
 
-    /// The pick the checkmark shows: Redde's, which every new conversation starts on, or with
-    /// New Chats Use the Server's Model on, the open conversation's own.
-    private var pick: ConversationModels.Pick? {
-        if settings.newChatsUseServerModel { return conversation.ownModel }
-        return settings.gatewayModel.nilIfEmpty.map { .init(model: $0, provider: settings.gatewayProvider.nilIfEmpty) }
+    /// The pick the checkmark shows: the open conversation's own.
+    private var pick: ConversationModels.Pick? { conversation.ownModel }
+
+    /// The conversation's own pick, when it is a model the server lists and not already the
+    /// default, on the Dashboard, where a bot's model (the main agent's too) can be changed.
+    private var defaultCandidate: ModelChoice? {
+        guard !isFastLane, conversation.connection == .hermesServe, owner != nil, let pick,
+              let choice = choices.first(where: { $0.model == pick.model && (pick.provider == nil || $0.provider == pick.provider) }),
+              !(serverDefault?.model == choice.model && serverDefault?.provider == choice.provider) else { return nil }
+        return choice
+    }
+
+    /// The bot whose model a conversation without a pick runs on: its own, or the main agent.
+    private var owner: HermesBot? {
+        let bots = BotDirectory.shared.bots(for: settings.connectionKey)
+        if let profile = conversation.routeProfile { return bots.first { $0.name == profile } }
+        return bots.first(where: \.isDefault)
+    }
+
+    private var makeDefaultQuestion: String {
+        String(localized: "Make \(makingDefault?.name ?? "") \(ownerName)'s default?", comment: "Model picker: asks before changing a bot's or the server's model")
+    }
+
+    private var makeDefaultDetail: String {
+        conversation.bot != nil
+            ? String(localized: "This changes the bot's model on your Hermes, as Edit Bot does.", comment: "Model picker: under the question before changing a bot's model")
+            : String(localized: "This changes your Hermes's main model, as Edit Bot does for your main agent: its scheduled jobs use it too.", comment: "Model picker: under the question before changing the main agent's model")
+    }
+
+    /// Writes the pick to the bot (or the main agent) on the server, then lets this conversation
+    /// follow it rather than hold a pick of its own.
+    private func makeDefault(_ choice: ModelChoice, confirmed: Bool) {
+        guard let owner else { return }
+        savingDefault = true
+        Task {
+            defer { savingDefault = false }
+            do {
+                switch try await HermesServeClient.shared.changeBot(owner, BotChange(model: choice, modelConfirmed: confirmed)) {
+                case let .confirmModel(question):
+                    hermesAsks = (choice, question)
+                    return
+                case .done:
+                    conversation.pickOwnModel(nil)
+                    _ = try? await BotDirectory.shared.refresh()
+                    await load()
+                }
+            } catch {
+                self.error = String(localized: "Couldn't change the default: \(error.localizedDescription)", comment: "Model picker: Make … the Default failed")
+            }
+        }
     }
 
     private var currentIsDefault: Bool {
@@ -220,12 +324,7 @@ struct ModelPickerView: View {
             settings.fastLaneModel = choice?.model ?? Settings.defaultFastLaneModel
             return
         }
-        if settings.newChatsUseServerModel {
-            conversation.pickOwnModel(choice.map { .init(model: $0.model, provider: $0.provider.nilIfEmpty) })
-        } else {
-            settings.gatewayModel = choice?.model ?? ""
-            settings.gatewayProvider = choice?.provider ?? ""
-        }
+        conversation.pickOwnModel(choice.map { .init(model: $0.model, provider: $0.provider.nilIfEmpty) })
         applyToOpenConversation(choice)
     }
 
@@ -266,6 +365,11 @@ struct ModelPickerView: View {
     static func loadChoices(conversation: Conversation, settings: Settings) async throws -> [ModelChoice] {
         if settings.transport == .chatCompletions {
             return try await fastLaneModels(base: settings.activeBaseURL)
+        }
+        // A Dashboard bot's chat lists its profile's, so the default the list marks is the bot's
+        // own model, the one its chat runs on without a pick (GitHub issue 58).
+        if conversation.connection == .hermesServe, let profile = conversation.routeProfile, profile != "default" {
+            return try await HermesServeClient.shared.modelOptions(forProfile: profile)
         }
         guard let backend = SessionBackend.available(conversation).first else {
             throw TransportError.unreachable(SessionBackend.notConfiguredMessage)

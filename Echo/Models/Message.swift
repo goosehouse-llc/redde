@@ -26,6 +26,9 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     var attachments: [Attachment] = []
     /// A nudge sent into a running turn rather than a new question.
     var isSteer: Bool = false
+    /// The question this message of the person's answers, shown over it: a card's title, or what
+    /// the agent asked mid-turn (`AnsweredQuestions`).
+    var answering: String?
     /// Filed as the person's, but not theirs: another bot's message, a bot's reply, or a
     /// background process reporting back (`BotMessages`).
     var delivered: Delivered?
@@ -39,7 +42,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case id, role, text, createdAt, metrics, error, reasoning, reasoningStartedAt, reasoningEndedAt, tools, todos, subagents, attachments, isSteer
-        case delivered, cards
+        case delivered, cards, answering
     }
 
     init(from decoder: Decoder) throws {
@@ -60,6 +63,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
         isSteer = try c.decodeIfPresent(Bool.self, forKey: .isSteer) ?? false
         delivered = try c.decodeIfPresent(Delivered.self, forKey: .delivered)
         cards = try c.decodeIfPresent([ReplyCard].self, forKey: .cards)
+        answering = try c.decodeIfPresent(String.self, forKey: .answering)
     }
 }
 

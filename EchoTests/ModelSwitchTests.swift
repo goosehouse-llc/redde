@@ -2,8 +2,8 @@ import Foundation
 import Testing
 @testable import Echo
 
-/// `Conversation.switchModel` is the sticky switch a spoken prefix makes: the setting moves, and
-/// an open hermes session is re-pinned. Without a session there's nothing to pin, so these run
+/// `Conversation.switchModel` is the sticky switch a spoken prefix makes: the fast lane's setting
+/// moves, or on Hermes the conversation's own pick, and an open session is re-pinned. Without a session there's nothing to pin, so these run
 /// offline.
 @MainActor
 struct ModelSwitchTests {
@@ -23,20 +23,18 @@ struct ModelSwitchTests {
         #expect(settings.gatewayModel.isEmpty)
     }
 
-    @Test func hermesSwitchesTheGatewayModelAndProvider() async throws {
+    /// GitHub issue 58: a switch on Hermes is the conversation's own pick, never the app's.
+    @Test func hermesSwitchesThisConversationsModelAndProvider() async throws {
         let (conversation, settings) = makeConversation(transport: .hermesSessions)
         try await conversation.switchModel("claude-opus-5-5", provider: "anthropic")
-        #expect(settings.gatewayModel == "claude-opus-5-5")
-        #expect(settings.gatewayProvider == "anthropic")
-        #expect(settings.fastLaneModel == "before")
+        #expect(conversation.ownModel == .init(model: "claude-opus-5-5", provider: "anthropic"))
+        #expect(settings.gatewayModel.isEmpty && settings.fastLaneModel == "before")
     }
 
-    @Test func aMissingProviderClearsTheOldOne() async throws {
-        let (conversation, settings) = makeConversation(transport: .hermesServe)
-        settings.gatewayProvider = "openrouter"
+    @Test func aMissingProviderLeavesItToTheServer() async throws {
+        let (conversation, _) = makeConversation(transport: .hermesServe)
         try await conversation.switchModel("gpt-5.5", provider: nil)
-        #expect(settings.gatewayModel == "gpt-5.5")
-        #expect(settings.gatewayProvider.isEmpty)
+        #expect(conversation.ownModel == .init(model: "gpt-5.5", provider: nil))
     }
 
     // MARK: - A saved provider against the backend's current list

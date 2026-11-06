@@ -38,6 +38,23 @@ final class CardAnswers {
         Task { @MainActor in shared.record(key, said: text) }
     }
 
+    /// What the card asked, for over its answer when the chat is read back (`AnsweredQuestions`).
+    func recordQuestion(_ key: String, _ question: String?) {
+        guard !key.isEmpty, let question else { return }
+        var asked = defaults.dictionary(forKey: Self.questionsKey) as? [String: String] ?? [:]
+        guard asked[key] != question else { return }
+        asked[key] = question
+        if asked.count > Self.most { asked.removeValue(forKey: asked.keys.sorted().first ?? "") }
+        defaults.set(asked, forKey: Self.questionsKey)
+    }
+
+    /// From a transcript read off the main actor: UserDefaults is safe from any thread.
+    nonisolated static func question(for key: String, defaults: UserDefaults = .standard) -> String? {
+        (defaults.dictionary(forKey: questionsKey) as? [String: String])?[key]
+    }
+
+    nonisolated private static let questionsKey = "cardQuestions"
+
     func setTicks(_ key: String, _ done: [Int]) {
         ticks[key] = done
         if ticks.count > Self.most { ticks.removeValue(forKey: ticks.keys.sorted().first ?? "") }

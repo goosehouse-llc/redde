@@ -20,8 +20,9 @@ extension Conversation {
                 if let answer = CardNote.find(in: text) { CardAnswers.record(answer.key, said: answer.said) }
                 let (text, asides) = AsideNote.split(WatchConnection.withoutHint(ReplyLanguage.stripNote(text, keepingAsides: true)))
                 for aside in asides { out += AsideNote.messages(aside, before: when) }
-                if let message = BotMessages.userMessage(text: text, displayKind: row["display_kind"]?.string,
+                if var message = BotMessages.userMessage(text: text, displayKind: row["display_kind"]?.string,
                                                          displayText: row["display_metadata"]?["display_text"]?.string, at: when) {
+                    if let answer = CardNote.find(in: row["text"]?.string ?? row["content"]?.displayText ?? "") { message.answering = CardAnswers.question(for: answer.key) }
                     out.append(message)
                 }
             case "assistant":
@@ -60,7 +61,8 @@ extension Conversation {
                 let (text, asides) = AsideNote.split(WatchConnection.withoutHint(   // a Dashboard turn's note, a watch's hint, asides
                     ReplyLanguage.stripNote(row.content?.text ?? "", keepingAsides: true)))
                 for aside in asides { out += AsideNote.messages(aside, before: when) }
-                guard let message = BotMessages.userMessage(text: text, displayKind: row.display_kind, displayText: nil, at: when) else { continue }
+                guard var message = BotMessages.userMessage(text: text, displayKind: row.display_kind, displayText: nil, at: when) else { continue }
+                if let answer = CardNote.find(in: row.content?.text ?? "") { message.answering = CardAnswers.question(for: answer.key) }
                 out.append(message)
             case "assistant":
                 var message = Message(role: .assistant, text: row.content?.text ?? "", createdAt: when)

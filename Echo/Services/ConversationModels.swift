@@ -1,12 +1,16 @@
 import Foundation
 import Observation
 
-/// Each conversation's own model, for Settings → New Chats Use the Server's Model (GitHub issue
-/// 45). With it on, a new conversation starts on the model the server is set to, and a model
-/// picked in a conversation is that conversation's alone. The Dashboard keeps a session's model
-/// once it is pinned, but a Hermes API run reads neither the session's stored model nor its lock,
-/// so the phone keeps the pick, by connection (`Settings.connectionKey`) and server session, and
-/// every turn of that conversation sends it.
+/// Each conversation's own model (GitHub issues 45 and 58). A model picked in a conversation is
+/// that conversation's alone; one nobody picked a model in runs on its bot's model, or for a
+/// normal chat the server's (config.yaml), as Hermes has them. Until 2026-11 a pick could instead
+/// be Redde's one model for every conversation, bots' chats too, which moved each bot off its own
+/// model: "changing the model on the Bot Chat itself should not change the bot's default model".
+/// A bot's model or the server's is changed on the server: Edit Bot, or the picker's Make This
+/// the Default. The Dashboard keeps a session's model once it is pinned, but a Hermes API run
+/// reads neither the session's stored model nor its lock, so the phone keeps the pick, by
+/// connection (`Settings.connectionKey`) and server session, and every turn of that conversation
+/// sends it.
 ///
 /// A pick outlives a conversation deleted elsewhere; the newest few hundred per connection are
 /// kept, which is far more than anyone picks by hand.
@@ -54,17 +58,13 @@ final class ConversationModels {
         if let data = try? JSONEncoder().encode(picks) { defaults.set(data, forKey: Self.key) }
     }
 
-    /// The model a Hermes turn asks for, with its provider. Off, Redde's pick, the same for every
-    /// conversation (nil for the server's default). On, the conversation's own pick, else nil:
-    /// a conversation nobody picked a model in stays on the server's.
-    static func turnModel(settings: Settings, own: Pick?) -> Pick? {
-        if settings.newChatsUseServerModel { return own }
-        return settings.gatewayModel.nilIfEmpty.map { Pick(model: $0, provider: settings.gatewayProvider.nilIfEmpty) }
-    }
+    /// The model a Hermes turn asks for, with its provider: the conversation's own pick, else nil,
+    /// which leaves it to the bot's or the server's.
+    static func turnModel(own: Pick?) -> Pick? { own }
 
     /// The same for a turn of a session that isn't on screen (Siri, the watch): its own pick, as
     /// this connection keeps it.
     func turnModel(session: String?, settings: Settings) -> Pick? {
-        Self.turnModel(settings: settings, own: session.flatMap { pick(connection: settings.connectionKey, session: $0) })
+        Self.turnModel(own: session.flatMap { pick(connection: settings.connectionKey, session: $0) })
     }
 }

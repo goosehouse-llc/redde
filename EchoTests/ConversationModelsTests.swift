@@ -44,40 +44,24 @@ struct ConversationModelsTests {
 
     // MARK: - The model a turn asks for
 
-    private func settings(on: Bool) -> Settings {
+    /// Settings as an older Redde left them: its one model for every conversation, which is no
+    /// longer read (GitHub issue 58).
+    private func settings() -> Settings {
         let settings = Settings(defaults: defaults())
         settings.transport = .hermesServe
         settings.gatewayModel = "claude-opus-5-5"
         settings.gatewayProvider = "anthropic"
-        settings.newChatsUseServerModel = on
         return settings
     }
 
-    @Test func offEveryTurnAsksForReddesPick() {
-        let settings = settings(on: false)
+    @Test func aTurnAsksForTheConversationsOwnPickElseNone() {
         let own = Pick(model: "qwen36-splash", provider: "custom:local")
-        #expect(ConversationModels.turnModel(settings: settings, own: nil) == Pick(model: "claude-opus-5-5", provider: "anthropic"))
-        #expect(ConversationModels.turnModel(settings: settings, own: own)?.model == "claude-opus-5-5", "a conversation's own pick is for the setting on")
-        settings.gatewayModel = ""
-        settings.gatewayProvider = ""
-        #expect(ConversationModels.turnModel(settings: settings, own: nil) == nil, "Gateway default asks for none")
+        #expect(ConversationModels.turnModel(own: nil) == nil, "none: the bot's model, or the server's")
+        #expect(ConversationModels.turnModel(own: own) == own)
     }
 
-    @Test func onATurnAsksForTheConversationsOwnPickElseNone() {
-        let settings = settings(on: true)
-        let own = Pick(model: "qwen36-splash", provider: "custom:local")
-        #expect(ConversationModels.turnModel(settings: settings, own: nil) == nil, "Redde's pick is not sent")
-        #expect(ConversationModels.turnModel(settings: settings, own: own) == own)
-        #expect(settings.startingModel.isEmpty && settings.startingProvider.isEmpty)
-    }
-
-    @Test func theSettingIsSynced() {
-        #expect(Settings.syncedKeys.contains("newChatsUseServerModel"))
-        let settings = settings(on: true)
-        settings.applySynced("newChatsUseServerModel", nil)
-        #expect(!settings.newChatsUseServerModel)
-        settings.applySynced("newChatsUseServerModel", true)
-        #expect(settings.newChatsUseServerModel)
+    @Test func theOldSwitchIsGone() {
+        #expect(!Settings.syncedKeys.contains("newChatsUseServerModel"))
     }
 
     // MARK: - Through a conversation
@@ -98,8 +82,8 @@ struct ConversationModelsTests {
         }
     }
 
-    private func conversation(on: Bool, _ transport: RecordingTransport, models: ConversationModels) -> (Conversation, Settings) {
-        let settings = settings(on: on)
+    private func conversation(_ transport: RecordingTransport, models: ConversationModels) -> (Conversation, Settings) {
+        let settings = settings()
         let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "models-\(UUID().uuidString)"))
         return (Conversation(settings: settings, store: store, transportOverride: transport, models: models), settings)
     }
@@ -113,29 +97,22 @@ struct ConversationModelsTests {
         return try #require(transport.requests.last)
     }
 
-    @Test func offANewConversationStartsOnReddesPick() async throws {
+    @Test func aNewConversationSendsNoModelThoughAnOlderReddeHadOne() async throws {
         let transport = RecordingTransport()
-        let (conversation, _) = conversation(on: false, transport, models: ConversationModels(defaults: defaults()))
+        let (conversation, _) = conversation(transport, models: ConversationModels(defaults: defaults()))
         let first = try await ask(conversation, transport, "Hello.")
-        #expect(first.model == "claude-opus-5-5" && first.provider == "anthropic")
-    }
-
-    @Test func onANewConversationSendsNoModel() async throws {
-        let transport = RecordingTransport()
-        let (conversation, _) = conversation(on: true, transport, models: ConversationModels(defaults: defaults()))
-        let first = try await ask(conversation, transport, "Hello.")
-        #expect(first.model == nil && first.provider == nil, "it starts on the server's model")
+        #expect(first.model == nil && first.provider == nil, "it starts on the server's model (or its bot's), not the old one-for-all")
         let second = try await ask(conversation, transport, "Again.")
         #expect(second.model == nil && second.provider == nil)
     }
 
-    @Test func onAPickIsThisConversationsAloneAndGoesWithEveryTurn() async throws {
+    @Test func aPickIsThisConversationsAloneAndGoesWithEveryTurn() async throws {
         let transport = RecordingTransport()
         let models = ConversationModels(defaults: defaults())
-        let (conversation, settings) = conversation(on: true, transport, models: models)
+        let (conversation, settings) = conversation(transport, models: models)
         // Picked before the first message: held, then kept with the session it made.
         try await conversation.switchModel("qwen36-splash", provider: "custom:local")
-        #expect(settings.gatewayModel == "claude-opus-5-5" && settings.gatewayProvider == "anthropic", "Redde's pick is untouched")
+        #expect(settings.gatewayModel == "claude-opus-5-5", "nothing of the app's own moves")
         let first = try await ask(conversation, transport, "Hello.")
         #expect(first.model == "qwen36-splash" && first.provider == "custom:local")
         #expect(models.pick(connection: settings.connectionKey, session: "stored-1")?.model == "qwen36-splash")

@@ -49,6 +49,9 @@ nonisolated enum WhatsNew {
                  detail: String(localized: "While it browses, see the page it's on and what its commands print. With Bot Screen on a Linux Hermes, watch its screen live and take over at a login, then hand it back.")),
             Item(symbol: "textformat", title: String(localized: "Paper White, and your font"),
                  detail: String(localized: "A new Paper White theme, Paper redone as real paper, and a font of your choice for every chat in Settings → Appearance → Font.")),
+            Item(symbol: "cpu", title: String(localized: "A model per chat"),
+                 detail: String(localized: "A model you pick changes that chat only. Without one, a chat runs on your server's model, and a bot's chat on the bot's own. Make This the Default moves a bot to the model you picked. A model picked for every chat before this is no longer used.",
+                                comment: "What's New 2.4: model picks are each conversation's own (GitHub issue 58)")),
         ]),
         Release(version: "2.3", items: [
             Item(symbol: "sunrise", title: String(localized: "Ahead of your day"),

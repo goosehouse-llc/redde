@@ -234,6 +234,8 @@ struct TranscriptView: View {
                     // keeps its UUID, and the stack would otherwise reuse the old bubble for it.
                     ForEach(Array(conversation.outbox.enumerated()), id: \.element.rowID) { index, item in
                         QueuedMessageRow(item: item, isFirst: index == 0,
+                                         joinsReply: conversation.canSteer(item),
+                                         waitsForReply: conversation.isStreaming && !conversation.canSteer(item),
                                          onSend: { conversation.sendQueuedNow(item.id) },
                                          onEdit: { if let m = conversation.removeQueued(item.id) { onEditQueued(m) } },
                                          onDelete: { conversation.removeQueued(item.id) })
@@ -316,7 +318,12 @@ struct TranscriptView: View {
             .toast($toaster.text, duration: .seconds(1.6))
             .environment(toaster)
             .animation(.easeOut(duration: 0.2), value: offersJump)
-            .safeAreaInset(edge: .top, spacing: 0) { reconnectBanner }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    reconnectBanner
+                    CatchingUpStrip(step: conversation.catchingUp)
+                }
+            }
             .safeAreaInset(edge: .top, spacing: 0) { if conversation.isIncognito { incognitoBanner } }
             .safeAreaInset(edge: .top, spacing: 0) { if showSearch { searchBar(proxy) } }
             .onChange(of: showSearch) { _, on in
@@ -544,6 +551,47 @@ struct TranscriptView: View {
         case let .reconnecting(attempt): String(localized: "Reconnecting to the Hermes Dashboard… (try \(attempt))")
         case let .failed(reason): String(localized: "Hermes Dashboard: \(reason)")
         default: nil
+        }
+    }
+}
+
+/// "Catching up…" over the chat while it is read again from the host (GitHub issue 59), with the
+/// step it is at. Shown only once a step has taken a moment: a quick look each time Redde comes
+/// forward shouldn't flash a strip.
+private struct CatchingUpStrip: View {
+    let step: Conversation.CatchingUp?
+    @State private var shown: Conversation.CatchingUp?
+
+    var body: some View {
+        Group {
+            if let shown {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.mini)
+                    Text(Self.text(shown))
+                }
+                .chatFont(.caption, weight: .medium)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .frame(maxWidth: .infinity)
+                .background(.bar)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: shown)
+        .task(id: step) {
+            guard let step else { shown = nil; return }
+            if shown == nil { try? await Task.sleep(for: .milliseconds(450)) }
+            guard !Task.isCancelled else { return }
+            shown = step
+        }
+    }
+
+    static func text(_ step: Conversation.CatchingUp) -> String {
+        switch step {
+        case .checking: String(localized: "Catching up: checking for anything new…", comment: "Strip over a chat: asking the server whether the conversation moved on")
+        case .loading: String(localized: "Catching up: loading what happened while you were away…", comment: "Strip over a chat: reading the conversation again from the server")
+        case .rejoining: String(localized: "Catching up: looking for a reply still under way…", comment: "Strip over a chat: joining a turn the agent is still working on")
         }
     }
 }

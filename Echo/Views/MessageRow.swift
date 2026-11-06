@@ -89,6 +89,16 @@ struct MessageRow: View, Equatable {
     private var ownBody: some View {
         VStack(alignment: message.role == .user && !promptStyled ? .trailing : .leading, spacing: 8) {
             if message.role == .assistant, theme.promptPrefix == nil { speakerLine }
+            // The question it answers, over the person's answer (`AnsweredQuestions`).
+            if message.role == .user, let asked = message.answering, !asked.isEmpty {
+                Label(asked, systemImage: "questionmark.bubble")
+                    .chatFont(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                    .multilineTextAlignment(promptStyled ? .leading : .trailing)
+                    .padding(.leading, promptStyled ? 0 : 48)
+                    .accessibilityLabel(String(localized: "Answering: \(asked)", comment: "VoiceOver: the question a message of the person's answers"))
+            }
             if message.role == .assistant, !message.reasoning.isEmpty || !message.tools.isEmpty {
                 // What went into the reply, as a pair of folds in one style.
                 VStack(alignment: .leading, spacing: 0) {
@@ -210,7 +220,8 @@ struct MessageRow: View, Equatable {
         .animation(.easeOut(duration: 0.3), value: isLive)
         .frame(maxWidth: .infinity, alignment: message.role == .user && !promptStyled ? .trailing : .leading)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(message.role == .user ? (message.isSteer ? String(localized: "Your steer") : String(localized: "You")) : replySpeaker ?? settings.headerTitle)
+        .accessibilityLabel(message.role == .user ? (message.answering != nil ? String(localized: "Your answer", comment: "VoiceOver: a message of the person's that answers a question")
+                                                     : message.isSteer ? String(localized: "Your steer") : String(localized: "You")) : replySpeaker ?? settings.headerTitle)
         .sensoryFeedback(.success, trigger: copyCount)
         .sheet(item: $fullDetail) { SelectableTextSheet(text: $0.text, title: $0.title, monospaced: true) }
     }

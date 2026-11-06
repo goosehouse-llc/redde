@@ -82,11 +82,13 @@ final class Conversation {
     var canSteer: Bool { isStreaming && connection.hasLedger }
 
     /// Nudge the running turn without cancelling it. Shows in the transcript as a steer note.
-    func steer(_ text: String) {
+    /// `queued`: a message from the outbox sent this way (`sendQueuedNow`), which goes back to the
+    /// front of it if the turn won't take it.
+    func steer(_ text: String, queued: OutboxItem? = nil) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard canSteer, !trimmed.isEmpty else { return }
         userSendCount += 1
-        var note = Message(role: .user, text: trimmed)
+        var note = Message(id: queued?.id ?? UUID(), role: .user, text: trimmed)
         note.isSteer = true
         // Keep the streaming reply last so the live row stays live.
         let insertAt = messages.lastIndex(where: { $0.role == .assistant }) ?? messages.endIndex
@@ -95,20 +97,45 @@ final class Conversation {
         let stored = serverSessionID
         let runID = currentRunID
         let dashboard = dashboard
+        let noteID = note.id
         run { [weak self] in
-            let accepted: Bool
-            switch transport {
-            case .hermesServe:
-                guard let stored else { throw TransportError.malformed("no session to steer") }
-                accepted = try await dashboard.steer(stored: stored, text: trimmed)
-            case .hermesSessions:
-                guard let runID, let api = self?.ledgerAPI() else { throw TransportError.malformed("no run to steer") }
-                accepted = try await api.steer(runID: runID, text: trimmed)
-            case .chatCompletions:
-                accepted = false
+            var accepted = false
+            do {
+                switch transport {
+                case .hermesServe:
+                    guard let stored else { throw TransportError.malformed("no session to steer") }
+                    accepted = try await dashboard.steer(stored: stored, text: trimmed)
+                case .hermesSessions:
+                    guard let runID, let api = self?.ledgerAPI() else { throw TransportError.malformed("no run to steer") }
+                    accepted = try await api.steer(runID: runID, text: trimmed)
+                case .chatCompletions:
+                    accepted = false
+                }
+            } catch {
+                // A queued message isn't lost to a failed steer: it waits again.
+                if let queued { self?.putBack(queued, note: noteID) }
+                throw error
             }
-            self?.statusLine = accepted ? String(localized: "steer queued", comment: "Status under a reply: a message added to the turn is waiting") : String(localized: "steer rejected (turn already finishing)")
+            guard let self else { return }
+            if !accepted, let queued { self.putBack(queued, note: noteID) }
+            self.statusLine = accepted ? String(localized: "steer queued", comment: "Status under a reply: a message added to the turn is waiting")
+                : queued != nil ? String(localized: "The reply was finishing: your message goes after it.", comment: "Status under a reply: a queued message tapped Send Now couldn't join the reply")
+                : String(localized: "steer rejected (turn already finishing)")
         }
+    }
+
+    /// A queued message the turn wouldn't take: out of the transcript, back at the front of the line.
+    private func putBack(_ item: OutboxItem, note: UUID) {
+        messages.removeAll { $0.id == note }
+        outbox.insert(OutboxItem(message: item.message, state: .queued, queuedAt: item.queuedAt), at: 0)
+        persist()
+        if !isStreaming { retryOutbox() }
+    }
+
+    /// A queued message can join the reply under way instead of waiting for it: there is one to
+    /// join, and it is words alone (a steer carries no attachments).
+    func canSteer(_ item: OutboxItem) -> Bool {
+        canSteer && item.message.attachments.isEmpty && !item.message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// Bumped on every reader-initiated send (send, steer, send-now). The transcript can't
@@ -288,6 +315,8 @@ final class Conversation {
         userSendCount += 1
         var userMessage = Message(role: .user, text: trimmed)
         userMessage.attachments = attachments
+        userMessage.answering = pendingAnswering
+        pendingAnswering = nil
         // A reply is still streaming, or earlier messages are still waiting: this one goes behind them.
         if isStreaming || !outbox.isEmpty {
             let waiting = outbox.first?.state == .waitingForConnection
@@ -429,11 +458,7 @@ final class Conversation {
                     let provider = Self.liveProvider(for: model, saved: request.provider, in: await listedModels())
                     if provider != request.provider {
                         request.provider = provider
-                        if settings.newChatsUseServerModel {
-                            if unsentModel?.model == model { unsentModel?.provider = provider }
-                        } else if settings.gatewayModel == model {
-                            settings.gatewayProvider = provider ?? ""
-                        }
+                        if unsentModel?.model == model { unsentModel?.provider = provider }
                     }
                 }
                 // Ledger transport: the session row must exist before the first turn.
@@ -738,7 +763,11 @@ final class Conversation {
     func rejoinIfWaiting() async {
         guard connection == .hermesServe, !isStreaming, let stored = serverSessionID, let transport = makeTransport() else { return }
         let identity = identity
-        guard let joined = try? await transport.rejoin(stored: stored) else { return }
+        let was = catchingUp
+        catchingUp = .rejoining
+        let joined = try? await transport.rejoin(stored: stored)
+        catchingUp = was
+        guard let joined else { return }
         // Another conversation was opened, or a message sent, while the host answered: let go.
         guard self.identity == identity, !isStreaming, serverSessionID == stored else { return }
         follow(joined, stored: stored)
@@ -763,16 +792,33 @@ final class Conversation {
     func catchUp() async {
         await initialLoad?.value   // at launch the conversation may still be coming off the disk
         guard connection.hasLedger, !isStreaming, let stored = serverSessionID else { return }
+        defer { catchingUp = nil }
         if endsUnanswered {
+            catchingUp = .loading
             try? await open(serverSession: stored)
             return
         }
+        catchingUp = .checking
         guard let backend = SessionBackend.current(self),
               let row = try? await backend.listSessions().first(where: { $0.id == stored }),
               Self.serverIsAhead(lastActive: row.last_active, newest: messages.last(where: { !$0.isAside })?.createdAt),
               serverSessionID == stored, !isStreaming else { return }
+        catchingUp = .loading
         try? await open(serverSession: stored)
     }
+
+    /// What catching up with the host is doing, for the strip over the chat (GitHub issue 59: the
+    /// chat looked as if the agent hadn't worked while the person was away, until it had loaded).
+    enum CatchingUp: Equatable, Sendable {
+        /// Asking whether the host has moved on since this copy.
+        case checking
+        /// Reading the conversation again, with what came while the app was away.
+        case loading
+        /// Looking for a reply still under way, or a question waiting, to follow from here.
+        case rejoining
+    }
+
+    private(set) var catchingUp: CatchingUp?
 
     /// The session was last active after the newest message here, by more than the two clocks
     /// may differ.
@@ -974,7 +1020,20 @@ final class Conversation {
     /// The reader asked to send a held message now. Only the first in line can go; it takes
     /// everything behind it off pause too, so they follow in order.
     func sendQueuedNow(_ id: UUID) {
-        guard outbox.first?.id == id else { return }
+        guard let head = outbox.first, head.id == id else { return }
+        // A reply is under way (GitHub issue 60: Send Now did nothing then): the message joins it
+        // as a steer where it can, and otherwise says it goes after it.
+        if isStreaming {
+            if canSteer(head) {
+                outbox.removeFirst()
+                persist()
+                steer(head.message.text, queued: head)
+            } else {
+                for i in outbox.indices where outbox[i].state == .paused { outbox[i].state = .queued }
+                statusLine = String(localized: "It goes as soon as this reply ends.", comment: "Status under a reply: Send Now on a queued message that can't join the reply")
+            }
+            return
+        }
         userSendCount += 1
         for i in outbox.indices where outbox[i].state == .paused { outbox[i].state = .queued }
         outbox[0].queuedAt = .now   // a confirmed send isn't stale
@@ -1305,35 +1364,29 @@ final class Conversation {
         }
     }
 
-    /// Switches to a model the way the picker does: the setting changes, so new conversations
-    /// and every later fast-lane turn use it, and the open conversation is re-pinned. Sticky:
-    /// it stays until the picker or another switch moves it. Used by spoken prefixes. With New
-    /// Chats Use the Server's Model on, only this conversation moves (`pickOwnModel`).
+    /// Switches to a model the way the picker does: on the fast lane, the setting, for every later
+    /// turn; on Hermes, this conversation's own pick (`pickOwnModel`), and the open conversation
+    /// is re-pinned. Sticky: it stays until the picker or another switch moves it. Used by
+    /// spoken prefixes.
     func switchModel(_ model: String, provider: String?) async throws {
         if settings.transport == .chatCompletions {
             settings.fastLaneModel = model
             return
         }
         let provider = Self.liveProvider(for: model, saved: provider, in: await listedModels())
-        if settings.newChatsUseServerModel {
-            pickOwnModel(ConversationModels.Pick(model: model, provider: provider))
-        } else {
-            settings.gatewayModel = model
-            settings.gatewayProvider = provider ?? ""
-        }
+        pickOwnModel(ConversationModels.Pick(model: model, provider: provider))
         try await pinOpenSessionModel(model, provider: provider)
     }
 
-    /// The model this conversation's own pick names, with New Chats Use the Server's Model on:
-    /// kept with its session, or held until the first message makes one. Nil: none picked, so it
-    /// is on the server's model.
+    /// The model this conversation's own pick names: kept with its session, or held until the first message makes one. Nil: none picked, so it
+    /// is on its bot's model or the server's.
     var ownModel: ConversationModels.Pick? {
         guard let serverSessionID else { return unsentModel }
         return models.pick(connection: settings.connectionKey, session: serverSessionID)
     }
 
-    /// Picks this conversation's own model (nil: back to the server's), leaving Redde's pick and
-    /// so every other conversation as it is. The caller re-pins an open session.
+    /// Picks this conversation's own model (nil: back to its bot's or the server's), leaving every
+    /// other conversation as it is. The caller re-pins an open session.
     func pickOwnModel(_ pick: ConversationModels.Pick?) {
         if let serverSessionID {
             models.set(pick, connection: settings.connectionKey, session: serverSessionID)
@@ -1343,8 +1396,8 @@ final class Conversation {
     }
 
     /// The model this conversation's next Hermes turn asks for (`ConversationModels.turnModel`):
-    /// Redde's pick, or with the setting on this conversation's own; nil for the server's.
-    var turnModel: ConversationModels.Pick? { ConversationModels.turnModel(settings: settings, own: ownModel) }
+    /// its own pick; nil for its bot's or the server's.
+    var turnModel: ConversationModels.Pick? { ConversationModels.turnModel(own: ownModel) }
 
     /// The provider to send with `model`, checked against what the backend lists right now. A
     /// saved slug is only a memory of a past list: the host may have renamed or removed that
@@ -1588,6 +1641,13 @@ final class Conversation {
     func respond(clarify answers: [String: String]) {
         guard let pendingInterrupt, case let .clarify(request) = pendingInterrupt.interrupt else { return }
         clearInterrupt()
+        // The question and its answer in the chat, before the reply that asked (GitHub issue 57).
+        let rows = AnsweredQuestions.rows(for: request, answers: answers)
+        if !rows.isEmpty {
+            let at = messages.lastIndex(where: { $0.role == .assistant }) ?? messages.endIndex
+            messages.insert(contentsOf: rows, at: at)
+            persist()
+        }
         run { [dashboard] in
             if request.isBatch {
                 for (qid, answer) in answers {
@@ -1911,9 +1971,15 @@ final class Conversation {
 
     func answerCard(_ card: ReplyCard, shown: String, said: String) {
         CardAnswers.shared.record(card.key, said: said)
+        let question = AnsweredQuestions.question(of: card)
+        CardAnswers.shared.recordQuestion(card.key, question)
         pendingNote = CardNote.note(key: card.key, said: said)
+        pendingAnswering = question
         _ = send(shown)
     }
+
+    /// The question the next message answers, for over it (`answerCard`).
+    private var pendingAnswering: String?
 
     // MARK: - Asides (`BotAsides`)
 
@@ -2029,7 +2095,10 @@ final class Conversation {
     /// put back where they came.
     nonisolated static func keepingAsides(of here: [Message], in host: [Message]) -> [Message] {
         var merged = host
-        for aside in here where aside.isAside && aside.delivered?.noted != true && !merged.contains(where: { $0.id == aside.id }) {
+        // Asides the agent hasn't heard of, and questions it asked mid-turn with their answers
+        // (`AnsweredQuestions`): neither is a message on the host.
+        for aside in here where (aside.isAside && aside.delivered?.noted != true || aside.isSteer && aside.answering != nil)
+            && !merged.contains(where: { $0.id == aside.id }) {
             let at = merged.firstIndex { $0.createdAt > aside.createdAt && !$0.isAside } ?? merged.endIndex
             merged.insert(aside, at: at)
         }

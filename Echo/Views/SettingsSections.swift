@@ -373,29 +373,25 @@ struct ModelSettings: View {
     var body: some View {
         Section {
             NavigationLink {
-                ModelPickerView()
+                ModelPickerView(fromSettings: true)
             } label: {
                 LabeledContent("Model") {
                     Text(modelSummary).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
-            // The fast lane sends its model with every request and keeps no conversations on a
-            // server, so there is no server's model for a new one to start on.
-            if settings.transport != .chatCompletions {
-                Toggle("New Chats Use the Server's Model", isOn: $settings.newChatsUseServerModel)
-            }
         } header: {
             Text("Model")
         } footer: {
             if settings.transport != .chatCompletions {
-                Text("On, a new conversation starts on the model your server is set to (its config.yaml), and a model you pick changes only the conversation you pick it in.",
-                     comment: "Settings: footer under New Chats Use the Server's Model")
+                Text("Each conversation has its own model, picked from its menu. Without one, it runs on the model your server is set to, or a bot's chat on the bot's own.",
+                     comment: "Settings › Model: footer, now that each conversation has its own model")
             }
         }
     }
 
     private var modelSummary: String {
-        let model = settings.transport == .chatCompletions ? settings.fastLaneModel : (settings.startingModel.isEmpty ? String(localized: "Default", comment: "The model the gateway is set up with") : settings.startingModel)
+        let model = settings.transport == .chatCompletions ? settings.fastLaneModel
+            : String(localized: "Per Conversation", comment: "Settings › Model: each conversation has its own model")
         let effort = settings.reasoningEffort.isEmpty ? "" : " · \(Settings.effortLabel(settings.reasoningEffort))"
         return model + effort
     }

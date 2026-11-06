@@ -54,6 +54,78 @@ struct HermesLabQueuedTests {
                                       "queued: \(queued), transcript: \(shown)")
     }
 
+    /// GitHub issue 60: Send Now on the queued message while the reply streams adds it to that
+    /// reply as a steer (it had done nothing): out of the outbox, a steer note in the chat, and no
+    /// turn of its own after. (A steer landing as the reply ends gets a step of its own from
+    /// Hermes, a second reply bubble; that is the steer answered, not a new turn.)
+    @Test func sendNowDuringAReplyAddsTheMessageToIt() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-queued-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let conversation = Conversation(settings: settings,
+                                        store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-queued-\(UUID().uuidString)")),
+                                        transportOverride: HermesServeTransport(client: client), dashboard: client)
+        _ = conversation.send(Self.drip)
+        try await Task.sleep(for: .seconds(3))
+        _ = conversation.send(Self.second)
+        let head = try #require(conversation.outbox.first)
+        let joins = conversation.canSteer(head)
+        conversation.sendQueuedNow(head.id)
+        let leftQueue = conversation.outbox.isEmpty
+        for _ in 0 ..< 80 {
+            try await Task.sleep(for: .milliseconds(250))
+            if !conversation.isStreaming, conversation.outbox.isEmpty { break }
+        }
+        try await Task.sleep(for: .seconds(3))   // a turn of its own would have started by now
+        for m in conversation.messages { print("  ----    \(m.role) \(m.isSteer ? "(steer) " : "")\(m.text.debugDescription)") }
+        print("  ----  status: \(conversation.statusLine ?? "-"), error: \(conversation.lastError ?? "-")")
+        let steers = conversation.messages.filter(\.isSteer).map(\.text)
+        let replies = conversation.messages.filter { $0.role == .assistant }.count
+        let asked = conversation.messages.filter { $0.role == .user && !$0.isSteer }.map(\.text)
+        let ok = joins && leftQueue && steers == [Self.second] && asked == [Self.drip] && replies >= 1 && conversation.outbox.isEmpty
+        HermesLabApprovalTests.report(ok, "Dashboard: Send Now on a queued message during a reply steers it into that reply",
+                                      "joins: \(joins), left queue: \(leftQueue), steers: \(steers), asked: \(asked), replies: \(replies), outbox: \(conversation.outbox.count)")
+    }
+
+    /// GitHub issue 57: a question the agent asks mid-turn shows in the chat with its answer,
+    /// before the reply that asked, and stays when the chat is read again from the host (where
+    /// the answer is no message).
+    @Test func aQuestionAnsweredMidTurnShowsWithItsAnswer() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-queued-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let conversation = Conversation(settings: settings,
+                                        store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-queued-\(UUID().uuidString)")),
+                                        transportOverride: HermesServeTransport(client: client), dashboard: client)
+        _ = conversation.send("lab:question please")
+        var asked: ClarifyRequest?
+        for _ in 0 ..< 80 {
+            try await Task.sleep(for: .milliseconds(250))
+            if let waiting = conversation.pendingInterrupt, case let .clarify(request) = waiting.interrupt { asked = request; break }
+        }
+        let request = try #require(asked, "the lab's question never came")
+        let question = try #require(request.questions.first)
+        conversation.respond(clarify: [request.isBatch ? question.id : "": "release"])
+        for _ in 0 ..< 80 {
+            try await Task.sleep(for: .milliseconds(250))
+            if !conversation.isStreaming { break }
+        }
+        func row(_ messages: [Message]) -> (index: Int, reply: Int?)? {
+            guard let i = messages.firstIndex(where: { $0.answering == question.question && $0.text == "release" }) else { return nil }
+            return (i, messages.lastIndex { $0.role == .assistant })
+        }
+        let live = row(conversation.messages)
+        let stored = try #require(conversation.serverSessionID)
+        try await conversation.open(serverSession: stored)
+        let reread = row(conversation.messages)
+        for m in conversation.messages { print("  ----    \(m.role) \(m.answering.map { "[\($0)] " } ?? "")\(m.text.prefix(60).debugDescription)") }
+        let ok = live != nil && (live?.reply ?? -1) > (live?.index ?? 0) && reread != nil
+        HermesLabApprovalTests.report(ok, "Dashboard: a question answered mid-turn shows with its answer, before the reply, and stays on reading again",
+                                      "live: \(String(describing: live)), read again: \(String(describing: reread))")
+    }
+
     /// The same with the reply joined partway (the app was away while the agent worked, as with a
     /// slow local model), then the next message queued behind it.
     @Test func aMessageQueuedDuringAJoinedReplyGetsItsOwnReply() async throws {

@@ -215,6 +215,36 @@ struct ConversationLifecycleTests {
         #expect(c.messages.map(\.text) == ["first", "abc", "second", "second answer"])
     }
 
+    /// GitHub issue 60: Send Now on a queued message during a reply did nothing. Where the reply
+    /// can't take it (the fast lane can't steer), it stays first in line, says it goes after the
+    /// reply, and does.
+    @Test func sendNowDuringAReplyThatCantTakeItSaysItGoesAfter() async throws {
+        let t = SequencedTransport([.init(events: [.textDelta("a"), .textDelta("b"), .textDelta("c"), .done], error: nil),
+                                    .init(events: [.textDelta("second answer"), .done], error: nil)])
+        let c = makeConversation(t)
+        _ = c.send("first")
+        try await Task.sleep(for: .milliseconds(30))
+        _ = c.send("second")
+        let head = try #require(c.outbox.first)
+        #expect(!c.canSteer(head), "the fast lane has no turn to steer")
+        c.sendQueuedNow(head.id)
+        #expect(c.outbox.map(\.message.text) == ["second"] && c.statusLine != nil)
+        try await Task.sleep(for: .milliseconds(600))
+        #expect(c.outbox.isEmpty && c.messages.map(\.text) == ["first", "abc", "second", "second answer"])
+    }
+
+    /// GitHub issue 57: a card's answer carries the card's question, shown over it.
+    @Test func aCardsAnswerCarriesItsQuestion() async throws {
+        let c = makeConversation(SequencedTransport([.init(events: [.textDelta("ok"), .done], error: nil)]))
+        let card = ReplyCard.choice(.init(title: "Which hotel?", options: [.init(title: "The Ritz"), .init(title: "The Savoy")], multiple: false))
+        c.answerCard(card, shown: "The Savoy", said: "The Savoy")
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(c.messages.first?.text == "The Savoy" && c.messages.first?.answering == "Which hotel?")
+        #expect(CardAnswers.question(for: card.key) == "Which hotel?", "kept for when the chat is read back")
+        for await _ in c.send("and then?") {}
+        #expect(c.messages.last(where: { $0.role == .user })?.answering == nil, "only the answer carries it")
+    }
+
     @Test func stopPausesTheQueue() async throws {
         let t = SequencedTransport([.init(events: [.textDelta("x")], error: nil, hang: true),
                                     .init(events: [.textDelta("later"), .done], error: nil)])
