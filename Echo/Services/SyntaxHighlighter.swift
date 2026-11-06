@@ -224,8 +224,10 @@ nonisolated struct SyntaxHighlighter {
                 else { while j < chars.count, isIdent(chars[j]) { j += 1 } }
                 emit(String(chars[i..<j]), .attribute); i = j; continue
             }
-            // Numbers
-            if c.isNumber, i == 0 || !isIdent(chars[i - 1]) {
+            // Numbers: from an ASCII digit only. "一", "三", "½", "①" are numbers to Swift but not
+            // hex digits, so the scan below never moved and this loop ran until the app was killed
+            // (GitHub #39: a Chinese code block froze its conversation at every opening).
+            if c.isASCII, c.isNumber, i == 0 || !isIdent(chars[i - 1]) {
                 var j = i
                 while j < chars.count, chars[j].isHexDigit || chars[j] == "." || chars[j] == "x" || chars[j] == "_" { j += 1 }
                 emit(String(chars[i..<j]), .number); i = j; continue

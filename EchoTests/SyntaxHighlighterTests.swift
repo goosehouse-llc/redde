@@ -46,4 +46,11 @@ struct SyntaxHighlighterTests {
         #expect(t.contains { $0 == ("class", .attribute) })
         #expect(t.contains { $0 == ("\"a\"", .string) })
     }
+
+    /// GitHub #39: a numeral that isn't an ASCII digit after a space looped for ever.
+    @Test func numeralsThatAreNotDigitsEndTheScan() {
+        for (code, lang) in [("步骤 一：安装", "sh"), ("value: 三", "yaml"), ("x = ½", "python"), ("(①)", ""), ("count 二十 = 20", "swift")] {
+            #expect(tokens(code, lang).map(\.0).joined() == code)
+        }
+    }
 }
