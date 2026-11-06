@@ -192,6 +192,21 @@ struct AppearanceSettings: View {
                     }
                 }
             }
+            // Pinned, Inbox, Goals, Ideas and Briefings (2.4 tidy): which of them show.
+            NavigationLink { ChatListCardsSettingsView() } label: {
+                LabeledContent {
+                    let shown = ChatListCard.allCases.filter(\.isShown).count
+                    shown == ChatListCard.allCases.count ? Text("All", comment: "Settings › Top of the Chat List: every card shows")
+                        : shown == 0 ? Text("None", comment: "Settings › Top of the Chat List: no card shows")
+                        : Text("\(shown) of \(ChatListCard.allCases.count)", comment: "Settings › Top of the Chat List: how many cards show, e.g. 3 of 5")
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Top of the Chat List", comment: "Settings › Appearance: which cards show above the conversations")
+                        Text("Pinned cards, your Inbox, Goals, Ideas and Briefings.", comment: "Settings › Appearance: under Top of the Chat List")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
             Picker("Chat text size", selection: $settings.chatTextSize) {
                 ForEach(Array(Settings.chatTextSizes), id: \.self) { Text(ChatTextSize.label($0)).tag($0) }
             }
@@ -386,7 +401,7 @@ struct ModelSettings: View {
     }
 }
 
-/// Settings → Agent → Current Location (`CurrentLocation`, asked 2026-10-30): the switch, and
+/// Settings → Your Day → Location → Current Location (`CurrentLocation`, asked 2026-10-30): the switch, and
 /// under it, while on, what the agent hears, or that the device doesn't allow it, with the way to
 /// Settings. Turning it on asks for the permission the first time.
 struct CurrentLocationSection: View {
@@ -412,20 +427,20 @@ struct CurrentLocationSection: View {
         Group {
             if service.refused {
                 Button(String(localized: "Redde isn't allowed your location. Open Settings…",
-                              comment: "Settings → Agent → Current Location, when location is denied for Redde")) {
+                              comment: "Settings → Your Day → Location → Current Location, when location is denied for Redde")) {
                     if let url = URL(string: Self.settingsLink) { openURL(url) }
                 }
             } else if let kept = service.kept {
                 let place = kept.words ?? String(format: "%.3f, %.3f", kept.latitude, kept.longitude)
                 Label {
-                    Text("Your agent hears “near \(place)”.", comment: "Settings → Agent → Current Location: the place the agent is told, e.g. near Thornton Park, Orlando, FL")
+                    Text("Your agent hears “near \(place)”.", comment: "Settings → Your Day → Location → Current Location: the place the agent is told, e.g. near Thornton Park, Orlando, FL")
                 } icon: {
                     Image(systemName: "location.fill").foregroundStyle(.tint)
                 }
                 .foregroundStyle(.secondary)
             } else if service.allowed || service.finding {
                 Label {
-                    Text("Finding where you are…", comment: "Settings → Agent → Current Location, while the first fix is found")
+                    Text("Finding where you are…", comment: "Settings → Your Day → Location → Current Location, while the first fix is found")
                 } icon: {
                     ProgressView().controlSize(.small)
                 }
@@ -447,7 +462,7 @@ struct CurrentLocationSection: View {
     }
 }
 
-/// Settings → Agent → Leave-By Alerts (`LeaveBy`, asked 2026-10-30), and the Heads-Ups page under
+/// Settings → Your Day → Location → Leave-By Alerts (`LeaveBy`, asked 2026-10-30), and the Heads-Ups page under
 /// Getting There: the switch; under it, while on, the way of getting about (`showsWay`) and the
 /// next alert, or what the device doesn't allow, with the way to Settings. Turning it on asks for
 /// what it needs (`LeaveByAlerts.turned`).
@@ -585,54 +600,7 @@ struct AgentSettings<Details: View>: View {
             Text("When an agent needs a key, it asks here, not in a chat. What you paste goes sealed straight into that profile's .env on your Hermes.")
         }
 
-        Section {
-            // All of the day's at once (`AheadOfYourDay`, asked 2026-10-30): the one-step sheet.
-            AheadOfYourDayRow()
-            // What the agents will do on their own in the next day (2.4): Agent Activity's first tab.
-            NavigationLink { AgentActivityView(tab: .comingUp) } label: { Label("Coming Up", systemImage: "clock.arrow.circlepath") }
-            // Goals (2.4): every goal, and New Goal.
-            NavigationLink { GoalsListView() } label: {
-                Label { Text("Goals", comment: "The chat list's section of the person's goals, and its page in Settings") } icon: { Image(systemName: "flag.checkered") }
-            }
-            .disabled(!canReachGateway)
-            NavigationLink { DailyJobView(daily: MorningIdeas.job) } label: { Label("Morning Ideas", systemImage: "lightbulb") }
-                .disabled(!canReachGateway)
-            NavigationLink { DailyJobView(daily: HeadsUps.job) } label: { Label("Heads-Ups", systemImage: "bell.badge") }
-                .disabled(!canReachGateway)
-            NavigationLink { DailyJobView(daily: EveningWrapUp.job) } label: { Label("Evening Wrap-up", systemImage: "moon.stars") }
-                .disabled(!canReachGateway)
-            NavigationLink { DailyJobView(daily: WeekAhead.job) } label: { Label("Week Ahead", systemImage: "calendar") }
-                .disabled(!canReachGateway)
-            NavigationLink { DailyJobView(daily: RoutineSuggestions.job) } label: { Label("Routine Suggestions", systemImage: "repeat") }
-                .disabled(!canReachGateway)
-            NavigationLink { BriefingsList() } label: { Label("Briefings", systemImage: "doc.text") }
-            #if os(iOS)
-            NavigationLink { PlacesView() } label: { Label(String(localized: "places.title", defaultValue: "Places", comment: "Settings: places the iPhone notices arriving at or leaving"), systemImage: "mappin.and.ellipse") }
-            if HealthDays.available {
-                NavigationLink { HealthDaysView() } label: { Label("Health", systemImage: "heart.text.square") }
-            }
-            #endif
-            NavigationLink { BeforeActingView() } label: { Label("Before Acting", systemImage: "hand.raised") }
-            NavigationLink { TriggersView() } label: { Label("Triggers from Your iPhone", systemImage: "bolt.badge.clock") }
-            NavigationLink { AgentActivityView() } label: { Label("Agent Activity", systemImage: "list.bullet.rectangle") }
-        } header: {
-            Text("Your Day")
-        } footer: {
-            Text("Ideas each morning, cards you take or put away with a swipe; a heads-up before events; a wrap-up each evening. Heads-ups and wrap-ups stay in Briefings, at the top of your chats. Triggers start your agent's work from your iPhone: arriving home, a time of day, a Focus.")
-        }
-
-        Section {
-            NavigationLink { WatchesView() } label: { Label("Watches & Follow-ups", systemImage: "eye") }
-                .disabled(!canReachGateway)
-        } footer: {
-            Text("Things your agent keeps an eye on and tells you only when they change, and loose ends it brings back to you when they're due.")
-        }
-
-        Section {
-            NavigationLink { ApprovalHistoryView() } label: { Label("Approval History", systemImage: "checkmark.shield") }
-        } footer: {
-            Text("Every time your agent asked before running something, what it was, why it asked and what you answered. Kept on this device only.")
-        }
+        // The day's jobs, goals, watches, location and approvals: Settings → Your Day (`YourDaySettings`).
 
         Section {
             // Email (2.4): the accounts on the Hermes, the Inbox, the rules.
@@ -662,10 +630,6 @@ struct AgentSettings<Details: View>: View {
         } footer: {
             Text("The calendars your agent looks at when you ask what's on, and the events calendar cards show.")
         }
-
-        CurrentLocationSection()
-
-        LeaveByAlertsSection()
 
         Section {
             Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {
@@ -706,22 +670,14 @@ struct AgentSettings<Details: View>: View {
         .id("agentFiles")
 
         Section {
-            // What it remembers, entry by entry (2.4): the files below, readable.
+            // What it remembers, entry by entry (2.4); MEMORY.md and USER.md themselves are under it.
             NavigationLink { MemoryView() } label: { Label("What Your Agent Remembers", systemImage: "brain.head.profile") }
-            NavigationLink {
-                ContextFileEditorView(title: "MEMORY.md", file: "memories/MEMORY.md",
-                                      purpose: String(localized: "The agent's own notes: things it decided to remember across conversations. Injected into every system prompt."))
-            } label: { Label("MEMORY.md", systemImage: "brain") }
-            NavigationLink {
-                ContextFileEditorView(title: "USER.md", file: "memories/USER.md",
-                                      purpose: String(localized: "What the agent knows about you: preferences, facts, how you like answers. Also injected into every prompt."))
-            } label: { Label("USER.md", systemImage: "person.crop.circle") }
         } header: {
             Text("Memory")
         } footer: {
             canEditFiles
-                ? Text("The files the memory tool writes when you say “remember that…”. Edit them here to correct or prune what Redde carries into every conversation.")
-                : Text("The files the memory tool writes when you say “remember that…”. Like the context files, they need the Hermes Dashboard login.")
+                ? Text("What your agent carries into every conversation, from when you say “remember that…”. Correct or prune it here; the files themselves are at the bottom.", comment: "Settings › Agent › Memory: footer")
+                : Text("What your agent carries into every conversation, from when you say “remember that…”. Like the context files, it needs the Hermes Dashboard login.", comment: "Settings › Agent › Memory: footer without the Dashboard login")
         }
         .disabled(!canEditFiles)
 

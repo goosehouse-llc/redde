@@ -730,6 +730,11 @@ final class Settings: ServeEndpoint {
     var projectsInChatList: Bool {
         didSet { store(projectsInChatList, forKey: Keys.projectsInChatList) }
     }
+    /// The cards left off the top of the chat list (`ChatListCard` raw values; 2.4 tidy,
+    /// 2026-11-05): empty, all of them show.
+    var hiddenChatListCards: [String] {
+        didSet { store(hiddenChatListCards, forKey: Keys.hiddenChatListCards) }
+    }
     /// How long the app may be in the background before it locks again.
     var lockGraceSeconds: Double {
         didSet { store(lockGraceSeconds, forKey: Keys.lockGraceSeconds) }
@@ -959,6 +964,7 @@ final class Settings: ServeEndpoint {
         static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
         static let showBots = "showBots"
         static let projectsInChatList = "projectsInChatList"
+        static let hiddenChatListCards = "hiddenChatListCards"
         static let lockGraceSeconds = "lockGraceSeconds"
         static let displayName = "displayName"
         static let setupDone = "setupDone"
@@ -1073,6 +1079,7 @@ final class Settings: ServeEndpoint {
         siriDraftsInNewConversation = defaults.bool(forKey: Keys.siriDraftsInNewConversation)
         showBots = defaults.object(forKey: Keys.showBots) as? Bool ?? true
         projectsInChatList = defaults.object(forKey: Keys.projectsInChatList) as? Bool ?? true
+        hiddenChatListCards = defaults.stringArray(forKey: Keys.hiddenChatListCards) ?? []
         lockGraceSeconds = defaults.object(forKey: Keys.lockGraceSeconds) as? Double ?? 60
         displayName = defaults.string(forKey: Keys.displayName) ?? ""
         setupDone = defaults.bool(forKey: Keys.setupDone)
@@ -1136,7 +1143,7 @@ final class Settings: ServeEndpoint {
     /// push relay.
     static let syncedKeys: [String] = [
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
-        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList,
+        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.hiddenChatListCards,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.newChatsUseServerModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
@@ -1180,6 +1187,7 @@ final class Settings: ServeEndpoint {
         case Keys.carPlayBots: carPlayBots = pick(CarPlayBotLook.sticker)
         case Keys.showBots: showBots = flag(true)
         case Keys.projectsInChatList: projectsInChatList = flag(true)
+        case Keys.hiddenChatListCards: hiddenChatListCards = value as? [String] ?? []
         case Keys.fastLaneURL: fastLaneURL = text(Self.defaultFastLaneURL)
         case Keys.fastLaneModel: fastLaneModel = text(Self.defaultFastLaneModel)
         case Keys.newChatsUseServerModel: newChatsUseServerModel = flag()
@@ -1485,6 +1493,7 @@ final class Settings: ServeEndpoint {
         siriDraftsInNewConversation = false
         showBots = true
         projectsInChatList = true
+        hiddenChatListCards = []
         lockGraceSeconds = 60
         displayName = ""
         serveURL = Self.defaultServeURL

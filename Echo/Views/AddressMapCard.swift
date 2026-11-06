@@ -6,7 +6,7 @@ import SwiftUI
 /// under it, when the agent sent no map of its own. Found on the phone by the system's address
 /// detector; the map is a picture drawn once and kept (a live map for every such reply would cost
 /// the transcript its smoothness), opened in Apple Maps with a tap, with directions from where
-/// the person is by the way they get about (Settings → Agent → Heads-Ups → Getting There).
+/// the person is by the way they get about (Settings → Your Day → Heads-Ups → Getting There).
 @MainActor
 enum AddressMaps {
     nonisolated struct Found: Equatable, Hashable, Sendable {

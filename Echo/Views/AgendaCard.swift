@@ -50,7 +50,12 @@ struct AgendaCard: View {
                     DaySection(day: day, kicker: day.near, large: false)
                 }
             }
-            if let first = days.first, let calendar = Self.calendarURL(for: first) {
+            // Events from an email or a file, not the calendar: says where, and Calendar has nothing to open.
+            if let source = card.source {
+                Label(source, systemImage: "paperclip")
+                    .chatFont(.footnote)
+                    .foregroundStyle(.secondary)
+            } else if let first = days.first, let calendar = Self.calendarURL(for: first) {
                 Link(destination: calendar) {
                     Text("Open in Calendar")
                         .chatFont(.subheadline, weight: .semibold)

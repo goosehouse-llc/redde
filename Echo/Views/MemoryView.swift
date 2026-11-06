@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Settings › Agent › Memory, and Edit Bot › Memory ("memory you can see", 2.4): what the agent
+/// Settings › Agent › What Your Agent Remembers, and Edit Bot › Memory ("memory you can see", 2.4): what the agent
 /// remembers, entry by entry (`AgentMemory`), to read, correct, delete or add to, and an import from
 /// ChatGPT or Claude. Changes are kept on the page until Save, which writes only what changed.
 struct MemoryView: View {
@@ -43,6 +43,7 @@ struct MemoryView: View {
                 if let problem = model.problem {
                     Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange).font(.footnote) }
                 }
+                if profile == nil { files }
             }
         }
         .navigationTitle(owner.map { String(localized: "\($0)'s Memory") } ?? String(localized: "Memory"))
@@ -60,6 +61,25 @@ struct MemoryView: View {
         }
         .confirmationDialog("Discard your changes?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
             Button("Discard Changes", role: .destructive) { model.discard() }
+        }
+    }
+
+    /// The two files themselves, to edit as text (they were rows of their own on Settings → Agent,
+    /// beside this page, until the 2.4 tidy).
+    private var files: some View {
+        Section {
+            NavigationLink {
+                ContextFileEditorView(title: "MEMORY.md", file: "memories/MEMORY.md",
+                                      purpose: String(localized: "The agent's own notes: things it decided to remember across conversations. Injected into every system prompt."))
+            } label: { Label("MEMORY.md", systemImage: "brain") }
+            NavigationLink {
+                ContextFileEditorView(title: "USER.md", file: "memories/USER.md",
+                                      purpose: String(localized: "What the agent knows about you: preferences, facts, how you like answers. Also injected into every prompt."))
+            } label: { Label("USER.md", systemImage: "person.crop.circle") }
+        } header: {
+            Text("Edit the Files", comment: "Memory: the section with MEMORY.md and USER.md, to edit as text")
+        } footer: {
+            Text("The files the memory tool writes, as plain text.", comment: "Memory: under MEMORY.md and USER.md")
         }
     }
 

@@ -9,23 +9,24 @@ struct GoalsSection: View {
     let open: (GoalReport) -> Void
     let add: () -> Void
     @State private var inbox = GoalsInbox.shared
+    @AppStorage(ChatListCard.goals.foldKey) private var isOpen = true
 
     var body: some View {
         if !inbox.onList.isEmpty {
             Section {
-                VStack(spacing: 10) {
-                    ForEach(inbox.onList) { goal in
-                        Button { open(goal) } label: { GoalCard(goal: goal) }
-                            .buttonStyle(.plain)
+                if isOpen {
+                    VStack(spacing: 10) {
+                        ForEach(inbox.onList) { goal in
+                            Button { open(goal) } label: { GoalCard(goal: goal) }
+                                .buttonStyle(.plain)
+                        }
                     }
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
-                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
             } header: {
-                HStack {
-                    Text("Goals", comment: "The chat list's section of the person's goals, and its page in Settings")
-                    Spacer()
+                FoldingHeader(title: ChatListCard.goals.title, count: inbox.onList.count, isOpen: $isOpen) {
                     Button { add() } label: {
                         Label { Text("New Goal", comment: "Button: opens the sheet to set a new goal") } icon: { Image(systemName: "plus") }
                             .labelStyle(.iconOnly)

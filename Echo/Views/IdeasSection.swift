@@ -88,17 +88,20 @@ final class IdeasInbox {
 struct IdeasSection: View {
     let take: (AgentIdea) -> Void
     @State private var inbox = IdeasInbox.shared
+    @AppStorage(ChatListCard.ideas.foldKey) private var isOpen = true
 
     var body: some View {
         if !inbox.ideas.isEmpty {
             Section {
-                IdeaDeck(ideas: inbox.ideas, take: take, put: { idea in inbox.remove(idea) },
-                         later: { inbox.later($0, until: $1) }, said: { inbox.said($0, liked: $1) })
-                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
+                if isOpen {
+                    IdeaDeck(ideas: inbox.ideas, take: take, put: { idea in inbox.remove(idea) },
+                             later: { inbox.later($0, until: $1) }, said: { inbox.said($0, liked: $1) })
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
             } header: {
-                Text("Ideas for you")
+                FoldingHeader(title: ChatListCard.ideas.title, count: inbox.ideas.count, isOpen: $isOpen)
             }
         }
     }
@@ -131,10 +134,11 @@ private struct IdeaDeck: View {
             face: { idea, isTop, moved in cardFace(idea, isTop: isTop, moved: moved) },
             menu: { menu($0) },
             footer: {
+                // The same shape as the Briefings deck's: its swipe, then hold (2.4 tidy).
                 if ideas.count > 1 {
-                    Text("\(1) of \(ideas.count) · Hold a card for more").monospacedDigit()
+                    Text("\(1) of \(ideas.count) · Swipe right to do it, hold for more", comment: "Under the ideas deck: which card of how many, and its gestures").monospacedDigit()
                 } else {
-                    Text("Hold the card for more")
+                    Text("Swipe right to do it, hold for more", comment: "Under the ideas deck with one card: its gestures")
                 }
             })
         .sensoryFeedback(.success, trigger: noted)

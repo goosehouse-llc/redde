@@ -65,7 +65,7 @@ struct SettingsView: View {
             // Dev hooks: `-echo.settingsAnchor` opens Agent on the context and memory files,
             // `-echo.settingsAnchor icloud` scrolls to Sync with iCloud and `-echo.settingsAnchor
             // plugin` to the Redde Plugin row, `voice` opens Voice, `appearance` Appearance with its
-            // colors open (`fonts` with its Font list open), `location` Agent on Current Location, `leaveBy` on Leave-By Alerts; `-echo.expandAppIcons`
+            // colors open (`fonts` with its Font list open), `day` Your Day, `location` or `leaveBy` its Location page; `-echo.expandAppIcons`
             // opens Appearance on the app icons (screenshots).
             .task {
                 if DevHooks.expandAppIcons { path = [.appearance] }
@@ -79,6 +79,8 @@ struct SettingsView: View {
                     path = [.voice]
                 } else if ["appearance", "fonts"].contains(DevHooks.value("-echo.settingsAnchor") ?? "") {
                     path = [.appearance]
+                } else if ["day", "location", "leaveBy"].contains(DevHooks.value("-echo.settingsAnchor") ?? "") {
+                    path = [.day]
                 } else {
                     path = [.agent]
                 }
@@ -120,6 +122,7 @@ struct SettingsView: View {
         case .voice: VoiceSettings()
         case .notifications: NotificationSettings()
         case .siri: if #available(iOS 27.0, macOS 27.0, *) { SiriSettings() }
+        case .day: YourDaySettingsPage(access: access)
         case .agent:
             AgentSettingsPage(access: access, saved: $secretSaved)
         }
@@ -128,7 +131,7 @@ struct SettingsView: View {
 
 /// A page of Settings: what was a section of the one long form.
 enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
-    case appearance, writing, voice, notifications, siri, agent
+    case appearance, writing, voice, notifications, siri, day, agent
 
     var id: String { rawValue }
 
@@ -145,6 +148,7 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
         case .voice: String(localized: "Voice")
         case .notifications: String(localized: "Notifications")
         case .siri: String(localized: "Siri")
+        case .day: String(localized: "Your Day", comment: "Settings page: what the agent does on its own through the day: daily jobs, goals, watches, location")
         case .agent: String(localized: "Agent", comment: "Settings page: the agent's skills, tools and files")
         }
     }
@@ -156,6 +160,7 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
         case .voice: "waveform"
         case .notifications: "bell.badge"
         case .siri: "sparkles"
+        case .day: "sunrise"
         case .agent: "brain.head.profile"
         }
     }
@@ -193,6 +198,16 @@ private struct AgentSettingsPage: View {
     }
 }
 
+/// Settings → Your Day (2.4 tidy, 2026-11-05): what the agent does on its own, moved off Agent.
+private struct YourDaySettingsPage: View {
+    let access: SettingsAccess
+
+    var body: some View {
+        YourDaySettings(canReachGateway: access.hasStoredKey || access.hasServePassword)
+            .task { await access.check() }
+    }
+}
+
 private struct SettingsPageForm<Content: View>: View {
     let page: SettingsPage
     @ViewBuilder let content: () -> Content
@@ -204,13 +219,7 @@ private struct SettingsPageForm<Content: View>: View {
                 .task {
                     guard page == .agent, DevHooks.settingsAnchor else { return }
                     try? await Task.sleep(for: .milliseconds(500))
-                    if DevHooks.value("-echo.settingsAnchor") == "location" {
-                        proxy.scrollTo("currentLocation", anchor: .center)
-                    } else if DevHooks.value("-echo.settingsAnchor") == "leaveBy" {
-                        proxy.scrollTo("leaveByAlerts", anchor: .center)
-                    } else {
-                        proxy.scrollTo("agentFiles", anchor: .top)
-                    }
+                    proxy.scrollTo("agentFiles", anchor: .top)
                 }
                 #endif
         }

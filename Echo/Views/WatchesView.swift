@@ -151,7 +151,7 @@ struct WatchesSheet: View {
     }
 }
 
-/// Settings → Agent → Watches & Follow-ups.
+/// Settings → Your Day → Watches & Follow-ups.
 struct WatchesView: View {
     @State private var jobs: [CronJob] = []
     @State private var reports = WatchReport.all()

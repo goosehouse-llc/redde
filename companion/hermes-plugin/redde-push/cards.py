@@ -333,8 +333,9 @@ def _agenda(card: dict) -> tuple[str, str | None]:
     if not events and not days and not title:
         return "", ("an agenda needs 'events' (each a 'title' and a 'start' that begins with its date, 2026-10-30T09:30:00-04:00), "
                     "or the 'date' asked about when there is nothing on it")
+    source = card.get("source").strip() if isinstance(card.get("source"), str) else ""
     if not events:
-        said = f"agenda: {title or ', '.join(days[:3])}, nothing on the calendar"
+        said = f"agenda: {title or ', '.join(days[:3])}, nothing {'found' if source else 'on the calendar'}"
     else:
         events.sort()
         listed = ", ".join(f"{t} {s[11:16] if len(s) > 15 else '(all day)'}".strip() for s, t in events[:4])
@@ -843,7 +844,9 @@ _PUTS_ON_CALENDAR = re.compile(
 AGENDA_NOTE = (f"[Redde: asked what's on the calendar. Look the events up with the calendar tool first, then show them "
                f"with {TOOL} as an 'agenda' card ('events' with title, start and end as the tool gave them, location, "
                "calendar; 'date' for each day asked about, so a free day shows too), then answer in a line: don't list the "
-               "events again in words.")
+               "events again in words. If they're not on the calendar but you found them in an email, a file or a page, "
+               "put those on the card with 'source' saying where (e.g. From your email): never an empty day for one that "
+               "has them.]")
 LIST_NOTE = (f"[Redde: show the list as a 'checklist' card with {TOOL} (its 'items' grouped by 'section', a short 'note' "
              "beside an item where it helps, e.g. ×2, an 'emoji', and a 'verb' for an item done, e.g. packed), "
              "then answer in a line: don't also write the list out in words.]")

@@ -199,7 +199,7 @@ enum WeekAhead {
         heard: [.briefing], health: true)
 }
 
-/// Settings → Agent → Morning Ideas, Evening Wrap-up, Heads-Ups, Routine Suggestions, Week Ahead.
+/// Settings → Your Day → Morning Ideas, Evening Wrap-up, Heads-Ups, Routine Suggestions, Week Ahead.
 struct DailyJobView: View {
     let daily: DailyJob
     @State private var job: CronJob?

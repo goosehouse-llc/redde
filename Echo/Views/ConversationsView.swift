@@ -434,11 +434,13 @@ struct ConversationsList: View {
                 topRow
                 if query.isEmpty, !selecting {
                     waitingNotesSection
-                    PinnedCardsSection()
-                    InboxSection(open: { MailCenter.shared.showingInbox = true })
-                    GoalsSection(open: { shownGoal = $0 }, add: { addingGoal = true })
-                    IdeasSection(take: takeIdea)
-                    BriefingsSection()
+                    // The cards at the top, each as the person chose (`ChatListCard`; read for redraws).
+                    let _ = settings.hiddenChatListCards
+                    if ChatListCard.pinned.isShown { PinnedCardsSection() }
+                    if ChatListCard.inbox.isShown { InboxSection(open: { MailCenter.shared.showingInbox = true }) }
+                    if ChatListCard.goals.isShown { GoalsSection(open: { shownGoal = $0 }, add: { addingGoal = true }) }
+                    if ChatListCard.ideas.isShown { IdeasSection(take: takeIdea) }
+                    if ChatListCard.briefings.isShown { BriefingsSection() }
                 }
                 if usesLedger {
                     if query.isEmpty, !selecting {
@@ -1214,27 +1216,7 @@ struct ConversationsList: View {
 
     /// A header that folds its section away and opens it again; folded, it says how many rows wait.
     private func foldingHeader(_ title: String, count: Int, isOpen: Binding<Bool>) -> some View {
-        Button {
-            withAnimation(.easeOut(duration: 0.2)) { isOpen.wrappedValue.toggle() }
-        } label: {
-            HStack(spacing: 6) {
-                Text(title)
-                if !isOpen.wrappedValue {
-                    Text("\(count)").chatFont(.caption2, weight: .semibold).monospacedDigit()
-                        .padding(.horizontal, 6).padding(.vertical, 1)
-                        .background(.quaternary, in: .capsule)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .chatFont(.caption, weight: .semibold)
-                    .rotationEffect(.degrees(isOpen.wrappedValue ? 90 : 0))
-            }
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(isOpen.wrappedValue ? String(localized: "Hide \(title.localizedLowercase)", comment: "VoiceOver: folds a section of the list away, e.g. “Hide bots”")
-                                                : String(localized: "Show \(title.localizedLowercase)", comment: "VoiceOver: opens a folded section of the list, e.g. “Show bots”"))
-        .accessibilityAddTraits(.isHeader)
+        FoldingHeader(title: title, count: count, isOpen: isOpen)
     }
 
     /// Ids of the rows currently shown, for select-all and bulk actions: folded runs aren't, nor

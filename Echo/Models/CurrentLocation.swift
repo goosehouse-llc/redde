@@ -2,7 +2,7 @@ import CoreLocation
 import Foundation
 
 /// Where the person is, for the agent (asked 2026-10-30: "can we build in a Current Location toggle,
-/// so it knows where we are for maps"): Settings → Agent → Current Location, off until turned on,
+/// so it knows where we are for maps"): Settings → Your Day → Current Location, off until turned on,
 /// this device's own (not synced: the permission is the device's). On, the agent hears roughly
 /// where the person is, the neighbourhood and town in words and the coordinates to three places
 /// (about 100 m), never the fix itself, and only with a question about places, directions, maps

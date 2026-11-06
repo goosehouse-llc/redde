@@ -1,7 +1,7 @@
 #if os(iOS)
 import SwiftUI
 
-/// Settings → Agent → Health (`HealthDays`): off until turned on; what is read and what the agent
+/// Settings → Your Day → Health (`HealthDays`): off until turned on; what is read and what the agent
 /// gets, shown as the agent will read it.
 struct HealthDaysView: View {
     @State private var on = HealthSummary.isOn()

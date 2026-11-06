@@ -178,6 +178,9 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         var events: [Event]
         /// The days asked about ("2026-10-30"), shown even with nothing on them.
         var days: [String]
+        /// Where the events came from when it isn't the calendar ("From your email", asked
+        /// 2026-11-05: Dec 17's appointments were in an attachment and the card said nothing was on).
+        var source: String? = nil
 
         nonisolated struct Event: Codable, Equatable, Sendable, Hashable {
             var title: String
@@ -830,7 +833,8 @@ nonisolated enum ReplyCards {
         }
         let title = text(value["title"]).map { String($0.prefix(80)) }
         guard !events.isEmpty || !days.isEmpty || title != nil else { return nil }
-        return .init(title: title, events: events, days: Array(days.prefix(14)))
+        return .init(title: title, events: events, days: Array(days.prefix(14)),
+                     source: text(value["source"]).map { String($0.prefix(80)) })
     }
 
     // MARK: - Things to buy

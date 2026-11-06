@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.18.1 (2026-11-05)
+
+- Asked what's on the calendar, the agent is told that events it found in an email, a file or a
+  page go on the agenda card too, with a `source` saying where ("From your email"), never an empty
+  day for one that has them. Redde shows the source under the card (2026-11-05: Dec 17's
+  appointments were in an attachment, and the card said "Nothing on your calendar"). Only in that
+  turn's note: the card tool's description, in every prompt, is unchanged.
+
 ## 1.18.0 (2026-11-05)
 
 - A card whose list came as JSON text (a review's "fields" written as a string) is drawn: the

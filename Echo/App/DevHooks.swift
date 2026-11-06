@@ -114,12 +114,13 @@ import WidgetKit
 ///   address 90 minutes from now, one in a room), Leave-By Alerts on by car, one run, and the
 ///   alerts pending in the log (category leaveby). `-echo.leaveByClean` deletes the test events,
 ///   logs what is pending once the calendar's change has been followed, and turns the switch off.
-///   `-echo.settingsAnchor leaveBy` opens Settings → Agent on Leave-By Alerts; `-echo.screen headsUps`
+///   `-echo.screen location` opens Settings → Your Day → Location, with Leave-By Alerts; `-echo.screen headsUps`
 ///   the Heads-Ups page, where they are too.
 /// - `-echo.section planned|kanban|made` (`cron` still means Planned): open the conversation list on that tab.
 /// - `-echo.demoPlanned`: Planned (and Coming Up) with a made-up week, phone alarms and reminders included.
-/// - `-echo.settingsAnchor [icloud|plugin|location]`: scroll Settings to the context and memory files, to iCloud,
-///   to the Redde Plugin row, or (Agent) to Current Location.
+/// - `-echo.settingsAnchor [icloud|plugin|day]`: scroll Settings to the context and memory files, to iCloud,
+///   to the Redde Plugin row, or open Your Day. `-echo.screen dailyJobs|location|chatListCards` open the
+///   2.4 tidy's pages on their own.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
 /// - `-echo.draft "text"`: type a question into a focused composer (keyboard screenshots).
 ///   `-echo.clearDrafts` forgets every conversation's unsent draft first (UI tests).

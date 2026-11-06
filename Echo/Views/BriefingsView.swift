@@ -285,6 +285,7 @@ struct BriefingsSection: View {
     @State private var noted = 0
     /// Bumped when the email page is put away, so the deck reads again.
     @State private var mailDone = 0
+    @AppStorage(ChatListCard.briefings.foldKey) private var isOpen = true
     @Environment(\.theme) private var theme
 
     /// Today or Updates (2026-11-05), when there are both.
@@ -329,6 +330,7 @@ struct BriefingsSection: View {
         let earlier = inbox.earlierUnread
         if !deck.isEmpty {
             Section {
+                if isOpen {
                 if !all.today.isEmpty, !all.updates.isEmpty {
                     Picker("Briefings", selection: $showing) {
                         Text("Today · \(all.today.count)", comment: "The briefings deck's tab for the day's (heads-ups, daily brief, wrap-up), with how many").tag(Shelf.today)
@@ -377,8 +379,9 @@ struct BriefingsSection: View {
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+                }
             } header: {
-                Text("Briefings")
+                FoldingHeader(title: ChatListCard.briefings.title, count: all.today.count + all.updates.count, isOpen: $isOpen)
             }
         }
     }

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Ahead of Your Day's sheet (asked 2026-10-30): the proactive features ticked, each with its
 /// line, and one Turn On that sets them all up in order, each row saying how it went
-/// (`AheadOfYourDaySetup`). Opened once from What's New and from Settings → Agent → Your Day; the
+/// (`AheadOfYourDaySetup`). Opened once from What's New and from Settings → Your Day; the
 /// same on an iPhone, an iPad and the Mac.
 struct AheadOfYourDayView: View {
     typealias Part = AheadOfYourDay.Part
@@ -30,7 +30,7 @@ struct AheadOfYourDayView: View {
                             options(for: part)
                         }
                     } footer: {
-                        Text("Each has its own page in Settings → Agent, to change its time or turn it off.", comment: "Ahead of Your Day: under the list of features")
+                        Text("Each has its own page in Settings → Your Day, to change its time or turn it off.", comment: "Ahead of Your Day: under the list of features")
                     }
                     // Run On (2026-11-03): the quick jobs on a small model, offered once.
                     QuickJobsOffer()
@@ -45,7 +45,7 @@ struct AheadOfYourDayView: View {
                     } header: {
                         Text("More Watches", comment: "Ahead of Your Day: watch templates that open New Watch")
                     } footer: {
-                        Text("Your agent keeps an eye on a parcel or a product's price and tells you only when it changes. All of them are in Settings → Agent → Watches & Follow-ups.", comment: "Ahead of Your Day: under More Watches")
+                        Text("Your agent keeps an eye on a parcel or a product's price and tells you only when it changes. All of them are in Settings → Your Day → Watches & Follow-ups.", comment: "Ahead of Your Day: under More Watches")
                     }
                     // Email (2.4): the inbox sorted on the Hermes, and the email watches above can read it.
                     Section {
@@ -440,7 +440,7 @@ private struct StatusLine: View {
     }
 }
 
-/// Settings → Agent → Your Day's first row: On when what the person picked is on; the sheet.
+/// Settings → Your Day's first row: On when what the person picked is on; the sheet.
 struct AheadOfYourDayRow: View {
     @State private var on: Bool?
     @State private var open = false

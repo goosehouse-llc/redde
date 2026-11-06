@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Agent → Before Acting (`AgentAutonomy`): how much each agent may do unasked.
+/// Settings → Your Day → Before Acting (`AgentAutonomy`): how much each agent may do unasked.
 struct BeforeActingView: View {
     @State private var levels: [String: AgentAutonomy.Level] = [:]
     private let settings = Settings.shared

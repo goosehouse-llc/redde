@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Agent → Agent Activity (asked 2026-10-28, after Meta's Muse, which keeps a record of
+/// Settings → Your Day → Activity (asked 2026-10-28, after Meta's Muse, which keeps a record of
 /// what it did): what your agents did on their own, the last week of it, newest first. Hermes says
 /// what its scheduled jobs ran (every run, on the Dashboard; each job's last, over the Hermes API)
 /// and what the board's workers finished or got stuck on; this phone adds what reached it (ideas
@@ -111,7 +111,7 @@ nonisolated enum AgentActivity {
     }
 }
 
-/// Settings → Agent → Agent Activity: two tabs (2.4, his pick 2026-11-02), what the agents will
+/// Settings → Your Day → Activity: two tabs (2.4, his pick 2026-11-02), what the agents will
 /// do on their own (Coming Up, first) and what they did (Done). Each tab reads when first shown.
 struct AgentActivityView: View {
     enum Tab: String, Hashable { case comingUp, done }

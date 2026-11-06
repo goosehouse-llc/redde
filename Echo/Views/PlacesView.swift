@@ -3,7 +3,7 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
-/// Settings → Agent → Places (`Places`).
+/// Settings → Your Day → Location → Places (`Places`).
 struct PlacesView: View {
     @State private var places = Places.shared
     @State private var editing: WatchedPlace?

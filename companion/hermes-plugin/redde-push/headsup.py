@@ -2,7 +2,7 @@
 a few minutes before something on the person's calendar, a short note of what they need for it,
 where it is, who is coming, what to bring, the weather if it is outdoors, as a notification.
 
-Each morning a job the app sets up (Settings → Agent → Heads-Ups) has the agent look at the day
+Each morning a job the app sets up (Settings → Your Day → Heads-Ups) has the agent look at the day
 and call `heads_up_before` for each event worth one. That makes a Hermes cron job that runs once,
 the given minutes before the event starts, named `[redde-notify] Heads-up: <event>`: its answer is
 sent to the paired phones as any `[redde-notify]` job's is (`routines.py`) and kept there with the

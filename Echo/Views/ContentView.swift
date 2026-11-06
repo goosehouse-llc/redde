@@ -220,6 +220,9 @@ struct ContentView: View {
                 case "mailReader": MailReaderView(thread: MailDemo.readerThread)
                 case "inboxCard": ScrollView { ReplyCardsView(cards: MailDemo.cards).padding() }
                 case "mailBrief": List { InboxSection(open: {}); BriefingsSection() }   // the deck's email page
+                case "dailyJobs": DailyJobsView()   // with -echo.demoRunOn
+                case "location": LocationSettingsView()
+                case "chatListCards": ChatListCardsSettingsView()
                 default: TriggersView()
                 }
             }
@@ -1419,7 +1422,7 @@ struct ContentView: View {
         #if DEBUG
         case "botGallery": showBotGallery = true
         case "patch": showDemoPatch = true
-        case "activity", "comingUp", "pluginUpdates", "triggers", "calendars", "headsUps", "wrapUp", "watches", "goal", "goals", "phoneTools", "health", "usage", "memory", "memoryImport", "memoryManifest", "inbox", "mailSetup", "mailAdd", "mailRules", "mailLabels", "mailReader", "inboxCard", "mailBrief": demoDayPage = DevHooks.value("-echo.screen")
+        case "activity", "comingUp", "pluginUpdates", "triggers", "calendars", "headsUps", "wrapUp", "watches", "goal", "goals", "phoneTools", "health", "usage", "memory", "memoryImport", "memoryManifest", "inbox", "mailSetup", "mailAdd", "mailRules", "mailLabels", "mailReader", "inboxCard", "mailBrief", "dailyJobs", "location", "chatListCards": demoDayPage = DevHooks.value("-echo.screen")
         case "aheadOfYourDay": showAheadOfYourDay = true
         #endif
         default: break

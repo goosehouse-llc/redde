@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Agent → Approval History: every approval answered on this device, newest first,
+/// Settings → Your Day → Approval History: every approval answered on this device, newest first,
 /// by day: what the agent wanted to run, why it had to ask, who asked where, and the answer
 /// (`ApprovalHistory`).
 struct ApprovalHistoryView: View {

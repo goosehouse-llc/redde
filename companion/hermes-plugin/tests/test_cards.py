@@ -497,6 +497,17 @@ class AgendaTests(unittest.TestCase):
         self.assertEqual(shown, [])
         self.assertIn("needs 'events'", problems[0])
 
+    def test_an_agenda_from_an_email_says_where_it_came_from(self):
+        # 2026-11-05: Dec 17's appointments were in an attachment, and the card said nothing was on.
+        note = cards.turn_note(self.home, "What's my schedule on Dec 17?", platform="desktop") or ""
+        self.assertIn("'source'", note)
+        self.assertIn("never an empty day", note)
+        said = json.loads(cards.handle({"cards": [{"type": "agenda", "date": "2026-12-17", "source": "From your email",
+                                                    "events": [{"title": "Dentist", "start": "2026-12-17T09:00:00-05:00"}]}]}))
+        self.assertEqual(said["cards"][0]["source"], "From your email", "passed on to the phone, which shows it")
+        shown, _ = cards.check({"cards": [{"type": "agenda", "date": "2026-12-17", "source": "From your email", "events": []}]})
+        self.assertIn("nothing found", shown[0])
+
     def test_the_card_is_passed_on_as_given(self):
         said = json.loads(cards.handle({"cards": [{"type": "agenda", "date": "2026-10-30",
                                                     "events": [{"title": "Standup", "start": "2026-10-30T09:30:00-04:00"}]}]}))

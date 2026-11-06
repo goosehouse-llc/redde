@@ -5,17 +5,20 @@ import SwiftUI
 struct PinnedCardsSection: View {
     @State private var pins = PinnedCards.shared
     @State private var answers = CardAnswers.shared
+    @AppStorage(ChatListCard.pinned.foldKey) private var isOpen = true
 
     var body: some View {
         if !pins.pins.isEmpty {
             Section {
-                ForEach(pins.pins) { pin in
-                    Button { pins.open = pin } label: { row(pin) }
-                        .buttonStyle(.plain)
-                        .swipeActions { Button("Unpin", systemImage: "pin.slash", role: .destructive) { pins.unpin(pin.key) } }
+                if isOpen {
+                    ForEach(pins.pins) { pin in
+                        Button { pins.open = pin } label: { row(pin) }
+                            .buttonStyle(.plain)
+                            .swipeActions { Button("Unpin", systemImage: "pin.slash", role: .destructive) { pins.unpin(pin.key) } }
+                    }
                 }
             } header: {
-                Text("Pinned")
+                FoldingHeader(title: ChatListCard.pinned.title, count: pins.pins.count, isOpen: $isOpen)
             }
         }
     }

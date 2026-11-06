@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Agent → Triggers from Your iPhone (asked 2026-10-28, after Grok Bot): Shortcuts
+/// Settings → Your Day → Triggers from Your iPhone (asked 2026-10-28, after Grok Bot): Shortcuts
 /// automations run Redde's background actions on their own (arriving home, a time of day, a Focus,
 /// CarPlay), so the iPhone's own triggers start an agent's work. Nothing new runs here: the page
 /// says how, with recipes.
