@@ -238,4 +238,27 @@ struct HermesLabQueuedTests {
         HermesLabApprovalTests.report(ok, "Dashboard: a reply cut by a dropped connection is whole once it is back, and the next message gets its own",
                                       "queued: \(queued), transcript: \(shown)")
     }
+
+    /// GitHub #64: a skill typed as a slash command (`/lab-hello` with words after it) is the
+    /// turn: Hermes is sent the skill and answers, rather than its own line coming back as the reply.
+    @Test func aSkillCommandRunsAsTheTurn() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-skill-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let conversation = Conversation(settings: settings,
+                                        store: ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "lab-skill-\(UUID().uuidString)")),
+                                        transportOverride: HermesServeTransport(client: client), dashboard: client)
+        let typed = "/lab-hello in plain words please"
+        _ = conversation.send(typed)
+        for _ in 0 ..< 120 {
+            try await Task.sleep(for: .milliseconds(250))
+            if !conversation.isStreaming, !(conversation.messages.last { $0.role == .assistant }?.text.isEmpty ?? true) { break }
+        }
+        let reply = conversation.messages.last { $0.role == .assistant }?.text ?? ""
+        print("  ----  transcript:")
+        for m in conversation.messages { print("  ----    \(m.role) \(m.text.prefix(200).debugDescription)") }
+        let ok = !reply.isEmpty && reply != typed && !reply.hasPrefix("/lab-hello")
+        HermesLabApprovalTests.report(ok, "Dashboard: a skill typed as /command runs as the turn", "reply: \(reply.prefix(200))")
+    }
 }

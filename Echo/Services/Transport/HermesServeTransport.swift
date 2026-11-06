@@ -62,13 +62,20 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     }
                     #endif
 
-                    if request.userText.hasPrefix("/"), !request.fromPage {
-                        for event in try await Self.runSlash(request.userText, runtime: runtime, client: client) {
-                            continuation.yield(event)
+                    // A slash command: answered by Hermes at once, or (a skill, /plan, /queue…) a
+                    // prompt it gives back to be sent as this turn, whose reply streams as any other.
+                    var userText = request.userText
+                    if userText.hasPrefix("/"), !request.fromPage {
+                        switch try await Self.runSlash(userText, runtime: runtime, client: client) {
+                        case let .shown(events):
+                            for event in events { continuation.yield(event) }
+                            continuation.yield(.done)
+                            continuation.finish()
+                            return
+                        case let .submit(message, notice):
+                            if let notice { continuation.yield(.status(notice)) }
+                            userText = message
                         }
-                        continuation.yield(.done)
-                        continuation.finish()
-                        return
                     }
 
                     let finished = AsyncStream<Result<Void, Error>>.makeStream()
@@ -83,7 +90,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     // prompt.submit takes no instructions: a reply language rides on the message,
                     // and so does the car's request for a short answer.
                     // A bot's chat: who the message's @tags are, before the other notes.
-                    let text = Self.prompt(request.userText, naming: references) + (request.mentionNote ?? "")
+                    let text = Self.prompt(userText, naming: references) + (request.mentionNote ?? "")
                         + (request.replyLanguage.map(ReplyLanguage.note) ?? "") + (request.units.map(MeasureUnits.note) ?? "")
                         + (request.calendars.map(CalendarChoice.note) ?? "") + (request.location.map(CurrentLocation.note) ?? "")
                         + (request.brief ? CarBrevity.note : "")
@@ -439,9 +446,16 @@ nonisolated struct HermesServeTransport: HermesTransport {
         return levels.contains(words[1]) ? words[1] : nil
     }
 
+    /// What a slash command comes to: words to show, or a prompt to send as the turn.
+    enum SlashOutcome {
+        case shown([TurnEvent])
+        /// A skill's text, or the prompt behind /plan, /queue… (`notice`: a line Hermes adds).
+        case submit(String, notice: String?)
+    }
+
     /// `/help`, `/model`, custom user commands… `slash.exec` first; 4018 means "use dispatch".
     @MainActor
-    private static func runSlash(_ text: String, runtime: String, client: HermesServeClient) async throws -> [TurnEvent] {
+    static func runSlash(_ text: String, runtime: String, client: HermesServeClient) async throws -> SlashOutcome {
         let body = String(text.dropFirst())
         // `/reasoning <level>` goes to `config.set`: `slash.exec` mirrors /model, /fast and a few
         // others into the live agent but not /reasoning, so through it the level only changes
@@ -451,26 +465,36 @@ nonisolated struct HermesServeTransport: HermesTransport {
         if let level = reasoningLevel(inSlash: body) {
             try await client.setSessionReasoning(runtimeSession: runtime, effort: level)
             #if os(watchOS)
-            return [.textDelta(String(localized: "Reasoning effort for this conversation: \(level)"))]
+            return .shown([.textDelta(String(localized: "Reasoning effort for this conversation: \(level)"))])
             #else
             if Settings.reasoningEfforts.contains(where: { $0.value == level }) { Settings.shared.reasoningEffort = level }
-            return [.textDelta(String(localized: "Reasoning effort for this conversation: \(Settings.effortLabel(level))"))]
+            return .shown([.textDelta(String(localized: "Reasoning effort for this conversation: \(Settings.effortLabel(level))"))])
             #endif
         }
+        let parts = body.split(separator: " ", maxSplits: 1).map(String.init)
+        let result: JSONValue
         do {
-            let result = try await client.call("slash.exec", params: .object(["session_id": .string(runtime), "command": .string(body)]))
-            let output = result["output"]?.displayText ?? ""
-            return [.textDelta(output.isEmpty ? String(localized: "(no output)", comment: "Shown when a slash command printed nothing") : output)]
+            result = try await client.call("slash.exec", params: .object(["session_id": .string(runtime), "command": .string(body)]))
         } catch let error as HermesServeClient.RPCError where error.code == 4018 {
-            let parts = body.split(separator: " ", maxSplits: 1).map(String.init)
-            let result = try await client.call("command.dispatch", params: .object([
+            result = try await client.call("command.dispatch", params: .object([
                 "session_id": .string(runtime), "name": .string(parts.first ?? body), "arg": .string(parts.count > 1 ? parts[1] : "")]))
-            if result["type"]?.string == "send", let message = result["message"]?.string {
-                _ = try await client.call("prompt.submit", params: .object(["session_id": .string(runtime), "text": .string(message)]))
-                return [.status(String(localized: "running \(parts.first ?? body)…", comment: "Status under a reply: a slash command is running"))]
-            }
-            let shown = result["display"]?.string ?? result["output"]?.displayText ?? result["message"]?.string ?? String(localized: "(done)", comment: "Shown when a slash command finished and said nothing")
-            return [.textDelta(shown)]
         }
+        return outcome(of: result)
+    }
+
+    /// A `slash.exec` or `command.dispatch` answer (GitHub #64). Hermes's own client sends a
+    /// "skill" or "send" answer's `message` as the turn and shows `display` (the line as typed) as
+    /// the person's bubble, never as the reply: Redde showed it as the reply, and the skill never ran.
+    static func outcome(of result: JSONValue) -> SlashOutcome {
+        let type = result["type"]?.string
+        if type == "skill" || type == "send", let message = result["message"]?.string, !message.isEmpty {
+            return .submit(message, notice: result["notice"]?.string?.nilIfEmpty)
+        }
+        let output = result["output"]?.displayText ?? ""
+        if !output.isEmpty { return .shown([.textDelta(output)]) }
+        // `prefill` (/undo): the text given back, to send again if wanted.
+        if type == "prefill", let message = result["message"]?.string, !message.isEmpty { return .shown([.textDelta(message)]) }
+        if type == nil { return .shown([.textDelta(String(localized: "(no output)", comment: "Shown when a slash command printed nothing"))]) }
+        return .shown([.textDelta(result["message"]?.string ?? String(localized: "(done)", comment: "Shown when a slash command finished and said nothing"))])
     }
 }

@@ -108,6 +108,9 @@ up() {
   mkdir -p "$HERMES_HOME/skills/lab-secret"
   print -l -- "---" "name: lab-secret" "description: Lab only. A skill that needs a secret." "required_environment_variables:" \
     "  - name: LAB_SECRET_TOKEN" "    prompt: Enter the lab token" "---" "" "# Lab secret" "" "Say hello." > "$HERMES_HOME/skills/lab-secret/SKILL.md"
+  # A plain skill, for a slash command that becomes the turn (GitHub #64: /<skill> came back as its own words).
+  mkdir -p "$HERMES_HOME/skills/lab-hello"
+  print -l -- "---" "name: lab-hello" "description: Lab only. A plain skill." "---" "" "# Lab hello" "" "Say hello." > "$HERMES_HOME/skills/lab-hello/SKILL.md"
   # The push scenario: the plugin from this repository, the relay on this machine (the Worker's
   # own code under Node) and a stand-in for Apple that records what it is sent.
   if [[ "$scenario" == push ]]; then
