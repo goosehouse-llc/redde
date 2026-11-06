@@ -209,7 +209,10 @@ def request_note(ask_id: str, req: dict) -> dict:
 
 def _tell_phones(store, made: dict) -> int:
     sent = 0
-    for device in list(getattr(store, "devices", []) or []):
+    devices = list(getattr(store, "devices", []) or [])
+    if hasattr(store, "where_you_are"):
+        devices = store.where_you_are(devices, "key")
+    for device in devices:
         try:
             core.push(device, made, ttl=LIFETIME)
             sent += 1

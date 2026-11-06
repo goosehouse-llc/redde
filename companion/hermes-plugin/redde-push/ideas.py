@@ -130,6 +130,7 @@ def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: fl
         return {"error": "No iPhone is paired with Redde's notifications here, so the ideas can't reach them. Tell "
                          "them in words instead."}
     made = core.ideas_note(profile, name, kept, uuid.uuid4().hex[:16])
+    phones = store.where_you_are(phones, "ideas")
     sent = 0
     for device in phones:
         try:

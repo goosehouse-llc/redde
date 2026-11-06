@@ -58,6 +58,28 @@ On the Mac:
 - **A heads-up's leaving time**: the extension has no location of its own, so it works from where
   the app last saw the Mac (`LeaveTime.lastKnown`, twelve hours at most), or adds none.
 
+## Only where you are
+
+Every paired device used to get every note, so at the Mac the iPhone buzzed beside it. From plugin
+1.19.0 (asked 2026-11-05) a device in use says so, and while one is, notes go only to the devices
+in use (`WhereYouAre` in the app, `Store.where_you_are` in the plugin):
+
+- **When a device is in use.** An iPhone or iPad: Redde is on screen. A Mac: Redde is running and
+  someone is at the Mac (input within five minutes, the screen awake and unlocked); Redde needn't
+  be in front.
+- **How it says so.** Over the Dashboard, `command.dispatch redde-push "here <device ids>
+  <until>"`, the time in seconds since 1970, three minutes ahead, said again every minute while
+  in use, and `0` as it is left. The plugin keeps each device's time (`here.json`, ten minutes at
+  most) and answers `redde-push here <devices paired here>`.
+- **Who hears.** While any paired device is in use, a note goes to those of its devices that are
+  in use, possibly none (a chat muted on the Mac in use stays quiet; the iPhone doesn't take the
+  Mac's place). With none in use, every device, as before. The widget's data, Leave-By wakes, a
+  pairing's first note, `test` and calls go where they always went.
+- **Off.** Settings › Alerts When Redde Is Closed › Only Where You Are (on by default, synced):
+  off, a device says nothing, and what it said before runs out.
+- **Over the Hermes API alone** there is no way to the plugin's commands, so nothing is said and
+  every device hears.
+
 ## Leave-By Alerts' traffic re-check
 
 Leave-By Alerts (`LeaveBy`, `LeaveByAlerts`) are worked out on the device and set as local

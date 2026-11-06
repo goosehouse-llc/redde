@@ -465,6 +465,53 @@ class Store:
                 self._write("calls.json", data)
             return found
 
+    # Where the person is (asked 2026-11-05, "notifications where you are"): a device says it is
+    # in use, until when; while one is, notes go to those in use alone, not to every device. A
+    # device says so again every minute or so while it is used, and 0 as it is left, so one that
+    # stops saying (closed, asleep, out of reach) is forgotten within a few minutes.
+
+    #: Notes that go to the devices they name whatever is in use: the widget's data, a wake for
+    #: Leave-By's re-check, a pairing's first note, a test, a call.
+    EVERYWHERE = frozenset({"widget", "leave", "paired", "test", "call"})
+    #: The longest a device is taken to be in use without saying so again.
+    HERE_AT_MOST = 600
+
+    def set_here(self, device_ids: list[str], until: int, now: float | None = None) -> list[str]:
+        """These devices are in use until `until` (seconds since 1970; 0: no longer). Returns the
+        ones that are paired here."""
+        now = time.time() if now is None else now
+        with self._lock:
+            known = {d.get("id") for d in self.devices}
+            mine = [i for i in device_ids if i in known]
+            if not mine:
+                return []
+            data = {d: float(u) for d, u in (self._read("here.json").get("devices") or {}).items() if d in known and float(u) > now}
+            for device in mine:
+                if until > now:
+                    data[device] = min(float(until), now + self.HERE_AT_MOST)
+                else:
+                    data.pop(device, None)
+            self._write("here.json", {"devices": data})
+            return mine
+
+    def here(self, now: float | None = None) -> set[str]:
+        """The paired devices in use now."""
+        now = time.time() if now is None else now
+        with self._lock:
+            known = {d.get("id") for d in self.devices}
+            return {d for d, u in (self._read("here.json").get("devices") or {}).items() if d in known and float(u) > now}
+
+    def where_you_are(self, devices: list[dict], kind: str = "", now: float | None = None) -> list[dict]:
+        """`devices` less those not in use, while any paired device is in use: there, a note goes
+        only where the person is. None of them may be (a chat muted on the Mac in use): then none,
+        as the Mac would have stayed quiet. When no device is in use, all of them."""
+        if kind in self.EVERYWHERE:
+            return devices
+        here = self.here(now)
+        if not here:
+            return devices
+        return [d for d in devices if d.get("id") in here]
+
     def muted(self, device_id: str, key: str, now: float | None = None) -> bool:
         """Whether this phone has this chat muted now."""
         with self._lock:
@@ -824,7 +871,9 @@ class Pusher:
             return ""
 
     def send(self, devices: list[dict], made: dict, tries: int = 2) -> int:
-        """Sends now, to each phone in turn; forgets a phone the relay says is gone."""
+        """Sends now, to each phone in turn; forgets a phone the relay says is gone. Only to those
+        in use, while one is (`Store.where_you_are`)."""
+        devices = self.store.where_you_are(devices, made.get("k", ""))
         delivered = 0
         for device in devices:
             for attempt in range(1, tries + 1):

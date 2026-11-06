@@ -730,6 +730,11 @@ final class Settings: ServeEndpoint {
     var projectsInChatList: Bool {
         didSet { store(projectsInChatList, forKey: Keys.projectsInChatList) }
     }
+    /// Settings › Alerts When Redde Is Closed › Only Where You Are (`WhereYouAre`): a device in
+    /// use tells the paired Hermes so, and its notes go there alone. On unless turned off.
+    var notifyWhereYouAre: Bool {
+        didSet { store(notifyWhereYouAre, forKey: Keys.notifyWhereYouAre) }
+    }
     /// The cards left off the top of the chat list (`ChatListCard` raw values; 2.4 tidy,
     /// 2026-11-05): empty, all of them show.
     var hiddenChatListCards: [String] {
@@ -964,6 +969,7 @@ final class Settings: ServeEndpoint {
         static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
         static let showBots = "showBots"
         static let projectsInChatList = "projectsInChatList"
+        static let notifyWhereYouAre = "notifyWhereYouAre"
         static let hiddenChatListCards = "hiddenChatListCards"
         static let lockGraceSeconds = "lockGraceSeconds"
         static let displayName = "displayName"
@@ -1080,6 +1086,7 @@ final class Settings: ServeEndpoint {
         siriDraftsInNewConversation = defaults.bool(forKey: Keys.siriDraftsInNewConversation)
         showBots = defaults.object(forKey: Keys.showBots) as? Bool ?? true
         projectsInChatList = defaults.object(forKey: Keys.projectsInChatList) as? Bool ?? true
+        notifyWhereYouAre = defaults.object(forKey: Keys.notifyWhereYouAre) as? Bool ?? true
         hiddenChatListCards = defaults.stringArray(forKey: Keys.hiddenChatListCards) ?? []
         lockGraceSeconds = defaults.object(forKey: Keys.lockGraceSeconds) as? Double ?? 60
         displayName = defaults.string(forKey: Keys.displayName) ?? ""
@@ -1144,7 +1151,7 @@ final class Settings: ServeEndpoint {
     /// push relay.
     static let syncedKeys: [String] = [
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
-        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.hiddenChatListCards,
+        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
@@ -1188,6 +1195,7 @@ final class Settings: ServeEndpoint {
         case Keys.carPlayBots: carPlayBots = pick(CarPlayBotLook.sticker)
         case Keys.showBots: showBots = flag(true)
         case Keys.projectsInChatList: projectsInChatList = flag(true)
+        case Keys.notifyWhereYouAre: notifyWhereYouAre = flag(true)
         case Keys.hiddenChatListCards: hiddenChatListCards = value as? [String] ?? []
         case Keys.fastLaneURL: fastLaneURL = text(Self.defaultFastLaneURL)
         case Keys.fastLaneModel: fastLaneModel = text(Self.defaultFastLaneModel)
@@ -1494,6 +1502,7 @@ final class Settings: ServeEndpoint {
         siriDraftsInNewConversation = false
         showBots = true
         projectsInChatList = true
+        notifyWhereYouAre = true
         hiddenChatListCards = []
         lockGraceSeconds = 60
         displayName = ""

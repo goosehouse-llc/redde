@@ -12,7 +12,8 @@ The app itself uses the slash command `/redde-push`, over the Dashboard: `watch 
 <device,...>` says which conversations it has taken part in (only those notify, and every turn
 over the Hermes API), `rooms <device,...> <room,...>` which group chats it follows (`rooms.py`),
 `mutes <device,...> <key=until,...>` which chats it has muted, `calls <device,...> <profile,...>`
-which agents may ring it (`calls.py`), `leave set <device> <wakes>` when to wake it for Leave-By
+which agents may ring it (`calls.py`), `here <device,...> <until>` that it is in use until then
+(0: no longer), so notes go only where the person is while a device is (from 1.19.0), `leave set <device> <wakes>` when to wake it for Leave-By
 Alerts' traffic re-check (`leave.py`), and `offer` then `accept <offer> <key> <box>` pair it
 without a code. From 1.15.0, `skip <profile> <job> <when>` skips a repeating job's next run
 (`routines.py`), `goals list` lists every agent's goals and `goals end <profile> <goal>` ends
@@ -551,6 +552,9 @@ def _slash(raw_args: str = "") -> str:
             if key and until.isdigit():
                 mutes[key] = int(until)
         return f"redde-push muted {len(store.set_mutes([w for w in words[1].split(',') if w], mutes))}"
+    if len(words) == 3 and words[0] == "here" and words[2].isdigit():
+        # Where the person is: these devices are in use until then (0: no longer).
+        return f"redde-push here {len(store.set_here([w for w in words[1].split(',') if w], int(words[2])))}"
     if words == ["status"]:
         return f"redde-push status {len(store.devices)}"
     if words == ["offer"]:

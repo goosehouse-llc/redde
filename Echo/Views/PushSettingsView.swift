@@ -57,6 +57,16 @@ struct PushSettingsView: View {
                 Text(Self.pairedFooter)
             }
 
+            if !push.pairings.isEmpty {
+                Section {
+                    Toggle(String(localized: "Only Where You Are", comment: "Settings › Alerts When Redde Is Closed: notes go only to the device in use"),
+                           isOn: $settings.notifyWhereYouAre)
+                        .onChange(of: settings.notifyWhereYouAre) { WhereYouAre.shared.settingChanged() }
+                } footer: {
+                    Text(Self.whereYouAreFooter)
+                }
+            }
+
             Section {
                 if Self.canAskDashboard {
                     ReddePluginRow(plugin: plugin, serverName: serverName)
@@ -103,6 +113,17 @@ struct PushSettingsView: View {
         String(localized: "While Redde is running it notifies you itself. Once it is closed, a paired Hermes does: it tells this Mac when a reply is ready, when the agent waits for you (an approval, a question, a password) and when it couldn't reply, for conversations you have taken part in from here, and brings your agents' ideas, briefings and heads-ups. Pair each iPhone, iPad and Mac you want them on. Control-click a pairing to remove it.", comment: "Footer under the paired Hermes machines on the Mac, in Settings › Notifications › Notify when Redde is closed")
         #else
         String(localized: "While Redde is running it notifies you itself. Once it is closed, a paired Hermes does: it tells this device when a reply is ready, when the agent waits for you (an approval, a question, a password) and when it couldn't reply, for conversations you have taken part in from here, and brings your agents' ideas, briefings and heads-ups. Pair each iPhone, iPad and Mac you want them on. Swipe a pairing to remove it.", comment: "Footer under the paired Hermes machines on an iPhone or an iPad, in Settings › Notifications › Notify when Redde is closed")
+        #endif
+    }
+
+    /// Under Only Where You Are.
+    private static var whereYouAreFooter: String {
+        #if os(macOS)
+        String(localized: "While you're at this Mac with Redde running, your Hermes sends its notifications here and not to your iPhone or iPad. Away from the Mac for five minutes, or with it locked, they go to every device again. Needs the Dashboard sign-in and the Redde plugin 1.19 or later; each device you want this on says so for itself.",
+               comment: "Footer under Only Where You Are on the Mac")
+        #else
+        String(localized: "While Redde is open on this device, your Hermes sends its notifications here and not to your other devices; at the Mac with Redde running, they go to the Mac. With Redde closed everywhere, every device gets them. Needs the Dashboard sign-in and the Redde plugin 1.19 or later.",
+               comment: "Footer under Only Where You Are on an iPhone or an iPad")
         #endif
     }
 

@@ -1535,6 +1535,12 @@ struct HermesLabPushTests {
             let after = try await paired()
             ok = pairing.accepted == true && !pairing.host.isEmpty && after == before + 1 && vault.pairings == [pairing]
             detail = "accepted \(String(describing: pairing.accepted)), host \(pairing.host), the plugin had \(before) phones and has \(after)"
+            // Notifications where you are (plugin 1.19.0): the plugin takes this device's word
+            // that it is in use, and that it no longer is.
+            let here = try await plugin(try #require(service.hereCommand(until: .now.addingTimeInterval(180), server: "lab")))
+            let gone = try await plugin(try #require(service.hereCommand(until: nil, server: "lab")))
+            ok = ok && here == "redde-push here 1" && gone == "redde-push here 1"
+            detail += ", in use: \(here), no longer: \(gone)"
             await service.unpair(pairing)
         } catch PushError.noPlugin {
             print("LAB SKIP: this lab's Hermes has no push plugin (scripts/hermes-lab/lab.sh up <tag> push)")

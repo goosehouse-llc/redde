@@ -549,6 +549,30 @@ final class PushService {
         }
     }
 
+    /// The plugin command that says this device is in use until `until` (`WhereYouAre`), or no
+    /// longer (nil); nil when there is nothing to say it to.
+    func hereCommand(until: Date?, server: String) -> String? {
+        let ids = pairings.filter(\.isPaired).map(\.id)
+        guard !ids.isEmpty, !deaf.contains(server) else { return nil }
+        return "here \(ids.joined(separator: ",")) \(until.map { Int($0.timeIntervalSince1970) } ?? 0)"
+    }
+
+    /// Tells the plugin this device is in use, or no longer, over the Dashboard (a Hermes API
+    /// connection without its login has no way to the plugin's commands). True once it was said.
+    @discardableResult
+    func sayHere(until: Date?, client: HermesServeClient = .shared, server: String, settings: Settings = .shared) async -> Bool {
+        guard settings.serveBaseURL != nil, let command = hereCommand(until: until, server: server) else { return false }
+        do {
+            // An older plugin answers with its usage line: nothing is kept, and every device hears.
+            return try await Self.command(over: client)(command).hasPrefix("redde-push here")
+        } catch PushError.noPlugin {
+            deaf.insert(server)
+            return false
+        } catch {
+            return false
+        }
+    }
+
     /// A Dashboard turn is starting in `stored`: tell the plugin this phone takes part in that
     /// conversation, so what happens in it notifies it. Once per conversation per launch,
     /// off to the side of the turn. Over the Hermes API there is no such channel, and none is

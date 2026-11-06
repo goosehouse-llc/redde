@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.19.0 (2026-11-05)
+
+- Notifications where you are: a device Redde is in use on says so (`/redde-push here <devices>
+  <until>`), again every minute or so, and 0 as it is left. While one is, notes go only to the
+  devices in use: at the Mac, the iPhone stays quiet, and the other way round. With none in use,
+  every device gets them, as before. The widget's data, Leave-By wakes, calls and tests go where
+  they always went. A device that stops saying so is forgotten within ten minutes at most.
+
 ## 1.18.1 (2026-11-05)
 
 - Asked what's on the calendar, the agent is told that events it found in an email, a file or a

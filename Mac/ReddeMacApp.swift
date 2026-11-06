@@ -127,6 +127,8 @@ struct ReddeMacApp: App {
                 Notifier.shared.registerCategories()
                 // Paired with a Hermes: the push address asked for again, for the relay to keep.
                 PushService.shared.refreshAtLaunch()
+                // At the Mac, notes come here and not to the iPhone (`WhereYouAre`).
+                WhereYouAre.shared.cameForward()
                 EchoShortcuts.updateAppShortcutParameters()
             }
             .onChange(of: scenePhase) { _, phase in
