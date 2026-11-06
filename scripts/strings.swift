@@ -135,9 +135,10 @@ func found(at folder: URL) -> [String: (comment: String, english: String)]? {
 /// The format specifiers a string has, in order of argument: `%@`, `%lld`, `%1$@` taken as their
 /// type alone, so a translation may reorder them with positions.
 func specifiers(_ text: String) -> [String] {
-    let pattern = try! NSRegularExpression(pattern: #"%(?:(\d+)\$)?([-+ 0#]*\d*(?:\.\d+)?(?:ll|l|h)?[@dDuUxXoOfeEgGcCsSpaA])"#)
+    // `%%` first, so a literal percent ("%lld%% open") isn't read as a specifier ("% o").
+    let pattern = try! NSRegularExpression(pattern: #"%%|%(?:(\d+)\$)?([-+ 0#]*\d*(?:\.\d+)?(?:ll|l|h)?[@dDuUxXoOfeEgGcCsSpaA])"#)
     var positional: [Int: String] = [:], plain: [String] = []
-    for match in pattern.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+    for match in pattern.matches(in: text, range: NSRange(text.startIndex..., in: text)) where match.range(at: 2).location != NSNotFound {
         let type = String(text[Range(match.range(at: 2), in: text)!]).filter { "@dDuUxXoOfeEgGcCsSpaA".contains($0) || $0 == "l" }
         if let position = Range(match.range(at: 1), in: text).flatMap({ Int(text[$0]) }) { positional[position] = type } else { plain.append(type) }
     }

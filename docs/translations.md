@@ -121,6 +121,21 @@ Keys with a count whose English has a singular and a plural form (`import en` gi
 - `This runs hermes update, %lld changes, and restarts Hermes.` (one: `This runs hermes update, %lld change, and restarts Hermes.`)
 - `Your agent has %lld ideas for you` (one: `Your agent has %lld idea for you`)
 - `its %lld custom headers` (one: `its custom header`)
+- `%lld runs` (one: `%lld run`)
+- `%lld times` (one: `%lld time`)
+- `%lld tokens a second` (one: `%lld token a second`)
+- `%lld words · ` (one: `%lld word · `)
+- `About You would be %lld characters over Hermes's limit. …` (one: `… %lld character over …`)
+- `Add %lld Facts to About You` (one: `Add %lld Fact to About You`)
+- `Browsed %lld pages` (one: `Browsed %lld page`)
+- `Done: %lld emails looked at.` (one: `Done: %lld email looked at.`)
+- `Every %lld days` (one: `Every %lld day`)
+- `Every %lld minutes` (one: `Every %lld minute`)
+- `Hermes ends a turn once a tool has failed %lld times.` (one: `Hermes ends a turn once a tool has failed %lld time.`)
+- `Notes would be %lld characters over Hermes's limit. …` (one: `… %lld character over …`)
+- `Only the first %lld pages were attached, as pictures: …` (one: `Only the first page was attached, as a picture: …`)
+- `Reply time and speed count the %lld replies this device received as they were written.` (one: `… the %lld reply this device received as it was written.`)
+- `You said this %lld times` (one: `You said this %lld time`)
 
 Two counts sit in a sentence with other values and stay plural in English, since a whole-string
 plural can't say which number it follows: `%lld files · +%lld −%lld` and `This runs hermes update
@@ -155,6 +170,8 @@ everyday word), `negations` (said right before those, they flip them) and `sound
   "Fertig", it "Fine", nl "Gereed", ja "完了"…); "done" as a state (a ticked task, the Kanban
   column, the title after a plugin change) is the key `task.done`, its own word ("Erledigt",
   "Terminé"…). A text that says "Tap Done" names the button's word.
+- **Working**: an email account that works is the key `mail.working` ("Funktioniert", "正常"…);
+  the plain "Working" is the chat list's busy mark and says busy.
 - **Notes**: the chat quick capture files into is called "Notes" on the server
   (`Capture.title`), and every language calls it that.
 - **Siri**: a phrase belongs to one shortcut only; `strings.swift` can't tell, so check after an

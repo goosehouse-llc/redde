@@ -6369,6 +6369,113 @@
         }
       }
     },
+    "New email" : {
+      "comment" : "Notification: an email rule matched",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny e-mail"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue E-Mail"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correo nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvel e-mail"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova email"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新着メール"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 이메일"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny e-post"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe e-mail"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowy e-mail"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo e-mail"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новое письмо"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nytt mejl"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni e-posta"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новий лист"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新邮件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新郵件"
+          }
+        }
+      }
+    },
     "Notifications from your Hermes reach this device." : {
       "comment" : "Notification: hermes redde-push test, when it says nothing of its own",
       "localizations" : {
@@ -8348,13 +8455,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Répondre"
+            "value" : "À répondre"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rispondi"
+            "value" : "Da rispondere"
           }
         },
         "ja" : {
@@ -8384,7 +8491,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odpowiedz"
+            "value" : "Do odpowiedzi"
           }
         },
         "pt-BR" : {
@@ -8396,19 +8503,19 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ответить"
+            "value" : "К ответу"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Svara"
+            "value" : "Svar"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yanıtla"
+            "value" : "Yanıt"
           }
         },
         "uk" : {

@@ -2118,7 +2118,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ 토큰"
+            "value" : "토큰 %@개"
           }
         },
         "nb" : {
@@ -2136,7 +2136,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ tokenów"
+            "value" : "Tokeny: %@"
           }
         },
         "pt-BR" : {
@@ -2172,7 +2172,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ token"
+            "value" : "%@ Token"
           }
         },
         "zh-Hant" : {
@@ -12397,6 +12397,113 @@
         }
       }
     },
+    "New email" : {
+      "comment" : "Notification: an email rule matched",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny e-mail"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue E-Mail"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correo nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvel e-mail"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova email"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新着メール"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 이메일"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny e-post"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe e-mail"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowy e-mail"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo e-mail"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новое письмо"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nytt mejl"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni e-posta"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новий лист"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新邮件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新郵件"
+          }
+        }
+      }
+    },
     "No reading yet" : {
       "localizations" : {
         "da" : {
@@ -13074,7 +13181,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "확인할 항목 없음"
+            "value" : "확인할 메일 없음"
           }
         },
         "nb" : {
@@ -13086,7 +13193,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Niets wacht op jou"
+            "value" : "Niets heeft je nodig"
           }
         },
         "pl" : {
@@ -13122,19 +13229,19 @@
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ніщо не потребує вашої уваги"
+            "value" : "Нічого не потребує вас"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "没有需要你处理的事项"
+            "value" : "没有需要你处理的"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有需要你處理的事項"
+            "value" : "沒有需要你處理的事"
           }
         }
       }
@@ -16286,13 +16393,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Répondre"
+            "value" : "À répondre"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rispondi"
+            "value" : "Da rispondere"
           }
         },
         "ja" : {
@@ -16322,7 +16429,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odpowiedz"
+            "value" : "Do odpowiedzi"
           }
         },
         "pt-BR" : {
@@ -16334,19 +16441,19 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ответить"
+            "value" : "К ответу"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Svara"
+            "value" : "Svar"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yanıtla"
+            "value" : "Yanıt"
           }
         },
         "uk" : {
