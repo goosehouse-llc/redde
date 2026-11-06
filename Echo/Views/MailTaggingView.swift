@@ -173,7 +173,7 @@ nonisolated enum TagRulePresets {
 /// A tagging rule's second line: "Label Paperless · 4 in 30 days".
 nonisolated enum TagRuleText {
     static func line(_ rule: MailRule) -> String {
-        var parts = [String(localized: "Label \(rule.arg ?? "")", comment: "An email tagging rule: the label it adds")]
+        var parts = [String(localized: "Label \(rule.labels.joined(separator: ", "))", comment: "An email tagging rule: the labels it adds")]
         if rule.name != nil { parts.insert(rule.conditions, at: 0) }
         if rule.archive { parts.append(String(localized: "and archive", comment: "An email tagging rule that also archives")) }
         if rule.matches > 0 { parts.append(String(localized: "\(rule.matches) in 30 days", comment: "An email tagging rule: how many emails it labelled lately")) }
@@ -188,8 +188,8 @@ nonisolated enum TagRuleText {
     }
 }
 
-/// Making or changing a tagging rule: its conditions (all of them or any one), the label (one the
-/// account has, or a new one), and whether it also archives (off unless set).
+/// Making or changing a tagging rule: its conditions (all of them or any one), its labels (ones the
+/// account has, or new ones; up to five, asked 11-06), and whether it also archives (off unless set).
 struct TagRuleEditor: View {
     let accountID: String
     var rule: MailRule?
@@ -216,6 +216,8 @@ struct TagRuleEditor: View {
     @State private var receipt = false
     @State private var days = 30
     @State private var label = ""
+    /// Labels after the first.
+    @State private var more: [ExtraLabel] = []
     @State private var action: MailRule.Action = .label
     @State private var archive = false
     @State private var enabled = true
@@ -267,21 +269,23 @@ struct TagRuleEditor: View {
                     } label: { Text("Do", comment: "Email rule: what it does") }
                 }
                 if action == .label { Section {
-                    if !labels.isEmpty {
-                        Picker(selection: $label) {
-                            Text("New Label…", comment: "Email tagging rule: type a new label").tag("")
-                            ForEach(labels, id: \.self) { Text($0).tag($0) }
-                        } label: { Text("Label", comment: "Email tagging rule: the label") }
+                    LabelChoice(name: $label, labels: labels) { Text("Label", comment: "Email tagging rule: the label") }
+                    ForEach($more) { $extra in
+                        LabelChoice(name: $extra.name, labels: labels, remove: { more.removeAll { $0.id == extra.id } }) {
+                            Text("Another Label", comment: "Email tagging rule: a second or later label it adds")
+                        }
                     }
-                    if labels.isEmpty || !labels.contains(label) {
-                        TextField(String(localized: "Label name", comment: "Email tagging rule: a new label"), text: $label)
+                    if more.count < 4 {
+                        Button { more.append(ExtraLabel()) } label: {
+                            Label { Text("Add Another Label", comment: "Email tagging rule: add a second label") } icon: { Image(systemName: "plus.circle") }
+                        }
                     }
                     Toggle(isOn: $archive) { Text("Also Archive", comment: "Email tagging rule: take it out of the inbox too") }
                 } header: {
                     Text("Then", comment: "Email tagging rule: what it does")
                 } footer: {
-                    Text(archive ? String(localized: "Matching emails are labelled and leave the inbox (they stay in All Mail). Undo puts them back.", comment: "Email tagging rule: also archive")
-                         : String(localized: "Matching emails are labelled and stay in your inbox.", comment: "Email tagging rule: label only"))
+                    Text(archive ? String(localized: "Matching emails get every label here and leave the inbox (they stay in All Mail). Undo puts them back.", comment: "Email tagging rule: also archive")
+                         : String(localized: "Matching emails get every label here and stay in your inbox.", comment: "Email tagging rule: label only"))
                 } }
                 Section { Toggle(isOn: $enabled) { Text("On", comment: "Email tagging rule: turned on") } }
                 if let problem { Section { Text(problem).font(.footnote).foregroundStyle(.red) } }
@@ -322,7 +326,7 @@ struct TagRuleEditor: View {
             from = rule.from ?? ""; domain = rule.domain ?? ""; to = rule.to ?? ""; cc = rule.cc ?? ""
             subject = rule.subject ?? ""; text = rule.body ?? ""; attachment = rule.attachment
             bucket = rule.bucket.flatMap(MailBucket.init(rawValue:)); receipt = rule.receipt == true
-            days = rule.newerThanDays ?? 30; label = rule.arg ?? ""; archive = rule.archive; enabled = rule.enabled
+            days = rule.newerThanDays ?? 30; label = rule.arg ?? ""; more = rule.also.map { ExtraLabel(name: $0) }; archive = rule.archive; enabled = rule.enabled
             action = [.label, .archive, .notify].contains(rule.action) ? rule.action : .label
         }
         if rule == nil {
@@ -343,7 +347,12 @@ struct TagRuleEditor: View {
         made.to = t[2].nilIfEmpty; made.cc = t[3].nilIfEmpty; made.subject = t[4].nilIfEmpty; made.body = t[5].nilIfEmpty
         made.attachment = attachment; made.bucket = bucket?.rawValue; made.receipt = receipt ? true : nil
         made.newerThanDays = days == 30 ? nil : days
-        made.arg = action == .label ? label.trimmingCharacters(in: .whitespaces) : nil
+        var names: [String] = []
+        for name in ([label] + more.map(\.name)).map({ $0.trimmingCharacters(in: .whitespaces) }) where !name.isEmpty && !names.contains(name) {
+            names.append(name)
+        }
+        made.arg = action == .label ? names.first : nil
+        made.also = action == .label ? Array(names.dropFirst()) : []
         made.archive = action == .label && archive; made.enabled = enabled
         made.notify = action == .notify
         made.account = made.builtin ? made.account : accountID
@@ -356,6 +365,47 @@ struct TagRuleEditor: View {
     }
 }
 
+/// A label after a rule's first, as the editor keeps it (named for `ForEach`).
+private struct ExtraLabel: Identifiable {
+    let id = UUID()
+    var name = ""
+}
+
+/// One of a rule's labels: picked from the account's, or typed new. An extra one can be taken off.
+private struct LabelChoice<Title: View>: View {
+    @Binding var name: String
+    let labels: [String]
+    var remove: (() -> Void)?
+    @ViewBuilder var title: Title
+
+    var body: some View {
+        if !labels.isEmpty {
+            HStack {
+                removeButton
+                Picker(selection: $name) {
+                    Text("New Label…", comment: "Email tagging rule: type a new label").tag("")
+                    ForEach(labels, id: \.self) { Text($0).tag($0) }
+                } label: { title }
+            }
+        }
+        if labels.isEmpty || !labels.contains(name) {
+            HStack {
+                if labels.isEmpty { removeButton }
+                TextField(String(localized: "Label name", comment: "Email tagging rule: a new label"), text: $name)
+            }
+        }
+    }
+
+    @ViewBuilder private var removeButton: some View {
+        if let remove {
+            Button(action: remove) {
+                Image(systemName: "minus.circle.fill").foregroundStyle(.red)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(Text("Remove Label", comment: "Email tagging rule: take this label off the rule"))
+        }
+    }
+}
 
 /// Suggested rules for one account, every provider (11-03): the switch and the open suggestions,
 /// each with Accept, Edit… and Dismiss. Nothing runs a suggestion until it's accepted. Where there

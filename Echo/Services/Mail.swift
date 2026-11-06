@@ -312,6 +312,8 @@ nonisolated struct MailRule: Codable, Identifiable, Equatable, Hashable, Sendabl
     var receipt: Bool?
     var action: Action
     var arg: String?
+    /// A tagging rule's other labels, after `arg` (several labels, asked 11-06; plugin 1.19.1).
+    var also: [String] = []
     var notify: Bool
     var made: Date?
     // Tagging rules (Gmail labels, 11-03); kept for every rule so saving never drops them.
@@ -350,6 +352,7 @@ nonisolated struct MailRule: Codable, Identifiable, Equatable, Hashable, Sendabl
         newerThanDays = when?["newer_than_days"]?.int
         self.action = action
         arg = v["arg"]?.string?.nilIfEmpty
+        also = v["also"]?.array?.compactMap { $0.string?.nilIfEmpty } ?? []
         notify = v["notify"]?.bool ?? (action == .notify)
         made = v["made"]?.number.map { Date(timeIntervalSince1970: $0) }
         matchAny = v["match"]?.string == "any"
@@ -363,6 +366,13 @@ nonisolated struct MailRule: Codable, Identifiable, Equatable, Hashable, Sendabl
 
     /// A tagging rule: Gmail labels what matches, with "also archive" off unless set.
     var isTagging: Bool { action == .label }
+
+    /// Every label a tagging rule adds, the first one first.
+    var labels: [String] {
+        var names: [String] = []
+        for name in [arg].compactMap({ $0 }) + (isTagging ? also : []) where !names.contains(name) { names.append(name) }
+        return names
+    }
 
     init(id: String, from: String? = nil, subject: String? = nil, action: Action, arg: String? = nil, made: Date? = .now) {
         self.id = id; self.from = from; self.subject = subject; self.action = action; self.arg = arg
@@ -385,6 +395,7 @@ nonisolated struct MailRule: Codable, Identifiable, Equatable, Hashable, Sendabl
         var out: [String: Any] = ["id": id, "when": when, "do": action.rawValue, "notify": notify,
                                   "match": matchAny ? "any" : "all", "enabled": enabled, "archive": isTagging && archive]
         if let arg { out["arg"] = arg }
+        if isTagging, !also.isEmpty { out["also"] = also }
         if let made { out["made"] = Int(made.timeIntervalSince1970) }
         if let account { out["account"] = account }
         if let name { out["name"] = name }
@@ -410,7 +421,7 @@ nonisolated struct MailRule: Codable, Identifiable, Equatable, Hashable, Sendabl
 
     /// The rule in a line: "From receipts@shop.example: archive it".
     var described: String {
-        var what = action.takesName ? "\(action.label): \(arg ?? "")" : action.label
+        var what = action.takesName ? "\(action.label): \(labels.joined(separator: ", "))" : action.label
         if isTagging && archive { what += String(localized: ", and archive", comment: "An email tagging rule that also archives") }
         return "\(name ?? conditions): \(what)"
     }
@@ -567,6 +578,8 @@ nonisolated enum MailError: LocalizedError, Equatable {
     case noPlugin
     case server(code: String, message: String)
     case malformed
+    /// The rule was saved with its first label only: the plugin is older than 1.19.1.
+    case oneLabel
 
     var errorDescription: String? {
         switch self {
@@ -578,6 +591,8 @@ nonisolated enum MailError: LocalizedError, Equatable {
             message.isEmpty ? String(localized: "Your Hermes said no (\(code)).") : message
         case .malformed:
             String(localized: "Your Hermes answered in a way Redde can't read. Update the Redde plugin there.")
+        case .oneLabel:
+            String(localized: "Saved with its first label only: more than one label needs the Redde plugin 1.19.1 or later. Update it in Settings › Redde Plugin, then add the others again.", comment: "Email tagging rule: the plugin is too old for several labels")
         }
     }
 
@@ -1161,6 +1176,7 @@ final class MailCenter {
         _ = try await ask(words)
         await loadRules()
         await refreshStatus()
+        if let edited, !edited.also.isEmpty, rules.first(where: { $0.id == "s" + suggestion.id })?.also.isEmpty == true { throw MailError.oneLabel }
     }
 
     func dismiss(_ suggestion: MailSuggestion, account id: String) async throws {
@@ -1173,6 +1189,8 @@ final class MailCenter {
         var list = rules
         if let i = list.firstIndex(where: { $0.id == rule.id }) { list[i] = rule } else { list.append(rule) }
         try await save(rules: list)
+        // A plugin before 1.19.1 keeps a rule's first label only.
+        if rule.also.count > 0, rules.first(where: { $0.id == rule.id })?.also.isEmpty == true { throw MailError.oneLabel }
     }
 
     func setTriage(_ on: Bool) async {

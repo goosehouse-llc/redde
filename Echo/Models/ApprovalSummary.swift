@@ -84,9 +84,34 @@ nonisolated struct ApprovalSummary: Equatable, Sendable {
         if rest.hasPrefix("put Claude's change in place") {
             return change(rest, who: who, isCoder: who == name("claude"))
         }
+        if tool == "redde_mail" { return mail(said, agent: agent) }
         // Anything else a hook says: its own words, and the tool.
         let words = said.isEmpty ? String(localized: "\(agent) wants to use \(tool)", comment: "Approval card's headline: a tool named only") : said
         return ApprovalSummary(headline: words)
+    }
+
+    /// The Redde plugin's email approvals (`mail.py` `gate`): "Unsubscribe from 3 senders: A, B, C",
+    /// "Move 2 emails to the trash" with a line per email, "Send an email to …" with its text. The
+    /// first line is the headline, what follows the rows (2026-11-06: "I couldn't tell what I was
+    /// approving").
+    private static func mail(_ said: String, agent: String) -> ApprovalSummary {
+        let paragraphs = said.components(separatedBy: "\n\n")
+        let first = paragraphs.first ?? said
+        let more = paragraphs.dropFirst().joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        if let m = first.firstMatch(of: /^Unsubscribe from (\d+) senders: (.+)$/) {
+            let names = m.output.2.components(separatedBy: ", ")
+            return ApprovalSummary(headline: String(localized: "\(agent) wants to unsubscribe you from \(String(m.output.1)) senders", comment: "Approval card's headline: unsubscribing from several newsletters; the count"),
+                                   steps: names.map { Step(symbol: "xmark.circle", text: $0) })
+        }
+        if let m = first.firstMatch(of: /^Unsubscribe from (.+)'s emails$/), m.output.1 != "a sender" {
+            return ApprovalSummary(headline: String(localized: "\(agent) wants to unsubscribe you from \(String(m.output.1))", comment: "Approval card's headline: unsubscribing from one sender; its name"),
+                                   steps: [Step(symbol: "xmark.circle", text: String(localized: "No more emails from \(String(m.output.1))", comment: "Approval card: what unsubscribing does; the sender"))])
+        }
+        if first.hasPrefix("Send an email") {
+            return ApprovalSummary(headline: first, steps: more.isEmpty ? [] : [Step(symbol: "text.alignleft", text: more)])
+        }
+        let symbol = first.contains("trash") ? "trash" : "envelope"
+        return ApprovalSummary(headline: first, steps: more.split(separator: "\n").map { Step(symbol: symbol, text: String($0)) })
     }
 
     private static func change(_ said: String, who: String, isCoder: Bool) -> ApprovalSummary {

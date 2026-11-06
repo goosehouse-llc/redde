@@ -13,6 +13,23 @@ struct ApprovalSummaryTests {
 
     private func texts(_ s: ApprovalSummary) -> [String] { s.steps.map(\.text) }
 
+    /// The Redde plugin's email approvals say who and which (2026-11-06).
+    @Test func emailApprovalsSayWhoAndWhich() {
+        let many = summary("<redde_mail> (plugin approval rule)", "Unsubscribe from 3 senders: Peacock, Carvana, YouTube")
+        #expect(many.headline == "Sol wants to unsubscribe you from 3 senders")
+        #expect(texts(many) == ["Peacock", "Carvana", "YouTube"])
+        let one = summary("<redde_mail> (plugin approval rule)", "Unsubscribe from Peacock's emails")
+        #expect(one.headline == "Sol wants to unsubscribe you from Peacock")
+        let old = summary("<redde_mail> (plugin approval rule)", "Unsubscribe from a sender's emails")
+        #expect(old.headline == "Unsubscribe from a sender's emails", "an older plugin's words, as they were")
+        let trash = summary("<redde_mail> (plugin approval rule)", "Move 2 emails to the trash\n\nDeals: “Sale”\nNews: “Headlines”")
+        #expect(trash.headline == "Move 2 emails to the trash")
+        #expect(texts(trash) == ["Deals: “Sale”", "News: “Headlines”"])
+        let send = summary("<redde_mail> (plugin approval rule)", "Send an email to ana@example.com: “Lunch”\n\nThursday works.\n\nAlex")
+        #expect(send.headline == "Send an email to ana@example.com: “Lunch”")
+        #expect(texts(send) == ["Thursday works.\n\nAlex"])
+    }
+
     @Test func coderPuttingItsChangeIntoHermesListsEachFileDeletesFirst() {
         let s = summary("<apply_claude_work> (plugin approval rule)",
                         "The claude bot wants to put Claude's change in place to Hermes's own settings (Hermes restarts after, and rolls back if it isn't well). DELETES 1 file(s): skills/old/SKILL.md; adds 2: skills/weather/SKILL.md, skills/weather/lookup.py; edits 1: profiles/home/config.yaml. +86 −41 lines. Card c4f1a2.")

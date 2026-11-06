@@ -161,6 +161,19 @@ struct InboxTests {
         #expect(MailRule(json: try json(#"{"id":"r4","when":{},"do":"delete"}"#)) == nil, "rules never delete")
     }
 
+    @Test func aTaggingRuleCanAddSeveralLabels() throws {
+        let rule = try #require(MailRule(json: try json(#"{"id":"r5","when":{"domain":"shop.example.com"},"do":"label","arg":"Receipts","also":["Paperless","Receipts"]}"#)))
+        #expect(rule.labels == ["Receipts", "Paperless"], "the first label first, each once")
+        #expect(rule.json["also"] as? [String] == ["Paperless", "Receipts"])
+        #expect(TagRuleText.line(rule).hasPrefix("Label Receipts, Paperless"))
+        #expect(rule.described.hasSuffix("Receipts, Paperless"))
+        var archiving = rule
+        archiving.action = .archive
+        #expect(archiving.json["also"] == nil && archiving.labels == ["Receipts"], "only a tagging rule has more labels")
+        let one = try #require(MailRule(json: try json(#"{"id":"r6","when":{"from":"a"},"do":"label","arg":"Bills"}"#)))
+        #expect(one.also.isEmpty && one.json["also"] == nil, "a one-label rule is written as before")
+    }
+
     @Test func theLogSaysWhatCanBeUndone() throws {
         let log = try MailWire.parse(#"redde-push mail {"log":[{"id":"m1","at":10,"rule":"r1","action":"archive","account":"main","ids":["main:INBOX:9"],"title":"Archived a receipt","undone":false,"by":"rule"},{"id":"m2","at":9,"rule":"r2","action":"notify","account":"main","ids":[],"title":"Told you","by":"rule"}]}"#)
         let entries = (log["log"]?.array ?? []).compactMap(MailLogEntry.init(json:))

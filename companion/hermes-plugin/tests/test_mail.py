@@ -371,6 +371,40 @@ class MailTests(unittest.TestCase):
         self.assertEqual(json.loads(reply.split(" ", 2)[2])["error"], "not_allowed")
         self.assertEqual(self.server.sent, [])
 
+    def test_the_agent_unsubscribes_from_several_at_once_and_hermes_sees_no_failure(self):
+        self.server.add(3, sender="News <news@paper.com>", subject="Headlines",
+                        headers={"List-Unsubscribe": "<https://paper.com/u?x=1>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"})
+        self.server.add(5, sender="Deals <deals@shop.com>", subject="Sale",
+                        headers={"List-Unsubscribe": "<https://shop.com/u>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"})
+        self.server.add(6, sender="Blog <hi@blog.com>", subject="New post", headers={"List-Unsubscribe": "<https://blog.com/leave>"})
+        box = self.inbox()
+        box.sync(box.account())
+        asked = mail.gate(self.root, "redde_mail", {"action": "unsubscribe", "ids": ["main:INBOX:3", "main:INBOX:5", "main:INBOX:6"]})
+        self.assertEqual(asked["action"], "approve")
+        self.assertIn("3 senders", asked["message"])
+        self.assertIn("News", asked["message"])
+        trash = mail.gate(self.root, "redde_mail", {"action": "trash", "ids": ["main:INBOX:5"]})["message"]
+        self.assertIn("Deals: “Sale”", trash, "the trash approval says which email")
+        posted = []
+
+        class Answer:
+            def close(self):
+                pass
+        with unittest.mock.patch("urllib.request.urlopen", lambda req, timeout: posted.append(req.full_url) or Answer()):
+            raw = mail.handle(box, {"action": "unsubscribe", "ids": ["main:INBOX:3", "main:INBOX:5", "main:INBOX:6"]})
+        said = json.loads(raw)
+        self.assertEqual(said["done"], ["main:INBOX:3", "main:INBOX:5"])
+        self.assertEqual([n["id"] for n in said["not_done"]], ["main:INBOX:6"], "a web-page-only sender is said, with why")
+        self.assertEqual(len(posted), 2)
+        # Hermes's own test (agent/display.py): "error" or "failed" in quotes near the start is a failure.
+        self.assertNotIn('"failed"', raw[:500].lower())
+        self.assertNotIn('"error"', raw[:500].lower())
+        archived = mail.handle(box, {"action": "archive", "ids": ["main:INBOX:3"]})
+        self.assertNotIn('"failed"', archived.lower(), "an archive that worked isn't a failure either")
+        nothing = json.loads(mail.handle(box, {"action": "unsubscribe", "ids": ["main:INBOX:6"]}))
+        self.assertIn("error", nothing, "nothing done is still an error")
+        self.assertIn("error", json.loads(mail.handle(box, {"action": "unsubscribe", "ids": []})))
+
     # drafts and sending
     def test_a_draft_is_sent_only_unchanged(self):
         self.server.add(1)

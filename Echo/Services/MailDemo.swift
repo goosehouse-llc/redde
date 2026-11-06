@@ -51,7 +51,7 @@ enum MailDemo {
         ["id": "r2", "when": ["from": "office@riverside.example.com"], "do": "notify", "notify": true, "made": Int(now - 86_400 * 9)],
         ["id": "paperless", "name": "Receipts with attachments → Paperless", "enabled": true, "builtin": true, "match": "all",
          "when": ["receipt": true, "attachment": "any"], "do": "label", "arg": "Paperless", "archive": false, "matches": 4],
-        ["id": "t2", "when": ["domain": "riverside.example.com"], "do": "label", "arg": "School", "archive": false, "match": "all",
+        ["id": "t2", "when": ["domain": "riverside.example.com"], "do": "label", "arg": "School", "also": ["Kids"], "archive": false, "match": "all",
          "enabled": true, "account": "main", "matches": 2],
         ["id": "t3", "name": "Newsletters to read later", "when": ["bucket": "newsletters", "subject": "weekly"], "do": "label",
          "arg": "Reading", "archive": true, "match": "all", "enabled": false, "account": "main"],
@@ -126,8 +126,9 @@ enum MailDemo {
             let ids = parts.count > 3 ? parts[3].split(separator: " ").first.map { $0.split(separator: ",").map(String.init) } ?? [] : []
             return reply(["done": ids, "failed": [], "log": "m\(Int(now))-1"])
         case "rules":
-            if parts.count > 2, parts[2].hasPrefix("set"), let json = try? JSONValue.parse(Data(words.drop { $0 != "{" }.utf8)) {
-                rules = (json["rules"]?.array ?? []).compactMap { r in try? JSONSerialization.jsonObject(with: JSONEncoder().encode(r)) as? [String: Any] }
+            // A plain list, as the app sends it since 11-05 (or {"rules": […]}, as before).
+            if parts.count > 2, parts[2].hasPrefix("set"), let json = try? JSONValue.parse(Data(words.drop { $0 != "[" && $0 != "{" }.utf8)) {
+                rules = (json.array ?? json["rules"]?.array ?? []).compactMap { r in try? JSONSerialization.jsonObject(with: JSONEncoder().encode(r)) as? [String: Any] }
             }
             return reply(["rules": rules])
         case "log":

@@ -3,6 +3,20 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.19.1 (2026-11-06)
+
+- A tagging rule can add several labels, up to five: the first stays in `arg`, the rest go in
+  `also`. A plugin older than this keeps only the first. Agent Activity names them all
+  ("Tagged Receipts, Paperless: Shop"), and Undo takes off every one the rule added, leaving any
+  the email had already. Undo still works on entries written before this.
+- `redde_mail` answers no longer say `"failed": []` when nothing failed. Hermes 0.22 reads "failed"
+  near the start of an answer as a failed call and stops the turn after 8, so an agent
+  unsubscribing from a pile of newsletters was stopped after 8 that worked. What wasn't done is now
+  `not_done`, with why; an answer is an error only when nothing was done.
+- The agent can unsubscribe from up to 25 senders in one call, behind one approval, and the
+  approval names them ("Unsubscribe from 3 senders: Peacock, Carvana, YouTube"), where it said
+  only "a sender's emails". Moving emails to the trash names each email too.
+
 ## 1.19.0 (2026-11-05)
 
 - Notifications where you are: a device Redde is in use on says so (`/redde-push here <devices>

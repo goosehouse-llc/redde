@@ -256,6 +256,47 @@ class GmailLabelTests(Base):
         box.act("undo", [entry["id"]])
         self.assertIn("Paperless", self.server.labels(1), "it was there before Redde: undo leaves it")
 
+    def test_a_rule_can_add_several_labels_and_undo_takes_off_only_its_own(self):
+        self.server.add(1, sender="Shop <orders@shop.example.com>", subject="Your receipt", labels={"Taxes"})
+        box = self.inbox()
+        saved = self.rules(box, [{"id": "r2", "when": {"domain": "shop.example.com"}, "do": "label", "arg": "Receipts",
+                                  "also": [" Paperless ", "Receipts", "Taxes"]}])
+        self.assertEqual(saved[0]["also"], ["Paperless", "Taxes"], "trimmed, and the first label isn't repeated")
+        self.assertEqual(mail.rule_labels(saved[0]), ["Receipts", "Paperless", "Taxes"])
+        box.sync(box.account())
+        self.assertTrue({"Receipts", "Paperless", "Taxes"} <= self.server.labels(1))
+        entry = next(e for e in box.state.log() if e["action"] == "tag")
+        self.assertEqual(entry["title"], "Tagged Receipts, Paperless, Taxes: Shop")
+        self.assertEqual(len(entry["ids"]), 1, "one email, counted once for the rule")
+        box.act("undo", [entry["id"]])
+        self.assertNotIn("Receipts", self.server.labels(1))
+        self.assertNotIn("Paperless", self.server.labels(1))
+        self.assertIn("Taxes", self.server.labels(1), "it was there before Redde: undo leaves it")
+
+    def test_several_labels_are_checked(self):
+        box = self.inbox()
+        with self.assertRaises(mail.MailError):
+            self.rules(box, [{"when": {"from": "a"}, "do": "label", "arg": "X", "also": "Y"}])
+        with self.assertRaises(mail.MailError):
+            self.rules(box, [{"when": {"from": "a"}, "do": "label", "arg": "X", "also": ['bad"name']}])
+        with self.assertRaises(mail.MailError):
+            self.rules(box, [{"when": {"from": "a"}, "do": "label", "arg": "X", "also": ["A", "B", "C", "D", "E"]}])
+        self.assertNotIn("also", self.rules(box, [{"when": {"from": "a"}, "do": "archive", "also": ["Y"]}])[0])
+
+    def test_an_undo_written_before_several_labels_still_works(self):
+        self.server.add(1, sender="News <news@paper.example.com>", subject="Morning edition")
+        box = self.inbox()
+        self.rules(box, [{"id": "r1", "when": {"domain": "paper.example.com"}, "do": "label", "arg": "Reading"}])
+        box.sync(box.account())
+        entries = box.state.log()
+        entry = next(e for e in entries if e["action"] == "tag")
+        for item in entry["undo"]["items"]:
+            item.pop("added_labels")
+        entry["undo"].pop("labels")
+        box.state._write("log.json", entries)
+        box.act("undo", [entry["id"]])
+        self.assertNotIn("Reading", self.server.labels(1))
+
     def test_archive_and_notify_rules_still_run(self):
         self.server.add(1, sender="Ana <ana@example.com>", subject="Hi")
         box = self.inbox()
