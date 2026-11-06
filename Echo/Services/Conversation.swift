@@ -403,6 +403,11 @@ final class Conversation {
             request.userText += note
             for i in messages.indices where messages[i].isAside { messages[i].delivered?.noted = true }
         }
+        // Reactions since the person last wrote (`Reactions`): told with this message, once.
+        if fromPage == nil, let note = ReactionNote.note(unsaidReactions()) {
+            request.userText += note
+            for i in messages.indices where messages[i].reaction != nil { messages[i].reactionSaid = true }
+        }
         // On this message alone, last: "Make This a Routine"'s, or a card's answer.
         if let note = pendingNote, fromPage == nil {
             request.userText += note
@@ -1978,6 +1983,25 @@ final class Conversation {
         _ = send(shown)
     }
 
+    // MARK: - Reactions (`Reactions`)
+
+    /// Reacts to a reply (nil: takes the reaction back). The agent hears of it with the next message.
+    func react(to id: UUID, with emoji: String?) {
+        guard let i = messages.firstIndex(where: { $0.id == id }), messages[i].role == .assistant else { return }
+        guard messages[i].reaction != emoji else { return }
+        messages[i].reaction = emoji
+        messages[i].reactionSaid = emoji == nil
+        persist()
+    }
+
+    /// Reactions the agent hasn't been told of, oldest first.
+    func unsaidReactions() -> [(emoji: String, reply: String)] {
+        messages.compactMap { message in
+            guard message.role == .assistant, !message.reactionSaid, let emoji = message.reaction else { return nil }
+            return (emoji, message.text)
+        }
+    }
+
     /// The question the next message answers, for over it (`answerCard`).
     private var pendingAnswering: String?
 
@@ -2095,6 +2119,21 @@ final class Conversation {
     /// put back where they came.
     nonisolated static func keepingAsides(of here: [Message], in host: [Message]) -> [Message] {
         var merged = host
+        // Reactions (`Reactions`): the host has none; each goes back on the reply it was made to,
+        // known by how it begins.
+        var reacted: [String: [Message]] = [:]
+        for message in here where message.role == .assistant && message.reaction != nil {
+            reacted[Reactions.opening(of: message.text, limit: 200), default: []].append(message)
+        }
+        if !reacted.isEmpty {
+            for i in merged.indices where merged[i].role == .assistant && merged[i].reaction == nil {
+                let key = Reactions.opening(of: merged[i].text, limit: 200)
+                guard let found = reacted[key]?.first else { continue }
+                reacted[key]?.removeFirst()
+                merged[i].reaction = found.reaction
+                merged[i].reactionSaid = found.reactionSaid
+            }
+        }
         // Asides the agent hasn't heard of, and questions it asked mid-turn with their answers
         // (`AnsweredQuestions`): neither is a message on the host.
         for aside in here where (aside.isAside && aside.delivered?.noted != true || aside.isSteer && aside.answering != nil)

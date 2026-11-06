@@ -245,6 +245,22 @@ struct ConversationLifecycleTests {
         #expect(c.messages.last(where: { $0.role == .user })?.answering == nil, "only the answer carries it")
     }
 
+    /// A reaction starts no turn; the agent hears of it with the next message, once.
+    @Test func aReactionIsToldWithTheNextMessageOnce() async throws {
+        let t = SequencedTransport([.init(events: [.textDelta("Booked."), .done], error: nil)])
+        let c = makeConversation(t)
+        for await _ in c.send("Book it") {}
+        let reply = try #require(c.messages.last)
+        c.react(to: reply.id, with: "👍")
+        #expect(t.calls == 1 && c.messages.last?.reaction == "👍", "no turn of its own")
+        for await _ in c.send("And the hotel?") {}
+        #expect(t.prompts.last?.contains("👍 (liked it) to your reply that began \"Booked.\"") == true)
+        for await _ in c.send("Thanks") {}
+        #expect(t.prompts.last?.contains(ReactionNote.opening) == false, "told once")
+        c.react(to: reply.id, with: nil)
+        #expect(c.messages.first(where: { $0.id == reply.id })?.reaction == nil)
+    }
+
     @Test func stopPausesTheQueue() async throws {
         let t = SequencedTransport([.init(events: [.textDelta("x")], error: nil, hang: true),
                                     .init(events: [.textDelta("later"), .done], error: nil)])

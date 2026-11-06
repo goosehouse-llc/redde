@@ -50,6 +50,17 @@ struct MessageRow: View, Equatable {
     }
 
     /// A reply straight on the page, under the agent's name.
+    /// Why Hermes stopped this turn, when it did. Only a reply that starts with Hermes's own words
+    /// looks further, at the turn's replies before it.
+    private var toolStop: String? {
+        guard message.text.hasPrefix("I stopped retrying because") else { return nil }
+        let all = conversation?.messages ?? []
+        let earlier = all.firstIndex(where: { $0.id == message.id }).map { i in
+            Array(all[..<i].reversed().prefix { $0.role != .user }.reversed())
+        } ?? []
+        return ToolStop.reason(message, earlier: earlier)
+    }
+
     private var flatReply: Bool { message.role == .assistant && theme.palette.flatReplies && message.error == nil }
 
     @Environment(\.theme) private var theme
@@ -63,6 +74,8 @@ struct MessageRow: View, Equatable {
     @State private var showThinking: Bool?
     @State private var showSteps: Bool?
     @State private var selecting = false
+    /// Part of the reply being selected where it stands (`InlineSelection`).
+    @State private var selectingInline = false
     @State private var fullMetrics = false
     /// Just copied: the button shows a check. `copyCount` drives the haptic.
     @State private var copied = false
@@ -146,18 +159,34 @@ struct MessageRow: View, Equatable {
                 let said = ServeMedia.named(in: invented?.said ?? message.text).text
                 if !said.isEmpty {
                     // A file the reply only names in passing opens from its path.
-                    MarkdownView(text: said, isLive: isLive, selectable: false, linkPaths: !isLive)
+                    replyText(said)
                         .padding(.horizontal, flatReply ? 2 : 14)
                         .padding(.vertical, flatReply ? 0 : theme.bubbleVerticalPadding)
                         .background(flatReply ? AnyShapeStyle(.clear) : bubble, in: .rect(cornerRadius: theme.bubbleRadius))
                         .foregroundStyle(theme.textColor)
-                        .contextMenu { replyMenu }
+                        .modifier(ReplyPress(inline: selectsInline, reacts: reacts && !selectingInline, menu: { replyMenu }, reactions: { reactionPalette }, onPress: startSelecting))
                         .overlay(highlightRing)
                         .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
                         .modifier(OpensServerPaths(source: fileSource))
                 }
                 if let invented {
                     InventedTurnNote(name: replySpeaker ?? settings.headerTitle, invented: invented.invented)
+                }
+                // The person's reaction, under the reply; a tap takes it back.
+                if let reaction = message.reaction {
+                    Button {
+                        conversation?.react(to: message.id, with: nil)
+                    } label: {
+                        Text(reaction)
+                            .font(.body)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(.quaternary, in: .capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, flatReply ? 0 : 8)
+                    .padding(.top, -4)
+                    .transition(.scale.combined(with: .opacity))
+                    .accessibilityLabel(String(localized: "You reacted \(reaction). Remove", comment: "VoiceOver: the reaction under a reply, which a tap takes back"))
                 }
             } else if message.isSteer {
                 // Added to a reply under way: the person's words, a quieter bubble of theirs in the
@@ -211,6 +240,13 @@ struct MessageRow: View, Equatable {
             if message.role == .assistant, !isLive {
                 ForEach(message.attachments.filter { $0.page != nil }) { AgentPage(attachment: $0, messageID: message.id) }
             }
+            // Hermes stopped the turn itself: why, from the last call of the tool (`ToolStop`).
+            if message.role == .assistant, !isLive, let why = toolStop {
+                Label { Text(why) } icon: { Image(systemName: "exclamationmark.triangle") }
+                    .chatFont(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+            }
             if showActions, message.role == .assistant, !isLive, message.error == nil, !message.text.isEmpty {
                 actionRow
                     .transition(.opacity)
@@ -218,6 +254,7 @@ struct MessageRow: View, Equatable {
         }
         // The reply finishing: its actions fade in, and the streaming edge fades into plain text.
         .animation(.easeOut(duration: 0.3), value: isLive)
+        .animation(.snappy(duration: 0.25), value: message.reaction)
         .frame(maxWidth: .infinity, alignment: message.role == .user && !promptStyled ? .trailing : .leading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(message.role == .user ? (message.answering != nil ? String(localized: "Your answer", comment: "VoiceOver: a message of the person's that answers a question")
@@ -547,8 +584,86 @@ struct MessageRow: View, Equatable {
         return Duration.seconds(Int(seconds.rounded())).formatted(.units(allowed: [.minutes, .seconds], width: .narrow))
     }
 
+    /// A finished reply in the transcript selects where it stands on a long-press; its menu is
+    /// on its ··· button. In voice mode and a group chat, which have no ··· button, the
+    /// long-press is still the menu.
+    private var selectsInline: Bool {
+        #if os(iOS)
+        showActions && !isLive && conversation != nil
+        #else
+        false
+        #endif
+    }
+
+    /// Reactions on a double-tap, as Messages has them.
+    private var reacts: Bool {
+        guard let conversation else { return false }
+        return !isLive && !conversation.isWorkerTranscript
+    }
+
+    @ViewBuilder
+    private func replyText(_ said: String) -> some View {
+        #if os(iOS)
+        if selectingInline {
+            SelectableReply(text: said, linkPaths: true) { selectingInline = false }
+        } else {
+            MarkdownView(text: said, isLive: isLive, selectable: false, linkPaths: !isLive)
+        }
+        #else
+        MarkdownView(text: said, isLive: isLive, selectable: false, linkPaths: !isLive)
+        #endif
+    }
+
+    private func startSelecting(at point: CGPoint) {
+        #if os(iOS)
+        // Already selectable: the text view's own long-press moves the selection.
+        guard !selectingInline else { return }
+        InlineSelection.pending = point
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) { selectingInline = true }
+        #endif
+    }
+
+    /// The six reactions, for the double-tap's popover.
+    private var reactionPalette: some View {
+        HStack(spacing: 4) {
+            ForEach(Reactions.all, id: \.emoji) { reaction in
+                Button {
+                    conversation?.react(to: message.id, with: message.reaction == reaction.emoji ? nil : reaction.emoji)
+                } label: {
+                    Text(reaction.emoji)
+                        .font(.title2)
+                        .frame(width: 44, height: 44)
+                        .background(message.reaction == reaction.emoji ? AnyShapeStyle(.tint.opacity(0.25)) : AnyShapeStyle(.clear), in: .circle)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(message.reaction == reaction.emoji
+                    ? String(localized: "Remove \(reaction.emoji)", comment: "VoiceOver: takes back a reaction to a reply")
+                    : String(localized: "React \(reaction.emoji)", comment: "VoiceOver: reacts to a reply with an emoji"))
+            }
+        }
+        .padding(.horizontal, 8)
+    }
+
     @ViewBuilder
     private var replyMenu: some View {
+        // A row of reactions at the top, as Messages has them (`Reactions`).
+        if let conversation, !isLive, !conversation.isWorkerTranscript {
+            ControlGroup {
+                ForEach(Reactions.all, id: \.emoji) { reaction in
+                    Button {
+                        conversation.react(to: message.id, with: message.reaction == reaction.emoji ? nil : reaction.emoji)
+                    } label: {
+                        Text(reaction.emoji)
+                    }
+                    .accessibilityLabel(message.reaction == reaction.emoji
+                        ? String(localized: "Remove \(reaction.emoji)", comment: "VoiceOver: takes back a reaction to a reply")
+                        : String(localized: "React \(reaction.emoji)", comment: "VoiceOver: reacts to a reply with an emoji"))
+                }
+            }
+            .controlGroupStyle(.palette)
+        }
         Button("Copy reply", systemImage: "doc.on.doc") { copy(message.text) }
         if !message.reasoning.isEmpty {
             Button("Copy thinking", systemImage: "brain") { copy(message.reasoning) }
@@ -896,5 +1011,27 @@ struct InventedTurnNote: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// What a press on a reply's text does. In the transcript a long-press selects the text where it
+/// stands (`InlineSelection`) and a double-tap brings up the reactions; elsewhere (voice mode, a
+/// group chat, the Mac) the long-press is the reply's menu, as before.
+private struct ReplyPress<Menu: View, Palette: View>: ViewModifier {
+    let inline: Bool
+    let reacts: Bool
+    @ViewBuilder let menu: () -> Menu
+    @ViewBuilder let reactions: () -> Palette
+    let onPress: (CGPoint) -> Void
+    @State private var showReactions = false
+
+    func body(content: Content) -> some View {
+        content
+            .contextMenu { if !inline { menu() } }
+            #if os(iOS)
+            .gesture(ReplyLongPress { if inline { onPress($0) } })
+            #endif
+            .simultaneousGesture(TapGesture(count: 2).onEnded { if reacts { showReactions = true } })
+            .popover(isPresented: $showReactions) { reactions().presentationCompactAdaptation(.popover) }
     }
 }

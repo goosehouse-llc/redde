@@ -60,30 +60,57 @@ final class ReplyActionsUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["calendar"].waitForExistence(timeout: 3), "The full output didn't open")
     }
 
-    /// Select part of a reply and "Ask about this": it lands in the composer as a quote.
-    func testAskingAboutASelectionQuotesItInTheComposer() {
+    /// GitHub issue 46: a long-press on a reply's text selects the word under the finger where
+    /// it stands, with the selection's menu; "Ask about this" puts it in the composer as a quote.
+    func testALongPressSelectsInPlaceAndAsksAboutIt() {
         let app = launchDemo()
         let reply = app.text(containing: "I've added a reminder")
         XCTAssertTrue(reply.waitForExistence(timeout: 15), "The demo reply didn't appear")
-        reply.press(forDuration: 1.0)
-        let select = app.buttons["Select text"]
-        XCTAssertTrue(select.waitForExistence(timeout: 5), "No Select text in the reply's menu")
-        select.tap()
-        XCTAssertTrue(app.navigationBars["Select text"].waitForExistence(timeout: 5), "The selectable copy didn't open")
+        reply.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5)).press(forDuration: 0.8)
 
-        // A long press picks the word under the finger and brings up the selection's menu.
-        let page = app.textViews.containing(NSPredicate(format: "value CONTAINS %@", "I've added a reminder")).firstMatch
-        XCTAssertTrue(page.waitForExistence(timeout: 5), "No selectable text in the sheet")
-        page.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.12)).press(forDuration: 1.0)
         let ask = app.menuItems["Ask about this"].exists ? app.menuItems["Ask about this"] : app.buttons["Ask about this"]
-        XCTAssertTrue(ask.waitForExistence(timeout: 5), "The selection's menu doesn't offer Ask about this")
+        XCTAssertTrue(ask.waitForExistence(timeout: 3), "The long-press didn't select with the selection's menu")
+        XCTAssertFalse(app.navigationBars["Select text"].exists, "It opened the sheet, not a selection in place")
+        XCTAssertFalse(app.buttons["Make This a Routine…"].exists || app.buttons["Watch This…"].exists, "The reply's own menu came up instead")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "inline-selection"
+        shot.lifetime = .keepAlways
+        add(shot)
+        // Let go with a tap elsewhere, and press again: the same, the reply drawn as before between.
+        app.staticTexts["Redde"].firstMatch.tap()
+        XCTAssertTrue(ask.waitForNonExistence(timeout: 3), "A tap elsewhere didn't let go of the selection")
+        XCTAssertTrue(reply.waitForExistence(timeout: 3), "The reply wasn't drawn as before")
+        reply.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)).press(forDuration: 0.8)
+        XCTAssertTrue(ask.waitForExistence(timeout: 3), "A second long-press didn't select")
         ask.tap()
 
-        XCTAssertTrue(app.navigationBars["Select text"].waitForNonExistence(timeout: 5), "The sheet stayed up")
-        let composer = app.textFields.firstMatch.exists ? app.textFields.firstMatch : app.textViews.firstMatch
+        let composer = app.textFields.firstMatch.exists ? app.textFields.firstMatch : app.textViews.matching(NSPredicate(format: "value BEGINSWITH %@", "> ")).firstMatch
         let quoted = NSPredicate(format: "value BEGINSWITH %@", "> ")
         expectation(for: quoted, evaluatedWith: composer)
         waitForExpectations(timeout: 5)
+    }
+
+    /// The reply's menu is on its ··· button now, "Select text" (the whole reply in a sheet) with it.
+    func testTheMoreButtonStillHasTheRepliesMenu() {
+        let app = launchDemo()
+        XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 15), "No actions under the reply")
+        // The reply's, not the header's.
+        app.buttons.matching(NSPredicate(format: "label == %@", "More")).allElementsBoundByIndex.last?.tap()
+        XCTAssertTrue(app.buttons["Select text"].waitForExistence(timeout: 3), "No Select text in the ··· menu")
+        app.buttons["Select text"].tap()
+        XCTAssertTrue(app.navigationBars["Select text"].waitForExistence(timeout: 5), "The selectable copy didn't open")
+    }
+
+    /// A double-tap on a reply brings up the reactions; one picked shows under it.
+    func testADoubleTapReacts() {
+        let app = launchDemo()
+        let reply = app.text(containing: "I've added a reminder")
+        XCTAssertTrue(reply.waitForExistence(timeout: 15), "The demo reply didn't appear")
+        reply.doubleTap()
+        let thumbs = app.buttons["React 👍"]
+        XCTAssertTrue(thumbs.waitForExistence(timeout: 3), "The double-tap didn't bring up the reactions")
+        thumbs.tap()
+        XCTAssertTrue(app.buttons["You reacted 👍. Remove"].waitForExistence(timeout: 3), "The reaction doesn't show under the reply")
     }
 }
 

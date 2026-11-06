@@ -250,6 +250,12 @@ enum DevHooks {
     static func applyAtLaunch(conversation: Conversation, settings: Settings) {
         conversationsAtLaunch = Set(conversation.storeForContext.summaries.map(\.id))
         if has("-echo.demo") { conversation.seedDemo() }
+        // A reaction under every reply (`Reactions`), to look at its badge.
+        // By its place in the list, `-echo.demoReaction 1` for ❤️: an emoji in a launch argument
+        // can arrive mangled.
+        if let picked = value("-echo.demoReaction").flatMap(Int.init), Reactions.all.indices.contains(picked) {
+            for reply in conversation.messages where reply.role == .assistant { conversation.react(to: reply.id, with: Reactions.all[picked].emoji) }
+        }
         if has("-echo.demoShort") { conversation.keepFirstMessages(2) }
         if has("-echo.demoTwo") { conversation.keepFirstMessages(4) }
         if has("-echo.demoLibrary") { conversation.seedDemoLibrary() }

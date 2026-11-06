@@ -242,6 +242,7 @@ targets:
       - path: Echo/Models/CalendarChoice.swift
       - path: Echo/Models/CurrentLocation.swift
       - path: Echo/Models/AsideNote.swift
+      - path: Echo/Models/Reactions.swift
       - path: Echo/Services/Transport/HermesTransport.swift
       - path: Echo/Services/Transport/HermesSessionsTransport.swift
       - path: Echo/Services/Transport/ChatCompletionsTransport.swift

@@ -29,6 +29,9 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     /// The question this message of the person's answers, shown over it: a card's title, or what
     /// the agent asked mid-turn (`AnsweredQuestions`).
     var answering: String?
+    /// The person's reaction to this reply (`Reactions`), and whether the agent has been told of it.
+    var reaction: String?
+    var reactionSaid: Bool = false
     /// Filed as the person's, but not theirs: another bot's message, a bot's reply, or a
     /// background process reporting back (`BotMessages`).
     var delivered: Delivered?
@@ -42,7 +45,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case id, role, text, createdAt, metrics, error, reasoning, reasoningStartedAt, reasoningEndedAt, tools, todos, subagents, attachments, isSteer
-        case delivered, cards, answering
+        case delivered, cards, answering, reaction, reactionSaid
     }
 
     init(from decoder: Decoder) throws {
@@ -64,6 +67,8 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
         delivered = try c.decodeIfPresent(Delivered.self, forKey: .delivered)
         cards = try c.decodeIfPresent([ReplyCard].self, forKey: .cards)
         answering = try c.decodeIfPresent(String.self, forKey: .answering)
+        reaction = try c.decodeIfPresent(String.self, forKey: .reaction)
+        reactionSaid = try c.decodeIfPresent(Bool.self, forKey: .reactionSaid) ?? false
     }
 }
 
