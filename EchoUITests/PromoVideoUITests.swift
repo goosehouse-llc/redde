@@ -955,4 +955,97 @@ final class PromoVideoUITests: XCTestCase {
         hold(2.2)
         mark("end")
     }
+
+    // MARK: Redde 2.4 (design/video, `make_24.py`)
+
+    /// 2.4's sample data in the standard theme, dark, as the 2.4 screenshots: the inbox, two goals,
+    /// the briefings, the bots and the made-up Coming Up day, on the chat list.
+    private func v24(_ extra: [String] = []) throws -> XCUIApplication {
+        try launch(["-echo.demoInbox", "two", "-echo.demoGoals", "-echo.demoBriefings", "-echo.demoComingUp",
+                    "-echo.demoProjects", "-echo.demoBots", "-displayName", "Sol", "-echo.clearDrafts",
+                    "-theme", "standard", "-appearance", "dark"] + extra)
+    }
+
+    /// The goal's tile in the Today row tapped: its page, then down to the plan.
+    func testV24Goal() throws {
+        let app = try v24(["-echo.screen", "sessions"])
+        let tile = app.staticTexts["Run a 10K by March"].firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 20), "no goal tile")
+        hold(1.5)
+        mark("start")
+        hold(1.0)
+        tile.tap()
+        XCTAssertTrue(app.staticTexts["Last Check-in"].firstMatch.waitForExistence(timeout: 10))
+        mark("open")
+        hold(2.5)
+        drag(app, from: CGVector(dx: 0.5, dy: 0.8), to: CGVector(dx: 0.5, dy: 0.35))
+        mark("plan")
+        hold(2.5)
+        mark("end")
+    }
+
+    /// The Inbox's tile tapped: Important, then Needs Reply, then an email in the reader.
+    func testV24Inbox() throws {
+        let app = try v24(["-echo.screen", "sessions"])
+        let tile = app.staticTexts["Inbox"].firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 20), "no inbox tile")
+        hold(1.5)
+        mark("start")
+        hold(1.0)
+        tile.tap()
+        let reply = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Needs Reply")).firstMatch
+        XCTAssertTrue(reply.waitForExistence(timeout: 10), "no piles")
+        mark("open")
+        hold(2.0)
+        reply.tap()
+        mark("reply")
+        hold(2.0)
+        let row = app.cells.firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "no email")
+        row.tap()
+        mark("email")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// The Today row slid along, then Planned: what the agent will do next.
+    func testV24Today() throws {
+        let app = try v24(["-echo.screen", "sessions"])
+        let tile = app.staticTexts["Inbox"].firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 20), "no Today row")
+        hold(1.5)
+        mark("start")
+        hold(1.2)
+        slide(tile, by: -320, hold: 0.4)
+        mark("slid")
+        hold(1.6)
+        // (the segmented tab: a hidden ⌘2 button is also called Planned)
+        app.segmentedControls.buttons["Planned"].firstMatch.tap()
+        mark("planned")
+        hold(3.5)
+        mark("end")
+    }
+
+    /// Memory: a fact added in words and saved.
+    func testV24Memory() throws {
+        // (only the memory's sample data: with the rest, something presented at launch closes the
+        // page again a few seconds in)
+        let app = try launch(["-echo.demoMemory", "-echo.screen", "memory", "-echo.clearDrafts", "-theme", "standard", "-appearance", "dark"])
+        let add = app.navigationBars["Memory"].waitForExistence(timeout: 20) ? app.collectionViews.buttons["Add"].firstMatch : app.buttons["no memory page"]
+        XCTAssertTrue(add.waitForExistence(timeout: 20), "no memory page")
+        hold(1.2)
+        mark("start")
+        hold(1.0)
+        add.tap()
+        hold(0.6)
+        app.typeText("Training for a 10K in March.")   // (the new row has the focus)
+        mark("typed")
+        hold(1.0)
+        let save = app.navigationBars.buttons["Save"].firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout: 5), "no Save")
+        save.tap()
+        mark("saved")
+        hold(2.5)
+        mark("end")
+    }
 }

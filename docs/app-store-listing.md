@@ -93,7 +93,7 @@ Most of this takes the Redde plugin 1.19 on your Hermes.
 - App Privacy stays "Data Not Collected": email, Home and Health data go only to the person's own Hermes; Goosehouse LLC receives none of it.
 - The privacy policy needs Apple Home, Phone Tools › Health, the email inbox (and that opening an email loads its pictures, which the sender can see), memory import and devices in use. Publish it before submitting.
 - The plugin: main serves 1.19.4 (pushed 2026-11-06). Publish a GitHub release for it at release (none since redde-push-1.12.0).
-- Screenshots: made 2026-11-06 (design/screenshots README, "2.4 slots"): Goals, Inbox, Today with Coming Up and Memory in Paper White in place of Ahead of your day, the day's timeline, the crew and the car (iPad: the backend); answers, bots and approvals renumbered 07–09. `scripts/app-store-push.py screenshots` sends them in the new order (not sent yet). App Previews: still the framed ones; new ones must be full-frame (2.3.4, 2026-10-29).
+- Screenshots: made 2026-11-06 (design/screenshots README, "2.4 slots"): Goals, Inbox, Today with Coming Up and Memory in Paper White in place of Ahead of your day, the day's timeline, the crew and the car (iPad: the backend); answers, bots and approvals renumbered 07–09. `scripts/app-store-push.py screenshots` sends them in the new order (not sent yet). App Previews: 2.4 carries 2.3.1's full-frame "A day with Redde" light cuts (iPhone and iPad), which show none of 2.4's features; any new one must be full-frame too (2.3.4, 2026-10-29).
 - The website: "coming soon in 2.4", then "new in 2.4" at release (deploys are his word).
 - Close GitHub #39, #61, #63 and #64 at release.
 
