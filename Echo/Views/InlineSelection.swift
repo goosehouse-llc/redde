@@ -183,6 +183,9 @@ private struct InlineTextView: UIViewRepresentable {
 
         /// The selection let go of (a tap on the text): the reply as before.
         func textViewDidChangeSelection(_ view: UITextView) {
+            #if DEBUG
+            (view as? ReplyTextView)?.showSelectionToTests()
+            #endif
             guard let view = view as? ReplyTextView, view.started, view.selectedRange.length == 0 else { return }
             view.finish()
         }
@@ -239,8 +242,12 @@ final class ReplyTextView: UITextView {
     /// The menu shown for the press's selection (`InlineTextView` adds it).
     fileprivate weak var pressMenu: UIEditMenuInteraction?
     private var tapElsewhere: [UITapGestureRecognizer] = []
-    /// Fingers on the text and its handles.
+    /// Fingers on the text.
     private let touches = TouchCount()
+    /// Fingers anywhere in the app's windows: the selection's handles aren't the text view's own
+    /// subviews, so a finger on one is only seen here (2026-11-07: touching a handle closed the
+    /// menu, and with no finger counted on the text the selection ended).
+    private var windowTouches: [TouchCount] = []
 
     override init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
@@ -282,10 +289,24 @@ final class ReplyTextView: UITextView {
         selectedTextRange = word
         started = true
         InlineSelection.selected()
+        #if DEBUG
+        showSelectionToTests()
+        #endif
         UISelectionFeedbackGenerator().selectionChanged()
         watchTaps()
         showMenu()
     }
+
+    #if DEBUG
+    /// For the UI tests (ReplyActionsUITests): the selection's length and where its end handle
+    /// stands, in screen points, as "inline-selection|length|x|y".
+    func showSelectionToTests() {
+        guard let range = selectedTextRange else { return }
+        let end = caretRect(for: range.end)
+        let point = convert(CGPoint(x: end.midX, y: end.midY), to: nil)
+        accessibilityIdentifier = "inline-selection|\(selectedRange.length)|\(Int(point.x))|\(Int(point.y))"
+    }
+    #endif
 
     /// The selection's menu, which the text view only shows by itself for a selection it made.
     func showMenu() {
@@ -304,14 +325,19 @@ final class ReplyTextView: UITextView {
             tap.delaysTouchesEnded = false
             each.addGestureRecognizer(tap)
             tapElsewhere.append(tap)
+            let count = TouchCount()
+            each.addGestureRecognizer(count)
+            windowTouches.append(count)
         }
     }
 
     /// A menu over the selection closed: a tap outside, or one of its actions (Copy, Ask about
-    /// this). Unless a finger is on the text or its handles (moving the selection), it ends.
+    /// this). Unless a finger is still down in the app (on a handle, moving the selection), it
+    /// ends. (A tap outside that only closes the menu lands in the menu's own window, where
+    /// nothing here counts it.)
     fileprivate func menuClosed() {
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.started, self.touches.down == 0 else { return }
+            guard let self, self.started, self.touches.down == 0, self.windowTouches.allSatisfy({ $0.down == 0 }) else { return }
             self.finish()
         }
     }
@@ -329,6 +355,8 @@ final class ReplyTextView: UITextView {
     private func stopWatching() {
         for tap in tapElsewhere { tap.view?.removeGestureRecognizer(tap) }
         tapElsewhere = []
+        for count in windowTouches { count.view?.removeGestureRecognizer(count) }
+        windowTouches = []
     }
 
     override func resignFirstResponder() -> Bool {
@@ -361,6 +389,8 @@ private final class TouchCount: UIGestureRecognizer {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) { lift(touches.count) }
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) { lift(touches.count) }
     override func canPrevent(_ other: UIGestureRecognizer) -> Bool { false }
+    /// Counting on while the transcript scrolls or a handle is dragged.
+    override func canBePrevented(by other: UIGestureRecognizer) -> Bool { false }
 
     private func lift(_ count: Int) {
         down = max(0, down - count)

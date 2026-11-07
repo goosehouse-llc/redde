@@ -90,6 +90,35 @@ final class ReplyActionsUITests: XCTestCase {
         waitForExpectations(timeout: 5)
     }
 
+    /// The selection's handles move it, as in Notes: the end handle dragged along takes in more.
+    func testDraggingAHandleGrowsTheSelection() {
+        let app = launchDemo()
+        let reply = app.text(containing: "I've added a reminder")
+        XCTAssertTrue(reply.waitForExistence(timeout: 15), "The demo reply didn't appear")
+        reply.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 0.8)
+        let selection = app.textViews.matching(NSPredicate(format: "identifier BEGINSWITH %@", "inline-selection|")).firstMatch
+        XCTAssertTrue(selection.waitForExistence(timeout: 3), "The long-press didn't select in place")
+        func state() -> (length: Int, end: CGPoint) {
+            let parts = selection.identifier.split(separator: "|").compactMap { Int($0) }
+            return (parts[0], CGPoint(x: parts[1], y: parts[2]))
+        }
+        let before = state()
+        let first = XCTAttachment(screenshot: app.screenshot())
+        first.name = "selected \(before.length) end \(Int(before.end.x)),\(Int(before.end.y))"
+        first.lifetime = .keepAlways
+        add(first)
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let handle = origin.withOffset(CGVector(dx: before.end.x, dy: before.end.y + 4))
+        handle.press(forDuration: 0.15, thenDragTo: origin.withOffset(CGVector(dx: min(before.end.x + 140, 380), dy: before.end.y + 4)))
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "handle-dragged"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(selection.waitForExistence(timeout: 2), "The selection ended when its handle was dragged")
+        let after = state()
+        XCTAssertGreaterThan(after.length, before.length, "Dragging the end handle didn't take in more text (\(before.length) → \(after.length))")
+    }
+
     /// The reply's menu is on its ··· button now, "Select text" (the whole reply in a sheet) with it.
     func testTheMoreButtonStillHasTheRepliesMenu() {
         let app = launchDemo()
