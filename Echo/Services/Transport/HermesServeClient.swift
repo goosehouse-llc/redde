@@ -1663,9 +1663,9 @@ final class HermesServeClient {
     }
 
     /// Models the desktop gateway can route to (`model.options`).
-    func modelOptions() async throws -> [ModelChoice] {
+    func modelOptions(refresh: Bool = false) async throws -> [ModelChoice] {
         try await ensureConnected()
-        let result = try await call("model.options", params: .object(["explicit_only": .bool(true)]))
+        let result = try await call("model.options", params: .object(["explicit_only": .bool(true), "refresh": .bool(refresh)]))
         return HermesSessionsAPI.parseModelOptions(result)
     }
 

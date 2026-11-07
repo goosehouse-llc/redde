@@ -47,6 +47,9 @@ import WidgetKit
 /// - `-echo.demoPlugin missing|old|off|there [restart]`: the notifications screen's plugin line on a
 ///   made-up server, with no Dashboard. Installing leaves it running; with `restart`, waiting for one.
 /// - `-echo.demoChatControls`: the model menu's "This conversation" switches on sample data.
+/// - `-echo.demoModels`: the model picker lists sample models, OpenRouter's among them, so its
+///   search reaches OpenRouter's full list (read from openrouter.ai); `-echo.modelSearch <words>`
+///   types them in the search box.
 /// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
 /// - `-echo.demoPhoneShot`: a short conversation in which the agent has used the phone four
 ///   times (the Phone tools store screenshot).
@@ -234,6 +237,7 @@ enum DevHooks {
     static var demoBots: Bool { has("-echo.demoBots") }
     static var demoGateway: Bool { has("-echo.demoGateway") }
     static var demoChatControls: Bool { has("-echo.demoChatControls") }
+    static var demoModels: Bool { has("-echo.demoModels") }
     static var demoFiles: Bool { has("-echo.demoFiles") }
     static var expandAppIcons: Bool { has("-echo.expandAppIcons") }
     static var voiceDemo: Bool { has("-echo.voiceDemo") }

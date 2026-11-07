@@ -19,6 +19,12 @@ struct ModelPickerView: View {
     /// unless they hold the current selection; Local stays open.
     @State private var collapsed: Set<String> = []
     @State private var collapsedSeeded = false
+    /// The search box: the server's models first, then, where the server has OpenRouter, the
+    /// rest of OpenRouter's (its public list, read when a search first needs it).
+    @State private var query = ""
+    @State private var catalog: [OpenRouterCatalog.Model] = []
+    @State private var catalogError: String?
+    @State private var catalogLoading = false
 
     private var isFastLane: Bool { settings.transport == .chatCompletions }
 
@@ -41,7 +47,11 @@ struct ModelPickerView: View {
     static func grouped(_ choices: [ModelChoice]) -> [(provider: String, name: String, models: [ModelChoice])] {
         let grouped = Dictionary(grouping: choices, by: \.provider)
         var out: [(provider: String, name: String, models: [ModelChoice])] = []
-        let customKeys = grouped.keys.filter { $0.hasPrefix("custom") }.sorted()
+        // (a custom endpoint out on the internet, Venice, is a provider like any: its own section)
+        func isLocal(_ key: String) -> Bool {
+            key.hasPrefix("custom") && !(grouped[key]?.contains { $0.onThisNetwork == false } ?? false)
+        }
+        let customKeys = grouped.keys.filter(isLocal).sorted()
         if !customKeys.isEmpty {
             let slug = customKeys.first { grouped[$0]?.contains(where: \.isCurrent) ?? false } ?? customKeys[0]
             var seen: Set<String> = []
@@ -54,15 +64,127 @@ struct ModelPickerView: View {
             }
             out.append((slug, String(localized: "Local", comment: "Models served by your own machines"), models.sorted { $0.name < $1.name }))
         }
-        for key in grouped.keys.filter({ !$0.hasPrefix("custom") }).sorted() {
+        for key in grouped.keys.filter({ !isLocal($0) }).sorted() {
             guard let models = grouped[key], let first = models.first else { continue }
             out.append((key, first.providerName, models.sorted { $0.name < $1.name }))
         }
         return out
     }
 
+    /// Whether the models are listed here (and the search box with them), rather than a pointer
+    /// to each conversation's own menu.
+    private var listsModels: Bool { !fromSettings || isFastLane }
+
     var body: some View {
+        searchableList
+        .navigationTitle("Model")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            #if DEBUG
+            if let words = DevHooks.value("-echo.modelSearch") { query = words }
+            #endif
+            if listsModels { await load() }
+        }
+        .task(id: searchWords) { await loadCatalogIfNeeded() }
+        .refreshable { await load(refresh: true) }
+        .confirmationDialog(makeDefaultQuestion, isPresented: Binding(get: { makingDefault != nil }, set: { if !$0 { makingDefault = nil } }),
+                            titleVisibility: .visible, presenting: makingDefault) { choice in
+            Button(String(localized: "Make It the Default", comment: "Model picker: confirms making a model a bot's or the server's default")) { makeDefault(choice, confirmed: false) }
+        } message: { _ in
+            Text(makeDefaultDetail)
+        }
+        .confirmationDialog(hermesAsks?.question ?? "", isPresented: Binding(get: { hermesAsks != nil }, set: { if !$0 { hermesAsks = nil } }),
+                            titleVisibility: .visible, presenting: hermesAsks) { asked in
+            Button(String(localized: "Use It", comment: "Model picker: says yes to Hermes's question about an expensive model")) { makeDefault(asked.choice, confirmed: true) }
+        }
+    }
+
+    @ViewBuilder
+    private var searchableList: some View {
+        if listsModels {
+            #if os(iOS)
+            list.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
+                            prompt: Text("Search models", comment: "Model picker: the search box's placeholder"))
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+            #else
+            list.searchable(text: $query, prompt: Text("Search models", comment: "Model picker: the search box's placeholder"))
+                .autocorrectionDisabled()
+            #endif
+        } else {
+            list
+        }
+    }
+
+    private var list: some View {
         List {
+            // Pinned first, for switching in a tap (asked 2026-11-07).
+            if searchWords.isEmpty, listsModels, !settings.pinnedModelsHere.isEmpty { pinnedSection }
+            // (searching, the box's results come straight under it)
+            if searchWords.isEmpty { effortAndControls }
+
+            if fromSettings, !isFastLane {
+                Section {
+                    Label {
+                        Text("Each conversation has its own model: pick one from the conversation's menu. Without one, a conversation runs on the model your server is set to, and a bot's chat on the bot's own, which Edit Bot changes.",
+                             comment: "Settings › Model: where models are picked now that each conversation has its own")
+                    } icon: { Image(systemName: "bubble.left.and.text.bubble.right") }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                } header: {
+                    Text("Model")
+                }
+            } else if !searchWords.isEmpty {
+                searchSections
+            } else {
+                modelSections
+            }
+        }
+    }
+
+    private var pinnedSection: some View {
+        Section {
+            modelRows(settings.pinnedModelsHere, showingProvider: true)
+        } header: {
+            Text("Pinned", comment: "Model picker: the models the person pinned, at the top")
+        }
+    }
+
+    /// A row's long press: Pin, and making it the bot's (or the server's) model (asked 2026-11-07).
+    @ViewBuilder
+    private func rowMenu(_ choice: ModelChoice) -> some View {
+        pinButton(choice)
+        if canMakeDefault(choice) {
+            Button(String(localized: "Make \(choice.name) \(ownerName)'s Default", comment: "Model picker: makes the picked model a bot's (or the server's) default, e.g. Make GLM 5 Sol's Default"),
+                   systemImage: "star") { makingDefault = choice }
+        }
+    }
+
+    /// On the Dashboard, where a bot's model (the main agent's too) can be changed, and not the
+    /// default already.
+    private func canMakeDefault(_ choice: ModelChoice) -> Bool {
+        !isFastLane && conversation.connection == .hermesServe && owner != nil && !savingDefault
+            && !(serverDefault?.model == choice.model && serverDefault?.provider == choice.provider)
+    }
+
+    /// Pin or Unpin, for a row's long press and its swipe.
+    @ViewBuilder
+    private func pinButton(_ choice: ModelChoice) -> some View {
+        if settings.isPinned(choice) {
+            Button(String(localized: "Unpin", comment: "Model picker: takes a model out of the pinned ones"), systemImage: "pin.slash") {
+                withAnimation { settings.togglePin(choice) }
+            }
+        } else {
+            Button(String(localized: "Pin", comment: "Model picker: keeps a model at the top of the list and in the chat header's menu"), systemImage: "pin") {
+                withAnimation { settings.togglePin(choice) }
+            }
+            .tint(.orange)
+        }
+    }
+
+    /// How hard the model thinks, and the open conversation's own switches.
+    @ViewBuilder
+    private var effortAndControls: some View {
             Section {
                 // A menu, not segments: seven levels don't share a phone-width row without
                 // truncating "Default" and "Medium" to "…".
@@ -85,36 +207,119 @@ struct ModelPickerView: View {
                 ChatControlsSection(stored: stored, source: ChatControlsSection.defaultSource,
                                     offersAutoApprove: conversation.connection != .hermesSessions)
             }
+    }
 
-            if fromSettings, !isFastLane {
-                Section {
-                    Label {
-                        Text("Each conversation has its own model: pick one from the conversation's menu. Without one, a conversation runs on the model your server is set to, and a bot's chat on the bot's own, which Edit Bot changes.",
-                             comment: "Settings › Model: where models are picked now that each conversation has its own")
-                    } icon: { Image(systemName: "bubble.left.and.text.bubble.right") }
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                } header: {
-                    Text("Model")
-                }
-            } else {
-                modelSections
+    // MARK: Search
+
+    /// The words typed, lowercased; empty when the box is.
+    private var searchWords: [String] {
+        query.lowercased().split(whereSeparator: \.isWhitespace).map(String.init)
+    }
+
+    /// The server's own models that hold every word typed, in the picker's order.
+    private var serverMatches: [ModelChoice] {
+        let words = searchWords
+        return byProvider.flatMap(\.models).filter { choice in
+            let text = (choice.model + " " + choice.name + " " + choice.providerName).lowercased()
+            return words.allSatisfy { OpenRouterCatalog.holds($0, in: text) }
+        }
+    }
+
+    /// The server's OpenRouter, when it has one set up: the slug and name it lists it under.
+    private var openRouter: (slug: String, name: String)? {
+        choices.first { $0.provider == Self.openRouterSlug }.map { ($0.provider, $0.providerName) }
+    }
+
+    static let openRouterSlug = "openrouter"
+
+    /// OpenRouter's models that hold every word typed, less the ones the server lists already.
+    private var catalogMatches: [OpenRouterCatalog.Model] {
+        guard openRouter != nil else { return [] }
+        let listed = Set(choices.map(\.model))
+        return OpenRouterCatalog.search(query, in: catalog).filter { !listed.contains($0.id) }
+    }
+
+    @ViewBuilder
+    private var searchSections: some View {
+        let mine = serverMatches
+        let more = catalogMatches
+        if !mine.isEmpty {
+            Section {
+                modelRows(mine, showingProvider: true)
+            } header: {
+                Text("On Your Server", comment: "Model picker search: the server's own models that match")
             }
         }
-        .navigationTitle("Model")
-        .navigationBarTitleDisplayMode(.inline)
-        .task { if !fromSettings || isFastLane { await load() } }
-        .refreshable { await load() }
-        .confirmationDialog(makeDefaultQuestion, isPresented: Binding(get: { makingDefault != nil }, set: { if !$0 { makingDefault = nil } }),
-                            titleVisibility: .visible, presenting: makingDefault) { choice in
-            Button(String(localized: "Make It the Default", comment: "Model picker: confirms making a model a bot's or the server's default")) { makeDefault(choice, confirmed: false) }
-        } message: { _ in
-            Text(makeDefaultDetail)
+        if let openRouter {
+            Section {
+                ForEach(more, id: \.id) { model in
+                    Button { selectFromCatalog(model, under: openRouter) } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(model.name)
+                                HStack(spacing: 6) {
+                                    Text(model.id).font(.caption.monospaced())
+                                    if let context = OpenRouterCatalog.contextLabel(model.context) {
+                                        Text(verbatim: "· \(context)").font(.caption)
+                                    }
+                                }
+                                .foregroundStyle(.secondary)
+                                if let price = model.price {
+                                    Text(price.summary).font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu { rowMenu(Self.choice(model, under: openRouter)) } preview: { ModelDetails(choice: Self.choice(model, under: openRouter)) }
+                    .swipeActions(edge: .leading) { pinButton(Self.choice(model, under: openRouter)) }
+                }
+                if catalogLoading, catalog.isEmpty {
+                    ProgressView()
+                } else if let catalogError {
+                    Label(catalogError, systemImage: "wifi.exclamationmark").foregroundStyle(.secondary).font(.footnote)
+                }
+            } header: {
+                Text("More on \(openRouter.name)", comment: "Model picker search: OpenRouter's models your server doesn't list, e.g. More on OpenRouter")
+            } footer: {
+                Text("From \(openRouter.name)'s full list: models that can use tools. Your server runs them on its \(openRouter.name) key.",
+                     comment: "Model picker search: under OpenRouter's extra models")
+            }
         }
-        .confirmationDialog(hermesAsks?.question ?? "", isPresented: Binding(get: { hermesAsks != nil }, set: { if !$0 { hermesAsks = nil } }),
-                            titleVisibility: .visible, presenting: hermesAsks) { asked in
-            Button(String(localized: "Use It", comment: "Model picker: says yes to Hermes's question about an expensive model")) { makeDefault(asked.choice, confirmed: true) }
+        if mine.isEmpty, more.isEmpty, !catalogLoading {
+            ContentUnavailableView.search(text: query)
         }
+    }
+
+    /// Reads OpenRouter's list the first time a search needs it.
+    private func loadCatalogIfNeeded() async {
+        guard !searchWords.isEmpty, openRouter != nil, catalog.isEmpty, !catalogLoading else { return }
+        catalogLoading = true
+        defer { catalogLoading = false }
+        do {
+            catalog = try await OpenRouterCatalog.shared.models()
+            catalogError = nil
+        } catch {
+            catalogError = String(localized: "Couldn't read OpenRouter's list: \(error.localizedDescription)",
+                                  comment: "Model picker search: OpenRouter's model list didn't load")
+        }
+    }
+
+    /// A model from OpenRouter's list: picked as the server's OpenRouter would list it, and kept
+    /// in that section so the checkmark shows once the search is cleared.
+    private func selectFromCatalog(_ model: OpenRouterCatalog.Model, under openRouter: (slug: String, name: String)) {
+        let choice = Self.choice(model, under: openRouter)
+        if !choices.contains(where: { $0.id == choice.id }) { choices.append(choice) }
+        collapsed.remove(openRouter.slug)
+        select(choice)
+        query = ""
+    }
+
+    static func choice(_ model: OpenRouterCatalog.Model, under openRouter: (slug: String, name: String)) -> ModelChoice {
+        ModelChoice(provider: openRouter.slug, providerName: openRouter.name, model: model.id, name: model.name, isCurrent: false,
+                    price: model.price, context: model.context)
     }
 
     @ViewBuilder
@@ -135,7 +340,13 @@ struct ModelPickerView: View {
             } header: {
                 Text("Model")
             } footer: {
-                if !isFastLane { modelFooter }
+                VStack(alignment: .leading, spacing: 6) {
+                    if !isFastLane { modelFooter }
+                    if settings.pinnedModelsHere.isEmpty {
+                        Text("Long-press a model to pin it: pinned models come first here.",
+                             comment: "Model picker footer: how to pin a model")
+                    }
+                }
             }
 
             // This conversation's pick as its bot's model, or the server's, from now on.
@@ -191,7 +402,7 @@ struct ModelPickerView: View {
     }
 
     @ViewBuilder
-    private func modelRows(_ models: [ModelChoice]) -> some View {
+    private func modelRows(_ models: [ModelChoice], showingProvider: Bool = false) -> some View {
         ForEach(models) { choice in
                         Button { select(choice) } label: {
                             HStack {
@@ -200,8 +411,19 @@ struct ModelPickerView: View {
                                     if choice.name != choice.model {
                                         Text(choice.model).font(.caption.monospaced()).foregroundStyle(.secondary)
                                     }
+                                    if showingProvider {
+                                        Text(choice.provider.hasPrefix("custom") && choice.onThisNetwork != false ? String(localized: "Local", comment: "Models served by your own machines") : choice.providerName)
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    if let price = choice.price {
+                                        Text(price.summary).font(.caption).foregroundStyle(.secondary)
+                                    }
                                 }
                                 Spacer()
+                                if !showingProvider, settings.isPinned(choice) {
+                                    Image(systemName: "pin.fill").font(.caption2).foregroundStyle(.secondary)
+                                        .accessibilityLabel(String(localized: "Pinned", comment: "Model picker: the models the person pinned, at the top"))
+                                }
                                 // The checkmark is what the conversation runs on; a server's
                                 // `isCurrent` is only its default (config.yaml), named as that so
                                 // the two are never taken for one another (GitHub issue 44).
@@ -215,6 +437,8 @@ struct ModelPickerView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .contextMenu { rowMenu(choice) } preview: { ModelDetails(choice: choice) }
+                        .swipeActions(edge: .leading) { pinButton(choice) }
         }
     }
 
@@ -361,28 +585,73 @@ struct ModelPickerView: View {
         }
     }
 
+    /// Switches the open conversation to a model, as a pick here does: from the chat header's
+    /// pinned menu.
+    static func use(_ choice: ModelChoice, in conversation: Conversation, settings: Settings) async throws {
+        if settings.transport == .chatCompletions {
+            settings.fastLaneModel = choice.model
+            return
+        }
+        conversation.pickOwnModel(.init(model: choice.model, provider: choice.provider.nilIfEmpty))
+        try await conversation.pinOpenSessionModel(choice.model, provider: choice.provider)
+    }
+
+    /// Whether the open conversation runs on a model (the checkmark).
+    static func isPicked(_ choice: ModelChoice, in conversation: Conversation, settings: Settings) -> Bool {
+        if settings.transport == .chatCompletions { return settings.fastLaneModel == choice.model }
+        guard let pick = conversation.ownModel else { return false }
+        return pick.model == choice.model && (pick.provider == nil || pick.provider == choice.provider)
+    }
+
     /// The active backend's models: llama-swap's on the fast lane, the gateway's otherwise.
-    static func loadChoices(conversation: Conversation, settings: Settings) async throws -> [ModelChoice] {
+    static func loadChoices(conversation: Conversation, settings: Settings, refresh: Bool = false) async throws -> [ModelChoice] {
+        #if DEBUG
+        if DevHooks.demoModels {
+            let local = ["qwen36-splash", "qwen36-35b-q4"].map {
+                ModelChoice(provider: "custom:local", providerName: "Local", model: $0, name: $0, isCurrent: $0 == "qwen36-splash")
+            }
+            let openRouter = [("anthropic/claude-sonnet-4.6", "Claude Sonnet 4.6", 3.0, 15.0), ("google/gemini-3-flash", "Gemini 3 Flash", 0.3, 2.5),
+                              ("qwen/qwen3.8-flash", "Qwen3.8 Flash", 0.15, 0.6), ("qwen/qwen3.8-max-0902", "Qwen3.8 Max", 1.2, 6.0)].map {
+                ModelChoice(provider: openRouterSlug, providerName: "OpenRouter", model: $0.0, name: $0.1, isCurrent: false,
+                            price: ModelPrice(input: $0.2, output: $0.3, cacheRead: $0.2 / 10), context: 262_144)
+            }
+            let venice = ModelChoice(provider: "custom:venice", providerName: "venice", model: "qwen-3-8-flash", name: "qwen-3-8-flash", isCurrent: false,
+                                     price: ModelPrice(input: 0.14, output: 0.49, cacheRead: 0.014), context: 1_000_000, onThisNetwork: false)
+            return local + openRouter + [venice]
+        }
+        #endif
         if settings.transport == .chatCompletions {
             return try await fastLaneModels(base: settings.activeBaseURL)
         }
         // A Dashboard bot's chat lists its profile's, so the default the list marks is the bot's
         // own model, the one its chat runs on without a pick (GitHub issue 58).
         if conversation.connection == .hermesServe, let profile = conversation.routeProfile, profile != "default" {
-            return try await HermesServeClient.shared.modelOptions(forProfile: profile)
+            return try await HermesServeClient.shared.modelOptions(forProfile: profile, refresh: refresh)
         }
         guard let backend = SessionBackend.available(conversation).first else {
             throw TransportError.unreachable(SessionBackend.notConfiguredMessage)
         }
-        return try await backend.modelOptions()
+        return try await backend.modelOptions(refresh: refresh)
     }
 
-    private func load() async {
+    /// `refresh` (pulled down): Hermes reads every provider's list again; otherwise a custom
+    /// endpoint not in use shows the list it saved (Venice's lacked a new model, 2026-11-07).
+    private func load(refresh: Bool = false) async {
         loading = true
         defer { loading = false }
         do {
-            choices = try await Self.loadChoices(conversation: conversation, settings: settings)
+            choices = Self.keepingPick(pick, in: try await Self.loadChoices(conversation: conversation, settings: settings, refresh: refresh))
             error = nil
+            if choices.contains(where: { $0.price == nil && VenicePrices.isVenice($0) }) {
+                let venice = await VenicePrices.shared.all()
+                choices = choices.map { choice in
+                    guard choice.price == nil, VenicePrices.isVenice(choice), let known = venice[choice.model] else { return choice }
+                    var priced = choice
+                    priced.price = known.price
+                    priced.context = priced.context ?? known.context
+                    return priced
+                }
+            }
             if !collapsedSeeded {
                 collapsedSeeded = true
                 collapsed = Set(byProvider.filter { group in
@@ -392,6 +661,15 @@ struct ModelPickerView: View {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    /// A pick from OpenRouter's full list isn't on the server's own: it is added to its provider's
+    /// section, so the checkmark has a row to sit on.
+    static func keepingPick(_ pick: ConversationModels.Pick?, in choices: [ModelChoice]) -> [ModelChoice] {
+        guard let pick, let provider = pick.provider, provider == openRouterSlug,
+              !choices.contains(where: { $0.model == pick.model && $0.provider == provider }),
+              let group = choices.first(where: { $0.provider == provider }) else { return choices }
+        return choices + [ModelChoice(provider: provider, providerName: group.providerName, model: pick.model, name: pick.model, isCurrent: false)]
     }
 
     /// llama-swap lists every model it can load, with the ones already loaded flagged.
@@ -408,6 +686,55 @@ struct ModelPickerView: View {
             let loaded = entry["status"]?["value"]?.string == "loaded"
             return ModelChoice(provider: "llama-swap", providerName: providerName, model: id,
                                name: loaded ? String(localized: "\(id)  ·  loaded", comment: "A model already loaded on the server") : id, isCurrent: loaded)
+        }
+    }
+}
+
+/// A model held up by a long press: what it is and what it costs (asked 2026-11-07).
+private struct ModelDetails: View {
+    let choice: ModelChoice
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(choice.name).font(.headline)
+                Text(choice.model).font(.caption.monospaced()).foregroundStyle(.secondary)
+                Text(choice.provider.hasPrefix("custom") && choice.onThisNetwork != false
+                     ? String(localized: "Local", comment: "Models served by your own machines") : choice.providerName)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 6) {
+                if let price = choice.price {
+                    row(String(localized: "Input", comment: "Model details: price of what the model reads"), ModelPrice.dollars(price.input))
+                    row(String(localized: "Output", comment: "Model details: price of what the model writes"), ModelPrice.dollars(price.output))
+                    if let cache = price.cacheRead {
+                        row(String(localized: "Cached input", comment: "Model details: price of input read again from the provider's cache"), ModelPrice.dollars(cache))
+                    }
+                } else {
+                    GridRow {
+                        Text("No price from this provider", comment: "Model details: the provider doesn't say what the model costs")
+                            .gridCellColumns(2).foregroundStyle(.secondary)
+                    }
+                }
+                if let context = OpenRouterCatalog.contextLabel(choice.context) {
+                    row(String(localized: "Context", comment: "Model details: how many tokens the model reads"),
+                        String(localized: "\(context) tokens", comment: "Model details: context size, e.g. 1M tokens"))
+                }
+            }
+            .font(.subheadline)
+            if choice.price.map({ !$0.isFree }) ?? false {
+                Text("Per million tokens, in US dollars.", comment: "Model details: the unit of the prices")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(18)
+        .frame(width: 320, alignment: .leading)
+    }
+
+    private func row(_ label: String, _ value: String) -> some View {
+        GridRow {
+            Text(label).foregroundStyle(.secondary)
+            Text(value).monospacedDigit()
         }
     }
 }

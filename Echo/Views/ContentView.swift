@@ -574,7 +574,7 @@ struct ContentView: View {
                     // Two lines, both of which open the model picker; beside the second, how
                     // full the model's context is, which opens its own explanation.
                     VStack(spacing: 1) {
-                        Button { showModelPicker = true } label: {
+                        modelButton {
                             Group {
                                 if let botFace {
                                     // A bot's chat: whose it is, by its face and name, side by side.
@@ -597,7 +597,6 @@ struct ContentView: View {
                             .foregroundStyle(theme.textColor)
                             .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
                         .accessibilityLabel("\(headerTitle). Model: \(modelChipLabel)")
                         .accessibilityHint("Choose which model answers")
                         HStack(spacing: 4) {
@@ -614,7 +613,7 @@ struct ContentView: View {
                                 .accessibilityElement(children: .ignore)
                                 .accessibilityLabel("Project: \(projectName)")
                             }
-                            Button { showModelPicker = true } label: {
+                            modelButton {
                                 HStack(spacing: 3) {
                                     // A bot's chat names the tag another chat reaches it by.
                                     Text("\(conversation.bot.map { "@" + BotMentions.shownTag(profile: $0.profile, handle: $0.handle, roster: BotDirectory.shared.roster) } ?? ProfileCatalog.agentName(conversation.elsewhere?.profile ?? settings.profileName, settings: settings)) · \(modelChipLabel)").chatFont(.caption).lineLimit(1)
@@ -623,7 +622,6 @@ struct ContentView: View {
                                 .foregroundStyle(.secondary)
                                 .contentShape(Rectangle())
                             }
-                            .buttonStyle(.plain)
                             .accessibilityHidden(true)   // the line above says it, with the same action
                             if runsWithoutAsking {
                                 Image(systemName: "bolt.fill")
@@ -1005,6 +1003,47 @@ struct ContentView: View {
 
     /// What the title chip shows: the model this conversation's turns ask for (Redde's pick, or
     /// with New Chats Use the Server's Model on its own), or the backend's default.
+    /// The header's two lines: a tap opens the model picker; on the Mac, a right click the pinned
+    /// models. Not a long press on iOS: the navigation bar takes any press there as a tap (a
+    /// context menu, a menu with a tap of its own and a long-press gesture all opened the picker,
+    /// iOS 27, 2026-11-07): there, they lead the picker the tap opens.
+    @ViewBuilder
+    private func modelButton<Label: View>(@ViewBuilder label: () -> Label) -> some View {
+        Button { showModelPicker = true } label: { label() }
+            .buttonStyle(.plain)
+            #if os(macOS)
+            .contextMenu { pinnedModelsMenu }
+            #endif
+    }
+
+    private func switchModel(to choice: ModelChoice) {
+        Task {
+            do { try await ModelPickerView.use(choice, in: conversation, settings: settings) }
+            catch { conversation.show(error: String(localized: "Couldn't switch this conversation: \(error.localizedDescription)")) }
+        }
+    }
+
+    /// The pinned models, for switching in a tap (asked 2026-11-07), and the whole list: the Mac
+    /// header's right click. (Not in the … menu: taken out at his word, 11-07.)
+    @ViewBuilder
+    private var pinnedModelsMenu: some View {
+        let pinned = settings.pinnedModelsHere
+        if pinned.isEmpty {
+            Text("No pinned models yet", comment: "Chat header's model menu: nothing pinned")
+        }
+        ForEach(pinned) { choice in
+            Button { switchModel(to: choice) } label: {
+                if ModelPickerView.isPicked(choice, in: conversation, settings: settings) {
+                    Label(choice.name, systemImage: "checkmark")
+                } else {
+                    Text(choice.name)
+                }
+            }
+        }
+        Divider()
+        Button(String(localized: "All Models…", comment: "Chat header's model menu: opens the model picker"), systemImage: "list.bullet") { showModelPicker = true }
+    }
+
     private var modelChipLabel: String {
         let picked = conversation.turnModel?.model
         // A bot's chat runs on the bot's own model, as its profile says (unless picked here).

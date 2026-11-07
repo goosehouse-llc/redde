@@ -339,6 +339,11 @@ final class Settings: ServeEndpoint {
     var botVoices: [String: [String: BotVoice]] {
         didSet { store(try? JSONEncoder().encode(botVoices), forKey: Keys.botVoices) }
     }
+    /// Models pinned at the top of the model picker (asked 2026-11-07), per server (its host, see
+    /// `pinnedModelsKey`; `fastLane` for the fast lane's). Synced.
+    var pinnedModels: [String: [ModelChoice]] {
+        didSet { store(try? JSONEncoder().encode(pinnedModels), forKey: Keys.pinnedModels) }
+    }
     /// Bots and group chats muted, per server (its id), then `BotListItem` id: until when
     /// (`Date.distantFuture`: until turned back on). See `Mutes`.
     var mutes: [String: [String: Date]] {
@@ -380,6 +385,31 @@ final class Settings: ServeEndpoint {
     var mutesHere: [String: Date] {
         get { mutes[activeServerID.uuidString] ?? [:] }
         set { mutes[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
+    }
+    /// `pinnedModels` for the connection in use.
+    var pinnedModelsHere: [ModelChoice] {
+        get { pinnedModels[pinnedModelsKey] ?? pinnedModels[activeServerID.uuidString] ?? [] }
+        set {
+            pinnedModels[pinnedModelsKey] = newValue.isEmpty ? nil : newValue
+            if pinnedModelsKey != activeServerID.uuidString { pinnedModels[activeServerID.uuidString] = nil }
+        }
+    }
+    /// Pins go by the server's host ("host:dchermes"), not its record's id: a server added on each
+    /// device by hand has a different id on each, and the pins didn't follow (11-07). The fast lane's
+    /// are its own.
+    private var pinnedModelsKey: String {
+        if transport == .chatCompletions { return "fastLane" }
+        let address = activeServer.map { $0.serveURL.isEmpty ? $0.gatewayURL : $0.serveURL } ?? ""
+        if let host = (URL(string: address)?.host() ?? URL(string: "http://" + address)?.host())?.lowercased(), !host.isEmpty {
+            return "host:" + host
+        }
+        return activeServerID.uuidString
+    }
+    func isPinned(_ choice: ModelChoice) -> Bool { pinnedModelsHere.contains { $0.id == choice.id } }
+    /// Pins a model at the end of the pinned ones, or unpins it.
+    func togglePin(_ choice: ModelChoice) {
+        if isPinned(choice) { pinnedModelsHere.removeAll { $0.id == choice.id } }
+        else { var kept = choice; kept.isCurrent = false; pinnedModelsHere.append(kept) }
     }
     /// `botVoices` for the server in use.
     var botVoicesHere: [String: BotVoice] {
@@ -935,6 +965,7 @@ final class Settings: ServeEndpoint {
         static let botSections = "botSections"
         static let apiBots = "apiBots"
         static let botVoices = "botVoices"
+        static let pinnedModels = "pinnedModels"
         static let mutes = "mutes"
         static let agentCalls = "agentCalls"
         static let callsWhileLocked = "callsWhileLocked"
@@ -1048,6 +1079,8 @@ final class Settings: ServeEndpoint {
             .flatMap { try? JSONDecoder().decode([String: [APIBot]].self, from: $0) } ?? [:]
         botVoices = defaults.data(forKey: Keys.botVoices)
             .flatMap { try? JSONDecoder().decode([String: [String: BotVoice]].self, from: $0) } ?? [:]
+        pinnedModels = defaults.data(forKey: Keys.pinnedModels)
+            .flatMap { try? JSONDecoder().decode([String: [ModelChoice]].self, from: $0) } ?? [:]
         mutes = defaults.data(forKey: Keys.mutes)
             .flatMap { try? JSONDecoder().decode([String: [String: Date]].self, from: $0) } ?? [:]
         agentCalls = defaults.bool(forKey: Keys.agentCalls)
@@ -1162,7 +1195,7 @@ final class Settings: ServeEndpoint {
     static let syncedKeys: [String] = [
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.cardAppearance, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
-        Keys.fastLaneURL, Keys.fastLaneModel, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
+        Keys.fastLaneURL, Keys.fastLaneModel, Keys.pinnedModels, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
@@ -1193,6 +1226,7 @@ final class Settings: ServeEndpoint {
         case Keys.cardAppearance: cardAppearance = pick(Appearance.system)
         case Keys.chatFont: chatFont = pick(ChatFont.theme)
         case Keys.agendaCalendars: agendaCalendars = value as? [String] ?? []
+        case Keys.pinnedModels: pinnedModels = decoded([:])
         case Keys.linkPreviews: linkPreviews = flag()
         case Keys.addressMaps: addressMaps = flag(true)
         case Keys.botFaces: botFaces = flag(true)

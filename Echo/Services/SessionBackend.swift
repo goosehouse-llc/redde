@@ -153,10 +153,10 @@ enum SessionBackend {
         }
     }
 
-    func modelOptions() async throws -> [ModelChoice] {
+    func modelOptions(refresh: Bool = false) async throws -> [ModelChoice] {
         switch self {
-        case .serve(let client): try await client.modelOptions()
-        case .ledger(let api): try await api.modelOptions()
+        case .serve(let client): try await client.modelOptions(refresh: refresh)
+        case .ledger(let api): try await api.modelOptions(refresh: refresh)
         }
     }
 }

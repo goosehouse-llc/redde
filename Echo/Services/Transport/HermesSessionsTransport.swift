@@ -586,9 +586,11 @@ nonisolated struct HermesSessionsAPI: Sendable {
         _ = try await send("DELETE", "api/sessions/\(id)")
     }
 
-    /// Models the gateway can route to, grouped by provider (`/api/model/options`).
-    func modelOptions() async throws -> [ModelChoice] {
-        try Self.parseModelOptions(try await send("GET", "api/model/options"))
+    /// Models the gateway can route to, grouped by provider (`/api/model/options`). `refresh`: each
+    /// provider's list read again (a custom endpoint not in use is otherwise its saved list).
+    func modelOptions(refresh: Bool = false) async throws -> [ModelChoice] {
+        try Self.parseModelOptions(try await send("GET", "api/model/options", query: refresh ? [URLQueryItem(name: "refresh", value: "true")] : [],
+                                                  timeout: refresh ? 45 : 20))
     }
 
     /// Shared with hermes serve's `model.options`, which returns the same payload.
@@ -604,13 +606,21 @@ nonisolated struct HermesSessionsAPI: Sendable {
             let slug = provider["slug"]?.string ?? provider["id"]?.string ?? ""
             let pname = provider["name"]?.string ?? slug
             let current = provider["is_current"]?.bool ?? false
+            let nearby = provider["api_url"]?.string.flatMap(ModelChoice.isOnThisNetwork)
             for model in provider["models"]?.array ?? [] {
                 // Live payloads carry models as bare id strings; keep the object shape too.
                 let id = model.string ?? model["id"]?.string ?? model["model"]?.string ?? ""
                 guard !id.isEmpty else { continue }
+                // Prices as the Dashboard shows them: per million tokens (`row.pricing[id]`).
+                let priced = provider["pricing"]?[id]
+                let price = ModelPrice.hermes(priced?["input"]?.string).map { input in
+                    ModelPrice(input: input, output: ModelPrice.hermes(priced?["output"]?.string) ?? 0,
+                               cacheRead: ModelPrice.hermes(priced?["cache"]?.string))
+                }
                 out.append(ModelChoice(provider: slug, providerName: pname, model: id,
                                        name: model["name"]?.string ?? id,
-                                       isCurrent: current && (model["is_current"]?.bool ?? (id == currentModel))))
+                                       isCurrent: current && (model["is_current"]?.bool ?? (id == currentModel)),
+                                       price: price, onThisNetwork: nearby))
             }
         }
         return out

@@ -16,6 +16,8 @@ final class Conversation {
     private(set) var isStreaming = false { didSet { if isStreaming != oldValue { watchHostTurns() } } }
     private(set) var statusLine: String?
     private(set) var lastError: String?
+    /// An error from outside a turn, shown where a turn's is (the header's pinned-model menu).
+    func show(error text: String) { lastError = text }
     /// A Kanban worker's run, open to read (GitHub issue 37): Hermes won't resume one, since a
     /// second writer on the card's workspace would go unsupervised, so there is no writing to it.
     private(set) var isWorkerTranscript = false

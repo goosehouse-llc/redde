@@ -292,6 +292,57 @@ nonisolated struct ModelChoice: Identifiable, Equatable, Sendable, Codable {
     var model: String
     var name: String
     var isCurrent: Bool
+    /// What it costs, when the provider says (Hermes's list, or Venice's own): `ModelPrice`.
+    var price: ModelPrice? = nil
+    /// How many tokens it reads, when known.
+    var context: Int? = nil
+    /// Whether its provider's address is on this network (localhost, a private or Tailscale
+    /// address, a one-word or .local name); nil when the server didn't say. A custom endpoint that
+    /// isn't (Venice) keeps a section of its own rather than folding into Local.
+    var onThisNetwork: Bool? = nil
+
+    nonisolated static func isOnThisNetwork(_ address: String) -> Bool? {
+        guard let host = URL(string: address)?.host()?.lowercased() ?? URL(string: "http://" + address)?.host()?.lowercased(), !host.isEmpty else { return nil }
+        if host == "localhost" || host.hasSuffix(".local") || host.hasSuffix(".ts.net") || host.hasSuffix(".lan") || !host.contains(".") { return true }
+        let parts = host.split(separator: ".").compactMap { Int($0) }
+        guard parts.count == 4 else { return false }
+        switch (parts[0], parts[1]) {
+        case (127, _), (10, _), (192, 168): return true
+        case (172, 16 ... 31), (100, 64 ... 127), (169, 254): return true
+        default: return false
+        }
+    }
+}
+
+/// A model's price in US dollars per million tokens (asked 2026-11-07: "see current pricing on
+/// each model").
+nonisolated struct ModelPrice: Hashable, Sendable, Codable {
+    var input: Double
+    var output: Double
+    var cacheRead: Double?
+
+    var isFree: Bool { input == 0 && output == 0 }
+
+    /// "$0.14", "$0.014", "free".
+    static func dollars(_ value: Double) -> String {
+        if value == 0 { return String(localized: "free", comment: "Model price: costs nothing") }
+        let digits = value >= 0.1 ? 2 : value >= 0.01 ? 3 : 4
+        return "$" + value.formatted(.number.precision(.fractionLength(0 ... digits)).grouping(.never).locale(Locale(identifier: "en_US")))
+    }
+
+    /// Under a model's name: "$0.14 in · $0.49 out per 1M tokens".
+    var summary: String {
+        if isFree { return String(localized: "Free", comment: "Model picker: a model that costs nothing") }
+        return String(localized: "\(Self.dollars(input)) in · \(Self.dollars(output)) out per 1M tokens",
+                      comment: "Model picker: a model's price, input and output, per million tokens")
+    }
+
+    /// Hermes's picker strings, already per million tokens: "$0.30", "free".
+    static func hermes(_ text: String?) -> Double? {
+        guard let text = text?.trimmingCharacters(in: .whitespaces).lowercased(), !text.isEmpty, text != "?" else { return nil }
+        if text == "free" { return 0 }
+        return Double(text.replacingOccurrences(of: "$", with: "").replacingOccurrences(of: ",", with: ""))
+    }
 }
 
 nonisolated enum TransportError: LocalizedError {

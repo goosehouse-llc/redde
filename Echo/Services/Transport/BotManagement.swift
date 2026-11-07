@@ -222,9 +222,9 @@ extension HermesServeClient {
     }
 
     /// The models a bot can have, its own marked current (the main profile's, for "default").
-    func modelOptions(forProfile name: String) async throws -> [ModelChoice] {
+    func modelOptions(forProfile name: String, refresh: Bool = false) async throws -> [ModelChoice] {
         try await ensureConnected()
-        let result = try await call("model.options", params: .object(["explicit_only": .bool(true), "profile": .string(name)]))
+        let result = try await call("model.options", params: .object(["explicit_only": .bool(true), "profile": .string(name), "refresh": .bool(refresh)]))
         return HermesSessionsAPI.parseModelOptions(result)
     }
 
