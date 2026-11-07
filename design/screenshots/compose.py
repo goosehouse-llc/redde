@@ -125,6 +125,14 @@ REVIEW = ('ph-review.png', (48, 849, 1273, 2066), 56)      # the email to check 
 APPROVAL = ('ph-approve.png', (48, 1551, 1273, 2529), 56)  # the approval in plain words
 FLIGHT = ('ph-flight.png', (48, 732, 1273, 1500), 56)      # the flight card's first leg (2.3.1)
 HOME = ('ph-home.png', (48, 470, 1273, 1340), 56)         # the home card's lights and the reading lamp (2.3.1)
+# 2.4 (2026-11-06): pieces of its new screens, each a sheet on the phone, cut from the sheet's top
+# edge (row 189 on a 1320×2868 iPhone 18 Pro Max): set over the phone's screens, and on iPad over
+# the chat list's empty pane, since the iPad shows them as small sheets in the middle.
+READER = ('ph-reader.png', (0, 189, 1320, 1690), 96)      # an email in the reader, its one-line summary on top
+COMINGUP = ('ph-comingup.png', (0, 189, 1320, 1600), 96)  # Agent Activity's Coming Up, today's part
+INBOX = ('ph-inbox.png', (0, 189, 1320, 1230), 96)        # the Inbox: the piles and two emails
+GOAL = ('ph-goal.png', (0, 189, 1320, 2868), 96)          # a goal's page: progress, last check-in, plan
+MEMORY = ('ph-memory.png', (0, 189, 1320, 2600), 96)      # What Your Agent Remembers, in Paper White
 
 def compose_cards(src, dst, headline, sub, bg, fg, subfg, pad, cards, blank_below=None):
     """A screen with cards from other screens set over its empty lower part, each turned a little
@@ -201,43 +209,48 @@ WHITE = (255, 255, 255); MIST = (200, 214, 240); SAND = (100, 96, 88); ASH = (17
 PLUM = (44, 30, 78); LILAC = (206, 192, 246)
 os.makedirs(f'{OUT}/iphone-6.9', exist_ok=True); os.makedirs(f'{OUT}/ipad-13', exist_ok=True)
 CORAL = (206, 92, 58); PEACH = (255, 222, 204); TEAL = (12, 84, 92); MINT = (178, 228, 226)
-# 2.3 (2026-10-30): the panorama, then what 2.3 brings (ahead of your day, the day's timeline, answer
-# cards, approvals), the bots, the car and privacy. Out: work, rich answers, backend (iPhone; the
-# iPad keeps it, having no car) and phone tools. A slot with a list of cards is drawn by compose_cards.
+# 2.4 (2026-11-06): the panorama, then what 2.4 brings (goals, the inbox, Today with Coming Up,
+# memory in Paper White), then 2.3's answers, bots and approvals, and privacy. Out: ahead of your
+# day and the day's timeline (Today and Coming Up take their place), the crew, the car (iPhone) and
+# the backend (iPad). Renumbered: answers 05 → 07, bots 06 → 08, approvals 08 → 09.
+# A slot with a list of cards is drawn by compose_cards.
 phone = [
   ('ph-chat-dark', '01-hero',    'Your agent, in your pocket.',  'Voice or text, on your own server. Nothing in between.', BLUE, WHITE, MIST),
   ('ph-voice',    '02-voice',    'Just talk.',                   'An orb that moves with your voice. On-device speech, hands-free if you like.', (24, 32, 46), WHITE, MIST),
-  # The chat list's ideas and briefings, and a Leave-By Alert come in over them (-echo.demoLeaveBy).
-  ('ph-ahead',    '03-ahead',    'Ahead of your day.',           'Ideas to swipe each morning, your week ahead, and a nudge when it’s time to leave.', CORAL, WHITE, PEACH),
-  ('ph-day',      '04-day',      'Your day at a glance.',        'Ask what’s on and see it to scale, free time marked. Tap a gap to add an event.', PAPER, INK, SAND),
+  ('ph-goal',     '03-goals',    'Goals it works toward.',       'Tell your agent what you want done. It plans the steps, checks in, and shows how far along you are.', CORAL, WHITE, PEACH),
+  ('ph-inbox',    '04-inbox',    'Your inbox, sorted.',          'Important, Needs Reply, FYI and News, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,
+   [(READER, 0.80, (0.50, 0.66), -1.5)]),
+  ('ph-today',    '05-today',    'Today, above your chats.',     'Your inbox, briefings and goals in one row. Coming Up shows what your agent will do next.', (24, 32, 46), WHITE, MIST,
+   [(COMINGUP, 0.80, (0.50, 0.80), 1.5)]),
+  ('ph-memory',   '06-memory',   'Memory you can see.',          'What your agent knows about you, in plain sentences. Change it, add to it, or bring it from ChatGPT or Claude.', PAPER, INK, SAND),
   # 2.3.1: things to buy (the agent's pick, prices, stock), with a flight and the home's controls over it.
-  ('ph-purchase', '05-answers',  'Answers you can use.',         'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
+  ('ph-purchase', '07-answers',  'Answers you can use.',         'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
    [(FLIGHT, 0.45, (0.245, 0.865), -1.5), (HOME, 0.43, (0.765, 0.855), 1.5)], 2380),
   # 2.0: the bots. Raw shots from PromoVideoUITests.testBotsShots (see README).
-  ('ph-bots',     '06-bots',     'Meet the crew.',               'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
-  ('ph-crew',     '07-crew',     'Talk to the whole crew.',      'Put bots in a group chat and they answer in turn, each in a voice of its own.', (24, 32, 46), WHITE, MIST),
-  ('ph-approve',  '08-approve',  'Nothing happens without you.', 'Check an email before it sends. Approvals say in plain words what will change.', CHAR, BONE, ASH,
+  ('ph-bots',     '08-bots',     'Meet the crew.',               'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
+  ('ph-approve',  '09-approve',  'Nothing happens without you.', 'Check an email before it sends. Approvals say in plain words what will change.', CHAR, BONE, ASH,
    [(REVIEW, 0.76, (0.50, 0.32), -1.5)]),
 ]
 pad = [
   ('pad-default-dark', '01-ipad',      'Built for iPad.',              'Sessions, scheduled jobs and the Kanban board beside the conversation.', BLUE, WHITE, MIST),
   ('pad-voice',        '02-ipad-voice','Just talk.',                   'An orb that moves with your voice. On-device speech, spoken replies, hands-free if you like.', (24, 32, 46), WHITE, MIST),
-  ('pad-ahead',        '03-ipad-ahead', 'Ahead of your day.',          'Ideas to swipe each morning, your week ahead, and a nudge when it’s time to leave.', CORAL, WHITE, PEACH),
-  ('pad-day',          '04-ipad-day',  'Your day at a glance.',        'Ask what’s on and see it to scale, free time marked. Tap a gap to add an event.', PAPER, INK, SAND),
-  ('pad-purchase',     '05-ipad-answers', 'Answers you can use.',      'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
+  ('pad-today',        '03-ipad-goals', 'Goals it works toward.',      'Tell your agent what you want done. It plans the steps, checks in, and shows how far along you are.', CORAL, WHITE, PEACH,
+   [(GOAL, 0.40, (0.64, 0.58), -1.0)]),
+  ('pad-today',        '04-ipad-inbox', 'Your inbox, sorted.',         'Important, Needs Reply, FYI and News, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,
+   [(INBOX, 0.40, (0.60, 0.28), -1.5), (READER, 0.36, (0.70, 0.66), 1.5)]),
+  ('pad-today',        '05-ipad-today', 'Today, above your chats.',    'Your inbox, briefings and goals in one row. Coming Up shows what your agent will do next.', (24, 32, 46), WHITE, MIST,
+   [(COMINGUP, 0.44, (0.64, 0.42), 1.0)]),
+  ('pad-today-paper',  '06-ipad-memory', 'Memory you can see.',       'What your agent knows about you, in plain sentences. Change it, add to it, or bring it from ChatGPT or Claude.', PAPER, INK, SAND,
+   [(MEMORY, 0.40, (0.64, 0.56), -1.0)]),
+  ('pad-purchase',     '07-ipad-answers', 'Answers you can use.',      'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
    [(FLIGHT, 0.28, (0.19, 0.60), -1.5), (HOME, 0.24, (0.19, 0.80), 2.0)]),
-  ('pad-bots',         '06-ipad-bots', 'Meet the crew.',               'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
-  ('pad-crew',         '07-ipad-crew', 'Talk to the whole crew.',      'Put bots in a group chat and they answer in turn, each in a voice of its own.', (24, 32, 46), WHITE, MIST),
-  ('pad-approve',      '08-ipad-approve', 'Nothing happens without you.', 'Check an email before it sends. Approvals say in plain words what will change.', CHAR, BONE, ASH,
+  ('pad-bots',         '08-ipad-bots', 'Meet the crew.',               'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
+  ('pad-approve',      '09-ipad-approve', 'Nothing happens without you.', 'Check an email before it sends. Approvals say in plain words what will change.', CHAR, BONE, ASH,
    [(REVIEW, 0.38, (0.64, 0.73), -1.5)]),
-  ('pad-settings',     '09-ipad-backend', 'Your backend, your rules.', 'Hermes, or any OpenAI-compatible model server. A setup code fills in the address and keys for you.', BLUE, WHITE, MIST),
 ]
 # iPad slots whose capture leaves most of the 13-inch screen empty, drawn larger in the frame (zoom.py):
 # the day's question and card, and the crew's screen, restacked larger.
-ZOOMED = {
-  '04-ipad-day': zoom.day,
-  '07-ipad-crew': zoom.crew,
-}
+ZOOMED = {}   # 2.3's day and crew slots (zoom.day, zoom.crew) left in 2.4
 for kind, slots in (('iphone-6.9', phone), ('ipad-13', pad)):
     for src, name, h, s, bg, fg, sfg, *cards in slots:
         if ONLY and name not in ONLY: continue
@@ -248,8 +261,8 @@ for kind, slots in (('iphone-6.9', phone), ('ipad-13', pad)):
         else:
             draw = compose_tools if name.endswith('-tools') else compose
             draw(f'{SHOTS}/{src}.png', f'{OUT}/{kind}/{name}.png', h, s, bg, fg, sfg, kind == 'ipad-13')
-# iPhone only: CarPlay runs from the phone.
-if not ONLY or '09-car' in ONLY:
+# iPhone only: CarPlay runs from the phone. Not in the 2.4 set; drawn when asked for by name.
+if ONLY and '09-car' in ONLY:
   compose_car([f'{SHOTS}/car-ask.png', f'{SHOTS}/car-voice.png', f'{SHOTS}/car-speaking.png'], f'{OUT}/iphone-6.9/09-car.png',
               'In the car, by voice.', 'CarPlay: tap Ask or Talk, take a note, or pause a reply. Answers are spoken, so your eyes stay on the road.',
               (24, 32, 46), WHITE, MIST)

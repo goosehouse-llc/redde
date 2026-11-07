@@ -6,6 +6,8 @@
 #
 # Builds the Debug app, then launches it on the iPhone 18 Pro Max (6.9") and iPad Pro 13-inch
 # simulators with the dev flags for each slot and a 9:41 status bar. Example endpoints only.
+# 2.4's new slots (2026-11-06) were taken on two made for them on iOS 27.0, "Redde Shots 2.4 iPhone"
+# (iPhone 18 Pro Max) and "Redde Shots 2.4 iPad" (iPad Pro 13-inch (M5)).
 # The 2.3 set (2026-10-30) was taken on simulators of its own, made for it on iOS 27.0:
 #   PHONE=<iPhone 17 Pro Max UDID> PAD=<iPad Pro 13-inch (M5) UDID> design/screenshots/capture.sh <raw>
 # Its Leave-By banner needs notifications allowed on each first: run PromoVideoUITests.testDayLeave
@@ -37,6 +39,7 @@ prepare() {   # device
     --cellularMode active --cellularBars 4 --wifiBars 3 --dataNetwork wifi
   xcrun simctl install "$1" "$APP"
   xcrun simctl spawn "$1" defaults write com.goosehouse.echo setupDone -bool YES
+  xcrun simctl spawn "$1" defaults write com.goosehouse.echo whatsNewSeenVersion "$(grep -m1 MARKETING_VERSION project.yml | grep -o '[0-9.]*')"
   # A fresh install's first launch is still setting up (the iPad sidebar showed a key prompt), so
   # throw one away. With the demo conversation, so its diagram and math have been drawn once:
   # drawn for the first time they arrive late, and the shot caught the transcript short of its end.
@@ -74,6 +77,16 @@ ahead() {   # device name args...
   cp "$RAW/$name-burst/24.png" "$RAW/$name.png"
   echo "$name: pick the picture with the banner from $name-burst"
   clock "$dev" 9:41
+}
+
+# 2.4's screens open as sheets at launch (-echo.screen goal|inbox|memory|comingUp|mailReader), and
+# some of them close again a few seconds in (2026-11-06: Goal and Coming Up by 9 s, the Inbox by
+# 9 s but not at 6 s). So: launch, wait PAUSE, and take a few frames a second apart, keeping the last.
+sheet() {   # device name args...
+  local dev="$1" name="$2"; shift 2
+  PAUSE=${PAUSE:-3} shot "$dev" "$name" "$@" >/dev/null
+  for i in 1 2 3; do sleep 1; xcrun simctl io "$dev" screenshot "$RAW/$name.png" >/dev/null 2>&1; done
+  echo "$name"
 }
 
 # ONLY=phone or ONLY=pad retakes one device's shots into a folder that has the other's.
@@ -114,6 +127,15 @@ shot "$PHONE" ph-home      -echo.demoCards home "${CARDS[@]}"
 clock "$PHONE" 9:41
 shot "$PHONE" ph-review    -echo.demoAsks -echo.demoAsksReviewOnly "${CARDS[@]}"
 shot "$PHONE" ph-approve   -echo.demoApprovalCard skill "${CARDS[@]}"
+# 2.4: a goal's page, the Inbox and an email in the reader, Agent Activity's Coming Up, the chat
+# list with the Today row, and memory in Paper White (compose.py cuts the sheets out for the iPad).
+sheet "$PHONE" ph-goal      -echo.demoGoals -echo.screen goal "${CARDS[@]}"
+sheet "$PHONE" ph-inbox     -echo.demoInbox two -echo.screen inbox "${CARDS[@]}"
+sheet "$PHONE" ph-reader    -echo.demoInbox two -echo.screen mailReader "${CARDS[@]}"
+sheet "$PHONE" ph-comingup  -echo.demoComingUp -echo.screen comingUp "${CARDS[@]}"
+sheet "$PHONE" ph-memory    -echo.demoMemory -echo.screen memory -theme paperWhite -appearance light "${FAST[@]}"
+shot "$PHONE" ph-today      -echo.demoInbox two -echo.demoGoals -echo.demoBriefings -echo.demoProjects -echo.demoBots \
+  -echo.screen sessions -displayName Sol -transport hermesServe -theme standard -appearance dark
 # Website only: the Kanban board (demo cards, no server) and typing with the keyboard up.
 shot "$PHONE" ph-kanban    -echo.demo -echo.demoKanban -echo.screen sessions -echo.section kanban -theme claudeCode -appearance dark "${FAST[@]}"
 # A headless simulator hides the software keyboard; turn that off for this one shot.
@@ -146,6 +168,10 @@ shot "$PAD" pad-weather      -echo.demoCards weather "${PADCARDS[@]}"
 shot "$PAD" pad-purchase     -echo.demoCards purchase "${PADCARDS[@]}"
 clock "$PAD" 9:41
 shot "$PAD" pad-approve      -echo.demoApprovalCard skill "${PADCARDS[@]}"
+# 2.4: the sidebar with the Today row and an empty pane, for the phone's sheets to be set over.
+TODAY=(-echo.demoInbox two -echo.demoGoals -echo.demoBriefings -echo.demoLibrary -displayName Sol "${FAST[@]}" "${CHATS[@]}")
+shot "$PAD" pad-today        "${TODAY[@]}" -theme standard -appearance dark
+shot "$PAD" pad-today-paper  "${TODAY[@]}" -theme paperWhite -appearance light
 shot "$PAD" pad-settings     -echo.demo -echo.screen setup "${PADCARDS[@]}"
 fi
 

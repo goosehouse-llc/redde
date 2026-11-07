@@ -63671,6 +63671,113 @@
         }
       }
     },
+    "Apple Home and Health" : {
+      "comment" : "What's New 2.4: two new phone tools",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Hjem og Sundhed"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Home und Health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casa y Salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maison et Santé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casa e Salute"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「ホーム」とヘルスケア"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 홈과 건강"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Hjem og Helse"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Woning en Gezondheid"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dom i Zdrowie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Casa e Saúde"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дом и Здоровье"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hem och Hälsa"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Ev ve Sağlık"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дім і Здоров’я"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“家庭”和“健康”"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「Apple 家庭」與「健康」"
+          }
+        }
+      }
+    },
     "Apple's on-device synthesizer. Zero network, fastest start." : {
       "localizations" : {
         "da" : {
@@ -103659,6 +103766,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "連線"
+          }
+        }
+      }
+    },
+    "Connect Gmail or any mailbox that takes an app password in Settings → Agent → Email. Your agent sorts what comes in into Important, Reply, FYI and News, follows the rules you set, and sends nothing until you approve the exact email. It takes the Dashboard connection and the Redde plugin 1.19 on your Hermes." : {
+      "comment" : "What's New 2.4: the email inbox",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forbind Gmail eller en hvilken som helst postkasse, der tager imod en appadgangskode, i Indstillinger → Agent → E-mail. Din agent sorterer det, der kommer ind, i Vigtigt, Svar, Til info og Nyheder, følger de regler, du sætter, og sender intet, før du godkender præcis den e-mail. Det kræver Dashboard-forbindelsen og Redde-plugin 1.19 på din Hermes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbinde Gmail oder ein beliebiges Postfach mit App-Passwort unter Einstellungen → Agent → E-Mail. Dein Agent sortiert, was ankommt, in Wichtig, Antworten, Zur Info und News, folgt den Regeln, die du festlegst, und sendet nichts, bis du genau diese E-Mail freigibst. Dafür braucht es die Dashboard-Verbindung und das Redde-Plugin 1.19 auf deinem Hermes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecta Gmail o cualquier buzón que admita una contraseña de app en Ajustes → Agente → Correo. Tu agente ordena lo que llega en Importante, Responder, Informativo y Boletines, sigue las reglas que pongas y no envía nada hasta que apruebes el correo exacto. Necesita la conexión del Dashboard y el plugin de Redde 1.19 en tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connectez Gmail ou toute boîte qui accepte un mot de passe d’app dans Réglages → Agent → E-mail. Votre agent trie ce qui arrive en Important, À répondre, Pour info et Infos, suit les règles que vous fixez et n’envoie rien tant que vous n’avez pas approuvé l’e-mail exact. Requiert la connexion Dashboard et le plugin Redde 1.19 sur votre Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega Gmail o qualsiasi casella che accetti una password per le app in Impostazioni → Agente → Email. Il tuo agente smista ciò che arriva in Importanti, Da rispondere, Per info e News, segue le regole che imposti e non invia nulla finché non approvi l'email esatta. Richiede la connessione Dashboard e il plugin Redde 1.19 sul tuo Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gmail、またはアプリパスワードを使える任意のメールボックスを、設定 → エージェント → メールで接続できます。エージェントが届いたメールを「重要」「返信」「参考」「ニュース」に分類し、設定したルールに従い、送るメールそのものをあなたが承認するまで何も送信しません。Dashboard接続と、HermesのReddeプラグイン1.19が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정 → 에이전트 → 이메일에서 Gmail 또는 앱 암호를 사용할 수 있는 모든 메일함을 연결하십시오. 에이전트가 들어오는 메일을 중요, 답장, 참고, 뉴스로 분류하고, 설정한 규칙을 따르며, 보낼 이메일을 그대로 승인하기 전에는 아무것도 보내지 않습니다. Dashboard 연결과 Hermes의 Redde 플러그인 1.19가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koble til Gmail eller en hvilken som helst e-postkonto som tar et apppassord, i Innstillinger → Agent → E-post. Agenten din sorterer det som kommer inn, i Viktig, Svar, Til info og Nyheter, følger reglene du setter, og sender ingenting før du godkjenner nøyaktig den e-posten. Det krever Dashboard-tilkoblingen og Redde-tillegget 1.19 på din Hermes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbind Gmail of elke mailbox die een app-wachtwoord accepteert in Instellingen → Agent → E-mail. Je agent sorteert wat binnenkomt in Belangrijk, Antwoord, Ter info en Nieuws, volgt de regels die je instelt en verstuurt niets totdat je precies die e-mail goedkeurt. Vereist de Dashboard-verbinding en de Redde-plug-in 1.19 op je Hermes."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połącz Gmail lub dowolną skrzynkę obsługującą hasło aplikacji w Ustawienia → Agent → E-mail. Agent sortuje to, co przychodzi, na Ważne, Do odpowiedzi, Do wiadomości i Newsy, stosuje ustalone przez Ciebie reguły i nic nie wysyła, dopóki nie zatwierdzisz dokładnie tego e-maila. Wymaga połączenia z Dashboard i wtyczki Redde 1.19 na Twoim Hermesie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecte o Gmail ou qualquer caixa de correio que aceite senha de app em Ajustes → Agente → E-mail. Seu agente separa o que chega em Importante, Responder, Para Saber e Notícias, segue as regras que você define e não envia nada até você aprovar o e-mail exato. Requer a conexão do Dashboard e o plugin do Redde 1.19 no seu Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключите Gmail или любой почтовый ящик с паролем приложения в «Настройки» → «Агент» → «Почта». Агент разбирает входящие письма на «Важное», «К ответу», «К сведению» и «Рассылки», следует заданным вами правилам и ничего не отправляет, пока вы не одобрите именно это письмо. Нужны подключение Dashboard и плагин Redde 1.19 на вашем Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslut Gmail eller vilken brevlåda som helst som tar ett applösenord i Inställningar → Agent → E-post. Din agent sorterar det som kommer in i Viktigt, Svar, För kännedom och Nyheter, följer reglerna du ställer in och skickar ingenting förrän du godkänner exakt det mejlet. Det kräver Dashboard-anslutningen och Redde-tillägget 1.19 på din Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gmail'i ya da uygulama parolası kabul eden herhangi bir posta kutusunu Ayarlar → Ajan → E-posta'da bağlayın. Ajanınız gelenleri Önemli, Yanıt, Bilginize ve Bülten olarak ayırır, koyduğunuz kurallara uyar ve siz e-postanın tam hâlini onaylayana kadar hiçbir şey göndermez. Bunun için Dashboard bağlantısı ve Hermes'inizde Redde eklentisi 1.19 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Під’єднайте Gmail або будь-яку поштову скриньку, що підтримує паролі програм, у Параметри → Агент → Пошта. Агент сортує вхідні листи на «Важливе», «Відповісти», «До відома» і «Розсилки», дотримується ваших правил і нічого не надсилає, доки ви не схвалите саме цей лист. Потрібні з’єднання Dashboard і плагін Redde 1.19 на вашому Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在设置 → 智能体 → 邮件中连接Gmail或任何支持App专用密码的邮箱。你的智能体会把收到的邮件分为“重要”“回复”“仅供参考”和“订阅”，遵循你设定的规则，在你批准要发送的那封邮件原文之前，什么都不会发送。需要Dashboard连接，以及你的Hermes上安装Redde插件1.19。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「設定」→「代理」→「郵件」中連接 Gmail 或任何支援 App 專用密碼的信箱。你的代理會把收到的郵件分成「重要」、「回覆」、「參考」和「電子報」，遵循你設定的規則，並在你核准要傳送的那封郵件原文前，絕不傳送任何東西。需要 Dashboard 連線，以及你 Hermes 上的 Redde 外掛 1.19。"
           }
         }
       }
@@ -189628,6 +189842,113 @@
         }
       }
     },
+    "In any chat's menu, or tap the context ring: the model, how full the context is, tokens, cost and every tool it used. Settings → Usage adds it up by day, by bot and by model." : {
+      "comment" : "What's New 2.4: session details and usage",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I en hvilken som helst chats menu, eller tryk på kontekstringen: modellen, hvor fuld konteksten er, tokens, pris og hvert værktøj, den brugte. Indstillinger → Forbrug lægger det sammen pr. dag, pr. bot og pr. model."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Menü jedes Chats oder durch Tippen auf den Kontextring: das Modell, wie voll der Kontext ist, Tokens, Kosten und jedes Tool, das es genutzt hat. Einstellungen → Nutzung rechnet es zusammen, nach Tag, Bot und Modell."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el menú de cualquier chat, o toca el anillo de contexto: el modelo, cuánto contexto está ocupado, los tokens, el coste y cada herramienta que usó. Ajustes → Uso lo suma por día, por bot y por modelo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans le menu de n’importe quelle discussion, ou touchez l’anneau de contexte : le modèle, le remplissage du contexte, les jetons, le coût et chaque outil utilisé. Réglages → Utilisation en fait le total par jour, par bot et par modèle."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nel menu di ogni chat, o tocca l'anello del contesto: il modello, quanto è pieno il contesto, i token, il costo e ogni strumento usato. Impostazioni → Utilizzo fa i totali per giorno, per bot e per modello."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チャットのメニューから、またはコンテキストリングをタップ：モデル、コンテキストの使用状況、トークン、コスト、使ったすべてのツール。設定 → 使用量では、日別、ボット別、モデル別に集計します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "채팅 메뉴에서, 또는 컨텍스트 링을 탭하십시오: 모델, 컨텍스트 사용량, 토큰, 비용, 사용한 모든 도구. 설정 → 사용량에서는 일별, 봇별, 모델별로 합산합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I menyen til en hvilken som helst chat, eller trykk på kontekstringen: modellen, hvor full konteksten er, tokener, kostnad og hvert verktøy den brukte. Innstillinger → Bruk summerer det per dag, per bot og per modell."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In het menu van elke chat, of tik op de contextring: het model, hoe vol de context is, tokens, de kosten en elke tool die het gebruikte. Instellingen → Gebruik telt het op per dag, per bot en per model."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W menu dowolnego czatu lub po stuknięciu pierścienia kontekstu: model, zapełnienie kontekstu, tokeny, koszt i każde użyte narzędzie. Ustawienia → Użycie sumuje to według dnia, bota i modelu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No menu de qualquer conversa, ou toque no anel de contexto: o modelo, o quanto o contexto está cheio, tokens, custo e cada ferramenta usada. Ajustes → Uso soma tudo por dia, por bot e por modelo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В меню любого чата или по касанию кольца контекста: модель, заполненность контекста, токены, стоимость и все использованные инструменты. «Настройки» → «Расход» суммирует это по дням, ботам и моделям."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I varje chatts meny, eller tryck på kontextringen: modellen, hur full kontexten är, tokens, kostnad och varje verktyg den använde. Inställningar → Användning summerar det per dag, per bot och per modell."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herhangi bir sohbetin menüsünde ya da bağlam halkasına dokunarak: model, bağlamın ne kadar dolu olduğu, token'lar, maliyet ve kullandığı her araç. Ayarlar → Kullanım bunları güne, bota ve modele göre toplar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У меню будь-якого чату або торкнувшись кільця контексту: модель, наскільки заповнений контекст, токени, вартість і кожен використаний інструмент. Параметри → Використання підсумовує це за днями, ботами та моделями."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在任意聊天的菜单中，或轻点上下文圆环：模型、上下文用了多少、Token、花费，以及它用过的每个工具。设置 → 用量会按天、按机器人和按模型汇总。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在任何聊天的選單中，或點一下上下文圓環：模型、上下文已用多少、Token、費用，以及它使用的每個工具。「設定」→「用量」會依日期、機器人和模型加總。"
+          }
+        }
+      }
+    },
     "In any chat's menu, or tap the context ring: the model, how full the context is, tokens, what it cost, and every tool it used." : {
       "localizations" : {
         "da" : {
@@ -228491,6 +228812,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "記憶已更新"
+          }
+        }
+      }
+    },
+    "Memory you can see" : {
+      "comment" : "What's New 2.4: the agent's memory, shown and editable",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hukommelse, du kan se"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Gedächtnis, das du sehen kannst"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una memoria que puedes ver"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une mémoire visible"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una memoria che puoi vedere"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目に見えるメモリ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "볼 수 있는 메모리"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minne du kan se"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een geheugen dat je kunt zien"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pamięć, którą widzisz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memória que você pode ver"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Память, которую видно"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minne du kan se"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görebildiğiniz bellek"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пам’ять, яку видно"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "看得见的记忆"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "看得見的記憶"
           }
         }
       }
@@ -321869,6 +322297,7 @@
     },
     "running %@…" : {
       "comment" : "Status under a reply: a slash command is running",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -327930,6 +328359,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "對 Siri 說「在 Redde 問 Home」，在車上的「機器人」標籤頁或 Apple Watch 上選擇機器人，或在「設定」→「語音」→「語音前綴」中為它指定一個口說字詞：「Home，關掉門廊的燈。」"
+          }
+        }
+      }
+    },
+    "Say “remember that…”, or hold a message and choose Remember This. Settings → Agent → What Your Agent Remembers shows what it keeps about you and in its own notes, to change or delete, and brings in what ChatGPT or Claude remembered, from their exports. On the Dashboard connection." : {
+      "comment" : "What's New 2.4: memory",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sig “husk, at …”, eller hold på en besked, og vælg Husk dette. Indstillinger → Agent → Det, din agent husker viser, hvad den gemmer om dig og i sine egne noter, så du kan ændre eller slette det, og henter det, ChatGPT eller Claude huskede, ind fra deres eksporter. På Dashboard-forbindelsen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sag „Merk dir, dass …“, oder halte eine Nachricht gedrückt und wähle „Merk dir das“. Einstellungen → Agent → Was sich dein Agent merkt zeigt, was er über dich und in seinen eigenen Notizen behält, zum Ändern oder Löschen, und übernimmt, was sich ChatGPT oder Claude gemerkt haben, aus deren Exporten. Über die Dashboard-Verbindung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di “recuerda que…”, o mantén pulsado un mensaje y elige Recordar esto. Ajustes → Agente → Lo que recuerda tu agente muestra lo que guarda sobre ti y en sus propias notas, para cambiarlo o eliminarlo, y trae lo que recordaban ChatGPT o Claude, desde sus exportaciones. Con la conexión del Dashboard."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites « retiens que… », ou maintenez le doigt sur un message et choisissez Retenir ceci. Réglages → Agent → Ce dont votre agent se souvient montre ce qu’il garde sur vous et dans ses propres notes, pour le modifier ou le supprimer, et importe ce dont ChatGPT ou Claude se souvenaient, depuis leurs exports. Avec la connexion Dashboard."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di' “ricorda che…”, oppure tieni premuto un messaggio e scegli Ricorda questo. Impostazioni → Agente → Cosa ricorda il tuo agente mostra ciò che conserva su di te e nelle sue note, da modificare o eliminare, e importa ciò che ricordavano ChatGPT o Claude, dalle loro esportazioni. Con la connessione Dashboard."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「覚えておいて…」と言うか、メッセージを長押しして「これを覚えて」を選びます。設定 → エージェント → エージェントが覚えていることで、あなたについて覚えていることとエージェント自身のメモを確認し、変更や削除ができます。ChatGPTやClaudeが覚えていたことも、それぞれの書き出しから読み込めます。Dashboard接続で利用できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“…기억해 줘”라고 말하거나, 메시지를 길게 누르고 이것 기억하기를 선택하십시오. 설정 → 에이전트 → 에이전트가 기억하는 내용에서 나에 대해 기억하는 내용과 에이전트 자체 메모를 보고 변경하거나 삭제할 수 있으며, ChatGPT나 Claude가 기억한 내용을 내보내기 파일에서 가져옵니다. Dashboard 연결에서 사용할 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si «husk at …», eller hold på en melding og velg Husk dette. Innstillinger → Agent → Det agenten din husker viser hva den lagrer om deg og i sine egne notater, så du kan endre eller slette det, og henter inn det ChatGPT eller Claude husket, fra eksportene deres. På Dashboard-tilkoblingen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeg ‘onthoud dat…’, of houd een bericht ingedrukt en kies Onthoud dit. Instellingen → Agent → Wat je agent onthoudt toont wat hij over jou en in zijn eigen notities bewaart, om te wijzigen of te verwijderen, en haalt binnen wat ChatGPT of Claude onthielden, uit hun exports. Op de Dashboard-verbinding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiedz „zapamiętaj, że…” albo przytrzymaj wiadomość i wybierz Zapamiętaj to. W Ustawienia → Agent → Co pamięta Twój agent zobaczysz, co agent wie o Tobie i co ma we własnych notatkach – możesz to zmienić lub usunąć – a także przeniesiesz to, co zapamiętały ChatGPT lub Claude, z ich eksportów. Przez połączenie z Dashboard."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diga “lembre que…”, ou toque e segure uma mensagem e escolha Lembrar Isto. Ajustes → Agente → O Que Seu Agente Lembra mostra o que ele guarda sobre você e nas próprias notas, para alterar ou apagar, e traz o que o ChatGPT ou o Claude lembravam, a partir das exportações deles. Na conexão do Dashboard."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скажите «запомни, что…» или удерживайте сообщение и выберите «Запомнить это». В «Настройки» → «Агент» → «Что помнит агент» видно, что агент хранит о вас и в собственных заметках; это можно изменить или удалить. Там же можно перенести то, что запомнили ChatGPT или Claude, из их экспортов. При подключении Dashboard."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Säg ”kom ihåg att…”, eller håll på ett meddelande och välj Kom ihåg detta. Inställningar → Agent → Det din agent kommer ihåg visar vad den sparar om dig och i sina egna anteckningar, så att du kan ändra eller radera det, och hämtar in det ChatGPT eller Claude kom ihåg, från deras exporter. På Dashboard-anslutningen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Şunu hatırla…” deyin ya da bir mesajı basılı tutup Bunu Hatırla'yı seçin. Ayarlar → Ajan → Ajanınızın Hatırladıkları, sizinle ilgili ve kendi notlarında sakladıklarını değiştirmeniz ya da silmeniz için gösterir; ChatGPT'nin ya da Claude'un hatırladıklarını da dışa aktarımlarından içeri alır. Dashboard bağlantısında."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скажіть «запам’ятай, що…» або утримуйте повідомлення й виберіть «Запам’ятати». У Параметри → Агент → Що пам’ятає агент видно, що агент зберігає про вас і у власних нотатках; це можна змінити або видалити. Там само можна перенести те, що запам’ятали ChatGPT чи Claude, з їхніх експортів. На з’єднанні Dashboard."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说“记住…”，或按住一条信息并选择“记住这个”。设置 → 智能体 → 你的智能体记住的内容会显示它记住的关于你的内容和它自己的笔记，可以更改或删除，还能从ChatGPT或Claude的导出文件中导入它们记住的内容。适用于Dashboard连接。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "說「記住…」，或按住一則訊息並選擇「記住這個」。「設定」→「代理」→「你的代理記得的事」會顯示它記得的關於你的事和它自己的筆記，可以更改或刪除，也能從 ChatGPT 或 Claude 的匯出檔案匯入它們記得的內容。適用於 Dashboard 連線。"
           }
         }
       }
@@ -339580,6 +340116,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工作階段詳細資訊"
+          }
+        }
+      }
+    },
+    "Session Details and Usage" : {
+      "comment" : "What's New 2.4: the session details sheet and the usage page",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessionsdetaljer og forbrug"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitzungsdetails und Nutzung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detalles de la sesión y Uso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Détails de la session et Utilisation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dettagli sessione e Utilizzo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セッションの詳細と使用量"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세션 세부사항 및 사용량"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Øktdetaljer og bruk"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessiedetails en Gebruik"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szczegóły sesji i użycie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detalhes da Sessão e Uso"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сведения о сеансе и расход"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessionsdetaljer och användning"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oturum Ayrıntıları ve Kullanım"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Деталі сесії та використання"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会话详情和用量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作階段詳細資訊與用量"
           }
         }
       }
@@ -412423,6 +413066,113 @@
         }
       }
     },
+    "Today, above your chats" : {
+      "comment" : "What's New 2.4: the Today strip of tiles at the top of the chat list",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I dag, over dine chats"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heute, über deinen Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy, encima de tus chats"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aujourd’hui, au-dessus de vos discussions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oggi, sopra le tue chat"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チャットの上に「今日」"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "채팅 위의 오늘"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I dag, over chattene dine"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vandaag, boven je chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dzisiaj, nad Twoimi czatami"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoje, acima das suas conversas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сегодня — над чатами"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idag, ovanför dina chattar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün, sohbetlerinizin üstünde"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сьогодні — над чатами"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“今天”，就在聊天上方"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「今天」，就在聊天上方"
+          }
+        }
+      }
+    },
     "Today, all day" : {
       "localizations" : {
         "da" : {
@@ -418179,6 +418929,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "執行中的輪次"
+          }
+        }
+      }
+    },
+    "Two new phone tools in Settings → Agent → Phone tools: your agent can see and control your Apple Home accessories and scenes, and read the kinds of Health data you choose, as totals and averages. Locks, garage doors and the alarm always ask you first. Both are off until you turn them on." : {
+      "comment" : "What's New 2.4: Apple Home and Health phone tools",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To nye telefonværktøjer i Indstillinger → Agent → Telefonværktøjer: din agent kan se og styre tilbehør og scener i dit Apple Hjem og læse de typer data fra Sundhed, du vælger, som totaler og gennemsnit. Låse, garageporte og alarmen spørger altid dig først. Begge er slået fra, indtil du slår dem til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwei neue Telefon-Tools unter Einstellungen → Agent → Telefon-Tools: Dein Agent kann deine Apple Home-Geräte und -Szenen sehen und steuern und die Arten von Health-Daten lesen, die du wählst, als Summen und Durchschnitte. Schlösser, Garagentore und die Alarmanlage fragen dich immer zuerst. Beide sind aus, bis du sie einschaltest."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dos nuevas herramientas en Ajustes → Agente → Herramientas del teléfono: tu agente puede ver y controlar los accesorios y ambientes de la app Casa, y leer los tipos de datos de Salud que elijas, como totales y medias. Las cerraduras, las puertas de garaje y la alarma siempre te preguntan antes. Ambas están desactivadas hasta que las actives."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deux nouveaux outils dans Réglages → Agent → Outils du téléphone : votre agent peut voir et contrôler les accessoires et scènes de Maison, et lire les types de données Santé que vous choisissez, en totaux et en moyennes. Les serrures, les portes de garage et l’alarme vous demandent toujours d’abord. Les deux restent désactivés jusqu’à ce que vous les activiez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due nuovi strumenti in Impostazioni → Agente → Strumenti del telefono: il tuo agente può vedere e controllare gli accessori e gli scenari di Casa, e leggere i tipi di dati di Salute che scegli, come totali e medie. Serrature, porte del garage e l'allarme chiedono sempre prima a te. Entrambi restano disattivati finché non li attivi."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定 → エージェント → デバイスツールに新しいツールが2つ：エージェントが「ホーム」アプリのアクセサリとシーンを確認・操作でき、選んだ種類のヘルスケアのデータを合計と平均で読み取れます。鍵、ガレージドア、アラームは常に先に確認します。どちらもオンにするまではオフです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정 → 에이전트 → 휴대폰 도구에 새 휴대폰 도구 두 가지: 에이전트가 Apple 홈의 액세서리와 장면을 보고 제어하며, 선택한 종류의 건강 데이터를 합계와 평균으로 읽을 수 있습니다. 잠금장치, 차고 문, 경보는 항상 먼저 묻습니다. 둘 다 켜기 전까지는 꺼져 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To nye telefonverktøy i Innstillinger → Agent → Telefonverktøy: agenten din kan se og styre tilbehøret og scenene i Apple Hjem, og lese de typene Helse-data du velger, som totaler og gjennomsnitt. Låser, garasjeporter og alarmen spør deg alltid først. Begge er av til du slår dem på."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twee nieuwe telefoontools in Instellingen → Agent → Telefoontools: je agent kan je accessoires en scènes in Woning zien en bedienen, en de soorten gezondheidsgegevens lezen die je kiest, als totalen en gemiddelden. Sloten, garagedeuren en het alarm vragen het je altijd eerst. Beide staan uit totdat je ze aanzet."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dwa nowe narzędzia telefonu w Ustawienia → Agent → Narzędzia telefonu: agent może widzieć akcesoria i sceny w aplikacji Dom i nimi sterować oraz odczytywać wybrane przez Ciebie rodzaje danych z aplikacji Zdrowie jako sumy i średnie. W przypadku zamków, bram garażowych i alarmu zawsze najpierw zapyta. Oba są wyłączone, dopóki ich nie włączysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duas novas ferramentas do telefone em Ajustes → Agente → Ferramentas do telefone: seu agente pode ver e controlar os acessórios e as cenas do seu app Casa e ler os tipos de dados do app Saúde que você escolher, como totais e médias. Fechaduras, portões de garagem e o alarme sempre perguntam a você antes. As duas ficam desativadas até você ativá-las."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Два новых инструмента в «Настройки» → «Агент» → «Инструменты телефона»: агент может видеть аксессуары и сценарии приложения «Дом» и управлять ими, а также читать выбранные вами типы данных «Здоровья» — итоги и средние значения. О замках, гаражных воротах и сигнализации он всегда сначала спрашивает вас. Оба выключены, пока вы их не включите."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Två nya telefonverktyg i Inställningar → Agent → Telefonverktyg: din agent kan se och styra tillbehör och scener i Hem, och läsa de typer av Hälsa-data du väljer, som summor och medelvärden. Lås, garageportar och larmet frågar dig alltid först. Båda är av tills du slår på dem."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayarlar → Ajan → Telefon araçları'nda iki yeni telefon aracı: ajanınız Apple Ev aksesuarlarınızı ve sahnelerinizi görüp denetleyebilir, seçtiğiniz Sağlık verisi türlerini de toplamlar ve ortalamalar olarak okuyabilir. Kilitler, garaj kapıları ve alarm için her zaman önce size sorulur. İkisi de siz açana kadar kapalıdır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Два нові інструменти в Параметри → Агент → Інструменти телефона: агент може бачити аксесуари й сцени в програмі «Дім» і керувати ними, а також читати вибрані вами типи даних «Здоров’я» як підсумки й середні значення. Про замки, гаражні ворота й сигналізацію він завжди спершу питає вас. Обидва вимкнено, доки ви їх не ввімкнете."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置 → 智能体 → 手机工具中新增两个手机工具：你的智能体可以查看和控制你的“家庭”配件和场景，并以总计和平均值形式读取你选择的“健康”数据类别。门锁、车库门和警报系统始终会先询问你。两者在你打开之前都保持关闭。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「設定」→「代理」→「手機工具」中有兩個新的手機工具：你的代理可以查看並控制你的「Apple 家庭」配件和場景，並以總計和平均值讀取你選擇的「健康」資料類型。門鎖、車庫門和保全系統一律會先問你。兩者在你開啟前都是關閉的。"
           }
         }
       }
@@ -462428,6 +463285,113 @@
         }
       }
     },
+    "Your Inbox" : {
+      "comment" : "What's New 2.4: the email inbox",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din indbakke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Posteingang"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu bandeja de entrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre boîte de réception"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua posta in arrivo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "受信トレイ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "받은 편지함"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innboksen din"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je inbox"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja skrzynka odbiorcza"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua Caixa de Entrada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши входящие"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din inkorg"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gelen Kutunuz"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваші вхідні"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的收件箱"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的收件匣"
+          }
+        }
+      }
+    },
     "your inbox · %@" : {
       "comment" : "Under the name on the briefing deck's email page: when the inbox was sorted",
       "localizations" : {
@@ -462638,6 +463602,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的收件匣會整理成重要的、需要回覆的和可以等的，一點即可封存、稍後提醒和取消訂閱。支援 Gmail、iCloud、Fastmail、Yahoo 或任何 IMAP 帳號。"
+          }
+        }
+      }
+    },
+    "Your inbox, the briefings you haven't read and your goals, as small tiles in one row at the top of your chats. Fold it away, or choose what it shows in Settings → Appearance → Top of the Chat List." : {
+      "comment" : "What's New 2.4: the Today strip",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din indbakke, de briefinger, du ikke har læst, og dine mål som små felter i én række øverst i dine chats. Fold den sammen, eller vælg, hvad den viser, i Indstillinger → Udseende → Øverst i chatlisten."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Posteingang, die Briefings, die du noch nicht gelesen hast, und deine Ziele, als kleine Kacheln in einer Reihe oben über deinen Chats. Klapp sie weg oder wähle unter Einstellungen → Erscheinungsbild → Oben in der Chatliste, was sie zeigt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu bandeja de entrada, los informes que no has leído y tus objetivos, como pequeñas casillas en una fila arriba de tus chats. Pliégala o elige qué muestra en Ajustes → Aspecto → Arriba en la lista de chats."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre boîte de réception, les briefings que vous n’avez pas lus et vos objectifs, en petites vignettes sur une rangée en haut de vos discussions. Repliez-la, ou choisissez ce qu’elle affiche dans Réglages → Apparence → Haut de la liste des discussions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua posta in arrivo, i briefing che non hai letto e i tuoi obiettivi, come piccoli riquadri in una riga in cima alle tue chat. Chiudila, o scegli cosa mostra in Impostazioni → Aspetto → In cima all'elenco chat."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "受信トレイ、未読のブリーフィング、目標を、小さなタイルとしてチャットの上部に1列で表示します。折りたたむことも、表示する内容を設定 → 外観 → チャットリストの上部で選ぶこともできます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "받은 편지함, 읽지 않은 브리핑, 목표를 채팅 상단에 작은 타일로 한 줄에 보여 줍니다. 접어 두거나, 설정 → 모양 → 채팅 목록 상단에서 표시할 항목을 선택하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innboksen din, briefingene du ikke har lest, og målene dine, som små fliser i én rad øverst i chattene dine. Fold den sammen, eller velg hva den viser, i Innstillinger → Utseende → Øverst i chattelisten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je inbox, de briefings die je nog niet hebt gelezen en je doelen, als kleine tegels in één rij bovenaan je chats. Klap hem in, of kies wat hij toont in Instellingen → Weergave → Bovenaan de chatlijst."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skrzynka odbiorcza, nieprzeczytane briefingi i Twoje cele jako małe kafelki w jednym rzędzie nad czatami. Możesz go zwinąć albo wybrać, co pokazuje, w Ustawienia → Wygląd → Góra listy czatów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua caixa de entrada, os briefings que você não leu e suas metas, como pequenos blocos em uma fileira no topo das suas conversas. Recolha a fileira ou escolha o que ela mostra em Ajustes → Aparência → Topo da Lista de Conversas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Входящие, непрочитанные сводки и ваши цели — маленькими плитками в один ряд над чатами. Ряд можно свернуть или выбрать, что в нем показывать, в «Настройки» → «Оформление» → «Вверху списка чатов»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din inkorg, briefingarna du inte har läst och dina mål, som små rutor i en rad överst i dina chattar. Fäll ihop den, eller välj vad den visar i Inställningar → Utseende → Överst i chattlistan."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gelen kutunuz, okumadığınız brifingler ve hedefleriniz, sohbetlerinizin en üstünde tek sırada küçük kutucuklar olarak. Katlayıp gizleyin ya da ne göstereceğini Ayarlar → Görünüm → Sohbet Listesinin Üstü'nde seçin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вхідні, непрочитані зведення і ваші цілі — маленькими плитками в один ряд над чатами. Ряд можна згорнути або вибрати, що в ньому показувати, у Параметри → Вигляд → Угорі списку чатів."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的收件箱、未读的简报和你的目标，以小方块排成一行显示在聊天顶部。可以收起，或在设置 → 外观 → 聊天列表顶部中选择显示的内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的收件匣、未讀的簡報和你的目標，以小方塊排成一列顯示在聊天頂端。可以收合起來，或在「設定」→「外觀」→「聊天列表頂端」中選擇要顯示的內容。"
           }
         }
       }

@@ -9,7 +9,7 @@ Hermes Redde
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New in 2.3.1: your agent works ahead with morning ideas, heads-ups, leave-by alerts and a week ahead, plus a calendar timeline, new cards, Redde for Mac and 17 languages.
+New in 2.4: goals your agent plans and checks in on, an email inbox it sorts, memory you can see, Apple Home and Health as phone tools, and Today above your chats.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,bots,watch,siri,shortcuts,private,openai
@@ -21,6 +21,7 @@ Redde is a complete iPhone, iPad and Mac client for Hermes, the open-source AI a
 You bring the backend. Redde has no account and no analytics, and your conversations go only to your server, and to a voice service if you pick one.
 
 AHEAD OF YOUR DAY
+• Goals: tell your agent what you want to get done. It plans the steps, checks in on a schedule and shows your progress above your chats.
 • Morning Ideas, a Week Ahead and an Evening Wrap-up arrive as cards to swipe. Before an event, a heads-up says what to bring, and Leave-By Alerts work out from your calendar and Apple Maps when to go.
 • "Let me know when it ships", "check back Friday": watches and follow-ups come back on their own. Places tell your agent you've arrived; Health-aware days, if you allow.
 • Answers come as cards: your day as a timeline, the weather by the hour, places on a map, an email to check before it sends, a list to tick off. Approvals say in plain words what will happen.
@@ -40,13 +41,14 @@ SEE THE AGENT WORK
 
 A FULL CLIENT
 • Chats live in your gateway's session ledger: start on the phone, continue on the desktop. Search, pin, fork, archive, or go incognito.
-• Projects, scheduled jobs, the Kanban board, skills, plugins, memory, MCP servers, files and an SSH terminal.
-• Phone tools: your agent can use your calendar, reminders, contacts, photos and files, set alarms and start calls and texts, each only if you allow it.
+• An email inbox your agent sorts, with rules you set. Gmail or any mailbox; nothing is sent until you approve it.
+• Projects, scheduled jobs, the Kanban board, skills, plugins, memory you can see and edit, MCP servers, files and an SSH terminal.
+• Phone tools: your agent can use your calendar, reminders, contacts, photos and files, Apple Home and the Health data you choose, set alarms and start calls and texts, each only if you allow it.
 • Markdown, code, tables, diagrams and math; pictures, PDFs and audio open in place.
 • Attach photos, files or a day's calendar, or share from any app. Regenerate, edit and resend, or switch models with /model.
 
 YOUR BACKEND, YOUR RULES
-• Connect through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Several servers in one list, synced with iCloud. Sign in with a password or a browser.
+• Connect through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Several servers in one list, synced with iCloud.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM, Ollama or a hosted provider.
 • Set up by QR code or link. Credentials stay in the Keychain; a key your agent asks for goes sealed straight to your server.
 • In 17 languages. Face ID lock, seven themes, iPad split view, iPhone Duo, and a native Mac app.
@@ -64,6 +66,36 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 - Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat for Hermes." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
+
+## What's New in 2.4 (4000)
+Goals, an email inbox, memory you can see, and Apple Home.
+
+• Goals. Tell your agent something you want to get done, in any chat or with New Goal. It makes a plan of steps for you to approve, checks in on a schedule, and the goal's card above your chats shows how far along you are.
+• Your Inbox. Connect Gmail or any mailbox that takes an app password. Your agent sorts what arrives into Important, Reply, FYI and News, follows the rules you set (label, archive, tell me, send to Paperless), and sends nothing until you approve the exact email. Unsubscribe with a tap, select several emails at once, and read each as its sender laid it out.
+• Today, above your chats: your inbox, the briefings you haven't read and your goals, as tiles in one row.
+• Coming Up: everything your agents plan to do on their own in the next day. Skip one once, or pause it.
+• Memory you can see. Say "remember that…", or hold a message and choose Remember This. See, change or delete what your agent keeps, and bring in what ChatGPT or Claude remembered.
+• Apple Home and Health as phone tools. Your agent can control your accessories and scenes (locks, garage doors and the alarm always ask you first) and read the kinds of Health data you choose. Both are off until you turn them on.
+• Watches in one tap: urgent emails, school messages, a package or a price drop.
+• Session Details for any chat (the model, context, tokens, cost and every tool used), and Settings → Usage by day, bot and model.
+• A model per chat: a model you pick changes that chat only. Run On gives a scheduled job its own model.
+• React to a reply with an emoji, and your agent hears it with your next message. Select part of a reply in place. Swipe left to see when each message came.
+• Scan a document or draw something to send. Watch the page your agent is browsing.
+• Paper White, Paper redone as real paper, and a font of your choice.
+• Bot sections, as in Hermes Desktop. Keep a Copy lets your agent read your calendar and reminders with Redde closed.
+• Fixes: a code block with some Chinese numerals froze a chat and closed Redde (GitHub #39). A notification tapped while a reply was coming in is no longer dropped (#61). A reply's notification opens at the start of that reply, and opening Redde no longer clears other chats' notifications (#63). A skill typed as a /command runs instead of coming back unchanged (#64).
+
+Most of this takes the Redde plugin 1.19 on your Hermes.
+
+## Before submitting 2.4
+- The build is 2.4 (284), archived from main. iPhone and iPad only: the Mac's 2.3 is still with App Review (IN_REVIEW since 2026-10-29), and App Store Connect takes no new Mac version until it clears.
+- New to declare, in the review notes: HomeKit (`com.apple.developer.homekit`, NSHomeKitUsageDescription) for Phone Tools › Apple Home, and Health data read for Phone Tools › Health (sent only to the person's own server, never kept by Redde, nothing written). The HealthKit capability itself shipped in 2.3.1.
+- App Privacy stays "Data Not Collected": email, Home and Health data go only to the person's own Hermes; Goosehouse LLC receives none of it.
+- The privacy policy needs Apple Home, Phone Tools › Health, the email inbox (and that opening an email loads its pictures, which the sender can see), memory import and devices in use. Publish it before submitting.
+- The plugin: main serves 1.19.4 (pushed 2026-11-06). Publish a GitHub release for it at release (none since redde-push-1.12.0).
+- Screenshots: made 2026-11-06 (design/screenshots README, "2.4 slots"): Goals, Inbox, Today with Coming Up and Memory in Paper White in place of Ahead of your day, the day's timeline, the crew and the car (iPad: the backend); answers, bots and approvals renumbered 07–09. `scripts/app-store-push.py screenshots` sends them in the new order (not sent yet). App Previews: still the framed ones; new ones must be full-frame (2.3.4, 2026-10-29).
+- The website: "coming soon in 2.4", then "new in 2.4" at release (deploys are his word).
+- Close GitHub #39, #61, #63 and #64 at release.
 
 ## What's New in 2.3.3 (4000)
 Fixes for opening things from notifications.

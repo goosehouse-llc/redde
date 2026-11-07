@@ -46,10 +46,10 @@ API = 'https://api.appstoreconnect.apple.com'
 LOCALE = 'en-US'
 # Folder, the display type App Store Connect files it under, and the upload order.
 SETS = [
-    ('iphone-6.9', 'APP_IPHONE_67', ['pano-01a', 'pano-01b', '03-ahead', '04-day', '05-answers', '06-bots',
-                                    '07-crew', '08-approve', '09-car', '10-privacy']),
-    ('ipad-13', 'APP_IPAD_PRO_3GEN_129', ['pano-01a', 'pano-01b', '03-ipad-ahead', '04-ipad-day', '05-ipad-answers',
-                                          '06-ipad-bots', '07-ipad-crew', '08-ipad-approve', '09-ipad-backend',
+    ('iphone-6.9', 'APP_IPHONE_67', ['pano-01a', 'pano-01b', '03-goals', '04-inbox', '05-today', '06-memory',
+                                    '07-answers', '08-bots', '09-approve', '10-privacy']),
+    ('ipad-13', 'APP_IPAD_PRO_3GEN_129', ['pano-01a', 'pano-01b', '03-ipad-goals', '04-ipad-inbox', '05-ipad-today',
+                                          '06-ipad-memory', '07-ipad-answers', '08-ipad-bots', '09-ipad-approve',
                                           '10-ipad-privacy']),
 ]
 LIMITS = {'promotionalText': 170, 'keywords': 100, 'description': 4000, 'whatsNew': 4000}
