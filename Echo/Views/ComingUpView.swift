@@ -160,6 +160,16 @@ final class ComingUpModel {
         }
     }
 
+    /// A job run now, from its details.
+    func runNow(_ job: CronJob) async {
+        do {
+            try await CronBackend.current()?.runNow(job.id, profile: job.profile)
+            await load()
+        } catch {
+            problem = error.localizedDescription
+        }
+    }
+
     func setPaused(_ item: ComingUp.Item, _ paused: Bool) async {
         guard let job = item.job else { return }
         working = item.id
@@ -187,6 +197,9 @@ struct ComingUpList: View {
     @State private var settings = Settings.shared
     /// A one-off to cancel, or a run too near to skip, waiting on the person's word.
     @State private var asking: ComingUp.Item?
+    /// A job's full details (its sheet), and one being edited from them.
+    @State private var details: CronJob?
+    @State private var editing: CronJob?
 
     private var upcoming: [ComingUp.Item] { model.items.filter { !$0.paused } }
     private var paused: [ComingUp.Item] { model.items.filter(\.paused) }
@@ -249,6 +262,18 @@ struct ComingUpList: View {
             await model.load()
         }
         .onChange(of: isShowing) { _, showing in if showing { Task { await model.load() } } }
+        .sheet(item: $details) { job in
+            CronJobDetail(job: job, backend: CronBackend.current()) { action in
+                let item = model.items.first { $0.job?.id == job.id && $0.job?.profile == job.profile }
+                switch action {
+                case .edit: details = nil; editing = job
+                case .run: Task { await model.runNow(job) }
+                case .toggle: if let item { details = nil; Task { await model.setPaused(item, job.state != .paused) } }
+                case .delete: if let item { details = nil; Task { await model.cancel(item) } }
+                }
+            }
+        }
+        .sheet(item: $editing) { job in CronJobEditor(job: job) { await model.load() } }
         .confirmationDialog(dialogTitle, isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
                             titleVisibility: .visible, presenting: asking) { item in
             if ComingUp.skipWay(item, now: .now) == .cancel {
@@ -301,7 +326,18 @@ struct ComingUpList: View {
         .contentShape(.rect)
         .onTapGesture { if item.kind == .event { open(item) } }
         .swipeActions(edge: .trailing) { actions(item, swipe: true) }
-        .contextMenu { actions(item, swipe: false) }
+        // A long press holds up its details (asked 2026-11-07), over the same actions; a job's
+        // full page (its runs, Edit) is a tap more.
+        .contextMenu {
+            if let job = item.job {
+                Button(String(localized: "Details"), systemImage: "info.circle") { details = job }
+                Divider()
+            }
+            actions(item, swipe: false)
+        } preview: {
+            PlannedPreview(item: item, symbol: item.kind == .leaveBy ? leaveSymbol : item.kind.symbol,
+                           title: title(item), subtitle: subtitle(item), state: state(item))
+        }
         .accessibilityElement(children: .combine)
         .accessibilityActions { actions(item, swipe: false) }
     }
@@ -401,23 +437,102 @@ struct ComingUpList: View {
     }
 }
 
+/// A Planned item's details, held up by a long press: when, how often, what the agent is told to
+/// do, and how its last run went.
+private struct PlannedPreview: View {
+    let item: ComingUp.Item
+    let symbol: String
+    let title: String
+    let subtitle: String?
+    let state: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Image(systemName: symbol).foregroundStyle(.tint)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.headline).fixedSize(horizontal: false, vertical: true)
+                    if let subtitle { Text(subtitle).font(.subheadline).foregroundStyle(.secondary) }
+                    if let state { Text(state).font(.caption.weight(.medium)).foregroundStyle(.orange) }
+                }
+            }
+            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 6) {
+                if item.paused {
+                    line(String(localized: "When"), String(localized: "Paused"))
+                } else if item.untimed {
+                    line(String(localized: "When"), String(localized: "Today"))
+                } else {
+                    line(item.job == nil ? String(localized: "When") : String(localized: "Next run"),
+                         item.at.formatted(.dateTime.weekday().hour().minute()) + " · " + item.at.relativeLabel)
+                }
+                if let job = item.job {
+                    // How often is in the subtitle already when it could be put in words.
+                    if item.cadence == nil {
+                        line(String(localized: "Schedule"), RoutineWhen(schedule: job.schedule)?.summary ?? job.schedule)
+                    }
+                    if let last = job.lastRunAt {
+                        line(String(localized: "Last run"), [last.relativeLabel, job.lastStatus].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " · "))
+                    }
+                    if let model = job.model, !model.isEmpty { line(String(localized: "Model"), model) }
+                }
+            }
+            .font(.footnote)
+            if let detail = item.detail { Text(detail).font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
+            if let job = item.job, !job.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(localized: "Prompt")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    // (a preview is laid out at its ideal size: without fixedSize the text stops at two lines)
+                    Text(job.prompt.trimmingCharacters(in: .whitespacesAndNewlines)).font(.footnote).lineLimit(16)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            if let error = item.job?.lastError, !error.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(localized: "Last error")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Text(error).font(.caption).foregroundStyle(.red).lineLimit(4).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(18)
+        .frame(width: 340, alignment: .leading)
+    }
+
+    private func line(_ label: String, _ value: String) -> some View {
+        GridRow {
+            Text(label).foregroundStyle(.secondary)
+            Text(value).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 #if DEBUG
 /// `-echo.demoComingUp`: a made-up day for the pictures, around now.
 enum ComingUpDemo {
     static func items(now: Date, planned: Bool = false) -> [ComingUp.Item] {
         func job(_ id: String, _ name: String, _ schedule: String, in minutes: Double, profile: String? = nil,
-                 enabled: Bool = true, times: Int? = nil) -> CronJob {
+                 enabled: Bool = true, times: Int? = nil, prompt: String? = nil, ranAgo hours: Double? = nil) -> CronJob {
             var fields: [String: JSONValue] = ["id": .string(id), "name": .string(name), "schedule": .string(schedule),
                                                "enabled": .bool(enabled), "next_run_at": .number(now.addingTimeInterval(minutes * 60).timeIntervalSince1970)]
             if let profile { fields["profile"] = .string(profile) }
+            // What the long press's details show.
+            if let prompt { fields["prompt"] = .string(prompt) }
+            if let hours {
+                fields["last_run_at"] = .number(now.addingTimeInterval(-hours * 3600).timeIntervalSince1970)
+                fields["last_status"] = .string("ok")
+            }
             if let times { fields["repeat"] = .object(["times": .number(Double(times)), "completed": .number(0)]) }
             return CronJob(.object(fields))!
         }
         let jobs = [
-            job("w1", "[redde-watch:kettle01] The price of the blue kettle", "*/30 * * * *", in: 12),
+            job("w1", "[redde-watch:kettle01] The price of the blue kettle", "*/30 * * * *", in: 12,
+                prompt: "Check the price of the blue Smeg kettle at the three shops in my notes. Tell me only if it drops below $120, with the shop and a link.",
+                ranAgo: 0.3),
             job("h1", "[redde-notify] Heads-up: Dentist", "once at 2:15 PM", in: 95, times: 1),
             job("f1", "[redde-followup:plumb001] Call the plumber about the quote", "once", in: 300, times: 1),
-            job("r1", "[redde-notify] What to wear for the weather", "0 7 * * 1-5", in: 60 * 15),
+            job("r1", "[redde-notify] What to wear for the weather", "0 7 * * 1-5", in: 60 * 15,
+                prompt: "Look up today's weather where I am and tell me in one line what to wear, and whether to take an umbrella.",
+                ranAgo: 9),
             job("d1", "[redde] Morning ideas", "30 7 * * *", in: 60 * 15.5),
             job("g1", "[redde-goal:10k] Run a 10K by March", "0 9 * * 1", in: 60 * 17),
             job("w2", "[redde-watch:nas00001] The NAS's free space", "0 */4 * * *", in: 150, profile: "ops"),

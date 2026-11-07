@@ -310,7 +310,8 @@ struct CronJobDetail: View {
                     Button("Delete", systemImage: "trash", role: .destructive) { onAction(.delete) }
                 }
             }
-            .navigationTitle(job.name.isEmpty ? String(localized: "Job", comment: "A scheduled job with no name") : job.name)
+            // Its name as the person knows it: Redde's tags ("[redde-watch:…]") taken off.
+            .navigationTitle(job.name.isEmpty ? String(localized: "Job", comment: "A scheduled job with no name") : ComingUp.describe(job).title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .task { runs = (try? await backend?.runs(job.id, profile: job.profile)) ?? [] }
