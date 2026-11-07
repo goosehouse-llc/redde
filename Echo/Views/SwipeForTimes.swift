@@ -6,7 +6,7 @@ import SwiftUI
 /// slide (`MessageTime` reads `TimeReveal`), not the rows. On the iPhone and iPad; the Mac has no
 /// swipe to give it.
 @MainActor @Observable final class TimeReveal {
-    /// How far the rows have slid, 0 to a little past `width`.
+    /// How far the rows have slid, 0 to `width` + `SwipeForTimes.stretch`.
     var offset: CGFloat = 0
     /// The room the times take.
     static let width: CGFloat = 72
@@ -38,11 +38,14 @@ private struct SwipeForTimes: ViewModifier {
         #endif
     }
 
-    /// Follows the finger to the times' width, then gives only a little.
+    /// Follows the finger to the times' width, then gives only a little, and never more than
+    /// `stretch` past it (11-07: the rows could slide 220 points, most of the screen).
     static func pulled(_ distance: CGFloat) -> CGFloat {
         let d = max(0, distance)
-        return min(d, TimeReveal.width) + max(0, d - TimeReveal.width) * 0.15
+        return min(d, TimeReveal.width) + min(stretch, max(0, d - TimeReveal.width) * 0.15)
     }
+
+    static let stretch: CGFloat = 24
 }
 
 #if os(iOS)
@@ -62,7 +65,9 @@ private struct SidewaysPan: UIGestureRecognizerRepresentable {
     func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
         switch pan.state {
         case .began, .changed:
-            reveal.offset = SwipeForTimes.pulled(-pan.translation(in: pan.view).x)
+            // Measured in the window: the view the pan sits on can be one that slides with
+            // the rows, which counted the slide itself as more swipe.
+            reveal.offset = SwipeForTimes.pulled(-pan.translation(in: nil).x)
         default:
             guard reveal.offset > 0 else { return }
             withAnimation(.spring(duration: 0.35, bounce: 0.15)) { reveal.offset = 0 }
