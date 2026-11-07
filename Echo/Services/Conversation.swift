@@ -2141,12 +2141,25 @@ final class Conversation {
         }
         // Asides the agent hasn't heard of, and questions it asked mid-turn with their answers
         // (`AnsweredQuestions`): neither is a message on the host.
-        for aside in here where (aside.isAside && aside.delivered?.noted != true || aside.isSteer && aside.answering != nil)
+        for aside in here where (aside.isAside && aside.delivered?.noted != true || aside.isSteer && aside.answering != nil && Self.turnKept(aside, in: host))
             && !merged.contains(where: { $0.id == aside.id }) {
             let at = merged.firstIndex { $0.createdAt > aside.createdAt && !$0.isAside } ?? merged.endIndex
             merged.insert(aside, at: at)
         }
         return merged
+    }
+
+    /// An answer row stays only while the host still has its turn: the person's message that
+    /// began it before the row, and the reply that asked after it (or none yet, within the hour:
+    /// the turn may still be going). 2026-11-07 two answers from a failed turn, which Hermes
+    /// never saved, stood at the top of every new chat with Sol.
+    nonisolated static func turnKept(_ answer: Message, in host: [Message], now: Date = .now) -> Bool {
+        let saved = host.filter { !$0.isAside }
+        guard saved.contains(where: { $0.role == .user && $0.createdAt < answer.createdAt }) else { return false }
+        guard let next = saved.first(where: { $0.createdAt > answer.createdAt }) else {
+            return now.timeIntervalSince(answer.createdAt) < 3600
+        }
+        return next.role == .assistant
     }
 
     private func update(_ id: UUID, _ body: (inout Message) -> Void) {

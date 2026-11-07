@@ -43,6 +43,24 @@ struct AnsweredQuestionsTests {
         #expect(merged[1].answering == "Which city?")
     }
 
+    @Test func answersFromATurnHermesNeverSavedAreLetGo() {
+        var answer = Message(role: .user, text: "Yes, fetch it now", createdAt: .now.addingTimeInterval(-7200))
+        answer.isSteer = true
+        answer.answering = "Shall I start?"
+        // Carried into a new chat: nothing of the turn before it.
+        let fresh = [Message(role: .user, text: "Hello", createdAt: .now.addingTimeInterval(-60)), Message(role: .assistant, text: "Hi.", createdAt: .now)]
+        #expect(Conversation.keepingAsides(of: [answer], in: fresh).map(\.text) == ["Hello", "Hi."])
+        // The turn's question saved, its reply not: the next message is the person's.
+        let lost = [Message(role: .user, text: "Pick a model", createdAt: .now.addingTimeInterval(-7300))] + fresh
+        #expect(Conversation.keepingAsides(of: [answer], in: lost).map(\.text) == ["Pick a model", "Hello", "Hi."])
+        // No reply yet, but a turn of a minute ago may still be going.
+        var recent = answer
+        recent.createdAt = .now.addingTimeInterval(-60)
+        let going = [Message(role: .user, text: "Pick a model", createdAt: .now.addingTimeInterval(-120))]
+        #expect(Conversation.keepingAsides(of: [recent], in: going).count == 2)
+        #expect(Conversation.keepingAsides(of: [answer], in: [Message(role: .user, text: "Pick a model", createdAt: .now.addingTimeInterval(-7300))]).count == 1, "an hour on, it's gone")
+    }
+
     @Test func theQuestionIsSavedWithTheMessage() throws {
         var message = Message(role: .user, text: "The Savoy")
         message.answering = "Which hotel?"
