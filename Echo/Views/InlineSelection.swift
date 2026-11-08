@@ -159,8 +159,19 @@ private struct InlineTextView: UIViewRepresentable {
         context.coordinator.openURL = openURL
         context.coordinator.asksAbout = asksAbout
         view.onEnd = onEnd
-        view.linkTextAttributes = [.foregroundColor: UIColor(theme.linkColor), .underlineStyle: NSUnderlineStyle.single.rawValue]
-        if view.attributedText != text { view.attributedText = text }
+        // Only what changed: setting either again clears the selection, and a redraw while
+        // selecting (on the iPad, a tap elsewhere) then ended it mid-update, which SwiftUI
+        // ignored, so the reply stayed as text views (2026-11-07). The view's own copy of the
+        // text never equals this one (UIKit adds attributes), so the last one set is compared.
+        let link = UIColor(theme.linkColor)
+        if context.coordinator.linkColor != link {
+            context.coordinator.linkColor = link
+            view.linkTextAttributes = [.foregroundColor: link, .underlineStyle: NSUnderlineStyle.single.rawValue]
+        }
+        if context.coordinator.shown != text {
+            context.coordinator.shown = text
+            view.attributedText = text
+        }
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: ReplyTextView, context: Context) -> CGSize? {
@@ -178,6 +189,8 @@ private struct InlineTextView: UIViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, UITextViewDelegate, UIEditMenuInteractionDelegate {
         var onEnd: () -> Void = {}
+        var shown: NSAttributedString?
+        var linkColor: UIColor?
         var openURL: OpenURLAction?
         var asksAbout = false
 
@@ -186,7 +199,7 @@ private struct InlineTextView: UIViewRepresentable {
             #if DEBUG
             (view as? ReplyTextView)?.showSelectionToTests()
             #endif
-            guard let view = view as? ReplyTextView, view.started, view.selectedRange.length == 0 else { return }
+                guard let view = view as? ReplyTextView, view.started, view.selectedRange.length == 0 else { return }
             view.finish()
         }
 
@@ -281,8 +294,12 @@ final class ReplyTextView: UITextView {
         guard bounds.insetBy(dx: -6, dy: -6).contains(point) else { return }
         InlineSelection.pending = nil
         guard let position = closestPosition(to: point) else { return finish() }
-        let word = tokenizer.rangeEnclosingPosition(position, with: .word, inDirection: .storage(.forward))
-            ?? tokenizer.rangeEnclosingPosition(position, with: .word, inDirection: .storage(.backward))
+        // On a space between words, the word beside it (a lone space selected had no Ask about this).
+        let near = [position, self.position(from: position, offset: -1), self.position(from: position, offset: 1)].compactMap(\.self)
+        let word = near.lazy.compactMap { at in
+            self.tokenizer.rangeEnclosingPosition(at, with: .word, inDirection: .storage(.forward))
+                ?? self.tokenizer.rangeEnclosingPosition(at, with: .word, inDirection: .storage(.backward))
+        }.first
             ?? textRange(from: position, to: self.position(from: position, offset: 1) ?? position)
         guard let word, !word.isEmpty else { return finish() }
         becomeFirstResponder()
@@ -370,7 +387,9 @@ final class ReplyTextView: UITextView {
         started = false
         stopWatching()
         if isFirstResponder { _ = super.resignFirstResponder() }
-        onEnd()
+        // After any view update this came from: a state change made during one is dropped.
+        let onEnd = onEnd
+        DispatchQueue.main.async { onEnd() }
     }
 }
 
