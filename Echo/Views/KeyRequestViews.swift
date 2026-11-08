@@ -176,6 +176,9 @@ struct KeyRequestSheet: View {
 /// Every request waiting on this server, each opening its card.
 struct KeyRequestsView: View {
     @State private var requests = KeyRequests.shared
+    /// Opened from here, not through `requests.showing`: that sheet hangs off the app's root, and
+    /// Settings is itself a sheet, so a tap there opened nothing (11-08).
+    @State private var open: KeyRequest?
 
     var body: some View {
         Form {
@@ -189,7 +192,7 @@ struct KeyRequestsView: View {
             } else {
                 Section {
                     ForEach(requests.pending) { request in
-                        Button { requests.showing = request } label: {
+                        Button { open = request } label: {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(request.name).font(.body.monospaced())
                                 Text("\(request.who) · \(request.destination)", comment: "Keys asked for: who asked, and where the key goes")
@@ -208,6 +211,7 @@ struct KeyRequestsView: View {
         }
         .navigationTitle(String(localized: "Keys Asked For"))
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $open, onDismiss: { Task { await requests.reload() } }) { KeyRequestSheet(request: $0) }
         .task { await requests.reload() }
         .refreshable { await requests.reload() }
     }
