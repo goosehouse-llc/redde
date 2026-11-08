@@ -1788,6 +1788,13 @@ final class Conversation {
         try await loadLedgerSession(summary, bot: ref)
     }
 
+    /// This bot's chat, open here while the bot works on what another bot asked (`HandoffStrip`):
+    /// read again as each of its steps lands, as opening it would.
+    func followHandoff(_ bot: HermesBot) async {
+        guard !isStreaming, self.bot?.profile == bot.name, catchingUp == nil else { return }
+        try? await openBot(bot, mainName: settings.headerTitle)
+    }
+
     /// "Ask Claude in Redde": the bot that name means on this server, its chat opened. Nil when it
     /// means none (the main profile, a profile with no bot here, the Hermes API, the Bots turned
     /// off): the caller moves the app to that profile instead. The roster as last read, else read now.

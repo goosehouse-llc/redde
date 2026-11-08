@@ -595,7 +595,15 @@ extension Conversation {
         done.tools = []
         var notice = Message(role: .user, text: "built in 3.1 s")
         notice.delivered = Delivered(kind: .process, title: "Background task finished: npm run build")
-        return [asked, reply, answer, done, notice]
+        var exchange = [asked, reply, answer, done, notice]
+        // `-echo.demoHandoff`: a card made for Fix-it, followed under the reply (`HandoffCardRow`).
+        if DevHooks.has("-echo.demoHandoff") {
+            var carded = Message(role: .assistant, text: "The card is made: t_10e4a128, the lookout and paper bots. I'll pick it up when Fix-it is done.")
+            carded.tools = [ToolActivity(name: "kanban_create", preview: "Make the lookout and paper bots", status: .completed,
+                                         args: "assignee: fixit\ntitle: Make the lookout and paper bots")]
+            exchange.append(carded)
+        }
+        return exchange
     }
 
     /// Dev hook (`-echo.demoPhoneShot`): the agent having used the phone four times, short, for

@@ -234,6 +234,16 @@ struct MessageRow: View, Equatable {
             if !isLive, !message.isSteer, message.error == nil, hasTextBubble { LinkPreviewSlot(text: message.text) }
             // A map, places, the weather, the time the reply shows (`ReplyCards`), as soon as they're asked for.
             if message.role == .assistant, let cards = message.cards, !cards.isEmpty { ReplyCardsView(cards: cards, pending: isLive) }
+            // Bots it handed work to (`message_agent`): each at work on it or done, a tap from its chat.
+            if message.role == .assistant, message.tools.contains(where: { $0.name == "message_agent" }) {
+                ForEach(Handoff.targets(in: message), id: \.target) { HandoffRow(target: $0.target, at: $0.at) }
+            }
+            // Cards it made for other bots (`kanban_create`, `claude_card`): each followed on the board.
+            if message.role == .assistant, message.tools.contains(where: { Handoff.cardTools.contains($0.name) }) {
+                ForEach(Array(Handoff.cards(in: message).enumerated()), id: \.offset) { _, card in
+                    HandoffCardRow(named: card.id, assignee: card.assignee, at: card.at)
+                }
+            }
             // A street address in a finished reply with no map of its own: a map of it (`AddressMaps`).
             if !isLive, message.error == nil, let found = AddressMaps.forReply(message) { AddressMapCard(found: found) }
             // Pages the agent made for the chat, live, under what it said about them.

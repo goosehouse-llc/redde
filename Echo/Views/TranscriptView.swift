@@ -350,6 +350,7 @@ struct TranscriptView: View {
                 VStack(spacing: 0) {
                     reconnectBanner
                     CatchingUpStrip(step: conversation.catchingUp)
+                    HandoffStrip(conversation: conversation)
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) { if conversation.isIncognito { incognitoBanner } }

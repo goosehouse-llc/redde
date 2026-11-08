@@ -28,6 +28,8 @@ nonisolated enum BotHandoffs {
         var role: String
         var text: String
         var at: Date?
+        /// The tools an assistant row called (`HandoffWatch`).
+        var tools: [String] = []
     }
 
     /// From `bot`'s chat: messages other bots sent it, and answers it got back from those it asked.
@@ -69,6 +71,13 @@ nonisolated enum BotHandoffs {
             }
         }
         return all
+    }
+
+    /// The tools an assistant row called: its `tool_calls`, a list, or the same as JSON text
+    /// (Hermes keeps either).
+    static func toolNames(_ calls: JSONValue?) -> [String] {
+        let list = calls?.array ?? calls?.string.flatMap { try? JSONValue.parse(Data($0.utf8)) }?.array ?? []
+        return list.compactMap { $0["function"]?["name"]?.string ?? $0["name"]?.string }
     }
 
     /// A Dashboard message row's words: its text, or its text parts.
@@ -114,19 +123,26 @@ final class BotHandoffStore {
 
     /// A bot's newest messages: by the Dashboard (read only, no chat opened for it), or on the
     /// Hermes API alone by its own key at /p/<profile>/.
-    private static func rows(of bot: HermesBot, chat: String, apiOnly: Bool, settings: Settings, dashboard: HermesServeClient) async -> [BotHandoffs.Row]? {
+    static func rows(of bot: HermesBot, chat: String, limit: Int = rowsRead, settings: Settings = .shared,
+                     dashboard: HermesServeClient = .shared) async -> [BotHandoffs.Row]? {
+        await rows(of: bot, chat: chat, limit: limit, apiOnly: BotDirectory.apiOnly(settings, dashboard: dashboard), settings: settings, dashboard: dashboard)
+    }
+
+    private static func rows(of bot: HermesBot, chat: String, limit: Int = rowsRead, apiOnly: Bool, settings: Settings, dashboard: HermesServeClient) async -> [BotHandoffs.Row]? {
         if apiOnly {
             guard let endpoint = settings.gatewayEndpoint(profile: bot.name) else { return nil }
             let api = HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.apiHeaders)
-            guard let stored = try? await api.newestMessages(sessionID: chat, limit: rowsRead) else { return nil }
-            return stored.map { BotHandoffs.Row(role: $0.role, text: $0.content?.text ?? "", at: $0.timestamp.map(Date.init(timeIntervalSince1970:))) }
+            guard let stored = try? await api.newestMessages(sessionID: chat, limit: limit) else { return nil }
+            return stored.map { BotHandoffs.Row(role: $0.role, text: $0.content?.text ?? "", at: $0.timestamp.map(Date.init(timeIntervalSince1970:)),
+                                                tools: ($0.tool_calls ?? []).compactMap { $0.function?.name }) }
         }
-        let path = HermesServeClient.naming("api/sessions/\(chat)/messages?order=latest&limit=\(rowsRead)&inline_images=false",
+        let path = HermesServeClient.naming("api/sessions/\(chat)/messages?order=latest&limit=\(limit)&inline_images=false",
                                             profile: bot.isDefault ? nil : bot.name)
         guard let json = try? await dashboard.restJSON("GET", path) else { return nil }
         return (json["messages"]?.array ?? []).map {
             BotHandoffs.Row(role: $0["role"]?.string ?? "", text: BotHandoffs.text(of: $0["content"]),
-                            at: $0["timestamp"]?.number.map(Date.init(timeIntervalSince1970:)))
+                            at: $0["timestamp"]?.number.map(Date.init(timeIntervalSince1970:)),
+                            tools: BotHandoffs.toolNames($0["tool_calls"]))
         }
     }
 }

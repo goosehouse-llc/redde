@@ -279,6 +279,7 @@ enum DevHooks {
         if demoBots {
             if !DemoDay.on { conversation.seedBotDemo() }   // (the day's video starts on a chat of Sol's)
             BotDirectory.shared.set(ConversationsList.demoBots, key: settings.connectionKey)
+            if has("-echo.demoHandoff") { HandoffWatch.shared.showDemo(value("-echo.demoHandoff")) }
             #if canImport(UIKit)
             if has("-echo.demoPicture") { BotPictures.shared.seed("scout", BotPictures.demoPicture) }
             #endif
