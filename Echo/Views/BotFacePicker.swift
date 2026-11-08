@@ -66,6 +66,16 @@ struct BotFacePicker: View {
         case "spark": String(localized: "Spark", comment: "A bot face's mark")
         case "freckles": String(localized: "Freckles", comment: "A bot face's mark")
         case "blush": String(localized: "Blush", comment: "A bot face's mark")
+        case "lens": String(localized: "Magnifier", comment: "A bot face's eyes: one seen through a magnifying glass (a researcher's)")
+        case "prompt": String(localized: "Prompt", comment: "A bot face's mouth: a terminal's “>_” prompt (a coder's)")
+        case "hardHat": String(localized: "Hard Hat", comment: "A bot face's mark")
+        case "mortarboard": String(localized: "Mortarboard", comment: "A bot face's mark: a graduation cap")
+        case "pencil": String(localized: "Pencil", comment: "A bot face's mark: a pencil behind its ear")
+        case "mast": String(localized: "Mast", comment: "A bot face's mark: a mast on its head sending signal waves (a lookout's)")
+        case "chimney": String(localized: "Chimney", comment: "A bot face's mark: a chimney with smoke")
+        case "calendar": String(localized: "Calendar", comment: "A bot face's mark: a desk calendar's band and rings")
+        case "paperclip": String(localized: "Paper Clip", comment: "A bot face's mark: a paper clip, a sheet behind")
+        case "envelope": String(localized: "Envelope", comment: "A bot face's mark: an envelope's flap")
         default: raw.capitalized
         }
     }

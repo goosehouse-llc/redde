@@ -255,8 +255,8 @@ struct BotAvatar: View {
         let shape = layout(face.shape)
         let u = s / 100
         context.scaleBy(x: u, y: u)
-        // An antenna stands above the body: the whole creature a little smaller, so it fits.
-        if face.mark == .antenna {
+        // A mark that stands above the body (an antenna, a hat): the whole creature a little smaller, so it fits.
+        if face.mark.standsAbove {
             context.translateBy(x: 50, y: 62)
             context.scaleBy(x: 0.86, y: 0.86)
             context.translateBy(x: -50, y: -62)
@@ -278,9 +278,30 @@ struct BotAvatar: View {
             context.stroke(stalk, with: .color(colors.deep), style: StrokeStyle(lineWidth: 3.6, lineCap: .round))
             context.fill(Path(ellipseIn: CGRect(x: shape.top.x + 4.5, y: shape.top.y - 15, width: 9, height: 9)), with: .color(colors.deep))
         }
+        let top = shape.top
+        behindBody(in: &context, shape: shape, colors: colors, ink: ink)
         context.fill(body, with: fill)
         if face.shape != .bubble, face.color == BotFace.white {
             context.stroke(body, with: .color(ink.opacity(0.2)), lineWidth: 1.6)
+        }
+        // Marks drawn on the body, under its gloss: a calendar's band, an envelope's flap.
+        var onBody = context
+        onBody.clip(to: body)
+        switch face.mark {
+        case .calendar:
+            let bottom = min(top.y + 16, shape.eyeY - 10)
+            let red = face.color == 9 || face.color == 2 ? Color(red: 0.72, green: 0.16, blue: 0.2) : Color(red: 0.93, green: 0.36, blue: 0.33)
+            onBody.fill(Path(CGRect(x: 0, y: 0, width: 100, height: bottom)), with: .color(red))
+        case .envelope:
+            var flap = Path()
+            flap.move(to: CGPoint(x: top.x - 29, y: top.y + 3))
+            flap.addQuadCurve(to: CGPoint(x: top.x, y: top.y + 13), control: CGPoint(x: top.x - 11, y: top.y + 13))
+            flap.addQuadCurve(to: CGPoint(x: top.x + 29, y: top.y + 3), control: CGPoint(x: top.x + 11, y: top.y + 13))
+            onBody.stroke(flap, with: .color(pale ? ink.opacity(0.3) : .white.opacity(0.8)), style: StrokeStyle(lineWidth: 2.8, lineCap: .round, lineJoin: .round))
+            onBody.fill(Path(roundedRect: CGRect(x: top.x + 25, y: top.y + 7, width: 9, height: 10), cornerRadius: 1.5),
+                        with: .color(Color(red: 1, green: 0.55, blue: 0.4)))
+        default:
+            break
         }
         if face.mark == .spark {
             // A small four-pointed sparkle by its top right.
@@ -306,6 +327,7 @@ struct BotAvatar: View {
         gloss.translateBy(x: shape.top.x - 17, y: shape.top.y + 13)
         gloss.rotate(by: .degrees(-28))
         gloss.fill(Path(ellipseIn: CGRect(x: -9, y: -5, width: 18, height: 10)), with: .color(.white.opacity(0.28)))
+        overBody(in: &context, shape: shape, colors: colors)
 
         // The eyes: white, with pupils looking its way (or where the pose says), open as far as it says.
         let glanced = [CGPoint(x: -1.8, y: 0.6), CGPoint(x: 1.8, y: 0.6), CGPoint(x: -1.4, y: -1.2), CGPoint(x: 1.4, y: -1.2)][face.glance % 4]
@@ -353,6 +375,17 @@ struct BotAvatar: View {
         case .sparkle:
             eye(left, white: 7.8, pupil: 4.6, sparkle: true)
             eye(right, white: 7.8, pupil: 4.6, sparkle: true)
+        case .lens:
+            // The other seen through a magnifying glass: bigger, the glass's handle down and out.
+            eye(left, white: 7.4, pupil: 3.8)
+            var handle = Path()
+            handle.move(to: CGPoint(x: right.x + 9, y: right.y + 9))
+            handle.addLine(to: CGPoint(x: right.x + 25, y: right.y + 25))
+            context.stroke(handle, with: .color(features), style: StrokeStyle(lineWidth: 5.5, lineCap: .round))
+            let glass = Path(ellipseIn: CGRect(x: right.x - 12.5, y: right.y - 12.5, width: 25, height: 25))
+            context.fill(glass, with: .color(Color(red: 0.86, green: 0.97, blue: 1)))
+            eye(right, white: 9.6, pupil: 5.4, sparkle: true)
+            context.stroke(glass, with: .color(features), lineWidth: 3)
         }
 
         // The mark below the eyes.
@@ -399,6 +432,116 @@ struct BotAvatar: View {
             grin.addQuadCurve(to: CGPoint(x: 51, y: mouthY), control: CGPoint(x: 51 - 3, y: mouthY + 4))
             grin.addQuadCurve(to: CGPoint(x: 51 + 6, y: mouthY - 1), control: CGPoint(x: 51 + 3, y: mouthY + 4))
             context.stroke(grin, with: .color(features), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+        case .prompt:
+            // ">_", a terminal's; its cursor green on a dark body.
+            var chevron = Path()
+            chevron.move(to: CGPoint(x: 51 - 11, y: mouthY))
+            chevron.addLine(to: CGPoint(x: 51 - 5, y: mouthY + 5))
+            chevron.addLine(to: CGPoint(x: 51 - 11, y: mouthY + 10))
+            context.stroke(chevron, with: .color(features), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+            context.fill(Path(roundedRect: CGRect(x: 51 - 1, y: mouthY + 8, width: 12, height: 3.2), cornerRadius: 1.6),
+                         with: .color(dark ? Color(red: 0.4, green: 0.95, blue: 0.55) : features))
+        }
+    }
+
+    /// A mark drawn behind the body: a mast's stalk, a pencil, a chimney, the sheet under a paper clip.
+    private func behindBody(in context: inout GraphicsContext, shape: Layout, colors: (light: Color, deep: Color), ink: Color) {
+        let top = shape.top
+        switch face.mark {
+        case .mast:
+            var stalk = Path()
+            stalk.move(to: CGPoint(x: top.x, y: top.y + 3))
+            stalk.addLine(to: CGPoint(x: top.x, y: top.y - 9))
+            context.stroke(stalk, with: .color(colors.deep), style: StrokeStyle(lineWidth: 3.6, lineCap: .round))
+        case .pencil:
+            var pencil = context
+            pencil.translateBy(x: top.x + 26, y: top.y + 7)
+            pencil.rotate(by: .degrees(40))
+            pencil.fill(Path(CGRect(x: -4.5, y: -24, width: 9, height: 34)), with: .color(Color(red: 1, green: 0.78, blue: 0.22)))
+            pencil.fill(Path(CGRect(x: -1.5, y: -24, width: 3, height: 34)), with: .color(Color(red: 0.95, green: 0.66, blue: 0.12)))
+            pencil.fill(Path(roundedRect: CGRect(x: -4.5, y: -31, width: 9, height: 8), cornerRadius: 2.5), with: .color(Color(red: 1, green: 0.55, blue: 0.62)))
+            var tip = Path()
+            tip.move(to: CGPoint(x: -4.5, y: 10))
+            tip.addLine(to: CGPoint(x: 4.5, y: 10))
+            tip.addLine(to: CGPoint(x: 0, y: 20))
+            tip.closeSubpath()
+            pencil.fill(tip, with: .color(Color(red: 0.98, green: 0.86, blue: 0.7)))
+        case .chimney:
+            context.fill(Path(roundedRect: CGRect(x: top.x + 14, y: top.y - 1, width: 10, height: 22), cornerRadius: 2),
+                         with: .color(colors.deep.mix(with: .black, by: 0.12)))
+        case .paperclip:
+            // A second sheet under it, a little up and to the right.
+            let sheet = shape.body.offsetBy(dx: 6, dy: -6)
+            context.fill(sheet, with: .color(colors.deep.mix(with: .black, by: 0.1)))
+            if face.color == BotFace.white { context.stroke(sheet, with: .color(ink.opacity(0.2)), lineWidth: 1.6) }
+        default:
+            break
+        }
+    }
+
+    /// A mark drawn over the body, before the eyes: a hat, a mast's light, smoke, a paper clip, a calendar's rings.
+    private func overBody(in context: inout GraphicsContext, shape: Layout, colors: (light: Color, deep: Color)) {
+        let top = shape.top
+        let gold = Color(red: 1, green: 0.78, blue: 0.22), steel = Color(red: 0.55, green: 0.58, blue: 0.64)
+        switch face.mark {
+        case .hardHat:
+            // Low enough to sit on its head, never over its eyes.
+            let base = min(top.y + 11, shape.eyeY - 13)
+            let yellow = Color(red: 1, green: 0.8, blue: 0.2), deep = Color(red: 0.92, green: 0.62, blue: 0.1)
+            var dome = Path()
+            dome.move(to: CGPoint(x: top.x - 24, y: base))
+            dome.addCurve(to: CGPoint(x: top.x + 24, y: base), control1: CGPoint(x: top.x - 24, y: base - 21), control2: CGPoint(x: top.x + 24, y: base - 21))
+            dome.closeSubpath()
+            context.fill(dome, with: .linearGradient(Gradient(colors: [yellow, deep]), startPoint: CGPoint(x: top.x - 21, y: base - 17),
+                                                     endPoint: CGPoint(x: top.x + 19, y: base + 1)))
+            context.fill(Path(roundedRect: CGRect(x: top.x - 3.5, y: base - 19, width: 7, height: 19), cornerRadius: 3), with: .color(.white.opacity(0.35)))
+            context.fill(Path(roundedRect: CGRect(x: top.x - 32, y: base - 2, width: 64, height: 6), cornerRadius: 3), with: .color(deep))
+        case .mortarboard:
+            context.fill(Path(roundedRect: CGRect(x: top.x - 15, y: top.y - 1, width: 30, height: 10), cornerRadius: 3),
+                         with: .color(Color(red: 0.2, green: 0.22, blue: 0.36)))
+            var board = Path()
+            board.move(to: CGPoint(x: top.x, y: top.y - 11))
+            board.addLine(to: CGPoint(x: top.x + 29, y: top.y - 3))
+            board.addLine(to: CGPoint(x: top.x, y: top.y + 5))
+            board.addLine(to: CGPoint(x: top.x - 29, y: top.y - 3))
+            board.closeSubpath()
+            context.fill(board, with: .linearGradient(Gradient(colors: [Color(red: 0.42, green: 0.45, blue: 0.66), Color(red: 0.24, green: 0.26, blue: 0.42)]),
+                                                      startPoint: CGPoint(x: top.x - 21, y: top.y - 10), endPoint: CGPoint(x: top.x + 19, y: top.y + 4)))
+            var tassel = Path()
+            tassel.move(to: CGPoint(x: top.x, y: top.y - 3))
+            tassel.addLine(to: CGPoint(x: top.x + 21, y: top.y - 1))
+            tassel.addLine(to: CGPoint(x: top.x + 21, y: top.y + 13))
+            context.stroke(tassel, with: .color(gold), style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
+            context.fill(Path(roundedRect: CGRect(x: top.x + 19, y: top.y + 12, width: 4, height: 6), cornerRadius: 1.5), with: .color(gold))
+        case .mast:
+            // Its light on top, a wave either side.
+            let light = CGPoint(x: top.x, y: top.y - 8.5)
+            context.fill(Path(ellipseIn: CGRect(x: light.x - 4.5, y: light.y - 4.5, width: 9, height: 9)), with: .color(Color(red: 1, green: 0.42, blue: 0.36)))
+            for (from, radius) in [(-40.0, 9.0), (-40.0, 15.0), (140.0, 9.0), (140.0, 15.0)] {
+                var wave = Path()
+                wave.addArc(center: light, radius: radius, startAngle: .degrees(from), endAngle: .degrees(from + 80), clockwise: false)
+                context.stroke(wave, with: .color(colors.deep.opacity(radius > 10 ? 0.5 : 0.9)), style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+            }
+        case .chimney:
+            for (dx, dy, r) in [(19.0, -6.0, 3.2), (24.0, -12.0, 4.2), (31.0, -18.0, 5.0)] {
+                context.fill(Path(ellipseIn: CGRect(x: top.x + dx - r, y: top.y + dy - r, width: r * 2, height: r * 2)),
+                             with: .color(Color(white: 0.75).opacity(0.85)))
+            }
+        case .paperclip:
+            var clip = Path()
+            clip.move(to: CGPoint(x: top.x - 23, y: top.y + 14))
+            clip.addLine(to: CGPoint(x: top.x - 23, y: top.y - 6))
+            clip.addArc(center: CGPoint(x: top.x - 18.5, y: top.y - 6), radius: 4.5, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+            clip.addLine(to: CGPoint(x: top.x - 14, y: top.y + 16))
+            clip.addArc(center: CGPoint(x: top.x - 17.5, y: top.y + 16), radius: 3.5, startAngle: .degrees(0), endAngle: .degrees(180), clockwise: false)
+            clip.addLine(to: CGPoint(x: top.x - 21, y: top.y - 1))
+            context.stroke(clip, with: .color(steel), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+        case .calendar:
+            for x in [top.x - 19, top.x + 19] {
+                context.fill(Path(roundedRect: CGRect(x: x - 2.6, y: top.y - 7, width: 5.2, height: 14), cornerRadius: 2.6), with: .color(steel))
+            }
+        default:
+            break
         }
     }
 }

@@ -179,6 +179,20 @@ struct BotsTests {
         #expect(house.code == "1:house:round:smile:antenna:9:1:-2" && BotFace(code: house.code) == house, "the house is kept by name")
         #expect(BotFace(code: "2:egg:round:none:none:0:1:0") == nil && BotFace(code: "1:cloud:round:none:none:0:1:0") == nil,
                 "a face from a later Redde isn't misread")
+        // The parts that say what a bot does (2026-11-08): picked only, kept by name.
+        #expect(BotFace.Eyes.seeded == [.round, .mismatched, .sleepy, .happy, .sparkle] && BotFace.Mouth.seeded == [.none, .smile, .oh, .grin]
+                && BotFace.Mark.seeded == [.none, .antenna, .spark, .freckles, .blush],
+                "new eyes, mouths and marks are for picking: what a name gives never changes")
+        let seededFaces = (0 ..< 400).map { BotFace(seed: "bot\($0)") }
+        #expect(seededFaces.allSatisfy { BotFace.Eyes.seeded.contains($0.eyes) && BotFace.Mouth.seeded.contains($0.mouth) && BotFace.Mark.seeded.contains($0.mark) })
+        let researcher = BotFace(shape: .round, eyes: .lens, mouth: .prompt, mark: .hardHat, glance: 1, tilt: 0, color: 4)
+        #expect(researcher.code == "1:round:lens:prompt:hardHat:4:1:0" && BotFace(code: researcher.code) == researcher)
+        for mark in BotFace.Mark.allCases {
+            var face = researcher
+            face.mark = mark
+            #expect(BotFace(code: face.code) == face, "\(mark) reads back as written")
+        }
+        #expect(BotFace.Mark.mortarboard.standsAbove && BotFace.Mark.antenna.standsAbove && !BotFace.Mark.calendar.standsAbove && !BotFace.Mark.blush.standsAbove)
 
         let names = ["default", "scout", "writer", "fixit", "coder"]
         let given = BotFace.faces(for: names)

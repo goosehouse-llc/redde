@@ -23,9 +23,31 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         /// The shapes a name gives, in their first order: never to change.
         static let seeded: [Shape] = [.round, .egg, .pill, .capsule, .burst, .pick, .hex, .diamond]
     }
-    enum Eyes: String, CaseIterable, Sendable { case round, mismatched, sleepy, happy, sparkle }
-    enum Mouth: String, CaseIterable, Sendable { case none, smile, oh, grin }
-    enum Mark: String, CaseIterable, Sendable { case none, antenna, spark, freckles, blush }
+    /// Eyes, mouths and marks after the first ones are only picked, never given by a name (as with
+    /// `Shape.seeded`): the ones that say what a bot does (asked 2026-11-08), a researcher's
+    /// magnifying glass, a coder's prompt, a hard hat, a pencil and so on.
+    enum Eyes: String, CaseIterable, Sendable {
+        case round, mismatched, sleepy, happy, sparkle
+        /// One eye seen through a magnifying glass: a researcher's.
+        case lens
+        static let seeded: [Eyes] = [.round, .mismatched, .sleepy, .happy, .sparkle]
+    }
+    enum Mouth: String, CaseIterable, Sendable {
+        case none, smile, oh, grin
+        /// ">_", a terminal's: a coder's.
+        case prompt
+        static let seeded: [Mouth] = [.none, .smile, .oh, .grin]
+    }
+    enum Mark: String, CaseIterable, Sendable {
+        case none, antenna, spark, freckles, blush
+        /// What a bot does: a hard hat (ops), a mortarboard (a teacher), a pencil behind its ear
+        /// (a writer), a mast sending (a lookout), a chimney (home), a desk calendar's band and
+        /// rings (a scheduler), a paper clip and a sheet behind (paperwork), an envelope's flap (mail).
+        case hardHat, mortarboard, pencil, mast, chimney, calendar, paperclip, envelope
+        static let seeded: [Mark] = [.none, .antenna, .spark, .freckles, .blush]
+        /// Stands up past the body's top: the whole creature drawn a little smaller, so it fits.
+        var standsAbove: Bool { [.antenna, .hardHat, .mortarboard, .pencil, .mast, .chimney, .paperclip].contains(self) }
+    }
 
     var shape: Shape
     var eyes: Eyes
@@ -96,9 +118,9 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
 
     /// Every face a name can give (colour, glance and lean aside), in a fixed order.
     private static let all: [BotFace] = Shape.seeded.flatMap { shape in
-        Eyes.allCases.flatMap { eyes in
-            Mouth.allCases.flatMap { mouth in
-                Mark.allCases.map { BotFace(shape: shape, eyes: eyes, mouth: mouth, mark: $0, glance: 0, tilt: 0, color: 0) }
+        Eyes.seeded.flatMap { eyes in
+            Mouth.seeded.flatMap { mouth in
+                Mark.seeded.map { BotFace(shape: shape, eyes: eyes, mouth: mouth, mark: $0, glance: 0, tilt: 0, color: 0) }
             }
         }
     }

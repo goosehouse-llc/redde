@@ -100,6 +100,7 @@ struct ContentView: View {
     #if DEBUG
     /// `-echo.screen botGallery`: every bot creature, large, to look them over.
     @State private var showBotGallery = false
+    @State private var showRoleFaces = false
     @State private var showDemoPatch = false
     /// `-echo.screen activity|pluginUpdates|triggers|watches`: that page, in a sheet (the day's video, `DemoDay`);
     /// `goal` and `goals` (with `-echo.demoGoals`) a goal's page and the list, for screenshots.
@@ -193,6 +194,7 @@ struct ContentView: View {
         .sheet(isPresented: $showGateway) { NavigationStack { GatewayView() } }
         #if DEBUG
         .fullScreenCover(isPresented: $showBotGallery) { BotGallery() }
+        .fullScreenCover(isPresented: $showRoleFaces) { RoleFaces() }
         .sheet(isPresented: $showDemoPatch) { PatchView(title: "Lab change one", patch: PatchView.demo, notes: PatchView.demoNotes, notesTitle: "Steps left with it") }
         .sheet(isPresented: Binding(get: { demoDayPage != nil }, set: { if !$0 { demoDayPage = nil } })) {
             NavigationStack {
@@ -1482,6 +1484,7 @@ struct ContentView: View {
         case "files": showFiles = true
         #if DEBUG
         case "botGallery": showBotGallery = true
+        case "roleFaces": showRoleFaces = true
         case "patch": showDemoPatch = true
         case "activity", "comingUp", "pluginUpdates", "triggers", "calendars", "headsUps", "wrapUp", "watches", "goal", "goals", "phoneTools", "health", "usage", "memory", "memoryImport", "memoryManifest", "inbox", "mailSetup", "mailAdd", "mailRules", "mailLabels", "mailReader", "inboxCard", "mailBrief", "dailyJobs", "location", "chatListCards": demoDayPage = DevHooks.value("-echo.screen")
         case "aheadOfYourDay": showAheadOfYourDay = true
