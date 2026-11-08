@@ -217,6 +217,38 @@ class AgentWatchTests(RoutinesTests):
         self.assertIn("NOTHING NEW", job["prompt"])
         self.assertEqual(watches.watch_id(job["prompt"]), watches.watch_id(job["name"]))
 
+    def test_a_watch_goes_to_the_watcher_profile_when_there_is_one(self):
+        import contextlib
+        from pathlib import Path
+        root = Path(self.root)
+        used = []
+
+        @contextlib.contextmanager
+        def store(home):
+            used.append(Path(home))
+            yield
+
+        said = watches.set_up(root, "the price of the blue kettle", make=self.make, store=store)
+        self.assertEqual(used, [], "no Watcher profile: the asking agent's own store")
+        self.assertNotIn("Watcher", said["set"])
+        (root / "profiles" / "watcher").mkdir(parents=True)
+        (root / "profiles" / "watcher" / "config.yaml").write_text("model: {}\n")
+        said = watches.set_up(root, "the price of the blue kettle", make=self.make, store=store)
+        self.assertEqual(used, [root / "profiles" / "watcher"])
+        self.assertIn("Watcher keeps it", said["set"])
+        # Asked in another bot's chat: the same Watcher.
+        (root / "profiles" / "ops").mkdir()
+        watches.set_up(root / "profiles" / "ops", "the backup job", make=self.make, store=store)
+        self.assertEqual(used[-1], root / "profiles" / "watcher")
+        # Asked in Watcher's own chat: its own store, no routing.
+        used.clear()
+        watches.set_up(root / "profiles" / "watcher", "the backup job", make=self.make, store=store)
+        self.assertEqual(used, [])
+        # A Hermes that can't route cron writes keeps it where it was asked.
+        said = watches.set_up(root, "the kettle", make=self.make, store=lambda home: None)
+        self.assertNotIn("Watcher", said["set"])
+        self.assertEqual(len(self.made), 5)
+
     def test_odd_asks_are_made_sensible(self):
         watches.set_up(self.root, "x", "every minute", 400, make=self.make)
         self.assertEqual((self.made[0]["schedule"], self.made[0]["repeat"]), ("0 * * * *", 24 * 30))

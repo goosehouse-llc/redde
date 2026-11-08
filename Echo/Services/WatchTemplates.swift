@@ -184,7 +184,9 @@ enum WatchTemplate: Hashable, Sendable {
     static func create(_ template: WatchTemplate, emailKnown: Bool? = nil) async throws {
         guard let backend = CronBackend.current() else { throw TransportError.malformed(String(localized: "Scheduled jobs need the Hermes Dashboard or the Hermes API.")) }
         let name = "\(Watches.watchTag)\(template.id)] \(template.name)"
-        try await backend.create(name: name, schedule: template.often.rawValue, prompt: template.prompt, deliver: "local", runs: template.runs)
+        // On Watcher when there is one, as a written watch is (`Watches.defaultWatcher`).
+        try await backend.create(name: name, schedule: template.often.rawValue, prompt: template.prompt, deliver: "local",
+                                 profile: Watches.defaultWatcher, runs: template.runs)
         guard template.needsEmail, emailKnown == nil else { return }
         // Not waited for: on the Dashboard a run blocks until it ends.
         Task {

@@ -183,6 +183,30 @@ def prompt(watch: str, what: str) -> str:
             "you can also use call_user.")
 
 
+#: The profile that keeps the watches when a Hermes has one by this name (2026-11-08, Sam: "Watcher
+#: handles all watches"): a watch asked for in any chat is made in its store, so it runs as Watcher,
+#: with Watcher's tools and model. A Hermes without one keeps each watch in the asking agent's store.
+WATCHER = "watcher"
+
+
+def watcher_home(home: Path) -> Path:
+    """Where a new watch goes: the Watcher profile's home if this Hermes has one, else `home`."""
+    home = Path(home)
+    root = home.parent.parent if home.parent.name == "profiles" else home
+    found = root / "profiles" / WATCHER
+    return found if (found / "config.yaml").is_file() else home
+
+
+def _store(home: Path):
+    """Hermes's cron writes going to `home`'s store (`cron.jobs.use_cron_store`), or None when this
+    Hermes can't route them (then the watch stays in the asking agent's own store)."""
+    try:
+        from cron.jobs import use_cron_store
+    except Exception:
+        return None
+    return use_cron_store(home)
+
+
 def mine(home: Path) -> int:
     try:
         import json
@@ -193,7 +217,7 @@ def mine(home: Path) -> int:
     return sum(1 for j in jobs or [] if isinstance(j, dict) and str(j.get("name") or "").startswith(TAG))
 
 
-def set_up(home: Path, what: str, every: str = "1h", days=7, make=None) -> dict:
+def set_up(home: Path, what: str, every: str = "1h", days=7, make=None, store=None) -> dict:
     what = " ".join(str(what or "").split())[:400]
     if not what:
         return {"error": "Say what to keep an eye on, as \"what\"."}
@@ -202,7 +226,14 @@ def set_up(home: Path, what: str, every: str = "1h", days=7, make=None) -> dict:
         days = max(DAYS[0], min(DAYS[1], int(days)))
     except (TypeError, ValueError):
         days = 7
-    if mine(home) >= MOST:
+    target = watcher_home(home)
+    if target != Path(home):
+        routed = (store or _store)(target)
+        if routed is None:
+            target = Path(home)
+    else:
+        routed = None
+    if mine(target) >= MOST:
         return {"error": f"There are already {MOST} watches: ask them which to stop first."}
     if make is None:
         try:
@@ -211,9 +242,16 @@ def set_up(home: Path, what: str, every: str = "1h", days=7, make=None) -> dict:
             return {"error": "This Hermes can't schedule watches (no cron). Tell them in words instead."}
     import uuid
     watch = uuid.uuid4().hex[:8]
-    make(prompt(watch, what), schedule, name=f"{TAG}{watch}] {title_of(what)}", deliver="local", repeat=per_day * days)
+    args = (prompt(watch, what), schedule)
+    kwargs = {"name": f"{TAG}{watch}] {title_of(what)}", "deliver": "local", "repeat": per_day * days}
+    if routed is not None:
+        with routed:
+            make(*args, **kwargs)
+    else:
+        make(*args, **kwargs)
+    who = " Watcher keeps it." if target != Path(home) else ""
     return {"set": f"Watching for {days} day{'s' if days != 1 else ''}; they'll hear only when it changes, and can stop it "
-                   "in Redde's Watches. Tell them in a few words."}
+                   f"in Redde's Watches.{who} Tell them in a few words."}
 
 
 def ask_note(home: Path, store_in, message, platform: str = "") -> str | None:

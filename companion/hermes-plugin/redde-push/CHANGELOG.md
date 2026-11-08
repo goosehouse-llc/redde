@@ -3,6 +3,13 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.19.6 (2026-11-08)
+
+- A watch asked for in any chat (`keep_an_eye_on`) is made on the Watcher bot when the Hermes has a
+  profile named `watcher`, so it runs with Watcher's tools and model. Without one, nothing changes:
+  the watch stays with the agent that was asked. Redde's New Watch and its templates pick Watcher
+  the same way.
+
 ## 1.19.5 (2026-11-08)
 
 - A scheduled run with a long answer is asked to open with the outcome in one bold line and give

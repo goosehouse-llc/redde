@@ -105,6 +105,13 @@ enum Watches {
         return (BotDirectory.shared.roster?.listed ?? []).filter { !$0.viaAPI }
     }
 
+    /// The bot new watches go to unless another is picked: one whose profile is "watcher" (the
+    /// plugin's `WATCHER`; 2026-11-08, "Watcher handles all watches"). Nil without one, or when Redde
+    /// is on it already: the watch stays with the agent Redde is on, as before.
+    static var defaultWatcher: String? {
+        watchers.first { $0.name == "watcher" && $0.name != Settings.shared.profileName }?.name
+    }
+
     /// The agents a change can be handed to.
     static var takers: [HermesBot] {
         #if DEBUG
@@ -371,6 +378,7 @@ struct NewWatchView: View {
     init(text: String, template: WatchTemplate.Kind? = nil) {
         _text = State(initialValue: text)
         _template = State(initialValue: template)
+        _watcher = State(initialValue: Watches.defaultWatcher ?? "")
     }
     /// The bot that looks ("" for the agent Redde is on), and what happens when it sees a change.
     @State private var watcher = ""
