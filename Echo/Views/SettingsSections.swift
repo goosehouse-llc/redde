@@ -121,6 +121,11 @@ struct AppearanceSettings: View {
                     Text(settings.chatFont.label)
                 }
             }
+            // Beside the font: the two say how the conversation reads.
+            Picker("Chat text size", selection: $settings.chatTextSize) {
+                ForEach(Array(Settings.chatTextSizes), id: \.self) { Text(ChatTextSize.label($0)).tag($0) }
+            }
+            .pickerStyle(.menu)
 
             Toggle(isOn: $settings.botFaces) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -219,10 +224,6 @@ struct AppearanceSettings: View {
                     }
                 }
             }
-            Picker("Chat text size", selection: $settings.chatTextSize) {
-                ForEach(Array(Settings.chatTextSizes), id: \.self) { Text(ChatTextSize.label($0)).tag($0) }
-            }
-            .pickerStyle(.menu)
             Toggle(isOn: $settings.linkPreviews) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Link previews")
