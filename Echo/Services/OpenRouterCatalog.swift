@@ -32,7 +32,7 @@ final class OpenRouterCatalog {
         return list
     }
 
-    private nonisolated static let session: URLSession = {
+    nonisolated static let session: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.httpCookieStorage = nil
         configuration.httpShouldSetCookies = false
@@ -113,7 +113,7 @@ actor VenicePrices {
 
     func all() async -> [String: (price: ModelPrice, context: Int?)] {
         if let cached, let fetchedAt, Date.now.timeIntervalSince(fetchedAt) < 6 * 3600 { return cached }
-        guard let (data, response) = try? await URLSession.shared.data(from: URL(string: "https://api.venice.ai/api/v1/models")!),
+        guard let (data, response) = try? await OpenRouterCatalog.session.data(from: URL(string: "https://api.venice.ai/api/v1/models")!),
               (response as? HTTPURLResponse)?.statusCode == 200 else { return cached ?? [:] }
         let found = Self.parse(data)
         cached = found

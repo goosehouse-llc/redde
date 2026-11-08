@@ -73,12 +73,12 @@ Goals, an email inbox, memory you can see, and Apple Home.
 • Goals. Tell your agent something you want to get done, in any chat or with New Goal. It makes a plan of steps for you to approve, checks in on a schedule, and the goal's card above your chats shows how far along you are.
 • Your Inbox. Connect Gmail or any mailbox that takes an app password. Your agent sorts what arrives into Important, Reply, FYI and News, follows the rules you set (label, archive, tell me, send to Paperless), and sends nothing until you approve the exact email. Unsubscribe with a tap, select several emails at once, and read each as its sender laid it out.
 • Today, above your chats: your inbox, the briefings you haven't read and your goals, as tiles in one row.
-• Coming Up: everything your agents plan to do on their own in the next day. Skip one once, or pause it.
+• Coming Up: everything your agents plan to do on their own in the next day. Skip one once, or pause it, or hold it to see what it will do.
 • Memory you can see. Say "remember that…", or hold a message and choose Remember This. See, change or delete what your agent keeps, and bring in what ChatGPT or Claude remembered.
 • Apple Home and Health as phone tools. Your agent can control your accessories and scenes (locks, garage doors and the alarm always ask you first) and read the kinds of Health data you choose. Both are off until you turn them on.
 • Watches in one tap: urgent emails, school messages, a package or a price drop.
 • Session Details for any chat (the model, context, tokens, cost and every tool used), and Settings → Usage by day, bot and model.
-• A model per chat: a model you pick changes that chat only. Run On gives a scheduled job its own model.
+• A model per chat: a model you pick changes that chat only. Search every model on OpenRouter, pin your favorites to the top, see what each one costs, and hold one to make it a bot's default. Run On gives a scheduled job its own model.
 • React to a reply with an emoji, and your agent hears it with your next message. Select part of a reply in place. Swipe left to see when each message came.
 • Scan a document or draw something to send. Watch the page your agent is browsing.
 • Paper White, Paper redone as real paper, and a font of your choice.
@@ -88,10 +88,10 @@ Goals, an email inbox, memory you can see, and Apple Home.
 Most of this takes the Redde plugin 1.19 on your Hermes.
 
 ## Before submitting 2.4
-- The build is 2.4 (284), archived from main. iPhone and iPad only: the Mac's 2.3 is still with App Review (IN_REVIEW since 2026-10-29), and App Store Connect takes no new Mac version until it clears.
+- The build is 2.4 (285), archived from main (284 was uploaded 11-06 but never submitted; 285 adds the 11-07 work: model search, pins and prices, Planned details, message-time and selection fixes, question rows). iPhone and iPad only: the Mac's 2.3 is still with App Review (IN_REVIEW since 2026-10-29), and App Store Connect takes no new Mac version until it clears.
 - New to declare, in the review notes: HomeKit (`com.apple.developer.homekit`, NSHomeKitUsageDescription) for Phone Tools › Apple Home, and Health data read for Phone Tools › Health (sent only to the person's own server, never kept by Redde, nothing written). The HealthKit capability itself shipped in 2.3.1.
 - App Privacy stays "Data Not Collected": email, Home and Health data go only to the person's own Hermes; Goosehouse LLC receives none of it.
-- The privacy policy needs Apple Home, Phone Tools › Health, the email inbox (and that opening an email loads its pictures, which the sender can see), memory import and devices in use. Publish it before submitting.
+- The privacy policy needs Apple Home, Phone Tools › Health, the email inbox (and that opening an email loads its pictures, which the sender can see), memory import, devices in use and (11-07) the public model and price lists the picker reads from openrouter.ai and api.venice.ai. Publish it before submitting.
 - The plugin: main serves 1.19.4 (pushed 2026-11-06). Publish a GitHub release for it at release (none since redde-push-1.12.0).
 - Screenshots: made 2026-11-06 (design/screenshots README, "2.4 slots"): Goals, Inbox, Today with Coming Up and Memory in Paper White in place of Ahead of your day, the day's timeline, the crew and the car (iPad: the backend); answers, bots and approvals renumbered 07–09. `scripts/app-store-push.py screenshots` sends them in the new order (not sent yet). App Previews: 2.4 carries 2.3.1's full-frame "A day with Redde" light cuts (iPhone and iPad), which show none of 2.4's features; any new one must be full-frame too (2.3.4, 2026-10-29).
 - The website: "coming soon in 2.4", then "new in 2.4" at release (deploys are his word).
