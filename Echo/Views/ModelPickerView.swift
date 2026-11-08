@@ -83,7 +83,10 @@ struct ModelPickerView: View {
             #if DEBUG
             if let words = DevHooks.value("-echo.modelSearch") { query = words }
             #endif
-            if listsModels { await load() }
+            if listsModels {
+                await load()
+                if error == nil { await refreshQuietlyOnce() }
+            }
         }
         .task(id: searchWords) { await loadCatalogIfNeeded() }
         .refreshable { await load(refresh: true) }
@@ -642,16 +645,7 @@ struct ModelPickerView: View {
         do {
             choices = Self.keepingPick(pick, in: try await Self.loadChoices(conversation: conversation, settings: settings, refresh: refresh))
             error = nil
-            if choices.contains(where: { $0.price == nil && VenicePrices.isVenice($0) }) {
-                let venice = await VenicePrices.shared.all()
-                choices = choices.map { choice in
-                    guard choice.price == nil, VenicePrices.isVenice(choice), let known = venice[choice.model] else { return choice }
-                    var priced = choice
-                    priced.price = known.price
-                    priced.context = priced.context ?? known.context
-                    return priced
-                }
-            }
+            await fillVenicePrices()
             if !collapsedSeeded {
                 collapsedSeeded = true
                 collapsed = Set(byProvider.filter { group in
@@ -661,6 +655,47 @@ struct ModelPickerView: View {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    private func fillVenicePrices() async {
+        guard choices.contains(where: { $0.price == nil && VenicePrices.isVenice($0) }) else { return }
+        let venice = await VenicePrices.shared.all()
+        choices = choices.map { choice in
+            guard choice.price == nil, VenicePrices.isVenice(choice), let known = venice[choice.model] else { return choice }
+            var priced = choice
+            priced.price = known.price
+            priced.context = priced.context ?? known.context
+            return priced
+        }
+    }
+
+    /// Which lists were read again this run (connection and profile): the first open of each asks
+    /// Hermes to read every provider again, out of sight. Hermes sends a custom endpoint that
+    /// isn't in use (Venice in Ops) with no models until something refreshes it, and a pull-down
+    /// in a half-height sheet moves the sheet instead (2026-11-07).
+    private static var refreshedThisRun: Set<String> = []
+
+    private func refreshQuietlyOnce() async {
+        guard !isFastLane else { return }
+        let key = settings.connectionKey + "|" + (conversation.routeProfile ?? "")
+        guard Self.refreshedThisRun.insert(key).inserted else { return }
+        guard let fresh = try? await Self.loadChoices(conversation: conversation, settings: settings, refresh: true) else {
+            Self.refreshedThisRun.remove(key)
+            return
+        }
+        let known = Set(choices.map(\.id))
+        guard fresh.contains(where: { !known.contains($0.id) }) else { return }
+        let priced = choices.filter { $0.price != nil }
+        withAnimation {
+            choices = Self.keepingPick(pick, in: fresh).map { choice in
+                guard choice.price == nil, let had = priced.first(where: { $0.id == choice.id }) else { return choice }
+                var kept = choice
+                kept.price = had.price
+                kept.context = kept.context ?? had.context
+                return kept
+            }
+        }
+        await fillVenicePrices()
     }
 
     /// A pick from OpenRouter's full list isn't on the server's own: it is added to its provider's
