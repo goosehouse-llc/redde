@@ -355,3 +355,31 @@ struct VideoAttachmentTests {
         }
     }
 }
+
+/// Shift-Return's line break with Return set to send (2026-11-07): where the cursor is.
+struct ShiftReturnTests {
+    @Test func goesAtTheCursor() {
+        var text = "line one line two"
+        let at = text.index(text.startIndex, offsetBy: 8)
+        var selection: TextSelection? = TextSelection(insertionPoint: at)
+        ReturnSends.insertLineBreak(into: &text, at: &selection)
+        #expect(text == "line one\n line two")
+        guard case .selection(let range)? = selection?.indices else { Issue.record("no cursor"); return }
+        #expect(text.distance(from: text.startIndex, to: range.lowerBound) == 9)
+    }
+
+    @Test func takesThePlaceOfSelectedText() {
+        var text = "a-b"
+        var selection: TextSelection? = TextSelection(range: text.index(after: text.startIndex) ..< text.index(text.startIndex, offsetBy: 2))
+        ReturnSends.insertLineBreak(into: &text, at: &selection)
+        #expect(text == "a\nb")
+    }
+
+    @Test func goesAtTheEndWithoutACursor() {
+        var text = "héllo 👋"
+        var selection: TextSelection?
+        ReturnSends.insertLineBreak(into: &text, at: &selection)
+        #expect(text == "héllo 👋\n")
+        #expect(ReturnSends.isReturn(from: "héllo 👋", to: text))
+    }
+}

@@ -343,6 +343,10 @@ struct TapHidesKeyboard: ViewModifier {
 /// Both composers have it: a conversation's, and a group chat's.
 struct ReturnSends: ViewModifier {
     @Binding var draft: String
+    /// The field's cursor, so a Shift-Return line break goes where it is.
+    @Binding var selection: TextSelection?
+    /// Whether the field has the keyboard: Shift-Return is the field's only then.
+    var isFocused: Bool
     /// Whether there is something to send (asked after the line break comes out again).
     let canSend: () -> Bool
     let send: () -> Void
@@ -353,12 +357,22 @@ struct ReturnSends: ViewModifier {
     func body(content: Content) -> some View {
         content
             .submitLabel(settings.returnSends ? .send : .return)
+            // Shift-Return as a keyboard shortcut, which is seen before the field takes the key
+            // (the key press below wasn't, on the iPad or the Mac: the line break was dropped or
+            // the message went; 2026-11-07).
+            .background {
+                Button("New line") { lineBreak() }
+                    .keyboardShortcut(.return, modifiers: .shift)
+                    .disabled(!settings.returnSends || !isFocused)
+                    .frame(width: 0, height: 0).opacity(0).accessibilityHidden(true)
+            }
             // A keyboard's Return, with Return set to send: sends, and Shift-Return is the line break.
             .onKeyPress(.return, phases: .down) { press in
                 guard settings.returnSends else { return .ignored }
                 if press.modifiers.contains(.shift) {
-                    lineBreakMeant = true
-                    return .ignored
+                    // Put in by hand: left to the field, the line break was dropped.
+                    lineBreak()
+                    return .handled
                 }
                 if canSend() { send() }
                 return .handled
@@ -377,6 +391,26 @@ struct ReturnSends: ViewModifier {
                 draft = old
                 if canSend() { send() }
             }
+    }
+
+    private func lineBreak() {
+        lineBreakMeant = true
+        Self.insertLineBreak(into: &draft, at: &selection)
+    }
+
+    /// A line break where the cursor is (in place of any selected text), or at the end when the
+    /// field hasn't said where it is; the cursor goes after it.
+    nonisolated static func insertLineBreak(into text: inout String, at selection: inout TextSelection?) {
+        guard case .selection(let range)? = selection?.indices,
+              let start = range.lowerBound.samePosition(in: text.utf16), let end = range.upperBound.samePosition(in: text.utf16),
+              start <= end, end <= text.utf16.endIndex else {
+            text.append("\n")
+            selection = TextSelection(insertionPoint: text.endIndex)
+            return
+        }
+        let offset = text.utf16.distance(from: text.utf16.startIndex, to: start)
+        text.replaceSubrange(start ..< end, with: "\n")
+        selection = TextSelection(insertionPoint: text.utf16.index(text.utf16.startIndex, offsetBy: offset + 1))
     }
 
     /// Whether a keyboard's Shift is held down now.

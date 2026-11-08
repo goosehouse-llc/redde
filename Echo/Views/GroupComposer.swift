@@ -14,6 +14,8 @@ struct GroupComposer: View {
     var talk: (() -> Void)?
     @Environment(\.theme) private var theme
     @State private var draft = ""
+    /// The field's cursor (Shift-Return's line break goes there).
+    @State private var selection: TextSelection?
     @State private var attachments: [Attachment] = []
     @State private var problem: String?
     @State private var dictation = Dictation()
@@ -158,14 +160,14 @@ struct GroupComposer: View {
             }
             .accessibilityLabel("Add")
             .accessibilityHint("Add a photo or file to your message. It goes to your server, where the bots can open it.")
-            TextField(dictation.isActive ? String(localized: "Listening…") : String(localized: "Message the group"), text: $draft, axis: .vertical)
+            TextField(dictation.isActive ? String(localized: "Listening…") : String(localized: "Message the group"), text: $draft, selection: $selection, axis: .vertical)
                 .accessibilityIdentifier("group-composer")
                 .font(theme.userFont)
                 .lineLimit(1 ... 6)
                 .textFieldStyle(.plain)
                 .padding(.vertical, 9)
                 .focused(focused)
-                .modifier(ReturnSends(draft: $draft, canSend: { hasDraft }, send: send))
+                .modifier(ReturnSends(draft: $draft, selection: $selection, isFocused: focused.wrappedValue, canSend: { hasDraft }, send: send))
             DictateButton(dictation: dictation, toggle: toggleDictation)
         }
         .padding(.horizontal, 4)

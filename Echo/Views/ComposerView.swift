@@ -12,6 +12,8 @@ struct ComposerView: View {
     /// "Edit & resend": the message being replaced; sending truncates the transcript from it.
     @Binding var editing: Message?
     @FocusState.Binding var focused: Bool
+    /// The field's cursor (Shift-Return's line break goes there).
+    @State private var selection: TextSelection?
     /// The round button beside the field when there's nothing to send: voice mode, listening at
     /// once, hands-free if Settings → Voice says so.
     let openHandsFree: () -> Void
@@ -546,14 +548,14 @@ struct ComposerView: View {
                 TextField(dictation.isActive ? String(localized: "Listening…")
                           : conversation.canSteer ? String(localized: "Steer the reply…")
                           : String(localized: "Ask \(conversation.bot?.name ?? ProfileCatalog.agentName(conversation.elsewhere?.profile ?? settings.profileName, settings: settings))", comment: "The message field's placeholder: ask the agent, by its name"),
-                          text: $draft, axis: .vertical)
+                          text: $draft, selection: $selection, axis: .vertical)
                     .lineLimit(1 ... 5)
                     .textFieldStyle(.plain)
                     .padding(.vertical, 9)
                     .focused($focused)
                     .accessibilityIdentifier("composer")
                     .onSubmit(send)
-                    .modifier(ReturnSends(draft: $draft, canSend: { hasDraft }, send: send))
+                    .modifier(ReturnSends(draft: $draft, selection: $selection, isFocused: focused, canSend: { hasDraft }, send: send))
                 if draftIsLong {
                     Button("Open the editor", systemImage: "arrow.up.left.and.arrow.down.right") { showEditor = true }
                         .chatFont(.footnote, weight: .semibold)
