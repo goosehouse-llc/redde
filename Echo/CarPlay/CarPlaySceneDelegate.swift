@@ -33,6 +33,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// Counts the loads of the Chats tab, so that a slow one can't write over a later one.
     private var chatsLoad = 0
     private var botsLoad = 0
+    /// The newest load whose answer is on the tab. An answer is shown unless a later one already
+    /// is: when reloads came faster than the server answered, only the latest was ever let through,
+    /// and the tab spun on "Loading…" for good (11-08, from the car).
+    private var chatsShown = 0
+    private var botsShownLoad = 0
+    /// How long a tab spins before it says it couldn't load.
+    static let loadGivesUp: Duration = .seconds(20)
     /// The phone's conversations as last read, for the few the Ask tab shows under its cards.
     private var chats: [CarPlayChat] = []
     private var observing = false
@@ -86,6 +93,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             // The conversation keeps running on the phone; only the car UI goes away.
             note("disconnected")
             controller = nil
+            shownModal = nil
             tabs = nil
             askTab = nil
             chatsTab = nil
@@ -398,21 +406,37 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         guard let list = chatsTab else { return }
         chatsLoad += 1
         let load = chatsLoad
+        giveUpChats(on: list)
         Task {
             do {
                 let rows = try await chatRows()
-                guard load == chatsLoad else { return }
+                guard load > chatsShown else { return }
+                chatsShown = load
                 list.emptyViewTitleVariants = [String(localized: "No chats yet")]
                 list.emptyViewSubtitleVariants = [String(localized: "Ask Redde something to start one")]
                 list.showsSpinnerWhileEmpty = false
                 list.updateSections([CPListSection(items: rows)])
                 askTab?.updateSections(askSections())
             } catch {
-                guard load == chatsLoad else { return }
+                // A failure only speaks for the newest load; an older one's answer may yet come.
+                guard load == chatsLoad, load > chatsShown else { return }
                 list.emptyViewTitleVariants = [String(localized: "Couldn't load your chats")]
                 list.emptyViewSubtitleVariants = [String(localized: "Check the connection on your iPhone")]
                 list.showsSpinnerWhileEmpty = false
             }
+        }
+    }
+
+    /// The Chats tab still spinning with nothing in it after a while says so, and opening the tab
+    /// again tries again. Whatever answer comes later still fills it.
+    private func giveUpChats(on list: CPListTemplate) {
+        Task { [weak self, weak list] in
+            try? await Task.sleep(for: Self.loadGivesUp)
+            guard let self, let list, list === self.chatsTab, list.sections.isEmpty, list.showsSpinnerWhileEmpty else { return }
+            self.note("chats still loading after \(Self.loadGivesUp)")
+            list.emptyViewTitleVariants = [String(localized: "Couldn't load your chats")]
+            list.emptyViewSubtitleVariants = [String(localized: "Check the connection on your iPhone")]
+            list.showsSpinnerWhileEmpty = false
         }
     }
 
@@ -465,8 +489,17 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         if let roster = cachedRoster() { showBots(roster, in: list) }
         Task {
             let roster = await freshRoster()
-            guard load == botsLoad else { return }
+            guard load > botsShownLoad else { return }
+            botsShownLoad = load
             showBots(roster, in: list)
+        }
+        Task { [weak self, weak list] in
+            try? await Task.sleep(for: Self.loadGivesUp)
+            guard let self, let list, list === self.botsTab, list.sections.isEmpty, list.showsSpinnerWhileEmpty else { return }
+            self.note("bots still loading after \(Self.loadGivesUp)")
+            list.emptyViewTitleVariants = [String(localized: "Couldn't load your bots")]
+            list.emptyViewSubtitleVariants = [String(localized: "Check the connection on your iPhone")]
+            list.showsSpinnerWhileEmpty = false
         }
         watchBots()
         drawAhead()
@@ -590,9 +623,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     /// Nothing is over the tabs: no voice card, no alert.
     private var tabsInView: Bool {
-        guard let controller else { return false }
-        return controller.presentedTemplate == nil && controller.templates.count <= 1
+        controller != nil && shownModal == nil
     }
+
+    /// The card or alert up over the tabs, as Redde put it there and the car's callbacks took it
+    /// down. Kept here, never asked of the car: `presentedTemplate` and `templates` wait on the car
+    /// for an answer, on the main thread. On 11-08 that wait never ended, every 5 s from the Bots
+    /// tab's watch: the car's screen froze on "Loading…", nothing on it could be pressed, and iOS
+    /// killed Redde for it (three times in ten minutes, 0x8BADF00D, stuck in `presentedTemplate`).
+    private var shownModal: CPTemplate?
 
     /// While the Bots tab is up: what the host is doing, every few seconds (a turn under way in a
     /// bot's chat, one waiting on you), and the bots read again now and then. Whatever changes
@@ -727,7 +766,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     // MARK: - Voice card
 
     /// CPVoiceControlTemplate is a modal template: present and dismiss it, never push it.
-    private var voiceCard: CPVoiceControlTemplate? { controller?.presentedTemplate as? CPVoiceControlTemplate }
+    private var voiceCard: CPVoiceControlTemplate? { controller == nil ? nil : shownModal as? CPVoiceControlTemplate }
 
     private func showVoiceCard() {
         showVoiceCard(faced: facedBot)
@@ -762,6 +801,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func hideVoiceCard() {
         guard let controller, voiceCard != nil else { return }
         closingCard = true
+        shownModal = nil
         controller.dismissTemplate(animated: true, completion: nil)
     }
 
@@ -782,6 +822,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     nonisolated func templateDidDisappear(_ aTemplate: CPTemplate, animated: Bool) {
         let kind = String(describing: type(of: aTemplate))
         Task { @MainActor in self.note("gone: \(kind)") }
+        let gone = ObjectIdentifier(aTemplate)
+        // Taken down by the car itself (its close button, Back) as well as by Redde.
+        Task { @MainActor in if let up = self.shownModal, ObjectIdentifier(up) == gone { self.shownModal = nil } }
         guard aTemplate is CPVoiceControlTemplate else { return }
         Task { @MainActor in self.voiceCardWentAway() }
     }
@@ -1140,6 +1183,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     private func alert(_ title: String) {
         let ok = CPAlertAction(title: String(localized: "OK"), style: .cancel) { [weak self] _ in
+            self?.shownModal = nil
             self?.controller?.dismissTemplate(animated: true, completion: nil)
         }
         present(CPAlertTemplate(titleVariants: [title], actions: [ok]))
@@ -1148,18 +1192,24 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// The car screen takes one modal template at a time: whatever is up comes down first.
     private func present(_ template: CPTemplate, animated: Bool = true, then shown: (@MainActor () -> Void)? = nil) {
         guard let controller else { return }
-        let show = { @MainActor in
-            controller.presentTemplate(template, animated: animated) { _, _ in
-                Task { @MainActor in shown?() }
+        let show = { @MainActor [weak self] in
+            self?.shownModal = template
+            controller.presentTemplate(template, animated: animated) { done, _ in
+                Task { @MainActor in
+                    // Not up after all: nothing is over the tabs that Redde knows of.
+                    if !done, let self, self.shownModal === template { self.shownModal = nil }
+                    shown?()
+                }
             }
         }
-        if controller.presentedTemplate == nil {
-            show()
-        } else {
-            if controller.presentedTemplate is CPVoiceControlTemplate { closingCard = true }   // (Redde's doing: it stays down)
+        if let up = shownModal {
+            if up is CPVoiceControlTemplate { closingCard = true }   // (Redde's doing: it stays down)
+            shownModal = nil
             controller.dismissTemplate(animated: animated) { _, _ in
                 Task { @MainActor in show() }
             }
+        } else {
+            show()
         }
     }
 }
