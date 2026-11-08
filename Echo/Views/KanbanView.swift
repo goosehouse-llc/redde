@@ -369,7 +369,7 @@ struct KanbanCardDetail: View {
                         if let d = task.completedAt { LabeledContent("Completed") { Text(d, format: .dateTime.month().day().hour().minute()) } }
                     }
                     if let b = task.body, !b.isEmpty { Section("Details") { MarkdownView(text: b) } }
-                    if let r = task.result, !r.isEmpty { Section("Result") { MarkdownView(text: r) } }
+                    if let r = task.result, !r.isEmpty { Section("Result") { ReportView(text: DayBrief.withoutNarration(r)) } }
                     else if let s = task.latestSummary, !s.isEmpty { Section("Latest") { Text(s).chatFont(.callout) } }
                     if let f = task.lastFailure, !f.isEmpty { Section("Last failure") { Text(f).chatFont(.footnote).foregroundStyle(.red) } }
                     if let change { changeSection(change, task: task) }

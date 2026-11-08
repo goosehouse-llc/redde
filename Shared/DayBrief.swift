@@ -366,6 +366,31 @@ nonisolated struct DayBrief: Equatable, Sendable {
     /// rule comes within its first few short paragraphs and a heading follows. Any other text as
     /// it is. For showing only: the briefing's text is kept as it came.
     static func withoutNarration(_ text: String) -> String {
+        withoutAnnouncement(beforeRule(text))
+    }
+
+    /// A short first paragraph that ends by announcing the report ("These are session logs, not a
+    /// prior milestone record. I have enough. Let me report the findings.", 2026-11-08), when more
+    /// follows: the model's working words. "Here's what changed:" leading into a list stays.
+    static func withoutAnnouncement(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let gap = trimmed.firstRange(of: /\n[ \t]*\n/) else { return text }
+        let first = trimmed[..<gap.lowerBound].trimmingCharacters(in: .whitespaces)
+        let rest = trimmed[gap.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !rest.isEmpty, first.count <= 300, !first.contains("\n"),
+              String(first[(first.ranges(of: /[.:!?]\s+/).last?.upperBound ?? first.startIndex)...]).firstMatch(of: announcement) != nil
+        else { return text }
+        return rest
+    }
+
+    /// "Let me report the findings.", "Now I'll write up the summary:", "Time to compose the notification.",
+    /// "Here is the evening wrap-up:" (not "Here's the update:", which leads into a finding).
+    private static var announcement: Regex<AnyRegexOutput> {
+        try! Regex(#"^(?:(?:now|ok(?:ay)?|alright|good|great|perfect|right)[,.!]?\s+)?(?:let me|let['’]s|let us|i['’]ll|i will|i['’]m going to|time to)\s+(?:now\s+)?(?:report|summari[sz]e|compose|write|draft|put|share|give|send|present|lay|deliver|prepare)\b(?:(?:\W+\w+){0,5}?\W+(?:findings|results|report|summary|update|notification|brief|briefing|answer|status|everything)\b|\W*$)|^(?:here['’]s|here is|below is)\s+(?:the|your|today['’]s|tonight['’]s|this (?:morning|evening|week)['’]s)\s+(?:\w+\s+){0,2}?(?:wrap-?up|brief|briefing|summary|report|notification|digest|rundown)\W*$"#)
+            .ignoresCase()
+    }
+
+    private static func beforeRule(_ text: String) -> String {
         let lines = text.components(separatedBy: .newlines)
         var paragraphs = 0, characters = 0, inParagraph = false
         for (i, raw) in lines.enumerated() {

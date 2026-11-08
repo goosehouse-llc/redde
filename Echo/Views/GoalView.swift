@@ -93,7 +93,7 @@ struct GoalView: View {
                     nextStep(next, color: BotAvatar.colors(of: face, theme: theme).deep)
                 }
                 if let details = goal.details ?? (runOn ? goal.next : nil) {
-                    MarkdownView(text: details).fixedSize(horizontal: false, vertical: true).padding(.vertical, 4)
+                    ReportView(text: DayBrief.withoutNarration(details)).fixedSize(horizontal: false, vertical: true).padding(.vertical, 4)
                 }
             } header: {
                 Text("Last Check-in", comment: "A goal's page: the section with what the agent last said about it")

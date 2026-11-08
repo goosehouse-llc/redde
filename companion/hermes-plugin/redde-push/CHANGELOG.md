@@ -3,6 +3,15 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.19.5 (2026-11-08)
+
+- A scheduled run with a long answer is asked to open with the outcome in one bold line and give
+  the rest as a short numbered list, each point opening in bold. Redde lays that out as cards
+  instead of a wall of text.
+- A first paragraph that ends by announcing the report ("I have enough. Let me report the
+  findings.") is left out of what reaches the phone, like the model's other working words. One
+  that opens "Let me know…" stays.
+
 ## 1.19.4 (2026-11-06)
 
 - A calendar card's events carry their calendar's colour (`color`, as the phone's calendar tool

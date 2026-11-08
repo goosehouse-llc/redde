@@ -52,13 +52,26 @@ NOTE = ("[Redde: if you make a scheduled job for this, make it yourself with cro
 #: "Nothing to report. [SILENT]"): said to every cron turn where a phone is paired.
 CRON_NOTE = ("[Redde: your final answer reaches the user's phone exactly as you write it. Start with the answer "
              "itself: no notes on what you are doing (\"Now let me…\", \"Here's the notification:\") and no \"---\" "
-             "before it. If there is nothing worth telling them, answer exactly [SILENT] and nothing else. Call "
+             "before it. If it runs past a few lines, open with the outcome in one short line all in bold, then give "
+             "the details as a short numbered list, each point opening with a few words in bold; Redde lays that out "
+             "as cards. If there is nothing worth telling them, answer exactly [SILENT] and nothing else. Call "
              "deferred tools one at a time, each by its exact name.]")
 #: Ways a model opens with what it is doing rather than what it found.
 _NARRATION = re.compile(
-    r"^(now\b|ok(ay)?\b|good\b|great\b|alright\b|all right\b|perfect\b|let me\b|let's\b|i'll\b|i will\b|"
+    r"^(now\b|ok(ay)?\b|good\b|great\b|alright\b|all right\b|perfect\b|let me\b(?! know)|let's\b|i'll\b|i will\b|"
     r"i have\b|i've\b|i now have\b|i've got\b|i need to\b|first,|next,|here's\b|here is\b|time to\b)", re.IGNORECASE)
 _RULE = re.compile(r"^\s*([-*_])(\s*\1){2,}\s*$")
+#: A sentence that announces the report ("Let me report the findings.", "Now I'll write up the summary:"):
+#: ending a short first paragraph, it marks the whole of it as the model's working words (2026-11-08:
+#: "These are session logs, not a prior milestone record. I have enough. Let me report the findings.").
+#: The app has the same rule (`DayBrief.withoutAnnouncement`).
+_ANNOUNCE = re.compile(
+    r"^(?:(?:now|ok(?:ay)?|alright|good|great|perfect|right)[,.!]?\s+)?(?:let me|let['’]s|let us|i['’]ll|i will|"
+    r"i['’]m going to|time to)\s+(?:now\s+)?(?:report|summari[sz]e|compose|write|draft|put|share|give|send|present|"
+    r"lay|deliver|prepare)\b(?:(?:\W+\w+){0,5}?\W+(?:findings|results|report|summary|update|notification|brief|"
+    r"briefing|answer|status|everything)\b|\W*$)"
+    r"|^(?:here['’]s|here is|below is)\s+(?:the|your|today['’]s|tonight['’]s|this (?:morning|evening|week)['’]s)\s+"
+    r"(?:\w+\s+){0,2}?(?:wrap-?up|brief|briefing|summary|report|notification|digest|rundown)\W*$", re.IGNORECASE)
 #: An answer whose last word is that nothing changed ("No change.", "**Nothing new.**"): a run that had
 #: nothing to tell, as quiet as [SILENT] (2026-11-05: a Strata watch Sol wrote said "No change" to the
 #: phone every four hours, its own prompt asking for that over Hermes's [SILENT]).
@@ -83,6 +96,13 @@ def job_mute(profile: str, job: str) -> str:
     return f"j:{profile}|{job}"
 
 
+def _working(paragraph: str) -> bool:
+    """A paragraph of the model's working words: every sentence such talk, or its last one announcing
+    the report."""
+    sentences = [s for s in re.split(r"(?<=[.:!?])\s+", paragraph) if s.strip()]
+    return bool(sentences) and (all(_NARRATION.match(s) for s in sentences) or ("\n" not in paragraph and bool(_ANNOUNCE.match(sentences[-1]))))
+
+
 def settle(words: str) -> tuple[str, bool, bool]:
     """A run's answer as the person should read it: (words, silent, failed). `[SILENT]` anywhere in
     it is silence (Hermes keeps quiet only for exactly that, and models write it after a line of
@@ -103,8 +123,7 @@ def settle(words: str) -> tuple[str, bool, bool]:
             break
     # Leading paragraphs whose every sentence is such talk ("I have all the information needed.
     # Here's the notification:").
-    while len(paragraphs) > 1 and len(paragraphs[0]) <= 300 and all(
-            _NARRATION.match(s) for s in re.split(r"(?<=[.:!])\s+", paragraphs[0]) if s.strip()):
+    while len(paragraphs) > 1 and len(paragraphs[0]) <= 300 and _working(paragraphs[0]):
         paragraphs = paragraphs[1:]
     if paragraphs and _NO_NEWS.fullmatch(paragraphs[-1].strip("*_`#> \t").rstrip(".!").strip("*_` ")):
         return "", True, False

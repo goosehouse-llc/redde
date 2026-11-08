@@ -204,6 +204,22 @@ class RoutinesTests(unittest.TestCase):
         whole = "Today was a quiet one.\n\nNothing else."
         self.assertEqual(routines.settle(whole)[0], whole)
 
+    def test_a_paragraph_that_ends_by_announcing_the_report_is_left_out(self):
+        # 2026-11-08, a Strata watch.
+        said = routines.settle("These are session logs, not a prior milestone record. I have enough. Let me report the "
+                               "findings.\n\nNone of the four trigger milestones has been reached.\n\n**Status: no release yet.**")[0]
+        self.assertTrue(said.startswith("None of the four"), said)
+        self.assertEqual(routines.settle("Time to compose the notification.\n\nYour parcel is here.")[0], "Your parcel is here.")
+        self.assertEqual(routines.settle("Both follow-ups set. Here is the evening wrap-up:\n\n**Done** — the vet.")[0],
+                         "**Done** — the vet.")
+        for kept in ("Let me know if you'd like me to send a reminder.\n\nThe vet is Thursday.",
+                     "Let me report the findings."):
+            self.assertEqual(routines.settle(kept)[0], kept, kept)
+
+    def test_a_long_answer_is_asked_to_open_in_bold_and_list_its_points(self):
+        self.assertIn("all in bold", routines.CRON_NOTE)
+        self.assertIn("numbered list", routines.CRON_NOTE)
+
     def test_an_answer_that_only_says_nothing_changed_is_quiet(self):
         for said in ("No change.", "**No changes.**", "Nothing new", "No updates since the last check.",
                      "Checked all four sources; Qwen3.6 still doesn't run on the Mac engine.\n\nNo change."):

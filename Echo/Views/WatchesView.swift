@@ -162,6 +162,8 @@ struct WatchesView: View {
     @State private var starting: WatchTemplate.Kind?
     /// A watch's or a follow-up's settings, from a hold on its row.
     @State private var settingsFor: CronJob?
+    /// Reports opened whole, laid out (`ReportView`); closed, a few plain lines.
+    @State private var open: Set<String> = []
 
     private var watches: [CronJob] { jobs.filter { $0.name.hasPrefix(Watches.watchTag) } }
     /// Updates whose watch isn't in the list (it couldn't be loaded, or is gone): shown on their
@@ -241,7 +243,7 @@ struct WatchesView: View {
                     .font(.callout).foregroundStyle(.orange)
                 Text(report.at, style: .relative).font(.caption).foregroundStyle(.secondary)
             } else if let report {
-                Text(report.text).font(.callout).foregroundStyle(report.failed ? .red : .primary).textSelection(.enabled)
+                said(report)
                 Text(report.at, style: .relative).font(.caption).foregroundStyle(.secondary)
             } else {
                 Text(job.lastRunAt == nil ? String(localized: "Not looked yet") : String(localized: "Nothing changed so far"))
@@ -257,11 +259,30 @@ struct WatchesView: View {
         }
     }
 
+    /// What a watch said: a few plain lines, a tap away from the whole of it laid out as a report
+    /// (asked 2026-11-08: "Do this for all reports"). A failure stays red words.
+    @ViewBuilder private func said(_ report: WatchReport) -> some View {
+        let words = DayBrief.withoutNarration(report.text)
+        if report.failed {
+            Text(PlainText.display(words)).font(.callout).foregroundStyle(.red).textSelection(.enabled)
+        } else if open.contains(report.id) {
+            ReportView(text: words)
+                .padding(.vertical, 4)
+                .contentShape(.rect)
+                .onTapGesture { open.remove(report.id) }
+        } else {
+            Text(PlainText.display(words)).font(.callout).lineLimit(4)
+                .contentShape(.rect)
+                .onTapGesture { open.insert(report.id) }
+                .accessibilityHint(Text("Shows the whole report", comment: "Watches: what tapping a watch's report does"))
+        }
+    }
+
     private func reportRow(_ report: WatchReport) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(report.title).font(.body.weight(.semibold)).lineLimit(2)
             if !report.agent.isEmpty { Text(report.agent).font(.caption).foregroundStyle(.secondary) }
-            Text(report.text).font(.callout).foregroundStyle(report.failed ? .red : .primary).textSelection(.enabled)
+            said(report)
             Text(report.at, style: .relative).font(.caption).foregroundStyle(.secondary)
         }
         .swipeActions { Button("Delete", systemImage: "trash", role: .destructive) { WatchReport.forget(report.id); reports = WatchReport.all() } }

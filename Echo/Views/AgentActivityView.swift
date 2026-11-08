@@ -212,8 +212,13 @@ struct AgentActivityDone: View {
                     }
                     Text(name(entry.profile)).font(.caption).foregroundStyle(.secondary)
                     if !entry.detail.isEmpty {
-                        Text(PlainText.display(entry.detail)).font(.subheadline).foregroundStyle(.secondary)
-                            .lineLimit(open.contains(entry.id) ? nil : 2)
+                        // Opened, the whole of it laid out as a report (asked 2026-11-08: "Do this for all reports").
+                        if open.contains(entry.id), !entry.failed {
+                            ReportView(text: DayBrief.withoutNarration(entry.detail), selectable: false).padding(.top, 4)
+                        } else {
+                            Text(PlainText.display(entry.detail)).font(.subheadline).foregroundStyle(.secondary)
+                                .lineLimit(open.contains(entry.id) ? nil : 2)
+                        }
                     }
                 }
             }

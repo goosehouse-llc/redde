@@ -178,7 +178,7 @@ struct MarkdownDocument: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                MarkdownView(text: text)
+                ReportView(text: text)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
             }

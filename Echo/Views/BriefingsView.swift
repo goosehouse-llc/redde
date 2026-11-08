@@ -28,11 +28,15 @@ final class BriefingsInbox {
                               text: "At Dr. Lee's on Main St in 30 minutes. Bring your insurance card; parking is behind the building.",
                               at: .now.addingTimeInterval(-300), failed: false),
                 AgentBriefing(id: "demo/0", title: "Evening wrap-up", agent: "Sol",
-                              text: "**Done:** the vet booked for Thursday, the PR merged.\n\n**Waiting on you:** one approval from Coder.\n\n**Tomorrow:** call the plumber; it comes back as an idea at 9.",
+                              text: "**Done** — the vet booked for Thursday, the PR merged.\n\n**Waiting on you** — one approval from Coder.\n\n**Tomorrow** — call the plumber; it comes back as an idea at 9.",
                               at: .now.addingTimeInterval(-3600 * 14), failed: false)]
             // `-echo.demoBriefings day`: a daily brief first, as an agent's own job writes one,
             // narration and all (`DayBrief`); its calendar from its own rows, never the phone's.
             if DevHooks.value("-echo.demoBriefings") == "day" { briefings.insert(Self.demoDayBrief, at: 0) }
+            // `-echo.demoBriefings report`: a watch's long report first, as a model writes one (`ReportView`).
+            if DevHooks.value("-echo.demoBriefings") == "report" { briefings.insert(Self.demoReport, at: 0) }
+            // `-echo.demoBriefings wrapup`: the wrap-up first.
+            if DevHooks.value("-echo.demoBriefings") == "wrapup" { briefings.insert(briefings.removeLast(), at: 0) }
             // `-echo.openBriefing`: the first one open, a moment after launch.
             if DevHooks.has("-echo.openBriefing") {
                 Task { [weak self] in
@@ -110,6 +114,31 @@ final class BriefingsInbox {
     #if DEBUG
     /// A made-up daily brief for today, in the shape the first real one came in: the model's
     /// working line, a rule, then tables, one event in two of them.
+    /// A watch's long report as a model writes one (asked 2026-11-08: "It looks like a wall of text"),
+    /// its working words first.
+    static var demoReport: AgentBriefing {
+        let text = """
+            These are session logs, not a prior milestone record. I have enough. Let me report the findings.
+
+            None of the four trigger milestones has been reached, but there is concrete progress worth reporting: a draft Metal PR appeared and a full working port now exists on a fork branch.
+
+            **Status: No release yet, but there's real progress on the Metal port. Nothing usable yet.**
+
+            **The short answer:** Qwen3.6-35B-A3B still does not run on your M1 Max. The docs still say so, no release lists it, and the milestone PRs aren't merged.
+
+            1. **A full working Metal port now exists, on a fork branch.** Issue #3932 is still open. Measured on an **M5 Pro, 64 GB**:
+               - Decode 74.6 tok/s (MTP: 105–114 tok/s)
+               - Prompt 4K/32K: 1,923 / 1,413 tok/s
+               - Greedy 8/10 prompts identical to llama.cpp
+
+            2. **PR #4885, the "Metal silu gate", is a draft.** It's the first of a proposed 3-PR split; its scope hasn't been agreed yet.
+
+            3. **Docs unchanged:** QWEN36.md still reads "The Intel Arc and Mac engines do not run it." The latest release (v0.2.9, Oct 31) doesn't list Qwen3.6.
+            """
+        return AgentBriefing(id: "demo/report", title: "Strata Mac Qwen3.6 Metal watch", agent: "Hermes", text: text,
+                             at: .now.addingTimeInterval(-60), failed: false)
+    }
+
     static var demoDayBrief: AgentBriefing {
         let today = Date.now.formatted(Date.FormatStyle(locale: Locale(identifier: "en_US")).weekday(.wide).month(.wide).day().year())
         let text = """
@@ -623,7 +652,7 @@ struct BriefingSheet: View {
                         if let starts = briefing.startsAt { EventCard(briefing: briefing, starts: starts) }
                         // Under the day's card, only what it doesn't show already.
                         let words = briefing.dayBrief == nil ? briefing.shownText : DayBrief.withoutSchedule(briefing.shownText)
-                        if !words.isEmpty { MarkdownView(text: words, selectable: true) }
+                        if !words.isEmpty { ReportView(text: words) }
                         if let found = briefing.mapPlace { AddressMapCard(found: found) }
                     }
                     let earlier = BriefingsInbox.shared.earlier(than: briefing)
@@ -631,7 +660,7 @@ struct BriefingSheet: View {
                         Text("Earlier", comment: "In a briefing's sheet: the same job's earlier runs, under the newest").chatFont(.headline).padding(.top, 8)
                         ForEach(earlier) { run in
                             DisclosureGroup {
-                                MarkdownView(text: run.shownText, selectable: true).padding(.top, 4)
+                                ReportView(text: run.shownText).padding(.top, 4)
                             } label: {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(run.at.formatted(.dateTime.weekday().hour().minute())).chatFont(.subheadline, weight: .semibold)
