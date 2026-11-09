@@ -471230,109 +471230,109 @@
         }
       }
     },
-    "Your inbox, the briefings you haven't read and your goals, as small tiles in one row at the top of your chats. Fold it away, or choose what it shows in Settings → Appearance → Top of the Chat List." : {
+    "Your inbox, your to-do lists, the briefings you haven't read and your goals, as small tiles in one row at the top of your chats. Ask any bot to make a list or add to it, and tap a list's tile to tick things off. Fold it away, or choose what it shows in Settings → Appearance → Top of the Chat List. Lists take the Dashboard connection and the Redde plugin 1.20 on your Hermes." : {
       "comment" : "What's New 2.4: the Today strip",
       "localizations" : {
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Din indbakke, de briefinger, du ikke har læst, og dine mål som små felter i én række øverst i dine chats. Fold den sammen, eller vælg, hvad den viser, i Indstillinger → Udseende → Øverst i chatlisten."
+            "value" : "Din indbakke, dine huskelister, de briefinger, du ikke har læst, og dine mål som små felter i én række øverst i dine chats. Bed en hvilken som helst bot om at lave en liste eller føje til den, og tryk på en listes felt for at krydse ting af. Fold den sammen, eller vælg, hvad den viser, i Indstillinger → Udseende → Øverst i chatlisten. Lister kræver Dashboard-forbindelsen og Redde-plugin 1.20 på din Hermes."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein Posteingang, die Briefings, die du noch nicht gelesen hast, und deine Ziele, als kleine Kacheln in einer Reihe oben über deinen Chats. Klapp sie weg oder wähle unter Einstellungen → Erscheinungsbild → Oben in der Chatliste, was sie zeigt."
+            "value" : "Dein Posteingang, deine Aufgabenlisten, die Briefings, die du noch nicht gelesen hast, und deine Ziele, als kleine Kacheln in einer Reihe oben über deinen Chats. Bitte einen beliebigen Bot, eine Liste anzulegen oder etwas hinzuzufügen, und tippe auf die Kachel einer Liste, um Dinge abzuhaken. Klapp sie weg oder wähle unter Einstellungen → Erscheinungsbild → Oben in der Chatliste, was sie zeigt. Listen brauchen die Dashboard-Verbindung und das Redde-Plugin 1.20 auf deinem Hermes."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu bandeja de entrada, los informes que no has leído y tus objetivos, como pequeñas casillas en una fila arriba de tus chats. Pliégala o elige qué muestra en Ajustes → Aspecto → Arriba en la lista de chats."
+            "value" : "Tu bandeja de entrada, tus listas de tareas, los informes que no has leído y tus objetivos, como pequeñas casillas en una fila arriba de tus chats. Pide a cualquier bot que haga una lista o que le añada algo, y toca la casilla de una lista para marcar lo hecho. Pliégala o elige qué muestra en Ajustes → Aspecto → Arriba en la lista de chats. Las listas necesitan la conexión del Dashboard y el plugin de Redde 1.20 en tu Hermes."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Votre boîte de réception, les briefings que vous n’avez pas lus et vos objectifs, en petites vignettes sur une rangée en haut de vos discussions. Repliez-la, ou choisissez ce qu’elle affiche dans Réglages → Apparence → Haut de la liste des discussions."
+            "value" : "Votre boîte de réception, vos listes de tâches, les briefings que vous n’avez pas lus et vos objectifs, en petites vignettes sur une rangée en haut de vos discussions. Demandez à n’importe quel bot de créer une liste ou d’y ajouter quelque chose, et touchez la vignette d’une liste pour cocher ce qui est fait. Repliez-la, ou choisissez ce qu’elle affiche dans Réglages → Apparence → Haut de la liste des discussions. Les listes requièrent la connexion Dashboard et le plugin Redde 1.20 sur votre Hermes."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La tua posta in arrivo, i briefing che non hai letto e i tuoi obiettivi, come piccoli riquadri in una riga in cima alle tue chat. Chiudila, o scegli cosa mostra in Impostazioni → Aspetto → In cima all'elenco chat."
+            "value" : "La tua posta in arrivo, i tuoi elenchi di cose da fare, i briefing che non hai letto e i tuoi obiettivi, come piccoli riquadri in una riga in cima alle tue chat. Chiedi a qualsiasi bot di creare un elenco o di aggiungervi qualcosa, e tocca il riquadro di un elenco per spuntare le voci. Chiudila, o scegli cosa mostra in Impostazioni → Aspetto → In cima all'elenco chat. Gli elenchi richiedono la connessione Dashboard e il plugin Redde 1.20 sul tuo Hermes."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "受信トレイ、未読のブリーフィング、目標を、小さなタイルとしてチャットの上部に1列で表示します。折りたたむことも、表示する内容を設定 → 外観 → チャットリストの上部で選ぶこともできます。"
+            "value" : "受信トレイ、ToDoリスト、未読のブリーフィング、目標を、小さなタイルとしてチャットの上部に1列で表示します。どのボットにもリストの作成や項目の追加を頼めます。リストのタイルをタップすると、項目にチェックを付けられます。折りたたむことも、表示する内容を設定 → 外観 → チャットリストの上部で選ぶこともできます。リストにはDashboard接続と、HermesのReddeプラグイン1.20が必要です。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "받은 편지함, 읽지 않은 브리핑, 목표를 채팅 상단에 작은 타일로 한 줄에 보여 줍니다. 접어 두거나, 설정 → 모양 → 채팅 목록 상단에서 표시할 항목을 선택하십시오."
+            "value" : "받은 편지함, 할 일 목록, 읽지 않은 브리핑, 목표를 채팅 상단에 작은 타일로 한 줄에 보여 줍니다. 어떤 봇에게든 목록을 만들거나 항목을 추가해 달라고 요청하고, 목록 타일을 탭하여 항목을 체크하십시오. 접어 두거나, 설정 → 모양 → 채팅 목록 상단에서 표시할 항목을 선택하십시오. 목록에는 Dashboard 연결과 Hermes의 Redde 플러그인 1.20이 필요합니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Innboksen din, briefingene du ikke har lest, og målene dine, som små fliser i én rad øverst i chattene dine. Fold den sammen, eller velg hva den viser, i Innstillinger → Utseende → Øverst i chattelisten."
+            "value" : "Innboksen din, gjøremålslistene dine, briefingene du ikke har lest, og målene dine, som små fliser i én rad øverst i chattene dine. Be en hvilken som helst bot lage en liste eller legge til noe i den, og trykk på flisen til en liste for å krysse av ting. Fold den sammen, eller velg hva den viser, i Innstillinger → Utseende → Øverst i chattelisten. Lister krever Dashboard-tilkoblingen og Redde-tillegget 1.20 på din Hermes."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je inbox, de briefings die je nog niet hebt gelezen en je doelen, als kleine tegels in één rij bovenaan je chats. Klap hem in, of kies wat hij toont in Instellingen → Weergave → Bovenaan de chatlijst."
+            "value" : "Je inbox, je takenlijsten, de briefings die je nog niet hebt gelezen en je doelen, als kleine tegels in één rij bovenaan je chats. Vraag een willekeurige bot om een lijst te maken of iets toe te voegen, en tik op de tegel van een lijst om dingen af te vinken. Klap hem in, of kies wat hij toont in Instellingen → Weergave → Bovenaan de chatlijst. Lijsten vereisen de Dashboard-verbinding en de Redde-plug-in 1.20 op je Hermes."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Skrzynka odbiorcza, nieprzeczytane briefingi i Twoje cele jako małe kafelki w jednym rzędzie nad czatami. Możesz go zwinąć albo wybrać, co pokazuje, w Ustawienia → Wygląd → Góra listy czatów."
+            "value" : "Skrzynka odbiorcza, Twoje listy zadań, nieprzeczytane briefingi i Twoje cele jako małe kafelki w jednym rzędzie nad czatami. Poproś dowolnego bota, by utworzył listę lub coś do niej dodał, i stuknij kafelek listy, by odhaczać pozycje. Możesz go zwinąć albo wybrać, co pokazuje, w Ustawienia → Wygląd → Góra listy czatów. Listy wymagają połączenia z Dashboard i wtyczki Redde 1.20 na Twoim Hermesie."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sua caixa de entrada, os briefings que você não leu e suas metas, como pequenos blocos em uma fileira no topo das suas conversas. Recolha a fileira ou escolha o que ela mostra em Ajustes → Aparência → Topo da Lista de Conversas."
+            "value" : "Sua caixa de entrada, suas listas de tarefas, os briefings que você não leu e suas metas, como pequenos blocos em uma fileira no topo das suas conversas. Peça a qualquer bot para criar uma lista ou adicionar algo a ela, e toque no bloco de uma lista para marcar os itens. Recolha a fileira ou escolha o que ela mostra em Ajustes → Aparência → Topo da Lista de Conversas. As listas requerem a conexão do Dashboard e o plugin do Redde 1.20 no seu Hermes."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Входящие, непрочитанные сводки и ваши цели — маленькими плитками в один ряд над чатами. Ряд можно свернуть или выбрать, что в нем показывать, в «Настройки» → «Оформление» → «Вверху списка чатов»."
+            "value" : "Входящие, ваши списки дел, непрочитанные сводки и ваши цели — маленькими плитками в один ряд над чатами. Попросите любого бота составить список или что-нибудь в него добавить и коснитесь плитки списка, чтобы отмечать пункты. Ряд можно свернуть или выбрать, что в нем показывать, в «Настройки» → «Оформление» → «Вверху списка чатов». Для списков нужны подключение Dashboard и плагин Redde 1.20 на вашем Hermes."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Din inkorg, briefingarna du inte har läst och dina mål, som små rutor i en rad överst i dina chattar. Fäll ihop den, eller välj vad den visar i Inställningar → Utseende → Överst i chattlistan."
+            "value" : "Din inkorg, dina att göra-listor, briefingarna du inte har läst och dina mål, som små rutor i en rad överst i dina chattar. Be vilken bot som helst att göra en lista eller lägga till något i den, och tryck på en listas ruta för att bocka av saker. Fäll ihop den, eller välj vad den visar i Inställningar → Utseende → Överst i chattlistan. Listor kräver Dashboard-anslutningen och Redde-tillägget 1.20 på din Hermes."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gelen kutunuz, okumadığınız brifingler ve hedefleriniz, sohbetlerinizin en üstünde tek sırada küçük kutucuklar olarak. Katlayıp gizleyin ya da ne göstereceğini Ayarlar → Görünüm → Sohbet Listesinin Üstü'nde seçin."
+            "value" : "Gelen kutunuz, yapılacaklar listeleriniz, okumadığınız brifingler ve hedefleriniz, sohbetlerinizin en üstünde tek sırada küçük kutucuklar olarak. Herhangi bir bottan liste yapmasını ya da listeye bir şey eklemesini isteyin; öğeleri işaretlemek için listenin kutucuğuna dokunun. Katlayıp gizleyin ya da ne göstereceğini Ayarlar → Görünüm → Sohbet Listesinin Üstü'nde seçin. Listeler için Dashboard bağlantısı ve Hermes'inizde Redde eklentisi 1.20 gerekir."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Вхідні, непрочитані зведення і ваші цілі — маленькими плитками в один ряд над чатами. Ряд можна згорнути або вибрати, що в ньому показувати, у Параметри → Вигляд → Угорі списку чатів."
+            "value" : "Вхідні, ваші списки справ, непрочитані зведення і ваші цілі — маленькими плитками в один ряд над чатами. Попросіть будь-якого бота скласти список або щось до нього додати й торкніться плитки списку, щоб позначати пункти. Ряд можна згорнути або вибрати, що в ньому показувати, у Параметри → Вигляд → Угорі списку чатів. Для списків потрібні з’єднання Dashboard і плагін Redde 1.20 на вашому Hermes."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的收件箱、未读的简报和你的目标，以小方块排成一行显示在聊天顶部。可以收起，或在设置 → 外观 → 聊天列表顶部中选择显示的内容。"
+            "value" : "你的收件箱、待办清单、未读的简报和你的目标，以小方块排成一行显示在聊天顶部。让任何机器人建一份清单或往里添加内容，轻点清单的方块即可勾掉事项。可以收起，或在设置 → 外观 → 聊天列表顶部中选择显示的内容。清单需要Dashboard连接，以及你的Hermes上安装Redde插件1.20。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的收件匣、未讀的簡報和你的目標，以小方塊排成一列顯示在聊天頂端。可以收合起來，或在「設定」→「外觀」→「聊天列表頂端」中選擇要顯示的內容。"
+            "value" : "你的收件匣、待辦清單、未讀的簡報和你的目標，以小方塊排成一列顯示在聊天頂端。請任何機器人建立清單或加入項目，點一下清單的方塊即可勾選完成。可以收合起來，或在「設定」→「外觀」→「聊天列表頂端」中選擇要顯示的內容。清單需要 Dashboard 連線，以及你 Hermes 上的 Redde 外掛 1.20。"
           }
         }
       }

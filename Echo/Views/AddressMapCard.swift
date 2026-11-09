@@ -79,7 +79,9 @@ struct AddressMapCard: View {
     let found: AddressMaps.Found
     @State private var lookup = PlaceLookup.shared
     @State private var picture: Image?
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
     @Environment(\.displayScale) private var displayScale
 
     private static let height: CGFloat = 150

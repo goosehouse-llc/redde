@@ -12,7 +12,9 @@ struct ConversionCard: View {
     @State private var typedWidth: CGFloat = 28
     @FocusState private var focused: Bool
     @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
 
     init(card: ReplyCard.Conversion) {
         self.card = card
@@ -58,7 +60,7 @@ struct ConversionCard: View {
                                                            : Text("Changes the amount; the answer is worked out again", comment: "VoiceOver hint: a conversion card's amount field"))
                     Text(verbatim: shown.fromSymbol).chatFont(.title3).foregroundStyle(.secondary)
                     Spacer(minLength: 0)
-                    Image(systemName: "pencil").foregroundStyle(.tertiary).accessibilityHidden(true)
+                    Image(systemName: "pencil").foregroundStyle(.secondary).accessibilityHidden(true)
                 }
                 .padding(.horizontal, 14)
                 .frame(minHeight: 48)

@@ -69,6 +69,14 @@ extension View {
     }
 }
 
+extension ColorScheme {
+    /// The appearance a card's content is drawn in: a solid card colour's or Card Appearance's, else
+    /// the app's (what `CardSurface` puts around it). A card that works out a colour from the scheme
+    /// around itself, outside its own frame, gets the app's instead: on 2026-11-09 a checklist on
+    /// an off-white card in dark mode drew dark grey rows under text meant for the light card.
+    var onCard: ColorScheme { Settings.shared.cardScheme ?? self }
+}
+
 /// Settings → Appearance → Cards on a card: its ground, and on a solid card (white, off-white,
 /// graphite, black) the card's own content drawn in that card's appearance, so its text reads on it
 /// whatever the phone's is; with Card Appearance light or dark, every card drawn so.

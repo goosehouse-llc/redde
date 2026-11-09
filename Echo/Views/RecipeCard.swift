@@ -18,7 +18,9 @@ struct RecipeCard: View {
     @State private var answers = CardAnswers.shared
     @State private var settings = Settings.shared
     @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
     @Environment(\.openURL) private var openURL
 
     enum Tab: Hashable { case ingredients, steps }

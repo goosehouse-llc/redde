@@ -43,7 +43,9 @@ private struct AnswerHeader: View {
     var title: String
     var subtitle: String?
     var needsYou: Bool
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -83,7 +85,9 @@ private struct GreyCapsule<Style: ShapeStyle>: View {
     let text: Text
     let style: Style
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
 
     var body: some View {
         text
@@ -131,7 +135,9 @@ struct ReviewCard: View {
     @State private var sendProblem: String?
     @Environment(\.answerCard) private var answerer
     @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
 
     /// A part of the sheet: who it's to, a detail, the subject, a message's words.
     private enum Piece: Hashable {
@@ -358,7 +364,9 @@ struct ChoiceCard: View {
     @State private var picked: Set<Int> = []
     @State private var answers = CardAnswers.shared
     @Environment(\.answerCard) private var answerer
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
 
     private var answered: String? { answers.said[whole.key] }
 
@@ -425,7 +433,7 @@ struct ChoiceCard: View {
             }
             Spacer(minLength: 6)
             Image(systemName: on ? "checkmark.circle.fill" : (card.multiple ? "circle" : "chevron.right"))
-                .foregroundStyle(on ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
+                .foregroundStyle(on ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
         }
         .padding(10)
         .background(on ? AnyShapeStyle(.tint.opacity(0.12)) : AnyShapeStyle(scheme.cardPanel), in: .rect(cornerRadius: 14))
@@ -486,7 +494,9 @@ struct ChecklistCard: View {
     @State private var exported: String?
     @Environment(\.answerCard) private var answerer
     @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
     @Environment(Conversation.self) private var conversation: Conversation?
 
     /// Past this many, groups start folded and open with a tap.
@@ -710,7 +720,9 @@ struct FormCard: View {
     @State private var values: [String] = []
     @State private var answers = CardAnswers.shared
     @Environment(\.answerCard) private var answerer
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
 
     private var answered: String? { answers.said[whole.key] }
 

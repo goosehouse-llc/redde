@@ -20,7 +20,9 @@ struct PurchaseCard: View {
     @Environment(\.answerCard) private var answerer
     @Environment(\.pinnedCard) private var pinned
     @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
     @Environment(\.openURL) private var openURL
 
     init(card: ReplyCard.Purchase, whole: ReplyCard) {
@@ -159,7 +161,7 @@ struct PurchaseCard: View {
                     }
                     Image(systemName: "chevron.down")
                         .chatFont(.caption, weight: .semibold)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(isOpen ? 180 : 0))
                         .opacity(item.hasDetails || item.url != nil ? 1 : 0)
                 }

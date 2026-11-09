@@ -12,7 +12,9 @@ struct ShowCard: View {
     private let shown: [Shown]
     @State private var open: Set<Int> = []
     @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorScheme) private var appScheme
+    /// The card's own appearance, not the app's (Card Appearance can differ): `ColorScheme.onCard`.
+    private var scheme: ColorScheme { appScheme.onCard }
     @Environment(\.openURL) private var openURL
 
     init(card: ReplyCard.Shows, whole: ReplyCard) {
@@ -133,7 +135,7 @@ struct ShowCard: View {
                     }
                     Spacer(minLength: 6)
                     Image(systemName: "chevron.down")
-                        .chatFont(.caption, weight: .semibold).foregroundStyle(.tertiary)
+                        .chatFont(.caption, weight: .semibold).foregroundStyle(.secondary)
                         .rotationEffect(.degrees(isOpen ? 180 : 0))
                 }
                 .padding(.vertical, 10)

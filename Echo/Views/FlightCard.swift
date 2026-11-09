@@ -300,7 +300,7 @@ private struct LegView: View {
                 .padding(.top, 4)
             }
             if let was { Text(verbatim: was).chatFont(.caption).strikethrough().foregroundStyle(.secondary).monospacedDigit() }
-            if let zone { Text(verbatim: zone).chatFont(.caption2).foregroundStyle(.tertiary) }
+            if let zone { Text(verbatim: zone).chatFont(.caption2).foregroundStyle(.secondary) }
             let place = [airport.terminal.map { String(localized: "Terminal \($0)", comment: "A flight card: an airport's terminal, e.g. Terminal 1") },
                          airport.gate.map { String(localized: "Gate \($0)", comment: "A flight card: the gate, e.g. Gate 14") }].compactMap(\.self)
             if !place.isEmpty {
