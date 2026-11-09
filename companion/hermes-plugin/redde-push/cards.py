@@ -935,14 +935,23 @@ HOME_NOTE = (f"[Redde: asked about the home. Do or read it with your Home Assist
              f"were asked about with {TOOL} as a 'home' card: " + SHAPES["home"] + ". Then answer in a line.]")
 # 1.14.6 (2026-11-03): "remind me to call the dentist before closing" got a card and "Reminder set for 5
 # PM", then "3:30 instead" another card; nothing was ever set, so nothing went off. The note says how.
+# 1.20.1 (2026-11-09): a reminder is an Apple Reminder on the iPhone first ("I'm getting Redde cron jobs
+# instead of reminders in iPhone"): it alerts there, shows in Reminders and on Redde's To Do list.
+REMINDER_HOW = ("A reminder goes in Apple Reminders on their iPhone, so it alerts there and shows in Reminders: "
+                "phone_reminders_add, with 'title' and 'due' (ISO with the person's offset; a day alone for a day with no "
+                "time), when phone tools are on (look for it with tool_search if it isn't among your tools); a reminders "
+                "tool of your own that writes to Apple Reminders will do too. Only when neither is there, and for a message "
+                "at a time: a job with your cron tool (cronjob_manage, action 'create'), name '[redde-notify] <what>', "
+                "schedule its time as ISO with the person's offset (or 'in 20m'), repeat 1, prompt 'Tell the person in one "
+                "line: <what>.' An alarm or a timer on their phone is phone_alarms_set. Changing a phone reminder is "
+                "phone_reminders_complete of the old one and phone_reminders_add of the new; cancelling it is "
+                "phone_reminders_complete (phone_reminders_list first for its id). A cron job's change is 'update' of that "
+                "job (action 'list' first for its job_id), its cancelling 'remove'.")
 REMINDER_NOTE = (f"[Redde: asked to set, change or cancel a reminder, a timer, an alarm or a message at a time. Do it for real "
-                 f"first: a reminder or a message at a time is a job with your cron tool (cronjob_manage, action 'create'): name "
-                 f"'[redde-notify] <what>', schedule its time as ISO with the person's offset (or 'in 20m'), repeat 1, prompt "
-                 f"'Tell the person in one line: <what>.' An alarm or a timer on their phone is phone_alarms_set, when phone tools "
-                 f"are on. Changing one is 'update' of that same job (action 'list' first for its job_id); cancelling is "
-                 f"'remove'. If that time has already passed today, ask, or set it for tomorrow and say so. Only then show it "
-                 f"with {TOOL} as a 'reminder' card, with 'job' set to its job_id: " + SHAPES["reminder"] + ". A card alone "
-                 f"sets nothing: never say it is set unless your tool set it. Then answer in a line.")
+                 f"first. {REMINDER_HOW} If that time has already passed today, ask, or set it for tomorrow and say so. "
+                 f"Only then show it with {TOOL} as a 'reminder' card, with 'id' set to the reminder's id or the job's "
+                 f"job_id: " + SHAPES["reminder"] + ". A card alone sets nothing: never say it is set unless your tool set "
+                 f"it. Then answer in a line.")
 COMPARE_NOTE = (f"[Redde: asked which is better. Look up what you need first, then show it with {TOOL} as a 'compare' card: "
                 + SHAPES["compare"] + ". Then answer in a line. Things to buy are a 'purchase' card instead.]")
 SCORE_NOTE = (f"[Redde: asked about a game. Look it up with your tools first (never guess a score or a time), then show it with "
@@ -1172,7 +1181,9 @@ def saw_result(session: str, name: str, arguments, result) -> None:
     job = None
     if isinstance(data, dict):
         inner = data.get("job") if isinstance(data.get("job"), dict) else {}
-        job = data.get("job_id") or inner.get("id") or inner.get("job_id") or data.get("id")
+        # A phone reminder: {"added": {"id": …}} (1.20.1), for the card's Change and Cancel too.
+        added = data.get("added") if isinstance(data.get("added"), dict) else {}
+        job = data.get("job_id") or inner.get("id") or inner.get("job_id") or added.get("id") or data.get("id")
     if not job:
         found = re.search(r'"?job_id"?\s*[:=]\s*"?([A-Za-z0-9_-]{4,})', text)
         job = found.group(1) if found else None
@@ -1192,11 +1203,8 @@ def unset_reminder(session: str, cards) -> str | None:
     record = _TURN_TOOLS.get(session)
     if record and time.time() - record["at"] < TURN_FOR and (record["set"] or record["seen"]):
         return None
-    return ("Nothing was set: a 'reminder' card only shows a reminder your tools set. Set it first: a reminder or a "
-            "message at a time is cronjob_manage, action 'create', name '[redde-notify] <what>', schedule its time (ISO "
-            "with the person's offset, or 'in 20m'), repeat 1, prompt 'Tell the person in one line: <what>.'; an alarm "
-            "or a timer on their phone is phone_alarms_set; changing one is 'update' of that job, cancelling 'remove'. "
-            "Then show the card with 'job' set to its job_id, and say it's set only then.")
+    return ("Nothing was set: a 'reminder' card only shows a reminder your tools set. Set it first. " + REMINDER_HOW
+            + " Then show the card with 'id' set to the reminder's id or the job's job_id, and say it's set only then.")
 
 
 def back_reminders(session: str, cards) -> None:

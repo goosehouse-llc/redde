@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.20.1 (2026-11-09)
+
+- A reminder goes in Apple Reminders on the iPhone. Asked to remind you, an agent used to make a
+  Redde notification on the Hermes (a "[redde-notify]" job), so nothing showed in Reminders. Now it
+  uses the phone's Reminders tool first, so the reminder alerts on the iPhone, shows in Reminders
+  and lands on the To Do list on its day. A job on the Hermes is only for when phone tools are off,
+  and for a message at a time. The reminder's id goes on the card, for its Change and Cancel.
+
 ## 1.20.0 (2026-11-09)
 
 - Lists: ask any agent for a to-do list (or groceries, packing, chores…) and it keeps it with

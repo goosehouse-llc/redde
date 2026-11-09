@@ -1119,6 +1119,19 @@ class ReminderSetTests(unittest.TestCase):
         self.assertNotIn("error", answer)
         self.assertEqual(answer["cards"][0]["job"], "a1b2c3d4")
 
+    def test_a_reminder_is_an_apple_reminder_first(self):
+        """1.20.1 (2026-11-09): "I'm getting Redde cron jobs instead of reminders in iPhone". The
+        phone's Reminders come first, a cron job only without them; the reminder's id goes on the card."""
+        for said in (cards.REMINDER_NOTE, json.loads(cards.handle({"cards": [self.CARD]}, session_id=self.session))["error"]):
+            self.assertIn("phone_reminders_add", said)
+            self.assertLess(said.index("phone_reminders_add"), said.index("cronjob_manage"))
+        cards.saw_calls(self.session, [("phone_reminders_add", {"title": "Call dentist"})])
+        cards.saw_result(self.session, "phone_reminders_add", {"title": "Call dentist"},
+                         json.dumps({"added": {"id": "4EC12F29-AAAA", "title": "Call dentist", "list": "Reminders", "completed": False}}))
+        answer = json.loads(cards.handle({"cards": [dict(self.CARD)]}, session_id=self.session))
+        self.assertNotIn("error", answer)
+        self.assertEqual(answer["cards"][0]["id"], "4EC12F29-AAAA")
+
     def test_setters_through_each_route_count(self):
         for name, arguments in (("phone_alarms_set", {}), ("phone_reminders_add", {}), ("mcp_calendar_create_reminder", {}),
                                 ("cronjob_manage", {"action": "update", "job_id": "x"}), ("cronjob_manage", {"action": "remove"}),

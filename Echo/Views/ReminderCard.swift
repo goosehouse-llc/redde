@@ -159,9 +159,17 @@ struct ReminderCard: View {
                                                                                : $0.formatted(date: .abbreviated, time: .shortened) } ?? card.when ?? ""
         let shown = time.isEmpty ? String(localized: "Set the reminder “\(card.title)” for real.", comment: "The message a reminder card's Set It sends, with no time")
                                  : String(localized: "Set the reminder “\(card.title)” for \(time) for real.", comment: "The message a reminder card's Set It sends, with its time")
-        return (shown, "the reminder card for \(card.kind.rawValue) \(named(card)) was only a card: nothing was set. Set it now with your cron tool "
-                + "(a job named '[redde-notify] \(card.title)', one run) or the phone's alarm tool, then show a fresh 'reminder' card with its job id; "
-                + "if that time has passed, ask")
+        // A reminder in Apple Reminders on the phone first (2026-11-09: "I'm getting Redde cron jobs
+        // instead of reminders in iPhone"); an alarm or a timer the phone's alarm tool; a message at
+        // a time a job on the Hermes.
+        let how = switch card.kind {
+        case .reminder: "with phone_reminders_add (Apple Reminders on their iPhone), or a reminders tool of your own that writes to Apple Reminders; "
+            + "only with neither, your cron tool (a job named '[redde-notify] \(card.title)', one run)"
+        case .timer, .alarm: "with phone_alarms_set (on their iPhone)"
+        case .schedule: "with your cron tool (one job, at that time)"
+        }
+        return (shown, "the reminder card for \(card.kind.rawValue) \(named(card)) was only a card: nothing was set. Set it now \(how), "
+                + "then show a fresh 'reminder' card with its id; if that time has passed, ask")
     }
 
     static func cancel(_ card: ReplyCard.Reminder) -> (shown: String, said: String) {

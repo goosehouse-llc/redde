@@ -85,6 +85,9 @@ struct MoreCardsTests {
         let asked = ReminderCard.setForReal(bare, now: ISO8601DateFormatter().date(from: "2026-11-03T17:00:00Z")!)
         #expect(asked.shown.hasPrefix("Set the reminder “Call dentist” for ") && asked.shown.hasSuffix(" for real."), "\(asked.shown)")
         #expect(asked.said.contains("[redde-notify] Call dentist") && asked.said.contains("nothing was set"))
+        // 2026-11-09: Apple Reminders on the phone first, a cron job only without them.
+        let first = try #require(asked.said.range(of: "phone_reminders_add")), cron = try #require(asked.said.range(of: "cron tool"))
+        #expect(first.lowerBound < cron.lowerBound)
     }
 
     @Test func aReminderIsSaidAndAnsweredInWords() {
