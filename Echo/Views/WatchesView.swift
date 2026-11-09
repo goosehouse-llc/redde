@@ -237,69 +237,103 @@ struct WatchesView: View {
 
     private func watchRow(_ job: CronJob) -> some View {
         let report = Watches.id(of: job).flatMap { reports[$0] }
-        return VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(Watches.title(of: job)).font(.body.weight(.semibold)).lineLimit(2)
-                Spacer(minLength: 6)
-                if job.state == .paused { Text("Paused").font(.caption).foregroundStyle(.secondary) }
+        let paused = job.state == .paused
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                WatchIcon(symbol: paused ? "pause.fill" : "eye.fill", tint: paused ? .secondary : .accentColor, dimmed: paused)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Watches.title(of: job)).font(.body.weight(.semibold)).lineLimit(2)
+                        .foregroundStyle(paused ? .secondary : .primary)
+                    if let line = who(job) { Text(line).font(.footnote).foregroundStyle(.secondary) }
+                    if report == nil {
+                        Text(job.lastRunAt == nil ? String(localized: "Not looked yet") : String(localized: "Nothing changed so far"))
+                            .font(.footnote).foregroundStyle(.tertiary)
+                    }
+                }
+                Spacer(minLength: 4)
+                WatchPill(text: paused ? String(localized: "Paused") : ComingUp.cadence(job.schedule), muted: paused)
             }
-            if let line = who(job) { Text(line).font(.caption).foregroundStyle(.secondary) }
             if let report, report.needsEmail {
                 // A template that reads email, on a Hermes that can't (2.4).
-                Label(WatchTemplate.needsEmailHint, systemImage: "envelope.badge.shield.half.filled")
-                    .font(.callout).foregroundStyle(.orange)
-                Text(report.at, style: .relative).font(.caption).foregroundStyle(.secondary)
+                WatchPanel(at: report.at, tint: .orange) {
+                    Label(WatchTemplate.needsEmailHint, systemImage: "envelope.badge.shield.half.filled")
+                        .font(.callout).foregroundStyle(.orange)
+                }
             } else if let report {
                 said(report)
-                Text(report.at, style: .relative).font(.caption).foregroundStyle(.secondary)
-            } else {
-                Text(job.lastRunAt == nil ? String(localized: "Not looked yet") : String(localized: "Nothing changed so far"))
-                    .font(.caption).foregroundStyle(.secondary)
             }
         }
+        .padding(.vertical, 6)
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         .swipeActions { Button("Stop", systemImage: "trash", role: .destructive) { remove(job) } }
         .contextMenu {
             Button("Settings…", systemImage: "slider.horizontal.3") { settingsFor = job }
             Button("Check Now", systemImage: "arrow.clockwise") { run(job) }
-            Button(job.state == .paused ? "Resume" : "Pause", systemImage: job.state == .paused ? "play" : "pause") { pause(job) }
+            Button(paused ? "Resume" : "Pause", systemImage: paused ? "play" : "pause") { pause(job) }
             Button("Stop Watching", systemImage: "trash", role: .destructive) { remove(job) }
         }
     }
 
-    /// What a watch said: a few plain lines, a tap away from the whole of it laid out as a report
-    /// (asked 2026-11-08: "Do this for all reports"). A failure stays red words.
+    /// What a watch said, in a panel under it with when: a few plain lines, a tap away from the
+    /// whole of it laid out as a report (asked 2026-11-08: "Do this for all reports"). A failure
+    /// stays red words.
     @ViewBuilder private func said(_ report: WatchReport) -> some View {
         let words = DayBrief.withoutNarration(report.text)
         if report.failed {
-            Text(PlainText.display(words)).font(.callout).foregroundStyle(.red).textSelection(.enabled)
+            WatchPanel(at: report.at, tint: .red) {
+                Label { Text(PlainText.display(words)).textSelection(.enabled) } icon: { Image(systemName: "exclamationmark.triangle.fill") }
+                    .font(.callout).foregroundStyle(.red)
+            }
         } else if open.contains(report.id) {
-            ReportView(text: words)
-                .padding(.vertical, 4)
-                .contentShape(.rect)
-                .onTapGesture { open.remove(report.id) }
+            WatchPanel(at: report.at) {
+                ReportView(text: words)
+                WatchFold(text: String(localized: "Show Less", comment: "Watches: folds a watch's report back to a few lines"), symbol: "chevron.up")
+            }
+            .contentShape(.rect)
+            .onTapGesture { withAnimation(.snappy) { _ = open.remove(report.id) } }
         } else {
-            Text(PlainText.display(words)).font(.callout).lineLimit(4)
-                .contentShape(.rect)
-                .onTapGesture { open.insert(report.id) }
-                .accessibilityHint(Text("Shows the whole report", comment: "Watches: what tapping a watch's report does"))
+            let plain = PlainText.display(words)
+            // Short and in one paragraph, it's all there already.
+            let more = plain.count > 140 || words.contains("\n")
+            WatchPanel(at: report.at) {
+                Text(plain).font(.callout).lineLimit(3)
+                if more {
+                    WatchFold(text: String(localized: "Show More", comment: "Watches: opens a watch's whole report"), symbol: "chevron.down")
+                }
+            }
+            .contentShape(.rect)
+            .onTapGesture { if more { withAnimation(.snappy) { _ = open.insert(report.id) } } }
+            .accessibilityHint(Text("Shows the whole report", comment: "Watches: what tapping a watch's report does"))
         }
     }
 
     private func reportRow(_ report: WatchReport) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(report.title).font(.body.weight(.semibold)).lineLimit(2)
-            if !report.agent.isEmpty { Text(report.agent).font(.caption).foregroundStyle(.secondary) }
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                WatchIcon(symbol: "doc.text.fill", tint: .secondary, dimmed: true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(report.title).font(.body.weight(.semibold)).lineLimit(2)
+                    if !report.agent.isEmpty { Text(report.agent).font(.footnote).foregroundStyle(.secondary) }
+                }
+            }
             said(report)
-            Text(report.at, style: .relative).font(.caption).foregroundStyle(.secondary)
         }
+        .padding(.vertical, 6)
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         .swipeActions { Button("Delete", systemImage: "trash", role: .destructive) { WatchReport.forget(report.id); reports = WatchReport.all() } }
     }
 
     private func followUpRow(_ job: CronJob) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(Watches.title(of: job)).font(.body)
-            if let next = job.nextRunAt { Text(next, format: .dateTime.weekday().month().day().hour().minute()).font(.caption).foregroundStyle(.secondary) }
+        HStack(spacing: 12) {
+            WatchIcon(symbol: "arrow.uturn.backward", tint: .orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Watches.title(of: job)).font(.body.weight(.medium))
+                if let next = job.nextRunAt {
+                    Text(next, format: .dateTime.weekday().month().day().hour().minute()).font(.footnote).foregroundStyle(.secondary)
+                }
+            }
         }
+        .padding(.vertical, 2)
         .swipeActions { Button("Cancel", systemImage: "trash", role: .destructive) { remove(job) } }
         .contextMenu {
             Button("Settings…", systemImage: "slider.horizontal.3") { settingsFor = job }
@@ -359,6 +393,74 @@ struct WatchesView: View {
         Task {
             do { try await CronBackend.current()?.runNow(job.id, profile: job.profile); await load() } catch { problem = error.localizedDescription }
         }
+    }
+}
+
+/// A watch's or a follow-up's symbol on a soft tile of its colour, at the head of its row.
+private struct WatchIcon: View {
+    var symbol: String
+    var tint: Color
+    var dimmed = false
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(tint)
+            .frame(width: 34, height: 34)
+            .background(tint.opacity(dimmed ? 0.12 : 0.16), in: .rect(cornerRadius: 9))
+            .accessibilityHidden(true)
+    }
+}
+
+/// How often a watch looks, or that it's paused, as a small capsule at the right of its title.
+private struct WatchPill: View {
+    var text: String?
+    var muted = false
+
+    var body: some View {
+        if let text {
+            Text(text)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(muted ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
+                .lineLimit(1)
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(muted ? AnyShapeStyle(.fill.tertiary) : AnyShapeStyle(.tint.opacity(0.12)), in: .capsule)
+                .fixedSize()
+        }
+    }
+}
+
+/// Show More / Show Less under a watch's report.
+private struct WatchFold: View {
+    var text: String
+    var symbol: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(text)
+            Image(systemName: symbol).imageScale(.small)
+        }
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(.tint)
+    }
+}
+
+/// What a watch said last, on a panel of its own under the watch, with how long ago.
+private struct WatchPanel<Content: View>: View {
+    var at: Date
+    var tint: Color?
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(at, format: .relative(presentation: .named))
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+            content
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(tint.map { AnyShapeStyle($0.opacity(0.1)) } ?? AnyShapeStyle(.fill.quaternary), in: .rect(cornerRadius: 12))
     }
 }
 
