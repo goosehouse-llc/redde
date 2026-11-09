@@ -4,8 +4,10 @@ import os
 /// How a live call is set up (`LiveVoice`): where its WebSocket connects, with which key, and
 /// what the session opens with, for the engine the chat's voice mode uses (`LiveEngine`): the key
 /// kept in Redde for that engine, on either connection. Hermes's own GPT-Live endpoint sets calls
-/// up over WebRTC only, which Redde no longer carries (LiveCall says why); calls with Hermes's key
-/// will go through a relay in the Redde plugin.
+/// up over WebRTC only, which Redde's keyed engines don't use (LiveCall says why); calls with
+/// Hermes's key will go through a relay in the Redde plugin. Hermes Live / Codex is set up by the
+/// Hermes host instead (`HermesLiveSignal`): its talk-desktop plugin opens the session with the
+/// Codex sign-in there, and the call is WebRTC (`HermesLiveCall`).
 struct LiveSetup {
     typealias Resolver = @MainActor @Sendable (Conversation, Settings, LiveEngine) async throws -> LiveSetup
     typealias Opener = @MainActor @Sendable (_ history: [LiveLine]) async throws -> LiveConnection
@@ -57,7 +59,10 @@ struct LiveSetup {
         let others = addressable(settings, besides: name)
         let plan: @MainActor @Sendable ([LiveLine]) -> LivePlan = { history in
             LivePlan(voice: voice, instructions: persona(name: name, engine: engine, others: others), history: history,
-                     agent: engine == .gptLive ? nil : LiveAgentTool(agentName: name))
+                     agent: engine.handsOverByDelegation ? nil : LiveAgentTool(agentName: name))
+        }
+        if engine.setUpByHermes {
+            return try await throughHermes(profile: conversation.routeProfile, voice: voice, settings: settings, plan: plan)
         }
         return try await connecting(profile: profile, settings: settings, engine: engine, plan: plan)
     }
@@ -65,13 +70,47 @@ struct LiveSetup {
     /// A group chat's call (`LiveRoom`), in `speaker`'s voice (a member's, saying its reply; nil,
     /// Redde's own): the room's voice, handing everything the person says to the room.
     static func resolveRoom(_ room: LiveRoom, speaker: String?, settings: Settings, engine: LiveEngine) async throws -> LiveSetup {
+        // Each member's reply is said by a session that opens saying it, in that member's voice;
+        // an engine that takes no line of Redde's (Hermes Live / Codex) can't.
+        guard engine.greets else {
+            throw LiveFailure(String(localized: "\(engine.name) can't be a group chat's call: it can't say each bot's reply in that bot's voice. Turn off Group Chats as Calls in Settings → Voice → Voice mode to talk with the group in Redde's voice."))
+        }
         let voice = settings.liveVoice(for: speaker, engine: engine)
         let (name, members) = (room.name, room.members.map(\.name))
         let plan: @MainActor @Sendable ([LiveLine]) -> LivePlan = { history in
             LivePlan(voice: voice, instructions: roomPersona(room: name, members: members, engine: engine),
-                     history: history, agent: engine == .gptLive ? nil : LiveAgentTool(agentName: name))
+                     history: history, agent: engine.handsOverByDelegation ? nil : LiveAgentTool(agentName: name))
         }
         return try await connecting(profile: speaker, settings: settings, engine: engine, plan: plan)
+    }
+
+    /// A Hermes Live / Codex call: the talk-desktop plugin on the Dashboard opens the session with
+    /// the Codex sign-in on the Hermes host, for `profile` (a bot's, or another profile's chat;
+    /// nil, the profile Redde is on), and answers the call's WebRTC offer (`HermesLiveCall`). No key
+    /// of Redde's is asked for or sent: there is none. Redde's persona, history and greetings
+    /// don't go: the plugin words the session.
+    private static func throughHermes(profile: String?, voice: String, settings: Settings,
+                                      plan: @escaping @MainActor @Sendable ([LiveLine]) -> LivePlan) async throws -> LiveSetup {
+        guard HermesLiveCall.available else { throw LiveFailure(HermesLiveSignal.needsDevice) }
+        guard BotDirectory.reachable(settings), let dashboard = settings.serveBaseURL else { throw LiveFailure(HermesLiveSignal.needsDashboard) }
+        // The Dashboard takes the handed-over turns as live voice ones where it knows them (0.21.3 on).
+        let hermes = settings.transport == .hermesServe ? await status(profile: profile, settings: settings) : nil
+        // The talk-desktop plugin uses an omitted profile for the Hermes host identity. "default"
+        // is Redde's internal label for that identity, not necessarily a named Hermes profile.
+        let signal = HermesLiveSignal(profile: profile ?? settings.profileName, voice: voice,
+                                      language: settings.speechLocale.language.languageCode?.identifier ?? "en") { path, body in
+            try await HermesServeClient.shared.restJSON("POST", path, body: body, timeout: 20)
+        }
+        let session = dashboard.appending(path: HermesLiveSignal.sessionPath)
+        return LiveSetup(label: "your Hermes's talk-desktop plugin, with its Codex sign-in", hermesKnowsLiveTurns: hermes != nil) { history in
+            let livePlan = plan(history)
+            // Unlike Redde's WebSocket engines, Codex Live receives its session prompt via the
+            // Dashboard. Carry a bounded, labelled transcript so its voice understands the active
+            // chat before it decides whether to hand a request back to that chat.
+            var sessionSignal = signal
+            sessionSignal.context = HermesLiveSignal.context(from: history)
+            return LiveConnection(url: session, plan: livePlan, hermesLive: sessionSignal)
+        }
     }
 
     /// Where a call with `plan` connects: the stand-in (DEBUG), else the service on Redde's key.
@@ -89,7 +128,7 @@ struct LiveSetup {
             }
         }
         #endif
-        if let key = Keychain.read(engine.keyItem)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
+        if let item = engine.key, let key = Keychain.read(item)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
             return LiveSetup(label: "Redde's \(engine.company) key", hermesKnowsLiveTurns: knows) { history in
                 let endpoint = try await engine.dialect.endpoint(key: key)
                 return LiveConnection(url: endpoint.url, headers: endpoint.headers, plan: plan(history))
@@ -160,7 +199,7 @@ struct LiveSetup {
     /// in its own voice (`LiveVoice.roomReplied`).
     static func roomPersona(room: String, members: [String], engine: LiveEngine = .gptLive) -> String {
         let who = members.isEmpty ? "the bots in it" : ListFormatter.localizedString(byJoining: members)
-        let handOver = engine == .gptLive ? "delegate it" : "call \(LiveAgentTool.name) with it"
+        let handOver = engine.handsOverByDelegation ? "delegate it" : "call \(LiveAgentTool.name) with it"
         return """
             You are the voice of "\(room)", a group chat in which the user talks with \(who). You are \
             not one of them, and you answer nothing yourself.
@@ -202,7 +241,7 @@ struct LiveSetup {
               A story, a poem or anything else the agent wrote for the user to hear: read all of it, word \
               for word, as it was written. Never shorten it, summarize it or tell it in your own words.
               """
-        let backend = engine == .gptLive
+        let backend = engine.handsOverByDelegation
             ? """
               Delegation policy:
               Backend tools:
@@ -221,7 +260,7 @@ struct LiveSetup {
 
               Call \(LiveAgentTool.name) when:
               """
-        let delegate = engine == .gptLive ? "Delegate" : "Call it"
+        let delegate = engine.handsOverByDelegation ? "Delegate" : "Call it"
         let addressed = others.isEmpty ? "" : "\n\nOther agents: the user may address \(others.joined(separator: ", ")) by name (\"\(others[0]), …\"). "
             + "The app sends such a request to that agent. \(delegate == "Delegate" ? "Delegate it" : "Call \(LiveAgentTool.name) with it, the name included,") "
             + "like any request, and never answer for them or say you can't reach them."
@@ -277,4 +316,204 @@ struct LiveSetup {
         }
         return kept
     }
+
+    // MARK: - Hermes Live / Codex
+
+    /// How the talk-desktop plugin stands on the Hermes Redde is on, for Settings → Voice → Voice
+    /// mode: whether Hermes Live / Codex can be had there at all.
+    static func talkDesktop(_ settings: Settings) async -> HermesLivePlugin {
+        guard BotDirectory.reachable(settings) else { return .needsDashboard }
+        do {
+            let plugins = try await HermesServeClient.shared.installedPlugins(profile: nil)
+            return HermesLivePlugin.find(in: plugins)
+        } catch {
+            return .unknown(error.localizedDescription)
+        }
+    }
+}
+
+/// A Hermes Live / Codex session, set up on the person's Hermes by its talk-desktop plugin, over the
+/// Dashboard: `POST …/codexlive/session` takes the profile, the voice, the language and the call's
+/// WebRTC offer, and answers with the SDP answer and what names the session (`HermesLiveSession`);
+/// `…/interrupt` cuts the voice off, and `…/stop` ends the session. The plugin opens it with the
+/// ChatGPT subscription Codex is signed in with on that machine: Redde holds no key for it.
+nonisolated struct HermesLiveSignal: Sendable {
+    static let route = "api/plugins/talk-desktop/codexlive"
+    static let sessionPath = route + "/session"
+    static let interruptPath = route + "/interrupt"
+    static let stopPath = route + "/stop"
+
+    /// A named Hermes profile the voice speaks for; nil means the Hermes host identity.
+    var profile: String?
+    var voice: String
+    /// What the person speaks, as a language code ("en"): Settings → Voice's, else the iPhone's.
+    var language: String
+    /// The recent active Redde chat, sent only to the user's configured Hermes Dashboard to orient
+    /// the voice model. It is data, not instructions, and deliberately bounded before transport.
+    var context = ""
+    /// A Dashboard REST call: a path under the Dashboard and a JSON body, its JSON answer back.
+    var post: @MainActor @Sendable (_ path: String, _ body: JSONValue) async throws -> JSONValue
+
+    /// What starts a session, with the call's offer (an SDP).
+    func sessionRequest(offer: String) -> JSONValue {
+        var body: [String: JSONValue] = ["voice": .string(voice), "language": .string(language), "offer": .string(offer)]
+        if let profile = Self.namedProfile(profile) { body["profile"] = .string(profile) }
+        if !context.isEmpty { body["context"] = .string(context) }
+        return .object(body)
+    }
+
+    /// Preserve the recent conversation, not an unbounded copy of it. The transcript is labelled
+    /// as context on the host so a message inside it cannot override the live-session instructions.
+    static func context(from history: [LiveLine], maximumCharacters: Int = 6_000) -> String {
+        let lines = history.suffix(16).compactMap { line -> String? in
+            let text = line.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return nil }
+            return (line.fromPerson ? "User: " : "Assistant: ") + text
+        }
+        let transcript = lines.joined(separator: "\n")
+        guard transcript.count > maximumCharacters else { return transcript }
+        return String(transcript.suffix(maximumCharacters))
+    }
+
+    /// "default" is Redde's local marker for the host identity, never a profile the talk-desktop
+    /// plugin should look up. Normalise it at the protocol boundary because conversation routing can
+    /// still carry that marker even when Settings has already normalised its selected profile.
+    static func namedProfile(_ profile: String?) -> String? {
+        guard let profile = profile?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !profile.isEmpty,
+              profile.caseInsensitiveCompare("default") != .orderedSame else { return nil }
+        return profile
+    }
+
+    static var needsDashboard: String {
+        String(localized: "Hermes Live / Codex needs your Hermes Dashboard: connect to it in Settings → Connection, or save its address and login there with the Hermes API.")
+    }
+
+    static var needsDevice: String {
+        String(localized: "Hermes Live / Codex calls need Redde on an iPhone or iPad.")
+    }
+
+    /// What the Dashboard refused a session with, in words.
+    static func failure(_ error: any Error) -> LiveFailure {
+        if let failure = error as? LiveFailure { return failure }
+        guard let refused = error as? TransportError else {
+            return LiveFailure(String(localized: "Your Hermes Dashboard couldn't be reached for Hermes Live / Codex: \(error.localizedDescription)"))
+        }
+        switch refused {
+        case .badURL:
+            return LiveFailure(needsDashboard)
+        case let .http(status, _) where status == 404 || status == 405:
+            return LiveFailure(String(localized: "Your Hermes has no Hermes Live / Codex: it needs the talk-desktop plugin, installed and switched on, in a version with Codex Live (Settings → Plugins)."))
+        case let .http(status, _) where status == 401 || status == 403:
+            return LiveFailure(String(localized: "Your Hermes Dashboard refused the call: check its login in Settings → Connection details."))
+        case let .http(status, body):
+            let detail = body.trimmingCharacters(in: .whitespacesAndNewlines)
+            return LiveFailure(detail.isEmpty
+                ? String(localized: "Your Hermes couldn't start Hermes Live / Codex (HTTP \(status)). Check that Codex is signed in there.")
+                : String(localized: "Your Hermes couldn't start Hermes Live / Codex: \(detail)"))
+        default:
+            return LiveFailure(String(localized: "Your Hermes Dashboard couldn't be reached for Hermes Live / Codex: \(refused.localizedDescription)"))
+        }
+    }
+}
+
+/// What the talk-desktop plugin answered a session with: the SDP answer for the call, what names
+/// the session on the Hermes (sent back with `interrupt` and `stop`), and whether it leaves each
+/// request to Redde (client-managed handoffs). Read leniently: camelCase or snake_case, at the top
+/// or in `session`, the answer as a string or as `{type, sdp}`.
+nonisolated struct HermesLiveSession: Equatable, Sendable {
+    var answer: String
+    /// The session's names as the plugin wrote them (its thread, its session).
+    var identity: [String: JSONValue]
+    /// The plugin leaves each request the voice hands over to Redde, to work in this chat and
+    /// answer with `delegation.context.append`. Nil when it didn't say.
+    var clientManagedHandoffs: Bool?
+    /// What the plugin warned of.
+    var warnings: [String]
+
+    private static let names = ["sessionId", "session_id", "threadId", "thread_id", "callId", "call_id"]
+
+    init(reply: JSONValue) throws {
+        let session = reply["session"]
+        func value(_ key: String) -> JSONValue? { reply[key] ?? session?[key] }
+        let answers: [JSONValue?] = [reply["sdp"], reply["answer"], reply["answer"]?["sdp"], reply["sdpAnswer"], reply["sdp_answer"],
+                                     session?["sdp"], session?["answer"], session?["answer"]?["sdp"]]
+        guard let answer = answers.lazy.compactMap({ $0?.string }).first(where: { $0.hasPrefix("v=") }) else {
+            throw LiveFailure(String(localized: "Your Hermes answered without a session for the call (no SDP answer)."))
+        }
+        self.answer = answer
+        var identity: [String: JSONValue] = [:]
+        for key in Self.names {
+            if let name = value(key), name.string?.isEmpty == false { identity[key] = name }
+        }
+        if identity.isEmpty, let name = reply["id"] ?? session?["id"], name.string?.isEmpty == false { identity["id"] = name }
+        self.identity = identity
+        let capabilities = reply["capabilities"] ?? session?["capabilities"]
+        let flags: [JSONValue?] = [value("clientManagedHandoffs"), value("client_managed_handoffs"),
+                                   capabilities?["clientManagedHandoffs"], capabilities?["client_managed_handoffs"]]
+        clientManagedHandoffs = flags.lazy.compactMap { $0.flatMap(Self.flag) }.first
+        let warned = (value("warnings")?.array ?? []).compactMap(\.string) + [value("warning")?.string].compactMap { $0 }
+        warnings = warned.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    }
+
+    /// Why the call goes no further, where the plugin would work the requests the voice hands over
+    /// in a task lane of its own (Codex's) instead of leaving them to Redde, or didn't say it
+    /// wouldn't: never let happen unasked. Nil when it leaves them to Redde.
+    var handoffProblem: String? {
+        guard clientManagedHandoffs != true else { return nil }
+        let why = clientManagedHandoffs == false
+            ? String(localized: "Your Hermes's talk-desktop plugin doesn't support client-managed handoffs, so it would work your requests in a task lane of its own (Codex's), not in this chat.")
+            : String(localized: "Your Hermes's talk-desktop plugin didn't say it supports client-managed handoffs, so your requests could be worked in a task lane of its own (Codex's), not in this chat.")
+        let warned = warnings.isEmpty ? "" : " " + warnings.joined(separator: " ")
+        return why + warned + " " + String(localized: "Redde ended the call rather than let that happen unasked: update talk-desktop on your Hermes, or pick another voice mode in Settings → Voice → Voice mode.")
+    }
+
+    /// What interrupting or stopping the session sends: its names, and the profile.
+    func request(profile: String?) -> JSONValue {
+        var body = identity
+        if let profile = HermesLiveSignal.namedProfile(profile) { body["profile"] = .string(profile) }
+        return .object(body)
+    }
+
+    private static func flag(_ value: JSONValue) -> Bool? {
+        if let flag = value.bool { return flag }
+        guard let word = value.string?.lowercased() else { return nil }
+        switch word {
+        case "true", "yes", "supported", "client": return true
+        case "false", "no", "unsupported": return false
+        default: return nil
+        }
+    }
+}
+
+/// How the talk-desktop plugin stands on the Hermes (`plugins.manage list`), for Settings.
+nonisolated enum HermesLivePlugin: Equatable, Sendable {
+    case needsDashboard
+    case missing
+    case off
+    case on(version: String)
+    case unknown(String)
+
+    static func find(in plugins: [InstalledPlugin]) -> HermesLivePlugin {
+        let names: Set<String> = ["talk-desktop", "talk_desktop"]
+        guard let plugin = plugins.first(where: { plugin in
+            [plugin.name, plugin.key, plugin.catalogName ?? ""].contains { names.contains($0.lowercased()) }
+        }) else { return .missing }
+        return plugin.enabled ? .on(version: plugin.version) : .off
+    }
+
+    /// For its row.
+    var summary: String {
+        switch self {
+        case .needsDashboard: String(localized: "Needs the Dashboard")
+        case .missing: String(localized: "talk-desktop isn't installed")
+        case .off: String(localized: "talk-desktop is switched off")
+        case let .on(version): version.isEmpty ? String(localized: "talk-desktop is on") : String(localized: "talk-desktop \(version) is on")
+        case .unknown: String(localized: "Can't tell")
+        }
+    }
+
+    /// The call can be tried: the plugin is there and on (whether it has Codex Live, and Codex is
+    /// signed in, the session's answer says).
+    var ready: Bool { if case .on = self { true } else { false } }
 }

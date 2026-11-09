@@ -167,6 +167,10 @@ final class VoiceSession {
     private var liveCued = false
     /// Settings → Voice → Voice mode is GPT-Live, and what makes a call. Injectable so tests choose.
     private let liveWanted: (_ profile: String?) -> Bool
+    /// That call can open saying a line of Redde's (`LiveEngine.greets`): a wake request's answer,
+    /// an agent's line. Hermes Live / Codex can't (its sessions are worded by the person's Hermes):
+    /// Redde's own voice says those, and the call opens after.
+    private let liveGreets: (_ profile: String?) -> Bool
     private let makeLive: (Conversation) -> LiveVoice
     /// Live calls go on with the phone locked (`Settings.liveWhenLocked`).
     private let liveWhenLocked: () -> Bool
@@ -325,10 +329,12 @@ final class VoiceSession {
          thinkingSound: any ThinkingSounding = ThinkingSoundPlayer.shared,
          respond: ((SpokenRequest.Answer) -> Void)? = nil,
          liveWanted: @escaping (_ profile: String?) -> Bool = { Settings.shared.usesLiveCall(for: $0) },
+         liveGreets: @escaping (_ profile: String?) -> Bool = { Settings.shared.liveEngine(for: $0)?.greets ?? true },
          makeLive: @escaping (Conversation) -> LiveVoice = { LiveVoice(conversation: $0) },
          liveWhenLocked: @escaping () -> Bool = { Settings.shared.liveWhenLocked },
          micAllowed: @escaping () async -> Bool = { await AVAudioApplication.requestRecordPermission() }) {
         self.liveWanted = liveWanted
+        self.liveGreets = liveGreets
         self.makeLive = makeLive
         self.liveWhenLocked = liveWhenLocked
         self.micAllowed = micAllowed
@@ -554,7 +560,9 @@ final class VoiceSession {
     /// where that chat has a call, the call opens saying the answer.
     func ask(_ text: String) {
         guard live == nil, asking == nil, phase == .idle || isErrored else { return }
-        if sendsTo == nil, liveWanted(conversation.bot?.profile) {
+        // A call that can't open saying the answer (Hermes Live / Codex) leaves it to Redde's own
+        // voice here, as if voice mode had heard it.
+        if sendsTo == nil, liveWanted(conversation.bot?.profile), liveGreets(conversation.bot?.profile) {
             output.stop()
             startLive(opening: text)
             return
@@ -587,7 +595,9 @@ final class VoiceSession {
         callEnded = ended
         continuous = true
         callLineSaid = listen ? nil : line
-        if listen, sendsTo == nil, liveWanted(conversation.bot?.profile) {
+        // A call that can't open saying the line (Hermes Live / Codex): Redde's own voice says it,
+        // and the call opens once it has (hands-free, as after any reply).
+        if listen, sendsTo == nil, liveWanted(conversation.bot?.profile), liveGreets(conversation.bot?.profile) {
             output.stop()
             startLive(greeting: line)
             return
@@ -716,8 +726,13 @@ final class VoiceSession {
     /// it is still being thought about. Then the agent works on and the reply waits, whole,
     /// until Play.
     func pauseSpeaking() {
-        // A call can't hold what its voice says: Pause shuts the microphone instead.
-        if live != nil { mute(); return }
+        // A call can't hold what its voice says: Pause shuts the microphone instead, and cuts the
+        // voice off where the service can be asked to (Hermes Live / Codex's interrupt).
+        if let live {
+            live.interrupt()
+            mute()
+            return
+        }
         guard phase == .speaking || phase == .thinking, !isPaused else { return }
         output.pause()
         isPaused = true

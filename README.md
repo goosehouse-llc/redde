@@ -22,6 +22,11 @@ and can't read them ([docs/push.md](docs/push.md)).
   does. Set up by your Hermes with its OpenAI key, or with your own key kept in Redde; off until
   you pick it, since your microphone goes to OpenAI while a call is open. In development builds
   only for now, not yet in the App Store's.
+- **Hermes Live / Codex.** A live call your Hermes sets up through its talk-desktop plugin, on the
+  ChatGPT subscription Codex is signed in with there: no API key in Redde. OpenAI's voice talks
+  and listens over WebRTC, and every request it hands over is worked by your agent in the chat on
+  screen; if the plugin wouldn't leave requests to Redde, the call ends and says so. It takes the
+  Hermes Dashboard and talk-desktop switched on; iPhone and iPad only, not yet in a release.
 - **Your language.** Listen in any language on-device transcription supports, hear each reply in a
   voice for the language it's written in, ask the agent to always answer in one language, and
   end a hands-free conversation with stop phrases of your own.
@@ -190,4 +195,6 @@ Redde for any purpose except offering a competing commercial product. Each relea
 its second anniversary.
 
 The Redde name and app icons are not licensed for use in other products. Bundled third-party code
-keeps its own license: KaTeX and Mermaid (MIT), KaTeX fonts (OFL).
+keeps its own license: KaTeX and Mermaid (MIT), KaTeX fonts (OFL), and in the iPhone and iPad app
+WebRTC for Hermes Live / Codex. Its verified redistribution notice is in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

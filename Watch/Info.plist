@@ -32,7 +32,7 @@
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.goosehouse.echo</string>
+	<string>$(WK_COMPANION_APP_BUNDLE_IDENTIFIER)</string>
 	<key>WKRunsIndependentlyOfCompanionApp</key>
 	<true/>
 </dict>
