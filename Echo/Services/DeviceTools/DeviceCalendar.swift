@@ -195,6 +195,51 @@ nonisolated enum DeviceCalendar {
         return .object(["completed": describe(reminder)])
     }
 
+    // MARK: - Ticks from Redde
+
+    /// A tick on a checklist card or one of the person's lists, made in Reminders too (asked
+    /// 2026-11-09: "when I check something off the to do list, it checks it off the apple
+    /// reminders list too"): the reminder of that title, in any list, done (or not done again).
+    /// Only where Redde may read reminders already: this never asks. Nothing happens when no
+    /// reminder has the title. True when one was changed.
+    @discardableResult
+    static func tick(_ text: String, done: Bool, now: Date = .now) async -> Bool {
+        guard EKEventStore.authorizationStatus(for: .reminder) == .fullAccess else { return false }
+        let wanted = folded(text)
+        guard !wanted.isEmpty else { return false }
+        let store = EKEventStore()
+        // Done: the ones still open. Undone: those done in the last week (the tick taken back).
+        let predicate = done ? store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: nil)
+            : store.predicateForCompletedReminders(withCompletionDateStarting: now.addingTimeInterval(-7 * 86400), ending: now, calendars: nil)
+        return await withCheckedContinuation { finished in
+            store.fetchReminders(matching: predicate) { reminders in
+                let candidates = (reminders ?? []).filter { $0.calendar?.allowsContentModifications != false }
+                guard let reminder = match(wanted, in: candidates, done: done) else { finished.resume(returning: false); return }
+                reminder.isCompleted = done
+                finished.resume(returning: (try? store.save(reminder, commit: true)) != nil)
+            }
+        }
+    }
+
+    /// The reminder an item means: its title the item's, or the item's start when the item adds a
+    /// word after it ("BP due Oct 30" for "BP", as Make It a List writes a note in). Of several,
+    /// the one due first (ticking), or the one done last (taking a tick back).
+    static func match(_ wanted: String, in reminders: [EKReminder], done: Bool) -> EKReminder? {
+        let titled = reminders.map { (reminder: $0, title: folded($0.title ?? "")) }.filter { !$0.title.isEmpty }
+        var found = titled.filter { $0.title == wanted }
+        if found.isEmpty { found = titled.filter { wanted.hasPrefix($0.title + " ") } }
+        let picked = found.map(\.reminder)
+        if done {
+            return picked.min { ($0.dueDateComponents?.date ?? .distantFuture) < ($1.dueDateComponents?.date ?? .distantFuture) }
+        }
+        return picked.max { ($0.completionDate ?? .distantPast) < ($1.completionDate ?? .distantPast) }
+    }
+
+    /// A title as compared: any case, spaces evened out.
+    static func folded(_ text: String) -> String {
+        text.split(whereSeparator: \.isWhitespace).joined(separator: " ").lowercased()
+    }
+
     private static func describe(_ reminder: EKReminder) -> JSONValue {
         var fields: [String: JSONValue] = [
             "id": .string(reminder.calendarItemIdentifier),

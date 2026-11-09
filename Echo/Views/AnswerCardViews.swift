@@ -697,8 +697,12 @@ struct ChecklistCard: View {
 
     private func toggle(_ index: Int) {
         var now = done
-        if now.contains(index) { now.remove(index) } else { now.insert(index) }
+        let ticking = !now.contains(index)
+        if ticking { now.insert(index) } else { now.remove(index) }
         answers.setTicks(whole.key, now.sorted())
+        // The same reminder in Reminders, ticked too, where there is one.
+        let text = card.items[index].text
+        Task { await DeviceCalendar.tick(text, done: ticking) }
     }
 
     private func send(_ answerer: CardAnswerer) {

@@ -209,6 +209,9 @@ final class TodayLists {
     // MARK: Changes
 
     func toggle(_ item: TodayList.Item, in list: TodayList) {
+        // The same reminder in Reminders, ticked too, where there is one.
+        let text = item.text, ticking = !item.done
+        Task { await DeviceCalendar.tick(text, done: ticking) }
         apply(list.id, ["action": .string(item.done ? "uncheck" : "check"), "items": .array([.string(item.id)])]) { kept in
             if let i = kept.items.firstIndex(where: { $0.id == item.id }) { kept.items[i].done.toggle() }
         }
