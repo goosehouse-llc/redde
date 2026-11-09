@@ -562,6 +562,14 @@ struct ConversationsList: View {
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
         .sheet(isPresented: $addingGoal) { NewGoalSheet() }
+        // A list's tile on the Today row (`TodayStrip`): the list, to check off and add to.
+        .sheet(isPresented: Binding(get: { TodayLists.shared.shownID != nil }, set: { if !$0 { TodayLists.shared.shownID = nil } })) {
+            NavigationStack { TodayListView() }
+        }
+        // The person's lists, when the chat list shows and when Redde comes back to the front.
+        .task(id: "\(settings.connectionKey)|\(scenePhase == .active)") {
+            if scenePhase == .active { await TodayLists.shared.refresh() }
+        }
         .sheet(item: $shownGoal) { goal in
             NavigationStack {
                 GoalView(goalID: goal.id)

@@ -17,7 +17,8 @@ which agents may ring it (`calls.py`), `here <device,...> <until>` that it is in
 Alerts' traffic re-check (`leave.py`), and `offer` then `accept <offer> <key> <box>` pair it
 without a code. From 1.15.0, `skip <profile> <job> <when>` skips a repeating job's next run
 (`routines.py`), `goals list` lists every agent's goals and `goals end <profile> <goal>` ends
-one (`goals.py`). From 1.16.0, `mail …` is the app's inbox (`mail.py`).
+one (`goals.py`). From 1.16.0, `mail …` is the app's inbox (`mail.py`). From 1.20.0, `lists list`
+and `lists do <change>` are the person's lists on the Today row (`lists.py`).
 
 And cards (`cards.py`): `redde_show`, a map, places, the weather or the time the app draws under a reply;
 the weather and the time are looked up (`forecast.py`, Open-Meteo).
@@ -37,7 +38,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, longterm, mail, qr, remember, remind, rooms, routines, watches
+from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, watches
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -293,6 +294,11 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     except Exception:
         log.debug("redde-push: goal note failed", exc_info=True)
     try:
+        # One of their lists (lists.py, 1.20.0): redde_list, not the agent's own todo tool.
+        notes.append(lists.turn_note(user_message, platform))
+    except Exception:
+        log.debug("redde-push: list note failed", exc_info=True)
+    try:
         # Asked about email (mail.py, 1.16.0): redde_mail, email as data, the inbox card; and a
         # briefing's run: the inbox as sorted.
         root = calls.caller(_home())[1]
@@ -519,6 +525,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:2] == ["goals", "end"]:
         # End a goal: its check-in job deleted, the goal marked ended (goals.py).
         return _end_goal_slash(words[2:])
+    if words[:1] == ["lists"]:
+        # The person's lists (lists.py): every one as JSON, and a change from the phone. The main home's.
+        return lists.slash(calls.caller(_home())[1], words[1:])
     if words[:1] == ["memory"]:
         # An import's facts to long-term memory (longterm.py): which store, and a memory MCP server
         # written to with no model call.
@@ -790,6 +799,8 @@ def register(ctx) -> None:
     watches.register(ctx, _home, _store_in)
     # Goals (goals.py): a plan on the Kanban board, check-ins, progress on the phone.
     goals.register(ctx, _home)
+    # Lists (lists.py): to-do lists and the like, a tile each on the phone's Today row.
+    lists.register(ctx, _home)
     # Email (mail.py): redde_mail while an account is set up, and one way to send.
     mail.register(ctx, _home)
     # Keys a bot asks for (keys.py): pasted into a card in Redde, straight into the profile's .env.

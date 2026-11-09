@@ -3,6 +3,13 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.20.0 (2026-11-09)
+
+- Lists: ask any agent for a to-do list (or groceries, packing, chores…) and it keeps it with
+  `redde_list`. Each list is a tile on Redde's Today row, right after the Inbox, and stays there
+  until it's deleted. Add to a list, check things off or clear the done ones in any chat, or on the
+  phone. The lists are kept on this Hermes, the same for every bot.
+
 ## 1.19.6 (2026-11-08)
 
 - A watch asked for in any chat (`keep_an_eye_on`) is made on the Watcher bot when the Hermes has a

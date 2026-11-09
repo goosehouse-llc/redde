@@ -52,6 +52,9 @@ And for goals (lab.sh goals): a goal's check-in (a message with "[redde-goal:") 
 a PROGRESS line, "1/2", and whether the turn was told the goal's steps; a watch tagged
 "[redde-watch:lab-mail]" answers "NO EMAIL ACCESS".
 
+And for lists (lab.sh lists): "lab:list" makes the model call `redde_list`, making "Lab groceries"
+with two items.
+
 And one for attachments: a message with "lab:file" in it is answered "[file seen]" when what
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
 or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
@@ -94,6 +97,8 @@ CALLS = {
     "lab:reminder": ("phone_reminders_add", {"title": "Renew the car registration", "due": "2026-10-20"}),
     "lab:photo": ("phone_photos_get", {"id": "ABC-123"}),
     "lab:note": ("phone_files_write", {"path": "lab/note.txt", "text": "from the agent"}),
+    # One of the person's lists (the Redde plugin's `redde_list`, lab.sh lists).
+    "lab:list": ("redde_list", {"action": "make", "title": "Lab groceries", "items": ["Milk", "Eggs"]}),
     # A call to the person (the Redde plugin's `call_user`, lab.sh calls).
     "lab:call": ("call_user", {"line": "Lab call: the garage door is open."}),
     # Cards (the Redde plugin's `redde_show`): a walk on a map, and the weather.

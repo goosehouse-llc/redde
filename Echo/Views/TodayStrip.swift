@@ -5,12 +5,14 @@ import SwiftUI
 /// scrolls sideways, in place of a row, a deck and a card each, which stacked until the chats
 /// were off the screen. A tap opens what a tile is; a briefing's hold menu has Done and Later, as
 /// its deck card had. Each kind still follows Settings → Appearance → Top of the Chat List, and
-/// the row folds away to a count.
+/// the row folds away to a count. The person's lists (2026-11-09, `TodayLists`) come right after
+/// the Inbox, one tile each, and stay until a list is deleted.
 struct TodayStrip: View {
     let openGoal: (GoalReport) -> Void
     @State private var mail = MailCenter.shared
     @State private var goals = GoalsInbox.shared
     @State private var briefings = BriefingsInbox.shared
+    @State private var lists = TodayLists.shared
     @AppStorage("chatList.open.today") private var isOpen = true
     @Environment(\.theme) private var theme
 
@@ -21,13 +23,15 @@ struct TodayStrip: View {
         let account = ChatListCard.inbox.isShown && mail.isSetUp ? mail.inbox : nil
         let deck = ChatListCard.briefings.isShown ? briefings.deck : []
         let goalList = ChatListCard.goals.isShown ? goals.onList : []
-        let count = (account == nil ? 0 : 1) + deck.count + goalList.count
+        let todayLists = ChatListCard.lists.isShown ? lists.lists : []
+        let count = (account == nil ? 0 : 1) + todayLists.count + deck.count + goalList.count
         if count > 0 {
             Section {
                 if isOpen {
                     ScrollView(.horizontal) {
                         HStack(spacing: 10) {
                             if let account { inboxTile(account) }
+                            ForEach(todayLists) { listTile($0) }
                             ForEach(deck) { briefingTile($0) }
                             ForEach(goalList) { goalTile($0) }
                         }
@@ -63,6 +67,32 @@ struct TodayStrip: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint(Text("Opens your email", comment: "VoiceOver hint: the chat list's Inbox row"))
+    }
+
+    private func listTile(_ list: TodayList) -> some View {
+        let open = list.open
+        let kind = list.items.isEmpty ? Text("List", comment: "Today strip: a to-do list's tile, with nothing on it yet")
+            : open.isEmpty ? Text("All done", comment: "Today strip: a to-do list with every item checked off")
+            : Text("\(open.count) to do", comment: "Today strip: how many items on a to-do list aren't checked off")
+        let detail = open.isEmpty
+            ? (list.items.isEmpty ? String(localized: "Nothing on it yet", comment: "Today strip: an empty to-do list") : "")
+            : open.prefix(4).map(\.text).formatted(.list(type: .and, width: .narrow))
+        return Button { lists.shownID = list.id } label: {
+            TodayTile(kind: kind, symbol: open.isEmpty && !list.items.isEmpty ? "checkmark.circle.fill" : "checklist",
+                      tint: .green, title: list.title, detail: detail)
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            if !list.finished.isEmpty {
+                Button { lists.clearDone(in: list) } label: {
+                    Label { Text("Clear Done", comment: "A to-do list: remove the items checked off") } icon: { Image(systemName: "checkmark.circle.badge.xmark") }
+                }
+            }
+            Button(role: .destructive) { lists.delete(list) } label: {
+                Label { Text("Delete List", comment: "A to-do list: delete the whole list") } icon: { Image(systemName: "trash") }
+            }
+        }
+        .accessibilityHint(Text("Opens the list", comment: "VoiceOver hint: a to-do list's tile on the chat list"))
     }
 
     private func briefingTile(_ briefing: AgentBriefing) -> some View {

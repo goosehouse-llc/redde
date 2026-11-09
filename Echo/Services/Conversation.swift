@@ -687,6 +687,8 @@ final class Conversation {
                 }
             }
             if finished?.name == ReplyCards.tool { Task { await fillCards(replyID) } }
+            // One of the person's lists changed (`redde_list`): its tile on the Today row follows.
+            if finished?.name == TodayLists.tool, finished?.status == .completed { Task { await TodayLists.shared.refresh() } }
             // The agent's to-do tool: what a finished call wrote, applied to the list so far, is
             // the list now. (The Dashboard says the list itself right after: `.todos`.)
             if let finished, let list = TodoList.after(step: finished, previous: TodoList.latest(in: messages)) {

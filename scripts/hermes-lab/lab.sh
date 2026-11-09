@@ -16,6 +16,7 @@
 #   scripts/hermes-lab/lab.sh grouppush [tag ...]  the push plugin's group chat notes: bots' messages and waits
 #   scripts/hermes-lab/lab.sh leave [tag ...]      Leave-By Alerts' traffic re-check: wakes said over the Dashboard, sent to one device
 #   scripts/hermes-lab/lab.sh goals [tag ...]      goals (Kanban cards in triage, check-ins with progress), skipping a run, email watches
+#   scripts/hermes-lab/lab.sh lists [tag ...]      the person's lists: redde_list in a turn, the app's lists list / lists do
 #   scripts/hermes-lab/lab.sh runon [tag ...]      a job's own model (Run On): set over the Dashboard, by the plugin from a mark, and back
 #   scripts/hermes-lab/lab.sh push --app [tag ...] the same, then the app pairs both ways and reads a notification
 #   scripts/hermes-lab/lab.sh device [tag ...]     phone tools: the agent calls one, a stand-in phone answers, on both connections
@@ -729,6 +730,20 @@ goals() {
   echo "\nAll checks passed."
 }
 
+# Lists (lists_check.py): a turn's redde_list call makes a list the app's `lists list` gives back,
+# and the app's `lists do` checks an item off. The push scenario (the plugin).
+lists() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / lists"
+    if ! LAB_OWN_HOME=1 up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" lists_check.py) || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Run On (runon_check.py): a scheduled job's own model, set by the Dashboard's job update, by the
 # plugin from a mark in its name (the Hermes API's way), and back to the main model by its command;
 # each run reaches the stub on the model it should. The push scenario (the plugin, two models).
@@ -915,6 +930,7 @@ case "${1:-}" in
   routines) shift; routines "$@" ;;
   leave) shift; leave "$@" ;;
   goals) shift; goals "$@" ;;
+  lists) shift; lists "$@" ;;
   runon) shift; runon "$@" ;;
   calls) shift; calls "$@" ;;
   apibots) shift; apibots "$@" ;;

@@ -5,7 +5,7 @@ import SwiftUI
 /// (Settings → Appearance → Top of the Chat List, `Settings.hiddenChatListCards`, synced), and each
 /// with a header folds away to its header and a count, the way Bots does (`FoldingHeader`).
 enum ChatListCard: String, CaseIterable, Identifiable {
-    case pinned, inbox, goals, ideas, briefings
+    case pinned, inbox, lists, goals, ideas, briefings
 
     var id: String { rawValue }
 
@@ -13,6 +13,7 @@ enum ChatListCard: String, CaseIterable, Identifiable {
         switch self {
         case .pinned: String(localized: "Pinned", comment: "The chat list's section of pinned cards")
         case .inbox: String(localized: "Inbox", comment: "The chat list's row for email")
+        case .lists: String(localized: "Lists", comment: "The chat list's tiles of the person's to-do lists")
         case .goals: String(localized: "Goals", comment: "The chat list's section of the person's goals, and its page in Settings")
         case .ideas: String(localized: "Ideas for you", comment: "The chat list's deck of the agent's ideas")
         case .briefings: String(localized: "Briefings", comment: "The chat list's deck of briefings")
@@ -23,6 +24,7 @@ enum ChatListCard: String, CaseIterable, Identifiable {
         switch self {
         case .pinned: String(localized: "Cards you pinned from a reply, like a checklist.", comment: "Settings › Top of the Chat List: under Pinned")
         case .inbox: String(localized: "Your email, once an account is set up.", comment: "Settings › Top of the Chat List: under Inbox")
+        case .lists: String(localized: "To-do lists and the like, once you ask an agent for one.", comment: "Settings › Top of the Chat List: under Lists")
         case .goals: String(localized: "Each goal's progress.", comment: "Settings › Top of the Chat List: under Goals")
         case .ideas: String(localized: "Morning Ideas to take or put away.", comment: "Settings › Top of the Chat List: under Ideas for you")
         case .briefings: String(localized: "Heads-ups, wrap-ups and your jobs' answers.", comment: "Settings › Top of the Chat List: under Briefings")
@@ -33,6 +35,7 @@ enum ChatListCard: String, CaseIterable, Identifiable {
         switch self {
         case .pinned: "pin"
         case .inbox: "envelope"
+        case .lists: "checklist"
         case .goals: "flag.checkered"
         case .ideas: "lightbulb"
         case .briefings: "doc.text"
