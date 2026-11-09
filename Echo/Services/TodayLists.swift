@@ -69,6 +69,11 @@ final class TodayLists {
     @ObservationIgnored var reachable: () async -> Bool = { await HermesServeClient.shared.canUse() }
     @ObservationIgnored var defaults: UserDefaults? = NeedsYou.shared
     @ObservationIgnored private var server: () -> String = { Settings.shared.activeServerID.uuidString }
+    /// Apple Reminders, for `addDueReminders` (made-up ones in tests).
+    @ObservationIgnored var dueReminders: (Date) async -> [DeviceCalendar.DueReminder] = { await DeviceCalendar.remindersDue(by: $0) }
+    @ObservationIgnored var finishedReminders: (Set<String>) async -> Set<String> = { await DeviceCalendar.finished($0) }
+    /// Settings › Appearance › Top of the Chat List: reminders onto a list on their day, and which.
+    @ObservationIgnored var settingsStore: UserDefaults = .standard
     /// One change at a time, in the order they were made.
     @ObservationIgnored private var sending: Task<Void, Never>?
 
@@ -120,6 +125,87 @@ final class TodayLists {
         // (A change sent meanwhile is newer than this answer: its own answer will say the lists.)
         guard sending == nil else { return }
         take(parsed.lists)
+        await addDueReminders()
+    }
+
+    // MARK: Reminders on their day
+
+    static let remindersKey = "lists.reminders"
+    static let remindersListKey = "lists.remindersList"
+    static let remindersListDefault = "To Do"
+    private static let listedKey = "listedReminders"
+
+    var addsReminders: Bool {
+        get { settingsStore.object(forKey: Self.remindersKey) as? Bool ?? true }
+        set { settingsStore.set(newValue, forKey: Self.remindersKey) }
+    }
+
+    var remindersList: String {
+        get { settingsStore.string(forKey: Self.remindersListKey)?.nilIfEmpty ?? Self.remindersListDefault }
+        set { settingsStore.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forKey: Self.remindersListKey) }
+    }
+
+    /// The list reminders go on: the one of that name (any case, spaces and dashes aside: "To-do"
+    /// is "To Do"), else nil and it gets made.
+    func remindersTarget() -> TodayList? {
+        let key = Self.letters(remindersList)
+        return lists.first { Self.letters($0.title) == key }
+    }
+
+    private static func letters(_ text: String) -> String {
+        String(text.lowercased().filter { $0.isLetter || $0.isNumber })
+    }
+
+    /// Reminders this device put on a list, by server: their ids and the item's words.
+    private var listed: [String: String] {
+        get { (defaults?.dictionary(forKey: Self.listedKey)?[server()] as? [String: String]) ?? [:] }
+        set {
+            var all = defaults?.dictionary(forKey: Self.listedKey) ?? [:]
+            all[server()] = newValue
+            defaults?.set(all, forKey: Self.listedKey)
+        }
+    }
+
+    /// Each reminder whose day has come (overdue ones too) onto the To Do list, once (asked
+    /// 2026-11-09: "when I add a reminder … auto list in my todo list for whatever day the
+    /// reminder is scheduled for"): Apple Reminders lives on the person's devices, so the phone
+    /// (or the Mac) brings them, whenever the lists are read. One already on the list, open, by
+    /// the same words isn't added twice (another device brought it). One done in Reminders since
+    /// gets its tick here too.
+    func addDueReminders(now: Date = .now) async {
+        guard addsReminders, available else { return }
+        #if DEBUG
+        if Self.demo { return }
+        #endif
+        var listed = self.listed
+        // Done in Reminders: ticked here (ticking here ticks Reminders already: `toggle`).
+        let finished = await finishedReminders(Set(listed.keys))
+        if !finished.isEmpty, let list = remindersTarget() {
+            let ids = finished.compactMap { id in
+                listed[id].flatMap { words in list.items.first { !$0.done && DeviceCalendar.folded($0.text) == DeviceCalendar.folded(words) }?.id }
+            }
+            if !ids.isEmpty, let answer = try? await run(["action": .string("check"), "list": .string(list.id), "items": .array(ids.map(JSONValue.string))]) {
+                take(answer.lists)
+            }
+        }
+        for id in finished { listed[id] = nil }
+
+        let endOfDay = Calendar.current.startOfDay(for: now).addingTimeInterval(86400 - 1)
+        let open = Set((remindersTarget()?.open ?? []).map { DeviceCalendar.folded($0.text) })
+        let fresh = await dueReminders(endOfDay).filter { listed[$0.id] == nil }
+        let adding = fresh.filter { !open.contains(DeviceCalendar.folded($0.title)) }
+        defer { self.listed = listed }
+        // Already there by its words: counted as listed, so a deleted one doesn't come back.
+        for reminder in fresh where !adding.contains(reminder) { listed[reminder.id] = reminder.title }
+        guard !adding.isEmpty else { return }
+        let titles = adding.map(\.title)
+        if let list = remindersTarget() {
+            guard let answer = try? await run(["action": .string("add"), "list": .string(list.id), "items": .array(titles.map(JSONValue.string))]) else { return }
+            take(answer.lists)
+        } else {
+            if case .failed = await make(remindersList, items: titles.map { (text: $0, done: false) }) { return }
+        }
+        for reminder in adding { listed[reminder.id] = reminder.title }
     }
 
     // MARK: From a reply

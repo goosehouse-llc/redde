@@ -221,6 +221,41 @@ nonisolated enum DeviceCalendar {
         }
     }
 
+    /// A reminder due by a day's end and not done (`TodayLists.addDueReminders`).
+    nonisolated struct DueReminder: Equatable, Sendable {
+        var id: String
+        var title: String
+        var due: Date
+    }
+
+    /// Every reminder not done whose day has come: due by `end` (overdue ones too), oldest
+    /// first. None without Reminders access (this never asks) or without a due date.
+    static func remindersDue(by end: Date) async -> [DueReminder] {
+        guard EKEventStore.authorizationStatus(for: .reminder) == .fullAccess else { return [] }
+        let store = EKEventStore()
+        let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: end, calendars: nil)
+        return await withCheckedContinuation { finished in
+            store.fetchReminders(matching: predicate) { reminders in
+                let due = (reminders ?? []).compactMap { r -> DueReminder? in
+                    guard let date = r.dueDateComponents.flatMap({ Calendar.current.date(from: $0) }), date <= end,
+                          let title = r.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+                    return DueReminder(id: r.calendarItemIdentifier, title: title, due: date)
+                }
+                finished.resume(returning: due.sorted { $0.due < $1.due })
+            }
+        }
+    }
+
+    /// Which of these reminders are done now (or gone from Reminders altogether).
+    static func finished(_ ids: Set<String>) async -> Set<String> {
+        guard !ids.isEmpty, EKEventStore.authorizationStatus(for: .reminder) == .fullAccess else { return [] }
+        let store = EKEventStore()
+        return Set(ids.filter { id in
+            guard let reminder = store.calendarItem(withIdentifier: id) as? EKReminder else { return true }
+            return reminder.isCompleted
+        })
+    }
+
     /// The reminder an item means: its title the item's, or the item's start when the item adds a
     /// word after it ("BP due Oct 30" for "BP", as Make It a List writes a note in). Of several,
     /// the one due first (ticking), or the one done last (taking a tick back).

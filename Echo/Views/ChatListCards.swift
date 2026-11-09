@@ -100,6 +100,8 @@ extension FoldingHeader where Accessory == EmptyView {
 /// Settings → Appearance → Top of the Chat List: which cards show above the conversations.
 struct ChatListCardsSettingsView: View {
     @State private var settings = Settings.shared
+    @State private var addsReminders = true
+    @State private var listName = ""
 
     var body: some View {
         Form {
@@ -118,6 +120,25 @@ struct ChatListCardsSettingsView: View {
                 Text("Each shows only when it has something in it. Tap a section's title in the chat list to fold it away to a count.",
                      comment: "Settings › Top of the Chat List: footer")
             }
+            // Apple Reminders onto a list on their day (2026-11-09).
+            Section {
+                Toggle(isOn: Binding(get: { addsReminders }, set: { addsReminders = $0; TodayLists.shared.addsReminders = $0 })) {
+                    Text("Reminders on Their Day", comment: "Settings › Top of the Chat List: put Apple Reminders on a list when they're due")
+                }
+                if addsReminders {
+                    TextField(String(localized: "List", comment: "Settings › Top of the Chat List: which list reminders go on"),
+                              text: Binding(get: { listName }, set: { listName = $0; TodayLists.shared.remindersList = $0 }),
+                              prompt: Text(TodayLists.remindersListDefault))
+                        .textInputAutocapitalization(.words)
+                }
+            } footer: {
+                Text("A reminder from Apple Reminders goes on this list on the day it's due, and one that's overdue stays until it's done. Tick it on either and it's ticked on both. Your iPhone or Mac adds them when Redde opens, as Reminders lives there.",
+                     comment: "Settings › Top of the Chat List: under Reminders on Their Day")
+            }
+        }
+        .onAppear {
+            addsReminders = TodayLists.shared.addsReminders
+            listName = TodayLists.shared.remindersList
         }
         .navigationTitle(Text("Top of the Chat List", comment: "Settings › Appearance: which cards show above the conversations"))
         #if os(iOS)

@@ -42823,6 +42823,113 @@
         }
       }
     },
+    "A reminder from Apple Reminders goes on this list on the day it's due, and one that's overdue stays until it's done. Tick it on either and it's ticked on both. Your iPhone or Mac adds them when Redde opens, as Reminders lives there." : {
+      "comment" : "Settings › Top of the Chat List: under Reminders on Their Day",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En påmindelse fra Påmindelser kommer på denne liste den dag, den skal gøres, og en forfalden bliver, til den er klaret. Sæt flueben ét sted, så er den klaret begge steder. Din iPhone eller Mac føjer dem til, når Redde åbnes, da Påmindelser ligger der."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Erinnerung aus Apple Erinnerungen kommt am Tag ihrer Fälligkeit auf diese Liste, und eine überfällige bleibt, bis sie erledigt ist. Hakst du sie an einer Stelle ab, ist sie an beiden abgehakt. Dein iPhone oder Mac fügt sie hinzu, wenn Redde geöffnet wird, denn dort liegen die Erinnerungen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un recordatorio de Recordatorios de Apple pasa a esta lista el día en que vence, y uno vencido se queda hasta que esté hecho. Márcalo en cualquiera de los dos y quedará marcado en ambos. Tu iPhone o Mac los añade cuando abres Redde, porque Recordatorios vive allí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un rappel de l’app Rappels arrive sur cette liste le jour de son échéance, et un rappel en retard y reste jusqu’à ce qu’il soit fait. Cochez-le d’un côté, il est coché des deux. Votre iPhone ou Mac les ajoute à l’ouverture de Redde, car c’est là que vivent vos rappels."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un promemoria dell’app Promemoria finisce in questa lista il giorno della scadenza, e uno scaduto resta finché non è fatto. Spuntalo da una parte ed è spuntato in entrambe. Il tuo iPhone o Mac li aggiunge quando apri Redde, perché è lì che vivono i Promemoria."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appleのリマインダーは期日の日にこのリストに追加され、期限切れのものは完了するまで残ります。どちらかでチェックすると両方でチェックされます。リマインダーはiPhoneやMacにあるため、Reddeを開いたときにそこから追加されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 미리 알림의 항목은 기한 당일에 이 목록에 추가되고, 기한이 지난 항목은 완료할 때까지 남아 있습니다. 한쪽에서 체크하면 양쪽 모두 체크됩니다. 미리 알림은 iPhone이나 Mac에 있으므로 Redde를 열 때 그곳에서 추가됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En påminnelse fra Påminnelser havner på denne listen den dagen den forfaller, og en som har forfalt, blir værende til den er gjort. Huk den av ett sted, så er den avhuket begge steder. iPhonen eller Macen din legger dem til når Redde åpnes, siden Påminnelser ligger der."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een herinnering uit Apple Herinneringen komt op de dag dat ze verloopt op deze lijst, en een verlopen herinnering blijft staan tot ze klaar is. Vink je haar ergens af, dan is ze op beide afgevinkt. Je iPhone of Mac voegt ze toe als Redde opent, want daar staan je herinneringen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przypomnienie z aplikacji Przypomnienia trafia na tę listę w dniu terminu, a zaległe zostaje, dopóki nie zostanie zrobione. Odhacz je w jednym miejscu, a będzie odhaczone w obu. Twój iPhone lub Mac dodaje je po otwarciu Redde, bo tam są Przypomnienia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um lembrete do app Lembretes entra nesta lista no dia em que vence, e um atrasado fica até ser feito. Marque em um lugar e ele fica marcado nos dois. Seu iPhone ou Mac os adiciona quando o Redde abre, porque os Lembretes ficam lá."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напоминание из «Напоминаний» Apple попадает в этот список в день срока, а просроченное остаётся, пока не будет выполнено. Отметьте его в одном месте — и оно отмечено в обоих. iPhone или Mac добавляют их при открытии Redde, ведь «Напоминания» хранятся там."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En påminnelse från Påminnelser hamnar på den här listan den dag den ska göras, och en försenad ligger kvar tills den är klar. Bocka av den på ett ställe så är den avbockad på båda. Din iPhone eller Mac lägger till dem när Redde öppnas, eftersom Påminnelser finns där."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Anımsatıcılar’daki bir anımsatıcı, son günü geldiğinde bu listeye eklenir; günü geçmiş olan ise yapılana kadar kalır. Birinde işaretlersen ikisinde de işaretlenir. Anımsatıcılar orada durduğu için iPhone’un veya Mac’in Redde açıldığında onları ekler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нагадування з «Нагадувань» Apple потрапляє до цього списку в день терміну, а прострочене залишається, доки його не виконано. Позначте його в одному місці — і воно позначене в обох. iPhone чи Mac додають їх, коли відкривається Redde, бо «Нагадування» зберігаються там."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 提醒事项中的提醒会在到期当天加入此列表，逾期的会一直保留到完成。在任一处勾选，两处都会勾选。提醒事项保存在你的 iPhone 或 Mac 上，因此会在打开 Redde 时由它们加入。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 提醒事項中的提醒會在到期當天加入此列表，逾期的會一直保留到完成。在任一處勾選，兩處都會勾選。提醒事項儲存在你的 iPhone 或 Mac 上，因此會在打開 Redde 時由它們加入。"
+          }
+        }
+      }
+    },
     "A reply being worked on shows on the Lock Screen and in the Dynamic Island." : {
       "localizations" : {
         "da" : {
@@ -217598,6 +217705,7 @@
     },
     "list.clear" : {
       "comment" : "A to-do list: the button by the Done heading that removes the items checked off",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -217711,6 +217819,7 @@
     },
     "list.done" : {
       "comment" : "A to-do list: the heading over the items checked off",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -316898,8 +317007,115 @@
         }
       }
     },
+    "Reminders on Their Day" : {
+      "comment" : "Settings › Top of the Chat List: put Apple Reminders on a list when they're due",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påmindelser på dagen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erinnerungen am Fälligkeitstag"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorios en su día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappels le jour venu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promemoria nel loro giorno"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "期日にリマインダーを追加"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "당일에 미리 알림 추가"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påminnelser på dagen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herinneringen op hun dag"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przypomnienia w swoim dniu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lembretes no dia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напоминания в свой день"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påminnelser på sin dag"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günü gelen anımsatıcılar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нагадування у свій день"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到期当天加入提醒事项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到期當天加入提醒事項"
+          }
+        }
+      }
+    },
     "Remove" : {
-      "comment" : "Email settings: swipe to remove an account",
+      "comment" : "A to-do list: take one item off it",
       "localizations" : {
         "da" : {
           "stringUnit" : {

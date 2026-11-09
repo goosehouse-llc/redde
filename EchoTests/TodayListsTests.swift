@@ -129,4 +129,80 @@ struct TodayListsTests {
         #expect(!old.available)
         #expect(await old.make("Packing", items: [(text: "Tent", done: false)]) != .made("Packing"))
     }
+
+    // MARK: Reminders on their day
+
+    private func reminderStore(lists json: String, _ asked: @escaping (JSONValue) -> String) -> TodayLists {
+        let lists = store { words in
+            if words == "lists list" { return "redde-push lists " + json }
+            return asked(try Self.decoded(words))
+        }
+        lists.settingsStore = UserDefaults(suiteName: "TodayListsTests-settings-\(UUID().uuidString)")!
+        return lists
+    }
+
+    @Test func remindersDueGoOnANewToDoListOnce() async throws {
+        var asked: [JSONValue] = []
+        let lists = reminderStore(lists: #"{"lists": []}"#) { change in
+            asked.append(change)
+            return #"redde-push lists {"said": {"made": "t1"}, "lists": [{"id": "t1", "title": "To Do", "items": [{"id": "a", "text": "BP", "done": false}, {"id": "b", "text": "Car payment", "done": false}]}]}"#
+        }
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        lists.finishedReminders = { _ in [] }
+        lists.dueReminders = { _ in [] }
+        await lists.refresh()   // (with the real clock: nothing due yet)
+        lists.dueReminders = { end in
+            #expect(end > now && end < now.addingTimeInterval(86400), "by the end of today")
+            return [.init(id: "r1", title: "BP", due: now.addingTimeInterval(-9 * 86400)), .init(id: "r2", title: "Car payment", due: now)]
+        }
+        await lists.addDueReminders(now: now)
+        #expect(asked.count == 1)
+        #expect(asked.first?["action"]?.string == "make")
+        #expect(asked.first?["title"]?.string == "To Do")
+        #expect(asked.first?["items"]?.array?.compactMap(\.string) == ["BP", "Car payment"], "overdue first")
+        await lists.addDueReminders(now: now)
+        #expect(asked.count == 1, "each reminder once")
+    }
+
+    @Test func onlyWhatIsntThereAlready() async throws {
+        var asked: [JSONValue] = []
+        let lists = reminderStore(lists: #"{"lists": [{"id": "t1", "title": "To-do", "items": [{"id": "a", "text": "bp", "done": false}]}]}"#) { change in
+            asked.append(change)
+            return #"redde-push lists {"said": {"added": 1}, "lists": [{"id": "t1", "title": "To-do", "items": [{"id": "a", "text": "bp", "done": false}, {"id": "b", "text": "Dentist", "done": false}]}]}"#
+        }
+        lists.dueReminders = { _ in [.init(id: "r1", title: "BP", due: .now), .init(id: "r2", title: "Dentist", due: .now)] }
+        lists.finishedReminders = { _ in [] }
+        await lists.refresh()
+        #expect(asked.count == 1)
+        #expect(asked.first?["action"]?.string == "add")
+        #expect(asked.first?["list"]?.string == "t1", "\"To-do\" is the To Do list")
+        #expect(asked.first?["items"]?.array?.compactMap(\.string) == ["Dentist"])
+    }
+
+    @Test func doneInRemindersIsTickedHere() async throws {
+        var asked: [JSONValue] = []
+        let lists = reminderStore(lists: #"{"lists": [{"id": "t1", "title": "To Do", "items": [{"id": "a", "text": "Dentist", "done": false}]}]}"#) { change in
+            asked.append(change)
+            return #"redde-push lists {"said": {}, "lists": [{"id": "t1", "title": "To Do", "items": [{"id": "a", "text": "Dentist", "done": true}]}]}"#
+        }
+        var done: Set<String> = []
+        lists.dueReminders = { _ in done.isEmpty ? [.init(id: "r2", title: "Dentist", due: .now)] : [] }
+        lists.finishedReminders = { ids in ids.intersection(done) }
+        await lists.refresh()
+        #expect(asked.isEmpty, "already on the list by its words")
+        done = ["r2"]
+        await lists.addDueReminders()
+        #expect(asked.first?["action"]?.string == "check")
+        #expect(asked.first?["items"]?.array?.compactMap(\.string) == ["a"])
+        #expect(lists.lists.first?.items.first?.done == true)
+    }
+
+    @Test func remindersCanBeTurnedOff() async {
+        var asked = 0
+        let lists = reminderStore(lists: #"{"lists": []}"#) { _ in asked += 1; return "" }
+        lists.addsReminders = false
+        lists.dueReminders = { _ in [.init(id: "r1", title: "BP", due: .now)] }
+        await lists.refresh()
+        #expect(asked == 0)
+    }
 }
