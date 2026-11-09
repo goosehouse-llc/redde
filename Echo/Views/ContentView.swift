@@ -174,6 +174,7 @@ struct ContentView: View {
         // so a Release build never opened a briefing, a key asked for, a pinned card, a watch draft
         // or Make This a Routine.
         .modifier(WatchDraftSheet())
+        .modifier(ListDraftSheet())
         .modifier(BriefingSheets())
         .modifier(KeyRequestSheets())
         .modifier(PinnedCardSheets { id in

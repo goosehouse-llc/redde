@@ -529,8 +529,7 @@ struct ChecklistCard: View {
         let done = self.done
         let allDone = !card.items.isEmpty && done.count == card.items.count
         // The marks: the theme's colour where it reads on the list's panel, else its text.
-        let mark = theme.accent.readable(on: scheme.cardPanel, or: scheme == .dark ? .white : .black,
-                                         in: { var e = EnvironmentValues(); e.colorScheme = scheme; return e }())
+        let mark = scheme.checklistMark(theme.accent)
         AnswerBox(symbol: "checklist", title: nil) {
             header(done.count, allDone: allDone, mark: mark)
             // A group's name is as tall as a finger, its panel right under it: the groups need no gap.
@@ -552,19 +551,8 @@ struct ChecklistCard: View {
 
     private func header(_ count: Int, allDone: Bool, mark: Color) -> some View {
         HStack(alignment: .center, spacing: 14) {
-            ZStack {
-                Circle().stroke(Color.primary.opacity(0.12), lineWidth: 5)
-                Circle().trim(from: 0, to: card.items.isEmpty ? 0 : Double(count) / Double(card.items.count))
-                    .stroke(allDone ? Color.green : mark, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                Text(count, format: .number).chatFont(size: 13, weight: .bold).monospacedDigit()
-                    .contentTransition(.numericText(value: Double(count)))
-            }
-            .frame(width: 43, height: 43)
-            .padding(2.5)
-            .animation(.snappy(duration: 0.25), value: count)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(standing(count))
+            ChecklistRing(count: count, total: card.items.count, mark: mark)
+                .accessibilityLabel(standing(count))
             VStack(alignment: .leading, spacing: 2) {
                 Text(card.title).chatFont(.headline, weight: .bold).lineLimit(2)
                 Text(([card.subtitle].compactMap { $0 } + [standing(count)]).joined(separator: " · "))
@@ -576,6 +564,27 @@ struct ChecklistCard: View {
         }
     }
 
+    /// Make It a List: the card's items on a list of its title, ticked as they are here. Its word
+    /// beside an item ("×2") goes with the item.
+    private func makeList() {
+        let done = self.done
+        let items = card.items.enumerated().map { index, item in
+            (text: [item.text, item.note].compactMap { $0 }.joined(separator: " "), done: done.contains(index))
+        }
+        Task {
+            switch await TodayLists.shared.make(card.title, items: items) {
+            case .made(let title):
+                exported = String(localized: "“\(title)” is on your Today row, at the top of your chats.",
+                                  comment: "Make It a List: a new list was made from a checklist")
+            case .added(let title):
+                exported = String(localized: "You had a list called “\(title)”, so these went onto it.",
+                                  comment: "Make It a List: a list of that name was there already")
+            case .failed(let why):
+                exported = why
+            }
+        }
+    }
+
     private var menu: some View {
         Menu {
             if pins.isPinned(whole.key) {
@@ -584,6 +593,10 @@ struct ChecklistCard: View {
                 Button("Pin to Chats", systemImage: "pin") {
                     pins.pin(whole, title: card.title, conversation: conversation?.id, agent: conversation?.bot?.name)
                 }
+            }
+            // One of the person's lists from it, ticked as it is (2026-11-09): a tile on the Today row.
+            if TodayLists.shared.available {
+                Button("Make It a List", systemImage: "text.badge.checkmark") { makeList() }
             }
             #if os(iOS)
             Button("Add to Reminders", systemImage: "checklist") { Task { exported = await ChecklistExport.toReminders(card, done: done) } }
@@ -646,16 +659,7 @@ struct ChecklistCard: View {
         let item = card.items[index]
         return Button { toggle(index) } label: {
             HStack(spacing: 12) {
-                ZStack {
-                    if on {
-                        Circle().fill(mark)
-                        Image(systemName: "checkmark").chatFont(size: 11, weight: .heavy)
-                            .foregroundStyle(mark == theme.accent ? theme.userText : (scheme == .dark ? Color.black : .white))
-                    } else {
-                        Circle().strokeBorder(Color.primary.opacity(0.35), lineWidth: 1.5)
-                    }
-                }
-                .frame(width: 22, height: 22)
+                ChecklistTick(on: on, mark: mark)
                 Text(item.text).chatFont(.subheadline)
                     .strikethrough(on, color: .secondary)
                     .foregroundStyle(on ? Color.secondary : Color.primary)
@@ -709,6 +713,156 @@ struct ChecklistCard: View {
     static func ticked(in said: String) -> Set<Int> {
         guard let open = said.range(of: "done ("), let close = said[open.upperBound...].firstIndex(of: ")") else { return [] }
         return Set(said[open.upperBound ..< close].split(separator: ",").compactMap { Int($0) })
+    }
+}
+
+// MARK: - The checklist's pieces, shared with the person's lists
+
+/// A checklist's progress: a ring that fills as items are done, and how many are, in it.
+struct ChecklistRing: View {
+    var count: Int
+    var total: Int
+    var mark: Color
+
+    var body: some View {
+        let allDone = total > 0 && count == total
+        ZStack {
+            Circle().stroke(Color.primary.opacity(0.12), lineWidth: 5)
+            Circle().trim(from: 0, to: total == 0 ? 0 : Double(count) / Double(total))
+                .stroke(allDone ? Color.green : mark, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Text(count, format: .number).chatFont(size: 13, weight: .bold).monospacedDigit()
+                .contentTransition(.numericText(value: Double(count)))
+        }
+        .frame(width: 43, height: 43)
+        .padding(2.5)
+        .animation(.snappy(duration: 0.25), value: count)
+        .accessibilityElement(children: .ignore)
+    }
+}
+
+/// An item's circle: open, or filled in the mark's colour with a tick.
+struct ChecklistTick: View {
+    var on: Bool
+    var mark: Color
+    @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var appScheme
+    private var scheme: ColorScheme { appScheme.onCard }
+
+    var body: some View {
+        ZStack {
+            if on {
+                Circle().fill(mark)
+                Image(systemName: "checkmark").chatFont(size: 11, weight: .heavy)
+                    .foregroundStyle(mark == theme.accent ? theme.userText : (scheme == .dark ? Color.black : .white))
+            } else {
+                Circle().strokeBorder(Color.primary.opacity(0.35), lineWidth: 1.5)
+            }
+        }
+        .frame(width: 22, height: 22)
+    }
+}
+
+extension ColorScheme {
+    /// The marks on a checklist: the theme's colour where it reads on the list's panel, else its text.
+    func checklistMark(_ accent: Color) -> Color {
+        accent.readable(on: cardPanel, or: self == .dark ? .white : .black,
+                        in: { var e = EnvironmentValues(); e.colorScheme = self; return e }())
+    }
+}
+
+/// One of the person's lists (`TodayLists`), drawn as a checklist card is (asked 2026-11-09: "I
+/// like this style to do list"): the ring and its count, the items on one panel in the order they
+/// were added, ticked in place, and a line at the end to add one. A hold on an item removes it.
+struct TodayListCard: View {
+    let list: TodayList
+    @State private var lists = TodayLists.shared
+    @State private var adding = ""
+    @FocusState private var typing: Bool
+    @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var appScheme
+    private var scheme: ColorScheme { appScheme.onCard }
+
+    var body: some View {
+        let mark = scheme.checklistMark(theme.accent)
+        let done = list.finished.count
+        AnswerBox(symbol: "checklist", title: nil) {
+            HStack(alignment: .center, spacing: 14) {
+                ChecklistRing(count: done, total: list.items.count, mark: mark)
+                    .accessibilityLabel(Text("\(done) of \(list.items.count) done"))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(list.title).chatFont(.headline, weight: .bold).lineLimit(2)
+                    Text("\(done) of \(list.items.count) done").chatFont(.footnote).monospacedDigit().foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                }
+                Spacer(minLength: 6)
+            }
+            VStack(spacing: 0) {
+                ForEach(list.items) { item in
+                    row(item, mark: mark)
+                    Divider()
+                }
+                addRow
+            }
+            .background(scheme.cardPanel, in: .rect(cornerRadius: 14))
+        }
+        .frame(maxWidth: 560, alignment: .leading)
+        .sensoryFeedback(.success, trigger: done == list.items.count && !list.items.isEmpty) { _, now in now }
+        .animation(.snappy(duration: 0.25), value: list.items)
+        // Typed and not yet sent when the sheet closes: it still goes on.
+        .onDisappear(perform: addTyped)
+    }
+
+    private func row(_ item: TodayList.Item, mark: Color) -> some View {
+        Button { lists.toggle(item, in: list) } label: {
+            HStack(spacing: 12) {
+                ChecklistTick(on: item.done, mark: mark)
+                Text(item.text).chatFont(.subheadline)
+                    .strikethrough(item.done, color: .secondary)
+                    .foregroundStyle(item.done ? Color.secondary : Color.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .frame(minHeight: 44)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: item.done)
+        .contextMenu {
+            Button(role: .destructive) { lists.remove([item], from: list) } label: {
+                Label { Text("Remove", comment: "A to-do list: take one item off it") } icon: { Image(systemName: "trash") }
+            }
+        }
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(item.done ? Text("Done") : Text("Not done"))
+        .accessibilityHint(item.done ? Text("Puts it back on the list", comment: "VoiceOver hint: a checked-off to-do item")
+                                     : Text("Checks it off", comment: "VoiceOver hint: a to-do item"))
+        .accessibilityAction(named: Text("Remove", comment: "A to-do list: take one item off it")) { lists.remove([item], from: list) }
+    }
+
+    private var addRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "plus").chatFont(size: 13, weight: .bold)
+                .foregroundStyle(.secondary)
+                .frame(width: 22, height: 22)
+                .accessibilityHidden(true)
+            TextField(String(localized: "Add an item", comment: "A to-do list: the field to type a new item in"), text: $adding)
+                .chatFont(.subheadline)
+                .focused($typing)
+                .submitLabel(.done)
+                .onSubmit(addTyped)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .frame(minHeight: 44)
+    }
+
+    /// What's typed goes on the list, and the field stays ready for the next.
+    func addTyped() {
+        let text = adding.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        lists.add(text, to: list)
+        adding = ""
+        typing = true
     }
 }
 

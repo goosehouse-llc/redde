@@ -79,4 +79,54 @@ struct TodayListsTests {
         try await Task.sleep(for: .milliseconds(200))
         #expect(lists.problem?.contains("1.20") == true)
     }
+
+    private static func decoded(_ sent: String) throws -> JSONValue {
+        var encoded = String(sent.dropFirst("lists do ".count)).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        encoded += String(repeating: "=", count: (4 - encoded.count % 4) % 4)
+        return try JSONDecoder().decode(JSONValue.self, from: try #require(Data(base64Encoded: encoded)))
+    }
+
+    /// Make It a List (2026-11-09): a checklist card's items on a new list, then the ones done
+    /// there ticked, by the ids the plugin gave the new items.
+    @Test func makeItAListKeepsWhatWasDone() async throws {
+        var asked: [JSONValue] = []
+        let made = """
+        redde-push lists {"said": {"made": "n1", "title": "Packing"}, "lists": [{"id": "n1", "title": "Packing",
+          "items": [{"id": "x1", "text": "Tent", "done": false}, {"id": "x2", "text": "Stove", "done": false},
+                    {"id": "x3", "text": "Sunscreen SPF 50", "done": false}]}]}
+        """
+        let lists = store { words in
+            if words == "lists list" { return #"redde-push lists {"lists": []}"# }
+            asked.append(try Self.decoded(words))
+            return asked.count == 1 ? made : made.replacingOccurrences(of: #""text": "Stove", "done": false"#, with: #""text": "Stove", "done": true"#)
+        }
+        await lists.refresh()
+        #expect(lists.available)
+        let result = await lists.make("Packing", items: [(text: "Tent", done: false), (text: "Stove", done: true), (text: "Sunscreen SPF 50", done: false)])
+        #expect(result == .made("Packing"))
+        #expect(asked.count == 2)
+        #expect(asked[0]["action"]?.string == "make")
+        #expect(asked[0]["items"]?.array?.compactMap(\.string) == ["Tent", "Stove", "Sunscreen SPF 50"])
+        #expect(asked[1]["action"]?.string == "check")
+        #expect(asked[1]["list"]?.string == "n1")
+        #expect(asked[1]["items"]?.array?.compactMap(\.string) == ["x2"])
+        #expect(lists.lists.first?.finished.map(\.text) == ["Stove"])
+    }
+
+    @Test func aListOfThatNameTakesTheItems() async throws {
+        let lists = store { words in
+            words == "lists list" ? Self.answer
+                : #"redde-push lists {"said": {"already_there": "l1"}, "lists": [{"id": "l1", "title": "Groceries", "items": [{"id": "a", "text": "Milk", "done": false}, {"id": "c", "text": "Bread", "done": false}]}]}"#
+        }
+        await lists.refresh()
+        #expect(await lists.make("groceries", items: [(text: "Bread", done: false)]) == .added("Groceries"))
+        #expect(lists.lists[0].items.map(\.text) == ["Milk", "Bread"])
+    }
+
+    @Test func listsAreOfferedOnlyWhereThePluginAnswers() async {
+        let old = store { _ in "redde-push: this command is for the Redde app." }
+        await old.refresh()
+        #expect(!old.available)
+        #expect(await old.make("Packing", items: [(text: "Tent", done: false)]) != .made("Packing"))
+    }
 }

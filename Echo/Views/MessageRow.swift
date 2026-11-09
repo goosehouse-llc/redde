@@ -681,6 +681,10 @@ struct MessageRow: View, Equatable {
         ShareLink(item: message.text) { Label("Share…", systemImage: "square.and.arrow.up") }
         Button("Select text", systemImage: "text.cursor") { selecting = true }
         Button("Watch This…", systemImage: "eye") { WatchDraft.shared.start(PlainText.display(message.text)) }
+        // Onto one of the person's lists (2026-11-09), where lists can be kept on this server.
+        if TodayLists.shared.available, !isLive {
+            Button("Add to a List…", systemImage: "checklist") { ListDraft.shared.start(PlainText.display(message.text)) }
+        }
         if let conversation, !isLive {
             Button("Remember This", systemImage: "brain.head.profile") { conversation.send(AgentMemory.rememberMessage(PlainText.display(message.text))) }
             // What was done for this reply, kept to do again (asked 2026-11-04): the chat menu's, for one reply.
@@ -705,6 +709,9 @@ struct MessageRow: View, Equatable {
             Button("Edit & resend", systemImage: "pencil", action: onEdit).disabled(isLive)
         }
         Button("Watch This…", systemImage: "eye") { WatchDraft.shared.start(message.text) }
+        if TodayLists.shared.available {
+            Button("Add to a List…", systemImage: "checklist") { ListDraft.shared.start(message.text) }
+        }
         if let conversation, !isLive, message.role == .user {
             Button("Remember This", systemImage: "brain.head.profile") { conversation.send(AgentMemory.rememberMessage(message.text)) }
         }
