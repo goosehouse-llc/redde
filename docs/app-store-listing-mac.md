@@ -51,6 +51,11 @@ A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible en
 
 Hermes is an open-source project by Nous Research. Redde is an independent client, not affiliated with it.
 
+## What's New in 2.4 (4000)
+
+## Before submitting the Mac's 2.4
+- The Mac's first version: no What's New (App Store Connect refuses one). 2.3 (279) was turned down on 2026-11-08 (Guideline 4: nothing reopened the main window once it was closed); App Store Connect's 2.3 was renamed 2.4 and takes build 292, where the Window menu lists "Redde" and ⌘N opens it. Answer App Review's message saying so.
+
 ## What's New in 2.3.1 (4000)
 Your agent, ahead of your day, and new cards.
 

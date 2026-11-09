@@ -5,6 +5,8 @@ app). `scripts/app-store-push.py notes --mac` puts the test key in and sends the
 text, 4,000 characters at most.
 
 ```text
+Guideline 4 (review of 2.3 on November 8): fixed in 2.4 (292). After the main window is closed, Window → Redde reopens it; File → New Conversation (⌘N) and the Dock icon reopen it too.
+
 Redde is a chat client for a self-hosted AI assistant, the native Mac version of the iPhone and iPad app (same bundle id, universal purchase). It has no account; conversations go only to the server the user configures.
 
 TO TEST

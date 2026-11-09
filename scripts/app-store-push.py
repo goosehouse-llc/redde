@@ -391,7 +391,8 @@ def project_build():
 def submit(app, version, wanted, dry, attach_only=False):
     """Attaches the build in project.yml to the version and sends the version to App Review, once
     the build has finished processing; `attach_only` (the `attach` command), the build alone."""
-    number = project_build()
+    # BUILD=<n> for another build than project.yml's (the Mac's, when its last upload was earlier).
+    number = os.environ.get('BUILD') or project_build()
     builds = api('GET', f'/v1/builds?filter[app]={app}&filter[version]={number}&filter[preReleaseVersion.version]={wanted}&filter[preReleaseVersion.platform]={PLATFORM}'
                         '&fields[builds]=version,processingState,usesNonExemptEncryption,expired')['data']
     if not builds:
