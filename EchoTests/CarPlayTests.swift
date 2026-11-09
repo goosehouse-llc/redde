@@ -527,6 +527,28 @@ struct CarPlayTests {
         try await waitUntil("listening") { h.recognizer.starts == 1 }
     }
 
+    /// More bots than a row holds go on further rows, none of which wraps: a row that wrapped sent
+    /// CarPlay's own process round its layout until the phone killed it, the car stuck on
+    /// "Loading…" (2026-11-08, six bots on a 568-point screen). A card on a later row still opens
+    /// its own bot.
+    @Test func manyBotsGoOnRowsThatNeverWrap() async throws {
+        let (h, _) = botsHarness((1...6).map { HermesBot(name: "bot\($0)", chatID: "s-\($0)", lastActive: .now.addingTimeInterval(Double(-60 * $0))) })
+        let opened = Opened()
+        h.delegate.openBot = { opened.bots.append($0.name) }
+        for look in CarPlayBotLook.allCases {
+            h.settings.carPlayBots = look
+            let rows = await h.delegate.botRows().compactMap { $0 as? CPListImageRowItem }
+            let perRow = look == .wide ? 3 : 4
+            #expect(rows.map(\.elements.count) == (look == .wide ? [3, 3] : [4, 2]), "\(look)")
+            #expect(rows.allSatisfy { !$0.allowsMultipleLines && $0.elements.count <= perRow }, "\(look): a row wraps")
+        }
+        h.settings.carPlayBots = .sticker
+        let second = try #require(await h.delegate.botRows().last as? CPListImageRowItem)
+        let titles = second.elements.compactMap { ($0 as? CPListImageRowItemCardElement)?.title }
+        try await press(card: 1, in: second)
+        #expect(opened.bots == [titles[1]], "the card pressed, not the second bot of all")
+    }
+
     /// Presses a card the way the car does, by its place in the row.
     private func press(card index: Int, in row: CPListImageRowItem) async throws {
         let handler = try #require(row.listImageRowHandler)

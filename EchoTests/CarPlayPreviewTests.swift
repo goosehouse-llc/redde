@@ -78,7 +78,10 @@ struct CarPlayPreviewTests {
             HermesBot(name: "scout", title: "Scout", chatID: "s-scout", lastActive: .now.addingTimeInterval(-600)),
             HermesBot(name: "writer", displayName: "Quill", chatID: "s-writer", lastActive: .now.addingTimeInterval(-3 * 86_400)),
             HermesBot(name: "fixit", title: "Fix-it", chatID: "s-fixit", lastActive: .now.addingTimeInterval(-120), workerActive: .now),
-        ]), key: h.settings.connectionKey)
+        ] + (0..<max(0, (Int(ProcessInfo.processInfo.environment["REDDE_CARPLAY_BOTS"] ?? "") ?? 4) - 4)).map { n in
+            // REDDE_CARPLAY_BOTS=<n> draws the tab with that many bots (four without it).
+            HermesBot(name: "extra\(n)", title: "Bot \(n + 5)", chatID: "s-extra\(n)", lastActive: .now.addingTimeInterval(-900))
+        }), key: h.settings.connectionKey)
         h.delegate.bots = directory
         // A moving picture is caught wherever its loop happens to be, often at rest: with
         // REDDE_CARPLAY_STILL the card gets the pictures that stand still (the store screenshot).

@@ -536,7 +536,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         drawAhead()
     }
 
-    /// The bots as one row of cards, in the look Settings → Appearance → CarPlay bot cards names,
+    /// The bots as rows of cards, in the look Settings → Appearance → CarPlay bot cards names,
     /// each face in its bot's mood; and what the cards say, to tell whether anything changed.
     /// Above them, whose chat is open, as the Ask tab says which conversation it carries on.
     private func botRows(_ roster: BotRoster) -> (rows: [any CPListTemplateItem], shown: [String]) {
@@ -562,19 +562,28 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
         let open = conversation?.bot.flatMap { open in listed.first { $0.name == open.profile } }?.label(mainName: settings.headerTitle)
         shown.append("open|\(open ?? "")")
-        let row = CPListImageRowItem(text: open.map { String(localized: "Now with \($0)", comment: "CarPlay: the bot whose chat is open") },
-                                     cardElements: cards, allowsMultipleLines: true)
-        // The card spins until the completion is called: here, until the voice card is on its way up.
-        row.listImageRowHandler = { [weak self] _, index, completion in
-            Task { @MainActor in
-                if listed.indices.contains(index) { await self?.talk(to: listed[index]) }
-                completion()
+        // Rows of a few cards each that never wrap. One row that wraps let CarPlay's own process
+        // go round in its layout until the phone killed it, over and over, the car stuck on
+        // "Loading…" (2026-11-08, six bots on a 568-point screen): two lines made the list just
+        // too tall, the scroll bar that came with it narrowed the row, and the row's height
+        // changed with its width. A row that keeps to one line is as tall at any width.
+        let perRow = look == .wide ? 3 : 4
+        let rows = stride(from: 0, to: cards.count, by: perRow).map { start in
+            let row = CPListImageRowItem(text: start == 0 ? open.map { String(localized: "Now with \($0)", comment: "CarPlay: the bot whose chat is open") } : nil,
+                                         cardElements: Array(cards[start..<min(start + perRow, cards.count)]), allowsMultipleLines: false)
+            // The card spins until the completion is called: here, until the voice card is on its way up.
+            row.listImageRowHandler = { [weak self] _, index, completion in
+                Task { @MainActor in
+                    if listed.indices.contains(start + index) { await self?.talk(to: listed[start + index]) }
+                    completion()
+                }
             }
+            return row as any CPListTemplateItem
         }
-        return ([row], shown)
+        return (rows, shown)
     }
 
-    /// At most this many bots on the tab: five fit across a car's screen of 568 points.
+    /// At most this many bots on the tab.
     private static let mostBots = 12
 
     /// What a bot is up to: what its chat is doing, or, quiet, how long it has been.
