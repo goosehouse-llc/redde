@@ -513,6 +513,20 @@ nonisolated struct KanbanColumn: Identifiable, Sendable {
     var name: String
     var tasks: [KanbanTask]
     var id: String { name }
+
+    /// Every column newest first, whatever order the server sends (his ask 2026-11-09): by when
+    /// the card was made, a card with no date last, ties in the server's order.
+    init(name: String, tasks: [KanbanTask]) {
+        self.name = name
+        self.tasks = tasks.enumerated().sorted { a, b in
+            switch (a.element.createdAt, b.element.createdAt) {
+            case let (x?, y?) where x != y: x > y
+            case (_?, nil): true
+            case (nil, _?): false
+            default: a.offset < b.offset
+            }
+        }.map(\.element)
+    }
 }
 
 /// The board's fixed status columns, in dispatcher order. `running` can't be set by hand.
