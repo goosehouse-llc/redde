@@ -120,7 +120,7 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
     /// parchment, sepia ink and a burnt-sienna pen, flat serif replies; after dark a lamp-lit
     /// study: a brown page, cream ink and an ochre accent, warmer and lighter than near-black.
     private static let paperPalette = Palette(
-        label: String(localized: "Paper", comment: "Name of a color theme in Settings → Appearance"),
+        label: String(localized: "Paper", comment: "Name of a color theme in Settings → Appearance, and a bot face's shape: a sheet of paper"),
         blurb: String(localized: "Parchment, sepia ink and a burnt-sienna pen; a lamp-lit study after dark."),
         accent: dyn((0.541, 0.231, 0.071), (0.878, 0.643, 0.345)),          // burnt sienna / ochre
         background: dyn((0.945, 0.902, 0.808), (0.165, 0.129, 0.094)),     // parchment / lamp-lit brown

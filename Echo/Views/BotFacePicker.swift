@@ -54,6 +54,7 @@ struct BotFacePicker: View {
         case "house": String(localized: "House", comment: "A bot face's shape")
         case "star": String(localized: "Star", comment: "A bot face's shape")
         case "blob": String(localized: "Blob", comment: "A bot face's shape")
+        case "paper": String(localized: "Paper", comment: "Name of a color theme in Settings → Appearance, and a bot face's shape: a sheet of paper")
         case "mismatched": String(localized: "Mismatched", comment: "A bot face's eyes")
         case "sleepy": String(localized: "Sleepy", comment: "A bot face's eyes")
         case "happy": String(localized: "Happy", comment: "A bot face's eyes")

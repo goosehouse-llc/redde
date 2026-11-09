@@ -286325,7 +286325,7 @@
       }
     },
     "Paper" : {
-      "comment" : "Name of a color theme in Settings → Appearance",
+      "comment" : "Name of a color theme in Settings → Appearance, and a bot face's shape: a sheet of paper",
       "localizations" : {
         "da" : {
           "stringUnit" : {

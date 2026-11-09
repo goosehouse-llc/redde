@@ -66,6 +66,8 @@ struct BotAvatar: View {
 
     /// The tail's corner: the radius of the one corner drawn sharp.
     private static let tailCorner: CGFloat = 6.5
+    /// How far down and in the paper's top right corner is folded.
+    private static let paperFold: CGFloat = 17
 
     private func layout(_ shape: BotFace.Shape) -> Layout {
         func rounded(_ points: [CGPoint], softness: CGFloat = 0.22, sharp: Int = -1, sharpness: CGFloat = 0.05) -> Path {
@@ -197,6 +199,19 @@ struct BotAvatar: View {
             }
             return Layout(body: rounded(points, softness: 0.5, sharp: nearestBottomLeft(points), sharpness: 0.12),
                           eyeY: 46, eyeGap: 11, top: CGPoint(x: 51, y: 12))
+        case .paper:
+            // A sheet of paper standing up: small corners, the bottom left one the tail, and the
+            // top right folded down (the flap is drawn over it, `paperFold`).
+            let r: CGFloat = 4.5, fold = Self.paperFold
+            var p = Path()
+            p.move(to: CGPoint(x: 21 + r, y: 9))
+            p.addLine(to: CGPoint(x: 81 - fold, y: 9))
+            p.addLine(to: CGPoint(x: 81, y: 9 + fold))
+            p.addArc(tangent1End: CGPoint(x: 81, y: 90), tangent2End: CGPoint(x: 21, y: 90), radius: r)
+            p.addArc(tangent1End: CGPoint(x: 21, y: 90), tangent2End: CGPoint(x: 21, y: 9), radius: Self.tailCorner * 0.6)
+            p.addArc(tangent1End: CGPoint(x: 21, y: 9), tangent2End: CGPoint(x: 81, y: 9), radius: r)
+            p.closeSubpath()
+            return Layout(body: p, eyeY: 46, eyeGap: 11, top: CGPoint(x: 49, y: 9))
         case .bubble:
             // Nearly square, its corners the theme's, scaled up, the bottom left one tucked in as the
             // bottom right of your own messages is (`userBubbleShape`).
@@ -283,6 +298,24 @@ struct BotAvatar: View {
         context.fill(body, with: fill)
         if face.shape != .bubble, face.color == BotFace.white {
             context.stroke(body, with: .color(ink.opacity(0.2)), lineWidth: 1.6)
+        }
+        // The paper's folded corner: the back of the sheet, paler, lying over it, with a soft
+        // shadow under its edge.
+        if face.shape == .paper {
+            let f = Self.paperFold
+            var flap = Path()
+            flap.move(to: CGPoint(x: 81 - f, y: 9))
+            flap.addLine(to: CGPoint(x: 81, y: 9 + f))
+            flap.addQuadCurve(to: CGPoint(x: 81 - f, y: 9 + f), control: CGPoint(x: 81 - f * 0.45, y: 9 + f * 1.06))
+            flap.addQuadCurve(to: CGPoint(x: 81 - f, y: 9), control: CGPoint(x: 81 - f * 1.06, y: 9 + f * 0.45))
+            flap.closeSubpath()
+            var shade = context
+            shade.clip(to: body)
+            shade.translateBy(x: -1.2, y: 1.6)
+            shade.fill(flap, with: .color(ink.opacity(0.16)))
+            context.fill(flap, with: .linearGradient(Gradient(colors: [colors.light.mix(with: .white, by: 0.45), colors.light]),
+                                                      startPoint: CGPoint(x: 81 - f, y: 9 + f), endPoint: CGPoint(x: 81, y: 9)))
+            context.stroke(flap, with: .color(colors.deep.opacity(0.5)), style: StrokeStyle(lineWidth: 1, lineJoin: .round))
         }
         // Marks drawn on the body, under its gloss: a calendar's band, an envelope's flap.
         var onBody = context
@@ -387,22 +420,23 @@ struct BotAvatar: View {
             eye(right, white: 9.6, pupil: 5.4, sparkle: true)
             context.stroke(glass, with: .color(features), lineWidth: 3)
         case .glasses:
-            // Big round rims, set a little wider than the eyes so they meet at a short bridge, the
-            // eyes in their middles behind a faint tint of glass; the arms' ends out to the sides.
-            let rim = shape.eyeGap * 1.1
+            // Big rims, squarish with rounded corners, set a little wider than the eyes so they meet
+            // at a short bridge, the eyes in their middles behind a faint tint of glass; the arms'
+            // ends out to the sides.
+            let rim = shape.eyeGap * 1.1, tall = rim * 0.86
             let lens = [CGPoint(x: 51 - rim - 1.6, y: left.y), CGPoint(x: 51 + rim + 1.6, y: right.y)]
             var glass = Path()
-            for c in lens { glass.addEllipse(in: CGRect(x: c.x - rim, y: c.y - rim, width: rim * 2, height: rim * 2)) }
+            for c in lens { glass.addRoundedRect(in: CGRect(x: c.x - rim, y: c.y - tall, width: rim * 2, height: tall * 2), cornerSize: CGSize(width: rim * 0.42, height: rim * 0.42)) }
             context.fill(glass, with: .color(Color(red: 0.86, green: 0.97, blue: 1).opacity(0.3)))
-            for c in lens { eye(c, white: min(7.8, rim - 3), pupil: min(4, rim * 0.36)) }
+            for c in lens { eye(c, white: min(7.8, tall - 2.6), pupil: min(4, rim * 0.36)) }
             var frame = glass
-            frame.move(to: CGPoint(x: lens[0].x + rim * 0.86, y: lens[0].y - rim * 0.5))
-            frame.addQuadCurve(to: CGPoint(x: lens[1].x - rim * 0.86, y: lens[1].y - rim * 0.5), control: CGPoint(x: 51, y: left.y - rim * 0.85))
-            frame.move(to: CGPoint(x: lens[0].x - rim, y: lens[0].y - 1.5))
-            frame.addLine(to: CGPoint(x: lens[0].x - rim - 4.5, y: lens[0].y - 3.5))
-            frame.move(to: CGPoint(x: lens[1].x + rim, y: lens[1].y - 1.5))
-            frame.addLine(to: CGPoint(x: lens[1].x + rim + 4.5, y: lens[1].y - 3.5))
-            context.stroke(frame, with: .color(features), style: StrokeStyle(lineWidth: 2.6, lineCap: .round))
+            frame.move(to: CGPoint(x: lens[0].x + rim, y: lens[0].y - tall * 0.45))
+            frame.addQuadCurve(to: CGPoint(x: lens[1].x - rim, y: lens[1].y - tall * 0.45), control: CGPoint(x: 51, y: left.y - tall * 0.8))
+            frame.move(to: CGPoint(x: lens[0].x - rim, y: lens[0].y - tall * 0.45))
+            frame.addLine(to: CGPoint(x: lens[0].x - rim - 4.5, y: lens[0].y - tall * 0.45 - 2))
+            frame.move(to: CGPoint(x: lens[1].x + rim, y: lens[1].y - tall * 0.45))
+            frame.addLine(to: CGPoint(x: lens[1].x + rim + 4.5, y: lens[1].y - tall * 0.45 - 2))
+            context.stroke(frame, with: .color(features), style: StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round))
         case .sunglasses:
             // Two big dark lenses, flat on top and round below, joined by a bar, each with a glint;
             // a light edge on a black face, or they'd vanish into it.
@@ -621,6 +655,15 @@ struct BotGallery: View {
             }
             .padding(10)
             .background(Color(white: 0.94), in: .rect(cornerRadius: 12))
+            // The paper, in a few colours and with a few marks, and small.
+            HStack(spacing: 8) {
+                ForEach(Array([(BotFace.white, BotFace.Mark.none, BotFace.Eyes.round), (1, .pencil, .glasses), (8, .spark, .happy), (BotFace.white + 1, .antenna, .sunglasses), (6, .paperclip, .sleepy)].enumerated()), id: \.offset) { i, part in
+                    BotAvatar(face: BotFace(shape: .paper, eyes: part.2, mouth: .smile, mark: part.1, glance: i % 4, tilt: Double(i * 2 - 4), color: part.0), size: 60)
+                }
+                BotAvatar(face: BotFace(shape: .paper, eyes: .round, mouth: .smile, mark: .none, glance: 1, tilt: 0, color: 2), size: 26)
+            }
+            .padding(10)
+            .background(Color.white, in: .rect(cornerRadius: 12))
             // The house beside the square it is drawn from, then with each mark, as large as a
             // creature in the picker and as small as one in the list: its peak takes the antenna,
             // the spark stands by its roof.
@@ -664,9 +707,9 @@ struct BotGallery: View {
             .padding()
             // The shapes only picked, never given by a name.
             HStack(spacing: 14) {
-                ForEach(Array([BotFace.Shape.ghost, .square, .house, .star, .blob].enumerated()), id: \.offset) { i, shape in
-                    BotAvatar(face: BotFace(shape: shape, eyes: [.round, .happy, .round, .sparkle, .mismatched][i], mouth: [.smile, .none, .smile, .grin, .oh][i],
-                                            mark: [.none, .blush, .antenna, .spark, .freckles][i], glance: i, tilt: Double(i * 2 - 4), color: [8, 4, 9, 1, 5][i]), size: 60)
+                ForEach(Array([BotFace.Shape.ghost, .square, .house, .star, .blob, .paper].enumerated()), id: \.offset) { i, shape in
+                    BotAvatar(face: BotFace(shape: shape, eyes: [.round, .happy, .round, .sparkle, .mismatched, .glasses][i], mouth: [.smile, .none, .smile, .grin, .oh, .smile][i],
+                                            mark: [.none, .blush, .antenna, .spark, .freckles, .none][i], glance: i % 4, tilt: Double(i * 2 - 4), color: [8, 4, 9, 1, 5, BotFace.white][i]), size: 52)
                 }
             }
             .padding(.vertical, 8)

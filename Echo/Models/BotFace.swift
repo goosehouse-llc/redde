@@ -15,8 +15,9 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         case bubble
         /// Shapes only picked, never given by a name (adding them to what a name gives would
         /// change every bot's creature): a ghost, a rounded square, a house (the square with a
-        /// peaked roof, asked 2026-10-24), a star, a blob.
-        case ghost, square, house, star, blob
+        /// peaked roof, asked 2026-10-24), a star, a blob, a sheet of paper with its top right
+        /// corner folded down (asked 2026-11-09).
+        case ghost, square, house, star, blob, paper
 
         /// The shapes a bot can be picked to have.
         static let given = allCases.filter { $0 != .bubble }
