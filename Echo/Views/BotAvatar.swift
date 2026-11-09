@@ -387,46 +387,50 @@ struct BotAvatar: View {
             eye(right, white: 9.6, pupil: 5.4, sparkle: true)
             context.stroke(glass, with: .color(features), lineWidth: 3)
         case .glasses:
-            // Round rims, a bridge between them and the arms' ends out to the sides; the eyes inside
-            // a little smaller on a narrow face, so a rim never cuts one.
-            let rim = min(9.6, shape.eyeGap - 1.2)
-            for c in [left, right] { eye(c, white: min(7.4, rim - 1.9), pupil: min(3.8, rim * 0.4)) }
-            var frame = Path()
-            for c in [left, right] { frame.addEllipse(in: CGRect(x: c.x - rim, y: c.y - rim, width: rim * 2, height: rim * 2)) }
-            frame.move(to: CGPoint(x: left.x + rim * 0.82, y: left.y - rim * 0.45))
-            frame.addQuadCurve(to: CGPoint(x: right.x - rim * 0.82, y: right.y - rim * 0.45), control: CGPoint(x: 51, y: left.y - rim * 0.95))
-            frame.move(to: CGPoint(x: left.x - rim, y: left.y - 1.5))
-            frame.addLine(to: CGPoint(x: left.x - rim - 5, y: left.y - 3.5))
-            frame.move(to: CGPoint(x: right.x + rim, y: right.y - 1.5))
-            frame.addLine(to: CGPoint(x: right.x + rim + 5, y: right.y - 3.5))
-            context.stroke(frame, with: .color(features), style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+            // Big round rims, set a little wider than the eyes so they meet at a short bridge, the
+            // eyes in their middles behind a faint tint of glass; the arms' ends out to the sides.
+            let rim = shape.eyeGap * 1.1
+            let lens = [CGPoint(x: 51 - rim - 1.6, y: left.y), CGPoint(x: 51 + rim + 1.6, y: right.y)]
+            var glass = Path()
+            for c in lens { glass.addEllipse(in: CGRect(x: c.x - rim, y: c.y - rim, width: rim * 2, height: rim * 2)) }
+            context.fill(glass, with: .color(Color(red: 0.86, green: 0.97, blue: 1).opacity(0.3)))
+            for c in lens { eye(c, white: min(7.8, rim - 3), pupil: min(4, rim * 0.36)) }
+            var frame = glass
+            frame.move(to: CGPoint(x: lens[0].x + rim * 0.86, y: lens[0].y - rim * 0.5))
+            frame.addQuadCurve(to: CGPoint(x: lens[1].x - rim * 0.86, y: lens[1].y - rim * 0.5), control: CGPoint(x: 51, y: left.y - rim * 0.85))
+            frame.move(to: CGPoint(x: lens[0].x - rim, y: lens[0].y - 1.5))
+            frame.addLine(to: CGPoint(x: lens[0].x - rim - 4.5, y: lens[0].y - 3.5))
+            frame.move(to: CGPoint(x: lens[1].x + rim, y: lens[1].y - 1.5))
+            frame.addLine(to: CGPoint(x: lens[1].x + rim + 4.5, y: lens[1].y - 3.5))
+            context.stroke(frame, with: .color(features), style: StrokeStyle(lineWidth: 2.6, lineCap: .round))
         case .sunglasses:
-            // Two dark lenses, flat on top and round below, joined by a bar, each with a glint;
+            // Two big dark lenses, flat on top and round below, joined by a bar, each with a glint;
             // a light edge on a black face, or they'd vanish into it.
-            let w = min(19, shape.eyeGap * 2 - 3), h = w * 0.74
-            let top = left.y - h * 0.48
+            let w = shape.eyeGap * 2.3, h = w * 0.72
+            let lens = [CGPoint(x: 51 - w / 2 - 1.6, y: left.y), CGPoint(x: 51 + w / 2 + 1.6, y: right.y)]
+            let top = left.y - h * 0.46
             var lenses = Path()
-            for c in [left, right] {
+            for c in lens {
                 lenses.addRoundedRect(in: CGRect(x: c.x - w / 2, y: top, width: w, height: h),
-                                      cornerRadii: RectangleCornerRadii(topLeading: 2.5, bottomLeading: h * 0.5, bottomTrailing: h * 0.5, topTrailing: 2.5))
+                                      cornerRadii: RectangleCornerRadii(topLeading: 3, bottomLeading: h * 0.5, bottomTrailing: h * 0.5, topTrailing: 3))
             }
             let tint = Color(red: 0.05, green: 0.05, blue: 0.08)
             context.fill(lenses, with: .linearGradient(Gradient(colors: [Color(red: 0.22, green: 0.24, blue: 0.32), tint]),
                                                        startPoint: CGPoint(x: 51, y: top), endPoint: CGPoint(x: 51, y: top + h)))
             var bar = Path()
-            bar.move(to: CGPoint(x: left.x + w / 2 - 1, y: top + 1.4))
-            bar.addLine(to: CGPoint(x: right.x - w / 2 + 1, y: top + 1.4))
-            bar.move(to: CGPoint(x: left.x - w / 2, y: top + 1.4))
-            bar.addLine(to: CGPoint(x: left.x - w / 2 - 4.5, y: top + 0.2))
-            bar.move(to: CGPoint(x: right.x + w / 2, y: top + 1.4))
-            bar.addLine(to: CGPoint(x: right.x + w / 2 + 4.5, y: top + 0.2))
-            context.stroke(bar, with: .color(dark ? .white.opacity(0.55) : tint), style: StrokeStyle(lineWidth: 2.8, lineCap: .round))
+            bar.move(to: CGPoint(x: lens[0].x + w / 2 - 1, y: top + 1.6))
+            bar.addLine(to: CGPoint(x: lens[1].x - w / 2 + 1, y: top + 1.6))
+            bar.move(to: CGPoint(x: lens[0].x - w / 2, y: top + 1.6))
+            bar.addLine(to: CGPoint(x: lens[0].x - w / 2 - 4, y: top + 0.4))
+            bar.move(to: CGPoint(x: lens[1].x + w / 2, y: top + 1.6))
+            bar.addLine(to: CGPoint(x: lens[1].x + w / 2 + 4, y: top + 0.4))
+            context.stroke(bar, with: .color(dark ? .white.opacity(0.55) : tint), style: StrokeStyle(lineWidth: 3, lineCap: .round))
             if dark { context.stroke(lenses, with: .color(.white.opacity(0.55)), lineWidth: 1.2) }
-            for c in [left, right] {
+            for c in lens {
                 var glint = Path()
-                glint.move(to: CGPoint(x: c.x - w * 0.28, y: top + h * 0.5))
+                glint.move(to: CGPoint(x: c.x - w * 0.28, y: top + h * 0.52))
                 glint.addLine(to: CGPoint(x: c.x - w * 0.06, y: top + h * 0.2))
-                context.stroke(glint, with: .color(.white.opacity(0.75)), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+                context.stroke(glint, with: .color(.white.opacity(0.75)), style: StrokeStyle(lineWidth: 2, lineCap: .round))
             }
         }
 
