@@ -110,7 +110,7 @@ struct GroupChatView: View {
                         ForEach(feed.state.approvals.filter { !feed.answering.contains($0.id) }) { approval in
                             VStack(alignment: .leading, spacing: 6) {
                                 // Headed by the bot asking, its face and name.
-                                ApprovalCard(request: approval.request, asker: asker(approval.memberID)) { feed.answer(approval, $0) }
+                                ApprovalCard(request: approval.request, asker: asker(approval.memberID)) { feed.answer(approval, $0) }.cardInk()
                                 // Hermes's approvals.timeout, 300 s unless changed; unanswered, the command isn't run.
                                 Text("Not answered in about 5 minutes, it isn't run.")
                                     .chatFont(.caption).foregroundStyle(.secondary)

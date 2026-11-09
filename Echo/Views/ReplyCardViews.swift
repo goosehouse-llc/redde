@@ -37,6 +37,7 @@ struct ReplyCardsView: View {
                 }
             }
         }
+        .cardInk()
         .frame(maxWidth: 520, alignment: .leading)
     }
 }
@@ -89,19 +90,83 @@ private struct CardSurface: ViewModifier {
         // A solid colour's appearance, else Card Appearance's, else the app's: the card, its
         // ground and its edge all in it.
         let drawnIn = Settings.shared.cardScheme ?? scheme
-        Group {
+        let inked = content.cardInk()
+        return Group {
             if raised {
-                content
+                inked
                     .background {
                         CardFill(cornerRadius: cornerRadius)
                             .shadow(color: .black.opacity(drawnIn == .light && scheme == .dark ? 0.3 : 0.08), radius: 12, y: 4)
                     }
                     .overlay { RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
             } else {
-                content.background { CardFill(cornerRadius: cornerRadius) }
+                inked.background { CardFill(cornerRadius: cornerRadius) }
             }
         }
         .environment(\.colorScheme, drawnIn)
+    }
+}
+
+extension View {
+    /// The accent made to read on a card's ground, for the card and everything in it: put on a
+    /// card from outside (`ReplyCardsView`, the hosts of the cards drawn elsewhere), since a card
+    /// reads its theme in its own body, before its ground (`cardGround`) is around it. 2026-11-09:
+    /// Sol's pale sky on an off-white card in dark mode could hardly be seen.
+    func cardInk() -> some View { modifier(CardInk()) }
+}
+
+private struct CardInk: ViewModifier {
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.theme) private var theme
+    @Environment(\.self) private var environment
+
+    func body(content: Content) -> some View {
+        let accent = Self.readable(theme.accent, drawnIn: Settings.shared.cardScheme ?? scheme, in: environment)
+        var onCard = theme
+        onCard.palette.accent = accent
+        return content.environment(\.theme, onCard).tint(accent)
+    }
+
+    /// `accent` darkened (on a light card) or lightened (on a dark one) until it has text
+    /// contrast, 4.5:1, with the card's ground: its solid colour, else the system's.
+    static func readable(_ accent: Color, drawnIn: ColorScheme, in environment: EnvironmentValues) -> Color {
+        var env = environment
+        env.colorScheme = drawnIn
+        let choice = Settings.shared.cardColor
+        let ground: Double = if choice.solid != nil, let solid = choice.color(in: env.theme) {
+            GoalCard.luminance(of: solid, in: env)
+        } else {
+            drawnIn == .light ? 0.95 : 0.015
+        }
+        func contrast(_ l: Double) -> Double { (max(l, ground) + 0.05) / (min(l, ground) + 0.05) }
+        guard contrast(GoalCard.luminance(of: accent, in: env)) < 4.5 else { return accent }
+        if drawnIn == .dark {
+            var shade = accent
+            for _ in 0 ..< 10 where contrast(GoalCard.luminance(of: shade, in: env)) < 4.5 {
+                shade = shade.mix(with: .white, by: 0.15)
+            }
+            return shade
+        }
+        // On a light card: the same hue, deeper and fuller, so a pale sky turns a real blue and
+        // not a grey (mixing in black greys a pale colour).
+        let c = accent.resolve(in: env)
+        var (hue, saturation, brightness) = hsb(Double(c.red), Double(c.green), Double(c.blue))
+        if saturation > 0.08 { saturation = max(saturation, 0.75) }   // a grey stays grey
+        var shade = Color(hue: hue, saturation: saturation, brightness: brightness)
+        for _ in 0 ..< 14 where contrast(GoalCard.luminance(of: shade, in: env)) < 4.5 {
+            brightness *= 0.9
+            shade = Color(hue: hue, saturation: saturation, brightness: brightness)
+        }
+        return shade
+    }
+
+    private static func hsb(_ r: Double, _ g: Double, _ b: Double) -> (Double, Double, Double) {
+        let high = max(r, g, b), low = min(r, g, b), span = high - low
+        guard span > 0 else { return (0, 0, high) }
+        var hue = r == high ? (g - b) / span : g == high ? 2 + (b - r) / span : 4 + (r - g) / span
+        hue /= 6
+        if hue < 0 { hue += 1 }
+        return (hue, span / high, high)
     }
 }
 

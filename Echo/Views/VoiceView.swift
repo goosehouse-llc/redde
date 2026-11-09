@@ -198,7 +198,7 @@ struct VoiceView: View {
                     .font(.footnote.weight(.medium)).foregroundStyle(.orange)
             }
         } else if let pending = conversation.pendingInterrupt {
-            InterruptCard(interrupt: pending.interrupt)
+            InterruptCard(interrupt: pending.interrupt).cardInk()
         }
     }
 

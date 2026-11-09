@@ -248,7 +248,7 @@ struct TranscriptView: View {
                         messageCell(message, canLoadTools: canLoadTools)
                     }
                     if let pending = conversation.pendingInterrupt {
-                        InterruptCard(interrupt: pending.interrupt)
+                        InterruptCard(interrupt: pending.interrupt).cardInk()
                     }
                     if let status = conversation.statusLine {
                         Label(status, systemImage: "ellipsis.circle")

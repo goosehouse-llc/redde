@@ -30,7 +30,7 @@ struct TodayListView: View {
                         .chatFont(.footnote)
                         .foregroundStyle(.orange)
                 }
-                TodayListCard(list: list)
+                TodayListCard(list: list).cardInk()
             }
             .padding()
         }

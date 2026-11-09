@@ -288,7 +288,7 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
 /// Equatable so the root can rebuild the value without every theme reader re-rendering.
 nonisolated struct ResolvedTheme: ThemeStyle, Equatable, Sendable {
     let base: Theme
-    let palette: Theme.Palette
+    var palette: Theme.Palette
     #if os(macOS)
     /// View → Zoom In and Out on the Mac (`TextZoom`): the conversation's fonts at this scale.
     var textScale: CGFloat = 1
