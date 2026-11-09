@@ -67,6 +67,8 @@ struct BotFacePicker: View {
         case "freckles": String(localized: "Freckles", comment: "A bot face's mark")
         case "blush": String(localized: "Blush", comment: "A bot face's mark")
         case "lens": String(localized: "Magnifier", comment: "A bot face's eyes: one seen through a magnifying glass (a researcher's)")
+        case "glasses": String(localized: "Glasses", comment: "A bot face's eyes: round eyes behind a pair of glasses")
+        case "sunglasses": String(localized: "Sunglasses", comment: "A bot face's eyes: dark sunglasses over them")
         case "prompt": String(localized: "Prompt", comment: "A bot face's mouth: a terminal's “>_” prompt (a coder's)")
         case "hardHat": String(localized: "Hard Hat", comment: "A bot face's mark")
         case "mortarboard": String(localized: "Mortarboard", comment: "A bot face's mark: a graduation cap")

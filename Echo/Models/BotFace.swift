@@ -30,6 +30,8 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         case round, mismatched, sleepy, happy, sparkle
         /// One eye seen through a magnifying glass: a researcher's.
         case lens
+        /// Round eyes behind round glasses, and dark sunglasses that hide them (asked 2026-11-09).
+        case glasses, sunglasses
         static let seeded: [Eyes] = [.round, .mismatched, .sleepy, .happy, .sparkle]
     }
     enum Mouth: String, CaseIterable, Sendable {

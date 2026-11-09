@@ -386,6 +386,48 @@ struct BotAvatar: View {
             context.fill(glass, with: .color(Color(red: 0.86, green: 0.97, blue: 1)))
             eye(right, white: 9.6, pupil: 5.4, sparkle: true)
             context.stroke(glass, with: .color(features), lineWidth: 3)
+        case .glasses:
+            // Round rims, a bridge between them and the arms' ends out to the sides; the eyes inside
+            // a little smaller on a narrow face, so a rim never cuts one.
+            let rim = min(9.6, shape.eyeGap - 1.2)
+            for c in [left, right] { eye(c, white: min(7.4, rim - 1.9), pupil: min(3.8, rim * 0.4)) }
+            var frame = Path()
+            for c in [left, right] { frame.addEllipse(in: CGRect(x: c.x - rim, y: c.y - rim, width: rim * 2, height: rim * 2)) }
+            frame.move(to: CGPoint(x: left.x + rim * 0.82, y: left.y - rim * 0.45))
+            frame.addQuadCurve(to: CGPoint(x: right.x - rim * 0.82, y: right.y - rim * 0.45), control: CGPoint(x: 51, y: left.y - rim * 0.95))
+            frame.move(to: CGPoint(x: left.x - rim, y: left.y - 1.5))
+            frame.addLine(to: CGPoint(x: left.x - rim - 5, y: left.y - 3.5))
+            frame.move(to: CGPoint(x: right.x + rim, y: right.y - 1.5))
+            frame.addLine(to: CGPoint(x: right.x + rim + 5, y: right.y - 3.5))
+            context.stroke(frame, with: .color(features), style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+        case .sunglasses:
+            // Two dark lenses, flat on top and round below, joined by a bar, each with a glint;
+            // a light edge on a black face, or they'd vanish into it.
+            let w = min(19, shape.eyeGap * 2 - 3), h = w * 0.74
+            let top = left.y - h * 0.48
+            var lenses = Path()
+            for c in [left, right] {
+                lenses.addRoundedRect(in: CGRect(x: c.x - w / 2, y: top, width: w, height: h),
+                                      cornerRadii: RectangleCornerRadii(topLeading: 2.5, bottomLeading: h * 0.5, bottomTrailing: h * 0.5, topTrailing: 2.5))
+            }
+            let tint = Color(red: 0.05, green: 0.05, blue: 0.08)
+            context.fill(lenses, with: .linearGradient(Gradient(colors: [Color(red: 0.22, green: 0.24, blue: 0.32), tint]),
+                                                       startPoint: CGPoint(x: 51, y: top), endPoint: CGPoint(x: 51, y: top + h)))
+            var bar = Path()
+            bar.move(to: CGPoint(x: left.x + w / 2 - 1, y: top + 1.4))
+            bar.addLine(to: CGPoint(x: right.x - w / 2 + 1, y: top + 1.4))
+            bar.move(to: CGPoint(x: left.x - w / 2, y: top + 1.4))
+            bar.addLine(to: CGPoint(x: left.x - w / 2 - 4.5, y: top + 0.2))
+            bar.move(to: CGPoint(x: right.x + w / 2, y: top + 1.4))
+            bar.addLine(to: CGPoint(x: right.x + w / 2 + 4.5, y: top + 0.2))
+            context.stroke(bar, with: .color(dark ? .white.opacity(0.55) : tint), style: StrokeStyle(lineWidth: 2.8, lineCap: .round))
+            if dark { context.stroke(lenses, with: .color(.white.opacity(0.55)), lineWidth: 1.2) }
+            for c in [left, right] {
+                var glint = Path()
+                glint.move(to: CGPoint(x: c.x - w * 0.28, y: top + h * 0.5))
+                glint.addLine(to: CGPoint(x: c.x - w * 0.06, y: top + h * 0.2))
+                context.stroke(glint, with: .color(.white.opacity(0.75)), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+            }
         }
 
         // The mark below the eyes.
@@ -554,6 +596,27 @@ struct BotGallery: View {
 
     var body: some View {
         ScrollView {
+            // Every eye, then the glasses and sunglasses on the narrowest faces, a black one and a
+            // white one, as large as in the picker and as small as in the list.
+            VStack(spacing: 10) {
+                ForEach([40, 26] as [CGFloat], id: \.self) { size in
+                    HStack(spacing: 6) {
+                        ForEach(BotFace.Eyes.allCases, id: \.self) { eyes in
+                            BotAvatar(face: BotFace(shape: .round, eyes: eyes, mouth: .smile, mark: .none, glance: 1, tilt: 0, color: 9), size: size)
+                        }
+                    }
+                }
+                HStack(spacing: 4) {
+                    ForEach(Array([(BotFace.Shape.star, 6), (.capsule, 4), (.diamond, 1), (.round, BotFace.white + 1), (.square, BotFace.white)].enumerated()), id: \.offset) { i, part in
+                        ForEach([BotFace.Eyes.glasses, .sunglasses], id: \.self) { eyes in
+                            BotAvatar(face: BotFace(shape: part.0, eyes: eyes, mouth: [.grin, .smile, .none][i % 3], mark: i == 4 ? .hardHat : .none,
+                                                    glance: i % 4, tilt: Double(i * 2 - 4), color: part.1), size: 34)
+                        }
+                    }
+                }
+            }
+            .padding(10)
+            .background(Color(white: 0.94), in: .rect(cornerRadius: 12))
             // The house beside the square it is drawn from, then with each mark, as large as a
             // creature in the picker and as small as one in the list: its peak takes the antenna,
             // the spark stands by its roof.
@@ -566,8 +629,8 @@ struct BotGallery: View {
                 ForEach([56, 26] as [CGFloat], id: \.self) { size in
                     HStack(spacing: 10) {
                         ForEach(Array(BotFace.Mark.allCases.enumerated()), id: \.offset) { i, mark in
-                            BotAvatar(face: BotFace(shape: .house, eyes: BotFace.Eyes.allCases[i], mouth: BotFace.Mouth.allCases[(i + 1) % 4], mark: mark,
-                                                    glance: i % 4, tilt: Double(i * 2 - 4), color: [6, 2, 0, 16, 12][i]), size: size)
+                            BotAvatar(face: BotFace(shape: .house, eyes: BotFace.Eyes.allCases[i % BotFace.Eyes.allCases.count], mouth: BotFace.Mouth.allCases[(i + 1) % 4], mark: mark,
+                                                    glance: i % 4, tilt: Double(i * 2 - 4), color: [6, 2, 0, 16, 12][i % 5]), size: size)
                         }
                     }
                 }
