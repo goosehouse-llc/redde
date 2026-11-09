@@ -1102,11 +1102,13 @@ final class HermesServeClient {
         return refusal.code == 4132 || refusal.message.localizedCaseInsensitiveContains("Kanban worker transcript")
     }
 
-    /// A stored session's newest 500 messages, oldest first, from the Dashboard's messages page
-    /// (0.21.0 onward): reading it doesn't resume the session.
-    func transcript(stored: String) async throws -> [HermesSessionsAPI.StoredMessage] {
+    /// A stored session's newest messages, oldest first, from the Dashboard's messages page
+    /// (0.21.0 onward): reading it doesn't resume the session. `limit` is what the caller needs —
+    /// the whole transcript's 500 by default, one row for a caller asking only whether the host
+    /// has moved on since its copy (`catchUp`).
+    func transcript(stored: String, limit: Int = 500) async throws -> [HermesSessionsAPI.StoredMessage] {
         struct Page: Decodable { var messages: [HermesSessionsAPI.StoredMessage] }
-        let data = try await rest("GET", "api/sessions/\(stored)/messages?order=latest&limit=500", body: nil, timeout: 120, about: stored)
+        let data = try await rest("GET", "api/sessions/\(stored)/messages?order=latest&limit=\(limit)", body: nil, timeout: 120, about: stored)
         return try JSONDecoder().decode(Page.self, from: data).messages
     }
 
