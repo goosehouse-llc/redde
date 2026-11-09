@@ -23,6 +23,7 @@ extension FocusedValues {
 /// iPad's keyboard shortcuts.
 struct ReddeCommands: Commands {
     @FocusedValue(\.chatCommands) private var chat
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Commands {
         SidebarCommands()
@@ -30,9 +31,11 @@ struct ReddeCommands: Commands {
         // Settings window, whose toolbar centres its items and the back button with them.
         CommandGroup(replacing: .appSettings) { SettingsCommand() }
         CommandGroup(replacing: .newItem) {
-            Button("New Conversation") { chat?.newConversation() }
-                .keyboardShortcut("n")
-                .disabled(chat == nil)
+            // With the window closed, it opens the window (on the conversation it had).
+            Button("New Conversation") {
+                if let chat { chat.newConversation() } else { openWindow(id: ReddeMacApp.mainWindow) }
+            }
+            .keyboardShortcut("n")
             Button("New Incognito Chat") { chat?.newIncognito?() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
                 .disabled(chat?.newIncognito == nil)

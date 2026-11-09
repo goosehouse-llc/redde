@@ -74,7 +74,10 @@ struct ReddeMacApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Redde") {
+        // One window, by name: the Window menu lists it, so it opens again after it was closed
+        // (App Review 2026-11-08 turned Mac 2.3 down when nothing could: a group's New Window was
+        // New Conversation here). ⌘N and the Dock icon open it too.
+        Window("Redde", id: Self.mainWindow) {
             ZStack {
                 ContentView()
                     .accessibilityHidden(lock.isLocked || lock.isCovered)
@@ -184,6 +187,7 @@ struct ReddeMacApp: App {
     }
 
     static let settingsWindow = "settings"
+    static let mainWindow = "main"
 }
 
 /// A menu drawn as the iPhone draws one: its label alone, without the Mac's bezel and arrow.
