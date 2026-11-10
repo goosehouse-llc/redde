@@ -59,6 +59,9 @@ And one for attachments: a message with "lab:file" in it is answered "[file seen
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
 or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
 
+And one for what goes with a message for the model alone (the plugin's turn notes, issue 72): a
+message with "lab:heard" in it is answered "[heard: <the message as it reached the model>]".
+
 usage: stub_llm.py <port> <name> <model,model,...>
 """
 import json
@@ -383,6 +386,8 @@ class Handler(BaseHTTPRequestHandler):
                 text = "NO EMAIL ACCESS"
             if "lab:file" in just_said:
                 text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
+            if "lab:heard" in just_said:
+                text = "[heard: " + just_said + "]"
             if messages[-1].get("role") == "tool":
                 text = "[kept]" if os.path.isdir(TARGET) else "[gone]"
                 # A question's answer comes back as the tool's result: say what it was.

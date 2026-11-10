@@ -394,8 +394,14 @@ nonisolated struct HermesSessionsAPI: Sendable {
 
         var displayTitle: String {
             if let title, !title.isEmpty { return title }
-            if let preview, !preview.isEmpty { return String(preview.prefix(80)) }
+            if let shownPreview { return String(shownPreview.prefix(80)) }
             return id
+        }
+        /// The preview as it is shown: the start of the chat's first message, without the notes
+        /// Redde wrote after it for the agent (`TurnNotes.preview`); nil when nothing is left.
+        var shownPreview: String? {
+            guard let shown = preview.map(TurnNotes.preview), !shown.isEmpty else { return nil }
+            return shown
         }
         var lastActiveDate: Date? { (last_active ?? started_at).map { Date(timeIntervalSince1970: $0) } }
         /// A run of a scheduled job: Hermes makes a session of each one (GitHub issue 19).

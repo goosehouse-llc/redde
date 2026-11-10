@@ -87,16 +87,15 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     for att in request.attachments {
                         if let reference = try await Self.attach(att, runtime: runtime, client: client) { references.append(reference) }
                     }
-                    // prompt.submit takes no instructions: a reply language rides on the message,
-                    // and so does the car's request for a short answer.
-                    // A bot's chat: who the message's @tags are, before the other notes.
-                    let text = Self.prompt(userText, naming: references) + (request.mentionNote ?? "")
-                        + (request.replyLanguage.map(ReplyLanguage.note) ?? "") + (request.units.map(MeasureUnits.note) ?? "")
-                        + (request.calendars.map(CalendarChoice.note) ?? "") + (request.location.map(CurrentLocation.note) ?? "")
-                        + (request.brief ? CarBrevity.note : "")
-                        + (request.incognito ? IncognitoNote.note : "")
-                        + (request.live.flatMap { $0.surface ? nil : LiveVoiceNote.note(context: $0.context) } ?? "")
-                        + (request.answeringCall.map(CallNote.note) ?? "")
+                    // prompt.submit takes no instructions. What goes with the message for the agent
+                    // (a reply language, where the person is, the car's request for a short answer)
+                    // is handed to Redde's plugin, which gives it to the model with this message and
+                    // leaves the message as it was typed; where the plugin can't, it rides on the
+                    // message, and Redde hides it (`TurnNotes`, issue 72).
+                    // A bot's chat: who the message's @tags are, part of the message either way.
+                    let said = Self.prompt(userText, naming: references) + (request.mentionNote ?? "")
+                    let notes = TurnNotes.riding(request)
+                    let text = await Self.hand(notes, with: said, stored: stored, runtime: runtime, client: client) ? said : said + notes
                     var params: [String: JSONValue] = ["session_id": .string(runtime), "text": .string(text)]
                     // A page's message is the agent's to read, not a bubble (Hermes 0.21.0 and later).
                     if request.fromPage { params["display_kind"] = .string("hidden") }
@@ -130,6 +129,31 @@ nonisolated struct HermesServeTransport: HermesTransport {
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+
+    /// Hands a turn's notes to Redde's plugin on this Hermes, before the message they go with
+    /// (`TurnNotes`): true when the plugin has them, and the message can go as it was typed.
+    /// False with no plugin there, or one from before 1.21.0 (it isn't asked again for a while),
+    /// and when the call fails or takes too long: the notes then ride on the message. The command
+    /// names the session, so it is answered by the plugin of the session's own profile, the one
+    /// whose hook the turn runs: a bot with an older copy, or none, says so itself.
+    @MainActor
+    static func hand(_ notes: String, with said: String, stored: String, runtime: String, client: HermesServeClient,
+                     now: Date = .now) async -> Bool {
+        guard client.takesTurnNotes(in: stored, at: now), let command = TurnNotes.command(stored: stored, said: said, notes: notes) else { return false }
+        do {
+            let reply = try await client.call("command.dispatch", params: .object([
+                "session_id": .string(runtime), "name": .string("redde-push"), "arg": .string(command)]), timeout: 4)
+            let output = reply["output"]?.string ?? ""
+            if output == TurnNotes.kept { return true }
+            // "redde-push turn refused…" is about this note; anything else is a plugin that doesn't know the command.
+            if !output.hasPrefix("redde-push turn ") { client.turnNotesRefused(in: stored, at: now) }
+        } catch is HermesServeClient.RPCError {
+            client.turnNotesRefused(in: stored, at: now)   // no such command: the plugin isn't on this Hermes
+        } catch {
+            // The socket dropped or was slow: this turn's ride on the message.
+        }
+        return false
     }
 
     /// A turn the host starts in the session, heard as it begins (`HermesTransport.watchHost`):

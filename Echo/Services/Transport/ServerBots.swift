@@ -108,7 +108,7 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
                   setUpRevision: row["ui_meta_revisions"]?["hermes-bots"]?.int ?? 0,
                   chatID: (chat?["resolved_id"]?.string?.nilIfEmpty ?? chat?["id"]?.string?.nilIfEmpty),
                   lastActive: (chat?["last_active"]?.number).flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil },
-                  preview: chat?["preview"]?.string?.nilIfEmpty,
+                  preview: chat?["preview"]?.string.map(TurnNotes.preview)?.nilIfEmpty,
                   previousNames: (row["previous_names"]?.array ?? []).compactMap(\.string),
                   face: (row["ui_meta"]?["redde"]?["face"]?.string).flatMap(BotFace.init(code:)),
                   reddeRevision: row["ui_meta_revisions"]?["redde"]?.int ?? 0,
@@ -716,7 +716,7 @@ final class BotDirectory {
                let chat = try? await APIBotChat.find(HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.apiHeaders)) {
                 bot.chatID = chat.id
                 bot.lastActive = chat.lastActiveDate
-                bot.preview = chat.preview
+                bot.preview = chat.shownPreview
             }
             bots.append(bot)
         }

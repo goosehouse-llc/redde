@@ -38,7 +38,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, watches
+from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, watches
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -289,6 +289,12 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     except Exception:
         log.debug("redde-push: couldn't have redde_show announced", exc_info=True)
     try:
+        # What the app said goes with this message (turnnote.py, 1.21.0): the reply language, the
+        # units, where they are. First, as when it was written after the message itself.
+        notes.append(turnnote.turn_note(calls.caller(_home())[1], session_id, user_message))
+    except Exception:
+        log.debug("redde-push: the app's note failed", exc_info=True)
+    try:
         notes.append(cards.turn_note(_home(), said, platform, session=session_id))
     except Exception:
         log.debug("redde-push: card note failed", exc_info=True)
@@ -523,6 +529,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["device"]:
         # Phone tools: which the agent is offered, what it has asked for, and the phone's answers.
         return phone_tools.slash(phone_tools.Phone(_home()), words[1:])
+    if words[:1] == ["turn"]:
+        # What goes to the agent with the app's next message (turnnote.py), kept in the main home.
+        return turnnote.slash(calls.caller(_home())[1], words[1:])
     if words[:1] == ["cards"]:
         # Cards in replies (cards.py): on unless the phone turned them off.
         return cards.slash(_home(), words[1:])

@@ -662,7 +662,7 @@ struct ConversationsList: View {
         }
         botChatRows = bots
         let filtered = q.isEmpty ? listed : listed.filter {
-            $0.displayTitle.lowercased().contains(q) || ($0.preview ?? "").lowercased().contains(q) || $0.sourceLabel.lowercased().contains(q)
+            $0.displayTitle.lowercased().contains(q) || ($0.shownPreview ?? "").lowercased().contains(q) || $0.sourceLabel.lowercased().contains(q)
         }
         visibleLedger = filtered.sorted { a, b in
             if (a.pinned ?? false) != (b.pinned ?? false) { return a.pinned ?? false }
@@ -1947,7 +1947,7 @@ struct ConversationsList: View {
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(.quaternary, in: .capsule)
                 }
-                Text(session.preview?.nilIfEmpty.map(ServeMedia.preview) ?? session.message_count.map { String(localized: "\($0) messages") } ?? " ")
+                Text(session.shownPreview.map(ServeMedia.preview) ?? session.message_count.map { String(localized: "\($0) messages") } ?? " ")
                     .lineLimit(1)
             }
             .chatFont(.subheadline)
@@ -2582,7 +2582,7 @@ struct ProjectSessionsView: View {
 
     private func filtered(_ rows: [HermesSessionsAPI.SessionSummary]) -> [HermesSessionsAPI.SessionSummary] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-        let list = q.isEmpty ? rows : rows.filter { $0.displayTitle.lowercased().contains(q) || ($0.preview ?? "").lowercased().contains(q) }
+        let list = q.isEmpty ? rows : rows.filter { $0.displayTitle.lowercased().contains(q) || ($0.shownPreview ?? "").lowercased().contains(q) }
         return list.sorted { ($0.lastActiveDate ?? .distantPast) > ($1.lastActiveDate ?? .distantPast) }
     }
 
@@ -2607,7 +2607,7 @@ struct ProjectSessionsView: View {
                 if let n = session.message_count { Text("·"); Text("\(n) messages") }
             }
             .chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
-            if let p = session.preview, !p.isEmpty { Text(ServeMedia.preview(p)).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(2) }
+            if let p = session.shownPreview { Text(ServeMedia.preview(p)).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(2) }
         }
         .padding(.vertical, 2)
         .contentShape(.rect)

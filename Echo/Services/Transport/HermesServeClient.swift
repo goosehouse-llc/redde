@@ -40,7 +40,20 @@ final class HermesServeClient {
     #endif
 
     enum State: Equatable { case disconnected, connecting, connected, reconnecting(attempt: Int), failed(String) }
-    private(set) var state: State = .disconnected
+    private(set) var state: State = .disconnected {
+        // Connected anew: Hermes may have been started again with Redde's plugin put in or updated.
+        didSet { if state == .connected, oldValue != .connected { turnNotesRefusedAt = [:] } }
+    }
+    /// When this Hermes last didn't take a turn's notes (`TurnNotes`): no plugin, or an older one.
+    /// By the session's profile ("" for the selected one): a bot answers with its own copy of
+    /// the plugin, which can be older than the main agent's, or missing.
+    @ObservationIgnored private var turnNotesRefusedAt: [String: Date] = [:]
+    /// Whether a turn's notes in `stored` are worth handing to the plugin: not refused lately.
+    func takesTurnNotes(in stored: String? = nil, at now: Date = .now) -> Bool {
+        turnNotesRefusedAt[turnNotesKey(stored)].map { now.timeIntervalSince($0) >= TurnNotes.askAgainAfter || now < $0 } ?? true
+    }
+    func turnNotesRefused(in stored: String? = nil, at now: Date = .now) { turnNotesRefusedAt[turnNotesKey(stored)] = now }
+    private func turnNotesKey(_ stored: String?) -> String { stored.flatMap { sessionProfiles[$0] } ?? "" }
     /// True after a successful `ensureConnected()` until `disconnect()`; drives auto-reconnect.
     private var wantsConnection = false
     private var reconnectTask: Task<Void, Never>?

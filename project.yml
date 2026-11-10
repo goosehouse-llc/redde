@@ -238,6 +238,7 @@ targets:
       # The complication's look and its link, shared with the extension that draws it.
       - path: WatchWidgets/AskComplication.swift
       - path: Echo/Models/ReplyLanguage.swift
+      - path: Echo/Models/TurnNotes.swift
       - path: Echo/Models/MeasureUnits.swift
       - path: Echo/Models/CalendarChoice.swift
       - path: Echo/Models/CurrentLocation.swift

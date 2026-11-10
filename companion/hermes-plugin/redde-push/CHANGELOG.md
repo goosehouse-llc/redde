@@ -3,6 +3,19 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.21.0 (2026-11-09)
+
+- What Redde tells the agent with a message no longer has to be written into the message. Your
+  reply language, your units, which calendars to look at and, on a question about places, roughly
+  where you are went after the message as a note, "(Reply in Dutch.)", "(The user is near …)":
+  the Dashboard takes no instructions with a message. Redde hid the note, but Hermes Desktop and
+  every other app showed it, and so did the first line of the chat in the chat list. Redde after 2.4
+  hands the note to the plugin instead, just before the message, and the plugin gives
+  it to the model with that message only. The message is stored as you typed it. (GitHub issue
+  72.) Older versions of Redde, and a Hermes without this version, work as before.
+- The note is kept on the server for a moment, in `turn-notes.json`, readable only by you, and
+  removed when the message's turn starts, or after two hours if it never does.
+
 ## 1.20.3 (2026-11-09)
 
 - "Send me a message at 7am tomorrow that says good morning" is taken for what it is, a reminder.

@@ -871,6 +871,32 @@ OpenAI-compatible connection as a system message. The Dashboard's `prompt.submit
 instructions, so a short note, "(Reply in Dutch (Nederlands).)", rides on the message; other
 clients show it, and Redde strips it when history loads.
 
+### Turn notes (issue 72)
+
+The reply language is one of several things said to the agent with a message on the Dashboard:
+the units, the calendars chosen, where the person is on a place question, the car's request for
+a short answer, an incognito chat's rule, a call's opening line (`TurnNotes.riding`). With
+Redde's plugin 1.21.0 or later on the Hermes they are not written into the message.
+`HermesServeTransport.hand` sends them first, as `/redde-push turn <stored session> <mark>
+<base64url>` over `command.dispatch` (a millisecond or two in the lab), and the plugin's
+`pre_llm_call` hook returns them as the turn's `context` (`turnnote.py`), which Hermes appends
+for the model alone (its `api_content` sidecar) while the stored message stays as typed. The
+mark is the first 8 bytes of the SHA-256 of the message's words (`TurnNotes.mark`, the same in
+`turnnote.mark`), so a message queued behind another turn takes its own note.
+
+Anything but "redde-push turn kept" means the notes ride on the message as before: no plugin
+(the command is unknown), an older one (its usage line), a call that fails or takes over 4 s. A
+Hermes that refused isn't asked again for an hour or until the socket is opened again
+(`HermesServeClient.takesTurnNotes`), kept per profile: the command names the session, so the
+plugin copy that answers is the one whose hook runs the turn, and a bot whose copy is older
+than the main agent's (or missing) refuses for itself alone (tried in the lab, 0.22.7). What Redde reads back from a message (who an @mention is,
+the files sent with it, a card's answer) stays on the message either way.
+
+A chat's preview is the start of its first message, sixty characters with the line breaks made
+spaces, so a short first message ran on into its notes in the chat list. `TurnNotes.preview`
+cuts a preview at the first note, whole or cut short (`SessionSummary.shownPreview`, a bot's
+row).
+
 ### Dashboard reconnects
 
 The WebSocket client reconnects with exponential backoff (1 s doubling to 30 s) whenever the socket

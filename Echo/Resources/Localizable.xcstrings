@@ -74883,7 +74883,114 @@
         }
       }
     },
+    "Asks the agent to answer in this language, whatever language you write or speak in. On a Hermes Dashboard without the Redde plugin it's added to each message as a note, “(Reply in …)”, which other apps show; Redde hides it. For voice mode, pick a matching Listening language too." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beder agenten om at svare på dette sprog, uanset hvilket sprog du skriver eller taler. På et Hermes Dashboard uden Redde-pluginet tilføjes det til hver besked som en note, “(Reply in …)”, som andre apps viser; Redde skjuler den. Vælg også et matchende lyttesprog til stemmetilstand."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bittet den Agenten, in dieser Sprache zu antworten, egal in welcher Sprache du schreibst oder sprichst. Bei einem Hermes Dashboard ohne das Redde-Plugin wird das jeder Nachricht als Hinweis „(Reply in …)“ angefügt, den andere Apps zeigen; Redde blendet ihn aus. Wähle für den Sprachmodus auch eine passende Erkennungssprache."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pide al agente que responda en este idioma, sea cual sea el idioma en que escribas o hables. En un Hermes Dashboard sin el plugin de Redde se añade a cada mensaje como una nota, “(Reply in …)”, que otras apps muestran; Redde la oculta. Para el modo de voz, elige también un Idioma de escucha que coincida."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande à l’agent de répondre dans cette langue, quelle que soit la langue dans laquelle vous écrivez ou parlez. Sur un Hermes Dashboard sans le plugin Redde, elle est ajoutée à chaque message sous forme de note, « (Reply in …) », que les autres apps affichent ; Redde la masque. Pour le mode vocal, choisissez aussi une Langue d’écoute correspondante."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiede all'agente di rispondere in questa lingua, qualunque sia la lingua in cui scrivi o parli. Su una Hermes Dashboard senza il plugin Redde viene aggiunta a ogni messaggio come nota, “(Reply in …)”, che altre app mostrano; Redde la nasconde. Per la modalità vocale, scegli anche una Lingua di ascolto corrispondente."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "書いたり話したりする言語に関係なく、この言語で回答するようエージェントに求めます。Reddeプラグインのない Hermes Dashboardでは各メッセージに「(Reply in …)」というメモとして追加され、ほかのアプリでは表示されますが、Reddeでは非表示になります。音声モードでは、対応する聞き取り言語も選んでください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "입력하거나 말하는 언어와 관계없이 에이전트에게 이 언어로 응답하도록 요청합니다. Redde 플러그인이 없는 Hermes Dashboard에서는 각 메시지에 “(Reply in …)” 메모로 추가되며, 다른 앱에서는 표시되지만 Redde에서는 가려집니다. 음성 모드의 경우 일치하는 듣기 언어도 선택하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ber agenten svare på dette språket, uansett hvilket språk du skriver eller snakker på. På et Hermes Dashboard uten Redde-tillegget legges det til i hver melding som en merknad, «(Reply in …)», som andre apper viser; Redde skjuler den. For stemmemodus velger du også et tilsvarende lyttespråk."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraagt de agent in deze taal te antwoorden, in welke taal je ook schrijft of spreekt. Op een Hermes Dashboard zonder de Redde-plug-in wordt het als notitie aan elk bericht toegevoegd, ‘(Reply in …)’, die andere apps tonen; Redde verbergt hem. Kies voor spraakmodus ook een passende luistertaal."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prosi agenta o odpowiedzi w tym języku, niezależnie od języka, w którym piszesz lub mówisz. W Hermes Dashboard bez wtyczki Redde jest dodawane do każdej wiadomości jako notatka „(Reply in …)”, którą pokazują inne aplikacje; Redde ją ukrywa. Do trybu głosowego wybierz też pasujący Język słuchania."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pede ao agente para responder neste idioma, qualquer que seja o idioma em que você escreve ou fala. Em um Hermes Dashboard sem o plugin do Redde, isso é adicionado a cada mensagem como uma nota, “(Reply in …)”, que outros apps mostram; o Redde a oculta. Para o modo de voz, escolha também um Idioma de escuta correspondente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просит агента отвечать на этом языке, на каком бы языке вы ни писали или говорили. В Hermes Dashboard без плагина Redde это добавляется к каждому сообщению как пометка «(Reply in …)», которую другие приложения показывают; Redde ее скрывает. Для голосового режима выберите также подходящий язык распознавания."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ber agenten svara på det här språket, oavsett vilket språk du skriver eller talar på. På en Hermes Dashboard utan Redde-tillägget läggs det till i varje meddelande som en anteckning, ”(Reply in …)”, som andra appar visar; Redde döljer den. För röstläge, välj också ett matchande Lyssningsspråk."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hangi dilde yazarsanız ya da konuşursanız konuşun, ajandan bu dilde yanıt vermesini ister. Redde eklentisi olmayan bir Hermes Dashboard'da her mesaja “(Reply in …)” notu olarak eklenir; diğer uygulamalar bunu gösterir, Redde gizler. Sesli mod için uygun bir Dinleme dili de seçin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просить агента відповідати цією мовою, хоч якою мовою ви пишете чи говорите. У Hermes Dashboard без плагіна Redde це додається до кожного повідомлення як примітка «(Reply in …)», яку показують інші програми; Redde її приховує. Для голосового режиму також виберіть відповідну «Мову розпізнавання»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要求智能体用此语言回答，无论你用什么语言书写或说话。在没有Redde插件的Hermes Dashboard上，它会作为备注“(Reply in …)”添加到每条消息中，其他App会显示它；Redde会将其隐藏。对于语音模式，也请选择相应的聆听语言。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要求代理用此語言回答，無論你用什麼語言書寫或說話。在沒有 Redde 外掛的 Hermes Dashboard 上，這會以「(Reply in …)」附註的形式加入每則訊息，其他 App 會顯示，Redde 則會隱藏。若使用語音模式，也請選擇相符的聆聽語言。"
+          }
+        }
+      }
+    },
     "Asks the agent to answer in this language, whatever language you write or speak in. On the Hermes Dashboard it's added to each message as a note, “(Reply in …)”, which other apps show; Redde hides it. For voice mode, pick a matching Listening language too." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {

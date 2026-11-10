@@ -1550,6 +1550,46 @@ struct HermesLabPushTests {
         }
         HermesLabApprovalTests.report(ok, "the app pairs with the plugin over the Dashboard in one step", detail)
     }
+
+    /// What goes with a message for the agent (`TurnNotes`, issue 72, plugin 1.21.0): the plugin
+    /// takes it, the model hears it with the message, and the message is stored as it was typed.
+    /// On a lab with no plugin (`lab.sh up <tag> approval`) it rides on the message, as before.
+    @Test func aTurnsNotesReachTheModelAndStayOffTheMessage() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let typed = "lab:heard what is on tomorrow"
+        var detail = ""
+        var ok = false
+        var what = "a turn's notes reach the model"
+        do {
+            // "lab:heard": the stub answers with the message as it reached the model.
+            var request = TurnRequest(userText: typed, history: [], sessionID: nil, model: nil, instructions: nil)
+            request.replyLanguage = "nl"
+            request.units = .us
+            var reply = "", stored = ""
+            for try await event in HermesServeTransport(client: client).stream(request) {
+                switch event {
+                case let .textDelta(delta): reply += delta
+                case let .textFinal(text): reply = text
+                case let .sessionID(id): stored = id
+                default: break
+                }
+            }
+            let kept = try await client.transcript(stored: stored).filter { $0.role == "user" }.compactMap { $0.content?.text }
+            let heard = reply.contains("(Reply in Dutch (Nederlands).)") && reply.contains("(Use US units.)")
+            if client.takesTurnNotes(in: stored) {
+                what += " through the plugin and stay off the stored message"
+                ok = heard && kept == [typed]
+            } else {
+                what += " on the message where no plugin takes them, and come off when it is read back"
+                ok = heard && kept != [typed] && kept.map { ReplyLanguage.stripNote($0) } == [typed]
+            }
+            detail = "the model heard the notes: \(heard); stored as \(kept)"
+        } catch {
+            detail = String(error.localizedDescription.prefix(200))
+        }
+        HermesLabApprovalTests.report(ok, what, detail)
+    }
 }
 
 /// The app's own side of phone tools against the plugin in an unmodified Hermes

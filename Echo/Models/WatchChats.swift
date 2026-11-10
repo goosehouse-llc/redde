@@ -26,7 +26,7 @@ nonisolated struct WatchChat: Identifiable, Equatable, Sendable {
     private static func title(_ session: HermesSessionsAPI.SessionSummary) -> String {
         let title = (session.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !title.isEmpty { return title }
-        let preview = ReplyLanguage.stripNote(session.preview ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let preview = session.shownPreview ?? ""
         return preview.isEmpty ? String(localized: "Untitled chat") : String(preview.prefix(60))
     }
 

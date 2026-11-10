@@ -67,7 +67,7 @@ struct EarlierChatsView: View {
             if let last = chat.lastActiveDate {
                 Text("Last message \(last.formatted(.relative(presentation: .named)))").font(.caption).foregroundStyle(.secondary)
             }
-            if let preview = chat.preview?.trimmingCharacters(in: .whitespacesAndNewlines), !preview.isEmpty {
+            if let preview = chat.shownPreview {
                 Text(PlainText.display(preview)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
             }
         }

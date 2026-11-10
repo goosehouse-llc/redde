@@ -116,7 +116,8 @@ up() {
   # own code under Node) and a stand-in for Apple that records what it is sent.
   if [[ "$scenario" == push ]]; then
     mkdir -p "$HERMES_HOME/plugins"
-    cp -R "$REPO/companion/hermes-plugin/redde-push" "$HERMES_HOME/plugins/redde-push"
+    # (LAB_PLUGIN=<folder>: another copy of the plugin, an older release's, for what the app does with one.)
+    cp -R "${LAB_PLUGIN:-$REPO/companion/hermes-plugin/redde-push}" "$HERMES_HOME/plugins/redde-push"
     export REDDE_PUSH_RELAY=http://127.0.0.1:18980   # the relay the plugin offers an app that pairs over the Dashboard
   else
     unset REDDE_PUSH_RELAY 2>/dev/null || true
@@ -134,6 +135,12 @@ up() {
   if [[ -n "${LAB_API_BOT:-}" ]]; then
     (export HOME="$run/home"; mkdir -p "$HOME"; "$hermes" profile create "$LAB_API_BOT" --clone --no-alias > "$run/profile.log" 2>&1)
     print "API_SERVER_KEY=${LAB_API_BOT}key-${LAB_API_BOT}key-${LAB_API_BOT}key" > "$HERMES_HOME/profiles/$LAB_API_BOT/.env"
+    # Its own copy of Redde's plugin (the clone has the main profile's): LAB_BOT_PLUGIN=<folder> puts
+    # another in its place, an older release's, and LAB_BOT_PLUGIN=none leaves the bot without one.
+    if [[ -n "${LAB_BOT_PLUGIN:-}" ]]; then
+      rm -rf "$HERMES_HOME/profiles/$LAB_API_BOT/plugins/redde-push"
+      [[ "$LAB_BOT_PLUGIN" == none ]] || cp -R "$LAB_BOT_PLUGIN" "$HERMES_HOME/profiles/$LAB_API_BOT/plugins/redde-push"
+    fi
   fi
   # And one with the main profile's key (LAB_API_BOT_SHARED=<name>): cloned, and the main key put in
   # its .env, as a person does for it (0.21.0's clone copies it; 0.21.3 and later leave it out).

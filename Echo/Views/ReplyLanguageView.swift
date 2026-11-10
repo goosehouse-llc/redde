@@ -18,7 +18,7 @@ struct ReplyLanguageView: View {
                 Section {
                     row(code: "", title: String(localized: "Automatic"), detail: String(localized: "The language you write or speak in"))
                 } footer: {
-                    Text("Asks the agent to answer in this language, whatever language you write or speak in. On the Hermes Dashboard it's added to each message as a note, “(Reply in …)”, which other apps show; Redde hides it. For voice mode, pick a matching Listening language too.")
+                    Text("Asks the agent to answer in this language, whatever language you write or speak in. On a Hermes Dashboard without the Redde plugin it's added to each message as a note, “(Reply in …)”, which other apps show; Redde hides it. For voice mode, pick a matching Listening language too.")
                 }
             }
             Section("Languages") {

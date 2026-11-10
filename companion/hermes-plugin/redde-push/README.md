@@ -122,7 +122,10 @@ agents each phone takes calls from, and the calls of the last day), and `keys.js
 (the keys agents have asked for: each request's name, profile and why, never a value, and a key
 pair made for that request alone, deleted once it is answered), and `leave.json` (when to wake
 each device for Leave-By Alerts' traffic re-check: an opaque id, the event's title and a time,
-each forgotten once sent). Delete the folder and nothing is paired.
+each forgotten once sent), and `turn-notes.json` (what Redde says to the agent with a message it
+is about to send: your reply language, your units and, on a question about places, roughly where
+you are; removed when that message's turn starts, see "With a message" below). Delete the folder
+and nothing is paired.
 
 ## Phone tools
 
@@ -281,6 +284,22 @@ them all (`leave cancel <device>`). Each wake is sent once, from the thread that
 schedules (every half minute), then forgotten; one more than fifteen minutes late (Hermes was
 down) is let go unsent. At most 30 a device, the soonest. Over the Hermes API alone there is no
 way for the app to say any of this, and Leave-By Alerts work as before.
+
+## With a message (1.21.0)
+
+Some of your settings in Redde are things the agent has to hear with a message: the language to
+reply in, your units, which calendars to look at, roughly where you are when you ask about a
+place (only with Current Location on), "keep it short, I'm driving". The Hermes API takes them
+as the turn's instructions. The Dashboard takes none, so Redde used to write them after the
+message as a note, "(Reply in Dutch.)", which Redde hides and every other app shows.
+
+From 1.21.0 Redde hands the note to the plugin just before it sends the message
+(`/redde-push turn <session> <mark> <note>`, the mark being a hash of the message's words), and
+the plugin gives it to the model as that turn's context: Hermes puts a plugin's context after
+the message for the model alone, and stores the message as it was typed. The note is kept in
+`turn-notes.json` until the turn starts (a message queued behind another turn finds its own by
+the mark), two hours at most. On a Hermes with an older plugin, or none, Redde writes the note
+after the message as before.
 
 ## Requirements
 
