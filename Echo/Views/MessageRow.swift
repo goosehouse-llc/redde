@@ -349,7 +349,8 @@ struct MessageRow: View, Equatable {
         let open = showTurnActivity ?? isLive
         return VStack(alignment: .leading, spacing: 2) {
             foldHeader(open: open,
-                       hint: open ? String(localized: "Hide turn activity") : String(localized: "Show turn activity")) {
+                       hint: open ? String(localized: "Hide turn activity", comment: "VoiceOver: folds away everything the agent thought and did in one turn")
+                                  : String(localized: "Show turn activity", comment: "VoiceOver: opens everything the agent thought and did in one turn")) {
                 withAnimation(.snappy(duration: 0.3)) { showTurnActivity = !open }
             } label: {
                 Text(isLive ? activity.workingLabel : activity.completedLabel).monospacedDigit()

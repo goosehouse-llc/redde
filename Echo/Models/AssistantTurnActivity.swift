@@ -29,16 +29,16 @@ nonisolated struct AssistantTurnActivity: Equatable, Sendable {
     var toolCount: Int { segments.reduce(0) { $0 + $1.tools.count } }
     var thoughtCount: Int { segments.count { !$0.reasoning.isEmpty } }
 
+    // The same words as a single reply's steps fold ("Used …", "Working · …").
     var completedLabel: String { String(localized: "Used \(summary)") }
-    var workingLabel: String { String(localized: "Working") + " · " + summary }
+    var workingLabel: String { String(localized: "Working · \(summary)") }
 
     private var summary: String {
         var parts: [String] = []
-        if toolCount > 0 {
-            parts.append(toolCount == 1 ? String(localized: "1 tool") : String(localized: "\(toolCount) tools"))
-        }
+        if toolCount > 0 { parts.append(String(localized: "\(toolCount) tools")) }
         if thoughtCount > 0 {
-            parts.append(thoughtCount == 1 ? String(localized: "1 thought") : String(localized: "\(thoughtCount) thoughts"))
+            parts.append(String(localized: "\(thoughtCount) thoughts",
+                                comment: "Turn activity summary: how many times the agent reasoned in one turn"))
         }
         return parts.joined(separator: " · ")
     }
