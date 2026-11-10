@@ -601,23 +601,69 @@ struct KeepACopyTests {
         #expect(service.copySentAt == now && service.copyFailure == nil)
     }
 
-    @Test func theCalendarCopyIsTheWeekBehindAndTwoMonthsAhead() async throws {
-        let plugin = Plugin()
+    /// A Keep a Copy service whose calendar answers the fetch ahead (from now) with `ahead` and the
+    /// one behind with `behind`; what it was asked is in the box.
+    private func copyService(_ plugin: Plugin, now: Date, ahead: [JSONValue], behind: [JSONValue])
+        -> (DeviceToolsService, Box<[(args: JSONValue, info: JSONValue)]>) {
         let defaults = UserDefaults(suiteName: "keep-a-copy-\(UUID().uuidString)")!
         let settings = Settings(defaults: defaults)
         settings.phoneTools.on = true
         settings.phoneTools.set(.calendar, .allow)
         settings.phoneTools.copy = true
-        var asked: JSONValue?
+        let asked = Box<[(args: JSONValue, info: JSONValue)]>([])
         let service = DeviceToolsService(settings: settings, defaults: defaults, command: { plugin.commands.append($0); return plugin.reply($0) },
-                                         run: { _, args, _ in asked = args; return .object(["events": .array([])]) },
+                                         run: { _, args, info in
+                                             asked.value.append((args, info))
+                                             let start = args["start"]?.string.flatMap { DeviceDates.parse($0) } ?? now
+                                             return .object(["events": .array(start < now.addingTimeInterval(-60) ? behind : ahead)])
+                                         },
                                          ask: { _ in .allow }, onScreen: { true })
+        return (service, asked)
+    }
+
+    private func event(_ id: String, _ hours: Double, from now: Date) -> JSONValue {
+        .object(["id": .string(id), "title": .string(id), "start": .string(DeviceDates.string(now.addingTimeInterval(hours * 3600)))])
+    }
+
+    @Test func theCalendarCopyIsTheComingTwoMonthsThenThePastWeek() async throws {
+        let plugin = Plugin()
         let now = Date(timeIntervalSince1970: 1_793_000_000)
+        // "under way" began an hour ago: both fetches find it.
+        let ahead = [event("under way", -1, from: now), event("tomorrow", 24, from: now), event("next month", 800, from: now)]
+        let behind = [event("monday", -100, from: now), event("yesterday", -24, from: now), event("under way", -1, from: now)]
+        let (service, asked) = copyService(plugin, now: now, ahead: ahead, behind: behind)
+        #expect(await service.refreshCopies(now: now))
+        let titles = plugin.synced("calendar")?["events"]?.array?.compactMap { $0["title"]?.string }
+        #expect(titles == ["monday", "yesterday", "under way", "tomorrow", "next month"])
+        try #require(asked.value.count == 2)
+        let windows = asked.value.map { ask in
+            ["start", "end"].map { ask.args[$0]?.string.flatMap { DeviceDates.parse($0) }?.timeIntervalSince(now) ?? .nan }
+        }
+        #expect(abs(windows[0][0]) < 2 && abs(windows[0][1] - 60 * 86400) < 2, "ahead first: now to two months on")
+        #expect(abs(windows[1][0] + 7 * 86400) < 2 && abs(windows[1][1]) < 2, "then the past week")
+        #expect(asked.value.allSatisfy { $0.args["limit"]?.int == 500 && $0.info["copy_most"]?.int == 500 })
+    }
+
+    @Test func aFullTwoMonthsLeavesThePastWeekOut() async {
+        let plugin = Plugin()
+        let now = Date(timeIntervalSince1970: 1_793_000_000)
+        let ahead = (0..<500).map { event("a\($0)", Double($0), from: now) }
+        let (service, asked) = copyService(plugin, now: now, ahead: ahead, behind: [event("old", -24, from: now)])
         await service.refreshCopies(now: now)
-        let start = try #require(asked?["start"]?.string.flatMap { DeviceDates.parse($0) })
-        let end = try #require(asked?["end"]?.string.flatMap { DeviceDates.parse($0) })
-        // Not a year back: 200 events from then would be all old ones on a busy calendar.
-        #expect(abs(start.timeIntervalSince(now) + 7 * 86400) < 2 && abs(end.timeIntervalSince(now) - 60 * 86400) < 2)
+        #expect(plugin.synced("calendar")?["events"]?.array?.count == 500)
+        #expect(asked.value.count == 1, "no room: the past week isn't fetched")
+    }
+
+    @Test func thePastWeekFillsTheRoomLeftWithItsLatest() async {
+        let plugin = Plugin()
+        let now = Date(timeIntervalSince1970: 1_793_000_000)
+        let ahead = (0..<498).map { event("a\($0)", Double($0 + 1), from: now) }
+        let behind = (1...5).reversed().map { event("b\($0)", Double(-$0 * 10), from: now) }
+        let (service, _) = copyService(plugin, now: now, ahead: ahead, behind: behind)
+        await service.refreshCopies(now: now)
+        let events = plugin.synced("calendar")?["events"]?.array ?? []
+        #expect(events.count == 500)
+        #expect(events.prefix(2).compactMap { $0["title"]?.string } == ["b2", "b1"], "the two nearest now")
     }
 
     @Test func comingToTheFrontSendsAtMostEveryTenMinutes() async {

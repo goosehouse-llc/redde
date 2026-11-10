@@ -401,19 +401,7 @@ final class DeviceToolsService {
         defer { isSendingCopy = false }
         do {
             if settings.phoneTools.access(.calendar) != .off {
-                // The past week and the coming two months, soonest first, at the tool's widest
-                // fetch: what scheduled jobs and quick questions ask about. (From a year back, 200
-                // events would be all old ones on a busy calendar.)
-                let wide = JSONValue.object([
-                    "start": .string(DeviceDates.string(now.addingTimeInterval(-7 * 86400))),
-                    "end": .string(DeviceDates.string(now.addingTimeInterval(60 * 86400))),
-                    "limit": .number(200),
-                ])
-                // Not readable (iOS access not given): said, rather than "sent" with nothing in it.
-                guard let events = try await run(.calendarEvents, wide, .object([:]))["events"]?.array else {
-                    throw DeviceToolError("the calendar couldn't be read.")
-                }
-                try await syncCopy("calendar", ["events": .array(events)])
+                try await syncCopy("calendar", ["events": .array(try await calendarCopy(now: now))])
             }
             if settings.phoneTools.access(.reminders) != .off {
                 // The ones still to do: done ones would crowd them out of the 200, and the
@@ -432,6 +420,35 @@ final class DeviceToolsService {
             logger.error("the copy of the calendar and reminders didn't reach the server: \(error.localizedDescription)")
             return false
         }
+    }
+
+    /// As many events as the plugin takes in a copy (its `_COPY_ITEMS`).
+    static let copyMost = 500
+
+    /// Keep a Copy's events: the coming two months first, then as much of the past week as there
+    /// is room for, the latest of it first. At 200 soonest-first, a busy calendar's copy ended
+    /// a month out, with last week's events taking room (11-10). Chronological, as the tool's.
+    func calendarCopy(now: Date) async throws -> [JSONValue] {
+        let most = Self.copyMost
+        func fetch(from: TimeInterval, to: TimeInterval, limit: Int) async throws -> [JSONValue] {
+            let args = JSONValue.object([
+                "start": .string(DeviceDates.string(now.addingTimeInterval(from))),
+                "end": .string(DeviceDates.string(now.addingTimeInterval(to))),
+                "limit": .number(Double(limit)),
+            ])
+            // Not readable (iOS access not given): said, rather than "sent" with nothing in it.
+            guard let events = try await run(.calendarEvents, args, .object(["copy_most": .number(Double(most))]))["events"]?.array else {
+                throw DeviceToolError("the calendar couldn't be read.")
+            }
+            return events
+        }
+        let ahead = Array(try await fetch(from: 0, to: 60 * 86400, limit: most).prefix(most))
+        guard ahead.count < most else { return ahead }
+        // An event under way now is in both: kept once, from the fetch ahead.
+        func key(_ event: JSONValue) -> String { "\(event["id"]?.string ?? "")|\(event["start"]?.string ?? "")" }
+        let seen = Set(ahead.map(key))
+        let behind = try await fetch(from: -7 * 86400, to: 0, limit: most).filter { !seen.contains(key($0)) }
+        return behind.suffix(most - ahead.count) + ahead
     }
 
     /// When the copy last reached the server, from this phone.

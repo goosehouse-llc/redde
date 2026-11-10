@@ -31,8 +31,8 @@ nonisolated enum DeviceCalendar {
     }
 
     /// `start`, `end` (default: now and a week on), `query` (words in the title, place or
-    /// notes), `limit`.
-    static func events(_ args: JSONValue, now: Date = .now) async throws -> JSONValue {
+    /// notes), `limit`. `most` is the agent's 200, or Keep a Copy's larger fetch.
+    static func events(_ args: JSONValue, now: Date = .now, most: Int = 200) async throws -> JSONValue {
         guard await allowed(.event) else { throw DeviceToolError.refused(.calendar) }
         let start = try args.date("start") ?? now
         var end = try args.date("end") ?? start.addingTimeInterval(7 * 86400)
@@ -49,7 +49,7 @@ nonisolated enum DeviceCalendar {
                 query.isEmpty || [event.title, event.location, event.notes].contains { $0?.lowercased().contains(query) == true }
             }
             .sorted { $0.startDate < $1.startDate }
-        let limit = args.limit(default: 50, most: 200)
+        let limit = args.limit(default: 50, most: most)
         return .object([
             "events": .array(found.prefix(limit).map(describe)),
             "more": .number(Double(max(0, found.count - limit))),

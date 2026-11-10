@@ -21,7 +21,8 @@ nonisolated struct DeviceToolRunner: Sendable {
     func run(_ tool: DeviceTool, _ args: JSONValue, info: JSONValue = .object([:])) async throws -> JSONValue {
         switch tool {
         case .info: info
-        case .calendarEvents: try await DeviceCalendar.events(args)
+        // `copy_most` comes only from Keep a Copy (the agent's arguments are `args`, not `info`).
+        case .calendarEvents: try await DeviceCalendar.events(args, most: info["copy_most"]?.int ?? 200)
         case .calendarAdd: try await DeviceCalendar.addEvent(args)
         case .remindersList: try await DeviceCalendar.reminders(args)
         case .remindersAdd: try await DeviceCalendar.addReminder(args)
