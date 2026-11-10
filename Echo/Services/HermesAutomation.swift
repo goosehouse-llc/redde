@@ -572,7 +572,48 @@ struct KanbanClient {
         #endif
         return Settings.shared.serveBaseURL != nil && HermesServeClient.shared.hasCredentials
     }
-    static let base = "api/plugins/kanban"
+    nonisolated static let base = "api/plugins/kanban"
+
+    /// A route on one of Hermes's boards. Hermes keeps several (a `default` and any made beside
+    /// it) and every route takes which in `?board=`; with none it answers for the board current
+    /// on the server, which is what the rest of Redde works on (goals, hand-offs, approvals).
+    /// The Kanban screen names the board it shows (GitHub issue 65: only the current one could
+    /// be seen from the phone).
+    nonisolated static func path(_ tail: String, board: String?) -> String {
+        guard let board, !board.isEmpty,
+              let slug = board.addingPercentEncoding(withAllowedCharacters: .alphanumerics.union(CharacterSet(charactersIn: "-_.~"))) else { return "\(base)/\(tail)" }
+        return "\(base)/\(tail)?board=\(slug)"
+    }
+
+    /// One of Hermes's boards, as the switcher lists it.
+    nonisolated struct BoardInfo: Identifiable, Equatable, Sendable {
+        var slug: String
+        var name: String
+        /// Its cards, those archived left out.
+        var total: Int
+        /// The board Hermes has current: where cards made elsewhere go.
+        var isCurrent: Bool
+
+        var id: String { slug }
+
+        init?(_ json: JSONValue) {
+            guard let slug = json["slug"]?.string, json["archived"]?.bool != true else { return nil }
+            self.slug = slug
+            let name = json["name"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            self.name = name.isEmpty ? slug : name
+            total = json["total"]?.int ?? 0
+            isCurrent = json["is_current"]?.bool ?? false
+        }
+    }
+
+    /// Hermes's boards, the default first (`GET /boards`, there since 2026.8.31).
+    static func boards() async throws -> [BoardInfo] {
+        #if DEBUG
+        if isDemo { return demoBoards() }
+        #endif
+        let json = try await HermesServeClient.shared.restJSON("GET", "\(base)/boards")
+        return (json["boards"]?.array ?? []).compactMap(BoardInfo.init)
+    }
 
     struct Board: Sendable {
         var columns: [KanbanColumn]
@@ -580,11 +621,11 @@ struct KanbanClient {
         var assignees: [String]
     }
 
-    static func board() async throws -> Board {
+    static func board(_ board: String? = nil) async throws -> Board {
         #if DEBUG
-        if isDemo { return demoBoard() }
+        if isDemo { return demoBoard(board) }
         #endif
-        let json = try await HermesServeClient.shared.restJSON("GET", "\(base)/board")
+        let json = try await HermesServeClient.shared.restJSON("GET", path("board", board: board))
         let columns = (json["columns"]?.array ?? []).compactMap { col -> KanbanColumn? in
             guard let name = col["name"]?.string else { return nil }
             return KanbanColumn(name: name, tasks: (col["tasks"]?.array ?? []).compactMap(KanbanTask.init))
@@ -594,38 +635,38 @@ struct KanbanClient {
     }
 
     /// Edit the card's own fields. Pass nil to leave a field alone.
-    static func edit(_ id: String, title: String?, body: String?, priority: Int?, assignee: String?) async throws {
+    static func edit(_ id: String, title: String?, body: String?, priority: Int?, assignee: String?, board: String? = nil) async throws {
         var fields: [String: JSONValue] = [:]
         if let title { fields["title"] = .string(title) }
         if let body { fields["body"] = .string(body) }
         if let priority { fields["priority"] = .number(Double(priority)) }
         if let assignee { fields["assignee"] = .string(assignee) }
         guard !fields.isEmpty else { return }
-        try await patch(id, fields)
+        try await patch(id, fields, board: board)
     }
 
     /// Move with the context the server wants: a reason for Blocked/Scheduled, a summary for Review/Done.
-    static func move(_ id: String, to status: String, reason: String? = nil, summary: String? = nil) async throws {
+    static func move(_ id: String, to status: String, reason: String? = nil, summary: String? = nil, board: String? = nil) async throws {
         var fields: [String: JSONValue] = ["status": .string(status)]
         if let reason, !reason.isEmpty { fields["block_reason"] = .string(reason) }
         if let summary, !summary.isEmpty { fields["summary"] = .string(summary) }
-        try await patch(id, fields)
+        try await patch(id, fields, board: board)
     }
 
-    static func task(_ id: String) async throws -> (KanbanTask, [KanbanComment], [KanbanAttachment]) {
-        let detail = try await detail(id)
+    static func task(_ id: String, board: String? = nil) async throws -> (KanbanTask, [KanbanComment], [KanbanAttachment]) {
+        let detail = try await detail(id, board: board)
         return (detail.task, detail.comments, detail.attachments)
     }
 
     /// A card with its timeline and its runs (`/tasks/<id>` lists them beside its comments and
     /// attachments).
-    static func detail(_ id: String) async throws -> KanbanDetail {
+    static func detail(_ id: String, board: String? = nil) async throws -> KanbanDetail {
         #if DEBUG
-        if isDemo, let card = demoBoard().columns.flatMap(\.tasks).first(where: { $0.id == id }) {
+        if isDemo, let card = demoBoard(board).columns.flatMap(\.tasks).first(where: { $0.id == id }) {
             return KanbanDetail(task: card, comments: [], attachments: [], events: [], runs: [])
         }
         #endif
-        let json = try await HermesServeClient.shared.restJSON("GET", "\(base)/tasks/\(id)")
+        let json = try await HermesServeClient.shared.restJSON("GET", path("tasks/\(id)", board: board))
         guard let t = json["task"].flatMap(KanbanTask.init) else { throw TransportError.malformed("no task") }
         return KanbanDetail(task: t, comments: (json["comments"]?.array ?? []).compactMap(KanbanComment.init),
                             attachments: (json["attachments"]?.array ?? []).compactMap(KanbanAttachment.init),
@@ -634,8 +675,8 @@ struct KanbanClient {
     }
 
     /// An attachment's contents, as text.
-    static func attachmentText(_ id: Int) async throws -> String {
-        String(decoding: try await HermesServeClient.shared.restData("\(base)/attachments/\(id)"), as: UTF8.self)
+    static func attachmentText(_ id: Int, board: String? = nil) async throws -> String {
+        String(decoding: try await HermesServeClient.shared.restData(path("attachments/\(id)", board: board)), as: UTF8.self)
     }
 
     /// The change a card carries: its newest patch, and the notes left with it.
@@ -646,39 +687,39 @@ struct KanbanClient {
     }
 
     /// A card's change, or nil when it has no patch on it.
-    static func change(of id: String) async throws -> CardChange? {
-        let (task, _, attachments) = try await self.task(id)
+    static func change(of id: String, board: String? = nil) async throws -> CardChange? {
+        let (task, _, attachments) = try await self.task(id, board: board)
         guard let patch = attachments.last(where: \.isPatch) else { return nil }
         var notes: String?
-        if let note = attachments.last(where: \.isNotes) { notes = try? await attachmentText(note.id) }
-        return CardChange(task: task, patch: try await attachmentText(patch.id), notes: notes)
+        if let note = attachments.last(where: \.isNotes) { notes = try? await attachmentText(note.id, board: board) }
+        return CardChange(task: task, patch: try await attachmentText(patch.id, board: board), notes: notes)
     }
 
-    static func create(title: String, body: String?, priority: Int, assignee: String?, ready: Bool) async throws -> String? {
+    static func create(title: String, body: String?, priority: Int, assignee: String?, ready: Bool, board: String? = nil) async throws -> String? {
         var fields: [String: JSONValue] = ["title": .string(title), "priority": .number(Double(priority)), "triage": .bool(!ready)]
         if let body, !body.isEmpty { fields["body"] = .string(body) }
         if let assignee, !assignee.isEmpty { fields["assignee"] = .string(assignee) }
-        let json = try await HermesServeClient.shared.restJSON("POST", "\(base)/tasks", body: .object(fields))
-        Task { try? await nudge() }
+        let json = try await HermesServeClient.shared.restJSON("POST", path("tasks", board: board), body: .object(fields))
+        Task { try? await nudge(board: board) }
         return json["warning"]?.string
     }
 
-    static func patch(_ id: String, _ fields: [String: JSONValue]) async throws {
-        _ = try await HermesServeClient.shared.restJSON("PATCH", "\(base)/tasks/\(id)", body: .object(fields))
-        Task { try? await nudge() }
+    static func patch(_ id: String, _ fields: [String: JSONValue], board: String? = nil) async throws {
+        _ = try await HermesServeClient.shared.restJSON("PATCH", path("tasks/\(id)", board: board), body: .object(fields))
+        Task { try? await nudge(board: board) }
     }
 
-    static func delete(_ id: String) async throws {
-        _ = try await HermesServeClient.shared.restJSON("DELETE", "\(base)/tasks/\(id)")
+    static func delete(_ id: String, board: String? = nil) async throws {
+        _ = try await HermesServeClient.shared.restJSON("DELETE", path("tasks/\(id)", board: board))
     }
 
-    static func comment(_ id: String, _ text: String) async throws {
-        _ = try await HermesServeClient.shared.restJSON("POST", "\(base)/tasks/\(id)/comments",
+    static func comment(_ id: String, _ text: String, board: String? = nil) async throws {
+        _ = try await HermesServeClient.shared.restJSON("POST", path("tasks/\(id)/comments", board: board),
                                                         body: .object(["author": .string("redde"), "body": .string(text)]))
     }
 
-    static func assignees() async throws -> [String] {
-        let json = try await HermesServeClient.shared.restJSON("GET", "\(base)/assignees")
+    static func assignees(board: String? = nil) async throws -> [String] {
+        let json = try await HermesServeClient.shared.restJSON("GET", path("assignees", board: board))
         return (json.array ?? json["assignees"]?.array ?? []).compactMap { $0.string ?? $0["name"]?.string }
     }
 
@@ -692,9 +733,11 @@ struct KanbanClient {
         private(set) var isLive = false
         var onChange: (@MainActor ([String]) -> Void)?   // touched task ids (empty = refresh all)
 
-        func start(since cursor: Int) {
+        /// `slug`: which of Hermes's boards to follow (nil, its current one). The socket is the
+        /// board's from its opening: another board is another socket.
+        func start(since cursor: Int, on slug: String? = nil) {
             stop()
-            task = Task { [weak self] in await Self.run(since: cursor, board: self) }
+            task = Task { [weak self] in await Self.run(since: cursor, board: self, slug: slug) }
         }
 
         #if DEBUG
@@ -714,14 +757,15 @@ struct KanbanClient {
 
         /// Holds the board weakly: the loop only ever touches it between awaits, so releasing
         /// the board ends the loop instead of the loop keeping the board alive.
-        private static func run(since: Int, board: LiveBoard?) async {
+        private static func run(since: Int, board: LiveBoard?, slug: String?) async {
             weak let board = board
             var cursor = since
             var backoff: Double = 2
             while !Task.isCancelled, board != nil {
                 do {
                     let ws = try await HermesServeClient.shared.openPluginSocket(
-                        path: "\(KanbanClient.base)/events", query: [.init(name: "since", value: String(cursor))])
+                        path: "\(KanbanClient.base)/events",
+                        query: [.init(name: "since", value: String(cursor))] + (slug.map { [.init(name: "board", value: $0)] } ?? []))
                     guard board != nil else { ws.cancel(with: .goingAway, reason: nil); return }
                     board?.socket = ws
                     board?.isLive = true
@@ -754,8 +798,8 @@ struct KanbanClient {
     }
 
     /// Wake the dispatcher so a new `ready` card starts without waiting for the 60 s tick.
-    static func nudge() async throws {
-        _ = try await HermesServeClient.shared.restJSON("POST", "\(base)/dispatch")
+    static func nudge(board: String? = nil) async throws {
+        _ = try await HermesServeClient.shared.restJSON("POST", path("dispatch", board: board))
     }
 }
 
@@ -764,7 +808,13 @@ extension KanbanClient {
     /// Screenshot helper (`-echo.demoKanban`): a sample board instead of the plugin's.
     static var isDemo: Bool { DevHooks.demoKanban }
 
-    static func demoBoard() -> Board {
+    /// Two boards (`-echo.demoKanban`), so the switcher shows: the household's, and a second one.
+    static func demoBoards() -> [BoardInfo] {
+        [BoardInfo(.object(["slug": .string("default"), "name": .string("Household"), "total": .number(11), "is_current": .bool(true)])),
+         BoardInfo(.object(["slug": .string("garden"), "name": .string("Garden"), "total": .number(2)]))].compactMap(\.self)
+    }
+
+    static func demoBoard(_ slug: String? = nil) -> Board {
         let now = Date.now.timeIntervalSince1970
         func card(_ id: String, _ title: String, _ summary: String, _ status: String, priority: Int = 0,
                   assignee: String? = "redde", ago: TimeInterval, comments: Int = 0) -> JSONValue {
@@ -774,6 +824,13 @@ extension KanbanClient {
             ]
             if let assignee { j["assignee"] = .string(assignee) }
             return .object(j)
+        }
+        if slug == "garden" {
+            let cards = [card("g1", "Order the tomato seeds", "San Marzano and one cherry kind, before March.", "todo", ago: 4_000),
+                         card("g2", "Plan the raised beds", "Two beds, 1.2 by 2.4 m, where the old shed stood.", "ready", ago: 50_000)]
+            return Board(columns: KanbanStatus.columns.map { name in
+                KanbanColumn(name: name, tasks: cards.compactMap(KanbanTask.init).filter { $0.status == name })
+            }, latestEventID: 0, assignees: ["redde", "home"])
         }
         let cards = [
             card("t1", "Compare heat pump quotes", "Three installers so far. Pull the SEER ratings and rebates into one table.", "todo", priority: 2, ago: 5_400, comments: 2),

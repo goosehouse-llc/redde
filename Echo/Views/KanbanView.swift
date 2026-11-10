@@ -8,6 +8,12 @@ struct KanbanView: View {
     @State private var latestEventID = 0
     @State private var columns: [KanbanColumn] = []
     @State private var assignees: [String] = []
+    /// Hermes's boards, when it keeps more than the one (GitHub issue 65: only the current board
+    /// could be seen). The switcher shows from two.
+    @State private var boards: [KanbanClient.BoardInfo] = []
+    /// The board shown: nil is the one Hermes has current. Remembered per server (`boardKey`).
+    @State private var board: String?
+    @State private var boardRead = false
     /// Kept across rebuilds (the board goes away while the iPhone's panel is closed).
     @SceneStorage("kanban.column") private var selected = "todo"
     @State private var error: String?
@@ -70,7 +76,13 @@ struct KanbanView: View {
                         }
                 }
             } header: {
-                if !columns.isEmpty { columnPicker.listRowInsets(EdgeInsets()) }
+                if !columns.isEmpty || boards.count > 1 {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if boards.count > 1 { boardPicker }
+                        if !columns.isEmpty { columnPicker }
+                    }
+                    .listRowInsets(EdgeInsets())
+                }
             }
         }
         .listStyle(.plain)
@@ -89,7 +101,7 @@ struct KanbanView: View {
             }
         }
         .task {
-            await refresh()
+            await refresh(boards: true)
             // Cancelled mid-fetch (tab switched, sheet closed): onDisappear already stopped
             // the socket, and starting it now would leave a loop running for the process.
             guard !Task.isCancelled else { return }
@@ -98,13 +110,13 @@ struct KanbanView: View {
         .onAppear { visible = true }
         .onDisappear { visible = false; live.stop() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await refresh(); if visible { startLive() } } } else { live.stop() }
+            if phase == .active { Task { await refresh(boards: true); if visible { startLive() } } } else { live.stop() }
         }
-        .refreshable { await refresh() }
-        .sheet(isPresented: $creating) { KanbanCardEditor(task: nil, assignees: assignees) { await refresh() } }
-        .sheet(item: $editing) { task in KanbanCardEditor(task: task, assignees: assignees) { await refresh() } }
+        .refreshable { await refresh(boards: true) }
+        .sheet(isPresented: $creating) { KanbanCardEditor(task: nil, assignees: assignees, board: board) { await refresh() } }
+        .sheet(item: $editing) { task in KanbanCardEditor(task: task, assignees: assignees, board: board) { await refresh() } }
         .sheet(item: Binding(get: { detailID.map { IDBox(id: $0) } }, set: { detailID = $0?.id })) { box in
-            KanbanCardDetail(taskID: box.id, assignees: assignees) { await refresh() }
+            KanbanCardDetail(taskID: box.id, assignees: assignees, board: board) { await refresh() }
         }
         .alert(moveTitle, isPresented: Binding(get: { moving != nil }, set: { if !$0 { moving = nil } })) {
             TextField(movePlaceholder, text: $moveNote)
@@ -132,10 +144,68 @@ struct KanbanView: View {
         if KanbanClient.isDemo { live.showLiveForDemo(); return }
         #endif
         live.onChange = { _ in Task { await refresh() } }
-        live.start(since: latestEventID)
+        live.start(since: latestEventID, on: board)
     }
 
     private struct IDBox: Identifiable { let id: String }
+
+    /// Where the board picked for a server is kept.
+    private var boardKey: String {
+        #if DEBUG
+        // The sample boards start on the first each time: a pick kept from one UI test sent the next astray.
+        if KanbanClient.isDemo { return "kanban.board.demo.unkept" }
+        #endif
+        return "kanban.board." + Settings.shared.connectionKey
+    }
+
+    /// The board on screen, by its row in the list: the one picked, else Hermes's current one.
+    private var shownBoard: KanbanClient.BoardInfo? {
+        boards.first { $0.slug == board } ?? (board == nil ? boards.first(where: \.isCurrent) : nil)
+    }
+
+    /// Which board: its name over the columns, a menu of them all under it.
+    private var boardPicker: some View {
+        Menu {
+            Picker("Board", selection: Binding(get: { shownBoard?.slug ?? "" }, set: { pick($0) })) {
+                ForEach(boards) { info in
+                    Text(verbatim: "\(info.name) (\(info.total))").tag(info.slug)
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "rectangle.3.group")
+                Text(verbatim: shownBoard?.name ?? String(localized: "Board")).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down").chatFont(size: 9, weight: .semibold).foregroundStyle(.secondary)
+            }
+            .chatFont(.subheadline, weight: .semibold)
+            .foregroundStyle(theme.textColor)
+            .padding(.horizontal, 14).padding(.top, 8).padding(.bottom, 2)
+            .contentShape(.rect)
+        }
+        .accessibilityLabel("Board: \(shownBoard?.name ?? "")")
+        .accessibilityHint("Choose another board")
+    }
+
+    private func remember(_ slug: String?) {
+        #if DEBUG
+        if KanbanClient.isDemo { return }
+        #endif
+        UserDefaults.standard.set(slug, forKey: boardKey)
+    }
+
+    /// Another board picked: its cards, and its own live updates.
+    private func pick(_ slug: String) {
+        guard slug != shownBoard?.slug, boards.contains(where: { $0.slug == slug }) else { return }
+        board = slug
+        remember(slug)
+        columns = []
+        latestEventID = 0
+        live.stop()
+        Task {
+            await refresh()
+            if visible { startLive() }
+        }
+    }
 
     private var columnPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -205,13 +275,27 @@ struct KanbanView: View {
         }
     }
 
-    private func refresh() async {
+    /// `boards`: the list of boards read again too (as the screen opens, comes back, or is pulled),
+    /// not with every card that changes.
+    private func refresh(boards listing: Bool = false) async {
         available = KanbanClient.isAvailable
         guard available else { return }
         loading = true
         defer { loading = false }
+        if !boardRead {
+            boardRead = true
+            board = UserDefaults.standard.string(forKey: boardKey)
+        }
+        if listing, let listed = try? await KanbanClient.boards() {
+            boards = listed
+            // One picked earlier that Hermes no longer has: back to its current board.
+            if let picked = board, !listed.contains(where: { $0.slug == picked }) {
+                board = nil
+                remember(nil)
+            }
+        }
         do {
-            let board = try await KanbanClient.board()
+            let board = try await KanbanClient.board(self.board)
             columns = board.columns
             assignees = board.assignees
             latestEventID = max(latestEventID, board.latestEventID)
@@ -237,7 +321,7 @@ struct KanbanView: View {
         Task {
             do {
                 let isReason = status == "blocked" || status == "scheduled"
-                try await KanbanClient.move(task.id, to: status, reason: isReason ? note : nil, summary: isReason ? nil : note)
+                try await KanbanClient.move(task.id, to: status, reason: isReason ? note : nil, summary: isReason ? nil : note, board: board)
                 await refresh()
             } catch { show(error.localizedDescription) }
         }
@@ -245,7 +329,7 @@ struct KanbanView: View {
 
     private func delete(_ task: KanbanTask) {
         Task {
-            do { try await KanbanClient.delete(task.id); await refresh() }
+            do { try await KanbanClient.delete(task.id, board: board); await refresh() }
             catch { show(error.localizedDescription) }
         }
     }
@@ -257,6 +341,8 @@ struct KanbanCardEditor: View {
     let task: KanbanTask?
     /// Assignees the board already knows; a fresh list is fetched only if this is empty.
     let assignees: [String]
+    /// Which of Hermes's boards the card is on (nil, its current one).
+    var board: String?
     let onSave: () async -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
@@ -305,7 +391,7 @@ struct KanbanCardEditor: View {
                     title = task.title; details = task.body ?? ""; priority = task.priority; assignee = task.assignee ?? ""
                 }
             }
-            .task { if assignees.isEmpty { fetched = try? await KanbanClient.assignees() } }
+            .task { if assignees.isEmpty { fetched = try? await KanbanClient.assignees(board: board) } }
         }
     }
 
@@ -319,9 +405,9 @@ struct KanbanCardEditor: View {
                                                 title: title != task.title ? title : nil,
                                                 body: details != (task.body ?? "") ? details : nil,
                                                 priority: priority != task.priority ? priority : nil,
-                                                assignee: assignee != (task.assignee ?? "") ? assignee : nil)
+                                                assignee: assignee != (task.assignee ?? "") ? assignee : nil, board: board)
                 } else {
-                    _ = try await KanbanClient.create(title: title, body: details, priority: priority, assignee: assignee, ready: startReady)
+                    _ = try await KanbanClient.create(title: title, body: details, priority: priority, assignee: assignee, ready: startReady, board: board)
                 }
                 await onSave()
                 dismiss()
@@ -333,6 +419,8 @@ struct KanbanCardEditor: View {
 struct KanbanCardDetail: View {
     let taskID: String
     var assignees: [String] = []
+    /// Which of Hermes's boards the card is on (nil, its current one).
+    var board: String?
     let onChange: () async -> Void
     @State private var editing = false
     @State private var pendingStatus: String?
@@ -419,7 +507,7 @@ struct KanbanCardDetail: View {
                 if let change { PatchView(title: change.task.title, patch: change.patch, notes: change.notes, notesTitle: String(localized: "Steps left with it")) }
             }
             .sheet(isPresented: $editing) {
-                if let task { KanbanCardEditor(task: task, assignees: assignees) { await load(); await onChange() } }
+                if let task { KanbanCardEditor(task: task, assignees: assignees, board: board) { await load(); await onChange() } }
             }
             .onChange(of: status) { _, new in
                 guard let task, !new.isEmpty, new != task.status else { return }
@@ -448,7 +536,7 @@ struct KanbanCardDetail: View {
         Task {
             do {
                 let isReason = new == "blocked" || new == "scheduled"
-                try await KanbanClient.move(task.id, to: new, reason: isReason ? note : nil, summary: isReason ? nil : note)
+                try await KanbanClient.move(task.id, to: new, reason: isReason ? note : nil, summary: isReason ? nil : note, board: board)
                 await load(); await onChange()
             } catch { status = task.status; self.error = error.localizedDescription }
         }
@@ -464,10 +552,10 @@ struct KanbanCardDetail: View {
 
     private func load() async {
         do {
-            let found = try await KanbanClient.detail(taskID)
+            let found = try await KanbanClient.detail(taskID, board: board)
             detail = found
             task = found.task; comments = found.comments; status = found.task.status; error = nil
-            if found.attachments.contains(where: \.isPatch) { change = try? await KanbanClient.change(of: taskID) }
+            if found.attachments.contains(where: \.isPatch) { change = try? await KanbanClient.change(of: taskID, board: board) }
         } catch { self.error = error.localizedDescription }
     }
 
@@ -580,7 +668,7 @@ struct KanbanCardDetail: View {
         let text = newComment.trimmingCharacters(in: .whitespacesAndNewlines)
         newComment = ""
         Task {
-            do { try await KanbanClient.comment(taskID, text); await load() }
+            do { try await KanbanClient.comment(taskID, text, board: board); await load() }
             catch { self.error = error.localizedDescription }
         }
     }

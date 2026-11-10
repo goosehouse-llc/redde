@@ -65,6 +65,22 @@ final class NewConversationEntryUITests: XCTestCase {
         XCTAssertFalse(question(app).exists, "It went into the open conversation")
     }
 
+    /// Hermes's other boards (GitHub issue 65): the switcher over the columns names the board
+    /// shown, and picking another shows that board's cards.
+    func testAnotherKanbanBoardCanBePicked() {
+        let app = launch(["-echo.demoKanban", "-echo.screen", "sessions", "-echo.section", "kanban"])
+        XCTAssertTrue(app.text(containing: "Compare heat pump quotes").waitForExistence(timeout: 20), "The demo board isn't on screen")
+        let switcher = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Board: Household'")).firstMatch
+        XCTAssertTrue(switcher.waitForExistence(timeout: 5), "No board switcher over the columns")
+        switcher.tap()
+        let garden = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Garden'")).firstMatch
+        XCTAssertTrue(garden.waitForExistence(timeout: 5), "The other board isn't offered")
+        garden.tap()
+        XCTAssertTrue(app.text(containing: "Order the tomato seeds").waitForExistence(timeout: 10), "The other board's cards didn't show")
+        XCTAssertFalse(app.text(containing: "Compare heat pump quotes").exists, "The first board's cards are still up")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Board: Garden'")).firstMatch.exists, "The switcher doesn't name the board picked")
+    }
+
     func testACardAskedInTheOpenConversationStaysThere() {
         let app = launch(["-echo.demoKanban", "-echo.screen", "sessions", "-echo.section", "kanban"])
         let card = app.text(containing: "Compare heat pump quotes")
