@@ -455,6 +455,21 @@ struct BotsTests {
 
     // MARK: - Group chats
 
+    /// What a room says when a call fails (GitHub issue 71: "The operation couldn't be completed"
+    /// told nobody what failed). The socket gone is a dropped connection, said as that; a read cut
+    /// short says nothing; Hermes's own refusal keeps its words.
+    @Test func aRoomSaysWhatWentWrong() {
+        let gone = NSError(domain: NSPOSIXErrorDomain, code: 57)   // "Socket is not connected"
+        #expect(GroupFeed.words(for: gone) == "The connection to Hermes dropped. Redde is trying again.")
+        #expect(GroupFeed.words(for: gone, sending: true) == "Couldn't send: the connection to Hermes dropped. Send it again in a moment.")
+        #expect(GroupFeed.words(for: TransportError.unreachable("not connected to Hermes Dashboard")) == "The connection to Hermes dropped. Redde is trying again.")
+        #expect(GroupFeed.words(for: CancellationError()) == nil)
+        #expect(GroupFeed.words(for: URLError(.cancelled)) == nil)
+        let refused = HermesServeClient.RPCError(code: 4001, message: "invalid_params")
+        #expect(GroupFeed.words(for: refused) == "invalid_params (4001)")
+        #expect(GroupFeed.words(for: refused, sending: true) == "Couldn't send: invalid_params (4001)")
+    }
+
     /// `groups.state`'s driver_status as Hermes 0.21.0 to 0.22.2 give it (hosted_room_service.status).
     @Test func aRoomSaysWhatItWaitsOn() throws {
         let status = try JSONDecoder().decode(JSONValue.self, from: Data("""
@@ -467,7 +482,17 @@ struct BotsTests {
              "peer_routes": []}
             """.utf8))
         let state = GroupState(status)
-        #expect(state.retries == ["dtask:aa"])
+        #expect(state.retries == [GroupRetry(taskID: "dtask:aa")])
+        // The task alone goes back when the row had no more: `groups.retry` takes no unknown keys.
+        #expect(state.retries[0].params(room: "r1") == .object(["room_id": .string("r1"), "task_id": .string("dtask:aa")]))
+        // A room that stalled getting ready (gateway `hosted_room_prepare_stall.retry_action`): the
+        // bot and the run are required with it (GitHub issue 73).
+        let stalled = GroupState(try JSONDecoder().decode(JSONValue.self, from: Data("""
+            {"blocked": true, "pending_actions": [{"kind": "retry", "member_id": "scout", "task_id": "prepare:r1", "execution_generation": 1}]}
+            """.utf8)))
+        #expect(stalled.retries == [GroupRetry(taskID: "prepare:r1", memberID: "scout", executionGeneration: 1)])
+        #expect(stalled.retries[0].params(room: "r1") == .object([
+            "room_id": .string("r1"), "task_id": .string("prepare:r1"), "member_id": .string("scout"), "execution_generation": .number(1)]))
         let approval = try #require(state.approvals.first)
         #expect(state.approvals.count == 1 && approval.memberID == "scout" && approval.taskID == "dtask:bb" && approval.executionGeneration == 2)
         #expect(approval.request.id == "q1" && approval.request.command == "rm -rf build" && approval.request.choices == ["once", "deny"])

@@ -422,7 +422,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         var approve: (_ room: String, _ approval: GroupApproval, _ choice: String) async throws -> Void = {
             try await HermesServeClient.shared.answerGroupApproval($0, $1, choice: $2)
         }
-        var retry: (_ room: String, _ task: String) async throws -> Void = { try await HermesServeClient.shared.retryGroupTask($0, task: $1) }
+        var retry: (_ room: String, _ retry: GroupRetry) async throws -> Void = { try await HermesServeClient.shared.retryGroupTask($0, $1) }
         var send: (_ room: String, _ text: String) async throws -> Void = {
             try await HermesServeClient.shared.sendToGroup($0, text: $1, eventID: UUID().uuidString)
         }
@@ -462,7 +462,10 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             guard let task else { return nil }
             return givePushedAnswer("pushed-group-retry", sessionID: "", room: room, kind: .groupWait, notGiven: String(localized: "The reply wasn't retried"),
                                     reaching: String(localized: "retry the reply", comment: "Completes \"Redde couldn't reach your Hermes to …\"")) {
-                try await calls.retry(room, task)
+                // The notification names the task alone: the room says what else goes back with it
+                // (`GroupRetry`). Not asked for there any more, it is tried by the task as before.
+                let waiting = try? await calls.state(room).retries.first { $0.taskID == task }
+                try await calls.retry(room, waiting ?? GroupRetry(taskID: task))
                 return nil
             }
         case UNNotificationDefaultActionIdentifier:

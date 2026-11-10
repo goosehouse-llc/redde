@@ -44,14 +44,17 @@ struct GroupNotesTests {
     final class Calls {
         var said: [String] = []
         var waiting: [GroupApproval] = []
+        var stalled: [GroupRetry] = []
     }
 
     private func harness(_ calls: Calls) -> NotifierTests.Harness {
         let h = NotifierTests.Harness()
         h.notifier.groupCalls = Notifier.GroupCalls(
-            state: { _ in GroupState(approvals: calls.waiting) },
+            state: { _ in GroupState(approvals: calls.waiting, retries: calls.stalled) },
             approve: { room, approval, choice in calls.said.append("approve \(room) \(approval.request.id) \(choice)") },
-            retry: { room, task in calls.said.append("retry \(room) \(task)") },
+            retry: { room, retry in
+                calls.said.append("retry \(room) \(retry.taskID)" + (retry.memberID.map { " \($0) \(retry.executionGeneration ?? -1)" } ?? ""))
+            },
             send: { room, text in calls.said.append("send \(room) \(text)") })
         return h
     }
@@ -102,6 +105,17 @@ struct GroupNotesTests {
         await h.notifier.route(action: "redde.followup", requestID: nil, questionID: nil, approve: nil, deny: nil,
                                userText: "  Saturday works.  ", room: "room-a")?.value
         #expect(calls.said == ["retry room-b t9", "send room-a Saturday works."])
+    }
+
+    /// A room that stalled getting ready: its Retry names the bot and the run, and the notification's
+    /// Retry sends them as the card's does (GitHub issue 73: without them Hermes answers 4001).
+    @Test func aNotificationsRetryCarriesWhatTheRoomSaysOfIt() async {
+        let calls = Calls()
+        calls.stalled = [GroupRetry(taskID: "prepare:room-b", memberID: "scout", executionGeneration: 1)]
+        let h = harness(calls)
+        await h.notifier.route(action: PushNote.retryAction, requestID: nil, questionID: nil, approve: nil, deny: nil, userText: nil,
+                               room: "room-b", task: "prepare:room-b")?.value
+        #expect(calls.said == ["retry room-b prepare:room-b scout 1"])
     }
 
     @Test func theButtonsWaitForAnUnlock() {

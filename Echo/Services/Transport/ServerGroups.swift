@@ -194,6 +194,40 @@ nonisolated struct GroupEvent: Identifiable, Equatable, Sendable {
     }
 }
 
+/// A reply that stopped partway, as the room's `pending_actions` give it: the task, and whatever
+/// else the row says of it. A room that stalled getting ready names the bot and which run of the
+/// task it was (`member_id`, `execution_generation`), and Hermes refuses a retry that leaves them
+/// out (4001; GitHub issue 73): what the row carries is sent back with it.
+nonisolated struct GroupRetry: Equatable, Sendable, Identifiable {
+    var taskID: String
+    var memberID: String?
+    var executionGeneration: Int?
+
+    var id: String { taskID }
+
+    init(taskID: String, memberID: String? = nil, executionGeneration: Int? = nil) {
+        self.taskID = taskID
+        self.memberID = memberID
+        self.executionGeneration = executionGeneration
+    }
+
+    init?(_ json: JSONValue) {
+        guard json["kind"]?.string == "retry", let task = json["task_id"]?.string else { return nil }
+        taskID = task
+        memberID = json["member_id"]?.string
+        executionGeneration = json["execution_generation"]?.int
+    }
+
+    /// `groups.retry`'s params. Only the keys the row had: its params take no unknown ones, and
+    /// a release whose rows carry the task alone asks for no more.
+    func params(room: String) -> JSONValue {
+        var params: [String: JSONValue] = ["room_id": .string(room), "task_id": .string(taskID)]
+        if let memberID { params["member_id"] = .string(memberID) }
+        if let executionGeneration { params["execution_generation"] = .number(Double(executionGeneration)) }
+        return .object(params)
+    }
+}
+
 /// What a room waits on, and whether a bot is at work.
 nonisolated struct GroupState: Equatable, Sendable {
     var working = false
@@ -205,9 +239,9 @@ nonisolated struct GroupState: Equatable, Sendable {
     var approvals: [GroupApproval] = []
     /// Replies that stopped partway, Hermes unsure how far they got (a restart mid-reply, a bot it
     /// couldn't reach): their tasks, each run again only when the person says so (`groups.retry`).
-    var retries: [String] = []
+    var retries: [GroupRetry] = []
 
-    init(working: Bool = false, blocked: Bool = false, approvals: [GroupApproval] = [], retries: [String] = []) {
+    init(working: Bool = false, blocked: Bool = false, approvals: [GroupApproval] = [], retries: [GroupRetry] = []) {
         self.working = working
         self.blocked = blocked
         self.approvals = approvals
@@ -220,7 +254,7 @@ nonisolated struct GroupState: Equatable, Sendable {
         stopping = (status?["counts"]?["stopping"]?.int ?? 0) > 0
         let pending = status?["pending_actions"]?.array ?? []
         approvals = pending.compactMap(GroupApproval.init)
-        retries = pending.compactMap { $0["kind"]?.string == "retry" ? $0["task_id"]?.string : nil }
+        retries = pending.compactMap(GroupRetry.init)
     }
 
     /// Something only the person can settle: a command to approve, or a reply to try again.
@@ -434,9 +468,9 @@ extension HermesServeClient {
     }
 
     /// Runs a reply that stopped partway again (`GroupState.retries`).
-    func retryGroupTask(_ room: String, task: String) async throws {
+    func retryGroupTask(_ room: String, _ retry: GroupRetry) async throws {
         try await ensureConnected()
-        _ = try await call("groups.retry", params: .object(["room_id": .string(room), "task_id": .string(task)]))
+        _ = try await call("groups.retry", params: retry.params(room: room))
     }
 
     /// Answers a bot's command: "once" or "deny". One answered meanwhile (on another device, or
@@ -777,8 +811,26 @@ final class GroupFeed {
             if state != self.state { self.state = state }
             if problem != nil { problem = nil }
         } catch {
-            problem = error.localizedDescription
+            failed(error)
         }
+    }
+
+    /// What went wrong, for the line under the room (GitHub issue 71: "The operation couldn't be
+    /// completed" said nothing). A read that was cut short as the screen changed is no problem at
+    /// all (nil); a connection that dropped is said as that, and the room is read again by itself;
+    /// anything else in its own words, which name Hermes's refusal or the answer Redde couldn't read.
+    nonisolated static func words(for error: Error, sending: Bool = false) -> String? {
+        if error is CancellationError || (error as? URLError)?.code == .cancelled { return nil }
+        if NetworkFailure.isConnectivity(error) {
+            return sending ? String(localized: "Couldn't send: the connection to Hermes dropped. Send it again in a moment.")
+                           : String(localized: "The connection to Hermes dropped. Redde is trying again.")
+        }
+        return sending ? String(localized: "Couldn't send: \(error.localizedDescription)") : error.localizedDescription
+    }
+
+    /// One of the room's calls failed: said, unless there is nothing to say.
+    private func failed(_ error: Error, sending: Bool = false) {
+        if let words = Self.words(for: error, sending: sending) { problem = words }
     }
 
     /// Each Hermes Desktop message's number here, by its key: the same message keeps its row.
@@ -797,7 +849,7 @@ final class GroupFeed {
             if fresh != events { events = fresh }
             if problem != nil { problem = nil }
         } catch {
-            problem = error.localizedDescription
+            failed(error)
         }
     }
 
@@ -834,7 +886,7 @@ final class GroupFeed {
                 await look()
             } catch {
                 sending.removeAll { $0.id == id }
-                problem = String(localized: "Couldn't send: \(error.localizedDescription)")
+                failed(error, sending: true)
             }
         }
     }
@@ -845,7 +897,7 @@ final class GroupFeed {
                 try await client.stopGroup(room.id)
                 await look()
             } catch {
-                problem = error.localizedDescription
+                failed(error)
             }
         }
     }
@@ -856,8 +908,8 @@ final class GroupFeed {
         settle(approval.id) { try await $0.answerGroupApproval(self.room.id, approval, choice: choice) }
     }
 
-    func retry(_ task: String) {
-        settle(task) { try await $0.retryGroupTask(self.room.id, task: task) }
+    func retry(_ retry: GroupRetry) {
+        settle(retry.id) { try await $0.retryGroupTask(self.room.id, retry) }
     }
 
     /// Answers one of the room's questions, its card hidden meanwhile. Refused as no longer
@@ -872,7 +924,7 @@ final class GroupFeed {
             } catch let error as HermesServeClient.RPCError where error.code == 5119 || error.code == 5118 {
                 await look()
             } catch {
-                problem = error.localizedDescription
+                failed(error)
             }
             answering.remove(id)
         }

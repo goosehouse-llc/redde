@@ -1011,9 +1011,15 @@ final class HermesServeClient {
             Task { @MainActor in
                 guard let self else { return }
                 self.log.error("send failed: \(error.localizedDescription)")
+                // A socket that has gone ("Socket is not connected") answers nothing more: closed
+                // here, so the next call dials again and doesn't wait for URLSession to notice. And
+                // said as what it is, not as iOS words it ("The operation couldn't be completed",
+                // GitHub issue 71).
+                let gone = NetworkFailure.isConnectivity(error)
                 if let id, let cont = self.pending.removeValue(forKey: id) {
-                    cont.resume(throwing: error)
+                    cont.resume(throwing: gone ? TransportError.unreachable(String(localized: "the connection to Hermes Dashboard dropped")) : error)
                 }
+                if gone { self.socketClosed(socket, error: error) }
             }
         }
     }

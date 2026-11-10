@@ -116,7 +116,7 @@ struct GroupChatView: View {
                                     .chatFont(.caption).foregroundStyle(.secondary)
                             }
                         }
-                        ForEach(feed.state.retries.filter { !feed.answering.contains($0) }, id: \.self) { retryCard($0) }
+                        ForEach(feed.state.retries.filter { !feed.answering.contains($0.id) }) { retryCard($0) }
                         if let problem = feed.problem {
                             Label(problem, systemImage: "exclamationmark.triangle").chatFont(.footnote).foregroundStyle(.orange)
                         }
@@ -475,14 +475,14 @@ struct GroupChatView: View {
 
     /// A reply that stopped partway (Hermes restarted mid-reply, or couldn't reach the bot): it
     /// runs again only when asked to, since Hermes can't tell how far it got.
-    private func retryCard(_ task: String) -> some View {
+    private func retryCard(_ retry: GroupRetry) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(feed.member(forTask: task).map { String(localized: "\($0.label)'s reply didn't finish") } ?? String(localized: "A reply didn't finish"),
+            Label((feed.room.member(retry.memberID) ?? feed.member(forTask: retry.taskID)).map { String(localized: "\($0.label)'s reply didn't finish") } ?? String(localized: "A reply didn't finish"),
                   systemImage: "arrow.clockwise")
                 .chatFont(.subheadline, weight: .semibold)
             Text("It stopped partway, and Hermes can't tell how far it got. Run it again?")
                 .chatFont(.footnote).foregroundStyle(.secondary)
-            Button("Retry") { feed.retry(task) }
+            Button("Retry") { feed.retry(retry) }
                 .buttonStyle(.bordered)
                 .chatFont(.footnote)
         }
