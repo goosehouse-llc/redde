@@ -118,26 +118,41 @@ extension View {
 private struct CardInk: ViewModifier {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.theme) private var theme
-    @Environment(\.self) private var environment
 
     func body(content: Content) -> some View {
-        let accent = Self.readable(theme.accent, drawnIn: Settings.shared.cardScheme ?? scheme, in: environment)
+        let accent = Self.readable(theme.accent, drawnIn: Settings.shared.cardScheme ?? scheme, theme: theme)
         var onCard = theme
         onCard.palette.accent = accent
         return content.environment(\.theme, onCard).tint(accent)
     }
 
+    /// What `readable` goes by, and what it found: worked out once for an accent on a ground.
+    /// It read the whole environment, so it ran again on any change in it, twice a card (the
+    /// cards' row and each card's surface), with up to thirty colours resolved each time.
+    private struct Asked: Hashable {
+        var accent: Color
+        var drawnIn: ColorScheme
+        var ground: Color?
+    }
+    private static var found: [Asked: Color] = [:]
+
     /// `accent` darkened (on a light card) or lightened (on a dark one) until it has text
     /// contrast, 4.5:1, with the card's ground: its solid colour, else the system's.
-    static func readable(_ accent: Color, drawnIn: ColorScheme, in environment: EnvironmentValues) -> Color {
-        var env = environment
-        env.colorScheme = drawnIn
+    static func readable(_ accent: Color, drawnIn: ColorScheme, theme: ResolvedTheme) -> Color {
         let choice = Settings.shared.cardColor
-        let ground: Double = if choice.solid != nil, let solid = choice.color(in: env.theme) {
-            GoalCard.luminance(of: solid, in: env)
-        } else {
-            drawnIn == .light ? 0.95 : 0.015
-        }
+        let solid = choice.solid != nil ? choice.color(in: theme) : nil
+        let asked = Asked(accent: accent, drawnIn: drawnIn, ground: solid)
+        if let known = found[asked] { return known }
+        var env = EnvironmentValues()
+        env.colorScheme = drawnIn
+        let shade = readable(accent, drawnIn: drawnIn, ground: solid.map { GoalCard.luminance(of: $0, in: env) }, in: env)
+        if found.count >= 64 { found.removeAll() }
+        found[asked] = shade
+        return shade
+    }
+
+    private static func readable(_ accent: Color, drawnIn: ColorScheme, ground solid: Double?, in env: EnvironmentValues) -> Color {
+        let ground = solid ?? (drawnIn == .light ? 0.95 : 0.015)
         func contrast(_ l: Double) -> Double { (max(l, ground) + 0.05) / (min(l, ground) + 0.05) }
         guard contrast(GoalCard.luminance(of: accent, in: env)) < 4.5 else { return accent }
         if drawnIn == .dark {
