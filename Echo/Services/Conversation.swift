@@ -809,19 +809,39 @@ final class Conversation {
         await initialLoad?.value   // at launch the conversation may still be coming off the disk
         guard connection.hasLedger, !isStreaming, let stored = serverSessionID else { return }
         defer { catchingUp = nil }
+        // Each while this chat is still the one open: another opened meanwhile isn't left for it.
+        let stillHere: @MainActor () throws -> Void = { [weak self] in
+            guard let self, self.serverSessionID == stored, !self.isStreaming else { throw CancellationError() }
+        }
         if endsUnanswered {
             catchingUp = .loading
-            try? await open(serverSession: stored)
+            try? await Self.untilReachable { try stillHere(); try await self.open(serverSession: stored) }
             return
         }
         catchingUp = .checking
         guard let backend = SessionBackend.current(self),
-              let written = try? await backend.newestMessageAt(stored),
+              let written = try? await Self.untilReachable({ try stillHere(); return try await backend.newestMessageAt(stored) }),
               Self.serverIsAhead(lastActive: written.timeIntervalSince1970,
                                  newest: messages.last(where: { !$0.isAside })?.createdAt),
               serverSessionID == stored, !isStreaming else { return }
         catchingUp = .loading
         try? await open(serverSession: stored)
+    }
+
+    /// Tries again, a little later each time, while what failed was the connection: just after
+    /// the app comes forward the first requests often fail while the network, or a VPN such as
+    /// Tailscale, wakes up, and catching up then gave up at once and left the chat as it was until
+    /// another was opened and this one again (GitHub issue 66). Anything else ends it at once.
+    static func untilReachable<T>(waits: [Duration] = [.seconds(1), .seconds(2), .seconds(4), .seconds(8)],
+                                  _ attempt: () async throws -> T) async throws -> T {
+        var waits = waits[...]
+        while true {
+            do {
+                return try await attempt()
+            } catch let error where HermesRuns.isTransient(error) && !waits.isEmpty && !Task.isCancelled {
+                try await Task.sleep(for: waits.removeFirst())
+            }
+        }
     }
 
     /// What catching up with the host is doing, for the strip over the chat (GitHub issue 59: the

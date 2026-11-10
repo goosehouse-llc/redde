@@ -211,4 +211,28 @@ struct RejoinTests {
         #expect(!Conversation.serverIsAhead(lastActive: nil, newest: newest))
         #expect(Conversation.serverIsAhead(lastActive: 1_000_000, newest: nil))
     }
+
+    /// GitHub issue 66: catching up asks again while the connection is what failed (the network
+    /// waking with the app), and stops at once at anything else, or when the waits run out.
+    @Test func catchingUpTriesAgainWhileTheNetworkWakes() async throws {
+        var tries = 0
+        let found = try await Conversation.untilReachable(waits: [.zero, .zero, .zero]) { () async throws -> Int in
+            tries += 1
+            if tries < 3 { throw URLError(.networkConnectionLost) }
+            return 42
+        }
+        #expect(found == 42 && tries == 3)
+
+        tries = 0
+        await #expect(throws: CancellationError.self) {
+            try await Conversation.untilReachable(waits: [.zero, .zero]) { () async throws -> Int in tries += 1; throw CancellationError() }
+        }
+        #expect(tries == 1)
+
+        tries = 0
+        await #expect(throws: URLError.self) {
+            try await Conversation.untilReachable(waits: [.zero, .zero]) { () async throws -> Int in tries += 1; throw URLError(.timedOut) }
+        }
+        #expect(tries == 3)
+    }
 }
