@@ -95,6 +95,51 @@ struct HermesServeClientTests {
         #expect(urls.contains { $0.contains("/api/sessions?") && $0.contains("profile=work") })
     }
 
+    /// `catchUp` asks the session itself, by id, whether the host has moved on since this copy
+    /// (GitHub issue 66): its newest message, one row, and — for a bot's chat, which is hidden and
+    /// left out of every list — the profile that owns it named with the call.
+    @MainActor
+    @Test func catchUpAsksTheSessionItsNewestMessageById() async throws {
+        ServeStub.reset()
+        nonisolated(unsafe) var urls: [String] = []
+        ServeStub.handler = { request, _ in
+            urls.append(request.url?.absoluteString ?? "")
+            if request.url?.path() == "/api/sessions/s-bot/messages" {
+                return (200, Data(#"{"messages":[{"id":"m-9","role":"assistant","content":{"text":"the reply that arrived while the phone slept"},"timestamp":1794247000.5}]}"#.utf8))
+            }
+            return (200, Data(#"{"sessions":[]}"#.utf8))
+        }
+        defer { ServeStub.reset() }
+        let client = makeClient()
+        client.noteProfile("scout", forStored: "s-bot")   // a bot's chat is a session of the bot's profile
+        let written: Date? = try await SessionBackend.serve(client).newestMessageAt("s-bot")
+        #expect(urls.contains { $0.contains("/api/sessions/s-bot/messages?order=latest&limit=1&profile=scout") },
+                "one row, by id, with the profile that owns the session: \(urls)")
+        #expect(written == Date(timeIntervalSince1970: 1_794_247_000.5))
+    }
+
+    /// And the session list is not asked at all: a bot's chat is hidden, so no list holds it —
+    /// asking one is what left the conversation unsynced when Redde came forward again.
+    @MainActor
+    @Test func theCatchUpQuestionIsNotPutToTheSessionList() async throws {
+        ServeStub.reset()
+        nonisolated(unsafe) var urls: [String] = []
+        ServeStub.handler = { request, _ in
+            urls.append(request.url?.absoluteString ?? "")
+            if request.url?.path() == "/api/sessions/s-bot/messages" {
+                return (200, Data(#"{"messages":[{"id":"m-9","role":"assistant","content":{"text":"missed"},"timestamp":1794247000.5}]}"#.utf8))
+            }
+            return (200, Data(#"{"sessions":[]}"#.utf8))
+        }
+        defer { ServeStub.reset() }
+        let client = makeClient()
+        client.noteProfile("scout", forStored: "s-bot")
+        _ = try await SessionBackend.serve(client).newestMessageAt("s-bot")
+        // The login probe asks `api/sessions?limit=1`; the list itself is `limit=100&offset=0&order=recent`.
+        #expect(!urls.contains { $0.contains("/api/sessions?limit=100") },
+                "the list route is left out of it entirely: \(urls)")
+    }
+
     /// Sidebar writes are fenced against current backends (issue 52): the PATCH carries a fresh
     /// request id with the revision read from the snapshot route, or the server refuses it with
     /// 409 client_upgrade_required — the "out of sync (different versions)" notice.

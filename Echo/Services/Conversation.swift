@@ -801,8 +801,10 @@ final class Conversation {
     /// It is fetched again, too, when the server has moved on past what is here though nothing
     /// was waiting: a turn the host began itself after a reply that arrived (a background job's
     /// end, a delegation's result, a card waking the agent), while the phone slept. Only when the
-    /// session list says so, so a long chat isn't read again each time Redde comes forward
-    /// (GitHub issue 40).
+    /// session says so, so a long chat isn't read again each time Redde comes forward (GitHub
+    /// issue 40). And it asks the session itself, by id, not by hunting the session list for its
+    /// row: a bot's chat is hidden and every list leaves those out, so for one of those the list
+    /// never answered and nothing was fetched at all (GitHub issue 66).
     func catchUp() async {
         await initialLoad?.value   // at launch the conversation may still be coming off the disk
         guard connection.hasLedger, !isStreaming, let stored = serverSessionID else { return }
@@ -814,8 +816,9 @@ final class Conversation {
         }
         catchingUp = .checking
         guard let backend = SessionBackend.current(self),
-              let row = try? await backend.listSessions().first(where: { $0.id == stored }),
-              Self.serverIsAhead(lastActive: row.last_active, newest: messages.last(where: { !$0.isAside })?.createdAt),
+              let written = try? await backend.newestMessageAt(stored),
+              Self.serverIsAhead(lastActive: written.timeIntervalSince1970,
+                                 newest: messages.last(where: { !$0.isAside })?.createdAt),
               serverSessionID == stored, !isStreaming else { return }
         catchingUp = .loading
         try? await open(serverSession: stored)

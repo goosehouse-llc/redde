@@ -105,6 +105,27 @@ enum SessionBackend {
         }
     }
 
+    /// When the host last wrote anything into one session, asked of that session by id: the
+    /// question `catchUp` puts before re-reading a conversation, "has the host moved on since
+    /// this copy?".
+    ///
+    /// By id, and not by hunting the session list: a session is had by its id whatever profile
+    /// owns it, and whether or not a list would hold it — a bot's chat is hidden, and every list
+    /// leaves those out (the Dashboard's REST list has no way to ask for them), so the list this
+    /// used to search never held the conversation being asked about (GitHub issue 66).
+    ///
+    /// Its newest stored message is the answer, not the session's own row: the row's `last_active`
+    /// is worked out in the list query and isn't in the row at all, while the message is the very
+    /// thing the transcript is built from.
+    func newestMessageAt(_ id: String) async throws -> Date? {
+        let stored: [HermesSessionsAPI.StoredMessage]
+        switch self {
+        case .serve(let client): stored = try await client.transcript(stored: id, limit: 1)
+        case .ledger(let api): stored = try await api.newestMessages(sessionID: id, limit: 1)
+        }
+        return stored.last?.timestamp.map { Date(timeIntervalSince1970: $0) }
+    }
+
     func rename(_ id: String, to title: String) async throws {
         switch self {
         case .serve(let client): try await client.updateSession(stored: id, title: title)
