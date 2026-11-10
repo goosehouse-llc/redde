@@ -43,7 +43,7 @@ let targets: [(name: String, catalog: String, build: String)] = [
 
 /// Catalogs no build fills: the Info.plist texts (the permission texts, an extension's name), keyed
 /// by their Info.plist key with the English as its value. Exported and imported with the rest.
-let plistCatalogs = ["Echo/Resources/InfoPlist.xcstrings", "EchoControls/InfoPlist.xcstrings"]
+let plistCatalogs = ["Echo/Resources/InfoPlist.xcstrings", "EchoControls/InfoPlist.xcstrings", "Mac/InfoPlist.xcstrings"]
 
 /// Builds that fill a catalog beside its own target's: the Mac app (ReddeMac) shares the app's,
 /// and has text of its own (its menus). Its build is in DerivedData-mac, from
@@ -214,6 +214,8 @@ case "plist":
     let wanted: [String: (catalog: String, keys: (String) -> Bool)] = [
         "Echo": ("Echo/Resources/InfoPlist.xcstrings", { $0.hasPrefix("NS") && $0.hasSuffix("UsageDescription") }),
         "EchoControls": ("EchoControls/InfoPlist.xcstrings", { $0 == "CFBundleDisplayName" }),
+        // The Mac asks in its own words ("on this Mac", no setup code to scan): its own catalog.
+        "ReddeMac": ("Mac/InfoPlist.xcstrings", { $0.hasPrefix("NS") && $0.hasSuffix("UsageDescription") }),
     ]
     let yaml = try! String(contentsOf: repo.appending(path: "project.yml"), encoding: .utf8)
     var target = "", inTargets = false

@@ -495,6 +495,10 @@ targets:
         excludes:
           - Web
           - Redde.storekit
+          # The iPhone's permission texts in translation: the Mac has its own (Mac/InfoPlist.xcstrings).
+          # With the iPhone's, a Mac in German asked for the camera "to scan a setup code" and
+          # said things stay "on this iPhone".
+          - InfoPlist.xcstrings
       - path: Echo/Resources/Web
         type: folder
         buildPhase: resources
@@ -551,7 +555,7 @@ targets:
         # Places (Settings → Agent → Places): arriving at or leaving a place the person set tells the bot they chose.
         # Current Location (Settings → Agent → Current Location): roughly where the person is, for the agent.
         NSLocationWhenInUseUsageDescription: With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there.
-        NSLocationAlwaysAndWhenInUseUsageDescription: With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on your iPhone; only "arrived at Home" goes to your server.
+        NSLocationAlwaysAndWhenInUseUsageDescription: With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on this Mac; only "arrived at Home" goes to your server.
         # Current Location (Settings → Agent → Current Location): what the Mac asks with.
         NSLocationUsageDescription: With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. It goes to your own server and nowhere else. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there.
         NSLocalNetworkUsageDescription: Redde connects to the Hermes gateway or model server you configure, which is often on your local network.

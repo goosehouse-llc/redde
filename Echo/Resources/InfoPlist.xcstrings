@@ -578,109 +578,109 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Når Dage med blik for helbredet er slået til, læser Redde nattens søvn, dine skridt og dine træninger, så din agents morgenidéer og aftenopsummering tager højde for din dag. Kun et resumé på én linje sendes til din egen server."
+            "value" : "Redde læser kun de sundhedsdata, du slår til. Med Dage med blik for helbredet præger nattens søvn, dine skridt og dine træninger din agents morgenidéer og aftenopsummering. Med Telefonværktøjer › Sundhed kan din agent læse de typer, du vælger, når den beder om det. Det sendes kun til din egen server."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wenn Gesundheitsbewusste Tage aktiviert ist, liest Redde den Schlaf der letzten Nacht, deine Schritte und deine Trainings, damit die Morgenideen und der Abendrückblick deines Agenten deinen Tag berücksichtigen. Nur eine einzeilige Zusammenfassung geht an deinen eigenen Server."
+            "value" : "Redde liest nur die Health-Daten, die du aktivierst. Mit Gesundheitsbewusste Tage fließen der Schlaf der letzten Nacht, deine Schritte und deine Trainings in die Morgenideen und den Abendrückblick deines Agenten ein. Mit Telefon-Tools › Health kann dein Agent die von dir gewählten Arten lesen, wenn er danach fragt. Sie gehen nur an deinen eigenen Server."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "With Health-Aware Days turned on, Redde reads last night's sleep, your steps and your workouts so your agent's morning ideas and evening wrap-up take your day into account. Only a one-line summary goes to your own server."
+            "value" : "Redde reads only the Health data you turn on. With Health-Aware Days, last night's sleep, your steps and your workouts shape your agent's morning ideas and evening wrap-up. With Phone Tools › Health, your agent can read the kinds you choose when it asks. It goes only to your own server."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Con Días según tu salud activado, Redde lee el sueño de anoche, tus pasos y tus entrenamientos para que las ideas matutinas y el resumen de la noche de tu agente tengan en cuenta tu día. Solo un resumen de una línea llega a tu propio servidor."
+            "value" : "Redde solo lee los datos de Salud que actives. Con Días según tu salud, el sueño de anoche, tus pasos y tus entrenamientos dan forma a las ideas matutinas y al resumen de la noche de tu agente. Con Herramientas del teléfono › Salud, tu agente puede leer los tipos que elijas cuando los pida. Solo van a tu propio servidor."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quand Journées attentives à la santé est activé, Redde lit le sommeil de la nuit dernière, vos pas et vos entraînements pour que les idées du matin et le bilan du soir de votre agent tiennent compte de votre journée. Seul un résumé d’une ligne est envoyé à votre propre serveur."
+            "value" : "Redde ne lit que les données de Santé que vous activez. Avec Journées attentives à la santé, le sommeil de la nuit dernière, vos pas et vos entraînements orientent les idées du matin et le bilan du soir de votre agent. Avec Outils du téléphone › Santé, votre agent peut lire les types que vous choisissez quand il les demande. Elles ne vont qu’à votre propre serveur."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Con Giornate attente alla salute attivo, Redde legge il sonno della notte scorsa, i tuoi passi e i tuoi allenamenti perché le idee del mattino e il riepilogo serale del tuo agente tengano conto della tua giornata. Al tuo server arriva solo un riepilogo di una riga."
+            "value" : "Redde legge solo i dati di Salute che attivi. Con Giornate attente alla salute, il sonno della notte scorsa, i tuoi passi e i tuoi allenamenti orientano le idee del mattino e il riepilogo serale del tuo agente. Con Strumenti del telefono › Salute, il tuo agente può leggere i tipi che scegli quando li chiede. Vanno solo al tuo server."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「健康を考慮した1日」をオンにすると、エージェントの朝のアイデアと夜の振り返りがあなたの1日を考慮できるよう、Reddeが昨夜の睡眠、歩数、ワークアウトを読み取ります。あなたのサーバに送られるのは1行の要約だけです。"
+            "value" : "Reddeが読み取るのは、あなたがオンにしたヘルスケアデータだけです。「健康を考慮した1日」では、昨夜の睡眠、歩数、ワークアウトがエージェントの朝のアイデアと夜の振り返りに反映されます。「デバイスツール › ヘルスケア」では、エージェントが求めたときに、あなたが選んだ種類を読み取れます。データはあなたのサーバにのみ送信されます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "건강을 고려한 하루를 켜면 에이전트의 아침 아이디어와 저녁 하루 정리가 사용자의 하루를 반영할 수 있도록 Redde가 지난밤 수면, 걸음 수, 운동을 읽습니다. 사용자의 서버에는 한 줄 요약만 전송됩니다."
+            "value" : "Redde는 사용자가 켠 건강 데이터만 읽습니다. 건강을 고려한 하루를 켜면 지난밤 수면, 걸음 수, 운동이 에이전트의 아침 아이디어와 저녁 하루 정리에 반영됩니다. 휴대폰 도구 › 건강을 켜면 에이전트가 요청할 때 사용자가 선택한 종류를 읽을 수 있습니다. 데이터는 사용자의 서버로만 전송됩니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Når Dager med helse i tankene er slått på, leser Redde søvnen fra i natt, skrittene dine og treningsøktene dine, slik at morgenidéene og kveldsoppsummeringen til agenten tar hensyn til dagen din. Bare et sammendrag på én linje går til din egen tjener."
+            "value" : "Redde leser bare helsedataene du slår på. Med Dager med helse i tankene former søvnen fra i natt, skrittene dine og treningsøktene dine morgenidéene og kveldsoppsummeringen til agenten. Med Telefonverktøy › Helse kan agenten lese typene du velger, når den ber om det. De går bare til din egen tjener."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Met Dagen met gezondheid in gedachten aan leest Redde de slaap van afgelopen nacht, je stappen en je trainingen, zodat de ochtendideeën en de avondterugblik van je agent rekening houden met je dag. Alleen een samenvatting van één regel gaat naar je eigen server."
+            "value" : "Redde leest alleen de gezondheidsgegevens die je aanzet. Met Dagen met gezondheid in gedachten bepalen de slaap van afgelopen nacht, je stappen en je trainingen mee de ochtendideeën en de avondterugblik van je agent. Met Telefoontools › Gezondheid kan je agent de soorten lezen die je kiest, wanneer die erom vraagt. Ze gaan alleen naar je eigen server."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gdy Dni z myślą o zdrowiu są włączone, Redde odczytuje sen z ostatniej nocy, Twoje kroki i treningi, aby poranne pomysły i wieczorne podsumowanie Twojego agenta uwzględniały Twój dzień. Do Twojego serwera trafia tylko jednowierszowe podsumowanie."
+            "value" : "Redde odczytuje tylko te dane z aplikacji Zdrowie, które włączysz. Przy Dniach z myślą o zdrowiu sen z ostatniej nocy, Twoje kroki i treningi kształtują poranne pomysły i wieczorne podsumowanie Twojego agenta. Przy opcji Narzędzia telefonu › Zdrowie Twój agent może odczytywać wybrane przez Ciebie rodzaje danych, gdy o nie poprosi. Trafiają tylko na Twój własny serwer."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Com Dias Conforme a Saúde ativado, o Redde lê o sono da noite passada, seus passos e seus treinos para que as ideias matinais e o resumo da noite do seu agente levem seu dia em conta. Só um resumo de uma linha vai para o seu próprio servidor."
+            "value" : "O Redde lê apenas os dados do Saúde que você ativar. Com Dias Conforme a Saúde, o sono da noite passada, seus passos e seus treinos moldam as ideias matinais e o resumo da noite do seu agente. Com Ferramentas do Telefone › Saúde, seu agente pode ler os tipos que você escolher quando ele pedir. Eles vão só para o seu próprio servidor."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Когда «Дни с учетом здоровья» включены, Redde читает сон за прошлую ночь, ваши шаги и тренировки, чтобы утренние идеи и вечерние итоги агента учитывали ваш день. На ваш сервер уходит только сводка в одну строку."
+            "value" : "Redde читает только те данные «Здоровья», которые вы включили. С «Днями с учетом здоровья» сон за прошлую ночь, ваши шаги и тренировки учитываются в утренних идеях и вечерних итогах агента. С «Инструментами телефона › Здоровье» агент может читать выбранные вами типы данных, когда запрашивает их. Данные уходят только на ваш собственный сервер."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Med Hälsomedvetna dagar på läser Redde nattens sömn, dina steg och dina träningspass så att din agents morgonidéer och kvällssammanfattning tar hänsyn till din dag. Bara en sammanfattning på en rad går till din egen server."
+            "value" : "Redde läser bara de hälsodata du slår på. Med Hälsomedvetna dagar formar nattens sömn, dina steg och dina träningspass din agents morgonidéer och kvällssammanfattning. Med Telefonverktyg › Hälsa kan din agent läsa de typer du väljer när den ber om det. De går bara till din egen server."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sağlığa Duyarlı Günler açıkken Redde, ajanınızın sabah fikirleri ve akşam özeti gününüzü hesaba katsın diye dün geceki uykunuzu, adımlarınızı ve antrenmanlarınızı okur. Kendi sunucunuza yalnızca tek satırlık bir özet gider."
+            "value" : "Redde yalnızca açtığınız Sağlık verilerini okur. Sağlığa Duyarlı Günler ile dün geceki uykunuz, adımlarınız ve antrenmanlarınız ajanınızın sabah fikirlerini ve akşam özetini biçimlendirir. Telefon Araçları › Sağlık ile ajanınız, istediğinde seçtiğiniz türleri okuyabilir. Veriler yalnızca kendi sunucunuza gider."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Коли «Дні з урахуванням здоров’я» ввімкнено, Redde читає сон за минулу ніч, ваші кроки й тренування, щоб ранкові ідеї та вечірні підсумки агента враховували ваш день. На ваш сервер надходить лише зведення в один рядок."
+            "value" : "Redde читає лише ті дані «Здоров’я», які ви ввімкнули. З «Днями з урахуванням здоров’я» сон за минулу ніч, ваші кроки й тренування враховуються в ранкових ідеях і вечірніх підсумках агента. З «Інструментами телефона › Здоров’я» агент може читати вибрані вами типи даних, коли запитує їх. Дані надходять лише на ваш власний сервер."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开“关注健康的日子”后，Redde会读取你昨晚的睡眠、步数和体能训练，让智能体的早间想法和晚间总结考虑你的一天。只有一行摘要会发送到你自己的服务器。"
+            "value" : "Redde 只读取你打开的“健康”数据。打开“关注健康的日子”后，你昨晚的睡眠、步数和体能训练会影响智能体的早间想法和晚间总结。打开“手机工具 › 健康”后，智能体可在请求时读取你选择的类型。数据只会发送到你自己的服务器。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟「關注健康的日子」後，Redde 會讀取你昨晚的睡眠、步數和體能訓練，讓代理的晨間點子和晚間總結考量你的一天。只有一行摘要會傳送到你自己的伺服器。"
+            "value" : "Redde 只會讀取你開啟的「健康」資料。開啟「關注健康的日子」後，你昨晚的睡眠、步數和體能訓練會影響代理的晨間點子和晚間總結。開啟「手機工具 › 健康」後，代理可在提出請求時讀取你選擇的類型。資料只會傳送到你自己的伺服器。"
           }
         }
       }
@@ -692,109 +692,223 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde gemmer intet i Sundhed. Når Dage med blik for helbredet er slået til, læser den kun din søvn, dine skridt og dine træninger."
+            "value" : "Redde gemmer intet i Sundhed. Den læser kun de sundhedsdata, du slår til, til Dage med blik for helbredet og Telefonværktøjer."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde speichert nichts in Health. Wenn Gesundheitsbewusste Tage aktiviert ist, liest es nur deinen Schlaf, deine Schritte und deine Trainings."
+            "value" : "Redde speichert nichts in Health. Es liest nur die Health-Daten, die du aktivierst, für Gesundheitsbewusste Tage und Telefon-Tools."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Redde doesn't save anything to Health. With Health-Aware Days turned on, it only reads your sleep, steps and workouts."
+            "value" : "Redde doesn't save anything to Health. It only reads the Health data you turn on, for Health-Aware Days and Phone Tools."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde no guarda nada en Salud. Con Días según tu salud activado, solo lee tu sueño, tus pasos y tus entrenamientos."
+            "value" : "Redde no guarda nada en Salud. Solo lee los datos de Salud que actives, para Días según tu salud y Herramientas del teléfono."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde n’enregistre rien dans Santé. Avec Journées attentives à la santé activé, il lit seulement votre sommeil, vos pas et vos entraînements."
+            "value" : "Redde n’enregistre rien dans Santé. Il lit seulement les données de Santé que vous activez, pour Journées attentives à la santé et Outils du téléphone."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde non salva nulla in Salute. Con Giornate attente alla salute attivo, legge solo il sonno, i passi e gli allenamenti."
+            "value" : "Redde non salva nulla in Salute. Legge solo i dati di Salute che attivi, per Giornate attente alla salute e Strumenti del telefono."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reddeはヘルスケアに何も保存しません。「健康を考慮した1日」をオンにすると、睡眠、歩数、ワークアウトを読み取るだけです。"
+            "value" : "Reddeはヘルスケアに何も保存しません。「健康を考慮した1日」と「デバイスツール」のために、あなたがオンにしたヘルスケアデータを読み取るだけです。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde는 건강 앱에 아무것도 저장하지 않습니다. 건강을 고려한 하루를 켜면 수면, 걸음 수, 운동만 읽습니다."
+            "value" : "Redde는 건강 앱에 아무것도 저장하지 않습니다. 건강을 고려한 하루와 휴대폰 도구를 위해 사용자가 켠 건강 데이터만 읽습니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde lagrer ingenting i Helse. Når Dager med helse i tankene er slått på, leser den bare søvnen, skrittene og treningsøktene dine."
+            "value" : "Redde lagrer ingenting i Helse. Den leser bare helsedataene du slår på, for Dager med helse i tankene og Telefonverktøy."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde bewaart niets in Gezondheid. Met Dagen met gezondheid in gedachten aan leest het alleen je slaap, stappen en trainingen."
+            "value" : "Redde bewaart niets in Gezondheid. Het leest alleen de gezondheidsgegevens die je aanzet, voor Dagen met gezondheid in gedachten en Telefoontools."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde niczego nie zapisuje w Zdrowiu. Gdy Dni z myślą o zdrowiu są włączone, odczytuje tylko sen, kroki i treningi."
+            "value" : "Redde niczego nie zapisuje w Zdrowiu. Odczytuje tylko te dane z aplikacji Zdrowie, które włączysz, na potrzeby Dni z myślą o zdrowiu i Narzędzi telefonu."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Redde não salva nada no Saúde. Com Dias Conforme a Saúde ativado, ele apenas lê seu sono, seus passos e seus treinos."
+            "value" : "O Redde não salva nada no Saúde. Ele apenas lê os dados do Saúde que você ativar, para Dias Conforme a Saúde e Ferramentas do Telefone."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde ничего не сохраняет в «Здоровье». Когда «Дни с учетом здоровья» включены, приложение только читает ваш сон, шаги и тренировки."
+            "value" : "Redde ничего не сохраняет в «Здоровье». Приложение только читает данные «Здоровья», которые вы включили, для «Дней с учетом здоровья» и «Инструментов телефона»."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde sparar ingenting i Hälsa. Med Hälsomedvetna dagar på läser den bara din sömn, dina steg och dina träningspass."
+            "value" : "Redde sparar ingenting i Hälsa. Den läser bara de hälsodata du slår på, för Hälsomedvetna dagar och Telefonverktyg."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde, Sağlık'a hiçbir şey kaydetmez. Sağlığa Duyarlı Günler açıkken yalnızca uykunu, adımlarını ve antrenmanlarını okur."
+            "value" : "Redde, Sağlık'a hiçbir şey kaydetmez. Yalnızca açtığınız Sağlık verilerini, Sağlığa Duyarlı Günler ve Telefon Araçları için okur."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde нічого не зберігає в «Здоров’ї». Коли ввімкнено «Дні з урахуванням здоров’я», програма лише читає ваш сон, кроки й тренування."
+            "value" : "Redde нічого не зберігає в «Здоров’ї». Програма лише читає дані «Здоров’я», які ви ввімкнули, для «Днів з урахуванням здоров’я» та «Інструментів телефона»."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde 不会向“健康”保存任何内容。打开“关注健康的日子”后，它只读取你的睡眠、步数和体能训练。"
+            "value" : "Redde 不会向“健康”保存任何内容。它只读取你打开的“健康”数据，用于“关注健康的日子”和“手机工具”。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redde 不會向「健康」儲存任何內容。開啟「關注健康的日子」後，它只會讀取你的睡眠、步數和體能訓練。"
+            "value" : "Redde 不會向「健康」儲存任何內容。它只會讀取你開啟的「健康」資料，用於「關注健康的日子」和「手機工具」。"
+          }
+        }
+      }
+    },
+    "NSHomeKitUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Telefonværktøjer › Apple Hjem er slået til, kan din agent se dit tilbehør og dine scener og styre dem, når du beder om det. Låse, garageporte, døre, vinduer og alarmen spørger altid dig først. Det, den læser, sendes kun til din egen server."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Telefon-Tools › Apple Home aktiviert ist, kann dein Agent deine Geräte und Szenen sehen und sie steuern, wenn du darum bittest. Bei Schlössern, Garagentoren, Türen, Fenstern und der Alarmanlage wirst du immer zuerst gefragt. Was er liest, geht nur an deinen eigenen Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Phone Tools › Apple Home on, your agent can see your accessories and scenes and control them when you ask. Locks, garage doors, doors, windows and the alarm always ask you first. What it reads goes only to your own server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Herramientas del teléfono › Casa activado, tu agente puede ver tus accesorios y ambientes y controlarlos cuando se lo pidas. Para cerraduras, puertas de garaje, puertas, ventanas y la alarma siempre se te pregunta primero. Lo que lee solo va a tu propio servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand Outils du téléphone › Maison est activé, votre agent peut voir vos accessoires et vos scènes et les contrôler quand vous le demandez. Pour les serrures, les portes de garage, les portes, les fenêtres et l’alarme, votre accord est toujours demandé d’abord. Ce qu’il lit ne va qu’à votre propre serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Strumenti del telefono › Casa attivo, il tuo agente può vedere i tuoi accessori e le tue scene e controllarli quando lo chiedi. Per serrature, porte del garage, porte, finestre e allarme ti viene sempre chiesto prima. Ciò che legge va solo al tuo server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「デバイスツール › ホーム」をオンにすると、エージェントがアクセサリとシーンを確認し、あなたが頼んだときに操作できます。鍵、ガレージドア、ドア、窓、アラームは必ず先にあなたに確認します。読み取った内容はあなたのサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 도구 › Apple 홈을 켜면 에이전트가 액세서리와 모드를 확인하고 사용자가 요청할 때 제어할 수 있습니다. 잠금장치, 차고 문, 문, 창문, 경보는 항상 먼저 사용자에게 묻습니다. 읽은 내용은 사용자의 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Telefonverktøy › Apple Hjem er slått på, kan agenten se tilbehørene og stemningene dine og styre dem når du ber om det. Låser, garasjeporter, dører, vinduer og alarmen spør alltid deg først. Det den leser, går bare til din egen tjener."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Telefoontools › Woning aan kan je agent je accessoires en scènes zien en ze bedienen wanneer je erom vraagt. Voor sloten, garagedeuren, deuren, ramen en het alarm wordt het altijd eerst aan jou gevraagd. Wat de agent leest, gaat alleen naar je eigen server."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy opcja Narzędzia telefonu › Dom jest włączona, Twój agent może widzieć Twoje akcesoria i sceny oraz sterować nimi, gdy o to poprosisz. W przypadku zamków, bram garażowych, drzwi, okien i alarmu zawsze najpierw pyta Ciebie. To, co odczytuje, trafia tylko na Twój własny serwer."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Ferramentas do Telefone › App Casa ativado, seu agente pode ver seus acessórios e cenas e controlá-los quando você pedir. Fechaduras, portas de garagem, portas, janelas e o alarme sempre perguntam a você primeiro. O que ele lê vai só para o seu próprio servidor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда «Инструменты телефона › Дом» включены, агент может видеть ваши аксессуары и сценарии и управлять ими по вашей просьбе. Для замков, гаражных ворот, дверей, окон и сигнализации он всегда сначала спрашивает вас. То, что он читает, уходит только на ваш собственный сервер."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktyg › Hem på kan din agent se dina tillbehör och scener och styra dem när du ber om det. Lås, garageportar, dörrar, fönster och larmet frågar alltid dig först. Det den läser går bara till din egen server."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefon Araçları › Apple Ev açıkken ajanınız aksesuarlarınızı ve ortamlarınızı görebilir ve siz istediğinizde onları denetleyebilir. Kilitler, garaj kapıları, kapılar, pencereler ve alarm için her zaman önce size sorulur. Okudukları yalnızca kendi sunucunuza gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли «Інструменти телефона › Дім» увімкнено, агент може бачити ваші приладдя та сцени й керувати ними на ваше прохання. Щодо замків, гаражних воріт, дверей, вікон і сигналізації він завжди спершу питає вас. Те, що він читає, надходить лише на ваш власний сервер."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开“手机工具 › 家庭”后，智能体可以查看你的配件和场景，并在你提出要求时控制它们。门锁、车库门、门、窗和警报始终会先征求你的同意。它读取的内容只会发送到你自己的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「手機工具 › Apple 家庭」後，代理可以查看你的配件和情境，並在你提出要求時控制它們。門鎖、車庫門、門、窗和警報一律會先徵求你的同意。它讀取的內容只會傳送到你自己的伺服器。"
           }
         }
       }

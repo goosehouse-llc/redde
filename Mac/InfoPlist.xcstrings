@@ -1,0 +1,1374 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSCalendarsFullAccessUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan vise din næste begivenhed, når du starter en samtale, og vedhæfte en dags begivenheder til en besked til din assistent. Begivenheder sendes kun til din egen server. Når Afgangsalarmer er slået til, læser Redde også dine næste begivenheder på denne enhed og spørger Apple Kort, hvor lang tid turen til deres adresse tager, så du får besked, når du skal af sted."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kann deinen nächsten Termin zeigen, wenn du eine Konversation beginnst, und die Termine eines Tages für deinen Assistenten an eine Nachricht anhängen. Termine gehen nur an deinen eigenen Server. Wenn Aufbruch-Hinweise aktiviert sind, liest Redde auch deine nächsten Termine auf diesem Gerät und fragt Apple Karten, wie lange der Weg zu ihrer Adresse dauert, um dir zu sagen, wann du losmusst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events go only to your own server. With Leave-By Alerts on, Redde also reads your next events on this device and asks Apple Maps how long the way to their address takes, to tell you when to leave."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde puede mostrar tu próximo evento cuando empiezas una conversación, y adjuntar los eventos de un día a un mensaje para tu asistente. Los eventos solo van a tu propio servidor. Con Avisos de salida activados, Redde también lee tus próximos eventos en este dispositivo y pregunta a Mapas de Apple cuánto se tarda en llegar a su dirección, para avisarte de cuándo salir."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde peut afficher votre prochain événement quand vous commencez une conversation, et joindre les événements d’une journée à un message pour votre assistant. Les événements ne vont qu’à votre propre serveur. Quand Alertes de départ est activé, Redde lit aussi vos prochains événements sur cet appareil et demande à Plans combien de temps prend le trajet jusqu’à leur adresse, pour vous dire quand partir."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde può mostrare il tuo prossimo evento quando inizi una conversazione, e allegare gli eventi di un giorno a un messaggio per il tuo assistente. Gli eventi vanno solo al tuo server. Con Avvisi di partenza attivi, Redde legge anche i tuoi prossimi eventi su questo dispositivo e chiede ad Apple Mappe quanto ci vuole per arrivare al loro indirizzo, per dirti quando partire."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは、会話を始めるときに次の予定を表示したり、アシスタントへのメッセージに1日の予定を添付したりできます。予定は自分のサーバにのみ送信されます。出発通知をオンにすると、Reddeはこのデバイス上の今後の予定も読み取り、その住所までの所要時間をAppleマップに問い合わせて、出発する時刻をお知らせします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde는 대화를 시작할 때 다음 이벤트를 표시하고, 어시스턴트에게 보낼 메시지에 하루의 이벤트를 첨부할 수 있습니다. 이벤트는 사용자의 서버로만 전송됩니다. 출발 알림을 켜면 Redde가 이 기기에서 다가오는 일정도 읽고, 그 주소까지 가는 데 걸리는 시간을 Apple 지도에 물어 출발할 때를 알려 줍니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan vise den neste hendelsen din når du starter en samtale, og legge ved en dags hendelser i en melding til assistenten din. Hendelser går bare til din egen tjener. Med Avreisevarsler på leser Redde også de neste hendelsene dine på denne enheten og spør Apple Kart hvor lang tid veien til adressen tar, for å si fra når du bør dra."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan je volgende activiteit tonen als je een gesprek begint, en de activiteiten van een dag bij een bericht voor je assistent voegen. Activiteiten gaan alleen naar je eigen server. Met Vertrekmeldingen aan leest Redde ook je volgende afspraken op dit apparaat en vraagt Apple Kaarten hoe lang de reis naar hun adres duurt, om je te laten weten wanneer je moet vertrekken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde może pokazać następne wydarzenie, gdy zaczynasz rozmowę, i załączyć wydarzenia z danego dnia do wiadomości dla asystenta. Wydarzenia trafiają tylko na Twój własny serwer. Gdy Alerty wyjścia są włączone, Redde odczytuje też Twoje najbliższe wydarzenia na tym urządzeniu i pyta Mapy Apple, ile zajmie droga pod ich adres, aby powiedzieć Ci, kiedy wyjść."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde pode mostrar seu próximo evento quando você inicia uma conversa, e anexar os eventos de um dia a uma mensagem para o seu assistente. Os eventos vão só para o seu próprio servidor. Com Alertas de Saída ativados, o Redde também lê seus próximos eventos neste dispositivo e consulta o Mapas da Apple sobre quanto tempo leva até o endereço deles, para avisar quando sair."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde может показывать ваше следующее событие, когда вы начинаете разговор, и прикреплять события дня к сообщению для ассистента. События отправляются только на ваш собственный сервер. Когда включены Оповещения о выходе, Redde также читает ваши ближайшие события на этом устройстве и спрашивает Apple Карты, сколько займёт дорога до их адреса, чтобы сообщить вам, когда выходить."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan visa din nästa händelse när du startar en konversation, och bifoga en dags händelser till ett meddelande till din assistent. Händelser går bara till din egen server. Med Avresepåminnelser på läser Redde också dina nästa händelser på den här enheten och frågar Apple Kartor hur lång tid vägen till deras adress tar, för att säga till när du ska åka."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, bir konuşma başlattığınızda sonraki etkinliğinizi gösterebilir ve bir günün etkinliklerini asistanınız için bir mesaja ekleyebilir. Etkinlikler yalnızca kendi sunucunuza gider. Çıkış Uyarıları açıkken Redde bu cihazdaki yaklaşan etkinliklerinizi de okur ve adreslerine ne kadar sürede gidileceğini Apple Haritalar'a sorarak ne zaman çıkmanız gerektiğini size bildirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde може показувати вашу наступну подію, коли ви починаєте розмову, і додавати події дня до повідомлення для асистента. Події надходять лише на ваш власний сервер. Коли ввімкнено Сповіщення про вихід, Redde також читає ваші найближчі події на цьому пристрої й запитує Apple Карти, скільки триватиме дорога до їхньої адреси, щоб повідомити вам, коли виходити."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde可在你开始对话时显示你的下一项日程，并将某天的日程附加到发给助手的消息中。日程只会发送到你自己的服务器。打开出发提醒后，Redde 还会在此设备上读取你接下来的日程，并向 Apple 地图询问前往其地址需要多久，以便告诉你何时出发。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 可以在你開始對話時顯示你的下一個行程，並將某天的行程附加到給助理的訊息中。行程只會傳送到你自己的伺服器。開啟出發提醒後，Redde 也會在此裝置上讀取你接下來的行程，並向 Apple 地圖詢問前往其地址需要多久，以便告訴你何時出發。"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bruger kameraet, når du viser din assistent noget i stemmetilstand. Et billede sendes kun til den server, du opretter forbindelse til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde verwendet die Kamera, wenn du deinem Assistenten im Sprachmodus etwas zeigst. Ein Bild geht nur an den Server, mit dem du dich verbindest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde uses the camera when you show your assistant something in voice mode. A picture goes only to the server you connect to."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde usa la cámara cuando le enseñas algo a tu asistente en el modo de voz. Una imagen solo va al servidor al que te conectas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde utilise l’appareil photo quand vous montrez quelque chose à votre assistant en mode vocal. Une image ne va qu’au serveur auquel vous vous connectez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde usa la fotocamera quando mostri qualcosa al tuo assistente in modalità vocale. Un’immagine va solo al server a cui ti connetti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは、音声モードでアシスタントに何かを見せるときにカメラを使用します。画像は接続先のサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde는 음성 모드에서 어시스턴트에게 무언가를 보여 줄 때 카메라를 사용합니다. 사진은 연결한 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bruker kameraet når du viser assistenten din noe i stemmemodus. Et bilde går bare til tjeneren du kobler til."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde gebruikt de camera als je je assistent iets laat zien in spraakmodus. Een beeld gaat alleen naar de server waarmee je verbinding maakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde używa aparatu, gdy pokazujesz coś asystentowi w trybie głosowym. Obraz trafia tylko na serwer, z którym się łączysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde usa a câmera quando você mostra algo ao seu assistente no modo de voz. Uma imagem vai só para o servidor ao qual você se conecta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde использует камеру, когда вы показываете что-то ассистенту в голосовом режиме. Изображение отправляется только на сервер, к которому вы подключаетесь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde använder kameran när du visar din assistent något i röstläge. En bild går bara till servern du ansluter till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, sesli modda asistanınıza bir şey gösterdiğinizde kamerayı kullanır. Bir görüntü yalnızca bağlandığınız sunucuya gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde використовує камеру, коли ви показуєте щось асистенту в голосовому режимі. Зображення надходить лише на сервер, до якого ви під’єднуєтеся."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当你在语音模式中向助手展示某样东西时，Redde会使用相机。图片只会发送到你连接的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會在你於語音模式中讓助理看東西時使用相機。圖片只會傳送到你連線的伺服器。"
+          }
+        }
+      }
+    },
+    "NSContactsUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonværktøjer slået til slår Redde en kontakt op, når din assistent beder om det. Det, den finder, sendes kun til den server, du opretter forbindelse til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Telefon-Tools aktiviert sind, schlägt Redde einen Kontakt nach, wenn dein Assistent darum bittet. Was es findet, geht nur an den Server, mit dem du dich verbindest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Herramientas del teléfono activadas, Redde busca un contacto cuando tu asistente se lo pide. Lo que encuentra solo va al servidor al que te conectas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec les Outils du téléphone activés, Redde recherche un contact quand votre assistant le lui demande. Ce qu’il trouve ne va qu’au serveur auquel vous vous connectez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con gli Strumenti del telefono attivi, Redde cerca un contatto quando il tuo assistente lo chiede. Ciò che trova va solo al server a cui ti connetti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイスツールがオンの場合、アシスタントの依頼に応じてReddeが連絡先を調べます。見つかった情報は接続先のサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 도구가 켜져 있으면 어시스턴트가 요청할 때 Redde가 연락처를 찾습니다. 찾은 내용은 연결한 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktøy slått på slår Redde opp en kontakt når assistenten din ber om det. Det den finner, går bare til tjeneren du kobler til."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Telefoontools aan zoekt Redde een contact op als je assistent erom vraagt. Wat het vindt, gaat alleen naar de server waarmee je verbinding maakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Narzędzia telefonu są włączone, Redde wyszukuje kontakt na prośbę Twojego asystenta. To, co znajdzie, trafia tylko na serwer, z którym się łączysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com as Ferramentas do telefone ativadas, o Redde busca um contato quando seu assistente pede. O que ele encontra vai só para o servidor ao qual você se conecta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда включены «Инструменты телефона», Redde ищет контакт по просьбе ассистента. Найденное отправляется только на сервер, к которому вы подключаетесь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktyg påslaget slår Redde upp en kontakt när din assistent ber om det. Det den hittar går bara till servern du ansluter till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefon araçları açıkken Redde, asistanınız istediğinde bir kişiyi arar. Bulduğu şey yalnızca bağlandığınız sunucuya gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ввімкнено «Інструменти телефона», Redde шукає контакт на прохання вашого асистента. Знайдене надходить лише на сервер, до якого ви під’єднуєтеся."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开手机工具后，当你的助手请求时，Redde会查找联系人。查找结果只会发送到你连接的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟手機工具後，Redde 會在你的助理要求時查詢聯絡人。找到的內容只會傳送到你連線的伺服器。"
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde opretter forbindelse til den Hermes-gateway eller modelserver, du konfigurerer, som ofte er på dit lokale netværk."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde verbindet sich mit dem von dir konfigurierten Hermes-Gateway oder Modellserver, der oft in deinem lokalen Netzwerk ist."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde connects to the Hermes gateway or model server you configure, which is often on your local network."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde se conecta al gateway de Hermes o al servidor de modelos que configures, que suele estar en tu red local."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde se connecte à la passerelle Hermes ou au serveur de modèles que vous configurez, souvent sur votre réseau local."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde si connette al gateway Hermes o al server di modelli che configuri, che spesso si trova sulla tua rete locale."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは、設定したHermesゲートウェイまたはモデルサーバに接続します。これらは多くの場合ローカルネットワーク上にあります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde는 구성한 Hermes 게이트웨이 또는 모델 서버에 연결하며, 이 서버는 대개 로컬 네트워크에 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kobler til Hermes-gatewayen eller modelltjeneren du konfigurerer, som ofte er på det lokale nettverket ditt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde maakt verbinding met de Hermes-gateway of modelserver die je instelt, en die staat vaak op je lokale netwerk."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde łączy się ze skonfigurowaną bramą Hermesa lub serwerem modelu, które często są w Twojej sieci lokalnej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde se conecta ao gateway do Hermes ou ao servidor de modelos que você configurar, que muitas vezes fica na sua rede local."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde подключается к настроенному вами шлюзу Hermes или серверу модели, который часто находится в вашей локальной сети."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ansluter till den Hermes-gateway eller modellserver du konfigurerar, som ofta finns på ditt lokala nätverk."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, yapılandırdığınız Hermes ağ geçidine ya da model sunucusuna bağlanır; bu sunucu genellikle yerel ağınızdadır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde під’єднується до налаштованого вами шлюзу Hermes або сервера моделі, який часто розташований у вашій локальній мережі."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde会连接到你配置的Hermes网关或模型服务器，它们通常位于你的本地网络中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會連線到你設定的 Hermes 閘道或模型伺服器，它們通常位於你的區域網路中。"
+          }
+        }
+      }
+    },
+    "NSLocationAlwaysAndWhenInUseUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Steder er slået til, opdager Redde, når du ankommer til eller forlader et sted, du har angivet, også når Redde er lukket, og giver besked til den bot, du har valgt. Hvor du er, bliver på denne Mac; kun “ankommet hjem” sendes til din server."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Orte aktiviert ist, bemerkt Redde, wenn du an einem festgelegten Ort ankommst oder ihn verlässt, auch wenn Redde geschlossen ist, und sagt es dem Bot, den du gewählt hast. Wo du bist, bleibt auf diesem Mac; nur „zu Hause angekommen“ geht an deinen Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on this Mac; only \"arrived at Home\" goes to your server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Lugares activado, Redde detecta cuándo llegas a un lugar que definiste o te vas de él, incluso con Redde cerrado, y avisa al bot que elegiste. Tu ubicación se queda en este Mac; solo “llegada a casa” llega a tu servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand Lieux est activé, Redde remarque quand vous arrivez dans un lieu défini ou le quittez, même quand Redde est fermé, et prévient le bot que vous avez choisi. Votre position reste sur ce Mac ; seul « arrivée à la maison » est envoyé à votre serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Luoghi attivo, Redde si accorge di quando arrivi in un luogo impostato o te ne vai, anche quando Redde è chiusa, e lo dice al bot che hai scelto. La tua posizione resta su questo Mac; al tuo server arriva solo “arrivo a casa”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場所をオンにすると、Reddeを閉じていても、設定した場所に到着したときや出発したときにReddeが気づき、選んだボットに知らせます。現在地はこのMacの中にとどまり、サーバに送られるのは「自宅に到着」だけです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "장소를 켜면 Redde가 닫혀 있어도 설정한 장소에 도착하거나 떠날 때 Redde가 알아채고 선택한 봇에게 알립니다. 현재 위치는 이 Mac에 남으며, 서버에는 “집에 도착”만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Steder er slått på, merker Redde når du kommer til eller drar fra et sted du har angitt, også når Redde er lukket, og sier fra til boten du valgte. Hvor du er, blir på denne Macen; bare «kommet hjem» går til tjeneren din."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Locaties aan merkt Redde wanneer je aankomt bij of vertrekt van een ingestelde locatie, ook als Redde gesloten is, en laat het de gekozen bot weten. Waar je bent, blijft op deze Mac; alleen ‘thuis aangekomen’ gaat naar je server."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Miejsca są włączone, Redde zauważa, kiedy przybywasz do ustawionego miejsca lub je opuszczasz, nawet gdy Redde jest zamknięte, i powiadamia wybranego bota. To, gdzie jesteś, zostaje na tym Macu; do Twojego serwera trafia tylko „przybycie do domu”."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Locais ativado, o Redde percebe quando você chega a um local definido ou sai dele, mesmo com o Redde fechado, e avisa o bot escolhido. Onde você está fica neste Mac; só “chegou em casa” vai para o seu servidor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда «Места» включены, Redde замечает, когда вы приходите в заданное место или уходите из него, даже если Redde закрыт, и сообщает выбранному боту. Ваше местоположение остается на этом Mac; на сервер уходит только «прибытие домой»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Platser på märker Redde när du kommer fram till eller lämnar en plats du har angett, även när Redde är stängd, och säger till den bot du valt. Var du är stannar på den här Macen; bara ”kommit hem” går till din server."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerler açıkken Redde, Redde kapalıyken bile belirlediğiniz bir yere vardığınızı ya da oradan ayrıldığınızı fark eder ve seçtiğiniz bota haber verir. Nerede olduğunuz bu Mac'te kalır; sunucunuza yalnızca “eve varıldı” gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли «Місця» ввімкнено, Redde помічає, коли ви приходите в задане місце чи йдете з нього, навіть коли Redde закрито, і повідомляє вибраному боту. Ваше місцезнаходження лишається на цьому Mac; на сервер надходить лише «прибуття додому»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开地点后，即使Redde已关闭，Redde也会在你到达或离开设置的地点时察觉，并告诉你选择的机器人。你的位置保留在这台Mac上；只有“已到家”会发送到你的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟地點後，即使 Redde 已關閉，Redde 也會在你抵達或離開設定的地點時察覺，並告訴你選擇的機器人。你的位置會保留在這台 Mac 上；只有「已到家」會傳送到你的伺服器。"
+          }
+        }
+      }
+    },
+    "NSLocationUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Aktuel placering er slået til, får din egen agent at vide omtrent, hvor du er, når du spørger om steder, vejvisning eller vejret. Det går til din egen server og ingen andre steder. Når Afgangsalarmer er slået til, beregner Redde ud fra, hvor du er, hvornår du skal af sted til en begivenhed; hvor du er, sendes kun til Apple Kort for at finde vejen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Aktueller Standort aktiviert ist, erfährt dein eigener Agent ungefähr, wo du bist, wenn du nach Orten, Wegbeschreibungen oder dem Wetter fragst. Das geht an deinen eigenen Server und nirgendwo sonst hin. Wenn Aufbruch-Hinweise aktiviert sind, berechnet Redde anhand deines Standorts, wann du zu einem Termin losmusst; dein Standort geht nur an Apple Karten, für den Weg dorthin."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. It goes to your own server and nowhere else. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Ubicación actual activada, tu propio agente sabe aproximadamente dónde estás cuando preguntas por lugares, indicaciones o el tiempo. Va a tu propio servidor y a ningún otro sitio. Con Avisos de salida activados, Redde calcula desde donde estás cuándo salir hacia un evento; tu ubicación solo va a Mapas de Apple, para el trayecto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand Position actuelle est activé, votre propre agent apprend à peu près où vous êtes lorsque vous posez une question sur des lieux, un itinéraire ou la météo. Cela va à votre propre serveur et nulle part ailleurs. Quand Alertes de départ est activé, Redde calcule à partir de votre position quand partir pour un événement ; votre position n’est envoyée qu’à Plans, pour le trajet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Posizione attuale attiva, il tuo agente sa più o meno dove sei quando chiedi di luoghi, indicazioni o meteo. Va al tuo server e da nessun’altra parte. Con Avvisi di partenza attivi, Redde calcola da dove sei quando partire per un evento; la tua posizione va solo ad Apple Mappe, per il percorso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在地をオンにすると、場所、経路、天気について尋ねたときに、あなた自身のエージェントにおおよその現在地が伝わります。送られるのはあなた自身のサーバだけです。出発通知をオンにすると、Reddeは現在地から予定に向けて出発する時刻を計算します。現在地は経路を調べるためにAppleマップにのみ送られます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "현재 위치를 켜면 장소, 길 안내, 날씨를 물어볼 때 내 에이전트가 대략적인 위치를 알게 됩니다. 위치는 내 서버로만 전송됩니다. 출발 알림을 켜면 Redde가 현재 위치에서 일정으로 출발할 시간을 계산합니다. 현재 위치는 경로를 찾기 위해 Apple 지도에만 전달됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Nåværende posisjon er slått på, får din egen agent vite omtrent hvor du er når du spør om steder, veibeskrivelser eller været. Det går til din egen tjener og ingen andre steder. Med Avreisevarsler på regner Redde ut fra der du er når du bør dra til en hendelse; posisjonen din går bare til Apple Kart, for veien dit."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Huidige locatie aan hoort je eigen agent ongeveer waar je bent als je vraagt naar plekken, routes of het weer. Het gaat naar je eigen server en nergens anders heen. Met Vertrekmeldingen aan berekent Redde vanaf je locatie wanneer je naar een afspraak moet vertrekken; je locatie gaat alleen naar Apple Kaarten, voor de route."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Bieżąca lokalizacja jest włączona, Twój własny agent dowiaduje się, mniej więcej gdzie jesteś, kiedy pytasz o miejsca, trasy lub pogodę. Trafia to tylko na Twój własny serwer. Gdy Alerty wyjścia są włączone, Redde na podstawie Twojej lokalizacji oblicza, kiedy wyjść na wydarzenie; Twoja lokalizacja trafia tylko do Map Apple, by wyznaczyć drogę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Localização atual ativada, seu próprio agente fica sabendo mais ou menos onde você está quando você pergunta sobre lugares, rotas ou o tempo. Isso vai para o seu próprio servidor e para nenhum outro lugar. Com Alertas de Saída ativados, o Redde calcula a partir de onde você está quando sair para um evento; sua localização vai só para o Mapas da Apple, para o trajeto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда включена «Текущая геопозиция», ваш собственный агент узнаёт, где вы примерно находитесь, когда вы спрашиваете о местах, маршрутах или погоде. Это уходит только на ваш собственный сервер. Когда включены Оповещения о выходе, Redde по вашей геопозиции рассчитывает, когда выходить на событие; геопозиция передаётся только в Apple Карты, для построения маршрута."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Aktuell plats på får din egen agent veta ungefär var du är när du frågar om platser, vägbeskrivningar eller vädret. Det går till din egen server och ingen annanstans. Med Avresepåminnelser på räknar Redde ut från var du är när du ska åka till en händelse; din plats skickas bara till Apple Kartor, för vägen dit."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mevcut Konum açıkken yerler, yol tarifleri veya hava durumu hakkında sorduğunuzda kendi ajanınız yaklaşık nerede olduğunuzu öğrenir. Bu bilgi yalnızca kendi sunucunuza gider. Çıkış Uyarıları açıkken Redde, bulunduğunuz yere göre bir etkinliğe ne zaman çıkmanız gerektiğini hesaplar; konumunuz yalnızca yol tarifi için Apple Haritalar'a gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ввімкнено «Поточне місцезнаходження», ваш власний агент дізнається, де ви приблизно перебуваєте, коли ви питаєте про місця, маршрути чи погоду. Це надходить лише на ваш власний сервер. Коли ввімкнено Сповіщення про вихід, Redde за вашим місцезнаходженням розраховує, коли виходити на подію; місцезнаходження передається лише в Apple Карти, для маршруту."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开当前位置后，当你询问地点、路线或天气时，你自己的智能体会知道你的大致位置。它只会发送到你自己的服务器。打开出发提醒后，Redde 会根据你所在的位置计算何时出发去参加日程；你的位置只会发送给 Apple 地图，用于规划路线。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟目前位置後，當你詢問地點、路線或天氣時，你自己的代理會知道你的大概位置。它只會傳送到你自己的伺服器。開啟出發提醒後，Redde 會根據你所在的位置計算何時出發前往行程；你的位置只會傳送給 Apple 地圖，用於規劃路線。"
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Steder er slået til, bruger Redde, hvor du er, til at angive et sted og opdage, når du ankommer eller tager af sted; kun “ankommet hjem” sendes til din server. Når Aktuel placering er slået til, får din egen agent at vide omtrent, hvor du er, når du spørger om steder, vejvisning eller vejret. Når Afgangsalarmer er slået til, beregner Redde ud fra, hvor du er, hvornår du skal af sted til en begivenhed; hvor du er, sendes kun til Apple Kort for at finde vejen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Orte aktiviert ist, verwendet Redde deinen Standort, um einen Ort festzulegen und zu bemerken, wann du ankommst oder gehst; nur „zu Hause angekommen“ geht an deinen Server. Wenn Aktueller Standort aktiviert ist, erfährt dein eigener Agent ungefähr, wo du bist, wenn du nach Orten, Wegbeschreibungen oder dem Wetter fragst. Wenn Aufbruch-Hinweise aktiviert sind, berechnet Redde anhand deines Standorts, wann du zu einem Termin losmusst; dein Standort geht nur an Apple Karten, für den Weg dorthin."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only \"arrived at Home\" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Lugares activado, Redde usa tu ubicación para definir un lugar y para detectar cuándo llegas o te vas; solo “llegada a casa” llega a tu servidor. Con Ubicación actual activada, tu propio agente sabe aproximadamente dónde estás cuando preguntas por lugares, indicaciones o el tiempo. Con Avisos de salida activados, Redde calcula desde donde estás cuándo salir hacia un evento; tu ubicación solo va a Mapas de Apple, para el trayecto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand Lieux est activé, Redde utilise votre position pour définir un lieu et remarquer quand vous arrivez ou partez ; seul « arrivée à la maison » est envoyé à votre serveur. Quand Position actuelle est activé, votre propre agent apprend à peu près où vous êtes lorsque vous posez une question sur des lieux, un itinéraire ou la météo. Quand Alertes de départ est activé, Redde calcule à partir de votre position quand partir pour un événement ; votre position n’est envoyée qu’à Plans, pour le trajet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Luoghi attivo, Redde usa la tua posizione per impostare un luogo e accorgersi di quando arrivi o te ne vai; al tuo server arriva solo “arrivo a casa”. Con Posizione attuale attiva, il tuo agente sa più o meno dove sei quando chiedi di luoghi, indicazioni o meteo. Con Avvisi di partenza attivi, Redde calcola da dove sei quando partire per un evento; la tua posizione va solo ad Apple Mappe, per il percorso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場所をオンにすると、Reddeは現在地を使って場所を設定し、到着や出発に気づきます。サーバに送られるのは「自宅に到着」だけです。現在地をオンにすると、場所、経路、天気について尋ねたときに、あなた自身のエージェントにおおよその現在地が伝わります。出発通知をオンにすると、Reddeは現在地から予定に向けて出発する時刻を計算します。現在地は経路を調べるためにAppleマップにのみ送られます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "장소를 켜면 Redde가 현재 위치를 사용해 장소를 설정하고 도착이나 출발을 알아채며, 서버에는 “집에 도착”만 전송됩니다. 현재 위치를 켜면 장소, 길 안내, 날씨를 물어볼 때 내 에이전트가 대략적인 위치를 알게 됩니다. 출발 알림을 켜면 Redde가 현재 위치에서 일정으로 출발할 시간을 계산합니다. 현재 위치는 경로를 찾기 위해 Apple 지도에만 전달됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Steder er slått på, bruker Redde hvor du er til å angi et sted og merke når du kommer eller drar; bare «kommet hjem» går til tjeneren din. Når Nåværende posisjon er slått på, får din egen agent vite omtrent hvor du er når du spør om steder, veibeskrivelser eller været. Med Avreisevarsler på regner Redde ut fra der du er når du bør dra til en hendelse; posisjonen din går bare til Apple Kart, for veien dit."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Locaties aan gebruikt Redde waar je bent om een locatie in te stellen en te merken wanneer je aankomt of vertrekt; alleen ‘thuis aangekomen’ gaat naar je server. Met Huidige locatie aan hoort je eigen agent ongeveer waar je bent als je vraagt naar plekken, routes of het weer. Met Vertrekmeldingen aan berekent Redde vanaf je locatie wanneer je naar een afspraak moet vertrekken; je locatie gaat alleen naar Apple Kaarten, voor de route."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Miejsca są włączone, Redde używa Twojej lokalizacji, aby ustawić miejsce i zauważać, kiedy przybywasz lub wychodzisz; do Twojego serwera trafia tylko „przybycie do domu”. Gdy Bieżąca lokalizacja jest włączona, Twój własny agent dowiaduje się, mniej więcej gdzie jesteś, kiedy pytasz o miejsca, trasy lub pogodę. Gdy Alerty wyjścia są włączone, Redde na podstawie Twojej lokalizacji oblicza, kiedy wyjść na wydarzenie; Twoja lokalizacja trafia tylko do Map Apple, by wyznaczyć drogę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Locais ativado, o Redde usa onde você está para definir um local e perceber quando você chega ou sai; só “chegou em casa” vai para o seu servidor. Com Localização atual ativada, seu próprio agente fica sabendo mais ou menos onde você está quando você pergunta sobre lugares, rotas ou o tempo. Com Alertas de Saída ativados, o Redde calcula a partir de onde você está quando sair para um evento; sua localização vai só para o Mapas da Apple, para o trajeto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда «Места» включены, Redde использует ваше местоположение, чтобы задать место и замечать, когда вы приходите или уходите; на сервер уходит только «прибытие домой». Когда включена «Текущая геопозиция», ваш собственный агент узнаёт, где вы примерно находитесь, когда вы спрашиваете о местах, маршрутах или погоде. Когда включены Оповещения о выходе, Redde по вашей геопозиции рассчитывает, когда выходить на событие; геопозиция передаётся только в Apple Карты, для построения маршрута."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Platser på använder Redde var du är för att ange en plats och märka när du kommer fram eller åker; bara ”kommit hem” går till din server. Med Aktuell plats på får din egen agent veta ungefär var du är när du frågar om platser, vägbeskrivningar eller vädret. Med Avresepåminnelser på räknar Redde ut från var du är när du ska åka till en händelse; din plats skickas bara till Apple Kartor, för vägen dit."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerler açıkken Redde, bir yer belirlemek ve vardığınızı ya da ayrıldığınızı fark etmek için nerede olduğunuzu kullanır; sunucunuza yalnızca “eve varıldı” gider. Mevcut Konum açıkken yerler, yol tarifleri veya hava durumu hakkında sorduğunuzda kendi ajanınız yaklaşık nerede olduğunuzu öğrenir. Çıkış Uyarıları açıkken Redde, bulunduğunuz yere göre bir etkinliğe ne zaman çıkmanız gerektiğini hesaplar; konumunuz yalnızca yol tarifi için Apple Haritalar'a gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли «Місця» ввімкнено, Redde використовує ваше місцезнаходження, щоб задати місце й помічати, коли ви приходите або йдете; на сервер надходить лише «прибуття додому». Коли ввімкнено «Поточне місцезнаходження», ваш власний агент дізнається, де ви приблизно перебуваєте, коли ви питаєте про місця, маршрути чи погоду. Коли ввімкнено Сповіщення про вихід, Redde за вашим місцезнаходженням розраховує, коли виходити на подію; місцезнаходження передається лише в Apple Карти, для маршруту."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开地点后，Redde会使用你的位置来设置地点，并察觉你何时到达或离开；只有“已到家”会发送到你的服务器。打开当前位置后，当你询问地点、路线或天气时，你自己的智能体会知道你的大致位置。打开出发提醒后，Redde 会根据你所在的位置计算何时出发去参加日程；你的位置只会发送给 Apple 地图，用于规划路线。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟地點後，Redde 會使用你的位置來設定地點，並察覺你何時抵達或離開；只有「已到家」會傳送到你的伺服器。開啟目前位置後，當你詢問地點、路線或天氣時，你自己的代理會知道你的大概位置。開啟出發提醒後，Redde 會根據你所在的位置計算何時出發前往行程；你的位置只會傳送給 Apple 地圖，用於規劃路線。"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lytter, så du kan tale med din assistent. Tale transskriberes på denne enhed, og kun din egen server modtager teksten, medmindre du starter et live-stemmeopkald, som går til den stemmetjeneste, du har valgt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde hört zu, damit du mit deinem Assistenten sprechen kannst. Sprache wird auf diesem Gerät transkribiert, und nur dein eigener Server erhält den Text, außer du startest einen Live-Sprachanruf, der an den von dir gewählten Sprachdienst geht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde escucha para que puedas hablar con tu asistente. La voz se transcribe en este dispositivo y solo tu propio servidor recibe el texto, salvo que inicies una llamada de voz en vivo, que va al servicio de voz que elegiste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde écoute pour que vous puissiez parler à votre assistant. La parole est transcrite sur cet appareil et seul votre propre serveur reçoit le texte, sauf si vous lancez un appel vocal en direct, qui passe par le service vocal que vous avez choisi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ascolta per permetterti di parlare con il tuo assistente. Il parlato viene trascritto su questo dispositivo e solo il tuo server riceve il testo, a meno che tu non avvii una chiamata vocale in tempo reale, che va al servizio vocale che hai scelto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは、アシスタントと話せるように音声を聞き取ります。音声はこのデバイス上で文字に変換され、テキストを受け取るのは自分のサーバだけです。ただし、ライブ音声通話を開始した場合は、選択した音声サービスに送られます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어시스턴트와 대화할 수 있도록 Redde가 듣습니다. 음성은 이 기기에서 받아쓰기되며 텍스트는 사용자의 서버만 받습니다. 단, 라이브 음성 통화를 시작하면 선택한 음성 서비스로 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lytter slik at du kan snakke med assistenten din. Tale transkriberes på denne enheten, og bare din egen tjener mottar teksten, med mindre du starter en live-samtale, som går til stemmetjenesten du valgte."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde luistert zodat je met je assistent kunt praten. Spraak wordt op dit apparaat getranscribeerd en alleen je eigen server ontvangt de tekst, tenzij je een live spraakgesprek start, dat naar de spraakdienst gaat die je hebt gekozen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde słucha, by umożliwić rozmowę z Twoim asystentem. Mowa jest transkrybowana na tym urządzeniu, a tekst otrzymuje tylko Twój własny serwer, chyba że rozpoczniesz połączenie głosowe na żywo, które trafia do wybranej usługi głosowej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde ouve para que você possa falar com seu assistente. A fala é transcrita neste dispositivo e só o seu próprio servidor recebe o texto, a menos que você inicie uma chamada de voz ao vivo, que vai para o serviço de voz que você escolheu."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde слушает, чтобы вы могли разговаривать с ассистентом. Речь расшифровывается на этом устройстве, и текст получает только ваш сервер, если только вы не начнете звонок с живым голосом — тогда звук идет в выбранный вами голосовой сервис."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lyssnar så att du kan prata med din assistent. Tal transkriberas på den här enheten och bara din egen server tar emot texten, om du inte startar ett livesamtal, som går till den rösttjänst du valt."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, asistanınızla konuşabilmeniz için dinler. Konuşma bu aygıtta metne dökülür ve metni yalnızca kendi sunucunuz alır; canlı sesli arama başlatırsanız ses, seçtiğiniz ses hizmetine gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde слухає, щоб ви могли говорити з асистентом. Мовлення транскрибується на цьому пристрої, і текст отримує лише ваш власний сервер, якщо тільки ви не почнете голосовий виклик наживо, який іде до вибраного вами голосового сервісу."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde会聆听，以便你与助手交谈。语音在此设备上转写，只有你自己的服务器会收到文本；除非你发起实时语音通话，此时语音会发送到你选择的语音服务。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會聆聽，讓你可以與助理交談。語音會在此裝置上轉寫，只有你自己的伺服器會收到文字；除非你開始即時語音通話，此時會傳送到你選擇的語音服務。"
+          }
+        }
+      }
+    },
+    "NSMotionUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde læser hovedbevægelser fra dine AirPods, så du kan nikke for at godkende eller ryste på hovedet for at afvise en anmodning fra din assistent. Det læses på denne Mac og bliver aldrig gemt eller sendt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde liest Kopfbewegungen von deinen AirPods, damit du eine Anfrage deines Assistenten mit einem Nicken genehmigen oder mit einem Kopfschütteln ablehnen kannst. Sie werden auf diesem Mac gelesen und nie gesichert oder gesendet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde reads head movement from your AirPods so you can nod to approve, or shake your head to deny, a request from your assistant. It is read on this Mac and never stored or sent."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lee el movimiento de la cabeza desde tus AirPods para que puedas asentir para aprobar, o negar con la cabeza para denegar, una solicitud de tu asistente. Se lee en este Mac y nunca se guarda ni se envía."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lit les mouvements de tête de vos AirPods pour que vous puissiez hocher la tête pour approuver une demande de votre assistant, ou la secouer pour la refuser. Ils sont lus sur ce Mac et ne sont jamais conservés ni envoyés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde legge il movimento della testa dagli AirPods per permetterti di annuire per approvare, o scuotere la testa per rifiutare, una richiesta del tuo assistente. Viene letto su questo Mac e mai salvato né inviato."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ReddeはAirPodsから頭の動きを読み取り、アシスタントからのリクエストをうなずいて承認したり、首を振って拒否したりできるようにします。動きはこのMac上で読み取られ、保存や送信は一切されません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어시스턴트의 요청을 고개를 끄덕여 승인하거나 저어서 거부할 수 있도록 Redde가 AirPods에서 머리 움직임을 읽습니다. 이 정보는 이 Mac에서만 읽히며 저장되거나 전송되지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde leser hodebevegelser fra AirPods slik at du kan nikke for å godkjenne eller riste på hodet for å avvise en forespørsel fra assistenten din. Det leses på denne Macen og blir aldri lagret eller sendt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde leest hoofdbewegingen uit je AirPods, zodat je kunt knikken om een verzoek van je assistent goed te keuren, of je hoofd kunt schudden om het te weigeren. Dit wordt op deze Mac gelezen en nooit bewaard of verstuurd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde odczytuje ruch głowy z AirPods, aby skinienie głową zatwierdzało, a pokręcenie głową odrzucało prośbę Twojego asystenta. Ruch jest odczytywany na tym Macu i nigdy nie jest przechowywany ani wysyłany."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde lê o movimento da cabeça pelos AirPods para que você possa acenar para aprovar, ou balançar a cabeça para negar, um pedido do seu assistente. Isso é lido neste Mac e nunca é armazenado nem enviado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde считывает движения головы с AirPods, чтобы вы могли кивнуть, одобряя запрос ассистента, или покачать головой, отклоняя его. Данные обрабатываются на этом Mac и никогда не сохраняются и не передаются."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde läser av huvudrörelser från dina AirPods så att du kan nicka för att godkänna, eller skaka på huvudet för att neka, en förfrågan från din assistent. Det läses av på den här Macen och sparas eller skickas aldrig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, asistanınızdan gelen bir isteği başınızı aşağı yukarı sallayarak onaylayabilmeniz ya da iki yana sallayarak reddedebilmeniz için AirPods'unuzdan baş hareketlerini okur. Bu bilgi bu Mac'te okunur, hiçbir zaman saklanmaz ya da gönderilmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde зчитує рухи голови з AirPods, щоб ви могли кивнути, схвалюючи запит асистента, або похитати головою, відхиляючи його. Дані зчитуються на цьому Mac й ніколи не зберігаються та не надсилаються."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde通过你的AirPods读取头部动作，让你可以点头批准或摇头拒绝助手的请求。动作在这台Mac上读取，绝不会被存储或发送。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會讀取你 AirPods 偵測到的頭部動作，讓你點頭核准或搖頭拒絕助理的請求。這些資料只在這台 Mac 上讀取，絕不會儲存或傳送。"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonværktøjer slået til finder Redde fotos, viser et til din assistent eller sletter dem, du bekræfter, når din assistent beder om det. Et foto sendes kun til den server, du opretter forbindelse til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Telefon-Tools aktiviert sind, findet Redde Fotos, zeigt deinem Assistenten eines oder löscht die von dir bestätigten, wenn dein Assistent darum bittet. Ein Foto geht nur an den Server, mit dem du dich verbindest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Phone tools turned on, Redde finds photos, shows one to your assistant, or deletes the ones you confirm, when your assistant asks it to. A photo goes only to the server you connect to."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Herramientas del teléfono activadas, Redde busca fotos, muestra una a tu asistente o elimina las que confirmes, cuando tu asistente se lo pide. Una foto solo va al servidor al que te conectas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec les Outils du téléphone activés, Redde trouve des photos, en montre une à votre assistant, ou supprime celles que vous confirmez, quand votre assistant le lui demande. Une photo ne va qu’au serveur auquel vous vous connectez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con gli Strumenti del telefono attivi, Redde trova foto, ne mostra una al tuo assistente o elimina quelle che confermi, quando il tuo assistente lo chiede. Una foto va solo al server a cui ti connetti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイスツールがオンの場合、アシスタントの依頼に応じて、Reddeが写真を探したり、アシスタントに写真を見せたり、確認した写真を削除したりします。写真は接続先のサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 도구가 켜져 있으면 어시스턴트가 요청할 때 Redde가 사진을 찾거나, 어시스턴트에게 사진을 보여 주거나, 사용자가 확인한 사진을 삭제합니다. 사진은 연결한 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktøy slått på finner Redde bilder, viser et til assistenten din eller sletter dem du bekrefter, når assistenten din ber om det. Et bilde går bare til tjeneren du kobler til."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Telefoontools aan zoekt Redde foto’s, laat het er een aan je assistent zien, of verwijdert het de foto’s die je bevestigt, als je assistent erom vraagt. Een foto gaat alleen naar de server waarmee je verbinding maakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Narzędzia telefonu są włączone, Redde na prośbę Twojego asystenta znajduje zdjęcia, pokazuje mu wybrane zdjęcie lub usuwa te, które potwierdzisz. Zdjęcie trafia tylko na serwer, z którym się łączysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com as Ferramentas do telefone ativadas, o Redde encontra fotos, mostra uma ao seu assistente ou apaga as que você confirmar, quando seu assistente pede. Uma foto vai só para o servidor ao qual você se conecta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда включены «Инструменты телефона», Redde по просьбе ассистента находит фото, показывает ему одно из них или удаляет те, что вы подтвердите. Фото отправляется только на сервер, к которому вы подключаетесь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktyg påslaget hittar Redde bilder, visar en för din assistent eller raderar de du bekräftar, när din assistent ber om det. En bild går bara till servern du ansluter till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefon araçları açıkken Redde, asistanınız istediğinde fotoğraf bulur, birini asistanınıza gösterir ya da onayladıklarınızı siler. Bir fotoğraf yalnızca bağlandığınız sunucuya gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ввімкнено «Інструменти телефона», Redde на прохання вашого асистента знаходить фото, показує йому одне з них або видаляє ті, які ви підтвердите. Фото надходить лише на сервер, до якого ви під’єднуєтеся."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开手机工具后，当你的助手请求时，Redde会查找照片、向助手展示某张照片，或删除你确认的照片。照片只会发送到你连接的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟手機工具後，當你的助理要求時，Redde 會尋找照片、將照片給助理看，或刪除你確認的照片。照片只會傳送到你連線的伺服器。"
+          }
+        }
+      }
+    },
+    "NSRemindersFullAccessUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonværktøjer slået til læser og tilføjer Redde påmindelser, når din assistent beder om det. De sendes kun til den server, du opretter forbindelse til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn Telefon-Tools aktiviert sind, liest Redde Erinnerungen und fügt welche hinzu, wenn dein Assistent darum bittet. Sie gehen nur an den Server, mit dem du dich verbindest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "With Phone tools turned on, Redde reads and adds reminders when your assistant asks it to. They go only to the server you connect to."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Herramientas del teléfono activadas, Redde lee y añade recordatorios cuando tu asistente se lo pide. Solo van al servidor al que te conectas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec les Outils du téléphone activés, Redde lit et ajoute des rappels quand votre assistant le lui demande. Ils ne vont qu’au serveur auquel vous vous connectez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con gli Strumenti del telefono attivi, Redde legge e aggiunge promemoria quando il tuo assistente lo chiede. Vanno solo al server a cui ti connetti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デバイスツールがオンの場合、アシスタントの依頼に応じてReddeがリマインダーを読み取ったり追加したりします。リマインダーは接続先のサーバにのみ送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "휴대폰 도구가 켜져 있으면 어시스턴트가 요청할 때 Redde가 미리 알림을 읽고 추가합니다. 미리 알림은 연결한 서버로만 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktøy slått på leser og legger Redde til påminnelser når assistenten din ber om det. De går bare til tjeneren du kobler til."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Telefoontools aan leest Redde herinneringen en voegt het ze toe als je assistent erom vraagt. Ze gaan alleen naar de server waarmee je verbinding maakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Narzędzia telefonu są włączone, Redde odczytuje i dodaje przypomnienia na prośbę Twojego asystenta. Trafiają one tylko na serwer, z którym się łączysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com as Ferramentas do telefone ativadas, o Redde lê e adiciona lembretes quando seu assistente pede. Eles vão só para o servidor ao qual você se conecta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда включены «Инструменты телефона», Redde читает и добавляет напоминания по просьбе ассистента. Они отправляются только на сервер, к которому вы подключаетесь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Telefonverktyg påslaget läser och lägger Redde till påminnelser när din assistent ber om det. De går bara till servern du ansluter till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefon araçları açıkken Redde, asistanınız istediğinde anımsatıcıları okur ve ekler. Bunlar yalnızca bağlandığınız sunucuya gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ввімкнено «Інструменти телефона», Redde читає й додає нагадування на прохання вашого асистента. Вони надходять лише на сервер, до якого ви під’єднуєтеся."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开手机工具后，当你的助手请求时，Redde会读取和添加提醒事项。它们只会发送到你连接的服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟手機工具後，Redde 會在你的助理要求時讀取並加入提醒事項。它們只會傳送到你連線的伺服器。"
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription" : {
+      "comment" : "Why Redde asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde omdanner det, du siger, til tekst på denne Mac, så du kan tale med din assistent."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde wandelt auf diesem Mac in Text um, was du sagst, damit du mit deinem Assistenten sprechen kannst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Redde turns what you say into text on this Mac, so you can talk to your assistant."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde convierte en texto lo que dices en este Mac para que puedas hablar con tu asistente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde transforme ce que vous dites en texte sur ce Mac, pour que vous puissiez parler à votre assistant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde trasforma in testo ciò che dici su questo Mac, così puoi parlare con il tuo assistente."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アシスタントと話せるよう、Reddeはあなたの話した内容をこのMac上でテキストに変換します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어시스턴트와 대화할 수 있도록 Redde가 사용자의 말을 이 Mac에서 텍스트로 변환합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde gjør det du sier om til tekst på denne Macen, slik at du kan snakke med assistenten din."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde zet wat je zegt op deze Mac om in tekst, zodat je met je assistent kunt praten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde zamienia to, co mówisz, na tekst na tym Macu, aby można było rozmawiać z asystentem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde transforma o que você diz em texto neste Mac para que você possa falar com seu assistente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde преобразует вашу речь в текст на этом Mac, чтобы вы могли говорить с ассистентом."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde gör om det du säger till text på den här Macen så att du kan prata med din assistent."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, asistanınızla konuşabilmeniz için söylediklerinizi bu Mac'te metne dönüştürür."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde перетворює ваше мовлення на текст на цьому Mac, щоб ви могли говорити з асистентом."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 会在这台 Mac 上将你说的话转成文字，让你可以与助手交谈。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會在這台 Mac 上將你說的話轉成文字，讓你可以與助理交談。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

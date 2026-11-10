@@ -40,7 +40,7 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Redde connects to the Hermes gateway or model server you configure, which is often on your local network.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on your iPhone; only "arrived at Home" goes to your server.</string>
+	<string>With Places turned on, Redde notices when you arrive at or leave a place you set, even when Redde is closed, and tells the bot you chose. Where you are stays on this Mac; only "arrived at Home" goes to your server.</string>
 	<key>NSLocationUsageDescription</key>
 	<string>With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. It goes to your own server and nowhere else. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
