@@ -29,7 +29,7 @@ nonisolated struct AssistantTurnActivity: Equatable, Sendable {
     var toolCount: Int { segments.reduce(0) { $0 + $1.tools.count } }
     var thoughtCount: Int { segments.count { !$0.reasoning.isEmpty } }
 
-    var completedLabel: String { "Used " + summary }
+    var completedLabel: String { String(localized: "Used \(summary)") }
     var workingLabel: String { String(localized: "Working") + " · " + summary }
 
     private var summary: String {

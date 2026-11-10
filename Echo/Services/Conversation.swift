@@ -1285,10 +1285,7 @@ final class Conversation {
     func load(_ record: ConversationRecord) {
         cancel(leaving: true)
         persist()
-        var loaded = record.messages
-        let turnStarts = record.assistantTurnStarts ?? []
-        for i in loaded.indices where turnStarts.contains(loaded[i].id) { loaded[i].beginsAssistantTurn = true }
-        become(id: record.id, createdAt: record.createdAt, messages: loaded,
+        become(id: record.id, createdAt: record.createdAt, messages: record.restoredMessages,
                outbox: record.outbox ?? [], serverSessionID: record.serverSessionID, name: record.name, bot: record.bot,
                elsewhere: record.elsewhere)
         // A held message from an earlier launch goes out if it can.
@@ -1729,6 +1726,18 @@ final class Conversation {
     func loadServeSession(_ summary: HermesSessionsAPI.SessionSummary, bot: BotRef? = nil, elsewhere: ProfileRoute? = nil,
                           isNew: Bool = false) async throws {
         let kept = store.summaries.first { $0.serverSessionID == summary.id }
+        // `session.resume` omits a page turn's hidden user row. Keep the local display sidecar
+        // available when the fetched transcript replaces this copy, including after a relaunch.
+        let keptMessages: [Message]?
+        if let kept {
+            if let cached = store.cachedRecord(id: kept.id) {
+                keptMessages = cached.restoredMessages
+            } else {
+                keptMessages = await store.loadRecord(id: kept.id)?.restoredMessages
+            }
+        } else {
+            keptMessages = nil
+        }
         let bot = bot ?? kept?.bot
         let elsewhere = bot == nil ? (elsewhere ?? kept?.elsewhere) : nil
         if let profile = bot?.profile ?? elsewhere?.profile { dashboard.noteProfile(profile, forStored: summary.id) }
@@ -1745,10 +1754,19 @@ final class Conversation {
         // A Kanban worker's run: its transcript from the Dashboard's messages page, as the desktop
         // shows it, without resuming it (Hermes refuses that, RPC 4132).
         if workerRun, !isNew { messages = await Self.readied(stored: try await dashboard.transcript(stored: summary.id)) }
+        // Serve resume leaves hidden page prompts out. The Dashboard's existing messages route
+        // retains them, so use its newest page only as boundary metadata; the resume transcript's
+        // rows and content remain authoritative.
+        var restoreLocalTurnStarts = !workerRun && keptMessages?.contains(where: { $0.beginsAssistantTurn }) == true
+        if restoreLocalTurnStarts, let stored = try? await dashboard.transcript(stored: summary.id) {
+            messages = Self.restoringServerTurnStarts(from: await Self.readied(stored: stored), in: messages)
+            restoreLocalTurnStarts = false
+        }
         // The agent's task list: replayed from the transcript's to-do calls (`readied`, off the
         // main actor), then set against what the host says the list is now.
         TodoList.reconcile(&messages, with: dashboard.hostTodos[summary.id])
-        adopt(serverSession: summary, messages: messages, bot: bot, elsewhere: elsewhere)
+        adopt(serverSession: summary, messages: messages, bot: bot, elsewhere: elsewhere,
+              localMessages: keptMessages, restoreLocalTurnStarts: restoreLocalTurnStarts)
         isWorkerTranscript = workerRun && !isNew
         // The agent may still be at work in it, or waiting for an answer.
         if !isNew, !isWorkerTranscript { await rejoinIfWaiting() }
@@ -1950,7 +1968,8 @@ final class Conversation {
     /// Switches this conversation to a gateway session: keeps (or mints) the matching local
     /// record, swaps in its transcript, and persists. Shared by both ledger transports.
     private func adopt(serverSession summary: HermesSessionsAPI.SessionSummary, messages new: [Message], bot: BotRef? = nil,
-                       elsewhere: ProfileRoute? = nil) {
+                       elsewhere: ProfileRoute? = nil, localMessages: [Message]? = nil,
+                       restoreLocalTurnStarts: Bool = false) {
         cancel(leaving: true)
         persist()
         // A bot's chat keeps its copy here when Hermes has compressed it into a new session.
@@ -1958,8 +1977,9 @@ final class Conversation {
         let existing = store.summaries.first { $0.serverSessionID == summary.id }
             ?? bot.flatMap { bot in store.summaries.first { $0.bot?.profile == bot.profile && ($0.serverID ?? server) == server } }
         // Asides the agent hasn't been told of yet are only here: kept, where they came.
-        let here = serverSessionID == summary.id ? messages : (existing.flatMap { store.cachedRecord(id: $0.id)?.messages } ?? [])
-        let new = Self.keepingAsides(of: here, in: new)
+        let here = serverSessionID == summary.id ? messages
+            : (localMessages ?? existing.flatMap { store.cachedRecord(id: $0.id)?.restoredMessages } ?? [])
+        let new = Self.keepingAsides(of: here, in: new, restoringTurnStarts: restoreLocalTurnStarts)
         become(id: existing?.id ?? UUID(), createdAt: existing?.createdAt ?? summary.lastActiveDate ?? .now,
                messages: new, serverSessionID: summary.id,
                name: bot?.name ?? Self.name(fromServerTitle: summary.title, firstQuestion: new.first { $0.role == .user && !$0.isSteer }?.text),
@@ -2142,10 +2162,65 @@ final class Conversation {
         }
     }
 
-    /// The host's transcript, with the asides here it doesn't have yet (not told to the agent)
-    /// put back where they came.
-    nonisolated static func keepingAsides(of here: [Message], in host: [Message]) -> [Message] {
+    /// Transfers boundaries reconstructed from the Dashboard's stored rows onto the Serve resume
+    /// transcript. Both views use the host's timestamps, so split or repeated assistant text is
+    /// unambiguous without comparing the phone's clock or rewriting any message content.
+    nonisolated static func restoringServerTurnStarts(from hints: [Message], in host: [Message]) -> [Message] {
+        var restored = host
+        func visibleText(_ message: Message) -> String {
+            ServeMedia.named(in: message.text).text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        var after = restored.startIndex
+        for hintIndex in hints.indices where hints[hintIndex].role == .assistant && hints[hintIndex].beginsAssistantTurn {
+            let hint = hints[hintIndex]
+            let sameTime = restored.indices.filter {
+                $0 >= after && restored[$0].role == .assistant
+                    && abs(restored[$0].createdAt.timeIntervalSince(hint.createdAt)) < 0.001
+            }
+            let sameTextAndTime = sameTime.filter { visibleText(restored[$0]) == visibleText(hint) }
+            var match = sameTextAndTime.count == 1 ? sameTextAndTime.first : (sameTime.count == 1 ? sameTime.first : nil)
+            if match == nil {
+                let text = visibleText(hint)
+                let hintCount = hints.count { $0.role == .assistant && visibleText($0) == text }
+                let occurrence = hints[...hintIndex].count { $0.role == .assistant && visibleText($0) == text } - 1
+                let matches = restored.indices.filter { restored[$0].role == .assistant && visibleText(restored[$0]) == text }
+                if matches.count == hintCount, matches.indices.contains(occurrence), matches[occurrence] >= after {
+                    match = matches[occurrence]
+                }
+            }
+            guard let match else { continue }
+            restored[match].beginsAssistantTurn = true
+            after = restored.index(after: match)
+        }
+        return restored
+    }
+
+    /// The host's transcript, with display-only turn boundaries, reactions, and the asides here it
+    /// doesn't have yet (not told to the agent) put back where they came.
+    nonisolated static func keepingAsides(of here: [Message], in host: [Message], restoringTurnStarts: Bool = false) -> [Message] {
         var merged = host
+        // The messages route may be unavailable on an older host. Preserve a local boundary only
+        // when its preceding reply's normalized occurrences map one-to-one; never guess among
+        // duplicate server segments and split a turn at the wrong row.
+        func visibleText(_ message: Message) -> String {
+            ServeMedia.named(in: message.text).text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if restoringTurnStarts {
+            var afterHostIndex = merged.startIndex
+            for turn in here.indices where here[turn].role == .assistant && here[turn].beginsAssistantTurn {
+                guard let anchor = here[..<turn].lastIndex(where: { $0.role == .assistant && !$0.isAside }) else { continue }
+                let text = visibleText(here[anchor])
+                let localCount = here.count { $0.role == .assistant && !$0.isAside && visibleText($0) == text }
+                let occurrence = here[...anchor].count { $0.role == .assistant && !$0.isAside && visibleText($0) == text } - 1
+                let matches = merged.indices.filter { merged[$0].role == .assistant && visibleText(merged[$0]) == text }
+                guard matches.count == localCount, matches.indices.contains(occurrence) else { continue }
+                let matched = matches[occurrence]
+                let following = merged.index(after: matched)
+                guard matched >= afterHostIndex, following < merged.endIndex, merged[following].role == .assistant else { continue }
+                merged[following].beginsAssistantTurn = true
+                afterHostIndex = following
+            }
+        }
         // Reactions (`Reactions`): the host has none; each goes back on the reply it was made to,
         // known by how it begins.
         var reacted: [String: [Message]] = [:]

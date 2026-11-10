@@ -30,7 +30,8 @@ struct AssistantTurnActivityTests {
                 "the repeated per-message folds are suppressed")
         let activity = try #require(answerPlacement.activity)
         #expect(activity.toolCount == 3 && activity.thoughtCount == 2)
-        #expect(activity.completedLabel == "Used 3 tools · 2 thoughts")
+        let summary = String(localized: "\(3) tools") + " · " + String(localized: "\(2) thoughts")
+        #expect(activity.completedLabel == String(localized: "Used \(summary)"))
         #expect(activity.segments.map(\.messageID) == [first.id, second.id],
                 "expanding keeps every activity segment in chronological order")
     }

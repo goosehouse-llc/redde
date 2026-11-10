@@ -30,6 +30,17 @@ nonisolated struct ConversationRecord: Identifiable, Codable, Equatable, Sendabl
     var elsewhere: ProfileRoute? = nil
 
     var turnCount: Int { messages.filter { $0.role == .user && !$0.isSteer }.count }
+
+    /// Messages as they were on screen. The turn marker is a local display sidecar rather than
+    /// part of a backend message, so decoding the record puts it back explicitly.
+    var restoredMessages: [Message] {
+        var restored = messages
+        let starts = assistantTurnStarts ?? []
+        for i in restored.indices where starts.contains(restored[i].id) {
+            restored[i].beginsAssistantTurn = true
+        }
+        return restored
+    }
 }
 
 /// What the list shows: a record without its messages.
