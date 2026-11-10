@@ -4,6 +4,25 @@ import Foundation
 // vocabulary rather than inside Conversation's turn logic. `fromServeRows` reads hermes
 // serve's history rows; `mapStored` reads the sessions ledger's stored messages.
 extension Conversation {
+    /// A fetched transcript made ready to show, off the main actor: its rows mapped, each
+    /// reply given its task list and its cards. As a chat opened this ran on the main thread:
+    /// 0.13 s for the mapping of 500 rows in a Debug build on the simulator (measured
+    /// 2026-11-09; reading the JSON was 0.02 s), a stutter as the transcript came in.
+    @concurrent nonisolated static func readied(serveRows rows: [JSONValue]) async -> [Message] {
+        var messages = messages(fromServeRows: rows)
+        TodoList.resolve(&messages)
+        ReplyCards.resolve(&messages)
+        return messages
+    }
+
+    /// The same for the Hermes API's stored messages (and the Dashboard's messages page).
+    @concurrent nonisolated static func readied(stored: [HermesSessionsAPI.StoredMessage]) async -> [Message] {
+        var messages = mapStored(stored)
+        TodoList.resolve(&messages)
+        ReplyCards.resolve(&messages)
+        return messages
+    }
+
     nonisolated static func messages(fromServeRows rows: [JSONValue]) -> [Message] {
         var out: [Message] = []
         /// Tool rows that came before the reply they belong to.

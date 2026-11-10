@@ -100,8 +100,8 @@ enum SessionBackend {
     /// A session's transcript, mapped into the app's messages.
     func messages(for id: String) async throws -> [Message] {
         switch self {
-        case .serve(let client): Conversation.messages(fromServeRows: try await client.history(stored: id))
-        case .ledger(let api): Conversation.mapStored(try await api.messages(sessionID: id))
+        case .serve(let client): await Conversation.readied(serveRows: try await client.history(stored: id))
+        case .ledger(let api): await Conversation.readied(stored: try await api.messages(sessionID: id))
         }
     }
 

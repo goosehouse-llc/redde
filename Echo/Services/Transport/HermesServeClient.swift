@@ -1105,8 +1105,13 @@ final class HermesServeClient {
     /// A stored session's newest 500 messages, oldest first, from the Dashboard's messages page
     /// (0.21.0 onward): reading it doesn't resume the session.
     func transcript(stored: String) async throws -> [HermesSessionsAPI.StoredMessage] {
-        struct Page: Decodable { var messages: [HermesSessionsAPI.StoredMessage] }
         let data = try await rest("GET", "api/sessions/\(stored)/messages?order=latest&limit=500", body: nil, timeout: 120, about: stored)
+        return try await Self.messagesPage(data)
+    }
+
+    /// The messages page read off the main actor (half a megabyte for 500 messages).
+    @concurrent nonisolated private static func messagesPage(_ data: Data) async throws -> [HermesSessionsAPI.StoredMessage] {
+        struct Page: Decodable { var messages: [HermesSessionsAPI.StoredMessage] }
         return try JSONDecoder().decode(Page.self, from: data).messages
     }
 

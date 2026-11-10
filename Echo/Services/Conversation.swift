@@ -1521,7 +1521,7 @@ final class Conversation {
         let api = bot != nil ? ledgerAPI(for: bot) : ledgerAPI(profile: elsewhere?.viaAPI == true ? elsewhere?.profile : nil)
         guard let api else { throw TransportError.noAPIKey }
         let stored = try await api.messages(sessionID: summary.id)
-        adopt(serverSession: summary, messages: Self.mapStored(stored), bot: bot, elsewhere: elsewhere)
+        adopt(serverSession: summary, messages: await Self.readied(stored: stored), bot: bot, elsewhere: elsewhere)
         // A run the app let go of before it ended (another conversation opened, the app closed):
         // taken up again. Over by now, its reply is in the transcript.
         let run = store === ConversationStore.shared ? ChatActivity.shared.run(of: summary.id, settings: settings) : nil
@@ -1722,18 +1722,16 @@ final class Conversation {
         var workerRun = summary.source == "kanban"
         if !isNew, !workerRun {
             do {
-                messages = Self.messages(fromServeRows: try await dashboard.history(stored: summary.id))
+                messages = await Self.readied(serveRows: try await dashboard.history(stored: summary.id))
             } catch where HermesServeClient.refusesWorkerRun(error) {
                 workerRun = true
             }
         }
         // A Kanban worker's run: its transcript from the Dashboard's messages page, as the desktop
         // shows it, without resuming it (Hermes refuses that, RPC 4132).
-        if workerRun, !isNew { messages = Self.mapStored(try await dashboard.transcript(stored: summary.id)) }
-        // The agent's task list: replayed from the transcript's to-do calls, then set against
-        // what the host says the list is now.
-        TodoList.resolve(&messages)
-        ReplyCards.resolve(&messages)
+        if workerRun, !isNew { messages = await Self.readied(stored: try await dashboard.transcript(stored: summary.id)) }
+        // The agent's task list: replayed from the transcript's to-do calls (`readied`, off the
+        // main actor), then set against what the host says the list is now.
         TodoList.reconcile(&messages, with: dashboard.hostTodos[summary.id])
         adopt(serverSession: summary, messages: messages, bot: bot, elsewhere: elsewhere)
         isWorkerTranscript = workerRun && !isNew
@@ -1770,9 +1768,7 @@ final class Conversation {
             // whole transcript, as any chat opens.
             return try await loadServeSession(summary, bot: bot, isNew: false)
         }
-        var messages = Self.mapStored(page)
-        TodoList.resolve(&messages)
-        ReplyCards.resolve(&messages)
+        var messages = await Self.readied(stored: page)
         TodoList.reconcile(&messages, with: dashboard.hostTodos[summary.id])
         adopt(serverSession: summary, messages: messages, bot: bot)
         await rejoinIfWaiting()
