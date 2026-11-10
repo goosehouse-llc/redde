@@ -176,7 +176,7 @@ private struct DaySection: View {
             Button { toggle(event) } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "clock")
-                        .foregroundStyle(AgendaCard.color(of: event.calendar, given: event.color))
+                        .foregroundStyle(AgendaCard.ink(of: event.calendar, given: event.color, in: scheme))
                     Text("All day", comment: "An agenda card: an event without a time")
                         .fontWeight(.semibold)
                     Text(event.title)
@@ -287,18 +287,19 @@ private struct DaySection: View {
         let isOpen = open.contains(event)
         let over = (event.end ?? event.start) < AgendaCard.now()
         let color = AgendaCard.color(of: event.calendar, given: event.color)
+        let ink = AgendaCard.ink(of: event.calendar, given: event.color, in: scheme)
         let shape = RoundedRectangle(cornerRadius: 10)
         return VStack(alignment: .leading, spacing: 2) {
             Button { toggle(event) } label: {
                 Group {
                     if isOpen {
-                        lines(event, color: color, notes: false, open: true)
+                        lines(event, color: ink, notes: false, open: true)
                     } else {
                         // As much as fits its time: with its notes, then its time and place, then one line.
                         ViewThatFits(in: .vertical) {
-                            lines(event, color: color, notes: true, open: false)
-                            lines(event, color: color, notes: false, open: false)
-                            oneLine(event, color: color)
+                            lines(event, color: ink, notes: true, open: false)
+                            lines(event, color: ink, notes: false, open: false)
+                            oneLine(event, color: ink)
                         }
                     }
                 }
@@ -335,8 +336,8 @@ private struct DaySection: View {
             ZStack(alignment: .leading) {
                 shape.fill(.background.secondary)
                 shape.fill(color.opacity(over && !isOpen ? tint * 0.45 : tint))
-                Rectangle().fill(color.opacity(over && !isOpen ? 0.5 : 1)).frame(width: 4)
-                shape.strokeBorder(color.opacity(isOpen ? 0.7 : 0.3), lineWidth: isOpen ? 1 : 0.5)
+                Rectangle().fill(ink.opacity(over && !isOpen ? 0.5 : 1)).frame(width: 4)
+                shape.strokeBorder(ink.opacity(isOpen ? 0.7 : 0.3), lineWidth: isOpen ? 1 : 0.5)
             }
             .clipShape(shape)
         }
@@ -355,16 +356,20 @@ private struct DaySection: View {
             }
             Text(open ? AgendaCard.time(event) : AgendaCard.when(event))
                 .chatFont(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Self.onBlock)
                 .lineLimit(open ? 2 : 1)
             if notes, let note = event.notes {
                 Text(note)
                     .chatFont(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Self.onBlock)
                     .lineLimit(1)
             }
         }
     }
+
+    /// An event's time and notes on its block: the system's grey for secondary text greys out on
+    /// a coloured block (a yellow one, 2026-11-10), so the text's own colour, a little lighter.
+    private static let onBlock = Color.primary.opacity(0.72)
 
     /// A short event on one line: its title and when it starts.
     private func oneLine(_ event: Event, color: AnyShapeStyle) -> some View {
@@ -376,7 +381,7 @@ private struct DaySection: View {
             Text(event.start.formatted(date: .omitted, time: .shortened))
                 .chatFont(.caption)
                 .monospacedDigit()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Self.onBlock)
                 .lineLimit(1)
                 .layoutPriority(1)
         }
@@ -963,14 +968,61 @@ extension AgendaCard {
     /// same every time it is named; the theme's tint with no name. Or every event in the one
     /// colour picked in Settings (Calendar Events).
     static func color(of calendar: String?, given: String? = nil, tints: CalendarTints = .shared) -> AnyShapeStyle {
-        if let picked = Settings.shared.eventColor.color { return AnyShapeStyle(picked) }
-        if let given = given.flatMap(rgb) { return AnyShapeStyle(given) }
-        guard let calendar, !calendar.isEmpty else { return AnyShapeStyle(.tint) }
-        if let own = tints.color(of: calendar) { return AnyShapeStyle(own) }
+        own(of: calendar, given: given, tints: tints).map { AnyShapeStyle($0) } ?? AnyShapeStyle(.tint)
+    }
+
+    /// The colour `color(of:)` gives, nil for the theme's tint.
+    private static func own(of calendar: String?, given: String?, tints: CalendarTints) -> Color? {
+        if let picked = Settings.shared.eventColor.color { return picked }
+        if let given = given.flatMap(rgb) { return given }
+        guard let calendar, !calendar.isEmpty else { return nil }
+        if let own = tints.color(of: calendar) { return own }
         let colors: [Color] = [.blue, .orange, .green, .purple, .pink, .teal, .red, .indigo, .brown, .mint]
         var hash: UInt64 = 0xcbf29ce484222325
         for byte in calendar.lowercased().utf8 { hash = (hash ^ UInt64(byte)) &* 0x100000001b3 }
-        return AnyShapeStyle(colors[Int(hash % UInt64(colors.count))])
+        return colors[Int(hash % UInt64(colors.count))]
+    }
+
+    /// The calendar's colour where it marks an event on the card (its dot, the bar down its side,
+    /// its edge, an all-day clock). On a light card a pale one (Calendar's yellow, a light green)
+    /// is the same hue, deeper, until a mark of it can be seen on its block (3:1), as Calendar
+    /// itself draws a yellow event: 2026-11-10, "on the yellow, it kind of washes out". The dark
+    /// keeps the colour as it is, and the theme's tint is made readable on cards already (`cardInk`).
+    static func ink(of calendar: String?, given: String? = nil, in scheme: ColorScheme, tints: CalendarTints = .shared) -> AnyShapeStyle {
+        guard scheme == .light, let own = own(of: calendar, given: given, tints: tints) else {
+            return color(of: calendar, given: given, tints: tints)
+        }
+        return AnyShapeStyle(deepened(own))
+    }
+
+    private static var deepenedFound: [Color: Color] = [:]
+
+    static func deepened(_ color: Color) -> Color {
+        if let known = deepenedFound[color] { return known }
+        var env = EnvironmentValues()
+        env.colorScheme = .light
+        // An event's block: the card's light ground with the colour washed over it.
+        let ground = 0.8
+        func seen(_ c: Color) -> Bool { (ground + 0.05) / (GoalCard.luminance(of: c, in: env) + 0.05) >= 3 }
+        var shade = color
+        if !seen(color) {
+            let c = color.resolve(in: env)
+            let r = Double(c.red), g = Double(c.green), b = Double(c.blue)
+            let high = max(r, g, b), span = high - min(r, g, b)
+            var hue = span == 0 ? 0 : r == high ? (g - b) / span : g == high ? 2 + (b - r) / span : 4 + (r - g) / span
+            hue /= 6
+            if hue < 0 { hue += 1 }
+            // Fuller as it deepens, so a yellow turns gold and not olive grey; a grey stays grey.
+            let saturation = high == 0 ? 0 : span / high > 0.08 ? max(span / high, 0.85) : span / high
+            var brightness = high
+            for _ in 0 ..< 16 where !seen(shade) {
+                brightness *= 0.9
+                shade = Color(hue: hue, saturation: saturation, brightness: brightness)
+            }
+        }
+        if deepenedFound.count >= 64 { deepenedFound.removeAll() }
+        deepenedFound[color] = shade
+        return shade
     }
 
     /// "#F7C204" as a colour.
