@@ -85,7 +85,10 @@ one that came out of a folder of a repository.) What each version changed is in
   notification), or a reply that didn't finish and waits for you to retry it (Retry).
 - **One of a bot's schedules ran**: the schedule's name, the bot's, and what it came up with;
   opening it shows the bot's answer in its chat. The plugin reads every profile's cron jobs on
-  this machine each half minute for it (`routines.py`).
+  this machine each half minute for it (`routines.py`). From 1.21.1 a schedule that answers in
+  the bot's chat says what the bot said there, read from the bot's `state.db` (read-only), once
+  it has (up to ten minutes; then the run's output), and a briefing says which session its run
+  was in, which each run's turn writes down in `cron-runs.json`.
 
 All of them only for conversations your phone has taken part in: over the Dashboard the app tells
 the plugin which those are, and over the Hermes API every turn counts. A session at the terminal

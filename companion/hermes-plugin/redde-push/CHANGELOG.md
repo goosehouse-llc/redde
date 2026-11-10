@@ -3,6 +3,22 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.21.1 (2026-11-10)
+
+- The phone's calendar tool is found when the agent searches for "agenda", "schedule",
+  "meetings" or "appointments". Hermes's tool search lists a tool by its first sentence, which
+  said only that the tool runs on the iPhone, and finds nothing for a query whose rarest word no
+  tool has: asked for its agenda, an agent found no calendar and went looking elsewhere.
+
+- A bot's schedule that answers in the bot's chat now notifies you with what the bot said there,
+  not with the run's raw output. Hermes hands the run's output to the bot, which reads it and
+  sums it up in its chat, and that chat is what a tap opens: the notification and the chat said
+  two different things. (GitHub issue 63.) The plugin waits up to ten minutes for the bot's
+  answer, then sends the output as before. It reads the bot's own `state.db`, read-only.
+- A briefing's notification carries the session its run was in, so Redde can open that on a tap
+  (a setting, off at first; GitHub issue 62). Each scheduled run writes its session down as it
+  starts, in `redde-push/cron-runs.json`. Older versions of Redde leave it alone.
+
 ## 1.21.0 (2026-11-09)
 
 - What Redde tells the agent with a message no longer has to be written into the message. Your

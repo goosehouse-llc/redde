@@ -276,6 +276,10 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     except Exception:
         log.debug("redde-push: turn hook failed", exc_info=True)
     try:
+        routines.remember_run(_home(), session_id, platform)   # a briefing's run, for its note (issue 62)
+    except Exception:
+        log.debug("redde-push: couldn't write the run's session down", exc_info=True)
+    try:
         cards.turn_began(session_id)   # a reminder card needs this turn's setter (1.14.6)
     except Exception:
         log.debug("redde-push: card turn start failed", exc_info=True)

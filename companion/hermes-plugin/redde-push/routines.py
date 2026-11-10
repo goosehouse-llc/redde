@@ -6,9 +6,10 @@ release has a hook for a cron run finishing (a run's turn fires the ordinary hoo
 own profile, which may not have this plugin), so the stores themselves are read: every profile's
 `cron/jobs.json` on this machine, every half minute, from a thread of this plugin's. A job whose
 last run moved on since the last look has run: its saved output (`cron/output/<job>/…`, the part
-after "## Response") is the note's words. How far each has been seen is on disk under a lock, so
-two processes reading send each run once. A phone that muted the bot (`b:<profile>`) hears
-nothing of it.
+after "## Response") is the note's words, or, for one delivered to a Bot Chat, the bot's answer
+to it there once given (issue 63: the chat opens on that answer). How far each has been seen is
+on disk under a lock, so two processes reading send each run once. A phone that muted the bot
+(`b:<profile>`) hears nothing of it.
 
 `Stores` is all that touches Hermes's files, so `Routines` can be tested alone.
 
@@ -229,6 +230,131 @@ class Stores:
             except Exception:
                 continue
         return "Hermes" if profile == "default" else profile
+
+    def chat_homes(self, home: Path, job: dict) -> list[Path]:
+        """The profiles whose Bot Chat the job's runs go to (`deliver: bot-chat` is its own,
+        `bot-chat:<name>` another on this machine), as Hermes reads the setting."""
+        found = []
+        for part in str(job.get("deliver") or "").split(","):
+            token = part.strip()
+            if token.lower() == "bot-chat":
+                found.append(Path(home))
+            elif token.lower().startswith("bot-chat:"):
+                name = token.split(":", 1)[1].strip()
+                if name.lower() == "default":
+                    found.append(self.root)
+                elif name:
+                    profiles = self.root / "profiles"
+                    found.append(next((p for p in (profiles / name.lower(), profiles / name) if p.is_dir()), profiles / name.lower()))
+        return found
+
+    def bot_reply(self, home: Path, job_name: str, since: float) -> tuple[str | None, bool]:
+        """The bot's answer in its chat to Hermes's message with a run's output (`[Cronjob
+        "<name>" output — …]`, one stored at `since` or later): (answer, the message is there).
+        The answer is None while the bot hasn't given one. Read only, from the profile's state.db."""
+        db = Path(home) / "state.db"
+        if not db.is_file():
+            return None, False
+        import sqlite3
+        try:
+            connection = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=2)
+        except sqlite3.Error:
+            return None, False
+        try:
+            rows = connection.execute(
+                "SELECT id, session_id, content FROM messages WHERE role = 'user' AND content LIKE '[Cronjob \"%' "
+                "AND timestamp >= ? ORDER BY id DESC LIMIT 20", (since,)).fetchall()
+            wanted = unmarked(job_name)
+            asked = next((r for r in rows if (m := _CRON_MESSAGE.match(r[2] or "")) and unmarked(m.group(1)) == wanted), None)
+            if asked is None:
+                return None, False
+            after = connection.execute(
+                "SELECT role, content, tool_calls FROM messages WHERE session_id = ? AND id > ? ORDER BY id", (asked[1], asked[0])).fetchall()
+        except sqlite3.Error:
+            return None, False
+        finally:
+            connection.close()
+        answer = None
+        for role, content, calls in after:
+            if role == "user":
+                break
+            if role == "assistant" and (content or "").strip() and not (calls or "").strip("[] \n"):
+                answer = content.strip()
+        return answer, True
+
+
+# ---- The session a run was in (issue 62) --------------------------------------------------------
+#
+# A briefing's note can carry the session its run was in, so a tap can open that and the person
+# can ask on in it. Hermes keeps it nowhere this reader can get at simply (a run's session is
+# `cron_<job>_<time>`, or under 0.22's own runner `local-…`, tied to the job in its ledger), so
+# each run's turn writes it down as it starts (`pre_llm_call`, platform "cron") in the home it
+# runs in: `redde-push/cron-runs.json`, job id → session and when.
+
+RUNS_FILE = "cron-runs.json"
+#: The most jobs kept there.
+RUNS_KEPT = 200
+#: How long a run can have taken: a session written down longer before the run ended is another's.
+RUN_LONGEST = 6 * 3600
+
+
+def run_job(session_id: str) -> str | None:
+    """The job a scheduled run's session is of: Hermes's runner's own word when this is its
+    process, else read off the id (`cron_<job>_<YYYYmmdd_HHMMSS>`)."""
+    try:
+        from gateway.session_cron import current_execution
+        found = current_execution()
+        if found and len(found) > 2 and found[1] == session_id and found[2]:
+            return str(found[2])
+    except Exception:
+        pass
+    match = re.fullmatch(r"cron_(.+)_\d{8}_\d{6}", session_id or "")
+    return match.group(1) if match else None
+
+
+def remember_run(home, session_id: str, platform: str, now: float | None = None) -> str | None:
+    """For `pre_llm_call`: a scheduled run's turn, written down with its job. The job, or None."""
+    if platform != "cron" or not session_id:
+        return None
+    job = run_job(session_id)
+    if not job:
+        return None
+    folder = Path(home) / "redde-push"
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / RUNS_FILE
+    try:
+        runs = json.loads(target.read_text())
+        runs = runs if isinstance(runs, dict) else {}
+    except (OSError, ValueError):
+        runs = {}
+    runs[job] = {"session": session_id, "at": time.time() if now is None else now}
+    runs = dict(sorted(runs.items(), key=lambda kv: kv[1].get("at", 0) if isinstance(kv[1], dict) else 0)[-RUNS_KEPT:])
+    temporary = folder / f"{RUNS_FILE}.{uuid.uuid4().hex[:8]}.tmp"
+    temporary.write_text(json.dumps(runs))
+    temporary.replace(target)
+    return job
+
+
+def run_session(home, job_id: str, ended: float | None) -> str:
+    """The session of a job's run that ended then, as its turn wrote it down; "" if none did."""
+    try:
+        found = json.loads((Path(home) / "redde-push" / RUNS_FILE).read_text()).get(job_id) or {}
+        at = float(found.get("at") or 0)
+    except (OSError, ValueError, AttributeError, TypeError):
+        return ""
+    if ended is not None and not (ended - RUN_LONGEST <= at <= ended + 60):
+        return ""
+    return str(found.get("session") or "")
+
+
+#: Hermes's message into a Bot Chat with a run's output (`cron.scheduler_delivery.bot_chat_message`).
+_CRON_MESSAGE = re.compile(r'\[Cronjob "(.*?)" output — ', re.DOTALL)
+#: How long a run's note waits for the bot to answer in its chat; then the run's own output goes.
+REPLY_WAIT = 600
+#: How long it waits for Hermes's message to reach the chat at all (it's handed over as the run ends).
+ARRIVAL_WAIT = 90
+#: How long before the run's end Hermes's message can have been stored.
+ARRIVAL_SLACK = 120
 
 
 def untagged(name: str) -> str:
@@ -528,11 +654,32 @@ class Routines:
                                                                         untagged(str(job.get("name") or "")).removeprefix("[redde] ").capitalize(),
                                                                         words, failed=failed, brief=str(job["id"]))))
                         continue
+                    if not failed and not told:
+                        # Delivered to a Bot Chat (issue 63): the bot reads the output and answers
+                        # there, and the chat opens on that answer, so the note says it too, once
+                        # given. Waited for a while, then the output as before.
+                        ended = _instant(last)
+                        for chat in self.stores.chat_homes(home, job) if ended else []:
+                            answer, arrived = self.stores.bot_reply(chat, str(job.get("name") or ""), ended - ARRIVAL_SLACK)
+                            if answer is not None:
+                                words, silent, _ = settle(answer)
+                                break
+                            if clock - ended < (REPLY_WAIT if arrived else ARRIVAL_WAIT):
+                                silent = None   # not yet: looked at again next time
+                                break
+                        else:
+                            silent = False
+                        if silent is None:
+                            now[key] = seen[key]
+                            continue
+                        if silent:
+                            continue
                     from . import headsup   # (here: headsup's own imports reach back to this module)
                     event = headsup.recall(home, str(job.get("name") or "")) if told else {}
                     outgoing.append((profile, core.routine_note(profile, self.stores.name(home, profile), untagged(str(job.get("name") or "")),
                                                                 words, failed=failed, brief=str(job["id"]) if told else "",
-                                                                starts=str(event.get("starts") or ""), where=str(event.get("where") or ""))))
+                                                                starts=str(event.get("starts") or ""), where=str(event.get("where") or ""),
+                                                                session=run_session(home, str(job["id"]), _instant(last)) if told else "")))
             self.store.set_routine_runs(now)
         sent = 0
         for profile, made in outgoing:

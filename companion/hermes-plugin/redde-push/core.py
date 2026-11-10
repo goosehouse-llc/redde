@@ -628,15 +628,19 @@ def room_note(kind: str, room: str, name: str = "", body: str = "", detail: str 
 
 
 def routine_note(profile: str, bot: str, title: str, body: str = "", failed: bool = False, brief: str = "",
-                 starts: str = "", where: str = "", goal: str = "", progress: str = "") -> dict:
+                 starts: str = "", where: str = "", goal: str = "", progress: str = "", session: str = "") -> dict:
     """One of a bot's schedules ran (`routines.py`): `p` the bot's profile, `d` what it is called,
     `t` the schedule's name, `b` what it came up with (or why it didn't finish, `w` "failed"). A
     `[redde-notify]` job's, whose answer has no chat to be in, is a briefing the phone keeps: `x`
     "brief", `i` the job's id (`brief`). A goal's check-in (`goals.py`, from 1.15.0) is a briefing
-    too, with `o` the goal's id and `q` its progress ("3/7"), which an older Redde leaves unread."""
+    too, with `o` the goal's id and `q` its progress ("3/7"), which an older Redde leaves unread.
+    From 1.21.1 a briefing has `j`, the session the run was in, when it is known: Redde can open
+    that on a tap (issue 62), and an older one leaves it alone."""
     made = {"v": 1, "k": "routine", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64)}
     if brief:
         made["x"], made["i"] = "brief", clipped(brief, 40)
+        if session and len(session) <= 160:
+            made["j"] = session
     if goal:
         made["o"] = clipped(goal, 40)
     if progress:

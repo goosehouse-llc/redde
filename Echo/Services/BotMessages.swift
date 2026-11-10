@@ -60,6 +60,72 @@ nonisolated enum BotMessages {
         return (Delivered(kind: .process, title: line), output)
     }
 
+    /// Hermes's word that work the agent handed to subagents in the background came back
+    /// (`delegate_task` in the background, 0.22: "[ASYNC DELEGATION BATCH COMPLETE — deleg_…]",
+    /// the agent's instructions, then each task's goal and summary). A user row, though nobody
+    /// typed it. On the Dashboard the agent answers it; over the Hermes API it starts no turn, and
+    /// the chat ended on it as if the person had sent it (GitHub issue 63). As a notice: whether
+    /// each task finished, and what it said, without Hermes's instructions and its file paths.
+    static func taskNotice(_ text: String) -> (Delivered, String)? {
+        guard text.hasPrefix("[ASYNC DELEGATION") else { return nil }
+        var tasks: [(goal: String, done: Bool, said: String)] = []
+        if text.hasPrefix("[ASYNC DELEGATION BATCH COMPLETE") {
+            let headers = text.matches(of: /(?m)^--- ([✓✗⚠]) TASK \d+\/\d+(?:: ([\s\S]*?))?  \(status=([^,)\n]*)[^\n]*\) ---\n/)
+            for (i, header) in headers.enumerated() {
+                let end = i + 1 < headers.count ? headers[i + 1].range.lowerBound : text.endIndex
+                let done = header.output.1 == "✓" || ["completed", "done", "success"].contains(String(header.output.3))
+                tasks.append((String(header.output.2 ?? ""), done, String(text[header.range.upperBound..<end])))
+            }
+            if headers.isEmpty, let error = text.firstMatch(of: /(?m)^--- ERROR ---\n([\s\S]*)/) {
+                tasks = [("", false, String(error.output.1))]
+            }
+        } else if text.hasPrefix("[ASYNC DELEGATION TASK FAILED") {
+            let goal = text.firstMatch(of: /(?m)^Task: ([^\n]*)/)?.output.1 ?? ""
+            let error = text.firstMatch(of: /(?m)^Error: ([^\n]*)/)?.output.1 ?? ""
+            tasks = [(String(goal), false, String(error))]
+        } else if let result = text.firstMatch(of: /(?m)^--- (RESULT|ERROR) ---\n([\s\S]*)/) {
+            // One task, as older releases report it.
+            let goal = text.firstMatch(of: /(?m)^Original goal: ([^\n]*)/)?.output.1 ?? ""
+            tasks = [(String(goal), result.output.1 == "RESULT", String(result.output.2))]
+        }
+        guard !tasks.isEmpty else { return nil }
+        let said = tasks.map { task in
+            // Up to Hermes's own lines after a summary: where the trace is, what the subagent left.
+            var lines: [Substring] = []
+            for line in task.said.split(separator: "\n", omittingEmptySubsequences: false) {
+                if ["Full live transcript", "Live transcript:", "Handed off to you:", "Child left ", "Child's process ",
+                    "Last persisted unit status:", "Task index "].contains(where: { line.hasPrefix($0) }) { break }
+                lines.append(line)
+            }
+            let words = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            return tasks.count > 1 && !task.goal.isEmpty ? "**\(line(task.goal))**\n\(words)" : words
+        }
+        let failed = tasks.contains { !$0.done }
+        let title: String
+        if tasks.count == 1, case let goal = line(tasks[0].goal), !goal.isEmpty {
+            title = failed ? String(localized: "Task didn't finish: \(goal)", comment: "In a chat: work the agent handed off came back unfinished")
+                : String(localized: "Task finished: \(goal)", comment: "In a chat: work the agent handed off is done")
+        } else {
+            title = failed ? String(localized: "Some tasks didn't finish", comment: "In a chat: work the agent handed off came back, not all of it done")
+                : String(localized: "Tasks finished", comment: "In a chat: the work the agent handed off is done")
+        }
+        return (Delivered(kind: .task, title: title), said.filter { !$0.isEmpty }.joined(separator: "\n\n"))
+
+        func line(_ goal: String) -> String {
+            let first = goal.split(separator: "\n").first.map(String.init)?.trimmingCharacters(in: .whitespaces) ?? ""
+            return first.count > 80 ? String(first.prefix(79)) + "…" : first
+        }
+    }
+
+    /// A task's notice the agent answered next (on the Dashboard it always does) folds away as a
+    /// schedule's does: what the person reads is the answer.
+    static func foldAnsweredTasks(_ messages: inout [Message]) {
+        for i in messages.indices where messages[i].delivered?.kind == .task {
+            let next = messages[(i + 1)...].first { $0.role == .assistant || $0.delivered == nil }
+            messages[i].delivered?.noted = next?.role == .assistant
+        }
+    }
+
     /// What Hermes's command line prints besides a bot's words, on every run: warnings first
     /// ("⚠ …", Hermes 0.21.0), and its session bookkeeping ("Session … found but has no messages.
     /// Starting fresh.", "session_id: …"). Taken out of a relayed reply.
@@ -121,6 +187,13 @@ nonisolated enum BotMessages {
                 return message
             }
         }
+        if displayKind == "async_delegation_complete" || text.hasPrefix("[ASYNC DELEGATION") {
+            if let (delivered, body) = taskNotice(text) {
+                var message = Message(role: .user, text: body, createdAt: when)
+                message.delivered = delivered
+                return message
+            }
+        }
         if let words = steer(text) {
             var message = Message(role: .user, text: words, createdAt: when)
             message.isSteer = true
@@ -140,7 +213,7 @@ nonisolated enum BotMessages {
     /// what it is; anything else as it came.
     static func rowPreview(_ preview: String?, roster: [HermesBot], mainName: String) -> String? {
         guard let preview = preview?.nilIfEmpty else { return nil }
-        if preview.hasPrefix("[IMPORTANT: Background process") { return String(localized: "A background task finished") }
+        if preview.hasPrefix("[IMPORTANT: Background process") || preview.hasPrefix("[ASYNC DELEGATION") { return String(localized: "A background task finished") }
         if let (title, _) = routine(preview) { return String(localized: "\(title) ran", comment: "A bot's row: its scheduled routine ran") }
         if let (said, _) = inventedTurn(in: preview) { return said.nilIfEmpty ?? "…" }
         guard let inbound = inbound(preview) else { return preview }

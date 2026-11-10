@@ -667,6 +667,12 @@ final class Settings: ServeEndpoint {
     var announceOnAirPods: Bool {
         didSet { store(announceOnAirPods, forKey: Keys.announceOnAirPods) }
     }
+    /// A briefing's notification opens the session its run was in, to ask on in it, not the
+    /// briefing's card (GitHub issue 62). Off: the card, as before. Needs plugin 1.21.1, which
+    /// says which session that was.
+    var briefingTapsOpenRun: Bool {
+        didSet { store(briefingTapsOpenRun, forKey: Keys.briefingTapsOpenRun) }
+    }
     /// Return in the composer sends the message; off, it starts a new line, and the Send button
     /// (or ⌘Return) sends. With it on, Shift-Return on a keyboard starts the new line.
     var returnSends: Bool {
@@ -988,6 +994,7 @@ final class Settings: ServeEndpoint {
         static let suggestFollowUps = "suggestFollowUps"
         static let earpieceAtEar = "earpieceAtEar"
         static let announceOnAirPods = "announceOnAirPods"
+        static let briefingTapsOpenRun = "briefingTapsOpenRun"
         static let notificationSound = "notificationSound"
         static let returnSends = "returnSends"
         static let chatTextSize = "chatTextSize"
@@ -1108,6 +1115,7 @@ final class Settings: ServeEndpoint {
         matchReplyLanguage = defaults.object(forKey: Keys.matchReplyLanguage) as? Bool ?? true
         earpieceAtEar = defaults.object(forKey: Keys.earpieceAtEar) as? Bool ?? true
         announceOnAirPods = defaults.bool(forKey: Keys.announceOnAirPods)
+        briefingTapsOpenRun = defaults.bool(forKey: Keys.briefingTapsOpenRun)
         notificationSound = defaults.object(forKey: Keys.notificationSound) as? Bool ?? true
         returnSends = defaults.bool(forKey: Keys.returnSends)
         chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
@@ -1196,7 +1204,7 @@ final class Settings: ServeEndpoint {
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.cardAppearance, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.pinnedModels, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
-        Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.earpieceAtEar,
+        Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
         Keys.replyVoice, Keys.kokoroURL,
@@ -1253,6 +1261,7 @@ final class Settings: ServeEndpoint {
         case Keys.keepRepliesInBackground: keepRepliesInBackground = flag(true)
         case Keys.notificationSound: notificationSound = flag(true)
         case Keys.announceOnAirPods: announceOnAirPods = flag()
+        case Keys.briefingTapsOpenRun: briefingTapsOpenRun = flag()
         case Keys.earpieceAtEar: earpieceAtEar = flag(true)
         case Keys.handsFreeByDefault: handsFreeByDefault = flag()
         case Keys.newConversationForVoice: newConversationForVoice = flag()
@@ -1527,6 +1536,7 @@ final class Settings: ServeEndpoint {
         keepRepliesInBackground = true
         earpieceAtEar = true
         announceOnAirPods = false
+        briefingTapsOpenRun = false
         notificationSound = true
         returnSends = false
         chatTextSize = 0

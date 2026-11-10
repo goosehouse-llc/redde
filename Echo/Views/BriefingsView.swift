@@ -223,6 +223,15 @@ final class BriefingsInbox {
         reload()
     }
 
+    /// The session the briefing's run was in, in the chat's place, to ask on in it (GitHub issue 62).
+    func openRun(_ briefing: AgentBriefing) {
+        guard let session = briefing.openableRun else { return }
+        markRead(briefing)
+        open = nil
+        showingAll = false
+        LaunchRouter.shared.requestSession(session)
+    }
+
     /// Done with a card: every run of its job read.
     func markJobRead(_ briefing: AgentBriefing) {
         AgentBriefing.markJobRead(briefing.jobKey)
@@ -679,6 +688,17 @@ struct BriefingSheet: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
                 ToolbarItem(placement: .secondaryAction) {
                     Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = briefing.text }
+                }
+                if briefing.openableRun != nil {
+                    // The run's own session, to ask on in it (GitHub issue 62).
+                    ToolbarItem(placement: .secondaryAction) {
+                        Button {
+                            dismiss()
+                            BriefingsInbox.shared.openRun(briefing)
+                        } label: {
+                            Label { Text("Open the Run's Chat", comment: "A briefing's sheet: opens the session the scheduled run was in, to ask on in it") } icon: { Image(systemName: "bubble.left.and.text.bubble.right") }
+                        }
+                    }
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {

@@ -59,6 +59,10 @@ And one for attachments: a message with "lab:file" in it is answered "[file seen
 reached the model also holds "lab-file-token" (a text file's contents, as Hermes inlines them)
 or "lab-clip.mp4" (how it names a file it can't inline), and "[file missing]" when it doesn't.
 
+And one for a bot's schedule delivered to its Bot Chat (issue 63): a run whose prompt has
+"lab:wordy-run" answers "Run report: …", and the bot's turn on Hermes's "[Cronjob …" message
+with that report in it answers "Summary for you: …".
+
 And one for what goes with a message for the model alone (the plugin's turn notes, issue 72): a
 message with "lab:heard" in it is answered "[heard: <the message as it reached the model>]".
 
@@ -92,6 +96,7 @@ CALLS = {
     "lab:badtick": (TODO, {"todos": [{"id": "2", "status": "completed"}], "merge": True}),
     "lab:question": ("clarify", {"questions": [{"question": "Which branch should I deploy?", "choices": ["main", "release"]}]}),
     "lab:delegate": ("delegate_task", {"goal": "Say hello."}),
+    "lab:wordy-task": ("delegate_task", {"goal": "Say hello, lab:wordy-subagent."}),
     "lab:sudo": ("terminal", {"command": "sudo true"}),
     # A kanban card, from wherever the message is (lab.sh templates: a bot in a group chat).
     "lab:card": ("kanban_create", {"title": "Lab card from a group chat", "assignee": "default", "body": "Made in a group chat."}),
@@ -388,6 +393,19 @@ class Handler(BaseHTTPRequestHandler):
                 text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
             if "lab:heard" in just_said:
                 text = "[heard: " + just_said + "]"
+            # A task handed off (issue 63, "lab:wordy-task" in CALLS): the subagent's own summary,
+            # then the agent's word on it when Hermes tells it the task came back.
+            if "ASYNC DELEGATION" in just_said:
+                if "Subagent's summary" in just_said:
+                    text = "The agent's word: the task is done, it said hello."
+            elif "lab:wordy-subagent" in just_said:
+                text = "Subagent's summary: said hello, nothing else to report."
+            # A bot's schedule delivered to its Bot Chat (issue 63): the run's answer, then the bot's
+            # summary of it in its chat, each worded so the two can be told apart.
+            if "lab:wordy-run" in just_said and not just_said.lstrip().startswith("[Cronjob"):
+                text = "Run report: wear the raincoat. It is 14 degrees with showers from noon, and the wind picks up after four."
+            elif just_said.lstrip().startswith("[Cronjob") and "Run report:" in just_said:
+                text = "Summary for you: raincoat today, rain from noon."
             if messages[-1].get("role") == "tool":
                 text = "[kept]" if os.path.isdir(TARGET) else "[gone]"
                 # A question's answer comes back as the tool's result: say what it was.

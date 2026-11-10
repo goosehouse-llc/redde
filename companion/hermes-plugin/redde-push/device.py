@@ -97,9 +97,13 @@ def _count(description: str) -> dict:
 TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
     "phone_info": (None, _WHERE + "What the phone allows right now: which phone tools are on and whether the user is asked "
                    "first, the local time and the time zone. Call it when unsure what you may do.", {}, []),
-    "phone_calendar_events": ("calendar", _WHERE + "The user's calendar events between two moments (default: the coming week), "
-                              "soonest first. " + _WHEN + "If the phone keeps a copy of its calendar on the server — Redde's Settings, Phone tools, Keep a copy — "
-                              "this answers from that copy with Redde closed, and says when it was last synced.", {
+    # (Led by what it is for, in the words people ask with: Hermes's tool search lists a tool by its
+    # first sentence and finds nothing for a query whose rarest word no tool has, "agenda" say.)
+    "phone_calendar_events": ("calendar", "The user's calendar, agenda or schedule: events, meetings and appointments today, "
+                              "tomorrow or any days, from every calendar on their iPhone. Between two moments (default: the "
+                              "coming week), soonest first. " + _WHEN + " Runs through the Redde app on the phone: it answers "
+                              "while Redde is open there, and, if the phone keeps a copy of its calendar on the server — Redde's "
+                              "Settings, Phone tools, Keep a copy — from that copy with Redde closed, saying when it was last synced.", {
         "start": _text("From when. Default: now."), "end": _text("Until when. Default: a week after the start."),
         "query": _text("Only events with these words in the title, place or notes."),
         "limit": _count("At most this many (default 50)."),

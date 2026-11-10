@@ -117,6 +117,9 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     /// how far along it is, steps done of all of them ("3/7").
     var o: String?
     var q: String?
+    /// On a briefing's (Redde's plugin 1.21.1): the session its run was in, which a tap can open
+    /// (`Settings.briefingTapsOpenRun`, GitHub issue 62).
+    var j: String?
 
     nonisolated struct Idea: Codable, Equatable, Sendable {
         var t: String?
@@ -400,8 +403,9 @@ nonisolated extension PushNote {
     static let taskKey = "task"
     /// On a key request's notification: the request, whose card a tap opens.
     static let keyRequestKey = "keyRequest"
-    /// On a briefing's: the briefing it was kept as, which a tap opens.
+    /// On a briefing's: the briefing it was kept as, which a tap opens; and the session its run was in.
     static let briefingKey = "briefing"
+    static let runSessionKey = "runSession"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
 
@@ -547,7 +551,10 @@ nonisolated extension PushNote {
         if kind == .call, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
         if let x, !x.isEmpty { info[Self.taskKey] = x }
         if kind == .key, let i, !i.isEmpty { info[Self.keyRequestKey] = i }
-        if let briefing = AgentBriefing.id(of: self) { info[Self.briefingKey] = briefing }
+        if let briefing = AgentBriefing.id(of: self) {
+            info[Self.briefingKey] = briefing
+            if let j, !j.isEmpty { info[Self.runSessionKey] = j }
+        }
         content.userInfo = info
         return true
     }

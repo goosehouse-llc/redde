@@ -57,6 +57,68 @@ class RoutinesTests(unittest.TestCase):
         self.assertEqual(made["d"], "scout", "no title kept for it: its profile")
         self.assertEqual(self.watch.look(), 0, "said once")
 
+    def chat(self, profile, rows):
+        """The bot's state.db with these (role, content, seconds ago, tool calls) rows in its Bot Chat."""
+        import sqlite3
+        home = self.root if profile == "default" else self.root / "profiles" / profile
+        home.mkdir(parents=True, exist_ok=True)
+        db = sqlite3.connect(home / "state.db")
+        db.execute("CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT, role TEXT, "
+                   "content TEXT, tool_calls TEXT, timestamp REAL)")
+        for role, content, ago, calls in rows:
+            db.execute("INSERT INTO messages (session_id, role, content, tool_calls, timestamp) VALUES ('botchat', ?, ?, ?, ?)",
+                       (role, content, calls, time.time() - ago))
+        db.commit()
+        db.close()
+
+    def bot_chat_run(self, ago=30):
+        """A run of scout's schedule that ended `ago` seconds since, its output handed to its Bot Chat."""
+        from datetime import datetime, timezone
+        home = self.job("scout", last="2026-10-20T07:00:00")
+        self.watch.look()
+        self.output(home, "# Cron Job\n\n## Response\n\nRun report: wear the raincoat, showers from noon.")
+        self.job("scout", last=datetime.fromtimestamp(time.time() - ago, timezone.utc).isoformat())
+        return home
+
+    ASKED = '[Cronjob "[bot:scout] What to wear" output — scheduled job, not the user. Review it, act on anything that needs action, and summarize for the chat.]\n\nRun report: wear the raincoat, showers from noon.'
+
+    def test_a_run_delivered_to_the_bots_chat_says_what_the_bot_answered_there(self):
+        """Issue 63: the note was the run's output, and the chat it opens ends with the bot's summary of it."""
+        self.bot_chat_run()
+        self.chat("scout", [("user", "hello scout", 900, None), ("assistant", "Hi!", 899, None),
+                            ("user", self.ASKED, 20, None), ("assistant", "", 15, '[{"id": "c1"}]'), ("tool", "{}", 14, None),
+                            ("assistant", "Raincoat today, rain from noon.", 10, None)])
+        self.assertEqual(self.watch.look(), 1)
+        self.assertEqual(self.sent[0][1]["b"], "Raincoat today, rain from noon.")
+        self.assertEqual(self.watch.look(), 0, "said once")
+
+    def test_the_note_waits_for_the_bots_answer_then_goes_without_it(self):
+        self.bot_chat_run()
+        self.chat("scout", [("user", self.ASKED, 20, None)])
+        self.assertEqual(self.watch.look(), 0, "the bot is still answering")
+        self.chat("scout", [("assistant", "Raincoat today.", 1, None)])
+        self.assertEqual(self.watch.look(), 1)
+        self.assertEqual(self.sent[0][1]["b"], "Raincoat today.")
+
+    def test_a_bot_that_never_answers_gets_the_runs_output_in_the_end(self):
+        self.bot_chat_run(ago=routines.REPLY_WAIT + 60)
+        self.chat("scout", [("user", self.ASKED, routines.REPLY_WAIT + 50, None)])
+        self.assertEqual(self.watch.look(), 1)
+        self.assertEqual(self.sent[0][1]["b"], "Run report: wear the raincoat, showers from noon.")
+
+    def test_an_earlier_runs_answer_isnt_taken_for_this_ones(self):
+        self.bot_chat_run(ago=routines.ARRIVAL_WAIT + 30)
+        self.chat("scout", [("user", self.ASKED, 86400, None), ("assistant", "Yesterday: sunglasses.", 86390, None)])
+        self.assertEqual(self.watch.look(), 1, "this run's message never came: the output, after a short wait")
+        self.assertEqual(self.sent[0][1]["b"], "Run report: wear the raincoat, showers from noon.")
+
+    def test_a_bot_that_answers_silent_sends_nothing(self):
+        self.bot_chat_run()
+        self.chat("scout", [("user", self.ASKED, 20, None), ("assistant", "[SILENT]", 10, None)])
+        self.assertEqual(self.watch.look(), 0)
+        self.assertEqual(self.sent, [])
+        self.assertEqual(self.watch.look(), 0, "and isn't looked at again")
+
     def test_a_run_that_failed_says_why(self):
         self.job("scout", last="2026-10-20T07:00:00")
         self.watch.look()
@@ -183,6 +245,18 @@ class RoutinesTests(unittest.TestCase):
         self.job("default", last="2026-10-31T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
         self.watch.look()
         return self.sent
+
+    def test_a_briefing_says_which_session_its_run_was_in(self):
+        """Issue 62: a tap can open the run's session. Written down by the run's own turn."""
+        from datetime import datetime
+        ran = datetime.fromisoformat("2026-10-31T21:00:00").timestamp()
+        self.assertIsNone(routines.remember_run(self.root, "20261031_205900_ab12", "desktop", now=ran - 60), "not a run")
+        self.assertEqual(routines.remember_run(self.root, "cron_job1_20261031_205900", "cron", now=ran - 60), "job1")
+        made = self.notify_run("The build is green.")[0][1]
+        self.assertEqual((made["x"], made["i"], made["j"]), ("brief", "job1", "cron_job1_20261031_205900"))
+        self.assertEqual(routines.run_session(self.root, "job1", ran + routines.RUN_LONGEST + 120), "", "an older run's isn't this one's")
+        self.assertNotIn("j", core.routine_note("default", "Sol", "Wrap-up", "Green.", brief="job1"), "none known: none said")
+        self.assertNotIn("j", core.routine_note("scout", "Scout", "What to wear", "A coat.", session="s1"), "only a briefing's")
 
     def test_silent_after_words_of_its_own_says_nothing(self):
         self.assertEqual(self.notify_run("A quiet day, nothing to report.\n\n[SILENT]"), [])

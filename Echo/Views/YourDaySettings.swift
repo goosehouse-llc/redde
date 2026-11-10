@@ -8,6 +8,7 @@ import SwiftUI
 struct YourDaySettings: View {
     /// An API key or a Dashboard login is stored: the jobs, goals and watches are on the server.
     let canReachGateway: Bool
+    @State private var settings = Settings.shared
 
     var body: some View {
         Section {
@@ -30,11 +31,18 @@ struct YourDaySettings: View {
             }
             .disabled(!canReachGateway)
             NavigationLink { BriefingsList() } label: { Label("Briefings", systemImage: "doc.text") }
+            Toggle(isOn: $settings.briefingTapsOpenRun) {
+                Label { Text("Briefing Taps Open the Run", comment: "Settings › Your Day: a briefing's notification opens the scheduled run's chat, not the briefing") } icon: { Image(systemName: "bubble.left.and.text.bubble.right") }
+            }
         } header: {
             Text("Every Day", comment: "Settings › Your Day: the section of the daily jobs")
         } footer: {
-            Text("Ideas each morning, a heads-up before events, a wrap-up each evening, the week ahead on Sundays. What they send stays in Briefings, at the top of your chats.",
-                 comment: "Settings › Your Day › Every Day: footer")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Ideas each morning, a heads-up before events, a wrap-up each evening, the week ahead on Sundays. What they send stays in Briefings, at the top of your chats.",
+                     comment: "Settings › Your Day › Every Day: footer")
+                Text("With Briefing Taps Open the Run on, a briefing's notification opens the chat its run was in, to ask on there. The main agent's briefings, with Redde's plugin 1.21.1 or later.",
+                     comment: "Settings › Your Day › Every Day: footer, about Briefing Taps Open the Run")
+            }
         }
 
         Section {

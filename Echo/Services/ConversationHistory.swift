@@ -10,6 +10,7 @@ extension Conversation {
     /// 2026-11-09; reading the JSON was 0.02 s), a stutter as the transcript came in.
     @concurrent nonisolated static func readied(serveRows rows: [JSONValue]) async -> [Message] {
         var messages = messages(fromServeRows: rows)
+        BotMessages.foldAnsweredTasks(&messages)
         TodoList.resolve(&messages)
         ReplyCards.resolve(&messages)
         return messages
@@ -18,6 +19,7 @@ extension Conversation {
     /// The same for the Hermes API's stored messages (and the Dashboard's messages page).
     @concurrent nonisolated static func readied(stored: [HermesSessionsAPI.StoredMessage]) async -> [Message] {
         var messages = mapStored(stored)
+        BotMessages.foldAnsweredTasks(&messages)
         TodoList.resolve(&messages)
         ReplyCards.resolve(&messages)
         return messages

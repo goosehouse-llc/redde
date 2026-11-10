@@ -186,7 +186,7 @@ class PhoneTools(unittest.TestCase):
             self.assertEqual(schema["name"], name)
             self.assertEqual(schema["parameters"]["type"], "object")
             self.assertTrue(set(schema["parameters"]["required"]) <= set(schema["parameters"]["properties"]), name)
-            self.assertTrue(schema["description"].startswith("Runs on the user's iPhone"), name)
+            self.assertIn("iPhone", schema["description"], name)   # (the calendar's leads with what it's for)
             self.assertFalse(check(), f"{name} is offered with everything off")
         self.phone.set_areas(["files"])
         offered = sorted(name for name, (_, _, _, check) in ctx.tools.items() if check())

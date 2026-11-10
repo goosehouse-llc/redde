@@ -362,6 +362,27 @@ struct NotifierTests {
         #expect(LaunchRouter.shared.consumeSession() == nil)
     }
 
+    /// GitHub issue 62: with Briefing Taps Open the Run on, a briefing's tap opens its run's
+    /// session; off (the default), the briefing, as before.
+    @Test func aBriefingsTapOpensItsRunWhenAsked() {
+        let h = Harness()
+        let settings = Settings.shared
+        let was = settings.briefingTapsOpenRun
+        defer { settings.briefingTapsOpenRun = was; BriefingsInbox.shared.open = nil; BriefingsInbox.shared.showingAll = false }
+        _ = LaunchRouter.shared.consumeSession()
+        settings.briefingTapsOpenRun = false
+        h.notifier.route(action: UNNotificationDefaultActionIdentifier, requestID: nil, questionID: nil, approve: nil, deny: nil,
+                         userText: nil, task: "brief", briefing: "job1/1800000000", runSession: "cron_job1_20270115_080000")
+        #expect(LaunchRouter.shared.consumeSession() == nil, "off: the briefing")
+        settings.briefingTapsOpenRun = true
+        h.notifier.route(action: UNNotificationDefaultActionIdentifier, requestID: nil, questionID: nil, approve: nil, deny: nil,
+                         userText: nil, task: "brief", briefing: "job1/1800000000", runSession: "cron_job1_20270115_080000")
+        #expect(LaunchRouter.shared.consumeSession() == "cron_job1_20270115_080000")
+        h.notifier.route(action: UNNotificationDefaultActionIdentifier, requestID: nil, questionID: nil, approve: nil, deny: nil,
+                         userText: nil, task: "brief", bot: "scout", briefing: "job1/1800000000", runSession: "cron_job1_20270115_080000")
+        #expect(LaunchRouter.shared.consumeSession() == nil, "a bot's: its briefing, the session being in its profile")
+    }
+
     /// 2.3.3: a watch's notification opened Redde on whatever was last on screen, its update only
     /// in Settings. A tap now opens the Watches list, and only a plain tap does.
     @Test func tappingAWatchsNotificationOpensTheWatches() throws {

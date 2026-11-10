@@ -79,14 +79,15 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
 /// bot then answers. Read out of transcripts by `BotMessages`. In a normal chat, too, the two
 /// sides of an aside (`BotAsides`): what the person asked a bot they tagged, and its answer.
 nonisolated struct Delivered: Codable, Equatable, Sendable {
-    enum Kind: String, Codable, Sendable { case message, reply, process, routine, asked, answer }
+    enum Kind: String, Codable, Sendable { case message, reply, process, routine, asked, answer, task }
     var kind: Kind
     /// The bot it is from: its profile, and what it called itself.
     var profile: String?
     var name: String?
     /// A process notice's one line (`display_text`), or the schedule's name.
     var title: String?
-    /// An aside the main agent has been told of (`AsideNote`), with the person's next message to it.
+    /// An aside the main agent has been told of (`AsideNote`), with the person's next message to it;
+    /// a task's notice the agent answered (`BotMessages.foldAnsweredTasks`).
     var noted: Bool?
 }
 

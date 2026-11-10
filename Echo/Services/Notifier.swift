@@ -220,6 +220,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let keyRequest = info[PushNote.keyRequestKey] as? String
         let kind = info[PushNote.kindKey] as? String
         let briefing = info[PushNote.briefingKey] as? String
+        let runSession = info[PushNote.runSessionKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         let leaveTitle = info[LeaveTime.eventTitleKey] as? String
         let leaveAt = (info[LeaveBy.latitudeKey] as? Double).flatMap { lat in (info[LeaveBy.longitudeKey] as? Double).map { (lat, $0) } }
@@ -241,7 +242,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             let work = self.route(action: action, requestID: requestID, questionID: questionID, approve: approve, deny: deny,
                                   userText: userText, conversationID: conversationID, sessionID: sessionID, approvalDigest: digest,
                                   questionDigest: asked, room: room, task: task, bot: bot, keyRequest: keyRequest,
-                                  kind: kind, briefing: briefing)
+                                  kind: kind, briefing: briefing, runSession: runSession)
             // The app may have been started just for this: iOS keeps it running until it is told.
             await work?.value
             handled()
@@ -345,15 +346,22 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     func route(action: String, requestID: String?, questionID: String?,
                approve: String?, deny: String?, userText: String?, conversationID: String? = nil, sessionID: String? = nil,
                approvalDigest: String? = nil, questionDigest: String? = nil, room: String? = nil, task: String? = nil,
-               bot: String? = nil, keyRequest: String? = nil, kind: String? = nil, briefing: String? = nil) -> Task<Void, Never>? {
+               bot: String? = nil, keyRequest: String? = nil, kind: String? = nil, briefing: String? = nil,
+               runSession: String? = nil) -> Task<Void, Never>? {
         // A bot asks for a key: its card, to paste it into (`KeyRequests`).
         if let keyRequest, !keyRequest.isEmpty, action == UNNotificationDefaultActionIdentifier {
             KeyRequests.shared.show(id: keyRequest)
             return nil
         }
-        // A briefing (a `[redde-notify]` job's answer): opened whole, over the chat list.
+        // A briefing (a `[redde-notify]` job's answer): opened whole, over the chat list; or, as the
+        // person chose, the main agent's run's session, to ask on in it (GitHub issue 62).
         if task == "brief", room == nil, action == UNNotificationDefaultActionIdentifier {
-            BriefingsInbox.shared.showNewest(id: briefing)
+            if Settings.shared.briefingTapsOpenRun, bot == nil, let runSession, !runSession.isEmpty {
+                if let briefing { AgentBriefing.markRead(briefing) }
+                LaunchRouter.shared.requestSession(runSession)
+            } else {
+                BriefingsInbox.shared.showNewest(id: briefing)
+            }
             return nil
         }
         // A watch saw something change: the Watches list, its update beside the watch. It had no

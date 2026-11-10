@@ -883,7 +883,7 @@ struct DeliveredMessage: View {
     var body: some View {
         switch delivered.kind {
         case .process: processLine
-        case .message, .reply, .routine, .asked: botMessage
+        case .message, .reply, .routine, .asked, .task: botMessage
         case .answer: answer
         }
     }
@@ -925,11 +925,13 @@ struct DeliveredMessage: View {
         let heading = unanswered ? String(localized: "\(name) didn't answer")
             : delivered.kind == .reply ? String(localized: "\(name) replied")
             : delivered.kind == .routine ? String(localized: "\(delivered.title?.nilIfEmpty ?? String(localized: "A schedule")) ran")
+            : delivered.kind == .task ? delivered.title?.nilIfEmpty ?? String(localized: "A background task finished")
             : String(localized: "Message from \(name)")
         // A bot's reply to one this bot sent folds away as the thinking does: what the person
         // reads (and hears) is this bot's answer, which follows it. So does what a schedule came
         // up with, which the bot answers next.
-        let folds = (delivered.kind == .reply || delivered.kind == .routine) && !unanswered
+        // A task's notice too, once the agent answered it (over the Hermes API it doesn't: shown open).
+        let folds = (delivered.kind == .reply || delivered.kind == .routine || (delivered.kind == .task && delivered.noted == true)) && !unanswered
         return VStack(alignment: .leading, spacing: 6) {
             if folds {
                 Button {
@@ -941,6 +943,8 @@ struct DeliveredMessage: View {
                             .rotationEffect(.degrees(open ? 90 : 0))
                         if delivered.kind == .routine {
                             Image(systemName: "clock").frame(width: 20)
+                        } else if delivered.kind == .task {
+                            Image(systemName: "checklist").frame(width: 20)
                         } else {
                             BotAvatar(face: face, name: name, size: 20)
                         }
@@ -954,7 +958,11 @@ struct DeliveredMessage: View {
                 .accessibilityHint(open ? String(localized: "Hides what \(name) said") : String(localized: "Shows what \(name) said"))
             } else {
                 HStack(spacing: 6) {
-                    BotAvatar(face: face, name: name, size: 20)
+                    if delivered.kind == .task {
+                        Image(systemName: "checklist").frame(width: 20).foregroundStyle(.secondary)
+                    } else {
+                        BotAvatar(face: face, name: name, size: 20)
+                    }
                     Text(heading).chatFont(.subheadline, weight: .semibold)
                 }
             }

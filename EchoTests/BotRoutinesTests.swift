@@ -80,4 +80,57 @@ struct BotRoutinesTests {
                          userText: nil, bot: "scout")
         #expect(LaunchRouter.shared.consumeBot() == "scout")
     }
+
+    /// Issue 63: over the Hermes API a background task's coming back starts no turn, and the chat
+    /// ended on Hermes's report as if the person had sent it.
+    @Test func aTaskComingBackIsANoticeNotTheirMessage() throws {
+        let one = """
+        [ASYNC DELEGATION BATCH COMPLETE — deleg_deaefad5]
+        A background fan-out unit you dispatched earlier — 1 subagent(s) — has finished; its consolidated results are below.
+
+        Dispatched: 2026-11-09 23:44:12 (0s ago)
+        Role: leaf   Model: alpha   Total duration: 0.16s
+
+        --- ✓ TASK 1/1: Say hello, lab:wordy-subagent.  (status=completed, api_calls=1, 0.09s) ---
+        Subagent's summary: said hello, nothing else to report.
+        Full live transcript (complete tool/assistant trace): /tmp/hermes/cache/delegation/live/deleg_deaefad5/task-0.log
+        """
+        let message = try #require(BotMessages.userMessage(text: one, displayKind: "async_delegation_complete", displayText: nil, at: .now))
+        #expect(message.delivered?.kind == .task)
+        #expect(message.delivered?.title == "Task finished: Say hello, lab:wordy-subagent.")
+        #expect(message.text == "Subagent's summary: said hello, nothing else to report.", "no instructions, no path")
+        #expect(BotMessages.rowPreview(one, roster: [], mainName: "Sol") == "A background task finished")
+
+        let two = """
+        [ASYNC DELEGATION BATCH COMPLETE — batch]
+        Private instructions
+        Role: leaf
+
+        --- ✓ TASK 1/2: Find the flights
+        to Lisbon  (status=completed) ---
+        Two direct ones on Friday.
+        Full live transcript (complete tool/assistant trace): /private/path
+
+        --- ✗ TASK 2/2: Book the hotel  (status=failed, 3.1s) ---
+        (no summary — status=failed: no card on file)
+        """
+        let (delivered, said) = try #require(BotMessages.taskNotice(two))
+        #expect(delivered.title == "Some tasks didn't finish")
+        #expect(said == "**Find the flights**\nTwo direct ones on Friday.\n\n**Book the hotel**\n(no summary — status=failed: no card on file)")
+
+        let failed = "[ASYNC DELEGATION TASK FAILED — deleg_x, task 2/3]\nOne subagent failed.\nTask: Book the hotel\nStatus: failed   Duration: 2s\nError: no card on file"
+        #expect(BotMessages.taskNotice(failed)?.0.title == "Task didn't finish: Book the hotel")
+        #expect(BotMessages.taskNotice(failed)?.1 == "no card on file")
+    }
+
+    @Test func aTaskTheAgentAnsweredFoldsAway() throws {
+        let notice = try #require(BotMessages.userMessage(text: "[ASYNC DELEGATION BATCH COMPLETE — d]\n\n--- ✓ TASK 1/1: Hi  (status=completed) ---\nDone.",
+                                                          displayKind: nil, displayText: nil, at: .now))
+        var answered = [notice, Message(role: .assistant, text: "It said hello.", createdAt: .now)]
+        BotMessages.foldAnsweredTasks(&answered)
+        #expect(answered[0].delivered?.noted == true)
+        var alone = [notice, Message(role: .user, text: "thanks", createdAt: .now)]
+        BotMessages.foldAnsweredTasks(&alone)
+        #expect(alone[0].delivered?.noted == false, "over the Hermes API nothing answers it: shown open")
+    }
 }

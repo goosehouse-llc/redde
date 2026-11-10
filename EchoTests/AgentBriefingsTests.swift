@@ -32,6 +32,30 @@ struct AgentBriefingsTests {
         #expect(AgentBriefing.all(in: store, now: Date(timeIntervalSince1970: 1_800_000_000 + 8 * 86_400)).isEmpty, "a week, then gone")
     }
 
+    /// GitHub issue 62: the plugin (1.21.1) says which session a briefing's run was in, and a tap
+    /// can open it. A bot's isn't opened by its id alone.
+    @Test func aBriefingKnowsItsRunsSession() throws {
+        let store = defaults()
+        var json: [String: Any] = ["v": 1, "k": "routine", "at": 1_800_000_000, "p": "default", "d": "Sol", "t": "Evening wrap-up",
+                                   "b": "Green.", "x": "brief", "i": "job1", "j": "cron_job1_20270115_080000"]
+        let note = try JSONDecoder().decode(PushNote.self, from: JSONSerialization.data(withJSONObject: json))
+        let content = UNMutableNotificationContent()
+        #expect(note.fill(content))
+        #expect(content.userInfo[PushNote.runSessionKey] as? String == "cron_job1_20270115_080000")
+        #expect(AgentBriefing.take(note, now: Date(timeIntervalSince1970: 1_800_000_000), in: store))
+        #expect(AgentBriefing.all(in: store, now: Date(timeIntervalSince1970: 1_800_000_000)).first?.openableRun == "cron_job1_20270115_080000")
+        json["p"] = "scout"
+        let bots = try JSONDecoder().decode(PushNote.self, from: JSONSerialization.data(withJSONObject: json))
+        AgentBriefing.take(bots, now: Date(timeIntervalSince1970: 1_800_000_000), in: store)
+        #expect(AgentBriefing.all(in: store, now: Date(timeIntervalSince1970: 1_800_000_000)).first { $0.profile == "scout" }?.openableRun == nil)
+        // An older plugin's: none.
+        json["p"] = "default"; json["j"] = nil; json["i"] = "job2"
+        let older = try JSONDecoder().decode(PushNote.self, from: JSONSerialization.data(withJSONObject: json))
+        let plain = UNMutableNotificationContent()
+        older.fill(plain)
+        #expect(plain.userInfo[PushNote.runSessionKey] == nil)
+    }
+
     /// One card a job in the deck, its newest run, with the earlier ones unread under it; Done
     /// reads them all (2026-11-05: a check every four hours stacked six cards a day).
     @Test func aJobsRunsAreOneCardInTheDeck() throws {

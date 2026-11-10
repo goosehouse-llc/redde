@@ -27,6 +27,15 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
     var profile: String?
     /// The job it came from (the note's `i`): its runs are one card in the deck (2026-11-05).
     var job: String?
+    /// The session its run was in (the note's `j`, plugin 1.21.1), to ask on in it (GitHub issue 62).
+    var runSession: String?
+
+    /// The run's session, where the app can open it: the main agent's (a bot's is in its own
+    /// profile, which a session id alone doesn't reach).
+    var openableRun: String? {
+        guard let runSession, !runSession.isEmpty, (profile ?? "default") == "default" else { return nil }
+        return runSession
+    }
 
     private static let key = "agentBriefings"
     static let most = 40
@@ -86,6 +95,7 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
         briefing.place = note.r.flatMap { $0.isEmpty ? nil : $0 }
         briefing.profile = note.p
         briefing.job = note.i.flatMap { $0.isEmpty ? nil : $0 }
+        briefing.runSession = note.j.flatMap { $0.isEmpty ? nil : $0 }
         // A job the person said not to show (`JobNotices`): not kept at all.
         if JobNotices.choice(for: briefing.jobKey, in: defaults) == .hidden { return false }
         var before = all(in: defaults, now: now).filter { $0.id != briefing.id }
