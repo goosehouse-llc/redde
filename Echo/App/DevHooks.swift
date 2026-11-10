@@ -76,7 +76,7 @@ import WidgetKit
 ///   [you|other]`: the Agent's Screen over a made-up desktop, watched, driven by you, or by someone else.
 /// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
 ///   `-echo.demoCards weather` (or `places`): that card alone. `-echo.demoCards purchase`: headphones to buy, as a purchase
-///   card (`PurchaseCard`); its pictures are drawn on the phone, and show with `-linkPreviews YES`. `home`, `reminder`,
+///   card (`PurchaseCard`); its pictures are drawn on the phone, and show with `-linkPreviews YES`; `pricecheck`: one vacuum at six stores. `home`, `reminder`,
 ///   `compare`, `score`: the house downstairs (`HomeCard`), a timer, a reminder and a weekly message (`ReminderCard`), two
 ///   comparisons (`CompareCard`), games over, to come and being played (`ScoreCard`). `recipe`, `delivery`, `flight`,
 ///   `show`, `conversion`, `stock`: a pasta for four (`RecipeCard`), a package coming and one delivered (`DeliveryCard`),

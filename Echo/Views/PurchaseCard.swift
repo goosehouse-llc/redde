@@ -34,17 +34,22 @@ struct PurchaseCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             CardBox(spacing: 14) {
-                header
-                hero(shown.items[shown.lead])
-                if !shown.others.isEmpty {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(shown.others.enumerated()), id: \.element) { n, index in
-                            if n > 0 { Divider() }
-                            row(shown.items[index])
-                        }
+                let pick = shown.items[shown.lead]
+                ProductPicture(image: pick.image, page: pick.url, symbol: pick.symbol, width: nil, height: 200)
+                heading(pick)
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(shown.ordered.enumerated()), id: \.element) { n, index in
+                        if n > 0 { Divider().padding(.leading, 14) }
+                        row(shown.items[index], isPick: index == shown.lead)
                     }
-                    .padding(.top, -6)
                 }
+                .background(scheme.cardPanel, in: .rect(cornerRadius: 16))
+                .clipShape(.rect(cornerRadius: 16))
+                .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
+                if let why = pick.product.why {
+                    Text(why).chatFont(.subheadline).fixedSize(horizontal: false, vertical: true)
+                }
+                if let url = pick.url { ListingLink(url: url, named: pick.view, prominent: true) }
                 if let note = shown.note {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Image(systemName: "info.circle").accessibilityHidden(true)
@@ -59,102 +64,63 @@ struct PurchaseCard: View {
         .animation(.snappy(duration: 0.25), value: open)
     }
 
-    // MARK: Header
+    // MARK: Under the picture
 
-    private var header: some View {
-        CardTitle(symbol: shown.symbol, title: card.title ?? String(localized: "Recommendations", comment: "A purchase card's title when the agent gave none"),
-                  subtitle: shown.range)
-    }
-
-    // MARK: The pick
-
-    private func hero(_ item: Shown.Item) -> some View {
-        let isOpen = open.contains(item.id)
-        return VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 14) {
-                    ProductPicture(image: item.image, page: item.url, symbol: item.symbol, side: 96)
-                    VStack(alignment: .leading, spacing: 4) {
-                        if let badge = item.badge { BadgeTag(text: badge, tone: item.tone) }
-                        Text(item.product.name).chatFont(.headline).lineLimit(3).fixedSize(horizontal: false, vertical: true)
-                        if let brand = item.product.brand { Text(brand).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(1) }
-                        if item.rating != nil { Stars(item: item).padding(.top, 2) }
-                    }
-                    Spacer(minLength: 0)
-                }
-                if let price = item.price {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(verbatim: price).chatFont(.title2, weight: .bold).monospacedDigit()
-                        if let was = item.was {
-                            Text(verbatim: was).chatFont(.subheadline).strikethrough().foregroundStyle(.secondary).monospacedDigit()
-                        }
-                        if let saving = item.saving {
-                            Text(saving).chatFont(.caption, weight: .semibold)
-                                .foregroundStyle(Self.good)
-                                .padding(.horizontal, 7).padding(.vertical, 3)
-                                .background(Self.good.opacity(0.14), in: .capsule)
-                        }
-                        Spacer(minLength: 0)
-                        if let stock = item.stock { StockTag(text: stock, inStock: item.inStock) }
-                    }
-                } else if let stock = item.stock {
-                    StockTag(text: stock, inStock: item.inStock)
-                }
-                if let why = item.product.why { Text(why).chatFont(.subheadline).fixedSize(horizontal: false, vertical: true) }
+    /// One product at several stores: its name, brand and the prices' range. Several products: the
+    /// card's title over the pick's name, brand and stars.
+    private func heading(_ pick: Shown.Item) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if !shown.byStore {
+                Text(card.title ?? String(localized: "Recommendations", comment: "A purchase card's title when the agent gave none"))
+                    .chatFont(.footnote, weight: .semibold).foregroundStyle(.secondary).lineLimit(2)
             }
-            .contentShape(.rect)
-            .onTapGesture { if let url = item.url { openURL(url) } }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(item.spoken)
-            .accessibilityActions { spokenActions(item) }
-            if isOpen { details(item, inRow: false).transition(.opacity) }
-            if let url = item.url { ListingLink(url: url, named: item.view, prominent: true) }
-            if item.hasDetails {
-                Button { toggle(item.id) } label: {
-                    Text(isOpen ? String(localized: "Less", comment: "Hides a purchase card's pros, cons and specs") : String(localized: "Details", comment: "Shows a purchase card's pros, cons and specs"))
-                        .chatFont(.subheadline, weight: .semibold)
-                        .foregroundStyle(theme.accent)
-                        .padding(.horizontal, 18)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .background(theme.accent.opacity(0.12), in: .capsule)
-                        .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityHint(isOpen ? Self.hideHint : Self.showHint)
-            }
+            Text(shown.byStore ? (card.title ?? pick.product.name) : pick.product.name)
+                .chatFont(.title3, weight: .bold).fixedSize(horizontal: false, vertical: true)
+            if let brand = pick.product.brand { Text(brand).chatFont(.subheadline).foregroundStyle(.secondary).lineLimit(1) }
+            if let range = shown.range { Text(verbatim: range).chatFont(.subheadline).foregroundStyle(.secondary).monospacedDigit() }
+            if !shown.byStore, pick.rating != nil { Stars(item: pick).padding(.top, 2) }
         }
-        .padding(14)
-        .background(scheme.cardPanel, in: .rect(cornerRadius: 16))
-        .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
-        #if os(iOS)
-        .contentShape(.contextMenuPreview, .rect(cornerRadius: 16))
-        #endif
-        .contextMenu { actions(item) }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: The others
 
-    private func row(_ item: Shown.Item) -> some View {
+    /// A store's price (one product), or a product (several): the pick first, tinted and tagged.
+    /// Tapped, it opens to its pros, cons, specs and its page.
+    private func row(_ item: Shown.Item, isPick: Bool) -> some View {
         let isOpen = open.contains(item.id)
         return VStack(alignment: .leading, spacing: 0) {
             Button { toggle(item.id) } label: {
                 HStack(spacing: 12) {
-                    ProductPicture(image: item.image, page: item.url, symbol: item.symbol, side: 48)
+                    if shown.byStore {
+                        StoreMark(name: item.product.retailer ?? item.product.name, isPick: isPick)
+                    } else {
+                        ProductPicture(image: item.image, page: item.url, symbol: item.symbol, side: 48)
+                    }
                     VStack(alignment: .leading, spacing: 3) {
-                        if let badge = item.badge { BadgeTag(text: badge, tone: item.tone, small: true) }
-                        Text(item.product.name).chatFont(.subheadline, weight: .semibold).lineLimit(2)
-                        if let facts = item.facts {
+                        HStack(spacing: 6) {
+                            Text(shown.byStore ? (item.product.retailer ?? item.product.name) : item.product.name)
+                                .chatFont(.subheadline, weight: .semibold).lineLimit(2)
+                            if isPick, let badge = item.badge { BadgeTag(text: badge, tone: item.tone, small: true) }
+                        }
+                        if !isPick, let badge = item.badge { BadgeTag(text: badge, tone: item.tone, small: true) }
+                        if let line = shown.byStore ? item.storeLine : item.facts {
                             HStack(spacing: 3) {
                                 if item.rating != nil { Image(systemName: "star.fill").imageScale(.small).foregroundStyle(Self.star).accessibilityHidden(true) }
-                                Text(verbatim: facts).lineLimit(1)
+                                Text(verbatim: line).lineLimit(1)
                             }
                             .chatFont(.caption).foregroundStyle(.secondary)
                         }
                     }
                     Spacer(minLength: 6)
                     VStack(alignment: .trailing, spacing: 1) {
-                        if let price = item.price { Text(verbatim: price).chatFont(.subheadline, weight: .semibold).monospacedDigit().lineLimit(1) }
+                        if let price = item.price {
+                            Text(verbatim: price).chatFont(isPick ? .headline : .subheadline, weight: isPick ? .bold : .semibold).monospacedDigit().lineLimit(1)
+                        }
                         if let was = item.was { Text(verbatim: was).chatFont(.caption).strikethrough().foregroundStyle(.secondary).monospacedDigit() }
+                        if isPick, let saving = item.saving {
+                            Text(saving).chatFont(.caption2, weight: .semibold).foregroundStyle(Self.good).lineLimit(1)
+                        }
                         if let stock = item.stock {
                             Text(stock).chatFont(.caption2, weight: .semibold).foregroundStyle(item.inStock ? Self.good : Self.bad).lineLimit(1)
                         }
@@ -163,9 +129,10 @@ struct PurchaseCard: View {
                         .chatFont(.caption, weight: .semibold)
                         .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(isOpen ? 180 : 0))
-                        .opacity(item.hasDetails || item.url != nil ? 1 : 0)
+                        .opacity(item.hasDetails || (item.url != nil && !isPick) ? 1 : 0)
                 }
                 .padding(.vertical, 12)
+                .padding(.horizontal, 14)
                 .frame(minHeight: 44)
                 .contentShape(.rect)
             }
@@ -177,11 +144,13 @@ struct PurchaseCard: View {
             .accessibilityActions { spokenActions(item) }
             .contextMenu { actions(item) }
             if isOpen {
-                details(item, inRow: true)
+                details(item, inRow: !isPick)
+                    .padding(.horizontal, 14)
                     .padding(.bottom, 14)
                     .transition(.opacity)
             }
         }
+        .background(isPick ? theme.accent.opacity(0.09) : .clear)
     }
 
     // MARK: Opened
@@ -204,7 +173,7 @@ struct PurchaseCard: View {
             if !item.product.specs.isEmpty { specs(item.product.specs) }
             if inRow, let url = item.url { ListingLink(url: url, named: item.view, prominent: false) }
         }
-        .padding(.leading, inRow ? 60 : 0)
+        .padding(.leading, shown.byStore ? 48 : 60)
     }
 
     private func point(_ text: String, symbol: String, colour: Color, spoken: String) -> some View {
@@ -302,12 +271,12 @@ struct PurchaseCard: View {
         static func asked(in said: String) -> FollowUp? { allCases.first { said.contains($0.marker) } }
     }
 
-    /// The chips a card has: Compare with two or more, Why with a pick.
+    /// The chips a card has: Compare with two or more products, Why with a pick.
     static func followUps(_ card: ReplyCard.Purchase) -> [FollowUp] {
         FollowUp.allCases.filter { chip in
             switch chip {
             case .cheaper: true
-            case .compare: card.items.count >= 2
+            case .compare: card.items.count >= 2 && !Shown.oneProduct(card)   // one product at several stores: nothing to compare
             case .why: card.hasPick
             }
         }
@@ -407,6 +376,8 @@ extension PurchaseCard {
             var ratingText: String?
             /// "4.4 (3,201) · Amazon": a row's line under its name.
             var facts: String?
+            /// A store's row, for one product at several: its rating, else the product's name there.
+            var storeLine: String?
             var badge: String?
             var tone: Tone
             var symbol: String
@@ -427,12 +398,29 @@ extension PurchaseCard {
         var lead: Int
         /// The others, after the pick, in the agent's order.
         var others: [Int]
+        /// The pick, then the others.
+        var ordered: [Int] { [lead] + others }
+        /// One product at several stores (a price check): rows are named by their store.
+        var byStore: Bool
         /// "$199 – $379", with two or more priced alike.
         var range: String?
         /// What the card is of ("headphones"), else a bag.
         var symbol: String
         /// The line under it: the agent's (or the plugin's) note, else when its prices were checked.
         var note: String?
+
+        /// Every product is the same one at another store: each names a store, and all name the
+        /// same thing or share a model number ("NV360", "WH-1000XM5").
+        static func oneProduct(_ card: ReplyCard.Purchase) -> Bool {
+            guard card.items.count >= 2, card.items.allSatisfy({ !($0.retailer ?? "").isEmpty }) else { return false }
+            let names = card.items.map { $0.name.lowercased() }
+            if Set(names).count == 1 { return true }
+            func models(_ name: String) -> Set<String> {
+                Set(name.split { !$0.isLetter && !$0.isNumber && $0 != "-" }.map(String.init)
+                    .filter { $0.count >= 3 && $0.contains(where: \.isNumber) && $0.contains(where: \.isLetter) })
+            }
+            return !names.dropFirst().reduce(models(names[0])) { $0.intersection(models($1)) }.isEmpty
+        }
 
         /// The pick first, then the rest as the agent gave them.
         static func order(_ card: ReplyCard.Purchase) -> [Int] {
@@ -465,7 +453,7 @@ extension PurchaseCard {
                 let stock = p.availability.map(PurchaseCard.stock)
                 let spoken = [badge, p.name, p.brand, price, spokenWas, stock, spokenRating, spokenReviews, spokenStore].compactMap(\.self).joined(separator: ", ")
                 return Item(id: i, product: p, price: price, was: was, saving: saving, rating: p.rating, ratingText: ratingText,
-                            facts: facts.isEmpty ? nil : facts.joined(separator: " · "), badge: badge, tone: Tone(badge ?? "", pick: p.pick),
+                            facts: facts.isEmpty ? nil : facts.joined(separator: " · "), storeLine: ratingText ?? p.name, badge: badge, tone: Tone(badge ?? "", pick: p.pick),
                             symbol: PurchaseCard.symbol(for: [p.name, p.brand ?? ""].joined(separator: " "), else: title),
                             url: p.url.flatMap(URL.init(string:)), image: p.image.flatMap(URL.init(string:)), view: view, spoken: spoken,
                             spokenStars: [spokenRating, spokenReviews].compactMap(\.self).joined(separator: ", ").nilIfEmpty,
@@ -473,6 +461,7 @@ extension PurchaseCard {
                             stock: stock, inStock: p.availability == .inStock)
             }
             note = card.note ?? card.checked.map { PurchaseCard.checkedNote($0, locale: locale) }
+            byStore = Self.oneProduct(card)
             lead = card.lead
             others = Self.order(card).dropFirst().map { $0 }
             let priced = card.items.compactMap { p in p.price.map { ($0, p.currency ?? home) } }
@@ -643,9 +632,23 @@ private struct ProductPicture: View {
     let image: URL?
     let page: URL?
     let symbol: String
-    let side: CGFloat
+    /// Nil: as wide as there is room (the card's picture at its top).
+    var width: CGFloat?
+    var height: CGFloat
     @State private var previews = LinkPreviews.shared
     @State private var settings = Settings.shared
+
+    init(image: URL?, page: URL?, symbol: String, side: CGFloat) {
+        self.init(image: image, page: page, symbol: symbol, width: side, height: side)
+    }
+
+    init(image: URL?, page: URL?, symbol: String, width: CGFloat?, height: CGFloat) {
+        self.image = image
+        self.page = page
+        self.symbol = symbol
+        self.width = width
+        self.height = height
+    }
 
     var body: some View {
         let preview = page.flatMap { previews.preview(for: $0) }
@@ -654,10 +657,33 @@ private struct ProductPicture: View {
         } else {
             nil
         }
-        CardPicture(url: image, symbol: symbol, side: side, still: still)
-            .task(id: settings.linkPreviews) {
-                if settings.linkPreviews, image == nil, let page { await previews.request(page) }
+        Group {
+            if let width {
+                CardPicture(url: image, symbol: symbol, side: width, still: still)
+            } else {
+                CardPicture(url: image, symbol: symbol, width: nil, height: height, corner: 14, pixels: 900, still: still)
             }
+        }
+        .task(id: settings.linkPreviews) {
+            if settings.linkPreviews, image == nil, let page { await previews.request(page) }
+        }
+    }
+}
+
+/// A store, as its row on a price check shows it: its first letter in a circle, the pick's in the accent.
+private struct StoreMark: View {
+    let name: String
+    let isPick: Bool
+    @Environment(\.theme) private var theme
+    @ScaledMetric(relativeTo: .subheadline) private var side: CGFloat = 36
+
+    var body: some View {
+        Text(verbatim: name.first.map { String($0).uppercased() } ?? "?")
+            .chatFont(.subheadline, weight: .bold)
+            .foregroundStyle(isPick ? theme.userText : .primary)
+            .frame(width: side, height: side)
+            .background(isPick ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.fill.tertiary), in: .circle)
+            .accessibilityHidden(true)
     }
 }
 

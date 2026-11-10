@@ -805,8 +805,9 @@ extension Conversation {
                     {"date": "\(day(6))", "high": 24, "low": 16, "condition": "clear"}]}
         """
         let newest = ["recipe", "delivery", "flight", "show", "conversion", "stock"]
-        let only = only.flatMap { (["weather", "places", "purchase", "home", "homekit", "reminder", "compare", "score"] + newest).contains($0) ? $0 : nil }   // else the next launch flag
+        let only = only.flatMap { (["weather", "places", "purchase", "pricecheck", "home", "homekit", "reminder", "compare", "score"] + newest).contains($0) ? $0 : nil }   // else the next launch flag
         if only == "purchase" { seedPurchaseDemo(); return }
+        if only == "pricecheck" { seedPriceCheckDemo(); return }
         if let only, ["home", "homekit", "reminder", "compare", "score"].contains(only) { seedMoreCardsDemo(only); return }
         if let only, newest.contains(only) { seedNewestCardsDemo(only); return }
         let shown = switch only ?? "" {
@@ -876,6 +877,31 @@ extension Conversation {
         reply.cards = ReplyCards.parse(args)
         for card in reply.cards ?? [] { CardAnswers.shared.forget(card.key) }   // its chips again, each time
         replaceForDemo(messages: [Message(role: .user, text: "Which noise-cancelling headphones should I buy? Under $300."), reply])
+    }
+
+    /// `-echo.demoCards pricecheck`: one product at six stores, as Watcher's price check sends it
+    /// (2026-11-10): shown by store, the pick first (`PurchaseCard.Shown.byStore`). Made-up links.
+    private func seedPriceCheckDemo() {
+        let json = #"""
+        {"cards": [{"type": "purchase", "title": "Shark Navigator NV360", "note": "Prices checked today at 2:29 PM; they change.",
+          "items": [
+            {"name": "Shark Navigator Lift-Away Deluxe NV360", "brand": "Shark", "price": 148.90, "was_price": 219.99, "currency": "USD",
+             "retailer": "Walmart", "url": "https://www.example.com/walmart-nv360", "availability": "in_stock", "pick": true,
+             "why": "The cheapest new one from a big store, sold and shipped by Walmart. The two eBay listings are cheaper but come from individual sellers.",
+             "pros": ["Free shipping", "Easy returns"], "specs": {"Seller": "Walmart", "Condition": "New"}},
+            {"name": "Shark NV360 Navigator", "price": 107.99, "retailer": "eBay", "badge": "Marketplace", "url": "https://www.example.com/ebay-nv360-1"},
+            {"name": "Shark NV360 upright, new", "price": 130, "rating": 5, "reviews": 4260, "retailer": "eBay", "badge": "Marketplace",
+             "url": "https://www.example.com/ebay-nv360-2"},
+            {"name": "Shark Navigator Lift-Away Deluxe NV360", "price": 149.99, "was_price": 199.99, "retailer": "Amazon", "url": "https://www.example.com/amazon-nv360"},
+            {"name": "Shark Navigator Lift-Away Deluxe NV360", "price": 149.99, "was_price": 199.99, "retailer": "Kohl's", "url": "https://www.example.com/kohls-nv360"},
+            {"name": "Shark Navigator Lift-Away Deluxe NV360", "price": 149.99, "was_price": 199.99, "retailer": "SharkNinja", "url": "https://www.example.com/shark-nv360"}]}]}
+        """#
+        let args = try? JSONValue.parse(Data(json.utf8))
+        var reply = Message(role: .assistant, text: "Walmart has it new for $148.90, $71 off.")
+        reply.tools = [ToolActivity(name: ReplyCards.tool, preview: "purchase", status: .completed, args: ToolActivity.args(ReplyCards.tool, args))]
+        reply.cards = ReplyCards.parse(args)
+        for card in reply.cards ?? [] { CardAnswers.shared.forget(card.key) }
+        replaceForDemo(messages: [Message(role: .user, text: "Find the best price on a Shark Navigator NV360."), reply])
     }
 
     /// `-echo.demoCards home|reminder|compare|score` (asked 2026-10-30): the house downstairs, with

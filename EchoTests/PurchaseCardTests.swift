@@ -47,6 +47,38 @@ struct PurchaseCardTests {
         #expect(card.lead == 0 && card.hasPick)
     }
 
+    /// One product at several stores (a price check) is shown by store; different products by product.
+    @Test func aPriceCheckIsShownByStore() throws {
+        let check = try purchase(#"""
+        {"cards": [{"type": "purchase", "title": "Shark Navigator NV360", "items": [
+          {"name": "Shark Navigator NV360 upright", "price": 148.90, "retailer": "Walmart", "pick": true},
+          {"name": "Shark Navigator Lift-Away Deluxe NV360", "price": 149.99, "retailer": "Amazon"},
+          {"name": "Shark NV360 Navigator", "price": 107.99, "retailer": "eBay (seller)"}]}]}
+        """#)
+        let shown = PurchaseCard.Shown(check, locale: us)
+        #expect(shown.byStore && shown.ordered == [0, 1, 2], "a model number they all name: one product, the pick first")
+        #expect(shown.items[1].storeLine == "Shark Navigator Lift-Away Deluxe NV360", "a store's line, with no rating: its name for the product")
+        #expect(PurchaseCard.followUps(check) == [.why, .cheaper], "no Compare the top two: they're the same product")
+
+        let same = try purchase(#"""
+        {"cards": [{"type": "purchase", "items": [{"name": "Bounty Paper Towels", "price": 21.99, "retailer": "Target"},
+          {"name": "bounty paper towels", "price": 19.99, "retailer": "Publix", "pick": true}]}]}
+        """#)
+        let shownSame = PurchaseCard.Shown(same, locale: us)
+        #expect(shownSame.byStore && shownSame.ordered == [1, 0], "the same name at two stores")
+
+        let choices = try purchase(#"""
+        {"cards": [{"type": "purchase", "title": "Cordless vacuums", "items": [
+          {"name": "Dyson V15 Detect", "price": 649, "retailer": "Dyson", "pick": true},
+          {"name": "Shark Stratos IZ862H", "price": 399, "retailer": "Shark"}]}]}
+        """#)
+        #expect(!PurchaseCard.Shown(choices, locale: us).byStore, "different products, each at its store")
+        let noStores = try purchase(#"""
+        {"cards": [{"type": "purchase", "items": [{"name": "Aurora Q5"}, {"name": "Aurora Q5"}]}]}
+        """#)
+        #expect(!PurchaseCard.Shown(noStores, locale: us).byStore, "no store named: nothing to show by store")
+    }
+
     @Test func thePickByItsFlagOrItsBadge() throws {
         let byWords = try purchase(#"{"type": "purchase", "items": [{"name": "A"}, {"name": "B", "pick": "Best overall"}, {"name": "C", "badge": "Budget pick"}]}"#)
         #expect(byWords.lead == 1 && byWords.items[1].badge == "Best overall")
