@@ -372,6 +372,7 @@ final class Conversation {
         let userID = userMessage.id
         if fromPage == nil { messages.append(userMessage) }
         var reply = Message(role: .assistant, text: "")
+        reply.beginsAssistantTurn = fromPage != nil
         reply.metrics = TurnMetrics(sentAt: .now)
         messages.append(reply)
         let replyID = reply.id
@@ -892,9 +893,14 @@ final class Conversation {
         if let last = messages.last, last.role == .assistant, last.text.isEmpty, last.error == nil {
             replyID = last.id
         } else {
-            let reply = Message(role: .assistant, text: "")
+            var reply = Message(role: .assistant, text: "")
+            reply.beginsAssistantTurn = true
+            reply.metrics = TurnMetrics(sentAt: .now)
             messages.append(reply)
             replyID = reply.id
+        }
+        update(replyID) { reply in
+            if reply.metrics == nil { reply.metrics = TurnMetrics(sentAt: .now) }
         }
         isStreaming = true
         joinedStop = joined.stop
@@ -913,6 +919,7 @@ final class Conversation {
                 try Task.checkCancellation()
                 await resolveServeMedia(replyID)
                 try Task.checkCancellation()
+                update(replyID) { $0.metrics?.completedAt = .now }
                 let replyText = messages.last { $0.id == replyID }?.text ?? ""
                 TurnActivity.shared.finish(reply: replyText)
                 Notifier.shared.notify(.replied, title: String(localized: "Redde replied"), body: PlainText.display(replyText),
@@ -1278,7 +1285,10 @@ final class Conversation {
     func load(_ record: ConversationRecord) {
         cancel(leaving: true)
         persist()
-        become(id: record.id, createdAt: record.createdAt, messages: record.messages,
+        var loaded = record.messages
+        let turnStarts = record.assistantTurnStarts ?? []
+        for i in loaded.indices where turnStarts.contains(loaded[i].id) { loaded[i].beginsAssistantTurn = true }
+        become(id: record.id, createdAt: record.createdAt, messages: loaded,
                outbox: record.outbox ?? [], serverSessionID: record.serverSessionID, name: record.name, bot: record.bot,
                elsewhere: record.elsewhere)
         // A held message from an earlier launch goes out if it can.
@@ -1344,9 +1354,11 @@ final class Conversation {
             if store.summaries.contains(where: { $0.id == id }) { store.delete(id: id) }
             return
         }
+        let turnStarts = Set(kept.filter(\.beginsAssistantTurn).map(\.id))
         let record = ConversationRecord(
             id: id, title: title, createdAt: createdAt, updatedAt: .now,
             transport: settings.transport, serverSessionID: serverSessionID, messages: kept,
+            assistantTurnStarts: turnStarts.isEmpty ? nil : turnStarts,
             outbox: outbox.isEmpty ? nil : outbox,
             serverID: settings.transport == .chatCompletions ? nil : settings.activeServerID,
             name: name, bot: bot, elsewhere: elsewhere)

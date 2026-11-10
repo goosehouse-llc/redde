@@ -13,6 +13,9 @@ nonisolated struct ConversationRecord: Identifiable, Codable, Equatable, Sendabl
     /// Hermes ledger session id, when this conversation lives on the gateway.
     var serverSessionID: String?
     var messages: [Message]
+    /// Display-only boundaries for turns whose user row is hidden (page/host turns). Kept beside
+    /// the messages so their backend shape and protocol stay unchanged. Absent in older files.
+    var assistantTurnStarts: Set<UUID>? = nil
     /// Messages not yet sent (queued or waiting for a connection). Absent in older files.
     var outbox: [OutboxItem]? = nil
     /// The Hermes server this conversation belongs to. Absent for OpenAI-compatible chats and in

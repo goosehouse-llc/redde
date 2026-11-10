@@ -35,6 +35,9 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     /// Filed as the person's, but not theirs: another bot's message, a bot's reply, or a
     /// background process reporting back (`BotMessages`).
     var delivered: Delivered?
+    /// Display-only boundary for a host/page turn that has no visible user row before it. It is
+    /// derived again from server history and deliberately is not part of `CodingKeys`.
+    var beginsAssistantTurn = false
 
     init(id: UUID = UUID(), role: Role, text: String, createdAt: Date = .now) {
         self.id = id
