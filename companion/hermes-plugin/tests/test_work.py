@@ -193,10 +193,149 @@ class WorkTests(unittest.TestCase):
         for nonsense in (["nonsense"], ["list"], ["list", "../etc"], ["stop", "coder", "rm"]):
             self.assertEqual(work.slash(root, nonsense), "redde-push work: this command is for the Redde app.", nonsense)
 
+    def test_a_chat_that_can_start_them_is_told_so(self):
+        self.assertEqual(work.turn_note(self.home, "chat1", "desktop"), work.TURN_NOTE)
+        self.assertIn("redde_work", work.TURN_NOTE)
+        self.start()
+        self.assertIsNone(work.turn_note(self.home, "stored1", "desktop"), "a workstream itself starts none")
+        for platform in ("cron", "subagent", "bot_room"):
+            self.assertIsNone(work.turn_note(self.home, "chat1", platform), platform)
+        sys.modules.pop("tui_gateway.server")
+        self.assertIsNone(work.turn_note(self.home, "chat1", "telegram"), "nowhere to start one")
+
     def test_its_note(self):
         made = core.work_note("coder", "W3", "Fix the build", "needs", "git push origin main", "stored3", bot="Coder")
         self.assertEqual({k: made[k] for k in ("k", "p", "d", "x", "w", "t", "s", "b")},
                          {"k": "work", "p": "coder", "d": "Coder", "x": "W3", "w": "needs", "t": "Fix the build", "s": "stored3", "b": "git push origin main"})
+        self.assertNotIn("r", made)
+        self.assertEqual(core.work_note("coder", "W3", "t", "done", engine="api")["r"], "api", "its chat is opened over the API")
+
+
+class APIServerAdapter:
+    """The gateway's API server, as work_runs.py reads it: its runs' table."""
+    _port, _host, _api_key = 18642, "127.0.0.1", "main-key-main-key"
+
+    def __init__(self):
+        self._run_statuses = {}
+
+
+class GatewayTests(unittest.TestCase):
+    """Workstreams over the Hermes API (`work_runs.py`, 1.23.0): run by the gateway as runs of the
+    plugin's own. The gateway's API is answered here by `self.answers`."""
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.home = Path(self.dir.name) / "profiles" / "coder"
+        self.home.mkdir(parents=True)
+        self.api = APIServerAdapter()
+        runner = types.SimpleNamespace(adapters={"api_server": self.api})
+        sys.modules["gateway.run"] = types.SimpleNamespace(_gateway_runner_ref=lambda: runner)
+        self.asked, self.runs = [], {}
+        self._ask = work.work_runs.ask
+        work.work_runs.ask = self.fake_ask
+
+    def tearDown(self):
+        work.work_runs.ask = self._ask
+        sys.modules.pop("gateway.run", None)
+        sys.modules.pop("tui_gateway.server", None)
+        self.dir.cleanup()
+
+    def fake_ask(self, method, path, profile, body=None, wait=0):
+        self.asked.append((method, path, profile, body))
+        if (method, path) == ("POST", "/api/sessions"):
+            return {"session": {"id": "api_work_1", "title": body["title"]}}
+        if (method, path) == ("POST", "/v1/runs"):
+            run = f"run_{len(self.runs) + 1}"
+            self.runs[run] = {"run_id": run, "status": "running", "session_id": body["session_id"]}
+            return {"run_id": run, "status": "started"}
+        if method == "GET" and path.startswith("/v1/runs/"):
+            return self.runs.get(path.split("/")[3], {})
+        return {}
+
+    def start(self, platform="api_server", chat="api_chat"):
+        return work.act(self.home, "coder", chat, {"action": "start", "title": "Fix the build", "brief": "Find out why."}, platform)
+
+    def test_a_chat_over_the_api_starts_one_in_the_gateway(self):
+        # (Some Hermes builds load the Dashboard's session methods in the gateway too: not used there.)
+        sys.modules["tui_gateway.server"] = FakeServer()
+        said = self.start()
+        self.assertEqual(said["started"], "W1")
+        self.assertEqual(self.asked[0], ("POST", "/api/sessions", "coder", {"title": "Work: W1 · Fix the build"}))
+        self.assertEqual(self.asked[1], ("POST", "/v1/runs", "coder", {"input": "Find out why.", "session_id": "api_work_1"}))
+        row = work.Store(self.home).get("W1")
+        self.assertEqual((row["engine"], row["session"], row["run"], row["chat"]), ("api", "api_work_1", "run_1", "api_chat"))
+        # Hermes's approval hook there names the run: it is found by that too.
+        self.assertEqual(work.Store(self.home).of_session("run_1")["ref"], "W1")
+        self.assertEqual(json.loads(work.slash(Path(self.dir.name), ["list", "coder"])[len("redde-push work "):])["work"][0]["engine"], "api")
+
+    def test_a_bots_chat_at_its_own_address_counts_as_the_api(self):
+        self.assertIn("started", self.start(platform="cli"))
+
+    def test_a_chat_elsewhere_in_the_gateway_is_told_it_cant(self):
+        said = self.start(platform="telegram")
+        self.assertIn("this chat runs elsewhere", said["error"])
+        self.assertEqual(self.asked, [])
+
+    def test_stopping_and_sending(self):
+        self.start()
+        self.assertEqual(work.act(self.home, "coder", "", {"action": "send", "id": "W1", "text": "and the tests"}),
+                         {"sent": "W1", "how": "steered"})
+        self.assertIn(("POST", "/v1/runs/run_1/steer", "coder", {"input": "and the tests"}), self.asked)
+        self.assertEqual(work.act(self.home, "coder", "", {"action": "stop", "id": "W1"}), {"stopped": "W1"})
+        self.assertIn(("POST", "/v1/runs/run_1/stop", "coder", {}), self.asked)
+        # One whose run has ended gets a run of its own.
+        self.runs["run_1"]["status"] = "completed"
+        work.Store(self.home).update("W1", status="done", stopping=0)
+        self.assertEqual(work.act(self.home, "coder", "", {"action": "send", "id": "W1", "text": "one more"})["how"], "sent")
+        self.assertEqual(work.Store(self.home).get("W1")["run"], "run_2")
+
+    def test_the_work_sheet_answers_its_approval(self):
+        self.start()
+        self.assertIn("isn't waiting", work.answer(self.home, "coder", "W1", "once")["error"])
+        work.needs_you(self.home, "run_1", "rm -rf build")
+        # Hermes 0.22.7 wants the exact request and the run's turn.
+        self.runs["run_1"].update(status="waiting_for_approval", execution_generation=3,
+                                  pending_controls=[{"kind": "approval", "prompt_id": "p9"}])
+        self.assertEqual(work.slash(Path(self.dir.name), ["answer", "coder", "W1", "once"]),
+                         'redde-push work {"answered": "W1", "choice": "once"}')
+        self.assertEqual(self.asked[-1], ("POST", "/v1/runs/run_1/approval", "coder",
+                                          {"request_id": "p9", "execution_generation": 3, "choice": "once"}))
+        self.assertEqual(work.Store(self.home).get("W1")["status"], "working")
+        # Earlier ones take the choice alone.
+        work.needs_you(self.home, "run_1", "rm -rf build")
+        self.runs["run_1"] = {"run_id": "run_1", "status": "waiting_for_approval"}
+        work.answer(self.home, "coder", "W1", "deny")
+        self.assertEqual(self.asked[-1][3], {"choice": "deny"})
+        self.assertIn("isn't waiting", work.answer(self.home, "coder", "W1", "maybe")["error"])
+
+    def test_one_over_the_dashboard_is_answered_in_its_chat(self):
+        sys.modules.pop("gateway.run")
+        sys.modules["tui_gateway.server"] = FakeServer()
+        work.act(self.home, "coder", "c", {"action": "start", "title": "t", "brief": "b"})
+        work.needs_you(self.home, "stored1", "git push")
+        self.assertEqual(work.answer(self.home, "coder", "W1", "once"), {"error": "answer W1 in its own chat"})
+
+    def test_its_report_is_a_run_in_its_chat_once_that_is_free(self):
+        self.api._run_statuses["app_run"] = {"session_id": "api_chat", "status": "running"}
+        work.report("api_chat", "coder", "[Workstream W1 …]", engine="api")
+        time.sleep(0.3)
+        self.assertEqual([a for a in self.asked if a[1] == "/v1/runs"], [])
+        self.api._run_statuses["app_run"]["status"] = "completed"
+        deadline = time.time() + 5
+        while time.time() < deadline and not any(a[1] == "/v1/runs" for a in self.asked):
+            time.sleep(0.1)
+        self.assertIn(("POST", "/v1/runs", "coder", {"input": "[Workstream W1 …]", "session_id": "api_chat"}), self.asked)
+
+    def test_a_store_from_1_22_0_gains_the_new_columns(self):
+        import sqlite3
+        path = work.db_path(self.home)
+        path.parent.mkdir(parents=True)
+        con = sqlite3.connect(path)
+        con.executescript(work._SCHEMA)
+        con.execute("INSERT INTO work(ref, title, brief, status, created, updated) VALUES('W1','t','b','done',1,1)")
+        con.commit()
+        con.close()
+        self.assertEqual(work.Store(self.home).get("W1")["engine"], "serve")
 
 
 if __name__ == "__main__":

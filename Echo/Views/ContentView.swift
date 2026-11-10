@@ -1229,7 +1229,7 @@ struct ContentView: View {
             // A conversation on another server than the one the app is on can't be fetched: the
             // app then stays where it was. The one streaming now is here already, live.
             if !(conversation.isStreaming && conversation.serverSessionID == session) {
-                Task { try? await conversation.open(serverSession: session, profile: place.profile, title: place.title) }
+                Task { try? await conversation.open(serverSession: session, profile: place.profile, title: place.title, viaAPI: place.viaAPI) }
             }
         }
         if canLeave, let profile = router.consumeBot() {

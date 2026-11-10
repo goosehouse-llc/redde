@@ -1927,12 +1927,18 @@ final class Conversation {
     /// tapped notification from a paired Hermes asks for. The transcript comes from the server,
     /// since the reply being announced arrived while the app wasn't running.
     /// `profile`: the one it is in when not the main one (a bot's workstream, `Workstreams`).
-    func open(serverSession id: String, profile: String? = nil, title: String? = nil) async throws {
+    /// `viaAPI`: where the session is, when not as the app's connection says: a workstream's chat
+    /// is the Hermes API's when the gateway runs it, the Dashboard's otherwise (a bot's chat on the
+    /// API connection goes by the Dashboard's login, and so do its workstreams).
+    func open(serverSession id: String, profile: String? = nil, title: String? = nil, viaAPI: Bool? = nil) async throws {
         let summary = HermesSessionsAPI.SessionSummary(id: id, title: title)
-        switch settings.transport {
-        case .hermesServe: try await loadServeSession(summary, elsewhere: profile.map { ProfileRoute(profile: $0, viaAPI: false) })
-        case .hermesSessions: try await loadLedgerSession(summary)
-        case .chatCompletions: throw TransportError.malformed(String(localized: "that conversation is on a Hermes connection"))
+        guard settings.transport != .chatCompletions else {
+            throw TransportError.malformed(String(localized: "that conversation is on a Hermes connection"))
+        }
+        if viaAPI ?? (settings.transport == .hermesSessions) {
+            try await loadLedgerSession(summary, elsewhere: profile.map { ProfileRoute(profile: $0, viaAPI: true) })
+        } else {
+            try await loadServeSession(summary, elsewhere: profile.map { ProfileRoute(profile: $0, viaAPI: false) })
         }
     }
 

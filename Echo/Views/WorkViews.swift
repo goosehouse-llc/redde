@@ -9,12 +9,13 @@ struct WorkStrip: View {
     @State private var followed: String?
     @State private var showing = false
 
-    /// The agent the chat is with, when its workstreams can be read: over the Dashboard.
+    /// The agent the chat is with, when its workstreams can be read: over the Dashboard or the
+    /// Hermes API (Redde's plugin 1.23).
     private var profile: String? {
         #if DEBUG
         if Workstreams.demo { return conversation.bot?.profile ?? "default" }
         #endif
-        guard Settings.shared.transport == .hermesServe, conversation.serverSessionID != nil else { return nil }
+        guard Settings.shared.transport != .chatCompletions, conversation.serverSessionID != nil else { return nil }
         return conversation.bot?.profile ?? conversation.elsewhere?.profile ?? "default"
     }
 
@@ -161,18 +162,30 @@ struct WorkSheet: View {
                 Text(item.isOpen ? item.created.formatted(.relative(presentation: .named)) : (item.ended ?? item.updated).formatted(.relative(presentation: .named)))
                     .font(.caption).foregroundStyle(.tertiary)
                 Spacer()
-                if item.isOpen {
-                    Button(role: .destructive) { stop(item) } label: {
-                        if stopping == item.id { ProgressView().controlSize(.small) } else { Text("Stop", comment: "The Work sheet: stops a workstream") }
+                if item.status == .needsYou, item.viaAPI {
+                    // Run by the Hermes API: only the plugin may answer it, so it is answered here.
+                    Button(role: .destructive) { answer(item, "deny") } label: { Text("Deny", comment: "Approval button: refuse the command") }
+                        .buttonStyle(.bordered).controlSize(.small)
+                        .disabled(stopping != nil)
+                    Button { answer(item, "once") } label: {
+                        if stopping == item.id { ProgressView().controlSize(.small) } else { Text("Allow Once", comment: "Approval button: allow it this one time") }
                     }
-                    .buttonStyle(.bordered).controlSize(.small)
+                    .buttonStyle(.borderedProminent).controlSize(.small)
                     .disabled(stopping != nil)
+                } else {
+                    if item.isOpen {
+                        Button(role: .destructive) { stop(item) } label: {
+                            if stopping == item.id { ProgressView().controlSize(.small) } else { Text("Stop", comment: "The Work sheet: stops a workstream") }
+                        }
+                        .buttonStyle(.bordered).controlSize(.small)
+                        .disabled(stopping != nil)
+                    }
+                    Button { open(item) } label: {
+                        Text(item.status == .needsYou ? String(localized: "Answer", comment: "The Work sheet: opens a workstream that waits for approval, to answer it")
+                             : String(localized: "Open", comment: "The Work sheet: opens a workstream's own chat"))
+                    }
+                    .buttonStyle(.borderedProminent).controlSize(.small)
                 }
-                Button { open(item) } label: {
-                    Text(item.status == .needsYou ? String(localized: "Answer", comment: "The Work sheet: opens a workstream that waits for approval, to answer it")
-                         : String(localized: "Open", comment: "The Work sheet: opens a workstream's own chat"))
-                }
-                .buttonStyle(.borderedProminent).controlSize(.small)
             }
         }
         .padding(.vertical, 4)
@@ -210,8 +223,16 @@ struct WorkSheet: View {
         }
     }
 
+    private func answer(_ item: Workstream, _ choice: String) {
+        stopping = item.id
+        Task {
+            problem = await store.answer(item.id, of: profile, with: choice)
+            stopping = nil
+        }
+    }
+
     private func open(_ item: Workstream) {
         dismiss()
-        LaunchRouter.shared.requestSession(item.session, profile: profile, title: "\(item.id) · \(item.title)")
+        LaunchRouter.shared.requestSession(item.session, profile: profile, title: "\(item.id) · \(item.title)", viaAPI: item.viaAPI)
     }
 }

@@ -223,6 +223,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let runSession = info[PushNote.runSessionKey] as? String
         let profile = info[PushNote.profileKey] as? String
         let title = info[PushNote.titleKey] as? String
+        let viaAPI = info[PushNote.viaAPIKey] as? Bool
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         let leaveTitle = info[LeaveTime.eventTitleKey] as? String
         let leaveAt = (info[LeaveBy.latitudeKey] as? Double).flatMap { lat in (info[LeaveBy.longitudeKey] as? Double).map { (lat, $0) } }
@@ -237,7 +238,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             }
             // A workstream's: its own chat, in its agent's profile (an approval is answered there).
             if kind == PushNote.Kind.work.rawValue, action == UNNotificationDefaultActionIdentifier, let sessionID {
-                LaunchRouter.shared.requestSession(sessionID, profile: profile, title: title)
+                LaunchRouter.shared.requestSession(sessionID, profile: profile, title: title, viaAPI: viaAPI ?? false)
                 handled()
                 return
             }

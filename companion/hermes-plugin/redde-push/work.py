@@ -9,11 +9,14 @@ puts a short report into the chat that started it, as a turn of that chat's own:
 reads it and tells the person what came of it, or says nothing ([SILENT]) when there's nothing to
 tell. Waiting on an approval, it is "needs you" until it is answered.
 
-Where it runs: in `hermes serve` (the Dashboard), through the session methods Hermes's own group
-rooms use in-process (`tui_gateway.server._methods`), called from a thread of our own so no
-client's connection is bound to it, and with a sink of its own for its events, which nobody is
-watching. Redde opens a workstream's chat like any other and sees it live. In any other process
-(the gateway: the Hermes API, Telegram) the tool says it can't start one there.
+Where it runs, by where the chat that starts it runs ("engine"):
+- "serve", a chat over the Dashboard: in `hermes serve`, through the session methods Hermes's own
+  group rooms use in-process (`tui_gateway.server._methods`), called from a thread of our own so
+  no client's connection is bound to it, and with a sink of its own for its events, which nobody
+  is watching. Redde opens a workstream's chat like any other and sees it live.
+- "api" (1.23.0), a chat over the Hermes API: in the gateway, as runs of the API's own that the
+  plugin starts and keeps the answering of (work_runs.py).
+A chat elsewhere (Telegram, the CLI) is told it can't start one there.
 
 Kept per profile in `<home>/redde-push/work.db` (SQLite): what each workstream is for, its chat,
 how it stands. Hermes keeps the chats themselves.
@@ -29,6 +32,8 @@ import sys
 import threading
 import time
 from pathlib import Path
+
+from . import work_runs
 
 log = logging.getLogger("redde-push")
 
@@ -53,9 +58,9 @@ STATUSES = ("starting", "working", "needs_you", "done", "failed", "stopped")
 OPEN = ("starting", "working", "needs_you")
 
 DESCRIPTION = (
-    "Hand a job to a workstream: a chat of your own that works on it by itself, in the background, "
-    "with your tools, while you go on talking with the user. Use it for work that takes many steps or "
-    "a while (research, a change to code, a long errand), not for a quick look-up. "
+    "Run a long job in the background (research, comparing options, a multi-step errand, a change to code) "
+    "as a workstream: a chat of your own that works on it by itself, with your tools, while you go on talking "
+    "with the user. Not for a quick look-up. "
     "action 'start' with a short 'title' and a 'brief' that says everything it needs: it can't see this "
     "chat. You hear back here when it finishes; the user can open it, watch it and reply to it in Redde. "
     "'list' shows yours and how each stands; 'read' with 'id' (W1, W2…) gives one's last words and recent "
@@ -85,6 +90,8 @@ CREATE TABLE IF NOT EXISTS work (
 CREATE INDEX IF NOT EXISTS work_session ON work(session);
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
 """
+#: Added after 1.22.0: where it runs, and (over the Hermes API) the run its turn is.
+_LATER = {"engine": "TEXT NOT NULL DEFAULT 'serve'", "run": "TEXT"}
 
 
 class Store:
@@ -104,9 +111,16 @@ class Store:
         con.row_factory = sqlite3.Row
         con.execute("PRAGMA journal_mode=WAL")
         con.executescript(_SCHEMA)
+        have = {row[1] for row in con.execute("PRAGMA table_info(work)")}
+        for name, kind in _LATER.items():
+            if name not in have:
+                try:
+                    con.execute(f"ALTER TABLE work ADD COLUMN {name} {kind}")
+                except sqlite3.OperationalError:
+                    pass   # (another process just added it)
         return con
 
-    def add(self, title: str, brief: str, chat: str, now: float | None = None) -> dict | None:
+    def add(self, title: str, brief: str, chat: str, now: float | None = None, engine: str = "serve") -> dict | None:
         """A new workstream, "starting"; None when AT_ONCE are already running."""
         now = time.time() if now is None else now
         con = self._open()
@@ -120,8 +134,8 @@ class Store:
             number = int(row[0]) if row else 1
             con.execute("INSERT OR REPLACE INTO meta(key, value) VALUES('next', ?)", (str(number + 1),))
             ref = f"W{number}"
-            con.execute("INSERT INTO work(ref, title, brief, chat, status, created, updated) VALUES(?,?,?,?,?,?,?)",
-                        (ref, title, brief, chat, "starting", now, now))
+            con.execute("INSERT INTO work(ref, title, brief, chat, status, created, updated, engine) VALUES(?,?,?,?,?,?,?,?)",
+                        (ref, title, brief, chat, "starting", now, now, engine))
             con.execute("DELETE FROM work WHERE ended IS NOT NULL AND ended < ?", (now - KEPT_FOR,))
             con.execute("COMMIT")
             return self.get(ref)
@@ -140,12 +154,13 @@ class Store:
             con.close()
 
     def of_session(self, session: str) -> dict | None:
-        """The workstream whose chat this is: cheap when the profile has none."""
+        """The workstream whose chat this is (or, over the Hermes API, whose run: what Hermes's
+        approvals there are keyed by): cheap when the profile has none."""
         if not session or not self.exists():
             return None
         con = self._open()
         try:
-            row = con.execute("SELECT * FROM work WHERE session = ?", (session,)).fetchone()
+            row = con.execute("SELECT * FROM work WHERE session = ? OR run = ? ORDER BY created DESC", (session, session)).fetchone()
             return dict(row) if row else None
         finally:
             con.close()
@@ -312,10 +327,14 @@ def halt(stored: str) -> bool:
     return True
 
 
-def report(chat: str, profile: str, text: str) -> None:
+def report(chat: str, profile: str, text: str, engine: str = "serve") -> None:
     """Into the chat that started a workstream, as a turn of its own the person sees only the
     answer of. After that chat's own turn: a message sent to a busy chat is kept in the running
     turn and then run again as its own, so the agent would hear it twice."""
+    if engine == "api":
+        work_runs.report(chat, profile, text, REPORT_WAIT)
+        return
+
     def deliver():
         deadline = time.time() + REPORT_WAIT
         try:
@@ -350,36 +369,65 @@ def _shown(row: dict) -> dict:
     return out
 
 
-def start(home: Path, profile: str, chat: str, title: str, brief: str) -> dict:
+def engine_for(platform: str, chat: str = "") -> str | None:
+    """Where a chat on this platform starts its workstreams: "serve", "api" or nowhere. In the
+    gateway, a chat over the Hermes API is "api_server", or "cli" for a bot's at /p/<bot>/ (Hermes
+    0.22.7 runs those as its CLI's; the CLI itself runs elsewhere). A bot's chat may not have said
+    its platform to this copy of the plugin: its session's source does. The gateway first: some
+    Hermes builds load the Dashboard's session methods in the gateway too."""
+    if work_runs.available():
+        return "api" if (platform or source_of(chat)) in ("api_server", "cli") else None
+    if server() is not None:
+        return "serve"
+    return None
+
+
+def source_of(chat: str) -> str:
+    """Where a session came from, as Hermes keeps it ("api_server" for the Hermes API)."""
+    if not chat:
+        return ""
+    try:
+        from hermes_state import SessionDB
+        return str((SessionDB().get_session(chat) or {}).get("source") or "")
+    except Exception:
+        return ""
+
+
+def start(home: Path, profile: str, chat: str, title: str, brief: str, platform: str = "") -> dict:
     title, brief = _clip(title, TITLE_LIMIT), _clip(brief, BRIEF_LIMIT)
     if not title or not brief:
         return {"error": "start needs a title and a brief"}
-    if server() is None:
-        return {"error": "Workstreams run in Hermes's Dashboard (hermes serve); this chat runs elsewhere, "
-                         "so do the job here yourself or ask the user to use Redde over the Dashboard."}
+    engine = engine_for(platform, chat)
+    if engine is None:
+        return {"error": "Workstreams run for chats in Redde (over the Dashboard or the Hermes API); this chat runs "
+                         "elsewhere, so do the job here yourself."}
     store = Store(home)
     if chat and store.of_session(chat):
         return {"error": "a workstream can't start workstreams of its own; do the work here"}
-    row = store.add(title, brief, chat)
+    row = store.add(title, brief, chat, engine=engine)
     if row is None:
         return {"error": f"{AT_ONCE} are already running; wait for one to finish (list shows them)",
                 "running": [_shown(r) for r in store.rows() if r["status"] in OPEN]}
+    run = None
     try:
-        stored = begin(profile, row["ref"], title, brief)
-    except WorkError as error:
+        if engine == "api":
+            stored, run = work_runs.begin(profile, f"{TITLE_PREFIX}{row['ref']} · {title}", brief)
+        else:
+            stored = begin(profile, row["ref"], title, brief)
+    except (WorkError, work_runs.RunsError) as error:
         store.update(row["ref"], status="failed", last=f"Didn't start: {error}", ended=time.time())
         return {"error": f"it didn't start: {error}"}
-    store.update(row["ref"], session=stored, status="working")
+    store.update(row["ref"], session=stored, status="working", run=run)
     return {"started": row["ref"], "title": title, "session": stored,
             "note": "Tell the user in one short sentence; you hear back here when it finishes."}
 
 
-def act(home: Path, profile: str, chat: str, args: dict) -> dict:
+def act(home: Path, profile: str, chat: str, args: dict, platform: str = "") -> dict:
     """`redde_work`."""
     action = str(args.get("action") or "list")
     store = Store(home)
     if action == "start":
-        return start(home, profile, chat, str(args.get("title") or ""), str(args.get("brief") or ""))
+        return start(home, profile, chat, str(args.get("title") or ""), str(args.get("brief") or ""), platform)
     if action == "list":
         return {"workstreams": [_shown(r) for r in store.rows(limit=20)]}
     row = store.get(str(args.get("id") or ""))
@@ -394,8 +442,12 @@ def act(home: Path, profile: str, chat: str, args: dict) -> dict:
         if not text or not row.get("session"):
             return {"error": "send needs text, to a workstream that started"}
         try:
-            how = say(row["session"], profile, text)
-        except WorkError as error:
+            if row.get("engine") == "api":
+                how, run = work_runs.say(profile, row["session"], row.get("run") or "", text)
+                store.update(row["ref"], run=run)
+            else:
+                how = say(row["session"], profile, text)
+        except (WorkError, work_runs.RunsError) as error:
             return {"error": str(error)}
         store.update(row["ref"], status="working", ended=None, asked=None)
         return {"sent": row["ref"], "how": how}
@@ -404,13 +456,41 @@ def act(home: Path, profile: str, chat: str, args: dict) -> dict:
             return {"error": f"{row['ref']} isn't running"}
         store.update(row["ref"], stopping=1)
         try:
-            stopped = halt(row["session"])
-        except WorkError as error:
+            if row.get("engine") == "api":
+                stopped = work_runs.halt(profile, row["session"], row.get("run") or "")
+            else:
+                stopped = halt(row["session"])
+        except (WorkError, work_runs.RunsError) as error:
             return {"error": str(error)}
         if not stopped:
             store.update(row["ref"], status="stopped", stopping=0, ended=time.time())
         return {"stopped": row["ref"]}
     return {"error": "action is start, list, read, send or stop"}
+
+
+#: How the person may answer a workstream's approval from the Work sheet.
+CHOICES = ("once", "session", "always", "deny")
+
+
+def answer(home: Path, profile: str, ref: str, choice: str) -> dict:
+    """The person's answer to the approval a workstream waits on, from the Work sheet, over the
+    Hermes API, where only the plugin may give it (it started the run). One over the Dashboard is
+    answered in its own chat, which the app opens (answering from here would take that chat's
+    connection from the app)."""
+    store = Store(home)
+    row = store.get(ref)
+    if row is None:
+        return {"error": "no workstream with that id"}
+    if row["status"] != "needs_you" or choice not in CHOICES:
+        return {"error": f"{row['ref']} isn't waiting on an answer"}
+    if row.get("engine") != "api":
+        return {"error": f"answer {row['ref']} in its own chat"}
+    try:
+        work_runs.answer(profile, row.get("run") or "", choice)
+    except work_runs.RunsError as error:
+        return {"error": str(error)}
+    store.update(row["ref"], status="working", asked=None)
+    return {"answered": row["ref"], "choice": choice}
 
 
 def transcript(home: Path, session: str, limit: int) -> list[dict]:
@@ -433,6 +513,22 @@ def transcript(home: Path, session: str, limit: int) -> list[dict]:
 def last_words(home: Path, session: str) -> str:
     found = [m for m in transcript(home, session, 6) if m["role"] == "assistant"]
     return found[-1]["text"] if found else ""
+
+
+#: Told with every message in a chat that can start workstreams: Hermes keeps plugin tools behind
+#: its tool search, so an agent would otherwise reach for one only when the person names it.
+TURN_NOTE = ("[Redde: when the user asks for something that takes many steps or a while (research, comparing "
+             "options, a long errand, a change to code), you may hand it to a workstream with the redde_work tool "
+             "(search for it if it isn't loaded) and keep talking; they follow it in Redde. Do quick things yourself.]")
+
+
+def turn_note(home: Path, session: str, platform: str) -> str | None:
+    """TURN_NOTE, in a chat over Redde's connections that isn't a workstream itself."""
+    if not session or engine_for(platform, session) is None or platform in ("cron", "subagent", "bot_room"):
+        return None
+    if Store(home).of_session(session):
+        return None
+    return TURN_NOTE
 
 
 def digest(home: Path, chat: str) -> str | None:
@@ -512,32 +608,38 @@ def home_of_profile(root: Path, profile: str) -> Path:
 
 def slash(root: Path, words: list[str]) -> str:
     """`/redde-push work list <profile> [chat]`: that agent's workstreams as JSON, for the app's
-    Work sheet. `work stop <profile> <id>`: stops one. The profile is named: the app's command
+    Work sheet. `work stop <profile> <id>`: stops one. `work answer <profile> <id> <choice>`:
+    answers the approval one waits on (once, session, always, deny). The profile is named: the app's command
     reaches the main agent's copy of the plugin, whichever agent it is about. Every reply starts
     "redde-push work"."""
     from .calls import PROFILE
-    if len(words) >= 2 and words[0] in ("list", "stop") and PROFILE.fullmatch(words[1]):
+    if len(words) >= 2 and words[0] in ("list", "stop", "answer") and PROFILE.fullmatch(words[1]):
         profile = words[1]
         home = home_of_profile(root, profile)
         if words[0] == "list" and len(words) <= 3:
             rows = Store(home).rows(chat=words[2] if len(words) == 3 else None, limit=50)
-            return "redde-push work " + json.dumps({"profile": profile, "engine": "serve" if server() else "none", "work": [
+            here = "api" if work_runs.available() else "serve" if server() else "none"
+            return "redde-push work " + json.dumps({"profile": profile, "engine": here, "work": [
                 {"id": r["ref"], "title": r["title"], "status": r["status"], "session": r.get("session") or "",
+                 "engine": r.get("engine") or "serve",
                  "chat": r.get("chat") or "", "last": _clip(r.get("last") or "", 600), "asked": r.get("asked") or "",
                  "created": int(r["created"]), "updated": int(r["updated"]), "ended": int(r["ended"]) if r.get("ended") else None}
                 for r in rows]}, ensure_ascii=False)
         if words[0] == "stop" and len(words) == 3 and _REF.fullmatch(words[2]):
             said = act(home, profile, "", {"action": "stop", "id": words[2]})
             return "redde-push work " + json.dumps(said, ensure_ascii=False)
+        if words[0] == "answer" and len(words) == 4 and _REF.fullmatch(words[2]):
+            return "redde-push work " + json.dumps(answer(home, profile, words[2], words[3]), ensure_ascii=False)
     return "redde-push work: this command is for the Redde app."
 
 
-def register(ctx, home_of, profile_of) -> None:
+def register(ctx, home_of, profile_of, platform_of=lambda session: "") -> None:
     def handle(args, **kwargs) -> str:
         args = args if isinstance(args, dict) else {}
         home = Path(home_of())
+        chat = str(kwargs.get("session_id") or "")
         try:
-            said = act(home, profile_of(home), str(kwargs.get("session_id") or ""), args)
+            said = act(home, profile_of(home), chat, args, platform_of(chat))
         except Exception as error:
             log.debug("redde-push: redde_work failed", exc_info=True)
             said = {"error": f"that didn't work: {error}"}

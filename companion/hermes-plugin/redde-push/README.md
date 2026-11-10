@@ -306,7 +306,7 @@ the message for the model alone, and stores the message as it was typed. The not
 the mark), two hours at most. On a Hermes with an older plugin, or none, Redde writes the note
 after the message as before.
 
-## Workstreams (1.22.0)
+## Workstreams (1.22.0, over the Hermes API from 1.23.0)
 
 `redde_work` (`work.py`): the main agent or a bot hands a job to a workstream, a chat of its own
 that works on it by itself while the chat that started it goes on. Actions: `start` (a title
@@ -324,10 +324,21 @@ workstreams stand. A step that needs approval waits for you as Hermes asks it, i
 workstream's own session, which Redde opens; the approval timeout (`approvals.timeout`, 300 s at
 first) applies there as anywhere, so an agent whose workstreams ask often may want it longer.
 
-For Redde: `/redde-push work list <profile> [chat]` (JSON after `redde-push work `) and
-`/redde-push work stop <profile> <W#>`, and a `work` note to the paired devices when one is done,
-fails or waits for you. Over the Hermes API the tool answers that workstreams run on the
-Dashboard.
+Over the Hermes API (`work_runs.py`, 1.23.0) the gateway runs them instead: a session of the
+API's own with the same title, whose turns are runs (`POST /v1/runs`) the plugin starts on the
+gateway's own listener with the profile's own API key (the main one, or a bot's own
+`API_SERVER_KEY` at `/p/<bot>/`). Hermes's hooks follow its turns as on the Dashboard; the report
+reaches the chat that started it as a run of that chat's own once the chat has none going. The
+key that starts a run is the only one that may answer its approvals, so a step that needs yours
+is answered from Redde's Work sheet through the plugin. A chat on another platform (Telegram,
+the CLI) is told workstreams run for chats in Redde.
+
+For Redde: `/redde-push work list <profile> [chat]` (JSON after `redde-push work `),
+`/redde-push work stop <profile> <W#>` and `/redde-push work answer <profile> <W#> <once|deny|…>`,
+and a `work` note to the paired devices when one is done, fails or waits for you (`r: "api"` for
+one the gateway runs). With no Dashboard login, Redde sends the same commands to the plugin's
+route on the API server: `POST /v1/redde/command` with `{"command": "…"}` and the main API key,
+answered `{"output": "…"}`.
 
 ## Requirements
 

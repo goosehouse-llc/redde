@@ -3,6 +3,25 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.23.0 (2026-11-10)
+
+- Workstreams over the Hermes API too. A chat over the API (`hermes gateway`), the main agent's
+  or a bot's at `/p/<bot>/`, starts its workstreams in the gateway: each one a session of the
+  API's own, titled as on the Dashboard, whose turns are runs the plugin starts on the gateway's
+  own listener with the profile's own API key. The report reaches the chat that started it as a
+  run of that chat's own, once the chat has none going. A step that needs your approval is
+  answered from Redde's Work sheet (`/redde-push work answer <profile> <W#> once|deny`): only
+  the key that started a run may answer it, and that is the plugin's.
+- Redde's commands over the Hermes API alone: the plugin puts a route on the API server,
+  `POST /v1/redde/command` with `{"command": "work list default"}` and the main API key, which
+  answers as `/redde-push work list default` does on the Dashboard. Redde uses it for
+  workstreams when it has no Dashboard login.
+- A workstream's note says `r: "api"` when the gateway runs it, so a tap opens its chat there.
+- An agent hands long jobs to workstreams without being told to. Hermes keeps plugin tools behind
+  its tool search, so an agent reached for `redde_work` only when the person said "workstream".
+  Now every message in a chat that can start one carries a line saying a job of many steps can go
+  to one, and the tool's first sentence (what the search reads) names such jobs.
+
 ## 1.22.0 (2026-11-10)
 
 - Workstreams, for the main agent and every bot. On the Dashboard an agent can hand a job to a

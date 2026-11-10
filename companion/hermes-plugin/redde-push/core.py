@@ -662,13 +662,17 @@ def routine_note(profile: str, bot: str, title: str, body: str = "", failed: boo
     return made
 
 
-def work_note(profile: str, ref: str, title: str, what: str, body: str = "", session: str = "", bot: str = "") -> dict:
+def work_note(profile: str, ref: str, title: str, what: str, body: str = "", session: str = "", bot: str = "",
+              engine: str = "serve") -> dict:
     """One of an agent's workstreams (`work.py`, 1.22.0): `p` the agent's profile, `d` its name, `x` its id (W3),
     `t` its title, `w` what happened ("done", "failed", "needs": waiting on the person's approval),
-    `b` its last words or what it waits on, `s` its chat, for a tap to open. An older Redde shows
-    the words it is sent and opens nothing."""
+    `b` its last words or what it waits on, `s` its chat, for a tap to open; `r` "api" (1.23.0) when
+    the Hermes API's gateway runs it, so its chat is opened there. An older Redde shows the words it
+    is sent and opens nothing."""
     made = {"v": 1, "k": "work", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64),
             "x": clipped(ref, 12), "w": clipped(what, 12)}
+    if engine == "api":
+        made["r"] = "api"
     for key, value, limit in (("t", title, 80), ("s", session, 160), ("d", bot, 64)):
         if value:
             made[key] = clipped(value, limit)

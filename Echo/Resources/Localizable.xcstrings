@@ -181101,7 +181101,7 @@
       }
     },
     "Hermes didn't answer. Try again in a moment." : {
-      "comment" : "A workstream couldn't be stopped: no answer from the server",
+      "comment" : "A workstream couldn't be stopped or answered: no answer from the server",
       "localizations" : {
         "da" : {
           "stringUnit" : {

@@ -499,7 +499,15 @@ nonisolated struct HermesSessionsAPI: Sendable {
             query.append(.init(name: "title", value: title))
             if includeHidden { query.append(.init(name: "include_hidden", value: "true")) }
         }
-        return try await get(ListEnvelope<SessionSummary>.self, "api/sessions", query: query).data
+        let rows = try await get(ListEnvelope<SessionSummary>.self, "api/sessions", query: query).data
+        // A workstream's own chat (Redde's plugin 1.23, over the Hermes API) is opened from its
+        // Work sheet, not a row: the Dashboard's are hidden sessions, these can't be.
+        return title == nil ? rows.filter { !Self.isWorkstreamChat($0.title) } : rows
+    }
+
+    /// "Work: W3 · Compare the quotes", as the plugin titles a workstream's chat.
+    nonisolated static func isWorkstreamChat(_ title: String?) -> Bool {
+        (title ?? "").firstMatch(of: #/^Work: W\d+ · /#) != nil
     }
 
     /// One session by its id, archived ones too (the list leaves those out); nil when it's gone.

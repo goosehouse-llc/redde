@@ -38,7 +38,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, watches, work
+from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, watches, work, work_runs
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -291,6 +291,7 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     try:
         work.turn_began(_home(), session_id)   # a workstream's turn (work.py)
         notes.append(work.digest(_home(), session_id))   # how the chat's workstreams stand
+        notes.append(work.turn_note(_home(), session_id, platform))   # that it can hand a long job to one
     except Exception:
         log.debug("redde-push: workstream note failed", exc_info=True)
     # What was said, for the notes that go by its words; a run's own mark (a watch's, a goal's
@@ -484,7 +485,7 @@ def _work_note(row: dict, what: str, body: str) -> None:
         main, pusher = _state()
         sender = pusher if store is main else core.Pusher(store, title_of=_title)
         made = core.work_note(profile, row["ref"], row["title"], what, body, row.get("session") or "",
-                              bot=routines.Stores(root).name(home, profile))
+                              bot=routines.Stores(root).name(home, profile), engine=row.get("engine") or "serve")
         threading.Thread(target=sender.send, args=(targets, made), name="redde-work-note", daemon=True).start()
 
 
@@ -521,7 +522,7 @@ def _work_ended(session: str, failed: bool, interrupted: bool) -> bool:
         if row["status"] in ("done", "failed"):
             _work_note(row, row["status"], row.get("last") or "")
             if row.get("chat"):
-                work.report(row["chat"], calls.caller(home)[0], work.report_text(row))
+                work.report(row["chat"], calls.caller(home)[0], work.report_text(row), row.get("engine") or "serve")
         return True
     except Exception:
         log.debug("redde-push: workstream end failed", exc_info=True)
@@ -936,7 +937,14 @@ def register(ctx) -> None:
     # Email (mail.py): redde_mail while an account is set up, and one way to send.
     mail.register(ctx, _home)
     # Workstreams (work.py): a job handed to a hidden chat of the agent's own.
-    work.register(ctx, _home, lambda home: calls.caller(home)[0])
+    work.register(ctx, _home, lambda home: calls.caller(home)[0], lambda session: _platforms.get(session, ""))
+    # The app's way to these commands over the Hermes API, with no Dashboard (work_runs.py, 1.23.0).
+    register_handler = getattr(ctx, "register_platform_handler", None)
+    if callable(register_handler):
+        try:
+            register_handler("api_server", work_runs.wire(_slash))
+        except Exception:
+            log.debug("redde-push: no route on the Hermes API", exc_info=True)
     # Keys a bot asks for (keys.py): pasted into a card in Redde, straight into the profile's .env.
     keys.register(ctx, _home, _store_in, lambda home, profile: routines.Stores(calls.caller(home)[1]).name(home, profile))
     ctx.register_cli_command("redde-push", "Notifications on your iPhone, iPad or Mac from Redde", _cli_setup, _cli)

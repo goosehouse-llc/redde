@@ -4,7 +4,8 @@ import Observation
 /// One of an agent's workstreams (Redde's plugin 1.22, `work.py`): a job the main agent or a bot
 /// handed to a hidden chat of its own (W1, W2…) that works on it by itself, while the chat that
 /// started it goes on (asked 2026-11-10: "bot work streams for all bots"). The plugin keeps them;
-/// Redde lists them over the Dashboard (`/redde-push work list <profile> [chat]`).
+/// Redde lists them with `/redde-push work list <profile> [chat]`, over the Dashboard or (1.23)
+/// the Hermes API, whichever the app is on.
 nonisolated struct Workstream: Equatable, Identifiable, Sendable {
     enum Status: String, Sendable {
         case starting, working, needsYou = "needs_you", done, failed, stopped
@@ -25,6 +26,10 @@ nonisolated struct Workstream: Equatable, Identifiable, Sendable {
     var created: Date
     var updated: Date
     var ended: Date?
+    /// Run by the Hermes API's gateway (1.23), for a chat over the API: its chat is the API's, and
+    /// its approval is answered from the Work sheet (only the plugin may, having started its run).
+    /// Else by the Dashboard, where its chat is opened to answer.
+    var viaAPI = false
 
     var isOpen: Bool { status == .starting || status == .working || status == .needsYou }
 
@@ -40,7 +45,7 @@ nonisolated struct Workstream: Equatable, Identifiable, Sendable {
             return Workstream(id: id, title: row["title"]?.string ?? "", status: Status(rawValue: row["status"]?.string ?? "") ?? .working,
                               session: session, chat: row["chat"]?.string ?? "", last: row["last"]?.string ?? "",
                               asked: row["asked"]?.string ?? "", created: date("created") ?? .now, updated: date("updated") ?? .now,
-                              ended: date("ended"))
+                              ended: date("ended"), viaAPI: row["engine"]?.string == "api")
         }
         return (json["profile"]?.string ?? "", work)
     }
@@ -81,7 +86,7 @@ nonisolated struct Workstream: Equatable, Identifiable, Sendable {
 
 /// The workstreams of the agents whose chats are open, as last read: asked of the plugin when a
 /// chat shows, when one of its turns ends and when a note about one comes, and every few seconds
-/// while one is running. Only over the Dashboard, where they run.
+/// while one is running. Over the app's connection, the Dashboard or the Hermes API.
 @MainActor
 @Observable
 final class Workstreams {
@@ -92,8 +97,11 @@ final class Workstreams {
     /// The plugin answered for workstreams on this server (1.22 or later).
     private(set) var available: Set<String> = []
 
-    @ObservationIgnored var plugin: PushService.PluginCommand = PushService.command(over: .shared)
-    @ObservationIgnored var reachable: () async -> Bool = { await HermesServeClient.shared.canUse() }
+    @ObservationIgnored var plugin: PushService.PluginCommand = PushService.command(over: Settings.shared)
+    @ObservationIgnored var reachable: () async -> Bool = { @MainActor in
+        if Settings.shared.transport == .hermesServe { return await HermesServeClient.shared.canUse() }
+        return Settings.shared.gatewayEndpoint(profile: "default") != nil
+    }
     @ObservationIgnored var connection: () -> String = { Settings.shared.connectionKey }
     /// How often an agent with a running workstream is read again.
     @ObservationIgnored var interval: Duration = .seconds(5)
@@ -127,13 +135,23 @@ final class Workstreams {
 
     /// Stops one mid-turn. What the plugin said when it couldn't, else nil.
     func stop(_ ref: String, of profile: String) async -> String? {
-        guard let output = try? await plugin("work stop \(profile) \(ref)"), output.hasPrefix(Workstream.prefix),
+        await ask("work stop \(profile) \(ref)", done: "stopped", of: profile)
+    }
+
+    /// Answers the approval one run by the Hermes API waits on ("once", "deny"): what the plugin
+    /// said when it couldn't, else nil.
+    func answer(_ ref: String, of profile: String, with choice: String) async -> String? {
+        await ask("work answer \(profile) \(ref) \(choice)", done: "answered", of: profile)
+    }
+
+    private func ask(_ command: String, done: String, of profile: String) async -> String? {
+        guard let output = try? await plugin(command), output.hasPrefix(Workstream.prefix),
               let start = output.firstIndex(of: "{"),
               let json = try? JSONDecoder().decode(JSONValue.self, from: Data(output[start...].utf8)) else {
-            return String(localized: "Hermes didn't answer. Try again in a moment.", comment: "A workstream couldn't be stopped: no answer from the server")
+            return String(localized: "Hermes didn't answer. Try again in a moment.", comment: "A workstream couldn't be stopped or answered: no answer from the server")
         }
         await refresh(profile)
-        return json["stopped"] == nil ? (json["error"]?.string ?? "") : nil
+        return json[done] == nil ? (json["error"]?.string ?? "") : nil
     }
 
     /// Read now and while anything of the agent's runs, for as long as something shows them.

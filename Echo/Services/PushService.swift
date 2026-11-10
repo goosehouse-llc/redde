@@ -375,6 +375,41 @@ final class PushService {
         }
     }
 
+    /// The plugin's command over the Hermes API alone (Redde's plugin 1.23: its route on the
+    /// API server, `/v1/redde/command`), with the main profile's key: the plugin's commands name
+    /// the profile they are about. An older plugin has no such route: `noPlugin`.
+    static func command(overAPI settings: Settings) -> PluginCommand {
+        { arguments in
+            guard let endpoint = await MainActor.run(body: { settings.gatewayEndpoint(profile: "default") }) else {
+                throw PushError.noDashboard(SessionBackend.notConfiguredMessage)
+            }
+            let headers = await MainActor.run { settings.apiHeaders }
+            var request = URLRequest(url: endpoint.url.appending(path: "v1/redde/command"))
+            request.httpMethod = "POST"
+            for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
+            request.setValue("Bearer \(endpoint.key)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.timeoutInterval = 30
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["command": arguments])
+            let (data, response) = try await StreamingHTTP.session.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if status == 404 { throw PushError.noPlugin }
+            guard (200 ..< 300).contains(status) else {
+                throw PushError.noDashboard(String(localized: "The server answered \(status)."))
+            }
+            return (try? JSONDecoder().decode(JSONValue.self, from: data))?["output"]?.string ?? ""
+        }
+    }
+
+    /// The plugin's command over the app's connection: the Dashboard's, else the Hermes API's.
+    static func command(over settings: Settings, dashboard: HermesServeClient = .shared) -> PluginCommand {
+        let viaDashboard = command(over: dashboard), viaAPI = command(overAPI: settings)
+        return { arguments in
+            let transport = await MainActor.run { settings.transport }
+            return try await (transport == .hermesServe ? viaDashboard : viaAPI)(arguments)
+        }
+    }
+
     /// Pairs with the Hermes the app is signed in to, with no code to scan: the plugin's offer
     /// is asked for over the Dashboard connection and this phone's answer handed back the same
     /// way. The key agreement is the one the code carries; here the connection that already

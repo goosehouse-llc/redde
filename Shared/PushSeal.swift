@@ -80,7 +80,8 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// One of an agent's workstreams (Redde's plugin 1.22, `work.py`): `p` the agent's
         /// profile, `d` its name, `x` its id (W3), `t` its title, `w` "done", "failed" or
         /// "needs" (it waits for an approval, `b` the command; else `b` its last words), `s` its
-        /// own chat, which a tap opens (`Workstreams`).
+        /// own chat, which a tap opens (`Workstreams`); `r` "api" for one run by the Hermes API's
+        /// gateway (1.23), whose chat is opened there.
         case work
     }
 
@@ -414,6 +415,8 @@ nonisolated extension PushNote {
     /// On a workstream's: the profile its chat is in, and what to call that chat.
     static let profileKey = "profile"
     static let titleKey = "title"
+    /// On a workstream's: it runs over the Hermes API, where its chat is opened.
+    static let viaAPIKey = "api"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
 
@@ -576,6 +579,7 @@ nonisolated extension PushNote {
         if kind == .call, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
         if kind == .work {
             if let p, !p.isEmpty { info[Self.profileKey] = p }
+            if r == "api" { info[Self.viaAPIKey] = true }
             info[Self.titleKey] = [x, t].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
         } else if let x, !x.isEmpty { info[Self.taskKey] = x }
         if kind == .key, let i, !i.isEmpty { info[Self.keyRequestKey] = i }

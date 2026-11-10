@@ -9,7 +9,7 @@ import UserNotifications
 struct WorkstreamsTests {
     static let answer = """
     redde-push work {"profile": "coder", "engine": "serve", "work": [
-      {"id": "W2", "title": "Write the notes", "status": "needs_you", "session": "s2", "chat": "c1", "last": "",
+      {"id": "W2", "title": "Write the notes", "status": "needs_you", "session": "s2", "chat": "c1", "last": "", "engine": "api",
        "asked": "git push origin main", "created": 2000, "updated": 2010, "ended": null},
       {"id": "W1", "title": "Fix the build", "status": "done", "session": "s1", "chat": "c1",
        "last": "Fixed: a missing import.", "asked": "", "created": 1000, "updated": 1500, "ended": 1500}]}
@@ -20,6 +20,7 @@ struct WorkstreamsTests {
         #expect(parsed.profile == "coder")
         #expect(parsed.work.map(\.id) == ["W2", "W1"])
         #expect(parsed.work[0].status == .needsYou && parsed.work[0].isOpen && parsed.work[0].asked == "git push origin main")
+        #expect(parsed.work[0].viaAPI && !parsed.work[1].viaAPI, "run by the Hermes API's gateway (1.23), or the Dashboard (no engine: 1.22)")
         #expect(parsed.work[1].status == .done && !parsed.work[1].isOpen && parsed.work[1].ended == Date(timeIntervalSince1970: 1500))
         #expect(Workstream.parse("redde-push: this command is for the Redde app.") == nil, "a plugin older than 1.22")
     }
@@ -53,6 +54,30 @@ struct WorkstreamsTests {
         #expect(await store.stop("W2", of: "coder") == nil)
         #expect(await store.stop("W1", of: "coder") == "W1 isn't running.")
         #expect(asked.contains("work stop coder W2"))
+    }
+
+    /// One run by the Hermes API is answered from the Work sheet: only the plugin may answer it.
+    @Test func answersOneRunByTheAPI() async {
+        let store = Workstreams()
+        store.reachable = { true }
+        var asked: [String] = []
+        store.plugin = { command in
+            asked.append(command)
+            if command.hasPrefix("work answer") {
+                return command.hasSuffix("W2 once") ? #"redde-push work {"answered": "W2", "choice": "once"}"# : #"redde-push work {"error": "W1 isn't waiting on an answer"}"#
+            }
+            return Self.answer
+        }
+        #expect(await store.answer("W2", of: "coder", with: "once") == nil)
+        #expect(await store.answer("W1", of: "coder", with: "deny") == "W1 isn't waiting on an answer")
+        #expect(asked.contains("work answer coder W2 once"))
+    }
+
+    /// Over the Hermes API a workstream's chat is a session like any other: kept out of the list.
+    @Test func itsChatIsNoRowOverTheAPI() {
+        #expect(HermesSessionsAPI.isWorkstreamChat("Work: W3 · Compare the quotes"))
+        #expect(!HermesSessionsAPI.isWorkstreamChat("Work: the plan for Monday"))
+        #expect(!HermesSessionsAPI.isWorkstreamChat(nil))
     }
 
     @Test func aReportIsANotice() throws {
@@ -106,6 +131,10 @@ struct WorkstreamsTests {
         #expect(done.userInfo[PushNote.titleKey] as? String == "W1 · Fix the build")
         #expect(done.userInfo[PushNote.botKey] == nil, "a tap opens the workstream, not the bot's chat")
         #expect(done.userInfo[PushNote.taskKey] == nil)
+        #expect(done.userInfo[PushNote.viaAPIKey] == nil)
+        let api = UNMutableNotificationContent()
+        #expect(PushNote(k: "work", s: "api_1", t: "Fix the build", r: "api", x: "W1", p: "coder").fill(api))
+        #expect(api.userInfo[PushNote.viaAPIKey] as? Bool == true, "a tap opens its chat over the Hermes API")
 
         let needs = UNMutableNotificationContent()
         #expect(PushNote(k: "work", s: "s2", t: "Write the notes", b: "git push origin main", d: "Coder", w: "needs", x: "W2", p: "coder").fill(needs))
@@ -121,7 +150,10 @@ struct WorkstreamsTests {
         router.requestSession("s2", profile: "coder", title: "W2 · Write the notes")
         #expect(router.consumeSession() == "s2")
         let place = router.consumeSessionPlace()
-        #expect(place.profile == "coder" && place.title == "W2 · Write the notes")
+        #expect(place.profile == "coder" && place.title == "W2 · Write the notes" && place.viaAPI == nil)
+        router.requestSession("api_9", profile: "coder", viaAPI: true)
+        _ = router.consumeSession()
+        #expect(router.consumeSessionPlace().viaAPI == true)
         router.requestSession("s3", profile: "default")
         _ = router.consumeSession()
         #expect(router.consumeSessionPlace().profile == nil, "the main agent's is no other profile")

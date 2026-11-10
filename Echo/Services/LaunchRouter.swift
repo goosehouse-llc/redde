@@ -116,10 +116,13 @@ final class LaunchRouter {
     /// The profile it is in, when not the main one (a bot's workstream), and what to call it.
     private(set) var pendingSessionProfile: String?
     private(set) var pendingSessionTitle: String?
+    /// It is over the Hermes API (a workstream the gateway runs); nil, as the app's connection is.
+    private(set) var pendingSessionViaAPI: Bool?
 
-    func requestSession(_ id: String, profile: String? = nil, title: String? = nil) {
+    func requestSession(_ id: String, profile: String? = nil, title: String? = nil, viaAPI: Bool? = nil) {
         pendingSessionProfile = profile == "default" ? nil : profile
         pendingSessionTitle = title
+        pendingSessionViaAPI = viaAPI
         pendingSession = id
     }
 
@@ -128,9 +131,9 @@ final class LaunchRouter {
         return pendingSession
     }
 
-    func consumeSessionPlace() -> (profile: String?, title: String?) {
-        defer { pendingSessionProfile = nil; pendingSessionTitle = nil }
-        return (pendingSessionProfile, pendingSessionTitle)
+    func consumeSessionPlace() -> (profile: String?, title: String?, viaAPI: Bool?) {
+        defer { pendingSessionProfile = nil; pendingSessionTitle = nil; pendingSessionViaAPI = nil }
+        return (pendingSessionProfile, pendingSessionTitle, pendingSessionViaAPI)
     }
 
     /// An agent's call was answered (`AgentCalls`): voice mode is already in its chat, and the
