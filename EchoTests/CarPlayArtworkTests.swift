@@ -158,6 +158,20 @@ struct CarPlayArtworkTests {
         try write(pictures)
     }
 
+    /// Only the newest sets of pictures are kept (a face in a theme is a set, about 30 MB): a
+    /// drive through many bots, or a change of theme, no longer keeps every one of them.
+    @Test func onlyTheNewestFacesPicturesAreKept() {
+        Art.forget()
+        let faces = (0 ... Art.voiceSetsKept).map { BotFace(seed: "kept-\($0)-\(UUID().uuidString)") }
+        let first = Art.voiceStateImage(.paused, look: .redde, face: faces[0])
+        #expect(Art.voiceStateImage(.paused, look: .redde, face: faces[0]) === first, "drawn once")
+        for face in faces.dropFirst() { _ = Art.voiceStateImage(.paused, look: .redde, face: face) }
+        #expect(!Art.hasVoicePicture(.paused, look: .redde, face: faces[0], movingAt: nil), "the one used longest ago was let go")
+        #expect(Art.hasVoicePicture(.paused, look: .redde, face: faces[1], movingAt: nil) && Art.hasVoicePicture(.paused, look: .redde, face: faces.last, movingAt: nil))
+        #expect(Art.voiceStateImage(.paused, look: .redde, face: faces[0]) !== first, "and is drawn again when asked for")
+        Art.forget()
+    }
+
     /// The picture that plays is the one Settings names, and a look that is no longer picked
     /// is let go.
     @Test func onlyThePickedLooksPicturesAreKept() {

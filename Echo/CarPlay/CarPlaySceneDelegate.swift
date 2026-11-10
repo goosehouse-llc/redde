@@ -747,7 +747,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// for every chat.
     private var drawingAhead: Task<Void, Never>?
     /// Bots whose faces are drawn ahead: as many as fit across his car's screen (`mostBots`).
-    /// About 30 MB a face, kept while the car is connected.
+    /// About 30 MB a face, kept while the car is connected and it is among the newest
+    /// (`CarPlayArtwork.voiceSetsKept`, which must stay above this and the open chat's).
     private static let botsDrawnAhead = 5
 
     private func drawAhead() {

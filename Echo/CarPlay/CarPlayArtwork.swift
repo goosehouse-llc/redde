@@ -376,6 +376,7 @@ enum CarPlayArtwork {
     static func voiceStateImage(_ state: VoiceState, look: CarPlayVoiceLook = .bars, face: BotFace? = nil, side: CGFloat = voiceImageSide,
                                 movingAt scale: CGFloat? = nil) -> UIImage {
         let key = voiceKey(state, look: look, face: face, side: side, movingAt: scale)
+        noteVoiceSet(of: key)
         if let made = voicePictures[key] { return made }
         // Being drawn ahead (`drawVoiceAhead`): finished from where that got to.
         let drawing = voiceDrawings[key] ?? VoiceDrawing(state, look: look, face: face, side: side, movingAt: scale)
@@ -393,7 +394,34 @@ enum CarPlayArtwork {
         let settings = Settings.shared
         let shown = face ?? BotDirectory.shared.mainFace
         let theme = look == .redde ? " \(settings.theme.rawValue) \(String(describing: settings.themeColors[settings.theme.rawValue])) \(shown.code) \(shown.picture ?? "")" : ""
-        return "\(look.rawValue) \(state.rawValue) \(side) \(scale ?? 0)\(theme)"
+        // The set (a look, or in the face look one face in one theme) and, after `setEnd`, the state.
+        return "\(look.rawValue) \(side) \(scale ?? 0)\(theme)\(setEnd)\(state.rawValue)"
+    }
+
+    /// Between a key's set and its state: a character no name has.
+    private static let setEnd: Character = "\u{1F}"
+
+    /// How many sets of voice pictures are kept: the open chat's face, the bots drawn ahead while
+    /// the Bots tab is up (`CarPlaySceneDelegate.botsDrawnAhead`, five) and two to spare. A set is
+    /// about 30 MB, and they were kept for as long as the car was connected: every further bot
+    /// talked to, and every face again after a change of theme or colours mid-drive.
+    static let voiceSetsKept = 8
+    /// The sets with pictures kept or being drawn, the one used longest ago first.
+    private static var voiceSets: [String] = []
+
+    /// A set was asked for: it is the newest, and past `voiceSetsKept` the oldest is let go,
+    /// unless it is being drawn ahead this moment.
+    private static func noteVoiceSet(of key: String) {
+        let set = String(key.prefix { $0 != setEnd })
+        if voiceSets.last == set { return }
+        voiceSets.removeAll { $0 == set }
+        voiceSets.append(set)
+        while voiceSets.count > voiceSetsKept {
+            guard let at = voiceSets.firstIndex(where: { old in !voiceDrawings.keys.contains { $0.hasPrefix(old + String(setEnd)) } }),
+                  at < voiceSets.count - 1 else { return }
+            let old = voiceSets.remove(at: at) + String(setEnd)
+            voicePictures = voicePictures.filter { !$0.key.hasPrefix(old) }
+        }
     }
 
     /// Draws what `voiceStateImage` gives for every state, and the backdrops behind them, a
@@ -408,6 +436,7 @@ enum CarPlayArtwork {
         for state in VoiceState.allCases {
             if #available(iOS 27.0, *) { _ = voiceBackdrop(state, look: look) }
             let key = voiceKey(state, look: look, face: face, side: side, movingAt: scale)
+            noteVoiceSet(of: key)
             guard voicePictures[key] == nil else { continue }
             let drawing = voiceDrawings[key] ?? VoiceDrawing(state, look: look, face: face, side: side, movingAt: scale)
             voiceDrawings[key] = drawing
@@ -537,6 +566,7 @@ enum CarPlayArtwork {
     static func forget() {
         voicePictures = [:]
         voiceDrawings = [:]
+        voiceSets = []
         backdrops = [:]
         cardPictures = [:]
         botPictures = [:]
@@ -546,6 +576,7 @@ enum CarPlayArtwork {
     static func keepVoicePictures(only look: CarPlayVoiceLook) {
         voicePictures = voicePictures.filter { $0.key.hasPrefix("\(look.rawValue) ") }
         voiceDrawings = voiceDrawings.filter { $0.key.hasPrefix("\(look.rawValue) ") }
+        voiceSets = voiceSets.filter { $0.hasPrefix("\(look.rawValue) ") }
     }
 
     /// Whether a state's picture is drawn and kept already: for the tests.
