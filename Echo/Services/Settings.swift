@@ -526,8 +526,8 @@ final class Settings: ServeEndpoint {
         static let offWhitePaper = Color(red: 0.973, green: 0.957, blue: 0.918)
         static let greyCard = Color(red: 0.227, green: 0.227, blue: 0.235)
         static let blackCard = Color(red: 0.055, green: 0.055, blue: 0.06)
-        /// The Code theme's pale sky (#CBF0FF), solid, as its bubbles are (asked 2026-11-02).
-        static let codeBlueCard = Color(red: 0.796, green: 0.941, blue: 1.0)
+        /// The Code theme's pale sky (#CBF0FF), solid, as its bubbles are in dark mode (asked 2026-11-02).
+        static let codeBlueCard = Color(red: ThemeColors.RGB.codeBlue.red, green: ThemeColors.RGB.codeBlue.green, blue: ThemeColors.RGB.codeBlue.blue)
         /// A solid card, and the appearance its contents are drawn in; nil for a wash.
         var solid: ColorScheme? {
             switch self {

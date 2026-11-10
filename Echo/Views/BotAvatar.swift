@@ -234,7 +234,7 @@ struct BotAvatar: View {
         let own: Color
         switch face.color {
         case BotFace.themed: own = theme.promptPrefix != nil ? theme.promptColor : theme.userBubble
-        case BotFace.codeBlue: own = Theme.claudeCode.userBubble
+        case BotFace.codeBlue: own = ThemeColors.RGB.codeBlue.color   // the one blue, in light and dark
         default: return BotFace.pair(face.color)
         }
         return (own.mix(with: .white, by: 0.14), own)

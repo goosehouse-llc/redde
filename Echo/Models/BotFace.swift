@@ -138,8 +138,8 @@ nonisolated struct BotFace: Equatable, Hashable, Sendable {
         case Self.themed:
             return nil
         case Self.codeBlue:
-            // #CBF0FF, the Code theme's accent and bubble.
-            let blue = ThemeColors.RGB(red: 0.796, green: 0.941, blue: 1.0)
+            // #CBF0FF, the Code theme's bubble in dark mode, in light and dark alike.
+            let blue = ThemeColors.RGB.codeBlue
             return ThemeColors(accent: blue, bubble: blue)
         case Self.white:
             return ThemeColors(accent: nil, bubble: ThemeColors.RGB(Self.palette[color].light))

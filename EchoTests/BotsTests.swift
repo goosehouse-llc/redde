@@ -1,5 +1,7 @@
 import Foundation
+import SwiftUI
 import Testing
+import UIKit
 @testable import Echo
 
 /// Bots (Hermes's Bot Mode on the Dashboard): the roster as `profiles.list` gives it, which bots
@@ -237,9 +239,12 @@ struct BotsTests {
         var redde = BotFace.main
         redde.color = BotFace.codeBlue
         let blue = try #require(redde.chatColors)
-        let code = ThemeColors.RGB(Theme.claudeCode.userBubble)
-        #expect(blue.accent == blue.bubble && abs((blue.bubble?.red ?? 0) - code.red) + abs((blue.bubble?.green ?? 0) - code.green)
-                + abs((blue.bubble?.blue ?? 0) - code.blue) < 0.003, "the Code blue as the Code theme has it")
+        // The Code blue is the one the Code theme's bubbles have in dark mode (2026-11-09), in light too.
+        let dark = UIColor(Theme.claudeCode.userBubble).resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
+        let code = ThemeColors.RGB(Color(uiColor: dark))
+        #expect(blue.accent == blue.bubble && blue.bubble == .codeBlue)
+        #expect(abs(code.red - ThemeColors.RGB.codeBlue.red) + abs(code.green - ThemeColors.RGB.codeBlue.green)
+                + abs(code.blue - ThemeColors.RGB.codeBlue.blue) < 0.003, "the Code blue as the Code theme has it in dark mode")
         let scout = BotFace(shape: .burst, eyes: .sleepy, mouth: .none, mark: .none, glance: 0, tilt: 0, color: 3)
         let indigo = try #require(scout.chatColors)
         #expect(indigo.accent != nil && indigo.accent == indigo.bubble, "a bot's colour for the bubbles and the accent")

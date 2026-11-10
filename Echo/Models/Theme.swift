@@ -233,7 +233,7 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
         accent: dyn((0.035, 0.412, 0.855), (0.345, 0.651, 1.000)),          // GitHub blue
         background: dyn((0.953, 0.965, 0.984), (0.051, 0.067, 0.090)),
         surface: dyn((1.000, 1.000, 1.000), (0.086, 0.106, 0.133)),
-        userBubble: dyn((0.867, 0.957, 1.000), (0.796, 0.941, 1.000)),     // pale sky
+        userBubble: dyn((0.867, 0.957, 1.000), (ThemeColors.RGB.codeBlue.red, ThemeColors.RGB.codeBlue.green, ThemeColors.RGB.codeBlue.blue)),   // pale sky; the Code blue in dark
         userText: dyn((1.000, 1.000, 1.000), (0.051, 0.067, 0.090)),       // the glyph on the blue
         flatReplies: true,
         text: dyn((0.122, 0.137, 0.157), (0.902, 0.929, 0.953)),
@@ -312,6 +312,12 @@ nonisolated struct ThemeColors: Codable, Equatable, Sendable {
         init(red: Double, green: Double, blue: Double) {
             self.red = red; self.green = green; self.blue = blue
         }
+
+        /// The Code blue, #CBF0FF: the Code theme's bubbles in dark mode, and the one blue of a
+        /// bot's Code Blue and of the cards' Code Blue, in light and dark alike (2026-11-09; the
+        /// theme's light bubbles went paler in ce92242, and these keep the blue). Written here
+        /// once: it was written out in three places.
+        static let codeBlue = RGB(red: 0.796, green: 0.941, blue: 1.000)
 
         init(_ color: Color) {
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0

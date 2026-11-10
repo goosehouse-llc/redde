@@ -207,7 +207,7 @@ struct BotFacePicker: View {
             let own = theme.promptPrefix != nil ? theme.promptColor : theme.userBubble
             pair = (own.mix(with: .white, by: 0.14), own)
         case BotFace.codeBlue:
-            pair = (Theme.claudeCode.userBubble.mix(with: .white, by: 0.14), Theme.claudeCode.userBubble)
+            pair = (ThemeColors.RGB.codeBlue.color.mix(with: .white, by: 0.14), ThemeColors.RGB.codeBlue.color)
         default:
             pair = BotFace.pair(index)
         }
