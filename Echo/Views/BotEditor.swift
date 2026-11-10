@@ -230,6 +230,14 @@ struct BotEditor: View {
                         } label: {
                             Text("Plugins")
                         }
+                        // This phone's tools, some of the main agent's, for a bot of its own (11-10).
+                        if !isMain {
+                            NavigationLink {
+                                BotPhoneToolsView(bot: editing, name: title.nilIfEmpty ?? editing.label(mainName: mainName))
+                            } label: {
+                                LabeledContent("Phone Tools", value: BotPhoneToolsView.summary(editing))
+                            }
+                        }
                         // What it remembers (2.4), its own as a profile's memory is.
                         NavigationLink {
                             MemoryView(profile: editing.name, owner: isMain ? mainName : title.nilIfEmpty ?? editing.label(mainName: mainName))

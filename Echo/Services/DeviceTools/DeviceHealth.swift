@@ -18,6 +18,7 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
     case exerciseMinutes = "exercise_minutes"
     case standHours = "stand_hours"
     case flights = "flights_climbed"
+    case daylight = "time_in_daylight"
     case weight
     case bmi
     case bodyFat = "body_fat"
@@ -26,7 +27,14 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
     case heartRateVariability = "heart_rate_variability"
     case bloodPressure = "blood_pressure"
     case vo2Max = "vo2_max"
+    case walkingHeartRate = "walking_heart_rate"
+    case cardioRecovery = "cardio_recovery"
+    case afibBurden = "afib_burden"
+    case ecg
+    case heartAlerts = "heart_alerts"
     case sleep
+    case wristTemperature = "wrist_temperature"
+    case breathingDisturbances = "breathing_disturbances"
     case respiratoryRate = "respiratory_rate"
     case bloodOxygen = "blood_oxygen"
     case bodyTemperature = "body_temperature"
@@ -34,15 +42,19 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
     case caffeine
     case dietaryEnergy = "dietary_energy"
     case protein
+    case walkingSteadiness = "walking_steadiness"
+    case noise = "noise_exposure"
+    case headphones = "headphone_audio"
     case mindfulMinutes = "mindful_minutes"
     case workouts
+    case workoutRoutes = "workout_routes"
     case menstrualFlow = "menstrual_flow"
 
     var id: String { rawValue }
 
     /// How Settings groups them.
     enum Group: String, CaseIterable, Sendable, Identifiable {
-        case activity, body, heart, sleep, vitals, nutrition, mindfulness, workouts, cycle
+        case activity, body, heart, sleep, vitals, nutrition, mobility, hearing, mindfulness, workouts, cycle
         var id: String { rawValue }
 
         var label: String {
@@ -53,6 +65,8 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
             case .sleep: String(localized: "Sleep", comment: "A group of Apple Health data (Settings → Phone tools → Health)")
             case .vitals: String(localized: "Vitals", comment: "A group of Apple Health data (Settings → Phone tools → Health)")
             case .nutrition: String(localized: "Nutrition", comment: "A group of Apple Health data (Settings → Phone tools → Health)")
+            case .mobility: String(localized: "Mobility", comment: "A group of Apple Health data (Settings → Phone tools → Health)")
+            case .hearing: String(localized: "Hearing", comment: "A group of Apple Health data (Settings → Phone tools → Health)")
             case .mindfulness: String(localized: "Mindfulness", comment: "A group of Apple Health data (Settings → Phone tools → Health)")
             case .workouts: String(localized: "Workouts", comment: "A group of Apple Health data (Settings → Phone tools → Health)")
             case .cycle: String(localized: "Cycle Tracking", comment: "A group of Apple Health data (Settings → Phone tools → Health)")
@@ -64,14 +78,17 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
 
     var group: Group {
         switch self {
-        case .steps, .distance, .activeEnergy, .exerciseMinutes, .standHours, .flights: .activity
+        case .steps, .distance, .activeEnergy, .exerciseMinutes, .standHours, .flights, .daylight: .activity
         case .weight, .bmi, .bodyFat: .body
-        case .heartRate, .restingHeartRate, .heartRateVariability, .bloodPressure, .vo2Max: .heart
-        case .sleep: .sleep
+        case .heartRate, .restingHeartRate, .heartRateVariability, .bloodPressure, .vo2Max, .walkingHeartRate, .cardioRecovery,
+             .afibBurden, .ecg, .heartAlerts: .heart
+        case .sleep, .wristTemperature, .breathingDisturbances: .sleep
         case .respiratoryRate, .bloodOxygen, .bodyTemperature: .vitals
         case .water, .caffeine, .dietaryEnergy, .protein: .nutrition
+        case .walkingSteadiness: .mobility
+        case .noise, .headphones: .hearing
         case .mindfulMinutes: .mindfulness
-        case .workouts: .workouts
+        case .workouts, .workoutRoutes: .workouts
         case .menstrualFlow: .cycle
         }
     }
@@ -84,6 +101,7 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
         case .exerciseMinutes: String(localized: "Exercise Minutes", comment: "Apple Health data")
         case .standHours: String(localized: "Stand Hours", comment: "Apple Health data")
         case .flights: String(localized: "Flights Climbed", comment: "Apple Health data")
+        case .daylight: String(localized: "Time in Daylight", comment: "Apple Health data")
         case .weight: String(localized: "Weight", comment: "Apple Health data")
         case .bmi: String(localized: "Body Mass Index", comment: "Apple Health data")
         case .bodyFat: String(localized: "Body Fat Percentage", comment: "Apple Health data")
@@ -92,7 +110,14 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
         case .heartRateVariability: String(localized: "Heart Rate Variability", comment: "Apple Health data")
         case .bloodPressure: String(localized: "Blood Pressure", comment: "Apple Health data")
         case .vo2Max: String(localized: "Cardio Fitness (VO₂ max)", comment: "Apple Health data")
+        case .walkingHeartRate: String(localized: "Walking Heart Rate Average", comment: "Apple Health data")
+        case .cardioRecovery: String(localized: "Cardio Recovery", comment: "Apple Health data: how far the heart rate falls in the minute after a workout")
+        case .afibBurden: String(localized: "AFib History", comment: "Apple Health data: how much of the time the Apple Watch saw signs of atrial fibrillation")
+        case .ecg: String(localized: "Electrocardiograms (ECG)", comment: "Apple Health data: ECG recordings taken on an Apple Watch")
+        case .heartAlerts: String(localized: "Heart Rate Notifications", comment: "Apple Health data: the Apple Watch's high, low and irregular rhythm notifications")
         case .sleep: String(localized: "Sleep", comment: "Apple Health data")
+        case .wristTemperature: String(localized: "Sleeping Wrist Temperature", comment: "Apple Health data")
+        case .breathingDisturbances: String(localized: "Breathing Disturbances", comment: "Apple Health data: breathing disturbances during sleep, from an Apple Watch")
         case .respiratoryRate: String(localized: "Respiratory Rate", comment: "Apple Health data")
         case .bloodOxygen: String(localized: "Blood Oxygen", comment: "Apple Health data")
         case .bodyTemperature: String(localized: "Body Temperature", comment: "Apple Health data")
@@ -100,25 +125,32 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
         case .caffeine: String(localized: "Caffeine", comment: "Apple Health data")
         case .dietaryEnergy: String(localized: "Dietary Energy", comment: "Apple Health data")
         case .protein: String(localized: "Protein", comment: "Apple Health data")
+        case .walkingSteadiness: String(localized: "Walking Steadiness", comment: "Apple Health data")
+        case .noise: String(localized: "Environmental Sound Levels", comment: "Apple Health data: how loud it was around the person")
+        case .headphones: String(localized: "Headphone Audio Levels", comment: "Apple Health data")
         case .mindfulMinutes: String(localized: "Mindful Minutes", comment: "Apple Health data")
         case .workouts: String(localized: "Workouts", comment: "Apple Health data")
+        case .workoutRoutes: String(localized: "Workout Routes", comment: "Apple Health data: where outdoor workouts went, from GPS")
         case .menstrualFlow: String(localized: "Menstrual Flow", comment: "Apple Health data")
         }
     }
 
     /// How it is read and what its answer looks like.
-    enum Shape: Sendable { case added, measured, stood, mindful, sleep, workouts, flow }
+    enum Shape: Sendable { case added, measured, stood, mindful, sleep, workouts, flow, ecg, alerts }
 
     var shape: Shape {
         switch self {
-        case .steps, .distance, .activeEnergy, .exerciseMinutes, .flights, .water, .caffeine, .dietaryEnergy, .protein: .added
+        case .steps, .distance, .activeEnergy, .exerciseMinutes, .flights, .daylight, .water, .caffeine, .dietaryEnergy, .protein: .added
         case .weight, .bmi, .bodyFat, .heartRate, .restingHeartRate, .heartRateVariability, .bloodPressure, .vo2Max,
-             .respiratoryRate, .bloodOxygen, .bodyTemperature: .measured
+             .walkingHeartRate, .cardioRecovery, .afibBurden, .wristTemperature, .breathingDisturbances, .walkingSteadiness,
+             .noise, .headphones, .respiratoryRate, .bloodOxygen, .bodyTemperature: .measured
         case .standHours: .stood
         case .mindfulMinutes: .mindful
         case .sleep: .sleep
-        case .workouts: .workouts
+        case .workouts, .workoutRoutes: .workouts
         case .menstrualFlow: .flow
+        case .ecg: .ecg
+        case .heartAlerts: .alerts
         }
     }
 
@@ -133,22 +165,25 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
         case .steps: "steps"
         case .distance: us ? "mi" : "km"
         case .activeEnergy, .dietaryEnergy: "kcal"
-        case .exerciseMinutes, .mindfulMinutes: "min"
+        case .exerciseMinutes, .mindfulMinutes, .daylight: "min"
         case .standHours: "hours"
         case .flights: "flights"
         case .weight: us ? "lb" : "kg"
         case .bmi: "BMI"
-        case .bodyFat, .bloodOxygen: "%"
-        case .heartRate, .restingHeartRate: "bpm"
+        case .bodyFat, .bloodOxygen, .afibBurden, .walkingSteadiness: "%"
+        case .heartRate, .restingHeartRate, .walkingHeartRate: "bpm"
+        case .cardioRecovery: "bpm drop in a minute"
+        case .breathingDisturbances: "per hour"
+        case .noise, .headphones: "dBA"
         case .heartRateVariability: "ms"
         case .bloodPressure: "mmHg"
         case .vo2Max: "mL/kg/min"
         case .respiratoryRate: "breaths/min"
-        case .bodyTemperature: us ? "°F" : "°C"
+        case .bodyTemperature, .wristTemperature: us ? "°F" : "°C"
         case .water: us ? "fl oz" : "mL"
         case .caffeine: "mg"
         case .protein: "g"
-        case .sleep, .workouts, .menstrualFlow: ""
+        case .sleep, .workouts, .workoutRoutes, .menstrualFlow, .ecg, .heartAlerts: ""
         }
     }
 
@@ -156,7 +191,8 @@ nonisolated enum HealthKind: String, CaseIterable, Codable, Sendable, Identifiab
     func decimals(us: Bool) -> Int {
         switch self {
         case .distance: 2
-        case .weight, .bmi, .bodyFat, .bloodOxygen, .vo2Max, .respiratoryRate, .bodyTemperature: 1
+        case .wristTemperature: 2
+        case .weight, .bmi, .bodyFat, .bloodOxygen, .vo2Max, .respiratoryRate, .bodyTemperature, .afibBurden, .breathingDisturbances: 1
         case .water: us ? 1 : 0
         default: 0
         }
@@ -199,9 +235,14 @@ nonisolated struct HealthAsk: Equatable, Sendable {
                                   + "Shared: \(Self.list(shared)).")
         }
         self.kind = kind
-        // The last week by default (two for workouts), today included.
+        // The last week by default (two for workouts, three months for the rare ones: ECGs and the
+        // watch's heart notifications), today included.
         let today = calendar.startOfDay(for: now)
-        let back = kind == .workouts ? 13 : 6
+        let back = switch kind.shape {
+        case .workouts: 13
+        case .ecg, .alerts: 89
+        default: 6
+        }
         start = try args.date("start") ?? calendar.date(byAdding: .day, value: -back, to: today) ?? today
         end = try args.date("end") ?? now
         // "Up to the 14th" means the whole of the 14th.
@@ -417,6 +458,41 @@ nonisolated enum HealthAnswer {
         var minutes: Double
         var distance: Double?
         var energy: Double?
+        /// Its heart rate, average and highest, when Heart Rate is shared too.
+        var averageBPM: Double?
+        var maxBPM: Double?
+        /// How far up it went, in metres, as the watch wrote it down.
+        var climb: Double?
+        /// Where it went, when Workout Routes is shared and it has one.
+        var route: Route?
+    }
+
+    /// A workout's route in brief: where it started and ended (about 100 m, three decimals) and
+    /// how many points the watch kept. The whole track would be thousands of rows.
+    struct Route: Equatable, Sendable {
+        var start: (Double, Double)
+        var end: (Double, Double)
+        var points: Int
+        /// The climb summed along the track, in metres, for a workout whose own record has none.
+        var climb: Double?
+
+        static func == (a: Route, b: Route) -> Bool {
+            a.start == b.start && a.end == b.end && a.points == b.points && a.climb == b.climb
+        }
+
+        static func place(_ point: (Double, Double)) -> String {
+            String(format: "%.3f,%.3f", point.0, point.1)
+        }
+
+        /// The climb along altitudes in order: every rise added, the falls left out. Rises under
+        /// a metre are GPS noise and are left out too.
+        static func climb(_ altitudes: [Double]) -> Double {
+            var total = 0.0, low = altitudes.first ?? 0
+            for altitude in altitudes.dropFirst() {
+                if altitude < low { low = altitude } else if altitude - low >= 1 { total += altitude - low; low = altitude }
+            }
+            return total
+        }
     }
 
     /// Newest first, at most `HealthAsk.most`.
@@ -428,12 +504,68 @@ nonisolated enum HealthAnswer {
                 row["distance"] = .string("\(HealthKind.distance.rounded(distance, us: us)) \(HealthKind.distance.unit(us: us))")
             }
             if let energy = workout.energy, energy > 0 { row["kcal"] = .number(energy.rounded()) }
+            if let bpm = workout.averageBPM { row["avg_bpm"] = .number(bpm.rounded()) }
+            if let bpm = workout.maxBPM { row["max_bpm"] = .number(bpm.rounded()) }
+            if let climb = workout.climb ?? workout.route?.climb, climb >= 1 {
+                row["climb"] = .string(us ? "\(Int((climb * 3.28084).rounded())) ft" : "\(Int(climb.rounded())) m")
+            }
+            if let route = workout.route {
+                row["route"] = .object(["start": .string(Route.place(route.start)), "end": .string(Route.place(route.end)),
+                                        "points": .number(Double(route.points))])
+            }
             return .object(row)
         }
         var fields: [String: JSONValue] = ["type": .string("workouts"), "workouts": .array(rows),
                                            "from": .string(day(ask.start, calendar: calendar)), "to": .string(day(ask.end.addingTimeInterval(-1), calendar: calendar))]
         if found.count > HealthAsk.most { fields["more"] = .number(Double(found.count - HealthAsk.most)) }
         if rows.isEmpty { fields["note"] = .string(nothing) }
+        return .object(fields)
+    }
+
+    /// One ECG the watch recorded: when, what it found, the heart rate through it, and whether
+    /// the person said they had symptoms.
+    struct ECG: Equatable, Sendable {
+        var at: Date
+        var result: String
+        var averageBPM: Double?
+        var symptoms: String?
+    }
+
+    /// Newest first, at most `HealthAsk.most`.
+    static func ecg(_ ask: HealthAsk, _ found: [ECG], calendar: Calendar = .current) -> JSONValue {
+        let rows: [JSONValue] = found.sorted { $0.at > $1.at }.prefix(HealthAsk.most).map { ecg in
+            var row: [String: JSONValue] = ["at": .string(DeviceDates.string(ecg.at)), "result": .string(ecg.result)]
+            if let bpm = ecg.averageBPM { row["avg_bpm"] = .number(bpm.rounded()) }
+            if let symptoms = ecg.symptoms { row["symptoms"] = .string(symptoms) }
+            return .object(row)
+        }
+        var fields: [String: JSONValue] = ["type": .string(HealthKind.ecg.rawValue), "recordings": .array(rows),
+                                           "from": .string(day(ask.start, calendar: calendar)), "to": .string(day(ask.end.addingTimeInterval(-1), calendar: calendar)),
+                                           "note": .string(rows.isEmpty ? nothing : "What the watch's ECG app classified; not a diagnosis.")]
+        if found.count > HealthAsk.most { fields["more"] = .number(Double(found.count - HealthAsk.most)) }
+        return .object(fields)
+    }
+
+    /// One of the watch's heart notifications: a high or low heart rate, or an irregular rhythm.
+    struct HeartAlert: Equatable, Sendable {
+        var at: Date
+        var kind: String
+        /// The bpm it was set to go off at, for a high or a low one.
+        var threshold: Double?
+    }
+
+    /// Newest first, at most `HealthAsk.most`.
+    static func alerts(_ ask: HealthAsk, _ found: [HeartAlert], calendar: Calendar = .current) -> JSONValue {
+        let rows: [JSONValue] = found.sorted { $0.at > $1.at }.prefix(HealthAsk.most).map { alert in
+            var row: [String: JSONValue] = ["at": .string(DeviceDates.string(alert.at)), "kind": .string(alert.kind)]
+            if let threshold = alert.threshold { row["threshold_bpm"] = .number(threshold.rounded()) }
+            return .object(row)
+        }
+        var fields: [String: JSONValue] = ["type": .string(HealthKind.heartAlerts.rawValue), "alerts": .array(rows),
+                                           "from": .string(day(ask.start, calendar: calendar)), "to": .string(day(ask.end.addingTimeInterval(-1), calendar: calendar))]
+        if found.count > HealthAsk.most { fields["more"] = .number(Double(found.count - HealthAsk.most)) }
+        if rows.isEmpty { fields["note"] = .string("None in that range. Either the watch sent none, or Health doesn't let Redde read them: "
+                                                    + "the user can check on the iPhone in Settings → Health → Data Access & Devices → Redde.") }
         return .object(fields)
     }
 
@@ -471,7 +603,7 @@ nonisolated enum DeviceHealth {
         }
         let ask = try HealthAsk(args, shared: shared, now: now)
         #if os(iOS)
-        return try await run(ask, us: us)
+        return try await run(ask, us: us, shared: shared)
         #else
         _ = ask
         throw DeviceToolError("This device has no Apple Health.")
@@ -496,6 +628,9 @@ nonisolated enum DeviceHealth {
         case .mindfulMinutes: [HKCategoryType(.mindfulSession)]
         case .menstrualFlow: [HKCategoryType(.menstrualFlow)]
         case .workouts: [HKObjectType.workoutType()]
+        case .workoutRoutes: [HKObjectType.workoutType(), HKSeriesType.workoutRoute()]
+        case .ecg: [HKObjectType.electrocardiogramType()]
+        case .heartAlerts: alertTypes.map(\.0)
         default: quantity(kind).map { [$0] } ?? []
         }
     }
@@ -521,24 +656,41 @@ nonisolated enum DeviceHealth {
         case .caffeine: HKQuantityType(.dietaryCaffeine)
         case .dietaryEnergy: HKQuantityType(.dietaryEnergyConsumed)
         case .protein: HKQuantityType(.dietaryProtein)
+        case .daylight: HKQuantityType(.timeInDaylight)
+        case .walkingHeartRate: HKQuantityType(.walkingHeartRateAverage)
+        case .cardioRecovery: HKQuantityType(.heartRateRecoveryOneMinute)
+        case .afibBurden: HKQuantityType(.atrialFibrillationBurden)
+        case .wristTemperature: HKQuantityType(.appleSleepingWristTemperature)
+        case .breathingDisturbances: HKQuantityType(.appleSleepingBreathingDisturbances)
+        case .walkingSteadiness: HKQuantityType(.appleWalkingSteadiness)
+        case .noise: HKQuantityType(.environmentalAudioExposure)
+        case .headphones: HKQuantityType(.headphoneAudioExposure)
         default: nil
         }
     }
 
+    /// The watch's heart notifications, and what each is called to the agent.
+    private static let alertTypes: [(HKCategoryType, String)] = [
+        (HKCategoryType(.highHeartRateEvent), "high heart rate"),
+        (HKCategoryType(.lowHeartRateEvent), "low heart rate"),
+        (HKCategoryType(.irregularHeartRhythmEvent), "irregular rhythm"),
+    ]
+
     /// The unit a number is read in, and what it is multiplied by (fractions become percent).
     private static func unit(_ kind: HealthKind, us: Bool) -> (HKUnit, Double) {
         switch kind {
-        case .steps, .flights, .bmi: (.count(), 1)
+        case .steps, .flights, .bmi, .breathingDisturbances: (.count(), 1)
         case .distance: (us ? .mile() : .meterUnit(with: .kilo), 1)
         case .activeEnergy, .dietaryEnergy: (.kilocalorie(), 1)
-        case .exerciseMinutes: (.minute(), 1)
+        case .exerciseMinutes, .daylight: (.minute(), 1)
         case .weight: (us ? .pound() : .gramUnit(with: .kilo), 1)
-        case .bodyFat, .bloodOxygen: (.percent(), 100)
-        case .heartRate, .restingHeartRate, .respiratoryRate: (.count().unitDivided(by: .minute()), 1)
+        case .bodyFat, .bloodOxygen, .afibBurden, .walkingSteadiness: (.percent(), 100)
+        case .heartRate, .restingHeartRate, .respiratoryRate, .walkingHeartRate, .cardioRecovery: (.count().unitDivided(by: .minute()), 1)
+        case .noise, .headphones: (.decibelAWeightedSoundPressureLevel(), 1)
         case .heartRateVariability: (.secondUnit(with: .milli), 1)
         case .bloodPressure: (.millimeterOfMercury(), 1)
         case .vo2Max: (HKUnit.literUnit(with: .milli).unitDivided(by: HKUnit.gramUnit(with: .kilo).unitMultiplied(by: .minute())), 1)
-        case .bodyTemperature: (us ? .degreeFahrenheit() : .degreeCelsius(), 1)
+        case .bodyTemperature, .wristTemperature: (us ? .degreeFahrenheit() : .degreeCelsius(), 1)
         case .water: (us ? .fluidOunceUS() : .literUnit(with: .milli), 1)
         case .caffeine: (.gramUnit(with: .milli), 1)
         case .protein: (.gram(), 1)
@@ -546,7 +698,7 @@ nonisolated enum DeviceHealth {
         }
     }
 
-    private static func run(_ ask: HealthAsk, us: Bool) async throws -> JSONValue {
+    private static func run(_ ask: HealthAsk, us: Bool, shared: [HealthKind]) async throws -> JSONValue {
         let calendar = Calendar.current
         switch ask.kind.shape {
         case .added, .measured:
@@ -628,14 +780,61 @@ nonisolated enum DeviceHealth {
             let distances: [HKQuantityType] = [HKQuantityType(.distanceWalkingRunning), HKQuantityType(.distanceCycling), HKQuantityType(.distanceSwimming),
                                                HKQuantityType(.distanceDownhillSnowSports), HKQuantityType(.distanceWheelchair)]
             let (distanceUnit, _) = unit(.distance, us: us)
-            let workouts: [HealthAnswer.Workout] = found.compactMap { sample in
-                guard let workout = sample as? HKWorkout else { return nil }
+            // The heart rate through each, only when Heart Rate is shared too; routes only when
+            // Workout Routes is, and for the newest few (each is a query of its own).
+            let withHeart = shared.contains(.heartRate)
+            let withRoutes = shared.contains(.workoutRoutes)
+            let bpm = HKUnit.count().unitDivided(by: .minute())
+            var workouts: [HealthAnswer.Workout] = []
+            for sample in found {
+                guard let workout = sample as? HKWorkout else { continue }
                 let distance = distances.lazy.compactMap { workout.statistics(for: $0)?.sumQuantity()?.doubleValue(for: distanceUnit) }.first
                 let energy = workout.statistics(for: HKQuantityType(.activeEnergyBurned))?.sumQuantity()?.doubleValue(for: .kilocalorie())
-                return HealthAnswer.Workout(start: workout.startDate, activity: HealthDays.name(of: workout.workoutActivityType),
-                                            minutes: workout.duration / 60, distance: distance, energy: energy)
+                var row = HealthAnswer.Workout(start: workout.startDate, activity: HealthDays.name(of: workout.workoutActivityType),
+                                               minutes: workout.duration / 60, distance: distance, energy: energy)
+                if withHeart, let heart = workout.statistics(for: HKQuantityType(.heartRate)) {
+                    row.averageBPM = heart.averageQuantity()?.doubleValue(for: bpm)
+                    row.maxBPM = heart.maximumQuantity()?.doubleValue(for: bpm)
+                }
+                row.climb = (workout.metadata?[HKMetadataKeyElevationAscended] as? HKQuantity)?.doubleValue(for: .meter())
+                if withRoutes, workouts.filter({ $0.route != nil }).count < Self.routesAtMost {
+                    row.route = await route(of: workout)
+                }
+                workouts.append(row)
             }
             return HealthAnswer.workouts(ask, workouts, us: us, calendar: calendar)
+        case .ecg:
+            let found = await samples(HKObjectType.electrocardiogramType(), ask, limit: HealthAsk.most + 40, newestFirst: true)
+            let bpm = HKUnit.count().unitDivided(by: .minute())
+            let recordings: [HealthAnswer.ECG] = found.compactMap { sample in
+                guard let ecg = sample as? HKElectrocardiogram else { return nil }
+                let result = switch ecg.classification {
+                case .sinusRhythm: "sinus rhythm"
+                case .atrialFibrillation: "atrial fibrillation"
+                case .inconclusiveLowHeartRate: "inconclusive: heart rate too low"
+                case .inconclusiveHighHeartRate: "inconclusive: heart rate too high"
+                case .inconclusivePoorReading: "inconclusive: poor recording"
+                case .inconclusiveOther: "inconclusive"
+                case .unrecognized: "unrecognized"
+                default: "not set"
+                }
+                let symptoms: String? = switch ecg.symptomsStatus {
+                case .present: "some"
+                case .none: "none"
+                default: nil
+                }
+                return HealthAnswer.ECG(at: ecg.startDate, result: result, averageBPM: ecg.averageHeartRate?.doubleValue(for: bpm), symptoms: symptoms)
+            }
+            return HealthAnswer.ecg(ask, recordings, calendar: calendar)
+        case .alerts:
+            var alerts: [HealthAnswer.HeartAlert] = []
+            for (type, name) in alertTypes {
+                for sample in await samples(type, ask, limit: HealthAsk.most, newestFirst: true) {
+                    let threshold = (sample.metadata?[HKMetadataKeyHeartRateEventThreshold] as? HKQuantity)?.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                    alerts.append(HealthAnswer.HeartAlert(at: sample.startDate, kind: name, threshold: threshold))
+                }
+            }
+            return HealthAnswer.alerts(ask, alerts, calendar: calendar)
         case .flow:
             let found = await samples(HKCategoryType(.menstrualFlow), ask)
             let days: [(Date, String)] = found.compactMap { sample in
@@ -654,6 +853,36 @@ nonisolated enum DeviceHealth {
             let byDay = Dictionary(days, uniquingKeysWith: { (order.firstIndex(of: $0) ?? 0) >= (order.firstIndex(of: $1) ?? 0) ? $0 : $1 })
             return HealthAnswer.flow(ask, days: byDay.map { ($0.key, $0.value) }, calendar: calendar)
         }
+    }
+
+    /// How many workouts in one answer get their route.
+    static let routesAtMost = 10
+
+    /// A workout's route in brief (`HealthAnswer.Route`), or nil when it has none or it can't be read.
+    private static func route(of workout: HKWorkout) async -> HealthAnswer.Route? {
+        let routes: [HKSample] = await withCheckedContinuation { done in
+            let query = HKSampleQuery(sampleType: HKSeriesType.workoutRoute(), predicate: HKQuery.predicateForObjects(from: workout),
+                                      limit: 1, sortDescriptors: nil) { _, found, _ in done.resume(returning: found ?? []) }
+            store.execute(query)
+        }
+        guard let route = routes.first as? HKWorkoutRoute else { return nil }
+        let points: [(Double, Double, Double)] = await withCheckedContinuation { done in
+            var kept: [(Double, Double, Double)] = []
+            var over = false   // (answered in batches, on HealthKit's queue: one answer back)
+            let query = HKWorkoutRouteQuery(route: route) { query, locations, finished, error in
+                guard !over else { return }
+                kept += (locations ?? []).map { ($0.coordinate.latitude, $0.coordinate.longitude, $0.altitude) }
+                if finished || error != nil {
+                    over = true
+                    if !finished { store.stop(query) }
+                    done.resume(returning: kept)
+                }
+            }
+            store.execute(query)
+        }
+        guard let first = points.first, let last = points.last else { return nil }
+        return HealthAnswer.Route(start: (first.0, first.1), end: (last.0, last.1), points: points.count,
+                                  climb: HealthAnswer.Route.climb(points.map(\.2)))
     }
 
     private static func pressure(_ ask: HealthAsk) async throws -> JSONValue {

@@ -179,16 +179,23 @@ nonisolated struct DeviceRequest: Equatable, Sendable, Identifiable {
     var arguments: JSONValue
     /// The Hermes session the turn is in, when the plugin knows.
     var session: String?
+    /// The agent that asked: a bot's profile, or "default" for the main agent (plugin 1.24.0;
+    /// nil from an older one, whose requests are all the main agent's).
+    var profile: String?
 
-    init(id: String, tool: String, arguments: JSONValue = .object([:]), session: String? = nil) {
-        self.id = id; self.tool = tool; self.arguments = arguments; self.session = session
+    init(id: String, tool: String, arguments: JSONValue = .object([:]), session: String? = nil, profile: String? = nil) {
+        self.id = id; self.tool = tool; self.arguments = arguments; self.session = session; self.profile = profile
     }
 
     /// From the plugin's JSON; nil for something that isn't a request.
     init?(_ value: JSONValue) {
         guard let id = value["id"]?.string, !id.isEmpty, let tool = value["tool"]?.string else { return nil }
-        self.init(id: id, tool: tool, arguments: value["args"] ?? .object([:]), session: value["session"]?.string)
+        self.init(id: id, tool: tool, arguments: value["args"] ?? .object([:]), session: value["session"]?.string,
+                  profile: value["profile"]?.string)
     }
+
+    /// A bot's profile; nil for the main agent.
+    var bot: String? { profile.flatMap { $0 == "default" || $0.isEmpty ? nil : $0 } }
 }
 
 /// Why a tool couldn't do what was asked, in words the agent can pass on.
@@ -199,6 +206,10 @@ nonisolated struct DeviceToolError: Error, Equatable, Sendable {
     static let off = DeviceToolError("Phone tools are turned off in Redde on the iPhone (Settings → Phone tools).")
     static func areaOff(_ area: DeviceArea) -> DeviceToolError {
         DeviceToolError("\(area.agentLabel) is turned off in Redde on the iPhone (Settings → Phone tools).")
+    }
+    /// A bot asked in an area it wasn't given (it is on for the main agent, or not at all).
+    static func notGiven(_ area: DeviceArea) -> DeviceToolError {
+        DeviceToolError("\(area.agentLabel) isn't one of this bot's phone tools in Redde on the iPhone (Edit Bot → Phone Tools).")
     }
     static func refused(_ area: DeviceArea) -> DeviceToolError {
         DeviceToolError("iOS doesn't let Redde use \(area.agentLabel): it has to be allowed in the iPhone's Settings → Privacy & Security.")

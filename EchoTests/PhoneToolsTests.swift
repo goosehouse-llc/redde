@@ -108,6 +108,8 @@ struct PhoneToolsTests {
         var failure: DeviceToolError?
         /// The areas the plugin knows, for an older one; nil knows them all.
         var pluginKnows: Set<String>?
+        /// A plugin from before 1.24.0, which gives bots nothing of their own.
+        var pluginBeforeBots = false
 
         func command(_ arguments: String) throws -> String {
             commands.append(arguments)
@@ -115,6 +117,10 @@ struct PhoneToolsTests {
                 if late > 0 { late -= 1; return "redde-push device next " + Data("[]".utf8).base64EncodedString() }
                 let data = try JSONEncoder().encode(JSONValue.array(waiting.map(JSONValue.object)))
                 return "redde-push device next " + data.base64EncodedString()
+            }
+            if arguments.hasPrefix("device bots ") {
+                if pluginBeforeBots { return "redde-push device: this command is for the Redde app." }
+                return "redde-push " + arguments
             }
             if arguments.hasPrefix("device areas ") {
                 let asked = arguments.dropFirst("device areas ".count).split(separator: ",").map(String.init)
@@ -279,10 +285,71 @@ struct PhoneToolsTests {
     @Test func thePluginIsToldWhichAreasAreOn() async throws {
         let h = Harness([.calendar: .allow, .files: .ask, .photos: .off])
         #expect(await h.service.publish() == [.calendar, .files])
-        #expect(h.world.commands.last == "device areas calendar,files")
+        #expect(h.world.commands.suffix(2) == ["device areas calendar,files", "device bots none"])
         h.settings.phoneTools.on = false
         #expect(await h.service.publish() == [])
-        #expect(h.world.commands.last == "device areas none")
+        #expect(h.world.commands.suffix(2) == ["device areas none", "device bots none"])
+    }
+
+    // MARK: A bot's own (11-10)
+
+    @Test func aBotIsGivenSomeOfTheMainAgentsAreas() async throws {
+        let h = Harness([.calendar: .allow, .health: .allow, .photos: .ask])
+        let server = h.settings.activeServerID.uuidString
+        #expect(h.settings.phoneTools.open(for: "health", server: server).isEmpty, "a bot has none until given some")
+        h.settings.phoneTools.give("health", server: server, .health, true)
+        h.settings.phoneTools.give("health", server: server, .contacts, true)   // off for the main agent: given, but not open
+        h.settings.phoneTools.give("scout", server: server, .photos, true)
+        #expect(h.settings.phoneTools.open(for: "health", server: server) == [.health])
+        #expect(h.settings.phoneTools.access(.photos, agent: "scout", server: server) == .ask, "at the main agent's access")
+        #expect(h.settings.phoneTools.access(.calendar, agent: "scout", server: server) == .off)
+        #expect(h.settings.phoneTools.access(.calendar, agent: "default", server: server) == .allow)
+        #expect(h.settings.phoneTools.given("health", server: "another server").isEmpty, "bots are a server's")
+        // Told to the plugin all at once, after the main agent's.
+        _ = await h.service.publish()
+        #expect(h.world.commands.suffix(2) == ["device areas calendar,photos,health", "device bots health=health scout=photos"])
+        #expect(!h.service.botsUnsupported)
+        // Taken back, a bot is left out: the plugin then gives it none.
+        h.settings.phoneTools.give("scout", server: server, .photos, false)
+        #expect(h.settings.phoneTools.bots?[server]?["scout"] == nil)
+        await h.service.publishBots()
+        #expect(h.world.commands.last == "device bots health=health")
+        // Kept with the rest of Phone tools.
+        let kept = try JSONDecoder().decode(PhoneToolsSettings.self, from: JSONEncoder().encode(h.settings.phoneTools))
+        #expect(kept == h.settings.phoneTools)
+    }
+
+    @Test func aBotAsksOnlyInItsOwnAreasAndByName() async throws {
+        let h = Harness([.calendar: .allow, .contacts: .ask])
+        let server = h.settings.activeServerID.uuidString
+        h.settings.phoneTools.give("scout", server: server, .contacts, true)
+        await #expect(throws: DeviceToolError.notGiven(.calendar)) {
+            try await h.service.perform(.init(id: "1", tool: "phone_calendar_events", profile: "scout"))
+        }
+        // The main agent's own areas are untouched, and an older plugin's requests are its.
+        _ = try await h.service.perform(.init(id: "2", tool: "phone_calendar_events", profile: "default"))
+        _ = try await h.service.perform(.init(id: "3", tool: "phone_calendar_events"))
+        // In its own area it is asked about as the main agent would be, by its own name, with no "always".
+        _ = try await h.service.perform(.init(id: "4", tool: "phone_contacts_search", profile: "scout"))
+        #expect(h.world.asked.count == 1 && h.world.asked[0].asker == "scout" && !h.world.asked[0].offersAlways)
+        #expect(h.world.ran == [.calendarEvents, .calendarEvents, .contactsSearch])
+        // phone_info tells it of its own areas only.
+        #expect(h.service.info(agent: "scout")["areas"]?["calendar"]?.string == "off")
+        #expect(h.service.info(agent: "scout")["areas"]?["contacts"]?.string == "on; the person is asked each time")
+        #expect(h.service.info()["areas"]?["calendar"]?.string?.hasPrefix("on") == true)
+        // The plugin's word for whose a request is.
+        let read = try #require(DeviceRequest(.object(["id": .string("r"), "tool": .string("phone_info"), "profile": .string("scout")])))
+        #expect(read.bot == "scout" && DeviceRequest(id: "r", tool: "phone_info", profile: "default").bot == nil)
+    }
+
+    @Test func anOlderPluginGivesBotsNothingAndItIsPointedOut() async {
+        let h = Harness([.health: .allow])
+        h.world.pluginBeforeBots = true
+        await h.service.publishBots()
+        #expect(!h.service.botsUnsupported, "nothing given, nothing missed")
+        h.settings.phoneTools.give("health", server: h.settings.activeServerID.uuidString, .health, true)
+        await h.service.publishBots()
+        #expect(h.service.botsUnsupported)
     }
 
     /// A plugin from before an area was added drops it: Settings says so under that area.

@@ -179,6 +179,53 @@ struct PhoneHealthTests {
         #expect(answer["workouts"]?.array?.last?["distance"] == nil)
     }
 
+    // MARK: The watch's (11-10)
+
+    @Test func aWorkoutCarriesItsHeartRateClimbAndRoute() throws {
+        let workouts = try ask(["type": .string("workouts")])
+        var hike = HealthAnswer.Workout(start: now.addingTimeInterval(-86400), activity: "hike", minutes: 95, distance: 4.2, energy: 610)
+        hike.averageBPM = 121.4; hike.maxBPM = 158.6; hike.climb = 304.8
+        hike.route = HealthAnswer.Route(start: (40.712776, -74.005974), end: (40.73061, -73.935242), points: 1824, climb: 290)
+        let row = try #require(HealthAnswer.workouts(workouts, [hike], us: true, calendar: calendar)["workouts"]?.array?.first)
+        #expect(row["avg_bpm"]?.number == 121 && row["max_bpm"]?.number == 159)
+        #expect(row["climb"]?.string == "1000 ft", "the workout's own climb before the track's")
+        #expect(row["route"]?["start"]?.string == "40.713,-74.006" && row["route"]?["points"]?.number == 1824)
+        // Without them, none of it.
+        let plain = HealthAnswer.Workout(start: now, activity: "walk", minutes: 20, distance: nil, energy: nil)
+        let bare = try #require(HealthAnswer.workouts(workouts, [plain], us: false, calendar: calendar)["workouts"]?.array?.first)
+        #expect(bare["avg_bpm"] == nil && bare["climb"] == nil && bare["route"] == nil)
+        // The climb along a track: rises added, falls and GPS jitter left out.
+        #expect(abs(HealthAnswer.Route.climb([100, 100.4, 99.8, 110, 105, 120, 119.5]) - 25.2) < 0.001)
+    }
+
+    @Test func ecgsAndHeartNotificationsAreLists() throws {
+        let shared: [HealthKind] = [.ecg, .heartAlerts]
+        let ecgs = try ask(["type": .string("ecg")], shared: shared)
+        #expect(calendar.dateComponents([.day], from: ecgs.start, to: now).day == 89, "three months back by default: they're rare")
+        let answer = HealthAnswer.ecg(ecgs, [
+            .init(at: now.addingTimeInterval(-7200), result: "sinus rhythm", averageBPM: 64.4, symptoms: "none"),
+            .init(at: now.addingTimeInterval(-86400 * 30), result: "atrial fibrillation", averageBPM: 98, symptoms: "some"),
+        ], calendar: calendar)
+        let newest = try #require(answer["recordings"]?.array?.first)
+        #expect(newest["result"]?.string == "sinus rhythm" && newest["avg_bpm"]?.number == 64 && newest["symptoms"]?.string == "none")
+        #expect(answer["note"]?.string?.contains("not a diagnosis") == true)
+        let alerts = HealthAnswer.alerts(try ask(["type": .string("heart_alerts")], shared: shared), [
+            .init(at: now.addingTimeInterval(-3600), kind: "high heart rate", threshold: 120),
+            .init(at: now.addingTimeInterval(-86400), kind: "irregular rhythm", threshold: nil),
+        ], calendar: calendar)
+        #expect(alerts["alerts"]?.array?.map { $0["kind"]?.string } == ["high heart rate", "irregular rhythm"])
+        #expect(alerts["alerts"]?.array?.first?["threshold_bpm"]?.number == 120)
+        #expect(HealthAnswer.alerts(try ask(["type": .string("heart_alerts")], shared: shared), [], calendar: calendar)["note"] != nil)
+    }
+
+    @Test func theWatchsKindsAreMeasuredInTheirOwnUnits() {
+        #expect(HealthKind.wristTemperature.unit(us: false) == "°C" && HealthKind.wristTemperature.decimals(us: false) == 2)
+        #expect(HealthKind.walkingSteadiness.unit(us: true) == "%" && HealthKind.afibBurden.unit(us: true) == "%")
+        #expect(HealthKind.noise.unit(us: true) == "dBA" && HealthKind.daylight.isAdded && !HealthKind.noise.isAdded)
+        #expect(HealthKind.workoutRoutes.group == .workouts && HealthKind.ecg.group == .heart && HealthKind.headphones.group == .hearing)
+        #expect(!HealthKind.ecg.hasStatistics && !HealthKind.heartAlerts.hasStatistics)
+    }
+
     @Test func standHoursAndMindfulMinutesAreAddedUpByDay() throws {
         let stood = try ask(["type": .string("steps")])   // the bucketing is the same for any kind
         let morning = calendar.date(from: DateComponents(year: 2026, month: 11, day: 1, hour: 9))!

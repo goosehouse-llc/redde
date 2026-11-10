@@ -15,7 +15,11 @@ and not memory, because the agent's turn and the app's command can be in differe
 
 Which tools the agent is offered is the phone's to say (`/redde-push device areas calendar,files`
 or `none`): a tool whose area is off isn't offered at all. With every area off, which is how it
-starts, the agent sees none of this.
+starts, the agent sees none of this. The main agent's areas are those; a bot (another Hermes
+profile) has its own, which the phone gives all at once (`/redde-push device bots
+health=health,calendar scout=none`), and a bot it names none for gets none (1.24.0). Every
+profile's requests are written down in the main home's folder, the one the app's command reads,
+each with the profile that made it, so the phone asks on that bot's behalf and by its rules.
 
 How a copy answers (issue 50). With Redde's Settings › Phone tools › Keep a copy turned on, the
 app also hands this plugin, while it is open, a whole read-only copy of the calendar and reminders
@@ -53,12 +57,16 @@ NO_PHONE_IN_A_JOB = ("The iPhone can't be reached from a scheduled job: Redde an
 #: A request nobody collected, or a saved file nobody needs any more, is cleared out after this.
 STALE = 600.0
 AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget", "people", "health", "home")
+#: A Hermes profile's name, as the phone may give it.
+PROFILE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
 #: The kinds of Apple Health data `phone_health_read` knows (the app's `HealthKind`); the person
 #: shares each on its own, and phone_info says which.
 HEALTH_TYPES = ("steps", "walking_running_distance", "active_energy", "exercise_minutes", "stand_hours", "flights_climbed",
-                "weight", "bmi", "body_fat", "heart_rate", "resting_heart_rate", "heart_rate_variability", "blood_pressure",
-                "vo2_max", "sleep", "respiratory_rate", "blood_oxygen", "body_temperature", "water", "caffeine",
-                "dietary_energy", "protein", "mindful_minutes", "workouts", "menstrual_flow")
+                "time_in_daylight", "weight", "bmi", "body_fat", "heart_rate", "resting_heart_rate", "heart_rate_variability",
+                "blood_pressure", "vo2_max", "walking_heart_rate", "cardio_recovery", "afib_burden", "ecg", "heart_alerts",
+                "sleep", "wrist_temperature", "breathing_disturbances", "respiratory_rate", "blood_oxygen", "body_temperature",
+                "water", "caffeine", "dietary_energy", "protein", "walking_steadiness", "noise_exposure", "headphone_audio",
+                "mindful_minutes", "workouts", "workout_routes", "menstrual_flow")
 #: How long a call for the widget waits for a phone that is following the turn, before what was
 #: written is sent to the phone as a notification instead.
 WIDGET_WAIT = 10.0
@@ -264,10 +272,16 @@ def _interrupted() -> bool:
 
 class Phone:
     """The requests waiting for the phone, its answers, and which areas it has turned on: small
-    files under the plugin's folder in the Hermes home, readable only by its owner."""
+    files under the plugin's folder in the main Hermes home, readable only by its owner. Made
+    from a bot's home (`<main>/profiles/<name>`), it is that bot's: the same folder, its own areas."""
 
     def __init__(self, home: Path):
-        self.dir = Path(home) / "redde-push" / "device"
+        home = Path(home)
+        if home.parent.name == "profiles":
+            self.profile, root = home.name, home.parent.parent
+        else:
+            self.profile, root = "default", home
+        self.dir = root / "redde-push" / "device"
 
     def _folder(self, name: str) -> Path:
         folder = self.dir / name
@@ -295,8 +309,27 @@ class Phone:
     # ---- which tools are offered
 
     def areas(self) -> list[str]:
+        if self.profile != "default":
+            return self.bots().get(self.profile, [])
         kept = self._read(self.dir / "areas.json") or {}
         return [area for area in kept.get("areas", []) if area in AREAS]
+
+    def bots(self) -> dict[str, list[str]]:
+        """Each bot's areas, as the phone last gave them; a bot not named has none."""
+        kept = self._read(self.dir / "bots.json") or {}
+        bots = kept.get("bots") if isinstance(kept, dict) else None
+        if not isinstance(bots, dict):
+            return {}
+        return {name: [a for a in AREAS if a in (areas or [])] for name, areas in bots.items()
+                if isinstance(name, str) and PROFILE.fullmatch(name) and isinstance(areas, list)}
+
+    def set_bots(self, bots: dict[str, list[str]]) -> dict[str, list[str]]:
+        """Replaces every bot's areas; the ones with none are left out."""
+        self._folder("requests")
+        kept = {name: [a for a in AREAS if a in areas] for name, areas in bots.items()
+                if PROFILE.fullmatch(name) and name != "default"}
+        self._write(self.dir / "bots.json", {"bots": {n: a for n, a in kept.items() if a}, "at": time.time()})
+        return self.bots()
 
     def set_areas(self, areas: list[str]) -> list[str]:
         self._folder("requests")
@@ -321,7 +354,8 @@ class Phone:
         `otherwise`, when given, is what to do and answer if the phone never collects it."""
         area = TOOLS[tool][0]
         if not self.offers(area):
-            return json.dumps({"error": "Phone tools for this are turned off in Redde on the iPhone (Settings, Phone tools)."})
+            where = "Settings, Phone tools" if self.profile == "default" else "this bot's Edit Bot, Phone tools"
+            return json.dumps({"error": f"Phone tools for this are turned off in Redde on the iPhone ({where})."})
         if SCHEDULED_RUN.match(session or ""):
             # No phone follows a scheduled job's run, so nothing would ever collect the request
             # (2026-11-04: Morning Ideas waited two minutes a call and tried again and again). A
@@ -331,7 +365,8 @@ class Phone:
         asked = self._folder("requests") / f"{request}.json"
         answered = self._folder("answers") / f"{request}.json"
         self._tidy()
-        self._write(asked, {"id": request, "tool": tool, "args": args or {}, "session": session or "", "at": time.time()})
+        self._write(asked, {"id": request, "tool": tool, "args": args or {}, "session": session or "", "profile": self.profile,
+                            "at": time.time()})
         deadline = time.monotonic() + wait
         try:
             while time.monotonic() < deadline:
@@ -397,7 +432,8 @@ class Phone:
         for path in paths:
             request = self._read(path)
             if isinstance(request, dict) and request.get("id") and not (self.dir / "answers" / path.name).exists():
-                found.append({key: request.get(key) for key in ("id", "tool", "args", "session")})
+                found.append({key: request.get(key) for key in ("id", "tool", "args", "session")}
+                             | {"profile": request.get("profile") or "default"})
         return found
 
     def answer(self, request: str, answer: dict) -> bool:
@@ -519,6 +555,17 @@ def slash(phone: Phone, words: list[str]) -> str:
         return "redde-push device areas " + (",".join(on) or "none")
     if words == ["status"]:
         return "redde-push device status " + (",".join(phone.areas()) or "none")
+    # bots <profile>=<area,...|none> ...: every bot's areas at once; `bots none` clears them all.
+    if words[:1] == ["bots"] and len(words) >= 2:
+        given: dict[str, list[str]] = {}
+        if words[1:] != ["none"]:
+            for word in words[1:]:
+                name, _, areas = word.partition("=")
+                if not PROFILE.fullmatch(name) or not areas:
+                    return f"redde-push device refused: {word} isn't <bot>=<areas>"
+                given[name] = [] if areas == "none" else areas.split(",")
+        held = phone.set_bots(given)
+        return "redde-push device bots " + (" ".join(f"{n}={','.join(a)}" for n, a in sorted(held.items())) or "none")
     if words == ["next"]:
         return "redde-push device next " + base64.b64encode(json.dumps(phone.waiting()).encode()).decode()
     if words[:1] == ["done"] and len(words) == 3:
@@ -793,6 +840,7 @@ def register(ctx, phone, to_widget=None) -> None:
     for at each call, since a home is a profile's and a process can serve several. `to_widget`
     sends something for the widget as a notification (see `widget_by_note`)."""
     watch(lambda: phone().dir / "areas.json")
+    watch(lambda: phone().dir / "bots.json")
 
     def offered(area):
         def check() -> bool:

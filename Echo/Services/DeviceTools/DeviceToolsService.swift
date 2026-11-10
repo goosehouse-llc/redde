@@ -23,8 +23,38 @@ nonisolated struct PhoneToolsSettings: Codable, Equatable, Sendable {
     /// Hermes, so those two can answer with Redde closed (issue 50). Off until asked; optional
     /// so settings saved before it stay readable.
     var copy: Bool?
+    /// The areas each bot may use, per server (its id), then bot (its profile): only ever some of
+    /// the ones on above, at the access set above. A bot not listed has none (asked 2026-11-10,
+    /// "my health bot"). The main agent's are `areas`.
+    var bots: [String: [String: [String]]]?
 
     var wantsCopy: Bool { copy == true }
+
+    /// The areas a bot on a server was given, whether or not they are on above.
+    func given(_ bot: String, server: String) -> Set<DeviceArea> {
+        Set((bots?[server]?[bot] ?? []).compactMap(DeviceArea.init(rawValue:)))
+    }
+    mutating func give(_ bot: String, server: String, _ area: DeviceArea, _ on: Bool) {
+        var areas = given(bot, server: server)
+        if on { areas.insert(area) } else { areas.remove(area) }
+        var servers = bots ?? [:]
+        var here = servers[server] ?? [:]
+        here[bot] = areas.isEmpty ? nil : DeviceArea.allCases.filter(areas.contains).map(\.rawValue)
+        servers[server] = here.isEmpty ? nil : here
+        bots = servers.isEmpty ? nil : servers
+    }
+
+    /// What an agent may do in an area: the main agent ("default" or nil) as set above; a bot the
+    /// same, in the areas it was given, and nothing in the rest.
+    func access(_ area: DeviceArea, agent: String?, server: String) -> Access {
+        guard let agent, agent != "default" else { return access(area) }
+        return given(agent, server: server).contains(area) ? access(area) : .off
+    }
+
+    /// The areas a bot is shown tools for.
+    func open(for bot: String, server: String) -> [DeviceArea] {
+        open.filter { given(bot, server: server).contains($0) }
+    }
 
     func access(_ area: DeviceArea) -> Access { on ? areas[area.rawValue] ?? .off : .off }
     mutating func set(_ area: DeviceArea, _ access: Access) { areas[area.rawValue] = access }
@@ -43,7 +73,7 @@ nonisolated struct PhoneToolsSettings: Codable, Equatable, Sendable {
 }
 
 nonisolated extension PhoneToolsSettings {
-    private enum CodingKeys: String, CodingKey { case on, areas, health, copy }
+    private enum CodingKeys: String, CodingKey { case on, areas, health, copy, bots }
 
     /// Read as kept, a setting kept before a field was added included: what is missing is its default.
     init(from decoder: any Decoder) throws {
@@ -52,6 +82,7 @@ nonisolated extension PhoneToolsSettings {
         areas = try kept.decodeIfPresent([String: Access].self, forKey: .areas) ?? [:]
         health = try kept.decodeIfPresent([String].self, forKey: .health) ?? []
         copy = try kept.decodeIfPresent(Bool.self, forKey: .copy)
+        bots = try kept.decodeIfPresent([String: [String: [String]]].self, forKey: .bots)
     }
 }
 
@@ -89,6 +120,8 @@ final class DeviceToolsService {
         /// A read in an area that asks: "always" is offered, and stops the asking for that area.
         var offersAlways: Bool
         var area: DeviceArea?
+        /// Who is asking: a bot's name; nil for the main agent.
+        var asker: String? = nil
     }
     nonisolated enum Answer: Sendable { case allow, always, deny }
 
@@ -101,6 +134,9 @@ final class DeviceToolsService {
     /// Areas that are on but that the plugin didn't take when last told: an older plugin knows
     /// fewer, and the agent isn't offered their tools. Empty when the plugin couldn't be asked.
     private(set) var unoffered: [DeviceArea] = []
+    /// The plugin is older than 1.24.0, which gives bots phone tools of their own: none of them
+    /// is offered any. False until it has been told and said so.
+    private(set) var botsUnsupported = false
 
     @ObservationIgnored private let settings: Settings
     @ObservationIgnored private let defaults: UserDefaults
@@ -225,11 +261,14 @@ final class DeviceToolsService {
             log = Array(([Entry(at: .now, title: question.title, detail: question.detail, outcome: outcome, note: why)] + log).prefix(40))
         }
         var access = PhoneToolsSettings.Access.allow
+        let server = settings.activeServerID.uuidString, bot = request.bot
         do {
             guard settings.phoneTools.on else { throw DeviceToolError.off }
             if let area = tool.area {
-                access = settings.phoneTools.access(area)
-                guard access != .off else { throw DeviceToolError.areaOff(area) }
+                guard settings.phoneTools.access(area) != .off else { throw DeviceToolError.areaOff(area) }
+                // A bot asks only in the areas it was given (Edit Bot → Phone Tools).
+                access = settings.phoneTools.access(area, agent: bot, server: server)
+                guard access != .off else { throw DeviceToolError.notGiven(area) }
             }
             // Apple Home answers only with Redde on the screen (HomeKit's rule for apps).
             if tool.area == .home, !onScreen() {
@@ -244,7 +283,9 @@ final class DeviceToolsService {
                 guard onScreen() else {
                     throw DeviceToolError("This needs a yes on the iPhone, and Redde isn't on its screen. Ask the person to open Redde and try again.")
                 }
-                switch await ask(Question(ask: question, offersAlways: !tool.changes && tool.area != .home, area: tool.area)) {
+                // "Always" loosens the area for every agent, so a bot's question doesn't offer it.
+                switch await ask(Question(ask: question, offersAlways: !tool.changes && tool.area != .home && bot == nil, area: tool.area,
+                                          asker: bot.map(Self.name(of:)))) {
                 case .deny: throw DeviceToolError.denied
                 case .always: if let area = tool.area, !tool.changes { settings.phoneTools.set(area, .allow) }
                 case .allow: break
@@ -258,7 +299,7 @@ final class DeviceToolsService {
             throw error
         }
         do {
-            let result = try await run(tool, request.arguments, info())
+            let result = try await run(tool, request.arguments, info(agent: bot))
             note(.done)
             return result
         } catch let error as DeviceToolError {
@@ -268,11 +309,13 @@ final class DeviceToolsService {
     }
 
     /// What `phone_info` tells the agent: when it is here, and what it may ask for.
-    func info(now: Date = .now) -> JSONValue {
+    /// `agent`: a bot's profile, told only of the areas it was given; nil for the main agent.
+    func info(agent: String? = nil, now: Date = .now) -> JSONValue {
         let app = "Redde \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")"
+        let server = settings.activeServerID.uuidString
         var areas: [String: JSONValue] = [:]
         for area in DeviceArea.allCases {
-            let state = switch settings.phoneTools.access(area) {
+            let state = switch settings.phoneTools.access(area, agent: agent, server: server) {
             case .off: "off"
             case .ask: "on; the person is asked each time"
             case .allow where area == .people: "on; iOS asks the person before a call goes out, and a message is theirs to send"
@@ -284,12 +327,12 @@ final class DeviceToolsService {
             areas[area.rawValue] = .string(state)
         }
         var health: [String: JSONValue] = [:]
-        if settings.phoneTools.access(.health) != .off {
+        if settings.phoneTools.access(.health, agent: agent, server: server) != .off {
             // What phone_health_read may be asked for: only these, and only on a device with Health.
             health["health_shared"] = .array(settings.phoneTools.sharedHealth.map { .string($0.rawValue) })
             if !DeviceHealth.available { health["health_note"] = .string("This device has no Apple Health: Health is read on the user's iPhone.") }
         }
-        if settings.phoneTools.access(.home) != .off, !DeviceHome.available {
+        if settings.phoneTools.access(.home, agent: agent, server: server) != .off, !DeviceHome.available {
             health["home_note"] = .string("Apple Home is on the user's iPhone: this Mac can't reach it.")
         }
         return .object(health.merging([
@@ -317,7 +360,27 @@ final class DeviceToolsService {
         let named = reply.dropFirst("redde-push device areas".count).split(whereSeparator: { $0 == " " || $0 == "," })
         let held = named.compactMap { DeviceArea(rawValue: String($0)) }
         unoffered = open.filter { !held.contains($0) }
+        await publishBots()
         return held
+    }
+
+    /// Tells the plugin every bot's areas on this server at once: the ones it was given that are
+    /// on for the main agent too. A bot left out gets none.
+    func publishBots() async {
+        let server = settings.activeServerID.uuidString
+        let given = (settings.phoneTools.bots?[server] ?? [:]).keys.sorted().compactMap { bot -> String? in
+            let open = settings.phoneTools.open(for: bot, server: server)
+            return open.isEmpty ? nil : "\(bot)=" + open.map(\.rawValue).joined(separator: ",")
+        }
+        guard let reply = try? await command("device bots " + (given.isEmpty ? "none" : given.joined(separator: " "))) else { return }
+        // An older plugin answers that the command is the app's: its bots get no phone tools.
+        botsUnsupported = !reply.hasPrefix("redde-push device bots") && !reply.hasPrefix("redde-push device refused")
+            && !given.isEmpty
+    }
+
+    /// What a bot is called, from the roster; its profile's name when it isn't there.
+    static func name(of bot: String) -> String {
+        BotDirectory.shared.roster?.bots.first { $0.name == bot }?.label(mainName: Settings.shared.headerTitle) ?? bot
     }
 
     // MARK: - The copy of the calendar and reminders (issue 50)
@@ -438,7 +501,7 @@ final class DeviceToolsService {
             guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
                   var top = scene.keyWindow?.rootViewController else { done.resume(returning: .deny); return }
             while let presented = top.presentedViewController { top = presented }
-            let alert = UIAlertController(title: String(localized: "\(Settings.shared.headerTitle) wants to:\n\(question.ask.title)", comment: "Asking the person before a phone tool runs: the agent's name, then what it wants to do"),
+            let alert = UIAlertController(title: String(localized: "\(question.asker ?? Settings.shared.headerTitle) wants to:\n\(question.ask.title)", comment: "Asking the person before a phone tool runs: the agent's name, then what it wants to do"),
                                           message: question.ask.detail.isEmpty ? nil : question.ask.detail, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: String(localized: "Don't Allow"), style: .cancel) { _ in done.resume(returning: .deny) })
             alert.addAction(UIAlertAction(title: String(localized: "Allow", comment: "Lets a phone tool run this once"), style: .default) { _ in done.resume(returning: .allow) })
@@ -452,7 +515,7 @@ final class DeviceToolsService {
     /// The question as an alert in front of Redde's window.
     private static func alert(_ question: Question) async -> Answer {
         let alert = NSAlert()
-        alert.messageText = String(localized: "\(Settings.shared.headerTitle) wants to:\n\(question.ask.title)", comment: "Asking the person before a phone tool runs: the agent's name, then what it wants to do")
+        alert.messageText = String(localized: "\(question.asker ?? Settings.shared.headerTitle) wants to:\n\(question.ask.title)", comment: "Asking the person before a phone tool runs: the agent's name, then what it wants to do")
         alert.informativeText = question.ask.detail
         alert.addButton(withTitle: String(localized: "Allow", comment: "Lets a phone tool run this once"))
         alert.addButton(withTitle: String(localized: "Don't Allow"))

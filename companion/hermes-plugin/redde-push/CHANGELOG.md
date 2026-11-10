@@ -3,6 +3,19 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.24.0 (2026-11-10)
+
+- Phone tools for bots. Until now only the main agent could use the iPhone's tools: a bot's
+  requests went to its own profile's folder, where the app never looked. Every profile's
+  requests now wait in the main home's folder, each saying which agent made it, and each bot has
+  areas of its own, which the app gives all at once (`/redde-push device bots health=health
+  scout=none`; Edit Bot › Phone Tools in Redde). A bot not named gets none.
+- More of the Apple Watch's Health data for `phone_health_read`: time in daylight, walking
+  heart rate average, cardio recovery, AFib history, ECG recordings, the watch's high, low and
+  irregular rhythm notifications, sleeping wrist temperature, breathing disturbances, walking
+  steadiness, environmental and headphone sound levels, and workout routes (a workout's start
+  and end, kept to about 100 m). Workouts also carry their heart rate when Heart Rate is shared.
+
 ## 1.23.1 (2026-11-10)
 
 - A bot's hand-off no longer dies when you leave the chat that asked. When the main agent asks
