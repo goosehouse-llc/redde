@@ -3,6 +3,15 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.23.1 (2026-11-10)
+
+- A bot's hand-off no longer dies when you leave the chat that asked. When the main agent asks
+  another bot (`message_agent`) from a Dashboard chat and the phone then locks, goes to another
+  app or opens another chat, Hermes closes the asking chat after 20 seconds and, with it, the
+  process carrying the other bot's answer ("terminated (SIGTERM)"), so the other bot stopped
+  half-way. The plugin now marks those processes to outlive the chat, as Hermes allows
+  (`persist_on_release`); the answer still comes back into the chat that asked.
+
 ## 1.23.0 (2026-11-10)
 
 - Workstreams over the Hermes API too. A chat over the API (`hermes gateway`), the main agent's

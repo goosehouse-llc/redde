@@ -38,7 +38,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, watches, work, work_runs
+from . import calls, cards, core, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, watches, work, work_runs
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -423,11 +423,16 @@ def _on_answer(session_id: str = "", platform: str = "", assistant_message=None,
 
 def _on_tool_done(tool_name: str = "", args=None, result=None, session_id: str = "", **_) -> None:
     """`post_tool_call`: a reminder, timer, alarm or job tool finished; its job id goes onto the
-    reminder card that follows (1.14.6). Nothing else, and quickly: it runs after every tool."""
+    reminder card that follows (1.14.6); a bot's hand-off is kept past its chat's close
+    (`handoffs`, 1.23.1). Nothing else, and quickly: it runs after every tool."""
     try:
         cards.saw_result(session_id, tool_name, args, result)
     except Exception:
         log.debug("redde-push: tool result watch failed", exc_info=True)
+    try:
+        handoffs.keep(tool_name)
+    except Exception:
+        log.debug("redde-push: hand-off keep failed", exc_info=True)
 
 
 def _on_request_error(session_id: str = "", platform: str = "", retryable=None, reason: str = "", status_code=None, error=None, **_) -> None:
