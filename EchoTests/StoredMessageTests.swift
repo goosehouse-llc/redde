@@ -40,4 +40,15 @@ struct StoredMessageTests {
         #expect(stored[0].content == nil)
         #expect(Conversation.mapStored(stored).last?.text == "ok")
     }
+
+    @Test func aHiddenPageMessageStillStartsAVisualAssistantTurn() throws {
+        let json = #"{"data":[{"role":"assistant","content":"The page is ready."},{"role":"user","content":"button: refresh","display_kind":"hidden"},{"role":"assistant","content":"The page is refreshed.","reasoning":"Read the new data."}]}"#
+        struct Envelope: Decodable { var data: [HermesSessionsAPI.StoredMessage] }
+        let stored = try JSONDecoder().decode(Envelope.self, from: Data(json.utf8)).data
+        let messages = Conversation.mapStored(stored)
+
+        #expect(messages.count == 2)
+        #expect(messages[1].beginsAssistantTurn)
+        #expect(AssistantTurnActivity.layout(messages)[messages[1].id]?.showsSpeaker == true)
+    }
 }

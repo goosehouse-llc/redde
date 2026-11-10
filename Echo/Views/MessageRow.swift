@@ -12,6 +12,10 @@ struct MessageRow: View, Equatable {
     /// Transcript screen: fetches what this reply's tools were called with and returned, for a
     /// step opened without them (`Conversation.loadToolDetails`).
     var onLoadToolDetails: (@MainActor @Sendable () async -> Void)? = nil
+    /// A grouped turn can open a step from any of its stored assistant messages.
+    var onLoadTurnToolDetails: (@MainActor @Sendable (UUID) async -> Void)? = nil
+    /// Transcript-only placement for consecutive assistant messages in one visual turn.
+    var turn: AssistantTurnActivity.Placement? = nil
     var isReading = false
     /// The copy / read / retry row under a finished reply. Voice mode hides it.
     var showActions = true
@@ -26,6 +30,8 @@ struct MessageRow: View, Equatable {
             && (a.onRegenerate == nil) == (b.onRegenerate == nil) && (a.onEdit == nil) == (b.onEdit == nil)
             && (a.onReadAloud == nil) == (b.onReadAloud == nil)
             && (a.onLoadToolDetails == nil) == (b.onLoadToolDetails == nil)
+            && (a.onLoadTurnToolDetails == nil) == (b.onLoadTurnToolDetails == nil)
+            && a.turn == b.turn
     }
     /// An image-only message renders just its attachments — no empty text bubble.
     private var hasTextBubble: Bool {
@@ -73,6 +79,7 @@ struct MessageRow: View, Equatable {
     /// while it is what the agent is doing, and folded after.
     @State private var showThinking: Bool?
     @State private var showSteps: Bool?
+    @State private var showTurnActivity: Bool?
     @State private var selecting = false
     /// Part of the reply being selected where it stands (`InlineSelection`).
     @State private var selectingInline = false
@@ -83,7 +90,7 @@ struct MessageRow: View, Equatable {
     /// The tool step that is open, and the fetch of its details where they weren't sent.
     @State private var openStep: UUID?
     @State private var loadingDetails = false
-    @State private var triedDetails = false
+    @State private var triedDetails: Set<UUID> = []
     @State private var fullDetail: ToolDetail?
     /// The transcript's toast; absent in voice mode, which has no actions to announce.
     @Environment(Toaster.self) private var toaster: Toaster?
@@ -101,7 +108,9 @@ struct MessageRow: View, Equatable {
 
     private var ownBody: some View {
         VStack(alignment: message.role == .user && !promptStyled ? .trailing : .leading, spacing: 8) {
-            if message.role == .assistant, theme.promptPrefix == nil { speakerLine }
+            if message.role == .assistant, theme.promptPrefix == nil, turn?.showsSpeaker != false {
+                speakerLine(live: turn?.isLiveTurn ?? isLive)
+            }
             // The question it answers, over the person's answer (`AnsweredQuestions`).
             if message.role == .user, let asked = message.answering, !asked.isEmpty {
                 Label(asked, systemImage: "questionmark.bubble")
@@ -112,7 +121,8 @@ struct MessageRow: View, Equatable {
                     .padding(.leading, promptStyled ? 0 : 48)
                     .accessibilityLabel(String(localized: "Answering: \(asked)", comment: "VoiceOver: the question a message of the person's answers"))
             }
-            if message.role == .assistant, !message.reasoning.isEmpty || !message.tools.isEmpty {
+            if message.role == .assistant, let activity = turn?.activity { turnActivityFold(activity) }
+            if message.role == .assistant, turn?.isGrouped != true, !message.reasoning.isEmpty || !message.tools.isEmpty {
                 // What went into the reply, as a pair of folds in one style.
                 VStack(alignment: .leading, spacing: 0) {
                     if !message.reasoning.isEmpty { thinkingFold }
@@ -288,12 +298,12 @@ struct MessageRow: View, Equatable {
     // MARK: - Reply parts
 
     /// Who is talking, and while the reply runs, for how long.
-    private var speakerLine: some View {
+    private func speakerLine(live: Bool) -> some View {
         HStack(spacing: 6) {
-            if isLive { LiveMark(color: theme.accent) }
+            if live { LiveMark(color: theme.accent) }
             if let replyFace { BotAvatar(face: replyFace, name: replySpeaker ?? settings.headerTitle, size: 20) }
             Text(replySpeaker ?? settings.headerTitle).chatFont(.subheadline, weight: .semibold)
-            if isLive {
+            if live {
                 // The one place that shimmers while the reply is being worked on.
                 TimelineView(.periodic(from: message.createdAt, by: 1)) { context in
                     ShimmerText(text: String(localized: "is working · \(Self.elapsed(from: message.createdAt, to: context.date))"))
@@ -331,6 +341,47 @@ struct MessageRow: View, Equatable {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(hint)
+    }
+
+    /// One fold for all reasoning and tool calls in a run of assistant messages. It opens while
+    /// the turn is live, then leaves the final answer in sight behind one compact summary.
+    private func turnActivityFold(_ activity: AssistantTurnActivity) -> some View {
+        let open = showTurnActivity ?? isLive
+        return VStack(alignment: .leading, spacing: 2) {
+            foldHeader(open: open,
+                       hint: open ? String(localized: "Hide turn activity") : String(localized: "Show turn activity")) {
+                withAnimation(.snappy(duration: 0.3)) { showTurnActivity = !open }
+            } label: {
+                Text(isLive ? activity.workingLabel : activity.completedLabel).monospacedDigit()
+            }
+            if open {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(activity.segments) { segment in
+                        if !segment.reasoning.isEmpty {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Thought").chatFont(.caption, weight: .semibold).foregroundStyle(.secondary)
+                                Text(isLive && segment.messageID == message.id
+                                     ? Self.tail(of: segment.reasoning, maxCharacters: 360) : segment.reasoning)
+                                    .chatFont(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                                    .lineLimit(isLive && segment.messageID == message.id ? 8 : nil)
+                                    .truncationMode(.head)
+                            }
+                        }
+                        if !segment.tools.isEmpty {
+                            toolRows(segment.tools, animated: isLive && segment.messageID == message.id, loadID: segment.messageID,
+                                     load: onLoadTurnToolDetails.map { loader in
+                                         { @MainActor @Sendable in await loader(segment.messageID) }
+                                     })
+                        }
+                    }
+                }
+                .modifier(FoldBody())
+            }
+        }
+        .animation(.snappy(duration: 0.3), value: open)
+        .animation(.snappy(duration: 0.3), value: openStep)
     }
 
     /// The reply's thinking: "Thinking" while it happens, with the newest of it underneath, then
@@ -390,49 +441,55 @@ struct MessageRow: View, Equatable {
                     .monospacedDigit()
             }
             if open {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(tools) { tool in
-                        // A step opens onto what it was called with and what came back, when
-                        // there is something to show or somewhere to fetch it from.
-                        let canOpen = tool.args != nil || tool.output != nil || onLoadToolDetails != nil
-                        let isOpen = openStep == tool.id
-                        VStack(alignment: .leading, spacing: 0) {
-                            Button { toggleStep(tool) } label: {
-                                HStack(alignment: .center, spacing: 12) {
-                                    StepMark(status: tool.status, animated: isLive)
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(BotMessages.stepName(tool) ?? tool.name).chatFont(.subheadline)
-                                            .foregroundStyle(tool.status == .running ? .primary : .secondary)
-                                        if let preview = tool.preview, !preview.isEmpty {
-                                            Text(preview).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
-                                        }
-                                    }
-                                    Spacer(minLength: 0)
-                                    if canOpen {
-                                        Image(systemName: "chevron.right")
-                                            .chatFont(.caption2, weight: .semibold)
-                                            .foregroundStyle(.tertiary)
-                                            .rotationEffect(.degrees(isOpen ? 90 : 0))
-                                    }
-                                }
-                                .padding(.vertical, 7)
-                                .contentShape(.rect)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(!canOpen)
-                            .accessibilityLabel("Tool \(tool.name), \(Self.statusLabel(tool.status))")
-                            .accessibilityHint(canOpen ? (isOpen ? String(localized: "Hides what it returned") : String(localized: "Shows what it returned")) : "")
-                            if isOpen { stepDetail(tool) }
-                        }
-                        .transition(.move(edge: .leading).combined(with: .opacity))
-                    }
-                }
-                .modifier(FoldBody())
+                toolRows(tools, animated: isLive, loadID: message.id, load: onLoadToolDetails)
+                    .modifier(FoldBody())
             }
         }
         .animation(.snappy(duration: 0.3), value: tools.count)
         .animation(.snappy(duration: 0.3), value: open)
         .animation(.snappy(duration: 0.3), value: openStep)
+    }
+
+    /// Tool rows shared by a message's own fold and a grouped turn's chronological disclosure.
+    private func toolRows(_ tools: [ToolActivity], animated: Bool, loadID: UUID,
+                          load: (@MainActor @Sendable () async -> Void)?) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(tools) { tool in
+                // A step opens onto what it was called with and what came back, when
+                // there is something to show or somewhere to fetch it from.
+                let canOpen = tool.args != nil || tool.output != nil || load != nil
+                let isOpen = openStep == tool.id
+                VStack(alignment: .leading, spacing: 0) {
+                    Button { toggleStep(tool, loadID: loadID, load: load) } label: {
+                        HStack(alignment: .center, spacing: 12) {
+                            StepMark(status: tool.status, animated: animated)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(BotMessages.stepName(tool) ?? tool.name).chatFont(.subheadline)
+                                    .foregroundStyle(tool.status == .running ? .primary : .secondary)
+                                if let preview = tool.preview, !preview.isEmpty {
+                                    Text(preview).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                }
+                            }
+                            Spacer(minLength: 0)
+                            if canOpen {
+                                Image(systemName: "chevron.right")
+                                    .chatFont(.caption2, weight: .semibold)
+                                    .foregroundStyle(.tertiary)
+                                    .rotationEffect(.degrees(isOpen ? 90 : 0))
+                            }
+                        }
+                        .padding(.vertical, 7)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canOpen)
+                    .accessibilityLabel("Tool \(tool.name), \(Self.statusLabel(tool.status))")
+                    .accessibilityHint(canOpen ? (isOpen ? String(localized: "Hides what it returned") : String(localized: "Shows what it returned")) : "")
+                    if isOpen { stepDetail(tool) }
+                }
+                .transition(.move(edge: .leading).combined(with: .opacity))
+            }
+        }
     }
 
     /// A step's state, read out by VoiceOver.
@@ -444,15 +501,16 @@ struct MessageRow: View, Equatable {
         }
     }
 
-    private func toggleStep(_ tool: ToolActivity) {
+    private func toggleStep(_ tool: ToolActivity, loadID: UUID, load: (@MainActor @Sendable () async -> Void)?) {
         openStep = openStep == tool.id ? nil : tool.id
         // Opened without its result: ask once for the whole reply's.
-        guard openStep == tool.id, tool.output == nil, tool.status != .running, !triedDetails, let onLoadToolDetails else { return }
+        guard openStep == tool.id, tool.output == nil, tool.status != .running,
+              !triedDetails.contains(loadID), let load else { return }
         loadingDetails = true
         Task {
-            await onLoadToolDetails()
+            await load()
             loadingDetails = false
-            triedDetails = true
+            triedDetails.insert(loadID)
         }
     }
 

@@ -244,8 +244,12 @@ struct TranscriptView: View {
                     }
                     // Asked once a pass, not once a row: it reads the settings and the Keychain.
                     let canLoadTools = conversation.canLoadToolDetails
+                    let liveID = conversation.isStreaming ? conversation.messages.last?.id : nil
+                    // The first row of a loaded page owns its heading even when an older part of
+                    // the same run is still hidden above it; hidden activity stays on that page.
+                    let turnLayout = AssistantTurnActivity.layout(visibleMessages, liveMessageID: liveID)
                     ForEach(visibleMessages) { message in
-                        messageCell(message, canLoadTools: canLoadTools)
+                        messageCell(message, turn: turnLayout[message.id], canLoadTools: canLoadTools)
                     }
                     if let pending = conversation.pendingInterrupt {
                         InterruptCard(interrupt: pending.interrupt).cardInk()
@@ -438,8 +442,15 @@ struct TranscriptView: View {
         return { await conversation.loadToolDetails(for: id) }
     }
 
+    private func turnToolDetailsLoader(for turn: AssistantTurnActivity.Placement?, canLoad: Bool)
+        -> (@MainActor @Sendable (UUID) async -> Void)? {
+        guard turn?.activity != nil, canLoad else { return nil }
+        let conversation = conversation
+        return { id in await conversation.loadToolDetails(for: id) }
+    }
+
     @ViewBuilder
-    private func messageCell(_ message: Message, canLoadTools: Bool) -> some View {
+    private func messageCell(_ message: Message, turn: AssistantTurnActivity.Placement?, canLoadTools: Bool) -> some View {
         if let day = dayLabels[message.id] {
             Text(day).chatFont(.caption2, weight: .semibold).foregroundStyle(.secondary)
                 .padding(.horizontal, 10).padding(.vertical, 4)
@@ -449,19 +460,27 @@ struct TranscriptView: View {
         }
         let live = conversation.isStreaming && message.id == conversation.messages.last?.id
         let reading = readingID == message.id && voiceSession.phase == .speaking
+        let final = turn?.isFinal != false
         MessageRow(message: message, isLive: live,
-                   onRegenerate: message.role == .assistant && !conversation.isStreaming
+                   onRegenerate: message.role == .assistant && final && !conversation.isStreaming
                        ? { @MainActor @Sendable in Task { await conversation.regenerate(replyID: message.id) } } : nil,
                    onEdit: message.role == .user && !message.isSteer && !conversation.isStreaming
                        ? { @MainActor @Sendable in onEdit(message) } : nil,
-                   onReadAloud: message.role == .assistant
+                   onReadAloud: message.role == .assistant && final
                        ? { @MainActor @Sendable in readAloud(message) } : nil,
-                   onLoadToolDetails: toolDetailsLoader(for: message, canLoad: canLoadTools),
+                   onLoadToolDetails: turn?.isGrouped == true ? nil : toolDetailsLoader(for: message, canLoad: canLoadTools),
+                   onLoadTurnToolDetails: turnToolDetailsLoader(for: turn, canLoad: canLoadTools),
+                   turn: turn,
                    isReading: reading,
+                   showActions: final,
                    highlight: highlight(for: message.id))
             .equatable()
+            // Consecutive reply rows read as one turn instead of a stack of separate bubbles.
+            .padding(.top, turn?.isContinuation == true ? -10 : 0)
             // Its time, seen with a swipe left (`swipeForTimes`).
-            .overlay(alignment: .topTrailing) { MessageTime(date: message.createdAt) }
+            .overlay(alignment: .topTrailing) {
+                if message.role != .assistant || final { MessageTime(date: message.createdAt) }
+            }
             // Just sent: it rises out of the composer (and the reply's row waits a beat for it).
             .modifier(MessageArrival(kind: MessageArrival.kind(for: message, isLive: live), leading: theme.promptPrefix != nil))
             .siriMessage(conversationID: conversation.id, messageID: message.id)

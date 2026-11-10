@@ -35,10 +35,17 @@ extension Conversation {
         var out: [Message] = []
         /// Tool rows that came before the reply they belong to.
         var waiting: [ToolActivity] = []
-        for row in rows where row["display_kind"]?.string != "hidden" || Self.isWorkReport(row["text"]?.string ?? row["content"]?.displayText) {
+        var nextAssistantBeginsTurn = false
+        for row in rows {
+            let role = row["role"]?.string
+            // Hidden rows are left out, but a workstream's report shows as a notice.
+            if row["display_kind"]?.string == "hidden", !Self.isWorkReport(row["text"]?.string ?? row["content"]?.displayText) {
+                if role == "user" { nextAssistantBeginsTurn = true }
+                continue
+            }
             let when = row["timestamp"]?.number.map { Date(timeIntervalSince1970: $0) } ?? .now
             let text = row["text"]?.string ?? row["content"]?.displayText ?? ""
-            switch row["role"]?.string {
+            switch role {
             case "user":
                 waiting = []   // the tools of a turn that never got its reply
                 // The Dashboard's reply-language note, and the hint a watch's question carries.
@@ -51,12 +58,18 @@ extension Conversation {
                                                          displayText: row["display_metadata"]?["display_text"]?.string, at: when) {
                     if let answer = CardNote.find(in: row["text"]?.string ?? row["content"]?.displayText ?? "") { message.answering = CardAnswers.question(for: answer.key) }
                     out.append(message)
+                    nextAssistantBeginsTurn = false
+                } else {
+                    // A page turn's marked user row is intentionally not a bubble.
+                    nextAssistantBeginsTurn = true
                 }
             case "assistant":
                 var m = Message(role: .assistant, text: text, createdAt: when)
                 m.reasoning = row["reasoning"]?.string ?? ""
                 guard !m.text.isEmpty || !m.reasoning.isEmpty else { continue }
                 m.tools = waiting
+                m.beginsAssistantTurn = nextAssistantBeginsTurn
+                nextAssistantBeginsTurn = false
                 waiting = []
                 out.append(m)
             case "tool":
@@ -80,7 +93,12 @@ extension Conversation {
 
     nonisolated static func mapStored(_ stored: [HermesSessionsAPI.StoredMessage]) -> [Message] {
         var out: [Message] = []
-        for row in stored where row.display_kind != "hidden" || Self.isWorkReport(row.content?.text) {
+        var nextAssistantBeginsTurn = false
+        for row in stored {
+            if row.display_kind == "hidden", !Self.isWorkReport(row.content?.text) {
+                if row.role == "user" { nextAssistantBeginsTurn = true }
+                continue
+            }
             let when = row.timestamp.map { Date(timeIntervalSince1970: $0) } ?? .now
             switch row.role {
             case "user":
@@ -88,12 +106,18 @@ extension Conversation {
                 let (text, asides) = AsideNote.split(WatchConnection.withoutHint(   // a Dashboard turn's note, a watch's hint, asides
                     ReplyLanguage.stripNote(row.content?.text ?? "", keepingAsides: true)))
                 for aside in asides { out += AsideNote.messages(aside, before: when) }
-                guard var message = BotMessages.userMessage(text: text, displayKind: row.display_kind, displayText: nil, at: when) else { continue }
-                if let answer = CardNote.find(in: row.content?.text ?? "") { message.answering = CardAnswers.question(for: answer.key) }
-                out.append(message)
+                if var message = BotMessages.userMessage(text: text, displayKind: row.display_kind, displayText: nil, at: when) {
+                    if let answer = CardNote.find(in: row.content?.text ?? "") { message.answering = CardAnswers.question(for: answer.key) }
+                    out.append(message)
+                    nextAssistantBeginsTurn = false
+                } else {
+                    nextAssistantBeginsTurn = true
+                }
             case "assistant":
                 var message = Message(role: .assistant, text: row.content?.text ?? "", createdAt: when)
                 message.reasoning = row.reasoning ?? row.reasoning_content ?? ""
+                message.beginsAssistantTurn = nextAssistantBeginsTurn
+                nextAssistantBeginsTurn = false
                 message.tools = (row.tool_calls ?? []).compactMap { call in
                     call.function?.name.map {
                         // Stored arguments are JSON, usually as text.
@@ -105,7 +129,8 @@ extension Conversation {
                 }
                 // Tool-call-only assistant rows fold into the next assistant text: one bubble with
                 // its tool chips, as it looked live, not a chips-only bubble and then the answer.
-                if let last = out.indices.last, out[last].role == .assistant, out[last].text.isEmpty, !out[last].tools.isEmpty {
+                if !message.beginsAssistantTurn, let last = out.indices.last, out[last].role == .assistant,
+                   out[last].text.isEmpty, !out[last].tools.isEmpty {
                     out[last].tools += message.tools
                     out[last].text = message.text
                     if !message.reasoning.isEmpty { out[last].reasoning += (out[last].reasoning.isEmpty ? "" : "\n\n") + message.reasoning }

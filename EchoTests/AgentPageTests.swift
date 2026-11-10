@@ -143,6 +143,73 @@ struct AgentPageTests {
         #expect(again.page == "rain.html")
     }
 
+    @Test func aReloadedPageTurnStaysSeparateWhenServeOmitsItsHiddenPrompt() throws {
+        let askedAt = Date(timeIntervalSince1970: 100)
+        let readyAt = Date(timeIntervalSince1970: 110)
+        let pageAt = Date(timeIntervalSince1970: 114)
+        let asked = Message(role: .user, text: "Make a map.", createdAt: askedAt)
+        let ready = Message(role: .assistant, text: "The page is ready.", createdAt: readyAt)
+        var pageReply = Message(role: .assistant, text: "Done.", createdAt: pageAt)
+        pageReply.beginsAssistantTurn = true
+        let saved = ConversationRecord(id: UUID(), title: "Map", createdAt: askedAt, updatedAt: pageAt,
+                                       transport: .hermesServe, serverSessionID: "page-session",
+                                       messages: [asked, ready, pageReply], assistantTurnStarts: [pageReply.id])
+        let reopened = try JSONDecoder().decode(ConversationRecord.self, from: JSONEncoder().encode(saved))
+        let local = reopened.restoredMessages
+        #expect(local.last?.beginsAssistantTurn == true, "the local sidecar survives relaunch before catch-up")
+
+        // `session.resume` leaves out the hidden user row that began the page turn, and can split
+        // that turn into several assistant rows. Its reconstructed rows have no local metrics.
+        let rows: [JSONValue] = [
+            .object(["role": .string("user"), "text": .string("Make a map."), "timestamp": .number(100)]),
+            .object(["role": .string("assistant"), "text": .string("The page is ready.\n\n::preview{file=\"map.html\"}"), "timestamp": .number(110)]),
+            .object(["role": .string("assistant"), "text": .string("Updating it now."), "timestamp": .number(115)]),
+            .object(["role": .string("assistant"), "text": .string("Done."), "timestamp": .number(120)]),
+        ]
+        let fetched = Conversation.messages(fromServeRows: rows)
+        #expect(fetched.allSatisfy { !$0.beginsAssistantTurn && $0.metrics == nil })
+        #expect(Conversation.keepingAsides(of: local, in: fetched).allSatisfy { !$0.beginsAssistantTurn },
+                "local boundaries are not guessed unless the authoritative messages route failed")
+
+        let storedJSON = #"{"data":[{"role":"user","content":"Make a map.","timestamp":100},{"role":"assistant","content":"The page is ready.\n\n::preview{file=\"map.html\"}","timestamp":110},{"role":"user","content":"Refresh it","display_kind":"hidden","timestamp":114},{"role":"assistant","content":"Updating it now.","timestamp":115},{"role":"assistant","content":"Done.","timestamp":120}]}"#
+        struct Envelope: Decodable { var data: [HermesSessionsAPI.StoredMessage] }
+        let stored = try JSONDecoder().decode(Envelope.self, from: Data(storedJSON.utf8)).data
+        let serverHints = Conversation.mapStored(stored)
+        #expect(serverHints[2].beginsAssistantTurn, "the messages route retains the hidden row Serve resume omits")
+
+        let caughtUp = Conversation.restoringServerTurnStarts(from: serverHints, in: fetched)
+        #expect(caughtUp.map(\.text) == fetched.map(\.text), "catch-up must not merge or rewrite stored message content")
+        #expect(caughtUp[2].beginsAssistantTurn, "the first row of the page turn regains its boundary")
+        let layout = AssistantTurnActivity.layout(caughtUp)
+        #expect(layout[caughtUp[1].id]?.isGrouped == false, "the completed reply remains its own turn")
+        #expect(layout[caughtUp[2].id]?.showsSpeaker == true && layout[caughtUp[3].id]?.isContinuation == true,
+                "the page turn's commentary and final answer stay together after reload")
+    }
+
+    @Test func ambiguousLocalReplyAnchorsNeverInventABoundary() {
+        let device = Date(timeIntervalSince1970: 10_000)
+        let asked = Message(role: .user, text: "Open the page.", createdAt: device)
+        let first = Message(role: .assistant, text: "Done.", createdAt: device.addingTimeInterval(1))
+        var pageOne = Message(role: .assistant, text: "Done.", createdAt: device.addingTimeInterval(2))
+        pageOne.beginsAssistantTurn = true
+        var pageTwo = Message(role: .assistant, text: "Finished.", createdAt: device.addingTimeInterval(4))
+        pageTwo.beginsAssistantTurn = true
+
+        let hostClock = Date(timeIntervalSince1970: 100)
+        let host = [
+            Message(role: .user, text: "Open the page.", createdAt: hostClock),
+            Message(role: .assistant, text: "Done.", createdAt: hostClock.addingTimeInterval(1)),
+            Message(role: .assistant, text: "Done.", createdAt: hostClock.addingTimeInterval(2.5)),
+            Message(role: .assistant, text: "Done.", createdAt: hostClock.addingTimeInterval(3)),
+            Message(role: .assistant, text: "Updating twice.", createdAt: hostClock.addingTimeInterval(4.5)),
+            Message(role: .assistant, text: "Finished.", createdAt: hostClock.addingTimeInterval(5)),
+        ]
+
+        let caughtUp = Conversation.keepingAsides(of: [asked, first, pageOne, pageTwo], in: host, restoringTurnStarts: true)
+        #expect(caughtUp.allSatisfy { !$0.beginsAssistantTurn },
+                "an extra equal server segment is ambiguous; do not split a turn at a guessed row")
+    }
+
     @Test func notWhileTheAgentIsAnsweringNorOutsideAConversationOnTheServer() async throws {
         let settings = Settings(defaults: UserDefaults(suiteName: "page-\(UUID().uuidString)")!)
         settings.transport = .hermesServe

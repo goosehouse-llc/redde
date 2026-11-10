@@ -13,6 +13,9 @@ nonisolated struct ConversationRecord: Identifiable, Codable, Equatable, Sendabl
     /// Hermes ledger session id, when this conversation lives on the gateway.
     var serverSessionID: String?
     var messages: [Message]
+    /// Display-only boundaries for turns whose user row is hidden (page/host turns). Kept beside
+    /// the messages so their backend shape and protocol stay unchanged. Absent in older files.
+    var assistantTurnStarts: Set<UUID>? = nil
     /// Messages not yet sent (queued or waiting for a connection). Absent in older files.
     var outbox: [OutboxItem]? = nil
     /// The Hermes server this conversation belongs to. Absent for OpenAI-compatible chats and in
@@ -27,6 +30,17 @@ nonisolated struct ConversationRecord: Identifiable, Codable, Equatable, Sendabl
     var elsewhere: ProfileRoute? = nil
 
     var turnCount: Int { messages.filter { $0.role == .user && !$0.isSteer }.count }
+
+    /// Messages as they were on screen. The turn marker is a local display sidecar rather than
+    /// part of a backend message, so decoding the record puts it back explicitly.
+    var restoredMessages: [Message] {
+        var restored = messages
+        let starts = assistantTurnStarts ?? []
+        for i in restored.indices where starts.contains(restored[i].id) {
+            restored[i].beginsAssistantTurn = true
+        }
+        return restored
+    }
 }
 
 /// What the list shows: a record without its messages.
