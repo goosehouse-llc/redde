@@ -127,7 +127,9 @@ pair made for that request alone, deleted once it is answered), and `leave.json`
 each device for Leave-By Alerts' traffic re-check: an opaque id, the event's title and a time,
 each forgotten once sent), and `turn-notes.json` (what Redde says to the agent with a message it
 is about to send: your reply language, your units and, on a question about places, roughly where
-you are; removed when that message's turn starts, see "With a message" below). Delete the folder
+you are; removed when that message's turn starts, see "With a message" below), and `work.db`
+(each workstream: its id, title, brief, its session and the chat that started it, how it stands
+and its last words, forgotten 30 days after it ends). Delete the folder
 and nothing is paired.
 
 ## Phone tools
@@ -303,6 +305,29 @@ the message for the model alone, and stores the message as it was typed. The not
 `turn-notes.json` until the turn starts (a message queued behind another turn finds its own by
 the mark), two hours at most. On a Hermes with an older plugin, or none, Redde writes the note
 after the message as before.
+
+## Workstreams (1.22.0)
+
+`redde_work` (`work.py`): the main agent or a bot hands a job to a workstream, a chat of its own
+that works on it by itself while the chat that started it goes on. Actions: `start` (a title
+and a brief that says everything the job needs: the workstream sees nothing else), `list`,
+`read` (its last messages), `send` (more to do: steers it if it is running, else a new turn) and
+`stop`. Three at once per agent; a workstream can't start one of its own.
+
+It runs inside `hermes serve` (the Dashboard), the way Hermes runs its own group rooms: a hidden
+session in the agent's profile, titled "Work: W1 · <title>", out of the chat list, kept open with
+no client on it. When its turn ends the plugin writes down how it ended (done, failed or
+stopped, with its last words) and, once the chat that started it is free, queues a hidden turn
+there with the report, worded as a report and not as your words; the agent tells you what came
+of it, or answers `[SILENT]`. Every turn in that chat also hears, as context, how its open
+workstreams stand. A step that needs approval waits for you as Hermes asks it, in the
+workstream's own session, which Redde opens; the approval timeout (`approvals.timeout`, 300 s at
+first) applies there as anywhere, so an agent whose workstreams ask often may want it longer.
+
+For Redde: `/redde-push work list <profile> [chat]` (JSON after `redde-push work `) and
+`/redde-push work stop <profile> <W#>`, and a `work` note to the paired devices when one is done,
+fails or waits for you. Over the Hermes API the tool answers that workstreams run on the
+Dashboard.
 
 ## Requirements
 

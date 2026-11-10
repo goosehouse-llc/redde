@@ -120,6 +120,11 @@ nonisolated enum BotMessages {
     /// A task's notice the agent answered next (on the Dashboard it always does) folds away as a
     /// schedule's does: what the person reads is the answer.
     static func foldAnsweredTasks(_ messages: inout [Message]) {
+        // A workstream's report the agent let pass ([SILENT]: nothing the person needs to hear):
+        // the notice alone, unfolded.
+        messages.removeAll { message in
+            message.role == .assistant && message.text.trimmingCharacters(in: .whitespacesAndNewlines) == "[SILENT]"
+        }
         for i in messages.indices where messages[i].delivered?.kind == .task {
             let next = messages[(i + 1)...].first { $0.role == .assistant || $0.delivered == nil }
             messages[i].delivered?.noted = next?.role == .assistant
@@ -194,6 +199,11 @@ nonisolated enum BotMessages {
                 return message
             }
         }
+        if let (delivered, body) = Workstream.notice(text) {
+            var message = Message(role: .user, text: body, createdAt: when)
+            message.delivered = delivered
+            return message
+        }
         if let words = steer(text) {
             var message = Message(role: .user, text: words, createdAt: when)
             message.isSteer = true
@@ -213,7 +223,7 @@ nonisolated enum BotMessages {
     /// what it is; anything else as it came.
     static func rowPreview(_ preview: String?, roster: [HermesBot], mainName: String) -> String? {
         guard let preview = preview?.nilIfEmpty else { return nil }
-        if preview.hasPrefix("[IMPORTANT: Background process") || preview.hasPrefix("[ASYNC DELEGATION") { return String(localized: "A background task finished") }
+        if preview.hasPrefix("[IMPORTANT: Background process") || preview.hasPrefix("[ASYNC DELEGATION") || preview.hasPrefix("[Workstream ") { return String(localized: "A background task finished") }
         if let (title, _) = routine(preview) { return String(localized: "\(title) ran", comment: "A bot's row: its scheduled routine ran") }
         if let (said, _) = inventedTurn(in: preview) { return said.nilIfEmpty ?? "…" }
         guard let inbound = inbound(preview) else { return preview }
@@ -224,6 +234,7 @@ nonisolated enum BotMessages {
 
     /// A message_agent call as a step's name: "Messaged @scout".
     static func stepName(_ tool: ToolActivity) -> String? {
+        if let named = Workstream.stepName(tool) { return named }
         guard tool.name == "message_agent", let target = tool.args?.firstMatch(of: /(?m)^target: @?([^\s]+)/)?.output.1 else { return nil }
         return String(localized: "Messaged @\(String(target))", comment: "A step in a reply: the agent sent another agent a message")
     }

@@ -30,7 +30,7 @@ ids = itertools.count(1)
 
 
 def report(ok, what, detail=""):
-    print(f"  {'PASS' if ok else 'FAIL'}  {what}{'  ' + detail if detail and not ok else ''}")
+    print(f"  {'PASS' if ok else 'FAIL'}  {what}{'  ' + str(detail) if detail and not ok else ''}")
     if not ok:
         failures.append(what)
 

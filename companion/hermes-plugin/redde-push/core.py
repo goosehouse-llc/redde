@@ -662,6 +662,23 @@ def routine_note(profile: str, bot: str, title: str, body: str = "", failed: boo
     return made
 
 
+def work_note(profile: str, ref: str, title: str, what: str, body: str = "", session: str = "", bot: str = "") -> dict:
+    """One of an agent's workstreams (`work.py`, 1.22.0): `p` the agent's profile, `d` its name, `x` its id (W3),
+    `t` its title, `w` what happened ("done", "failed", "needs": waiting on the person's approval),
+    `b` its last words or what it waits on, `s` its chat, for a tap to open. An older Redde shows
+    the words it is sent and opens nothing."""
+    made = {"v": 1, "k": "work", "at": int(time.time()), "n": host_name(), "p": clipped(profile, 64),
+            "x": clipped(ref, 12), "w": clipped(what, 12)}
+    for key, value, limit in (("t", title, 80), ("s", session, 160), ("d", bot, 64)):
+        if value:
+            made[key] = clipped(value, limit)
+    if body:
+        made["b"] = clipped(body, BODY_LIMIT, lines=True)
+    while len(json.dumps(made, ensure_ascii=False).encode()) > NOTE_LIMIT and len(made.get("b", "")) > 20:
+        made["b"] = clipped(made["b"], len(made["b"]) * 2 // 3, lines=True)
+    return made
+
+
 def watch_note(profile: str, name: str, title: str, body: str, watch: str, failed: bool = False, why: str = "") -> dict:
     """A watch saw something change (`watches.py`): `p` the agent's profile, `d` what it is called,
     `t` what is watched, `b` what it says changed (or why it couldn't look, `w` "failed"), `i` the

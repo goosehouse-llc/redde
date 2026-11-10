@@ -38,7 +38,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, watches
+from . import calls, cards, core, followups, goals, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, watches, work
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -203,6 +203,8 @@ def _on_approval(command: str = "", description: str = "", session_id: str = "",
         session = session_id or session_key
         if _platforms.get(session, "") == "bot_room":   # the room says so, to those following it
             return
+        if _work_waits(session, command, description):   # a workstream's: needs you (work.py)
+            return
         _state()[1].submit("approval", session, _platforms.get(session, ""), body=command, detail=description)
     except Exception:
         log.debug("redde-push: approval hook failed", exc_info=True)
@@ -225,6 +227,8 @@ def _on_reply(session_id: str = "", assistant_response: str = "", platform: str 
         # Hermes doesn't deliver, isn't pushed as a reply either, under Notify All (issue 55).
         if platform == "cron" and isinstance(assistant_response, str) and (
                 routines.settle(assistant_response)[1] or watches.quiet(assistant_response)):
+            return
+        if _work_reply(session_id, assistant_response):   # a workstream's (work.py): its report says it
             return
         if isinstance(assistant_response, str) and assistant_response.strip():
             # A reply nobody asked for just now, in a conversation whose handed-off task just
@@ -284,6 +288,11 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     except Exception:
         log.debug("redde-push: card turn start failed", exc_info=True)
     notes = []
+    try:
+        work.turn_began(_home(), session_id)   # a workstream's turn (work.py)
+        notes.append(work.digest(_home(), session_id))   # how the chat's workstreams stand
+    except Exception:
+        log.debug("redde-push: workstream note failed", exc_info=True)
     # What was said, for the notes that go by its words; a run's own mark (a watch's, a goal's
     # check-in's, a briefing's) is looked for in the whole of it.
     said = _said(user_message)
@@ -436,11 +445,14 @@ def _failed(session: str, platform: str, why: str) -> None:
     _state()[1].submit("failed", session, platform, body=why, now=_leaving)
 
 
-def _on_turn_end(session_id: str = "", platform: str = "", turn_id: str = "", failed=False, turn_exit_reason: str = "", **_) -> None:
+def _on_turn_end(session_id: str = "", platform: str = "", turn_id: str = "", failed=False, turn_exit_reason: str = "",
+                 interrupted=False, **_) -> None:
     """`on_session_end`. With a turn id it is a turn ending; the Dashboard also sends it, without
     one, when it closes a session, which says nothing about a turn."""
     try:
         if not turn_id or not session_id:
+            return
+        if _work_ended(session_id, failed is True, interrupted is True):   # a workstream's (work.py)
             return
         platform = platform or _platforms.get(session_id, "")
         turns, waiting = _watchers()
@@ -453,6 +465,75 @@ def _on_turn_end(session_id: str = "", platform: str = "", turn_id: str = "", fa
             _failed(session_id, platform, f"The turn ended with an error ({why})." if why else "The turn ended with an error.")
     except Exception:
         log.debug("redde-push: turn end hook failed", exc_info=True)
+
+
+# ---- Workstreams (work.py, 1.22.0) ----
+
+#: A workstream's last reply, by its session, for the report its turn's end makes.
+_work_said: dict[str, str] = {}
+
+
+def _work_note(row: dict, what: str, body: str) -> None:
+    """A workstream finished, failed or waits on the person: told to the phones, as its bot's."""
+    home = _home()
+    profile, root = calls.caller(home)
+    # The phones are paired with the main home, whichever bot's workstream it is (as for reminders).
+    store = _store_in(root)
+    targets = store.unmuted(store.devices, "b:" + profile)
+    if targets:
+        main, pusher = _state()
+        sender = pusher if store is main else core.Pusher(store, title_of=_title)
+        made = core.work_note(profile, row["ref"], row["title"], what, body, row.get("session") or "",
+                              bot=routines.Stores(root).name(home, profile))
+        threading.Thread(target=sender.send, args=(targets, made), name="redde-work-note", daemon=True).start()
+
+
+def _work_waits(session: str, command: str, description: str) -> bool:
+    try:
+        # The command itself, as an approval's note carries it: the app puts it in words.
+        row = work.needs_you(_home(), session, command or description)
+        if row is None:
+            return False
+        _work_note(row, "needs", command or description)
+        return True
+    except Exception:
+        log.debug("redde-push: workstream approval failed", exc_info=True)
+        return False
+
+
+def _work_reply(session: str, reply) -> bool:
+    try:
+        if not work.Store(_home()).of_session(session):
+            return False
+        if isinstance(reply, str) and reply.strip():
+            _work_said[session] = reply
+        return True
+    except Exception:
+        return False
+
+
+def _work_ended(session: str, failed: bool, interrupted: bool) -> bool:
+    try:
+        home = _home()
+        row = work.turn_ended(home, session, failed, interrupted, _work_said.pop(session, ""))
+        if row is None:
+            return False
+        if row["status"] in ("done", "failed"):
+            _work_note(row, row["status"], row.get("last") or "")
+            if row.get("chat"):
+                work.report(row["chat"], calls.caller(home)[0], work.report_text(row))
+        return True
+    except Exception:
+        log.debug("redde-push: workstream end failed", exc_info=True)
+        return False
+
+
+def _on_approval_answered(session_id: str = "", session_key: str = "", **_) -> None:
+    """`post_approval_response`: a workstream waiting on the person works again."""
+    try:
+        work.answered(_home(), session_id or session_key)
+    except Exception:
+        log.debug("redde-push: workstream answer failed", exc_info=True)
 
 
 def _on_stopped(session_key: str = "", session_id: str = "", **_) -> None:
@@ -555,6 +636,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["calls"]:
         # Which agents may ring the phone (calls.py): kept in the main home, with the phones.
         return calls.slash(_store_in(calls.caller(_home())[1]), words[1:])
+    if words[:1] == ["work"]:
+        # Workstreams (work.py): the app's Work sheet lists them and stops one, per profile.
+        return work.slash(calls.caller(_home())[1], words[1:])
     if words[:1] == ["job-model"]:
         # A job's own model at once (routines.py, Run On): `job-model <profile> <job> <model|-> <provider|->`.
         return _job_model_slash(words[1:])
@@ -820,6 +904,11 @@ def register(ctx) -> None:
         known = False
     if known:
         ctx.register_hook("agent_loop_stopped", _on_stopped)
+    try:
+        if "post_approval_response" in VALID_HOOKS:
+            ctx.register_hook("post_approval_response", _on_approval_answered)
+    except Exception:
+        pass
     # A reminder's run answered here, with no model (remind.py, 1.14.6; Hermes 0.22+ has middleware).
     register_middleware = getattr(ctx, "register_middleware", None)
     if callable(register_middleware):
@@ -846,6 +935,8 @@ def register(ctx) -> None:
     lists.register(ctx, _home)
     # Email (mail.py): redde_mail while an account is set up, and one way to send.
     mail.register(ctx, _home)
+    # Workstreams (work.py): a job handed to a hidden chat of the agent's own.
+    work.register(ctx, _home, lambda home: calls.caller(home)[0])
     # Keys a bot asks for (keys.py): pasted into a card in Redde, straight into the profile's .env.
     keys.register(ctx, _home, _store_in, lambda home, profile: routines.Stores(calls.caller(home)[1]).name(home, profile))
     ctx.register_cli_command("redde-push", "Notifications on your iPhone, iPad or Mac from Redde", _cli_setup, _cli)

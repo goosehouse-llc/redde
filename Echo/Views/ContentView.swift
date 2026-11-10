@@ -1222,13 +1222,14 @@ struct ContentView: View {
         // the fast lane, which would lose it, the tap waits for the reply's end (`isStreaming`).
         let canLeave = !conversation.isStreaming || conversation.connection.hasLedger
         if canLeave, let session = router.consumeSession() {
+            let place = router.consumeSessionPlace()
             if sizeClass != .regular, showConversations { setDrawer(open: false) }
             // Also when it is the conversation already on screen: what is here may be from before
             // the app was closed, without the reply or the question the notification is about.
             // A conversation on another server than the one the app is on can't be fetched: the
             // app then stays where it was. The one streaming now is here already, live.
             if !(conversation.isStreaming && conversation.serverSessionID == session) {
-                Task { try? await conversation.open(serverSession: session) }
+                Task { try? await conversation.open(serverSession: session, profile: place.profile, title: place.title) }
             }
         }
         if canLeave, let profile = router.consumeBot() {

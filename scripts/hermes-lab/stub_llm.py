@@ -52,6 +52,10 @@ And for goals (lab.sh goals): a goal's check-in (a message with "[redde-goal:") 
 a PROGRESS line, "1/2", and whether the turn was told the goal's steps; a watch tagged
 "[redde-watch:lab-mail]" answers "NO EMAIL ACCESS".
 
+And for workstreams (lab.sh work): "lab:work" makes the model call `redde_work` to start one,
+whose brief ("lab:work-brief") is answered "Workstream report: …", and whose report in the chat
+that started it is answered "The agent's word: …".
+
 And for lists (lab.sh lists): "lab:list" makes the model call `redde_list`, making "Lab groceries"
 with two items.
 
@@ -107,6 +111,9 @@ CALLS = {
     "lab:note": ("phone_files_write", {"path": "lab/note.txt", "text": "from the agent"}),
     # One of the person's lists (the Redde plugin's `redde_list`, lab.sh lists).
     "lab:list": ("redde_list", {"action": "make", "title": "Lab groceries", "items": ["Milk", "Eggs"]}),
+    "lab:work": ("redde_work", {"action": "start", "title": "Lab errand", "brief": "lab:work-brief Do the lab errand and say what you did."}),
+    "lab:work-risky": ("redde_work", {"action": "start", "title": "Lab cleanup", "brief": "Do the danger thing: clear the lab folder."}),
+    "lab:work-slow": ("redde_work", {"action": "start", "title": "Lab slow job", "brief": "A long one, lab:slow."}),
     # A call to the person (the Redde plugin's `call_user`, lab.sh calls).
     "lab:call": ("call_user", {"line": "Lab call: the garage door is open."}),
     # Cards (the Redde plugin's `redde_show`): a walk on a map, and the weather.
@@ -393,6 +400,12 @@ class Handler(BaseHTTPRequestHandler):
                 text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
             if "lab:heard" in just_said:
                 text = "[heard: " + just_said + "]"
+            # Workstreams (lab.sh work): the workstream's own answer to its brief, then the agent's
+            # word on its report in the chat that started it.
+            if "lab:work-brief" in just_said:
+                text = "Workstream report: the lab errand is done."
+            elif just_said.lstrip().startswith("[Workstream ") and "Workstream report:" in just_said:
+                text = "The agent's word: W1 finished the lab errand."
             # A task handed off (issue 63, "lab:wordy-task" in CALLS): the subagent's own summary,
             # then the agent's word on it when Hermes tells it the task came back.
             if "ASYNC DELEGATION" in just_said:

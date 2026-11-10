@@ -25,11 +25,17 @@ extension Conversation {
         return messages
     }
 
+    /// A workstream's report to the chat that started it (Redde's plugin 1.22): a hidden turn,
+    /// which Hermes's own apps leave out, shown here as a notice (`Workstream.notice`).
+    nonisolated static func isWorkReport(_ text: String?) -> Bool {
+        text?.hasPrefix("[Workstream ") == true
+    }
+
     nonisolated static func messages(fromServeRows rows: [JSONValue]) -> [Message] {
         var out: [Message] = []
         /// Tool rows that came before the reply they belong to.
         var waiting: [ToolActivity] = []
-        for row in rows where row["display_kind"]?.string != "hidden" {
+        for row in rows where row["display_kind"]?.string != "hidden" || Self.isWorkReport(row["text"]?.string ?? row["content"]?.displayText) {
             let when = row["timestamp"]?.number.map { Date(timeIntervalSince1970: $0) } ?? .now
             let text = row["text"]?.string ?? row["content"]?.displayText ?? ""
             switch row["role"]?.string {
@@ -74,7 +80,7 @@ extension Conversation {
 
     nonisolated static func mapStored(_ stored: [HermesSessionsAPI.StoredMessage]) -> [Message] {
         var out: [Message] = []
-        for row in stored where row.display_kind != "hidden" {
+        for row in stored where row.display_kind != "hidden" || Self.isWorkReport(row.content?.text) {
             let when = row.timestamp.map { Date(timeIntervalSince1970: $0) } ?? .now
             switch row.role {
             case "user":

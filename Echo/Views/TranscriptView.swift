@@ -351,6 +351,7 @@ struct TranscriptView: View {
                     reconnectBanner
                     CatchingUpStrip(step: conversation.catchingUp)
                     HandoffStrip(conversation: conversation)
+                    WorkStrip(conversation: conversation)
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) { if conversation.isIncognito { incognitoBanner } }

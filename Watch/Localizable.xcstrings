@@ -2244,13 +2244,13 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "回答"
+            "value" : "応答"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "답변"
+            "value" : "응답"
           }
         },
         "nb" : {
@@ -2262,7 +2262,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Antwoord"
+            "value" : "Antwoorden"
           }
         },
         "pl" : {
@@ -2304,13 +2304,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "回答"
+            "value" : "回应"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "回答"
+            "value" : "回應"
           }
         }
       }

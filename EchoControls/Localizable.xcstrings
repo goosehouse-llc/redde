@@ -4208,13 +4208,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld har brug for dig"
+                  "value" : "%lld venter på dig"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld har brug for dig"
+                  "value" : "%lld venter på dig"
                 }
               }
             }
@@ -4259,22 +4259,16 @@
         "fr" : {
           "variations" : {
             "plural" : {
-              "many" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld vous attendent"
-                }
-              },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld vous attend"
+                  "value" : "%lld a besoin de vous"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld vous attendent"
+                  "value" : "%lld ont besoin de vous"
                 }
               }
             }
@@ -4283,22 +4277,16 @@
         "it" : {
           "variations" : {
             "plural" : {
-              "many" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld aspettano te"
-                }
-              },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld aspetta te"
+                  "value" : "%lld ha bisogno di te"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld aspettano te"
+                  "value" : "%lld hanno bisogno di te"
                 }
               }
             }
@@ -4310,7 +4298,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld件が要対応"
+                  "value" : "%lld件があなたを待っています"
                 }
               }
             }
@@ -4322,7 +4310,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld개 확인 필요"
+                  "value" : "%lld개가 기다리는 중"
                 }
               }
             }
@@ -4334,13 +4322,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld trenger deg"
+                  "value" : "%lld venter på deg"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld trenger deg"
+                  "value" : "%lld venter på deg"
                 }
               }
             }
@@ -4352,13 +4340,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld wacht op jou"
+                  "value" : "%lld wacht op je"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld wachten op jou"
+                  "value" : "%lld wachten op je"
                 }
               }
             }
@@ -4397,12 +4385,6 @@
         "pt-BR" : {
           "variations" : {
             "plural" : {
-              "many" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld precisam de você"
-                }
-              },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -4436,7 +4418,7 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld ждет вас"
+                  "value" : "%lld ждёт вас"
                 }
               },
               "other" : {
@@ -4454,13 +4436,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld behöver dig"
+                  "value" : "%lld väntar på dig"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld behöver dig"
+                  "value" : "%lld väntar på dig"
                 }
               }
             }
@@ -4472,13 +4454,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld sizi bekliyor"
+                  "value" : "%lld seni bekliyor"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld sizi bekliyor"
+                  "value" : "%lld seni bekliyor"
                 }
               }
             }
@@ -4490,25 +4472,25 @@
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld потребують вас"
+                  "value" : "%lld чекають на вас"
                 }
               },
               "many" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld потребують вас"
+                  "value" : "%lld чекають на вас"
                 }
               },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld потребує вас"
+                  "value" : "%lld чекає на вас"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld потребує вас"
+                  "value" : "%lld чекають на вас"
                 }
               }
             }
@@ -4520,7 +4502,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld项需要你处理"
+                  "value" : "%lld 个在等你"
                 }
               }
             }
@@ -4532,7 +4514,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld 個需要你"
+                  "value" : "%lld 個在等你"
                 }
               }
             }

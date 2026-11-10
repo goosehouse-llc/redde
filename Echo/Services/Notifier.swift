@@ -221,6 +221,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let kind = info[PushNote.kindKey] as? String
         let briefing = info[PushNote.briefingKey] as? String
         let runSession = info[PushNote.runSessionKey] as? String
+        let profile = info[PushNote.profileKey] as? String
+        let title = info[PushNote.titleKey] as? String
         let userText = (response as? UNTextInputNotificationResponse)?.userText
         let leaveTitle = info[LeaveTime.eventTitleKey] as? String
         let leaveAt = (info[LeaveBy.latitudeKey] as? Double).flatMap { lat in (info[LeaveBy.longitudeKey] as? Double).map { (lat, $0) } }
@@ -230,6 +232,12 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             // A Leave-By Alert's Open in Maps: the way there.
             if action == LeaveBy.mapsAction, let leaveAt {
                 LeaveByAlerts.openInMaps(title: leaveTitle, latitude: leaveAt.0, longitude: leaveAt.1, mode: leaveMode)
+                handled()
+                return
+            }
+            // A workstream's: its own chat, in its agent's profile (an approval is answered there).
+            if kind == PushNote.Kind.work.rawValue, action == UNNotificationDefaultActionIdentifier, let sessionID {
+                LaunchRouter.shared.requestSession(sessionID, profile: profile, title: title)
                 handled()
                 return
             }
@@ -259,6 +267,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let sessionID = info[PushNote.sessionKey] as? String
         let room = info[PushNote.roomKey] as? String
         let bot = info[PushNote.botKey] as? String
+        let profile = info[PushNote.profileKey] as? String
         let sealed = info[PushNote.sealedKey] as? String
         let leaving = notification.request.identifier.hasPrefix(LeaveTime.reminderPrefix)
         let urgent = notification.request.content.interruptionLevel == .timeSensitive
@@ -274,6 +283,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             }
             // A heads-up came: its leaving reminder and a Leave-By Alert for the same event become one.
             if kind == PushNote.Kind.routine.rawValue { LeaveByAlerts.shared.headsUpArrived() }
+            if kind == PushNote.Kind.work.rawValue, let profile { Workstreams.shared.heard(profile: profile) }
             if kind == nil, let sealed {
                 show(self.presentUnopened(sealed))
             } else {
@@ -301,6 +311,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         if GoalReport.take(note) { GoalsInbox.shared.reload() }
         if AgentBriefing.take(note) { BriefingsInbox.shared.reload() }
         AgentActivityNote.take(note)
+        Workstreams.shared.heard(note)
         let content = UNMutableNotificationContent()
         content.sound = sound
         guard note.fill(content) else { return shown }

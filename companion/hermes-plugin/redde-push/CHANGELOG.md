@@ -3,6 +3,21 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.22.0 (2026-11-10)
+
+- Workstreams, for the main agent and every bot. On the Dashboard an agent can hand a job to a
+  workstream (`redde_work`): a hidden chat of its own (W1, W2…, titled "Work: W1 · …") that
+  works on it by itself, up to three at once per agent, while the chat that started it goes on.
+  When a workstream finishes, the chat that started it hears so in a turn of its own and tells
+  you what came of it; until then it hears, with each message, how its workstreams stand. A
+  workstream's step that needs your approval waits for you as any other does, and Redde says so.
+  The agent can read one, send it more to do, or stop it. Kept in `redde-push/work.db`, per
+  profile, 30 days after they end.
+- Redde lists an agent's workstreams and stops one with `/redde-push work list|stop <profile> …`,
+  and hears from the plugin when one is done, failed or waits for you (a note of kind `work`).
+- Over the Hermes API (`hermes gateway`) the tool says workstreams run on the Dashboard: that
+  side comes later.
+
 ## 1.21.1 (2026-11-10)
 
 - The phone's calendar tool is found when the agent searches for "agenda", "schedule",

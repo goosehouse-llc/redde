@@ -1926,10 +1926,11 @@ final class Conversation {
     /// Opens the conversation a Hermes session id names, from the server the app is on: what a
     /// tapped notification from a paired Hermes asks for. The transcript comes from the server,
     /// since the reply being announced arrived while the app wasn't running.
-    func open(serverSession id: String) async throws {
-        let summary = HermesSessionsAPI.SessionSummary(id: id)
+    /// `profile`: the one it is in when not the main one (a bot's workstream, `Workstreams`).
+    func open(serverSession id: String, profile: String? = nil, title: String? = nil) async throws {
+        let summary = HermesSessionsAPI.SessionSummary(id: id, title: title)
         switch settings.transport {
-        case .hermesServe: try await loadServeSession(summary)
+        case .hermesServe: try await loadServeSession(summary, elsewhere: profile.map { ProfileRoute(profile: $0, viaAPI: false) })
         case .hermesSessions: try await loadLedgerSession(summary)
         case .chatCompletions: throw TransportError.malformed(String(localized: "that conversation is on a Hermes connection"))
         }

@@ -29,6 +29,7 @@ import WidgetKit
 ///   `-echo.tour`, the app goes through what people do in it by itself, each step measured.
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 ///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`), and
+///   `-echo.demoWork` for the workstreams strip over the chat and its Work sheet (`-echo.showWork` opens it)
 ///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's) (`-echo.demoBotCount n`
 ///   for n bots, up to 12, where they fold, or 1 for the main profile alone; `-echo.demoPicture` gives Scout a picture from Hermes Desktop); with
 ///   `-echo.openGroup` its group chat is open, and `-echo.demoDraft` plays a bot's reply there as

@@ -77,6 +77,11 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// Email (Redde's plugin 1.16, `mail.py`): `x` "rule", a rule he made to be told matched
         /// (`t` the title, `b` who and what, `i` the rule or the log entry). Tapped, the Inbox.
         case mail
+        /// One of an agent's workstreams (Redde's plugin 1.22, `work.py`): `p` the agent's
+        /// profile, `d` its name, `x` its id (W3), `t` its title, `w` "done", "failed" or
+        /// "needs" (it waits for an approval, `b` the command; else `b` its last words), `s` its
+        /// own chat, which a tap opens (`Workstreams`).
+        case work
     }
 
     var v = 1
@@ -406,6 +411,9 @@ nonisolated extension PushNote {
     /// On a briefing's: the briefing it was kept as, which a tap opens; and the session its run was in.
     static let briefingKey = "briefing"
     static let runSessionKey = "runSession"
+    /// On a workstream's: the profile its chat is in, and what to call that chat.
+    static let profileKey = "profile"
+    static let titleKey = "title"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
 
@@ -524,6 +532,23 @@ nonisolated extension PushNote {
             content.threadIdentifier = "redde.leave"
             content.sound = nil
             content.interruptionLevel = .passive
+        case .work:
+            // As a bot's schedule's: the job, then whose; or, waiting, as an approval is told.
+            let who = p == "default" ? nil : d.flatMap { $0.isEmpty ? nil : $0 }
+            let job = [x, t].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+            if w == "needs" {
+                content.title = who.map { String(localized: "\($0) needs your approval", comment: "Notification: a bot, by its name, waits for a command to be approved") }
+                    ?? String(localized: "Redde needs your approval")
+                content.subtitle = job
+                content.body = b ?? ""
+                content.interruptionLevel = .timeSensitive
+            } else {
+                let name = t.flatMap { $0.isEmpty ? nil : $0 } ?? x ?? ""
+                content.title = w == "failed" ? String(localized: "\(name) didn't finish", comment: "Notification: a bot's scheduled job, by its name, failed") : name
+                if let who { content.subtitle = who }
+                content.body = String(PlainText.display(b ?? "").prefix(300))
+            }
+            content.threadIdentifier = "redde.work.\(p ?? "")"
         case .groupWait:
             let who = d.flatMap { $0.isEmpty ? nil : $0 }
             if let t, !t.isEmpty { content.subtitle = t }
@@ -549,7 +574,10 @@ nonisolated extension PushNote {
         if kind == .routine, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
         // A bot's missed call opens its chat; the main agent's, the conversation it called from.
         if kind == .call, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
-        if let x, !x.isEmpty { info[Self.taskKey] = x }
+        if kind == .work {
+            if let p, !p.isEmpty { info[Self.profileKey] = p }
+            info[Self.titleKey] = [x, t].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+        } else if let x, !x.isEmpty { info[Self.taskKey] = x }
         if kind == .key, let i, !i.isEmpty { info[Self.keyRequestKey] = i }
         if let briefing = AgentBriefing.id(of: self) {
             info[Self.briefingKey] = briefing
