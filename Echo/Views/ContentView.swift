@@ -111,13 +111,9 @@ struct ContentView: View {
     @State private var showFiles = false
     #endif
 
-    var body: some View {
-        // One container whatever the layout, so that what hangs off it (the sheets, the voice
-        // screen, the work done as Redde opens) stays put when the layout changes under it:
-        // opening or closing an iPhone Duo swaps one layout for the other while Redde runs, as
-        // drawing an iPad window narrower does. On a Group each was the layout's own, and went
-        // with it: the voice screen closed, the opening's work ran again.
-        groupVoicePresentation(chatPresentations(ZStack {
+    /// The wide layout or the iPhone's, one container either way (see `body`).
+    private var layouts: some View {
+        ZStack {
             if sizeClass == .regular {
                 // iPad: sessions in the sidebar, transcript in the detail column.
                 NavigationSplitView {
@@ -141,6 +137,31 @@ struct ContentView: View {
                 #endif
             }
         }
+    }
+
+    var body: some View {
+        // One container whatever the layout, so that what hangs off it (the sheets, the voice
+        // screen, the work done as Redde opens) stays put when the layout changes under it:
+        // opening or closing an iPhone Duo swaps one layout for the other while Redde runs, as
+        // drawing an iPad window narrower does. On a Group each was the layout's own, and went
+        // with it: the voice screen closed, the opening's work ran again.
+        groupVoicePresentation(chatPresentations(VStack(spacing: 0) {
+            // A live call put away from the voice screen (`CallBar`): over the chat and the list
+            // alike, everything else moved down under it. A row above them and not a safe-area
+            // inset: a navigation bar takes no notice of one, and the call's bar lay on the chat's.
+            if callInBar {
+                CallBar(session: voiceSession, name: conversation.bot?.name ?? settings.headerTitle,
+                        face: botFace ?? BotDirectory.shared.mainFace) { showVoice = true }
+                    .environment(\.theme, chatTheme)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            layouts
+        }
+        // The page's colour behind the bar and the clock above it; nothing new behind the rest.
+        .background { if callInBar { chatTheme.pageColor.ignoresSafeArea() } }
+        .animation(.snappy(duration: 0.3), value: callInBar)
+        // The call is that chat's: another one opened ends it (its answers would land in the wrong one).
+        .onChange(of: conversation.id) { if voiceSession.inBar { voiceSession.cancel() } }
         .environment(\.wideLayout, sizeClass == .regular)
         .environment(\.showSettingsSheet, SettingsOpener { showSettings = true })))
         #if os(iOS)
@@ -274,7 +295,18 @@ struct ContentView: View {
             presentWhatsNewIfDue()
             #if DEBUG
             if DevHooks.has("-echo.voiceView") { openVoice(fromOutside: true) }
-            if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: false, fromOutside: true) }
+            if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: DevHooks.has("-echo.handsFree"), fromOutside: true) }
+            // `-echo.callBar` with it: the call put away once it is up, as the chevron does (the lab).
+            if DevHooks.has("-echo.callBar") {
+                Task {
+                    for _ in 0..<100 where !(voiceSession.isLive && !voiceSession.liveConnecting) { try? await Task.sleep(for: .milliseconds(100)) }
+                    try? await Task.sleep(for: .seconds(2))
+                    voiceSession.moveToBar()
+                    showVoice = false
+                }
+            }
+            // Once a demo conversation is in: one opened under the bar hangs up, as another chat does.
+            if DevHooks.has("-echo.demoCallBar") { Task { try? await Task.sleep(for: .seconds(1.5)); voiceSession.poseBar() } }
             // `-echo.livePreview <voice>`: that live voice's preview played (the engine whose voice
             // it is), how it went in the live-measure log (with `-echo.liveMeasure`).
             if let voice = DevHooks.value("-echo.livePreview") {
@@ -1060,8 +1092,13 @@ struct ContentView: View {
         }
     }
 
+    /// A live call going on with the voice screen put away: its bar shows (`CallBar`).
+    private var callInBar: Bool { voiceSession.inBar && !showVoice }
+
     /// Voice mode as you'd open it by hand: Hands-free follows Settings → Voice.
     private func openVoice(fromOutside: Bool) {
+        // A call in its bar: the Talk button, Siri or a control opens its screen again, as it is.
+        if voiceSession.inBar { showVoice = true; return }
         voiceSession.continuous = settings.handsFreeByDefault
         if fromOutside { startFreshForVoice() }
         showVoice = true
@@ -1105,7 +1142,7 @@ struct ContentView: View {
         guard prompt.isDue(version: version) else { return }
         Task {
             try? await Task.sleep(for: .seconds(2.5))
-            guard !showVoice, !showConversations, !showSettings, !showSetup, !showModelPicker, whatsNew == nil,
+            guard !showVoice, !voiceSession.isLive, !showConversations, !showSettings, !showSetup, !showModelPicker, whatsNew == nil,
                   !lock.isLocked, !conversation.isStreaming, scenePhase == .active else { return }
             prompt.markAsked(version: version)
             requestReview()
@@ -1278,7 +1315,7 @@ struct ContentView: View {
         }
         Task {
             if conversation.bot?.profile != asked {
-                if showVoice { voiceSession.cancel() }   // what voice mode was saying in another chat is over
+                if showVoice || voiceSession.inBar { voiceSession.cancel() }   // what voice mode was saying in another chat is over
                 do {
                     if try await conversation.openBot(asked: asked, mainName: settings.headerTitle) != nil {
                         // In the bot's chat now: carry on in it, never a fresh conversation.
@@ -1295,7 +1332,7 @@ struct ContentView: View {
             // A conversation on that profile, the app staying on its own: "Ask Work in Redde" once
             // moved the whole app there for good, unseen (2026-10-29).
             if let profile = ProfileCatalog.find(asked, in: ProfileCatalog.known()) {
-                if showVoice { voiceSession.cancel() }   // voice mode was open on another chat: what it was saying is over
+                if showVoice || voiceSession.inBar { voiceSession.cancel() }   // voice mode was open on another chat: what it was saying is over
                 ProfileCatalog.startConversation(on: profile.name, conversation: conversation, settings: settings)
             }
             await launchVoice(handsFree: request.handsFree, fromOutside: true)
@@ -1315,7 +1352,7 @@ struct ContentView: View {
             let here = conversation.bot?.profile
             let there = wake.profile.map { here == $0 } ?? (here == nil || here == "default")
             if !there {
-                if showVoice { voiceSession.cancel() }   // what voice mode was saying in another chat is over
+                if showVoice || voiceSession.inBar { voiceSession.cancel() }   // what voice mode was saying in another chat is over
                 do {
                     if let profile = wake.profile {
                         guard try await conversation.goToBot(profile, mainName: settings.headerTitle) else {
@@ -1357,6 +1394,8 @@ struct ContentView: View {
     /// over the Settings default. `fromOutside`: not from a button in the chat. `asking`: asked at
     /// once instead of listening (`VoiceSession.ask`).
     private func launchVoice(handsFree: Bool, fromOutside: Bool, asking: String? = nil) async {
+        // A call in its bar: its screen again, the call as it is (never a new conversation under it).
+        if voiceSession.inBar, asking == nil { showVoice = true; return }
         voiceSession.continuous = handsFree
         if !showVoice {
             if fromOutside { startFreshForVoice() }

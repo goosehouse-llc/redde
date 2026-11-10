@@ -163,6 +163,38 @@ final class VoiceSession {
     var liveEngine: LiveEngine? { live?.engine }
     /// A GPT-Live call being set up.
     var liveConnecting: Bool { live.map { !$0.connected } ?? false }
+    /// When the call was made, for how long it has been going (`CallBar`).
+    private(set) var liveBegan: Date?
+    /// The call goes on with the voice screen put away, as a bar over the chat (`CallBar`; asked
+    /// 2026-11-09, "build the call bar"): the screen closing doesn't hang up (`VoiceView`), and
+    /// the bar opens it again. Only ever true on a call; it ends with the call.
+    private(set) var inBar = false
+
+    /// The voice screen is being put away with the call left going. Nothing happens off a call.
+    func moveToBar() {
+        guard live != nil else { return }
+        inBar = true
+        setLooking(false)   // the camera is the voice screen's
+    }
+
+    /// The voice screen is back: closing it ends the call again, as it always did.
+    func leaveBar() {
+        inBar = false
+        #if DEBUG
+        if barPosed { barPosed = false; liveBegan = nil; isMuted = false }
+        #endif
+    }
+
+    #if DEBUG
+    /// `-echo.demoCallBar`: the bar with no call under it, a minute and some in, for pictures and
+    /// the UI test. Its buttons do what they say to the bar alone.
+    private(set) var barPosed = false
+    func poseBar() {
+        barPosed = true
+        inBar = true
+        liveBegan = .now - 83
+    }
+    #endif
     /// The call's start cue has played: its end gets the stop cue.
     private var liveCued = false
     /// Settings → Voice → Voice mode is GPT-Live, and what makes a call. Injectable so tests choose.
@@ -650,6 +682,9 @@ final class VoiceSession {
     /// Shut the mic without ending the conversation, so nothing said in the car is taken for a
     /// question. Only while listening; hands-free stays as it was for when the mic comes back.
     func mute() {
+        #if DEBUG
+        if barPosed { isMuted = true; return }
+        #endif
         if let live {
             guard !isMuted else { return }
             isMuted = true
@@ -667,6 +702,9 @@ final class VoiceSession {
 
     func unmute() {
         guard isMuted else { return }
+        #if DEBUG
+        if barPosed { isMuted = false; return }
+        #endif
         if let live {
             isMuted = false
             live.setMuted(false)
@@ -789,6 +827,9 @@ final class VoiceSession {
         }
         #endif
         callLineSaid = nil
+        #if DEBUG
+        if barPosed { leaveBar(); return }
+        #endif
         if live != nil { endLive(); return }
         defer { endCall() }
         joinTask?.cancel()
@@ -836,6 +877,8 @@ final class VoiceSession {
         live.alreadySaid = alreadySaid
         live.room = room
         self.live = live
+        liveBegan = .now
+        inBar = false
         isMuted = false
         isCapturing = false
         liveTranscript = ""
@@ -901,6 +944,8 @@ final class VoiceSession {
         live.onChange = nil
         if live.state != .ended { live.hangUp() }
         isMuted = false
+        inBar = false
+        liveBegan = nil
         liveSaid = ""
         activeTool = nil
         // While the call is still the session's, so the phase change makes no cue or audio change of its own.

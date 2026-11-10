@@ -136,7 +136,10 @@ import WidgetKit
 ///   conversation with `-siriDraftsInNewConversation YES`).
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo ["<words>"]` poses it mid-listen;
 ///   with `-echo.voiceDemoPhase speaking`, mid-reply instead (the words are the reply's), for screenshots;
-///   `-echo.autoVoice` opens it and starts listening. More poses for the promo video:
+///   `-echo.autoVoice` opens it and starts listening (`-echo.handsFree` with it: hands-free, so a
+///   live call stays up after its first answer, to measure; `-echo.callBar` too: the call put away
+///   into its bar over the chat two seconds after it is up; `-echo.demoCallBar` alone: the bar with
+///   no call under it, for pictures and `CallBarUITests`). More poses for the promo video:
 ///   `-echo.voiceDemoPhase thinking`; `-echo.voiceDemoPhase follow` (the pose follows the conversation
 ///   played into it, as `-echo.demoCall` does); `-echo.voiceDemoCall` (on a call: "On a call" while
 ///   listening); `-echo.voiceDemoSaid "<words>"` (speaking, the call's voice's words as its caption);

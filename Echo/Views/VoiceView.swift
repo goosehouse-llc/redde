@@ -90,7 +90,12 @@ struct VoiceView: View {
                 }
             } else {
                 VStack(spacing: 0) {
-                    upper(orbScale: 1)
+                    VStack(spacing: 0) { upper(orbScale: 1) }
+                        .contentShape(.rect)
+                        // A swipe down on the orb's part of the screen, as the chevron: the call to its bar.
+                        .simultaneousGesture(DragGesture(minimumDistance: 40).onEnded { drag in
+                            if drag.translation.height > 90, abs(drag.translation.width) < drag.translation.height / 2 { putAway() }
+                        }, isEnabled: canPutAway)
                     middle
                     lower
                 }
@@ -104,11 +109,26 @@ struct VoiceView: View {
         .background(theme.pageColor)
         .foregroundStyle(theme.textColor)
         .onAppear {
+            session.leaveBar()   // back from the bar over the chat (`CallBar`): the call is this screen's again
             session.attachHeadsetControls()
             // GPT-Live: its framework loaded and the Dashboard asked now, not when the orb is tapped.
             if Settings.shared.usesLiveCall(for: conversation.bot?.profile), group == nil { LiveSetup.prepare(conversation, .shared) }
         }
-        .onDisappear { session.detachHeadsetControls(); session.cancel(); session.setLooking(false) }
+        .onDisappear {
+            // Put away with the call left going (`putAway`): it is the bar's now, headset presses and all.
+            if session.inBar { return }
+            session.detachHeadsetControls(); session.cancel(); session.setLooking(false)
+        }
+    }
+
+    /// A live call goes on without this screen, as a bar over the chat (`CallBar`), so the chat can
+    /// be read while it does. Not a room's call, which is this screen's and the group chat's.
+    private var canPutAway: Bool { session.isLive && group == nil }
+
+    private func putAway() {
+        guard canPutAway else { return }
+        session.moveToBar()
+        dismiss()
     }
 
     @ViewBuilder
@@ -128,6 +148,13 @@ struct VoiceView: View {
 
     private var soloHeader: some View {
         HStack(spacing: 12) {
+            if canPutAway {
+                Button(action: putAway) { Label("Back to the Chat", systemImage: "chevron.down") }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.glass)
+                    .accessibilityHint("The call goes on while you read")
+                    .transition(.opacity)
+            }
             Toggle(isOn: $session.continuous) {
                 Label("Hands-free", systemImage: "waveform")
             }
@@ -167,6 +194,7 @@ struct VoiceView: View {
     /// The orb and what is going on.
     @ViewBuilder private func upper(orbScale: CGFloat) -> some View {
         header
+            .animation(.snappy(duration: 0.25), value: canPutAway)
         orb
             .scaleEffect(orbScale)
             .frame(width: 233 * orbScale, height: 233 * orbScale)

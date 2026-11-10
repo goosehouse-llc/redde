@@ -362,6 +362,29 @@ struct VoiceSessionTests {
 
     // MARK: Mute
 
+    /// The call bar (`CallBar`): only a live call is put away into it, and hanging up clears it.
+    @Test func onlyACallGoesToTheBar() async throws {
+        let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
+        h.session.moveToBar()
+        #expect(!h.session.inBar, "voice mode off a call has nothing to keep going")
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.session.moveToBar()
+        #expect(!h.session.inBar, "listening for a typed-chat turn isn't a call")
+        h.session.cancel()
+        // The bar as posed for pictures: its buttons work on it, and Hang Up takes it away.
+        h.session.poseBar()
+        #expect(h.session.inBar)
+        #expect(h.session.liveBegan != nil)
+        h.session.mute()
+        #expect(h.session.isMuted)
+        h.session.unmute()
+        #expect(!h.session.isMuted)
+        h.session.cancel()
+        #expect(!h.session.inBar)
+        #expect(h.session.liveBegan == nil)
+    }
+
     @Test func muteHoldsTheMicShutUntilItIsOpenedAgain() async throws {
         let h = Harness(transport: ConversationLifecycleTests.ScriptedTransport([]))
         h.session.mute()
