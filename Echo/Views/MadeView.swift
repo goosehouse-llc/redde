@@ -61,7 +61,7 @@ final class MadeIndex {
         defer { looking = false }
         var found: [MadeItem] = []
         for summary in store.sorted.prefix(Self.conversations) {
-            guard let record = await store.loadRecord(id: summary.id) else { continue }
+            guard let record = await store.peekRecord(id: summary.id) else { continue }
             found += MadeItem.found(in: record, agent: summary.bot?.name)
         }
         items = found.sorted { $0.at > $1.at }

@@ -3,6 +3,20 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.20.2 (2026-11-09)
+
+- A long pasted message (a log, a file) no longer holds a reply up. Before each answer the plugin
+  reads the message to see what was asked for; over a long text with no full stops that took up to
+  two seconds. It now reads the start and the end of a long message, where the asking is.
+- A snooze set while the inbox was being checked is kept. The check read the account, talked to
+  the mail server for a few seconds and saved everything it had read, so a snooze, a queued labels
+  job or an email archived in those seconds was written over, and a snoozed email whose time was
+  lost never came back. What changed meanwhile is now merged in, across Hermes's processes too.
+- Fewer cards asked for by mistake: `echo $HOME` and "stock Ubuntu" are no share price, a temp
+  file is no weather, clock skew and time zones in code are no asking the time, a BM25 score is no
+  game, "the lights PR" is no home, and "send me the logs", "the error message", "a good book" or
+  "order the results by date" ask for no review card. "What's on my schedule" is no scheduled job.
+
 ## 1.20.1 (2026-11-09)
 
 - A reminder goes in Apple Reminders on the iPhone. Asked to remind you, an agent used to make a

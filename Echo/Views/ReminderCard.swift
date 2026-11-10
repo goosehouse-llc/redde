@@ -71,9 +71,10 @@ struct ReminderCard: View {
     }
 
     /// The time left, large, and a ring of it where the timer's length is known: redrawn each
-    /// second here alone.
+    /// second here alone, until it is over and then no more (a finished timer's card went on
+    /// being redrawn every second for as long as it was on screen).
     private func countdown(to end: Date) -> some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
+        TimelineView(.explicit(sequence(first: Date.now) { $0 < end ? min($0.addingTimeInterval(1), end) : nil })) { context in
             let left = max(0, end.timeIntervalSince(context.date))
             HStack(spacing: 14) {
                 if let duration = card.duration, duration > 0 {

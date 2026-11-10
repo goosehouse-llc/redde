@@ -819,12 +819,26 @@ def handle(args, home=None, session_id: str = "", **_) -> str:
 # is it" at 9:06 and 9:09 PM, Sol (no terminal, so no `date`; Hermes gives only the date) said
 # 9:55 PM, then 12:05 AM Thursday, on a Friday, and showed no card (2026-10-23).
 _ASKS_TIME = re.compile(r"\bwhat(?:'s|’s| is)? the time\b|\bwhat time\b|\btime (?:is it|now|there|in|zone)\b"
-                        r"|\b(?:current|local) time\b|\bclock\b|\bo'?clock\b", re.IGNORECASE)
-_ASKS_WEATHER = re.compile(r"\bweather\b|\bforecast\b|\btemp(?:erature)?s?\b|\bdegrees\b|\bumbrella\b"
+                        r"|\b(?:current|local) time\b|\bclock\b(?! (?:skew|speed|rate|cycles?|drift|signal|sync|frequency|source)\b)"
+                        r"|\bo'?clock\b", re.IGNORECASE)
+#: Time as code has it is no asking of the hour ("convert the time zone in python", 2026-11-09).
+_CODE_TIME = re.compile(r"\b(?:python|swift|javascript|typescript|java|rust|golang|sql|bash|datetime|timestamps?|strftime|zoneinfo|"
+                        r"pytz|tzinfo|unix time|epoch|ntp)\b", re.IGNORECASE)
+# Not a temp file nor a processor's temperature.
+_ASKS_WEATHER = re.compile(r"\bweather\b|\bforecast\b|\b(?<!cpu )(?<!gpu )temp(?:erature)?s?\b(?! (?:files?|dirs?|director(?:y|ies)|"
+                           r"folders?|tables?|var(?:iable)?s?|paths?|passwords?|buffers?|storage|data|cop(?:y|ies)|branch|agency|job)\b)"
+                           r"|\bdegrees\b|\bumbrella\b"
                            r"|\b(?:rain(?:ing|y)?|snow(?:ing)?|sunny|humid(?:ity)?|windy)\b", re.IGNORECASE)
 #: Asked to do something for them that is hard to undo, in English: a review card first.
-_ASKS_ACTION = re.compile(r"\b(?:send|email|e-mail|text|message|reply to|book|reserve|buy|order|purchase|pay|cancel my|"
-                          r"post|publish|schedule (?:a|the)|invite)\b", re.IGNORECASE)
+#: The verb, not the noun of the same spelling, and not what is done for the person alone: "send me
+#: the logs", "the error message", "a text file", "a good book", "order the results by date", "a
+#: POST request" asked for a review card before (2026-11-09).
+_ASKS_ACTION = re.compile(
+    r"\b(?:send(?! (?:me|us)\b)|email|e-mail|(?<!the )text(?! (?:files?|fields?|box(?:es)?|views?|editors?|colou?rs?|sizes?)\b)"
+    r"|(?<!error )(?<!commit )(?<!log )(?<!the )message|reply to|book(?= (?:a|an|the|me|us|my|our|it|that|this|one|two|\d+)\b)|reserve|buy"
+    r"|(?<!in )order(?! (?:by|of)\b)(?! (?:the |these |those )?(?:results?|rows?|lists?|items?|columns?|output)\b)|purchase"
+    r"|pay(?! attention\b)|cancel my|(?<!blog )post(?! (?:requests?|endpoints?|methods?|body)\b)|publish|schedule (?:a|the)|invite)\b",
+    re.IGNORECASE)
 #: Asked for a list to tick off, in English: a checklist card, not the list in words.
 _ASKS_LIST = re.compile(r"\b(?:packing|shopping|grocery|to-?do|todo|check)\s*list\b|\bchecklist\b|\blist of (?:things|what) to "
                         r"(?:pack|bring|buy|do|get)\b|\bwhat (?:do|should) (?:i|we) (?:pack|bring)\b", re.IGNORECASE)
@@ -915,6 +929,8 @@ _HOME_ACTS = re.compile(
     r"\b(?:turn|switch|flip)\b[^.?!]*\b(?:on|off|up|down)\b|\b(?:dim|brighten|lock|unlock|open|close|shut)\b|\bset\b[^.?!]*\bto \d"
     r"|\b(?:is|are|did i leave)\b[^.?!]*\b(?:on|off|open|closed|shut|locked|unlocked)\b|\bleft (?:on|open|unlocked)\b"
     r"|\bhow (?:warm|cold|hot) is (?:it )?(?:in )?the house\b", re.IGNORECASE)
+#: Code named after the house is no home ("open the house repo issue", "the lights PR").
+_NOT_HOME = re.compile(r"\b(?:repo(?:sitor(?:y|ies))?s?|PRs?|pull requests?|branch(?:es)?|commits?|github)\b", re.IGNORECASE)
 #: Asked to be reminded, or for a timer, an alarm or a message at a time, in English: a 'reminder' card.
 _ASKS_REMINDER = re.compile(
     r"\bremind (?:me|us)\b|\b(?:change|move|cancel|delete|remove|stop|snooze)\b[^.?!]*\b(?:reminder|timer|alarm)\b"
@@ -927,7 +943,8 @@ _ASKS_SCORE = re.compile(
     r"\b(?:did|do|does) (?:the )?(?!you\b|i\b|we\b)[\w.'’ -]{2,30} (?:win|lose|beat)\b|\bwho (?:won|is winning|’s winning|'s winning)\b[^.?!]*\b(?:game|match|series|final|bowl|cup)\b"
     r"|\b(?:final |the )?scores?\b(?! (?:card|sheet))|\bnext\b[\w.'’ -]{0,30}\b(?:game|match)\b|\bwhen (?:do|does|is|are) (?:the )?[\w.'’ -]{2,30} (?:play|game|match)\b"
     r"|\b(?:game|match)\b[^.?!]{0,12}\b(?:tonight|today|tomorrow|last night)\b|\bhow(?:'s| is|’s| are)\b[^.?!]*\b(?:game|match) going\b", re.IGNORECASE)
-_NOT_SCORE = re.compile(r"\b(?:credit|test|exam|sat|act|gre|risk|credit) scores?\b|\bscore (?:me|a deal)\b", re.IGNORECASE)
+_NOT_SCORE = re.compile(r"\b(?:credit|test|exam|sat|act|gre|risk|fico|bm25|f1|similarity|relevance|confidence|cosine|quality|benchmark|"
+                        r"eval|evaluation|accuracy|sentiment|lighthouse|ranking|sleep|readiness) scores?\b|\bscore (?:me|a deal)\b", re.IGNORECASE)
 PURCHASE_NOTE = (f"[Redde: asked what to buy. Look it up with your tools first (web search, the stores' own pages): never make up a "
                  f"price, a rating or a link. Then show them with {TOOL} as a 'purchase' card: " + SHAPES["purchase"]
                  + ". Then answer in a line: don't list them again.]")
@@ -1003,7 +1020,9 @@ _NOT_CONVERSION = re.compile(r"\b(?:files?|pdfs?|json|csv|markdown|html|strings?
 _ASKS_STOCK = re.compile(
     r"\bstocks?\b|\bshare price\b|\bshares? (?:of|in)\b|\b(?:nasdaq|nyse|dow jones|s&p ?500|ftse|nikkei|dax)\b|\bticker\b|\bmarket cap\b"
     r"|\btrading at\b|\bhow(?:'s|’s| is| did| are)\b[^.?!]*\b(?:the market|the markets|my portfolio)\b|\b(?:beat|missed?) earnings\b"
-    r"|\bearnings (?:report|call|date)\b|\$[A-Z]{1,5}\b", re.IGNORECASE)
+    # A ticker in capitals ("$NVDA"), not a shell's variable ("echo $HOME").
+    r"|\bearnings (?:report|call|date)\b|(?-i:\$(?!(?:HOME|PATH|USER|PWD|SHELL|TERM|LANG|TMP|IFS|UID|HOST|VAR|ENV|KEY|FOO|BAR)\b)[A-Z]{1,5}\b)",
+    re.IGNORECASE)
 #: From 1.14.5 (2026-11-02: "How is nvda today" got a table): a ticker or a company asked about
 #: by itself. Only tickers and names that aren't everyday words ("Apple", "Meta" and "Target" need
 #: "stock"); the second pattern takes any ticker in capitals with "how is" before it.
@@ -1017,7 +1036,8 @@ _ASKS_SHARE = re.compile(
     rf"|\b(?:price|quote) (?:of|for) (?:{_SHARES})\b|\bwhat(?:'s|’s| is) (?:{_SHARES}) (?:at|trading at|doing)\b", re.IGNORECASE)
 _ASKS_TICKER = re.compile(r"\b[Hh]ow(?:'s|’s| is| did)\s+(?!(?:HA|NAS|API|VPN|CPU|GPU|TV|AC|PC|MCP|LLM|DNS|SSD|UPS|WIFI|HVAC|USB|AI)\b)"
                           r"[A-Z]{2,5}\s+(?:doing|today|trading|this week|do today|do this week)\b(?!\s+with\b)")
-_NOT_STOCK = re.compile(r"\b(?:in|out of|back in|low on) stock\b|\bstock (?:up|photos?|images?|footage|android|firmware|rom|settings|ios|pot)\b"
+_NOT_STOCK = re.compile(r"\b(?:in|out of|back in|low on) stock\b|\bstock (?:up|photos?|images?|footage|android|firmware|rom|settings|ios|pot|"
+                        r"ubuntu|debian|linux|kernel|install(?:ation)?|config(?:uration)?|build|version|hermes|macos|windows)\b"
                         r"|\b(?:chicken|beef|vegetable|veggie|fish|soup|bone|turkey) stock\b|\btake stock\b|\brolling stock\b", re.IGNORECASE)
 _NEVER_MADE_UP = "never make up a price, a time, a status, a rating or a link"
 RECIPE_NOTE = (f"[Redde: asked for a recipe. Look a real one up first with your tools (web search, the site's own page) and give its source and "
@@ -1241,6 +1261,10 @@ def card_alone_note(text: str) -> str | None:
             f"'{kind}' card: " + SHAPES[kind] + "." + ALONE + "]")
 
 
+def _asks_time(text: str) -> bool:
+    return bool(_ASKS_TIME.search(text)) and not _CODE_TIME.search(text)
+
+
 def turn_note(home: Path, message, platform: str = "", at: datetime | None = None, session: str = "") -> str | None:
     """For `pre_llm_call`: when the person asks the time or the weather, and cards are on, what
     their time is (in the zone their phone said) and to show the card before answering. Added to
@@ -1254,7 +1278,7 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
     # A card's answer is the go-ahead itself, not a new ask.
     calendar_asked = bool(_ASKS_CALENDAR.search(text)) and not _PUTS_ON_CALENDAR.search(text)
     # "What's the weather tomorrow" is the weather's, unless the calendar is named too.
-    if calendar_asked and (_ASKS_WEATHER.search(text) or _ASKS_TIME.search(text)) and not _NAMES_CALENDAR.search(text):
+    if calendar_asked and (_ASKS_WEATHER.search(text) or _asks_time(text)) and not _NAMES_CALENDAR.search(text):
         calendar_asked = False
     if "[Redde card " not in text and calendar_asked and not gated(home):
         note = AGENDA_NOTE
@@ -1275,7 +1299,7 @@ def turn_note(home: Path, message, platform: str = "", at: datetime | None = Non
                 more += (f" Where the person is, it is now {forecast.time_said(None, tz, at).split(': ', 1)[1]} ({tz.key}).]"
                          if tz is not None else "]")
             return more
-    time_asked, weather_asked = bool(_ASKS_TIME.search(text)), bool(_ASKS_WEATHER.search(text))
+    time_asked, weather_asked = _asks_time(text), bool(_ASKS_WEATHER.search(text))
     if not time_asked and not weather_asked:
         # A card's answer is the go-ahead itself, not a new ask.
         if "[Redde card " in text:
@@ -1317,7 +1341,7 @@ def more_note(text: str) -> str | None:
         return STOCK_NOTE
     if _ASKS_SCORE.search(text) and not _NOT_SCORE.search(text):
         return SCORE_NOTE
-    if _HOME_THINGS.search(text) and _HOME_ACTS.search(text):
+    if _HOME_THINGS.search(text) and _HOME_ACTS.search(text) and not _NOT_HOME.search(text):
         return HOME_NOTE
     # Then converting, cooking and watching, before buying ("what's $100 in euros" is no shopping).
     if _ASKS_CONVERSION.search(text) and not _NOT_CONVERSION.search(text):

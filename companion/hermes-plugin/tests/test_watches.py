@@ -106,9 +106,6 @@ class FollowUpTests(unittest.TestCase):
         self.assertEqual(self.made, [])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class NotifyJobTests(RoutinesTests):
     """A job the agent made with Redde's notify tag sends each run's answer (asked 2026-10-28)."""
@@ -274,3 +271,7 @@ class HeadsUpEventTests(RoutinesTests):
         made = self.sent[0][1]
         self.assertEqual(made["u"], "2026-10-29T14:30:00-04:00")
         self.assertEqual(made["r"], "12 Main St, Springfield")
+
+
+if __name__ == "__main__":
+    unittest.main()

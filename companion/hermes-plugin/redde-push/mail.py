@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import base64
 import contextlib
+import copy
 import email
 import email.policy
 import hashlib
@@ -46,6 +47,11 @@ from dataclasses import dataclass, field
 from email.message import EmailMessage
 from email.utils import getaddresses, parseaddr, parsedate_to_datetime
 from pathlib import Path
+
+try:
+    import fcntl
+except ImportError:   # Windows: the threads' lock alone
+    fcntl = None
 
 log = logging.getLogger("redde_push.mail")
 
@@ -305,9 +311,43 @@ def usable(root: Path) -> bool:
 
 # ---- state -------------------------------------------------------------------------------------
 
+_GONE = object()
+
+
+def merged(before, after, fresh):
+    """`after`, which is what a long piece of work (a sync, a labels step) made of `before`, with
+    what someone else wrote to the file meanwhile (`fresh`) kept. The work read the account, talked
+    to the mail server for seconds and saved the whole of it, so a snooze set in those seconds, a
+    labels job queued or an email archived was written over, and a snoozed email with its time lost
+    never comes back (found 2026-11-09). Key by key: what only the other changed is the other's;
+    what both changed is merged an entry at a time where it is a dictionary (the messages), an item
+    at a time where it is a list (the snoozes), and is the work's otherwise."""
+    if isinstance(before, dict) and isinstance(after, dict) and isinstance(fresh, dict):
+        result = dict(after)
+        for key in set(before) | set(fresh):
+            was, theirs, mine = before.get(key, _GONE), fresh.get(key, _GONE), after.get(key, _GONE)
+            if theirs == was:
+                continue
+            if mine == was:
+                value = theirs
+            elif _GONE in (was, theirs, mine):
+                continue
+            else:
+                value = merged(was, mine, theirs)
+            if value is _GONE:
+                result.pop(key, None)
+            else:
+                result[key] = value
+        return result
+    if isinstance(before, list) and isinstance(after, list) and isinstance(fresh, list):
+        return [i for i in after if i in fresh or i not in before] + [i for i in fresh if i not in before and i not in after]
+    return after
+
+
 class State:
     """What is kept in redde-push/mail/ under the main home: one file per account, rules, the log,
-    drafts and settings. One lock for all of it (threads of this process)."""
+    drafts and settings. One lock for all of it (threads of this process); an account's file is
+    also saved under a file's lock, for Hermes's other process with the plugin in it."""
 
     _lock = threading.RLock()
 
@@ -322,7 +362,8 @@ class State:
 
     def _write(self, name: str, value) -> None:
         self.dir.mkdir(parents=True, exist_ok=True)
-        tmp = self.dir / f".{name}.tmp"
+        # Its own name: two writers (threads, or the gateway and the Dashboard) never share one.
+        tmp = self.dir / f".{name}.{os.getpid()}.{threading.get_ident()}.tmp"
         tmp.write_text(json.dumps(value, ensure_ascii=False))
         os.chmod(tmp, 0o600)
         tmp.replace(self.dir / name)
@@ -330,8 +371,33 @@ class State:
     def account(self, account_id: str) -> dict:
         return self._read(f"acct-{account_id}.json", {})
 
-    def save_account(self, account_id: str, value: dict) -> None:
+    @contextlib.contextmanager
+    def _held(self):
+        """The threads' lock and, where there is one, a file's across processes. Not to be nested:
+        a second lock on the file from the same process would wait for the first."""
         with self._lock:
+            if fcntl is None:
+                yield
+                return
+            self.dir.mkdir(parents=True, exist_ok=True)
+            with open(self.dir / ".lock", "w") as handle:
+                fcntl.flock(handle, fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(handle, fcntl.LOCK_UN)
+
+    def save_account(self, account_id: str, value: dict, since: dict | None = None) -> None:
+        """Saves an account. `since`: a copy of it as it was read, for work that took a while (a
+        sync, a labels step): what was written to the file meanwhile is kept (`merged`), and
+        `value` is brought up to date with it."""
+        with self._held():
+            if since is not None:
+                fresh = self.account(account_id)
+                if fresh != since:
+                    kept = merged(since, value, fresh)
+                    value.clear()
+                    value.update(kept)
             self._write(f"acct-{account_id}.json", value)
 
     def rules(self) -> list[dict]:
@@ -1268,6 +1334,7 @@ class Inbox:
         """New messages since the last look, sorted, the person's rules run on them. What was new."""
         now = now or time.time()
         kept = self.state.account(account.id)
+        before = copy.deepcopy(kept)
         if account.via == "gmail_api":
             new = self._sync_gmail(account, kept)
         else:
@@ -1287,7 +1354,7 @@ class Inbox:
         kept["last_sync"] = int(now)
         kept.pop("problem", None)
         self._trim(kept)
-        self.state.save_account(account.id, kept)
+        self.state.save_account(account.id, kept, since=before)
         self._rules(account, kept, new, texts)
         return new
 
@@ -1655,6 +1722,7 @@ class Inbox:
         if not labelable(account):
             return False
         kept = self.state.account(account.id)
+        before = copy.deepcopy(kept)
         now = now or time.time()
         try:
             if (kept.get("labels_unlabel") or {}).get("state") == "queued":
@@ -1666,7 +1734,7 @@ class Inbox:
             kept.pop("labels_problem", None)
         except MailError as error:
             kept["labels_problem"] = error.message
-        self.state.save_account(account.id, kept)
+        self.state.save_account(account.id, kept, since=before)
         return True
 
     def _backfill_step(self, account: Account, kept: dict, now: float) -> None:

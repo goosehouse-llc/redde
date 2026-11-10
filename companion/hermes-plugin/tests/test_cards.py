@@ -302,9 +302,6 @@ class CardTests(unittest.TestCase):
         self.assertEqual(cards.SCHEMA["name"], "redde_show")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class AnnounceTests(unittest.TestCase):
     """GitHub issue 35: on Hermes 0.22 the Dashboard tells a client of redde_show's calls live."""
@@ -1176,3 +1173,62 @@ class ReminderSetTests(unittest.TestCase):
         for words in ("cronjob_manage", "[redde-notify]", "repeat 1", "phone_alarms_set", "'update'", "'remove'",
                       "already passed", "A card alone sets nothing"):
             self.assertIn(words, cards.REMINDER_NOTE)
+
+
+class TurnTextTests(unittest.TestCase):
+    """What a turn's notes look at (`_said`), and what they no longer take for an ask (2026-11-09)."""
+
+    def test_a_long_message_is_looked_at_by_its_start_and_its_end(self):
+        short = "what's the weather tomorrow"
+        self.assertEqual(plugin._said(short), short)
+        self.assertEqual(plugin._said([{"type": "text", "text": short}, {"type": "image_url"}]).strip(), short)
+        self.assertEqual(plugin._said({"content": short}), short)
+        self.assertEqual(plugin._said(None), "")
+        long = "remind me at five " + "log line without a stop " * 2000 + " and which is better"
+        said = plugin._said(long)
+        self.assertLessEqual(len(said), 2 * plugin.LOOKED_AT + 3)
+        self.assertTrue(said.startswith("remind me at five ") and said.endswith(" and which is better"))
+        self.assertIn("\n.\n", said, "a full stop between the two, so no pattern runs across")
+        self.assertEqual(cards.more_note(said), cards.REMINDER_NOTE)
+
+    def test_a_pasted_log_does_not_hold_the_turn_up(self):
+        # "is … or … better" over 64 KB with no full stop: minutes uncut, a few milliseconds cut.
+        log = "the quick brown fox is jumping over lazy dogs or cats and turn set are " * 1000
+        began = time.perf_counter()
+        said = plugin._said(log)
+        cards.more_note(said)
+        cards._ASKS_ACTION.search(said)
+        self.assertLess(time.perf_counter() - began, 0.5)
+
+    def test_code_and_nouns_are_no_asks(self):
+        for text in ("echo $HOME in the script", "is this stock Ubuntu?", "what is the BM25 score here",
+                     "open the house repo issue", "turn on the lights PR checks"):
+            self.assertIsNone(cards.more_note(text), text)
+        for text in ("delete the temp file", "what's the cpu temp limit"):
+            self.assertIsNone(cards._ASKS_WEATHER.search(text), text)
+        for text in ("fix the clock skew on the server", "convert the time zone in python"):
+            self.assertFalse(cards._asks_time(text), text)
+        for text in ("send me the logs", "order the results by date", "what does the error message say", "open the text file",
+                     "recommend a good book", "it is a POST request", "in order to build it", "pay attention to the tests"):
+            self.assertIsNone(cards._ASKS_ACTION.search(text), text)
+        self.assertIsNone(plugin.routines._SCHEDULED.search("what's on my schedule today"))
+
+    def test_the_asks_are_still_asks(self):
+        self.assertEqual(cards.more_note("how is $NVDA doing"), cards.STOCK_NOTE)
+        self.assertEqual(cards.more_note("what's the stock price of Apple"), cards.STOCK_NOTE)
+        self.assertEqual(cards.more_note("what's the score of the Heat game"), cards.SCORE_NOTE)
+        self.assertEqual(cards.more_note("turn off the lights"), cards.HOME_NOTE)
+        self.assertEqual(cards.more_note("is the garage door open?"), cards.HOME_NOTE)
+        for text in ("what's the temperature outside", "temps this weekend?", "will it rain"):
+            self.assertIsNotNone(cards._ASKS_WEATHER.search(text), text)
+        for text in ("what time is it", "what's the time in Tokyo", "what does the clock say"):
+            self.assertTrue(cards._asks_time(text), text)
+        for text in ("send an email to Bob", "text mom I'm late", "message Ana that I'm on my way", "book a table for two",
+                     "book me a flight", "order a pizza", "post this to the blog", "pay the electric bill", "send the invoice to Ana"):
+            self.assertIsNotNone(cards._ASKS_ACTION.search(text), text)
+        for text in ("schedule a daily brief", "every morning tell me the news", "make a cron job for it"):
+            self.assertIsNotNone(plugin.routines._SCHEDULED.search(text), text)
+
+
+if __name__ == "__main__":
+    unittest.main()

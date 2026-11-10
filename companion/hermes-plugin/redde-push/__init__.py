@@ -239,6 +239,33 @@ def _on_reply(session_id: str = "", assistant_response: str = "", platform: str 
         log.debug("redde-push: reply hook failed", exc_info=True)
 
 
+#: How much of a long message a turn's notes look at, in characters: this much of its start and
+#: of its end, where the asking is. The notes' patterns are for a sentence someone said; over a
+#: pasted log with no full stop in it, "is … or … better" took 0.25 s at 8 KB and 1.9 s at 16 KB,
+#: before every answer (measured 2026-11-09).
+LOOKED_AT = 2000
+
+
+def _said(message) -> str:
+    """The turn's message as its notes look at it: its text (of a message with pictures, the text
+    parts), and of a long one only the start and the end, cut between words with a full stop
+    between the two, so that no pattern runs from one into the other."""
+    if isinstance(message, dict):
+        message = message.get("content")
+    if isinstance(message, list):
+        text = " ".join(str(p.get("text") or "") for p in message if isinstance(p, dict))
+    else:
+        text = message if isinstance(message, str) else ""
+    if len(text) <= 2 * LOOKED_AT:
+        return text
+    start, end = text[:LOOKED_AT], text[-LOOKED_AT:]
+    if not text[LOOKED_AT].isspace() and (cut := max(start.rfind(" "), start.rfind("\n"))) > 0:
+        start = start[:cut]
+    if not text[-LOOKED_AT - 1].isspace() and (cut := min((i for i in (end.find(" "), end.find("\n")) if i >= 0), default=-1)) >= 0:
+        end = end[cut + 1:]
+    return start + "\n.\n" + end
+
+
 def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_message=None, **_) -> dict | None:
     """`pre_llm_call`: a turn starts. Asked the time or the weather, the agent is told the
     person's time and to show the card (`cards.turn_note`); asked to call, how (`calls.turn_note`)."""
@@ -253,18 +280,21 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     except Exception:
         log.debug("redde-push: card turn start failed", exc_info=True)
     notes = []
+    # What was said, for the notes that go by its words; a run's own mark (a watch's, a goal's
+    # check-in's, a briefing's) is looked for in the whole of it.
+    said = _said(user_message)
     try:
         cards.announce()   # its calls told to the Dashboard's clients as they happen (issue 35)
         keys.announce()    # and request_secret's, so its card shows at once
     except Exception:
         log.debug("redde-push: couldn't have redde_show announced", exc_info=True)
     try:
-        notes.append(cards.turn_note(_home(), user_message, platform, session=session_id))
+        notes.append(cards.turn_note(_home(), said, platform, session=session_id))
     except Exception:
         log.debug("redde-push: card note failed", exc_info=True)
     try:
         # Asked to call: how (calls.py), for an agent the phone takes calls from.
-        notes.append(calls.turn_note(_home(), _store_in, user_message))
+        notes.append(calls.turn_note(_home(), _store_in, said))
     except Exception:
         log.debug("redde-push: call note failed", exc_info=True)
     try:
@@ -274,42 +304,42 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
         log.debug("redde-push: watch note failed", exc_info=True)
     try:
         # Asked for something on a schedule: how its answers reach the phone (routines.py).
-        notes.append(routines.turn_note(_home(), _store_in, user_message, platform))
+        notes.append(routines.turn_note(_home(), _store_in, said, platform))
         # A scheduled run: its answer goes to the phone as written (routines.py).
         notes.append(routines.cron_note(_home(), _store_in, platform))
     except Exception:
         log.debug("redde-push: schedule note failed", exc_info=True)
     try:
         # Something to do later, said in passing: that a follow-up can be set (followups.py).
-        notes.append(followups.turn_note(_home(), _store_in, user_message, platform))
+        notes.append(followups.turn_note(_home(), _store_in, said, platform))
         # Asked to hear when something happens: that a watch can be set (watches.py).
-        notes.append(watches.ask_note(_home(), _store_in, user_message, platform))
+        notes.append(watches.ask_note(_home(), _store_in, said, platform))
     except Exception:
         log.debug("redde-push: follow-up note failed", exc_info=True)
     try:
         # Something that sounds like a goal: that one can be set (goals.py); a goal's check-in:
         # its steps and how to answer.
-        notes.append(goals.turn_note(user_message, platform))
+        notes.append(goals.turn_note(said, platform))
         notes.append(goals.checkin_note(_home(), user_message, platform))
     except Exception:
         log.debug("redde-push: goal note failed", exc_info=True)
     try:
         # One of their lists (lists.py, 1.20.0): redde_list, not the agent's own todo tool.
-        notes.append(lists.turn_note(user_message, platform))
+        notes.append(lists.turn_note(said, platform))
     except Exception:
         log.debug("redde-push: list note failed", exc_info=True)
     try:
         # Asked about email (mail.py, 1.16.0): redde_mail, email as data, the inbox card; and a
         # briefing's run: the inbox as sorted.
         root = calls.caller(_home())[1]
-        notes.append(mail.turn_note(root, user_message, platform))
+        notes.append(mail.turn_note(root, said, platform))
         notes.append(mail.brief_note(root, user_message, platform))
     except Exception:
         log.debug("redde-push: mail note failed", exc_info=True)
     try:
         # "Remember that…" / "Forget that…" (remember.py): how to use the memory tool, so Redde's
         # Memory page shows one clean entry and a forget really removes it.
-        notes.append(remember.turn_note(user_message, platform))
+        notes.append(remember.turn_note(said, platform))
         # The app's "Save to long-term memory:" (longterm.py): exactly those, with the provider's tool.
         notes.append(longterm.turn_note(user_message, platform, _config()))
     except Exception:

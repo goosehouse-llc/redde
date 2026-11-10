@@ -416,6 +416,46 @@ class MailTests(unittest.TestCase):
         self.assertEqual(len(self.server.folders["INBOX"]), 1)
         self.assertEqual(self.server.folders["Redde/Snoozed"], {})
 
+    def test_a_snooze_set_while_a_sync_runs_is_kept(self):
+        # The sync read the account, talked to the server and saved the whole of it: a snooze set
+        # in those seconds was written over, and the email never came back (2026-11-09).
+        self.server.add(1)
+        self.server.add(2, subject="Second")
+        box = self.inbox()
+        box.sync(box.account())
+        box.state.save_account("main", {**box.state.account("main"), "last_sync": 0})
+        other = self.inbox()
+        looked = box._sync_imap
+
+        def meanwhile(account, imap, kept):
+            new = looked(account, imap, kept)
+            other.act("snooze", ["main:INBOX:1"], 2_000_000)                       # the Dashboard's process, mid-sync
+            return new
+        box._sync_imap = meanwhile
+        box.sync(box.account(), now=1_000_000)
+        kept = box.state.account("main")
+        self.assertEqual([s["until"] for s in kept.get("snoozed", [])], [2_000_000], "the snooze outlives the sync's save")
+        self.assertNotIn("main:INBOX:1", kept["messages"], "and the snoozed email stays out of the inbox")
+        self.assertIn("main:INBOX:2", kept["messages"])
+        self.assertEqual(kept["last_sync"], 1_000_000)
+        box._sync_imap = looked
+        box.state.save_account("main", {**box.state.account("main"), "last_sync": 0})
+        box.sync(box.account(), now=2_000_001)
+        self.assertEqual(self.server.folders["Redde/Snoozed"], {}, "and it comes back when due")
+
+    def test_merged_keeps_what_each_side_changed(self):
+        before = {"messages": {"a": {"unread": True}, "b": {"unread": True}, "c": {"unread": True}}, "snoozed": [{"id": 1}, {"id": 2}],
+                  "last_sync": 1, "labels_backfill": {"state": "done"}}
+        after = {"messages": {"a": {"unread": True}, "b": {"unread": False}, "c": {"unread": True}, "d": {"unread": True}},
+                 "snoozed": [{"id": 2}], "last_sync": 2, "labels_backfill": {"state": "done"}}
+        fresh = {"messages": {"b": {"unread": True}, "c": {"unread": False}}, "snoozed": [{"id": 1}, {"id": 2}, {"id": 3}],
+                 "last_sync": 1, "labels_backfill": {"state": "queued"}, "labels_unlabel": {"state": "queued"}}
+        self.assertEqual(mail.merged(before, after, fresh), {
+            "messages": {"b": {"unread": False}, "c": {"unread": False}, "d": {"unread": True}},   # a archived by the other, d new
+            "snoozed": [{"id": 2}, {"id": 3}],                                                     # 1 came due, 3 was set meanwhile
+            "last_sync": 2, "labels_backfill": {"state": "queued"}, "labels_unlabel": {"state": "queued"}})
+        self.assertEqual(mail.merged(before, after, before), after, "nothing written meanwhile: the work's as it is")
+
     def test_unsubscribe_one_click_on_a_tap_but_mailto_needs_the_agent(self):
         self.server.add(3, sender="News <news@paper.com>", subject="Headlines",
                         headers={"List-Unsubscribe": "<https://paper.com/u?x=1>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"})
@@ -774,9 +814,6 @@ class MailTests(unittest.TestCase):
         self.assertNotIn("app-pass", json.dumps(said))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class ReceiptSpottingTests(unittest.TestCase):
     """What counts as a receipt from the headers alone (11-05: "Your Amazon.com order of …" didn't)."""
@@ -792,3 +829,7 @@ class ReceiptSpottingTests(unittest.TestCase):
     def test_ordinary_mail_is_not(self):
         for subject in ("Lunch on Friday?", "Your weekly digest", "The order of the agenda", "In order to join, reply"):
             self.assertFalse(mail.rule_bucket({"subject": subject, "address": "friend@example.com"})[1], subject)
+
+
+if __name__ == "__main__":
+    unittest.main()

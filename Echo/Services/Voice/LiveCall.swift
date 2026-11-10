@@ -536,11 +536,13 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     func stop() {
         if let observer { NotificationCenter.default.removeObserver(observer) }
         observer = nil
-        engine.stop()
+        // Said before the engine stops: a restart already under way on `sending` (the hang-up
+        // itself changes the route) looks again once it has started the engine, and stops it.
         state.withLock { state in
             state.socket = nil
             state.stopped = true
         }
+        engine.stop()
     }
 
     // MARK: The engine
@@ -602,6 +604,12 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
             try connectNodes()
             engine.prepare()
             try engine.start()
+            // Hung up meanwhile (`stop`, on the main actor): the microphone isn't left running,
+            // nor the sound moved to the loudspeaker after the call.
+            guard !state.withLock({ $0.stopped }) else {
+                engine.stop()
+                return
+            }
             Self.keepOnSpeaker()
             state.withLock { $0.stats.restarts += 1 }
         } catch {

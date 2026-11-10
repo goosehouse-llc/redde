@@ -107,6 +107,17 @@ final class ConversationStore {
         return record
     }
 
+    /// The full record for a look through many of them (the Made tab reads up to 400): decoded
+    /// off the main actor like `loadRecord`, and not kept. `cache` is never emptied, so a scan
+    /// through `loadRecord` left every transcript it read in memory until the app closed.
+    func peekRecord(id: UUID) async -> ConversationRecord? {
+        if let cached = cache[id] { return cached }
+        let directory = directory
+        let record = await Task.detached(priority: .utility) { Self.read(id, in: directory) }.value
+        // A write may have landed while decoding; the in-memory copy is the newer one.
+        return cache[id] ?? record
+    }
+
     func upsert(_ record: ConversationRecord) {
         cache[record.id] = record
         pending[record.id] = record

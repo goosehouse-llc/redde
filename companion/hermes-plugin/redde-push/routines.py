@@ -36,9 +36,10 @@ EVERY = 30.0
 #: "I want Sol to be able to do this", a daily meeting brief): its name starts with this.
 NOTIFY = "[redde-notify]"
 #: What sounds like asking for something on a schedule, in English: a turn's note, said then only.
+#: To schedule, not their schedule ("what's on my schedule today").
 _SCHEDULED = re.compile(
     r"\b(every (day|morning|evening|night|week|weekday|hour|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|"
-    r"daily|weekly|each (morning|day|week)|on weekdays|schedule|cron|recurring)\b", re.IGNORECASE)
+    r"daily|weekly|each (morning|day|week)|on weekdays|(?<!my )(?<!the )(?<!our )(?<!your )schedule|cron|recurring)\b", re.IGNORECASE)
 NOTE = ("[Redde: if you make a scheduled job for this, make it yourself with cronjob_manage (don't hand the user a "
         "command), start its name with \"[redde-notify] \" (\"[redde-notify] Daily meeting brief\") and deliver it "
         "\"local\": each run's answer then reaches the user's iPhone as a notification through Redde, so no chat "

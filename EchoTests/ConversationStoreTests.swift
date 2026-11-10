@@ -54,6 +54,23 @@ struct ConversationStoreTests {
         #expect(ConversationStore(directory: dir).record(id: record.id)?.messages.count == 2)
     }
 
+    /// A look through many records (the Made tab) reads each without keeping it.
+    @Test func peekingReadsARecordWithoutKeepingIt() async throws {
+        let dir = tempDirectory()
+        defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }
+        let first = ConversationStore(directory: dir)
+        let record = sample()
+        first.upsert(record)
+        first.saveNow()
+        let store = ConversationStore(directory: dir)
+        #expect(await store.peekRecord(id: record.id)?.messages.count == 2)
+        #expect(store.cachedRecord(id: record.id) == nil, "read, not kept")
+        #expect(await store.loadRecord(id: record.id)?.messages.count == 2)
+        #expect(store.cachedRecord(id: record.id) != nil, "an opened one is kept")
+        #expect(await store.peekRecord(id: UUID()) == nil)
+        #expect(await first.peekRecord(id: record.id)?.messages.count == 2, "one already in memory is given as it is")
+    }
+
     @Test func migratesTheSingleFileArchive() throws {
         let dir = tempDirectory()
         defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }

@@ -1,6 +1,7 @@
 """A job's own model, Redde's Run On (`routines.set_model`, `models_due`, `/redde-push job-model`):
 python -m unittest discover -s companion/hermes-plugin/tests"""
 import json
+import unittest
 from datetime import datetime, timedelta, timezone
 
 from test_goals import FakeCron
@@ -76,3 +77,7 @@ class RunOnTests(RoutinesTests):
             self.assertIn("for the Redde app", plugin._job_model_slash(["default", "job1", "m]", "p"]))
         finally:
             plugin._home = original
+
+
+if __name__ == "__main__":
+    unittest.main()

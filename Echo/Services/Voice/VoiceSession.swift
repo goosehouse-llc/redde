@@ -961,13 +961,24 @@ final class VoiceSession {
         }
     }
 
+    /// Which watch of the recogniser's words is the live one: each start of one retires the last.
+    /// A watch ends only when the words change outside a listen, and a hands-free turn starts
+    /// the next listen (and a new watch) with the last one still waiting, so one more was left
+    /// running per turn, each writing `liveTranscript` on every word heard.
+    @ObservationIgnored private var transcriptWatch = 0
+
     private func observeTranscript() {
+        transcriptWatch &+= 1
+        observeTranscript(watch: transcriptWatch)
+    }
+
+    private func observeTranscript(watch: Int) {
         withObservationTracking {
             liveTranscript = recognizer.transcript
         } onChange: { [weak self] in
             Task { @MainActor in
-                guard let self, self.phase == .listening else { return }
-                self.observeTranscript()
+                guard let self, self.phase == .listening, self.transcriptWatch == watch else { return }
+                self.observeTranscript(watch: watch)
             }
         }
     }
