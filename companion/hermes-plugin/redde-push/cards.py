@@ -688,7 +688,15 @@ def unpacked(args):
         return args
     args = {k: _decoded(v) if k == "cards" else v for k, v in args.items()}
     def card(c):
-        return {k: _decoded(v) for k, v in c.items()} if isinstance(c, dict) else c
+        if not isinstance(c, dict):
+            return c
+        c = {k: _decoded(v) for k, v in c.items()}
+        # 2026-11-09: a reminder's card came with its 'kind' (reminder, timer...) and no 'type' in
+        # five runs of twenty-seven (Qwen 3.6, the lab): refused, and sent again a model step later.
+        # No other card has those kinds.
+        if not c.get("type") and str(c.get("kind") or "").lower() in REMINDER_KINDS:
+            c["type"] = "reminder"
+        return c
     if isinstance(args.get("cards"), list):
         args["cards"] = [card(c) for c in args["cards"]]
     elif args.get("type"):
@@ -936,7 +944,11 @@ _ASKS_REMINDER = re.compile(
     r"\bremind (?:me|us)\b|\b(?:change|move|cancel|delete|remove|stop|snooze)\b[^.?!]*\b(?:reminder|timer|alarm)\b"
     r"|\bset (?:a |an |me a )?(?:timer|alarm|reminder)\b|\b(?:timer|alarm|reminder) for\b|\bwake me(?: up)? at\b"
     r"|\bevery (?:day|morning|evening|night|week|weekday|monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b[^.?!]*"
-    r"\b(?:tell|send|remind|message|text|give|ping)\b|\bschedule (?:a )?message\b|\bin \d+ (?:min(?:ute)?s?|hours?)\b[^.?!]*\b(?:tell|remind|ping)\b",
+    r"\b(?:tell|send|remind|message|text|give|ping)\b|\bschedule (?:a )?message\b|\bin \d+ (?:min(?:ute)?s?|hours?)\b[^.?!]*\b(?:tell|remind|ping)\b"
+    # 2026-11-09 (the lab): "send me a message at 7am tomorrow that says good morning" got the note
+    # for sending things (a review card first) and a job made any old way. A message at a time.
+    r"|\b(?:(?:send|give) (?:me|us) (?:a |an )?(?:message|text|note|ping|nudge|notification|heads[- ]up)|(?:text|message|ping|notify|nudge) (?:me|us))\b"
+    r"[^.?!]{0,60}?\b(?:at \d{1,2}(?::\d{2})?(?: ?[ap]\.?m\.?)?(?![\d.:]*[.:]\d)|at (?:noon|midnight)\b|in \d+ ?(?:min(?:ute)?s?|hours?)\b|tomorrow\b|tonight\b)",
     re.IGNORECASE)
 #: Asked about a game, in English: a 'score' card. Not a credit score, not a song played.
 _ASKS_SCORE = re.compile(
@@ -1268,7 +1280,9 @@ def _asks_time(text: str) -> bool:
 def turn_note(home: Path, message, platform: str = "", at: datetime | None = None, session: str = "") -> str | None:
     """For `pre_llm_call`: when the person asks the time or the weather, and cards are on, what
     their time is (in the zone their phone said) and to show the card before answering. Added to
-    that turn's message only, so it costs nothing on any other."""
+    the message that asks, and to no other; Hermes 0.22 keeps it with that message, so it is sent
+    again with every later turn of the conversation (and a follow-up, "make it 8:30 instead", which
+    gets no note of its own, is done right by the one above it: the lab, 2026-11-09)."""
     if platform not in REDDES or not offered(home):
         return None
     text = _text(message)

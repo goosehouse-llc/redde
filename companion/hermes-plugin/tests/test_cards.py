@@ -601,6 +601,16 @@ class MoreCardsTests(unittest.TestCase):
         self.assertEqual(shown, [])
         self.assertIn("'items' (up to 6, your pick first), each {name, brand, price", problems[0], "the error gives the whole shape")
 
+    def test_a_reminder_card_without_its_type_is_still_a_reminder(self):
+        # 2026-11-09 (the lab, Qwen 3.6): 'kind' given and 'type' left out, refused, sent again.
+        for kind in cards.REMINDER_KINDS:
+            sent = cards.unpacked({"cards": [{"kind": kind, "title": "Call mom", "at": "2026-11-10T09:00:00-05:00", "id": "rem-1"}]})
+            self.assertEqual(sent["cards"][0]["type"], "reminder")
+            self.assertEqual(cards.check(sent)[1], [])
+        # A review's kinds are other kinds, and a card that says its type keeps it.
+        self.assertNotIn("type", cards.unpacked({"cards": [{"kind": "email", "title": "Send it"}]})["cards"][0])
+        self.assertEqual(cards.unpacked({"cards": [{"type": "review", "kind": "reminder", "title": "x"}]})["cards"][0]["type"], "review")
+
     def test_home_reminder_compare_and_score_are_checked(self):
         shown, problems = cards.check({"cards": [
             {"type": "home", "devices": [{"name": "Kitchen lights", "kind": "light", "state": "on", "entity": "light.kitchen"}, {"name": "Porch"}, {"area": "x"}]},
@@ -633,7 +643,10 @@ class MoreCardsTests(unittest.TestCase):
             "'home' card": ("Turn off the kitchen lights", "Is the garage closed?", "Set the house to 70", "Lock the front door",
                             "Did I leave the porch light on?", "dim the living room lamps", "set the living room lights to 40%"),
             "'reminder' card": ("Remind me to call the vet tomorrow at 10", "Set a timer for 20 minutes", "Wake me up at 6:30",
-                                "Every Monday, send me the weekly numbers", "set an alarm for 7 o'clock"),
+                                "Every Monday, send me the weekly numbers", "set an alarm for 7 o'clock",
+                                # 2026-11-09: a message at a time got the note for sending things.
+                                "send me a message at 7am tomorrow that says good morning", "text me at 5 to leave",
+                                "ping me in 20 minutes", "give me a heads-up at 4:30pm", "Send me a text at noon saying lunch"),
             "'compare' card": ("Which is better for a beginner, Python or JavaScript?", "Lisbon vs Porto for a week in March",
                                "Should I learn Spanish or French?", "Is Notion better than Obsidian for notes?"),
             "'score' card": ("Did the Magic win?", "When's the next Lightning game?", "What was the score last night?",
@@ -647,7 +660,9 @@ class MoreCardsTests(unittest.TestCase):
                                 "Can you recommend a good book?", "What should I get for dinner?", "What's the best way to learn Go?"),
             "'home' card": ("Turn on notifications", "Is the store open?", "Close the deal with Ana", "Did the Heat win?",
                             "Lock the row before you update it"),
-            "'reminder' card": ("What time is it?", "Set the alarm to away.", "What reminders do I have?"),
+            "'reminder' card": ("What time is it?", "Set the alarm to away.", "What reminders do I have?", "send me the logs",
+                                "ping me at 192.168.1.5", "send me a message when the build finishes", "text me the address",
+                                "tell me what happened at 3am", "send a message to John at 5", "what did the message at 7am say"),
             "'compare' card": ("What's the weather?", "Which headphones should I buy, the Sony or the Bose?",
                                "Compare these two functions and tell me which is faster"),
             "'score' card": ("What's my credit score?", "Did you play the song?", "Who won the election?"),

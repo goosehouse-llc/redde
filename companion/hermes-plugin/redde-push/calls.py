@@ -68,7 +68,8 @@ NOTE = ("[Redde: to ring the user's iPhone, use the call_user tool; if it isn't 
 def turn_note(home: Path, store_in, message) -> str | None:
     """For `pre_llm_call`: a message asks to be called, and this agent may call, so the turn is told
     how. Hermes 0.22 lists a plugin's tools behind its tool search, and a model asked to call said
-    "calling you now" without the tool (Marta, 2026-10-26). That turn only."""
+    "calling you now" without the tool (Marta, 2026-10-26). Added to the message that asks only
+    (Hermes 0.22 keeps it with that message for the rest of the conversation)."""
     text = message if isinstance(message, str) else " ".join(
         str(p.get("text") or "") for p in message or [] if isinstance(p, dict)) if isinstance(message, list) else ""
     if not _ASKS_CALL.search(text):

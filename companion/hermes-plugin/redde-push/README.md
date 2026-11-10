@@ -323,7 +323,7 @@ its `price` ("$$"), `hours` (whether it is open, in words: "Open until 9 PM", "C
 and `pick` (the agent's pick); the app adds the walk to each from where the phone is, where it
 already knows. Older apps ignore all of these. Redde tells the plugin the phone's time zone and temperature units
 (`/redde-push cards on tz=… units=…`) for "what time is it" with no place. When a message asks the time or
-the weather (in English), the plugin adds a line to that turn only: the person's time in that
+the weather (in English), the plugin adds a line to that message only: the person's time in that
 zone, and to show the card before answering. An agent asked "what time is it" otherwise answers
 from Hermes's clock, which is the server's.
 
@@ -355,8 +355,9 @@ Change and Cancel. A `compare` card puts two to four things side by side. A `sco
 games, final, live or upcoming. So the tool's description stays short on every prompt, their
 fields are not in the schema: when a message asks what to buy, for the home, for a reminder or a
 timer, which is better, or about a game (in English), the plugin adds that card's exact shape to
-that turn only, with the person's time for a reminder or a game; and the tool's error gives the
-shape when a card comes without it. None of these lines is added with cards off or for a gated agent.
+that message only, with the person's time for a reminder or a game; and the tool's error gives the
+shape when a card comes without it. (Hermes 0.22 keeps a note with its message, so it is sent again with
+each later turn of that conversation: what it costs, it costs for the conversation.) None of these lines is added with cards off or for a gated agent.
 
 From 1.14.0 a purchase card is checked before it shows: `redde_show` reads each product's own page
 from the Hermes server (a few at once, about five seconds at most) and makes the card what the

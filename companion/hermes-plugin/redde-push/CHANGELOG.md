@@ -3,6 +3,15 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.20.3 (2026-11-09)
+
+- "Send me a message at 7am tomorrow that says good morning" is taken for what it is, a reminder.
+  It got the note for emails and messages sent to somebody else, and the agent then set it up as
+  a job that wakes a model, or set nothing. Tried with the local model nine asks three times
+  each: all 27 set right, where 25 were.
+- A reminder card sent without its `type` is still a reminder (a model left it out about one time
+  in four: `kind` says what it is). It was turned away and the agent sent the card again.
+
 ## 1.20.2 (2026-11-09)
 
 - A long pasted message (a log, a file) no longer holds a reply up. Before each answer the plugin
