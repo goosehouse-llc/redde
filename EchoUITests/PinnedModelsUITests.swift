@@ -30,7 +30,11 @@ final class PinnedModelsUITests: XCTestCase {
         let pin = app.buttons["Pin"]
         XCTAssertTrue(pin.waitForExistence(timeout: 5), "A long press didn't offer Pin")
         pin.tap()
-        XCTAssertTrue(app.staticTexts["Pinned"].waitForExistence(timeout: 5), "No Pinned section after pinning")
+        // The Pinned section is at the top, scrolled out of the half-height sheet to reach the
+        // model (a swipe down on the sheet closes it), so the row's pin mark says it here; the
+        // section itself is checked when the picker opens again below.
+        let marked = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Pinned' OR (label CONTAINS 'qwen36-35b-q4' AND label CONTAINS 'Pinned')")).firstMatch
+        XCTAssertTrue(marked.waitForExistence(timeout: 5), "The model isn't marked pinned after pinning")
         shot("pinned in the picker", app)
 
         // (from the full height, one swipe only takes the sheet to half)
@@ -48,6 +52,7 @@ final class PinnedModelsUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Model"].waitForExistence(timeout: 8), "The header didn't open the picker")
         let pinned = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'qwen36-35b-q4'")).firstMatch
         XCTAssertTrue(pinned.waitForExistence(timeout: 5), "The pinned model isn't at the top")
+        XCTAssertTrue(app.staticTexts["Pinned"].exists, "No Pinned section after pinning")
         pinned.tap()
         for _ in 0 ..< 3 where app.navigationBars["Model"].exists { app.navigationBars["Model"].swipeDown(velocity: .fast); sleep(1) }
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Model: qwen36-35b-q4'")).firstMatch.waitForExistence(timeout: 8),

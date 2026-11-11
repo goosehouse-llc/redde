@@ -16,7 +16,7 @@ final class PushPluginUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.demoPlugin"] + flags + ["-echo.screen", "push"]
         app.launch()
-        XCTAssertTrue(app.navigationBars["When Redde is closed"].waitForExistence(timeout: 30), "The notifications screen didn't open")
+        XCTAssertTrue(app.navigationBars["Alerts When Redde Is Closed"].waitForExistence(timeout: 30), "The notifications screen didn't open")
         return app
     }
 

@@ -81,8 +81,10 @@ final class ReadingUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.staticTexts["On this iPhone"].waitForExistence(timeout: 30)
                       || app.staticTexts["ON THIS IPHONE"].waitForExistence(timeout: 2), "The saved copies aren't offered when the list can't load")
+        // Under the Today tiles and the problem card, so further down than the screen goes.
         let copy = app.staticTexts["Lisbon trip ideas"]
-        XCTAssertTrue(copy.waitForExistence(timeout: 5))
+        for _ in 0 ..< 4 where !(copy.waitForExistence(timeout: 1) && copy.isHittable) { app.swipeUp() }
+        XCTAssertTrue(copy.exists && copy.isHittable, "No saved copy of Lisbon trip ideas")
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Saved copy")).firstMatch.exists)
         keep("saved copies")
         copy.tap()

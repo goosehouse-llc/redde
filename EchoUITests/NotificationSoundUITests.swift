@@ -1,6 +1,6 @@
 import XCTest
 
-/// Settings → Voice → Notification sound: on until it is turned off, and it stays as set across a
+/// Settings → Notifications → Alert Sound: on until it is turned off, and it stays as set across a
 /// launch. Needs no server. Leaves the setting as it found it.
 @MainActor
 final class NotificationSoundUITests: XCTestCase {
@@ -9,7 +9,7 @@ final class NotificationSoundUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
-        app.openSettingsPage("Voice")
+        app.openSettingsPage("Notifications")
         let sound = app.switches["Alert Sound"]
         for _ in 0 ..< 12 where !(sound.exists && sound.isHittable) { app.swipeUp() }
         XCTAssertTrue(sound.exists && sound.isHittable, "No Alert Sound switch in Settings")

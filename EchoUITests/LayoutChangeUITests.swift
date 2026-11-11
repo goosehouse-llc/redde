@@ -154,7 +154,7 @@ final class LayoutChangeUITests: XCTestCase {
         let app = launch(["-echo.demoLong"])
         XCTAssertTrue(app.staticTexts["End of the long demo."].waitForExistence(timeout: 15), "The long demo didn't open")
         openChatMenu(app)
-        tapOnScreen("Find in conversation", in: app)
+        tapOnScreen("Find", in: app)   // the menu's row of icons since 2026-11-03
         let find = app.textFields["Find in conversation"]
         XCTAssertTrue(find.waitForExistence(timeout: 5), "Find didn't open")
         find.typeText("kitchen")

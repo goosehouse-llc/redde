@@ -160,14 +160,15 @@ final class VoiceOptionsUITests: XCTestCase {
         shot("voice on a profile")
         app.terminate()
 
-        // The app is on that profile now: the picker shows it chosen.
+        // The name is known now, and the app stays on its own profile: since 2026-10-29 the ask
+        // starts a conversation on that profile instead of moving the whole app there, unseen.
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "profiles"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Profile"].waitForExistence(timeout: 20), "The profile picker didn't open")
         let named = app.buttons["field-notes"]
         XCTAssertTrue(named.waitForExistence(timeout: 5), "The profile asked for by name isn't listed")
-        XCTAssertTrue(named.isSelected, "The app didn't move to the profile that was asked for")
-        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Default'")).firstMatch.isSelected)
+        XCTAssertFalse(named.isSelected, "The ask moved the whole app to the profile")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Default'")).firstMatch.isSelected, "The app left its own profile")
         shot("profile picker")
         app.terminate()
 

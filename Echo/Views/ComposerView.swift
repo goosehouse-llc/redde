@@ -556,6 +556,11 @@ struct ComposerView: View {
                     .accessibilityIdentifier("composer")
                     .onSubmit(send)
                     .modifier(ReturnSends(draft: $draft, selection: $selection, isFocused: focused, canSend: { hasDraft }, send: send))
+                    // A field built again over a half-typed draft (the iPhone Duo opened or closed)
+                    // took up the old cursor, and typing went in after the first letter.
+                    .onAppear {
+                        if !draft.isEmpty { selection = TextSelection(insertionPoint: draft.endIndex) }
+                    }
                 if draftIsLong {
                     Button("Open the editor", systemImage: "arrow.up.left.and.arrow.down.right") { showEditor = true }
                         .chatFont(.footnote, weight: .semibold)

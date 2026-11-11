@@ -20,6 +20,18 @@ final class SwipeToConversationsUITests: XCTestCase {
                    thenHoldForDuration: 0)
     }
 
+    /// The list is open when its bar can be reached: parked, the panel's bar is hidden but still
+    /// in the tree (iOS 27.2), so its being there says nothing.
+    private func listIsOpen(_ app: XCUIApplication, _ open: Bool, timeout: TimeInterval = 5) -> Bool {
+        let bar = app.navigationBars["Conversations"]
+        let end = Date.now.addingTimeInterval(timeout)
+        repeat {
+            if (bar.exists && bar.isHittable) == open { return true }
+            Thread.sleep(forTimeInterval: 0.25)
+        } while Date.now < end
+        return false
+    }
+
     func testSwipeRightOpensConversations() throws {
         let app = launch()
         try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")
@@ -28,7 +40,7 @@ final class SwipeToConversationsUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Conversations"].waitForExistence(timeout: 5), "Swiping right didn't open the list")
     }
 
-    /// One tap on Cron or Kanban switches the list; it took two.
+    /// One tap on Planned or Kanban switches the list; it took two.
     func testOneTapSwitchesSection() throws {
         // Not pinned: a launch-argument value can't be overwritten, so no tap could change it.
         let app = launch(pinSection: false)
@@ -38,7 +50,7 @@ final class SwipeToConversationsUITests: XCTestCase {
         let segments = app.segmentedControls.firstMatch
         XCTAssertTrue(segments.waitForExistence(timeout: 5), "The button didn't open the list")
         sleep(1)
-        for (segment, title) in [("Cron", "Cron"), ("Kanban", "Kanban"), ("Chats", "Conversations"), ("Kanban", "Kanban"), ("Cron", "Cron")] {
+        for (segment, title) in [("Planned", "Planned"), ("Kanban", "Kanban"), ("Chats", "Conversations"), ("Kanban", "Kanban"), ("Planned", "Planned")] {
             segments.buttons[segment].tap()
             XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 3), "One tap on \(segment) didn't switch")
         }
@@ -49,7 +61,7 @@ final class SwipeToConversationsUITests: XCTestCase {
         let app = launch(pinSection: false)
         try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")
         XCTAssertTrue(app.buttons["Conversations"].waitForExistence(timeout: 15), "The chat never appeared")
-        for (segment, title) in [("Chats", "Conversations"), ("Cron", "Cron"), ("Kanban", "Kanban"), ("Chats", "Conversations")] {
+        for (segment, title) in [("Chats", "Conversations"), ("Planned", "Planned"), ("Kanban", "Kanban"), ("Chats", "Conversations")] {
             drag(app, from: CGVector(dx: 0.1, dy: 0.45), to: CGVector(dx: 0.9, dy: 0.47))
             let segments = app.segmentedControls.firstMatch
             XCTAssertTrue(segments.waitForExistence(timeout: 5), "Swiping right didn't open the list")
@@ -68,19 +80,19 @@ final class SwipeToConversationsUITests: XCTestCase {
         let list = app.navigationBars["Conversations"]
 
         app.buttons["Conversations"].tap()
-        XCTAssertTrue(list.waitForExistence(timeout: 5), "The button didn't open the list")
+        XCTAssertTrue(listIsOpen(app, true), "The button didn't open the list")
         app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
-        XCTAssertTrue(list.waitForNonExistence(timeout: 5), "Tapping the chat beside the panel didn't close it")
+        XCTAssertTrue(listIsOpen(app, false), "Tapping the chat beside the panel didn't close it")
 
         drag(app, from: CGVector(dx: 0.1, dy: 0.45), to: CGVector(dx: 0.9, dy: 0.47))
-        XCTAssertTrue(list.waitForExistence(timeout: 5), "Swiping right didn't open the list")
+        XCTAssertTrue(listIsOpen(app, true), "Swiping right didn't open the list")
         drag(app, from: CGVector(dx: 0.95, dy: 0.5), to: CGVector(dx: 0.2, dy: 0.5))
-        XCTAssertTrue(list.waitForNonExistence(timeout: 5), "Dragging the chat back didn't close the panel")
+        XCTAssertTrue(listIsOpen(app, false), "Dragging the chat back didn't close the panel")
 
         app.buttons["Conversations"].tap()
-        XCTAssertTrue(list.waitForExistence(timeout: 5), "The button didn't open the list")
+        XCTAssertTrue(listIsOpen(app, true), "The button didn't open the list")
         list.buttons["New conversation"].tap()
-        XCTAssertTrue(list.waitForNonExistence(timeout: 5), "Starting a new conversation didn't close the panel")
+        XCTAssertTrue(listIsOpen(app, false), "Starting a new conversation didn't close the panel")
     }
 
     /// A swipe too short to open the panel leaves it parked: its bar (Settings, New conversation)
@@ -93,7 +105,8 @@ final class SwipeToConversationsUITests: XCTestCase {
         window.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.45))
             .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.45)),
                    withVelocity: .slow, thenHoldForDuration: 0.2)
-        XCTAssertFalse(app.navigationBars["Conversations"].waitForExistence(timeout: 2), "A short swipe opened the list")
+        sleep(2)   // time for it to open, if it were going to
+        XCTAssertTrue(listIsOpen(app, false, timeout: 0), "A short swipe opened the list")
     }
 
     func testVerticalScrollDoesNotOpenConversations() throws {
@@ -101,6 +114,7 @@ final class SwipeToConversationsUITests: XCTestCase {
         try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")
         XCTAssertTrue(app.buttons["Conversations"].waitForExistence(timeout: 15), "The chat never appeared")
         drag(app, from: CGVector(dx: 0.4, dy: 0.3), to: CGVector(dx: 0.5, dy: 0.7))
-        XCTAssertFalse(app.navigationBars["Conversations"].waitForExistence(timeout: 2), "A scroll opened the list")
+        sleep(2)   // time for it to open, if it were going to
+        XCTAssertTrue(listIsOpen(app, false, timeout: 0), "A scroll opened the list")
     }
 }

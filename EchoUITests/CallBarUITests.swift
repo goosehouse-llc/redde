@@ -31,8 +31,10 @@ final class CallBarUITests: XCTestCase {
         XCTAssertTrue(bar.exists, "No call bar over the chat")
         XCTAssertTrue(bar.label.contains("On a call"), "The bar doesn't say there is a call: \(bar.label)")
         // Everything else is under it: it lay on the chat's header when it was a safe-area inset.
-        let header = app.navigationBars.firstMatch
-        XCTAssertTrue(header.waitForExistence(timeout: 5), "No header on the chat")
+        // The chat's, the one on screen: the parked conversation list's bar is hidden but still in
+        // the tree (iOS 27.2), at the top of the screen, under whatever title its section has.
+        XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 5), "No header on the chat")
+        let header = app.navigationBars.allElementsBoundByIndex.first { $0.isHittable } ?? app.navigationBars.firstMatch
         XCTAssertLessThanOrEqual(bar.frame.maxY, header.frame.minY + 1, "The bar covers the chat's header")
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = "call bar"

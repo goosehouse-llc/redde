@@ -50,7 +50,7 @@ final class PushPairingUITests: XCTestCase {
     func testSettingsSayHowToPairAndListNoPairingAtFirst() throws {
         continueAfterFailure = false
         let app = launch(["-echo.screen", "push"])
-        XCTAssertTrue(app.navigationBars["When Redde is closed"].waitForExistence(timeout: 15), "The pairing screen didn't open")
+        XCTAssertTrue(app.navigationBars["Alerts When Redde Is Closed"].waitForExistence(timeout: 15), "The pairing screen didn't open")
         try XCTSkipIf(app.text(containing: "Paired ").exists, "This simulator is paired with a Hermes already")
         XCTAssertTrue(app.text(containing: "Not paired with a Hermes yet.").exists)
         XCTAssertTrue(app.text(containing: "hermes plugins install goosehouse-llc/redde/companion/hermes-plugin/redde-push").exists)
@@ -92,7 +92,7 @@ final class PushPairingUITests: XCTestCase {
 
         // Leave the simulator as it was: remove the pairing (which also removes it at the relay).
         let again = launch(["-push.relay", relay, "-echo.screen", "push"])
-        XCTAssertTrue(again.navigationBars["When Redde is closed"].waitForExistence(timeout: 20))
+        XCTAssertTrue(again.navigationBars["Alerts When Redde Is Closed"].waitForExistence(timeout: 20))
         let row = again.text(containing: "Paired ")
         XCTAssertTrue(row.waitForExistence(timeout: 5), "The pairing isn't listed")
         row.swipeLeft()

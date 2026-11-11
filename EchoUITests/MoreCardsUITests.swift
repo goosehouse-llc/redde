@@ -29,9 +29,14 @@ final class MoreCardsUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Unlock"].waitForExistence(timeout: 5) && app.staticTexts["Unlock Front door?"].waitForExistence(timeout: 5),
                       "Unlocking didn't ask first")
         shot(app, "home-confirm")
-        app.text(containing: "Kitchen · On").coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5)).tap()   // outside the question: not unlocked
+        // Outside the question, well clear of its popover: not unlocked.
+        app.text(containing: "Basement humidity").coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let question = app.staticTexts["Unlock Front door?"]
+        XCTAssertTrue(question.waitForNonExistence(timeout: 5), "The question didn't go away")
         sleep(1)
-        XCTAssertFalse(app.text(containing: "Unlock Front door").exists, "Unlock was sent")
+        // The message an unlock sends, exactly (the button's VoiceOver label is the same words, so not CONTAINS).
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label == %@", "Unlock Front door")).firstMatch.exists, "Unlock was sent")
+        XCTAssertTrue(app.text(containing: "Locked").exists, "The door isn't shown locked")
         let toggle = app.switches["Kitchen lights"]
         XCTAssertTrue(toggle.isHittable, "The kitchen's switch isn't on the screen")
         (toggle.switches.firstMatch.exists ? toggle.switches.firstMatch : toggle).tap()
@@ -47,8 +52,11 @@ final class MoreCardsUITests: XCTestCase {
         app.windows.firstMatch.swipeUp()
         sleep(1)
         XCTAssertTrue(app.text(containing: "Every Monday at 9 AM").exists, "How it repeats isn't shown")
-        app.buttons["Change…"].firstMatch.tap()
-        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 5), "Change… has no field")
+        // Change… moved into the card's ⋯ menu on 2026-11-10, as Change Time… and Other Change….
+        app.buttons["More for Send the weekly report"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Change Time…"].waitForExistence(timeout: 5), "The menu has no Change Time…")
+        app.buttons["Other Change…"].firstMatch.tap()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 5), "Other Change… has no field")
         shot(app, "reminder-change")
     }
 
