@@ -1281,7 +1281,22 @@ def _asks_time(text: str) -> bool:
     return bool(_ASKS_TIME.search(text)) and not _CODE_TIME.search(text)
 
 
+#: Added to a card note where Hermes names Redde's connection after another interface: a session
+#: moved between connections got Hermes's "now being answered on a different interface: tui" note
+#: (terminal: no attachments), and Sol wrote a table instead of the agenda card it was asked for (11-10).
+SURFACE_LINE = (f"[Redde: this is the Redde app, whatever interface Hermes names (tui, api_server): Markdown renders and "
+                f"{TOOL} cards show here.]")
+
+
 def turn_note(home: Path, message, platform: str = "", at: datetime | None = None, session: str = "") -> str | None:
+    """`_turn_note`, and where Hermes names Redde's connection 'tui' or 'api_server', that cards show."""
+    note = _turn_note(home, message, platform=platform, at=at, session=session)
+    if note and platform in ("tui", "api_server") and TOOL in note:
+        return note + "\n" + SURFACE_LINE
+    return note
+
+
+def _turn_note(home: Path, message, platform: str = "", at: datetime | None = None, session: str = "") -> str | None:
     """For `pre_llm_call`: when the person asks the time or the weather, and cards are on, what
     their time is (in the zone their phone said) and to show the card before answering. Added to
     the message that asks, and to no other; Hermes 0.22 keeps it with that message, so it is sent

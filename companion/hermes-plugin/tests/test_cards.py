@@ -184,6 +184,10 @@ class CardTests(unittest.TestCase):
                           "Sol guessed: 12:05 AM Thursday, at 9:09 PM on Friday")
             self.assertIn("'weather' card", cards.turn_note(home, "Will it rain tomorrow?", "api_server", at))
             self.assertIn("a 'time' and a 'weather' card", cards.turn_note(home, [{"type": "text", "text": "time in Tokyo and the weather there"}], "tui", at))
+            # Hermes may call Redde's connection a terminal (tui) after a session moves between connections (11-10).
+            self.assertIn(cards.SURFACE_LINE, cards.turn_note(home, "What time is it", "tui", at))
+            self.assertIn(cards.SURFACE_LINE, cards.turn_note(home, "What time is it", "api_server", at))
+            self.assertNotIn(cards.SURFACE_LINE, cards.turn_note(home, "What time is it", "desktop", at))
             for other in ("Tell me a 30 word short story.", "Set the alarm to away."):
                 self.assertIsNone(cards.turn_note(home, other, "desktop", at), other)
             self.assertIn("'home' card", cards.turn_note(home, "Turn off the lights in the office.", "desktop", at), "from 1.12.0 a home card, no time")

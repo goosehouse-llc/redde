@@ -521,6 +521,32 @@ class CopyOfThePhone(unittest.TestCase):
         self.assertEqual(result["events"], [{"title": "Dad arrives"}])
         self.assertEqual(self.phone.waiting(), [])
 
+    def test_guessed_argument_names_are_taken_and_others_are_named(self):
+        """Sol guessed since/until for start/end and was answered the coming week six times (11-10)."""
+        fixed, ignored = device._calendar_args({"since": "2027-07-01", "until": "2027-07-31", "search": "flight", "colour": "red"})
+        self.assertEqual(fixed, {"start": "2027-07-01", "end": "2027-07-31", "query": "flight"})
+        self.assertEqual(ignored, ["colour"])
+        fixed, _ = device._calendar_args({"date": "2027-07-08"})
+        self.assertEqual(fixed, {"start": "2027-07-08", "end": "2027-07-08"})
+        fixed, _ = device._calendar_args({"start": "2027-07-08T09:00", "from": "2026-01-01"})
+        self.assertEqual(fixed, {"start": "2027-07-08T09:00"}, "the tool's own name wins")
+        noted = json.loads(device._noting(json.dumps({"events": []}), ["colour"]))
+        self.assertIn("colour", noted["ignored"])
+        self.assertIn("start and end", noted["ignored"])
+        self.assertEqual(device._noting('{"events": []}', []), '{"events": []}')
+        # A day a copy can't reach is asked of the phone with the right names.
+        self.phone.set_areas(["calendar"])
+        result = {}
+        args, _ = device._calendar_args({"since": "2027-07-08", "until": "2027-07-08"})
+        reader = threading.Thread(target=lambda: result.update(json.loads(
+            self.phone.read("phone_calendar_events", args, session="s1", wait=5))), daemon=True)
+        reader.start()
+        request = waiting(self.phone)[0]
+        self.assertEqual((request["args"]["start"], request["args"]["end"]), ("2027-07-08", "2027-07-08"))
+        self.phone.answer(request["id"], {"ok": True, "result": {"events": [{"title": "Flight"}], "more": 0}})
+        reader.join(5)
+        self.assertEqual(result["events"], [{"title": "Flight"}])
+
     # 3. Reminders copy
 
     def test_reminders_copy(self):

@@ -3,6 +3,17 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.25.2 (2026-11-10)
+
+- The calendar tool is shown to the agent outright, not behind tool search. Search showed it one
+  line of the tool, so it guessed `since`/`until` for `start`/`end`, and every range it tried was
+  answered with the coming week ("July 2027 is beyond the copy").
+- The calendar tool takes the names an agent guesses (`since`, `until`, `from`, `to`, `date` for a
+  whole day, `search`…) as its own, and tells the agent about any it doesn't take.
+- A card note says the card shows even when Hermes names the connection `tui` or `api_server`. A
+  chat that moved between connections was told by Hermes it was now in the terminal, and the agent
+  wrote a table instead of the agenda card.
+
 ## 1.25.1 (2026-11-10)
 
 - The copy of the calendar answers only for the days it covers. A day past it (more than two

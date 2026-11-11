@@ -840,6 +840,54 @@ _FILLERS = {"the", "and", "for", "with", "from", "into", "onto", "our", "his", "
 _SEARCH_REACH = 365 * 86400.0
 
 
+#: Tools shown to the agent outright: it found the calendar through tool search, saw one line of it,
+#: guessed since/until for start/end and was answered the coming week six times (11-10).
+_ALWAYS_SHOWN = ("phone_calendar_events",)
+#: What an agent writes for the calendar tool's arguments when it guesses their names.
+_CALENDAR_NAMES = {
+    "start": ("since", "from", "after", "begin", "start_date", "from_date", "start_time", "starting", "time_min", "timeMin"),
+    "end": ("until", "to", "before", "end_date", "to_date", "end_time", "ending", "time_max", "timeMax"),
+    "query": ("q", "search", "text", "keyword", "keywords", "term", "terms"),
+    "limit": ("max", "max_results", "maxResults", "count"),
+}
+_CALENDAR_DAY = ("date", "day", "on")
+
+
+def _calendar_args(args: dict) -> tuple[dict, list[str]]:
+    """The calendar tool's arguments under their own names, and those it doesn't take. A day alone
+    ("date": "2027-07-08") is that whole day."""
+    known = {"start", "end", "query", "limit", "live"}
+    fixed = {key: value for key, value in args.items() if key in known}
+    ignored = []
+    for key, value in args.items():
+        if key in known or value in (None, ""):
+            continue
+        own = next((name for name, others in _CALENDAR_NAMES.items() if key in others), None)
+        if own:
+            fixed.setdefault(own, value)
+        elif key in _CALENDAR_DAY:
+            fixed.setdefault("start", value)
+            fixed.setdefault("end", value)
+        else:
+            ignored.append(key)
+    return fixed, ignored
+
+
+def _noting(answer: str, ignored: list[str]) -> str:
+    """The answer, telling the agent which of its arguments were left out and what the tool takes."""
+    if not ignored:
+        return answer
+    try:
+        result = json.loads(answer)
+    except ValueError:
+        return answer
+    if isinstance(result, dict):
+        result["ignored"] = (f"Not arguments of this tool, so not used: {', '.join(sorted(ignored))}. It takes start and end "
+                             "(ISO dates or times; a day alone is the whole day), query, limit and live.")
+        return json.dumps(result)
+    return answer
+
+
 def _words(query: str) -> list[str]:
     """A search's words, in order, once each: three letters or more and not a filler."""
     found = []
@@ -995,6 +1043,9 @@ def register(ctx, phone, to_widget=None) -> None:
         def handle(args, **kwargs) -> str:
             args = args if isinstance(args, dict) else {}
             # Route the two copyable tools through the copy path first.
+            if name == "phone_calendar_events":
+                args, ignored = _calendar_args(args)
+                return _noting(phone().read(name, args, session=kwargs.get("session_id")), ignored)
             if name in _COPY_OF:
                 return phone().read(name, args, session=kwargs.get("session_id"))
             if TOOLS[name][0] == "widget":
@@ -1004,6 +1055,13 @@ def register(ctx, phone, to_widget=None) -> None:
             return phone().ask(name, args, session=kwargs.get("session_id"))
         return handle
 
+    try:    # Shown outright, never behind tool search, whose one line hides the names it takes (11-10).
+        import toolsets
+        for name in _ALWAYS_SHOWN:
+            if name not in toolsets._HERMES_CORE_TOOLS:
+                toolsets._HERMES_CORE_TOOLS.append(name)
+    except Exception:
+        pass
     for name, (area, description, properties, required) in TOOLS.items():
         schema = {"name": name, "description": description,
                   "parameters": {"type": "object", "properties": properties, "required": required}}
