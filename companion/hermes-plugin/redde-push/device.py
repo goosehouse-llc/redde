@@ -17,7 +17,8 @@ Which tools the agent is offered is the phone's to say (`/redde-push device area
 or `none`): a tool whose area is off isn't offered at all. With every area off, which is how it
 starts, the agent sees none of this. The main agent's areas are those; a bot (another Hermes
 profile) has its own, which the phone gives all at once (`/redde-push device bots
-health=health,calendar scout=none`), and a bot it names none for gets none (1.24.0). Every
+health=health,calendar scout=none`): a bot it gives none gets none (1.24.0), and one it doesn't
+name gets the calendar and reminders, when they're on for the main agent (1.25.0). Every
 profile's requests are written down in the main home's folder, the one the app's command reads,
 each with the profile that made it, so the phone asks on that bot's behalf and by its rules.
 
@@ -59,6 +60,8 @@ STALE = 600.0
 AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget", "people", "health", "home")
 #: A Hermes profile's name, as the phone may give it.
 PROFILE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
+# What a bot has when the phone hasn't set it, of the main agent's areas (1.25.0, asked 2026-11-10).
+BOT_DEFAULT = ("calendar", "reminders")
 #: The kinds of Apple Health data `phone_health_read` knows (the app's `HealthKind`); the person
 #: shares each on its own, and phone_info says which.
 HEALTH_TYPES = ("steps", "walking_running_distance", "active_energy", "exercise_minutes", "stand_hours", "flights_climbed",
@@ -309,26 +312,38 @@ class Phone:
     # ---- which tools are offered
 
     def areas(self) -> list[str]:
-        if self.profile != "default":
-            return self.bots().get(self.profile, [])
+        """The areas this agent is offered. A bot's are some of the main agent's: the ones the phone
+        gave it, or BOT_DEFAULT when the phone hasn't set that bot; none at all until the phone has
+        said anything about bots (an older Redde would answer a bot's request as the main agent's)."""
         kept = self._read(self.dir / "areas.json") or {}
-        return [area for area in kept.get("areas", []) if area in AREAS]
+        main = [area for area in kept.get("areas", []) if area in AREAS]
+        if self.profile == "default":
+            return main
+        bots = self._bots()
+        if bots is None:
+            return []
+        mine = bots.get(self.profile, BOT_DEFAULT)
+        return [area for area in main if area in mine]
 
-    def bots(self) -> dict[str, list[str]]:
-        """Each bot's areas, as the phone last gave them; a bot not named has none."""
-        kept = self._read(self.dir / "bots.json") or {}
+    def _bots(self) -> dict[str, list[str]] | None:
+        """Each bot the phone set, with its areas (empty: it was given none); None before it set any."""
+        kept = self._read(self.dir / "bots.json")
         bots = kept.get("bots") if isinstance(kept, dict) else None
         if not isinstance(bots, dict):
-            return {}
+            return None
         return {name: [a for a in AREAS if a in (areas or [])] for name, areas in bots.items()
                 if isinstance(name, str) and PROFILE.fullmatch(name) and isinstance(areas, list)}
 
+    def bots(self) -> dict[str, list[str]]:
+        """Each bot the phone set, with its areas; the others have BOT_DEFAULT."""
+        return self._bots() or {}
+
     def set_bots(self, bots: dict[str, list[str]]) -> dict[str, list[str]]:
-        """Replaces every bot's areas; the ones with none are left out."""
+        """Replaces every bot's areas. One given none is kept as none (not BOT_DEFAULT)."""
         self._folder("requests")
         kept = {name: [a for a in AREAS if a in areas] for name, areas in bots.items()
                 if PROFILE.fullmatch(name) and name != "default"}
-        self._write(self.dir / "bots.json", {"bots": {n: a for n, a in kept.items() if a}, "at": time.time()})
+        self._write(self.dir / "bots.json", {"bots": kept, "at": time.time()})
         return self.bots()
 
     def set_areas(self, areas: list[str]) -> list[str]:
@@ -555,7 +570,8 @@ def slash(phone: Phone, words: list[str]) -> str:
         return "redde-push device areas " + (",".join(on) or "none")
     if words == ["status"]:
         return "redde-push device status " + (",".join(phone.areas()) or "none")
-    # bots <profile>=<area,...|none> ...: every bot's areas at once; `bots none` clears them all.
+    # bots <profile>=<area,...|none> ...: every bot the phone set, at once; `bots none` clears them all,
+    # which leaves every bot with BOT_DEFAULT (of the main agent's areas).
     if words[:1] == ["bots"] and len(words) >= 2:
         given: dict[str, list[str]] = {}
         if words[1:] != ["none"]:
@@ -565,7 +581,7 @@ def slash(phone: Phone, words: list[str]) -> str:
                     return f"redde-push device refused: {word} isn't <bot>=<areas>"
                 given[name] = [] if areas == "none" else areas.split(",")
         held = phone.set_bots(given)
-        return "redde-push device bots " + (" ".join(f"{n}={','.join(a)}" for n, a in sorted(held.items())) or "none")
+        return "redde-push device bots " + (" ".join(f"{n}={','.join(a) or 'none'}" for n, a in sorted(held.items())) or "none")
     if words == ["next"]:
         return "redde-push device next " + base64.b64encode(json.dumps(phone.waiting()).encode()).decode()
     if words[:1] == ["done"] and len(words) == 3:

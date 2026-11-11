@@ -24,24 +24,30 @@ nonisolated struct PhoneToolsSettings: Codable, Equatable, Sendable {
     /// so settings saved before it stay readable.
     var copy: Bool?
     /// The areas each bot may use, per server (its id), then bot (its profile): only ever some of
-    /// the ones on above, at the access set above. A bot not listed has none (asked 2026-11-10,
-    /// "my health bot"). The main agent's are `areas`.
+    /// the ones on above, at the access set above (asked 2026-11-10, "my health bot"). A bot not
+    /// listed has `botDefault`; one listed with none has none. The main agent's are `areas`.
     var bots: [String: [String: [String]]]?
+
+    /// What a bot has until it's set: the calendar and reminders (his pick 2026-11-10), of the
+    /// ones on above. The plugin's BOT_DEFAULT (1.25.0) is the same.
+    static let botDefault: Set<DeviceArea> = [.calendar, .reminders]
 
     var wantsCopy: Bool { copy == true }
 
     /// The areas a bot on a server was given, whether or not they are on above.
     func given(_ bot: String, server: String) -> Set<DeviceArea> {
-        Set((bots?[server]?[bot] ?? []).compactMap(DeviceArea.init(rawValue:)))
+        guard let kept = bots?[server]?[bot] else { return Self.botDefault }
+        return Set(kept.compactMap(DeviceArea.init(rawValue:)))
     }
     mutating func give(_ bot: String, server: String, _ area: DeviceArea, _ on: Bool) {
         var areas = given(bot, server: server)
         if on { areas.insert(area) } else { areas.remove(area) }
         var servers = bots ?? [:]
         var here = servers[server] ?? [:]
-        here[bot] = areas.isEmpty ? nil : DeviceArea.allCases.filter(areas.contains).map(\.rawValue)
-        servers[server] = here.isEmpty ? nil : here
-        bots = servers.isEmpty ? nil : servers
+        // Kept even when empty: none is a choice, unlike a bot never set (`botDefault`).
+        here[bot] = DeviceArea.allCases.filter(areas.contains).map(\.rawValue)
+        servers[server] = here
+        bots = servers
     }
 
     /// What an agent may do in an area: the main agent ("default" or nil) as set above; a bot the
@@ -368,14 +374,17 @@ final class DeviceToolsService {
     /// on for the main agent too. A bot left out gets none.
     func publishBots() async {
         let server = settings.activeServerID.uuidString
-        let given = (settings.phoneTools.bots?[server] ?? [:]).keys.sorted().compactMap { bot -> String? in
+        // Only the bots set here; the plugin gives the others `botDefault` (1.25.0).
+        let given = (settings.phoneTools.bots?[server] ?? [:]).keys.sorted().map { bot in
             let open = settings.phoneTools.open(for: bot, server: server)
-            return open.isEmpty ? nil : "\(bot)=" + open.map(\.rawValue).joined(separator: ",")
+            return "\(bot)=" + (open.isEmpty ? "none" : open.map(\.rawValue).joined(separator: ","))
         }
         guard let reply = try? await command("device bots " + (given.isEmpty ? "none" : given.joined(separator: " "))) else { return }
         // An older plugin answers that the command is the app's: its bots get no phone tools.
+        // (Said only where a bot would have something: one set here, or the default's areas on.)
+        let defaults = settings.phoneTools.open.contains(where: PhoneToolsSettings.botDefault.contains)
         botsUnsupported = !reply.hasPrefix("redde-push device bots") && !reply.hasPrefix("redde-push device refused")
-            && !given.isEmpty
+            && (defaults || given.contains { !$0.hasSuffix("=none") })
     }
 
     /// What a bot is called, from the roster; its profile's name when it isn't there.

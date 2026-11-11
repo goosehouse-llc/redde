@@ -3,6 +3,12 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.25.0 (2026-11-10)
+
+- A bot starts with the calendar and reminders phone tools: one the app hasn't set has those two,
+  when they're on for the main agent. A bot given none keeps none, and no bot gets an area the
+  main agent has off. Until the app has set any bot (an older Redde), bots still have none.
+
 ## 1.24.0 (2026-11-10)
 
 - Phone tools for bots. Until now only the main agent could use the iPhone's tools: a bot's

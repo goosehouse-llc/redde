@@ -153319,6 +153319,113 @@
         }
       }
     },
+    "Every bot starts with Calendar and Reminders, when they're on in Settings → Phone tools." : {
+      "comment" : "Edit Bot → Phone Tools: the areas a bot has before they're changed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver bot starter med Kalender og Påmindelser, når de er slået til i Indstillinger → Telefonværktøjer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeder Bot beginnt mit Kalender und Erinnerungen, wenn sie in Einstellungen → Telefon-Tools an sind."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada bot empieza con Calendario y Recordatorios, cuando están activados en Ajustes → Herramientas del teléfono."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque bot commence avec Calendrier et Rappels, s’ils sont activés dans Réglages → Outils du téléphone."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni bot parte con Calendario e Promemoria, se sono attivi in Impostazioni → Strumenti del telefono."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "どのボットも最初からカレンダーとリマインダーを使えます（設定 → デバイスツールでオンの場合）。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모든 봇은 캘린더와 미리 알림으로 시작합니다(설정 → 휴대폰 도구에서 켜져 있을 때)."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hver bot starter med Kalender og Påminnelser, når de er slått på i Innstillinger → Telefonverktøy."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elke bot begint met Agenda en Herinneringen, als die aanstaan in Instellingen → Telefoontools."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Każdy bot zaczyna z Kalendarzem i Przypomnieniami, gdy są włączone w Ustawienia → Narzędzia telefonu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo bot começa com Calendário e Lembretes, quando estão ativados em Ajustes → Ferramentas do telefone."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Каждый бот начинает с Календаря и Напоминаний, если они включены в Настройки → Инструменты телефона."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varje bot börjar med Kalender och Påminnelser, när de är på i Inställningar → Telefonverktyg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her bot, Ayarlar → Telefon araçları'nda açıksa Takvim ve Anımsatıcılar ile başlar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кожен бот починає з Календаря й Нагадувань, якщо вони ввімкнені в Параметри → Інструменти телефона."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个机器人一开始就有日历和提醒事项（在“设置 → 手机工具”中打开时）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每個機器人一開始就有行事曆和提醒事項（在「設定 → 手機工具」中開啟時）。"
+          }
+        }
+      }
+    },
     "Every Category" : {
       "localizations" : {
         "da" : {

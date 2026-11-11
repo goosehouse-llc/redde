@@ -299,15 +299,28 @@ class PhoneTools(unittest.TestCase):
         bot = device.Phone(Path(self.home.name) / "profiles" / "health")
         self.assertEqual((bot.profile, bot.dir), ("health", self.phone.dir))
         self.phone.set_areas(["calendar", "health"])
-        # The main agent's areas aren't a bot's: it has none until the phone gives it some.
+        # Until the phone says anything about bots (an older Redde), a bot has none.
         self.assertEqual(bot.areas(), [])
         self.assertFalse(bot.offers(None) or bot.offers("health"))
         self.assertIn("Edit Bot", json.loads(bot.ask("phone_health_read", {"type": "steps"}, wait=5))["error"])
+        # Then one it doesn't name has the calendar and reminders, of the main agent's (1.25.0).
+        self.assertEqual(device.slash(self.phone, ["bots", "none"]), "redde-push device bots none")
+        self.assertEqual(bot.areas(), ["calendar"])
+        self.phone.set_areas(["calendar", "reminders", "health"])
+        self.assertEqual(bot.areas(), ["calendar", "reminders"])
+        self.phone.set_areas(["calendar", "health"])
         said = device.slash(self.phone, ["bots", "health=health,teleport", "scout=none", "bad/name=calendar"])
         self.assertTrue(said.startswith("redde-push device refused"))
-        self.assertEqual(device.slash(self.phone, ["bots", "health=health,teleport", "scout=none"]), "redde-push device bots health=health")
+        self.assertEqual(device.slash(self.phone, ["bots", "health=health,teleport", "scout=none"]),
+                         "redde-push device bots health=health scout=none")
         self.assertEqual(bot.areas(), ["health"])
         self.assertTrue(bot.offers("health") and not bot.offers("calendar"))
+        # One given none keeps none; one it never named keeps the default.
+        self.assertEqual(device.Phone(Path(self.home.name) / "profiles" / "scout").areas(), [])
+        self.assertEqual(device.Phone(Path(self.home.name) / "profiles" / "other").areas(), ["calendar"])
+        # Never more than the main agent's.
+        device.slash(self.phone, ["bots", "health=health,contacts"])
+        self.assertEqual(bot.areas(), ["health"])
         self.assertEqual(self.phone.areas(), ["calendar", "health"])   # the main agent's stay as they were
         # Its call waits in the main folder, saying whose it is.
         call = Calls(bot, "phone_health_read", {"type": "steps"})
@@ -320,9 +333,9 @@ class PhoneTools(unittest.TestCase):
         self.assertEqual(waiting(self.phone)[0]["profile"], "default")
         device.slash(self.phone, ["done", waiting(self.phone)[0]["id"], b64({"ok": True, "result": {}})])
         call.done()
-        # The whole list is replaced each time; `none` clears it.
+        # The whole list is replaced each time; `none` clears it, back to the default.
         self.assertEqual(device.slash(self.phone, ["bots", "none"]), "redde-push device bots none")
-        self.assertEqual(bot.areas(), [])
+        self.assertEqual(bot.areas(), ["calendar"])
 
     def test_health_is_read_only_offered_alone_and_small(self):
         area, description, properties, required = device.TOOLS["phone_health_read"]

@@ -2,8 +2,8 @@ import SwiftUI
 
 /// Edit Bot → Phone Tools: which of this phone's areas one bot may use (asked 2026-11-10, a health
 /// bot that reads the Apple Watch's data). Only the areas on in Settings → Phone tools, at the
-/// access set there; each off for the bot until given. Kept on this phone, per server, and told
-/// to the plugin at once (`DeviceToolsService.publishBots`).
+/// access set there; a bot starts with Calendar and Reminders (`PhoneToolsSettings.botDefault`).
+/// Kept on this phone, per server, and told to the plugin at once (`DeviceToolsService.publishBots`).
 struct BotPhoneToolsView: View {
     let bot: HermesBot
     let name: String
@@ -39,8 +39,12 @@ struct BotPhoneToolsView: View {
                         }
                     }
                 } footer: {
-                    Text("\(name) asks Redde for these the way your agent does, with the same rules: what asks you first still asks, and the question says it's \(name) asking. Off ones aren't offered to it at all.",
-                         comment: "Edit Bot → Phone Tools: what giving a bot an area means; the bot's name twice")
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("\(name) asks Redde for these the way your agent does, with the same rules: what asks you first still asks, and the question says it's \(name) asking. Off ones aren't offered to it at all.",
+                             comment: "Edit Bot → Phone Tools: what giving a bot an area means; the bot's name twice")
+                        Text("Every bot starts with Calendar and Reminders, when they're on in Settings → Phone tools.",
+                             comment: "Edit Bot → Phone Tools: the areas a bot has before they're changed")
+                    }
                 }
                 if service.botsUnsupported {
                     Section {

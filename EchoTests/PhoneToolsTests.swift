@@ -296,24 +296,27 @@ struct PhoneToolsTests {
     @Test func aBotIsGivenSomeOfTheMainAgentsAreas() async throws {
         let h = Harness([.calendar: .allow, .health: .allow, .photos: .ask])
         let server = h.settings.activeServerID.uuidString
-        #expect(h.settings.phoneTools.open(for: "health", server: server).isEmpty, "a bot has none until given some")
+        // A bot starts with the calendar and reminders, of the main agent's (here only the calendar is on).
+        #expect(h.settings.phoneTools.open(for: "health", server: server) == [.calendar])
+        #expect(h.settings.phoneTools.bots == nil, "the default isn't kept: a bot made later has it too")
         h.settings.phoneTools.give("health", server: server, .health, true)
         h.settings.phoneTools.give("health", server: server, .contacts, true)   // off for the main agent: given, but not open
         h.settings.phoneTools.give("scout", server: server, .photos, true)
-        #expect(h.settings.phoneTools.open(for: "health", server: server) == [.health])
+        #expect(h.settings.phoneTools.open(for: "health", server: server) == [.calendar, .health])
         #expect(h.settings.phoneTools.access(.photos, agent: "scout", server: server) == .ask, "at the main agent's access")
-        #expect(h.settings.phoneTools.access(.calendar, agent: "scout", server: server) == .off)
-        #expect(h.settings.phoneTools.access(.calendar, agent: "default", server: server) == .allow)
-        #expect(h.settings.phoneTools.given("health", server: "another server").isEmpty, "bots are a server's")
-        // Told to the plugin all at once, after the main agent's.
+        #expect(h.settings.phoneTools.access(.calendar, agent: "scout", server: server) == .allow)
+        #expect(h.settings.phoneTools.access(.contacts, agent: "scout", server: server) == .off)
+        #expect(h.settings.phoneTools.given("health", server: "another server") == PhoneToolsSettings.botDefault, "bots are a server's")
+        // Only the bots set here are told to the plugin, all at once, after the main agent's.
         _ = await h.service.publish()
-        #expect(h.world.commands.suffix(2) == ["device areas calendar,photos,health", "device bots health=health scout=photos"])
+        #expect(h.world.commands.suffix(2) == ["device areas calendar,photos,health", "device bots health=calendar,health scout=calendar,photos"])
         #expect(!h.service.botsUnsupported)
-        // Taken back, a bot is left out: the plugin then gives it none.
-        h.settings.phoneTools.give("scout", server: server, .photos, false)
-        #expect(h.settings.phoneTools.bots?[server]?["scout"] == nil)
+        // Everything taken back is none, kept as such (not the default again).
+        for area in [DeviceArea.calendar, .reminders, .photos] { h.settings.phoneTools.give("scout", server: server, area, false) }
+        #expect(h.settings.phoneTools.bots?[server]?["scout"] == [])
+        #expect(h.settings.phoneTools.open(for: "scout", server: server).isEmpty)
         await h.service.publishBots()
-        #expect(h.world.commands.last == "device bots health=health")
+        #expect(h.world.commands.last == "device bots health=calendar,health scout=none")
         // Kept with the rest of Phone tools.
         let kept = try JSONDecoder().decode(PhoneToolsSettings.self, from: JSONEncoder().encode(h.settings.phoneTools))
         #expect(kept == h.settings.phoneTools)
@@ -323,6 +326,7 @@ struct PhoneToolsTests {
         let h = Harness([.calendar: .allow, .contacts: .ask])
         let server = h.settings.activeServerID.uuidString
         h.settings.phoneTools.give("scout", server: server, .contacts, true)
+        h.settings.phoneTools.give("scout", server: server, .calendar, false)
         await #expect(throws: DeviceToolError.notGiven(.calendar)) {
             try await h.service.perform(.init(id: "1", tool: "phone_calendar_events", profile: "scout"))
         }
@@ -346,10 +350,15 @@ struct PhoneToolsTests {
         let h = Harness([.health: .allow])
         h.world.pluginBeforeBots = true
         await h.service.publishBots()
-        #expect(!h.service.botsUnsupported, "nothing given, nothing missed")
+        #expect(!h.service.botsUnsupported, "nothing given (and no calendar or reminders for the default), nothing missed")
         h.settings.phoneTools.give("health", server: h.settings.activeServerID.uuidString, .health, true)
         await h.service.publishBots()
         #expect(h.service.botsUnsupported)
+        // The default alone is missed too.
+        let calendar = Harness([.calendar: .allow])
+        calendar.world.pluginBeforeBots = true
+        await calendar.service.publishBots()
+        #expect(calendar.service.botsUnsupported)
     }
 
     /// A plugin from before an area was added drops it: Settings says so under that area.
