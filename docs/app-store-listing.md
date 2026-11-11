@@ -1,18 +1,20 @@
-# App Store listing — Hermes Redde
+# App Store listing — Redde: AI Agent Voice & Chat
 
 Character limits are Apple's. Everything here describes shipped, verified behaviour.
 
 ## Name (30)
-Hermes Redde
+Redde: AI Agent Voice & Chat
+
+Until 2.5 it was "Hermes Redde". Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
 
 ## Subtitle (30)
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New in 2.4: goals your agent plans and checks in on, an email inbox it sorts, memory you can see, Apple Home and Health as phone tools, and Today above your chats.
+New in 2.5: bots that work in the background, models and provider keys set from your phone, free local calls, phone tools for bots, and better battery life.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
-voice,assistant,ai,agent,carplay,self-hosted,llm,ollama,bots,watch,siri,shortcuts,private,openai
+assistant,carplay,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,talk
 
 ## Description (4000)
 
@@ -24,33 +26,33 @@ AHEAD OF YOUR DAY
 • Goals: tell your agent what you want to get done. It plans the steps, checks in on a schedule and shows your progress above your chats.
 • Morning Ideas, a Week Ahead and an Evening Wrap-up arrive as cards to swipe. Before an event, a heads-up says what to bring, and Leave-By Alerts work out from your calendar and Apple Maps when to go.
 • "Let me know when it ships", "check back Friday": watches and follow-ups come back on their own. Places tell your agent you've arrived; Health-aware days, if you allow.
-• Answers come as cards: your day as a timeline, the weather by the hour, places on a map, an email to check before it sends, a list to tick off. Approvals say in plain words what will happen.
+• Answers come as cards: your day as a timeline, the weather by the hour, places on a map, an email to check before it sends, a list to tick off.
 
 BOTS
 • Each Hermes profile is a bot with a face, a voice and a chat of its own. Start from a template (Researcher, Writer, Coder, Home, Planner) and make its job, model and tools your own.
-• Type @ to hand work to another bot, or put two to six in a group chat. Give one a schedule and its answer arrives with a notification, even with Redde closed.
+• Type @ to hand work to another bot, or put two to six in a group chat. A bot can work in the background and tell you when it's done. Give one a schedule and its answer arrives with a notification, even with Redde closed.
 
 TALK, DON'T TYPE
 • Tap the mic or say "Hey" and your agent's name, ask, hear the answer, or show it what the camera sees. Speech is recognized on your device; replies are read by the built-in voice, Kokoro, ElevenLabs or your Hermes.
-• Or talk live, interrupting any time, with GPT-Live, Gemini Live, Grok Voice or ElevenLabs on your own key. An agent you allow can call you.
-• Hands-free until you say "that's all". CarPlay, Apple Watch, Siri, widgets and the Action Button. Spoken prefixes switch models or go to a bot: "Opus, review this diff".
+• Or talk live, interrupting any time: a free local call in your reading voice, or GPT-Live, Gemini Live, Grok Voice or ElevenLabs on your own key. An agent you allow can call you.
+• Hands-free until you say "that's all". CarPlay, Apple Watch, Siri, widgets and the Action Button. Spoken prefixes switch models or go to a bot.
 
 SEE THE AGENT WORK
 • Reasoning and tool calls live, with a Live Activity; lock the phone and it carries on.
 • Approve or answer from a notification, out loud, or with a nod in AirPods. Notifications reach you with Redde closed, encrypted end to end.
 
 A FULL CLIENT
-• Chats live in your gateway's session ledger: start on the phone, continue on the desktop. Search, pin, fork, archive, or go incognito.
+• Start a chat on the phone, continue on the desktop. Search, pin, fork, archive, or go incognito.
 • An email inbox your agent sorts, with rules you set. Gmail or any mailbox; nothing is sent until you approve it.
 • Projects, scheduled jobs, the Kanban board, skills, plugins, memory you can see and edit, MCP servers, files and an SSH terminal.
 • Phone tools: your agent can use your calendar, reminders, contacts, photos and files, Apple Home and the Health data you choose, set alarms and start calls and texts, each only if you allow it.
 • Markdown, code, tables, diagrams and math; pictures, PDFs and audio open in place.
-• Attach photos, files or a day's calendar, or share from any app. Regenerate, edit and resend, or switch models with /model.
+• Attach photos, files or a day's calendar, or share from any app. Regenerate, edit and resend.
 
 YOUR BACKEND, YOUR RULES
 • Connect through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Several servers in one list, synced with iCloud.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM, Ollama or a hosted provider.
-• Set up by QR code or link. Credentials stay in the Keychain; a key your agent asks for goes sealed straight to your server.
+• Set up by QR code or link, and set models and keys from the phone. Credentials stay in the Keychain; a key your agent asks for goes sealed straight to your server.
 • In 17 languages. Face ID lock, eight themes, iPad split view, iPhone Duo, and a native Mac app.
 • The one service we run is an optional relay for notifications, which can't read them.
 
@@ -63,9 +65,38 @@ Hermes is an open-source project by Nous Research. Redde is an independent clien
 Two pictures App Store Connect has taken since October 2026, on the version page under Product Page Information → Header and Search Results. People on iOS 27 and later see them; without them the page and the search result look as before (screenshots in the search result). Both are in `design/screenshots/creative/`, made by `design/screenshots/creative.py`.
 
 - Header (`header-3840x1646.png`, 21:9): "Type it. Or just say it." between two halves of a waveform. The top of the product page, above the icon and the name.
-- Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat for Hermes." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
+- Search results (`search-3840x2560.png`, 3:2): "Talk to your own AI agent. Voice and chat, on your own server." beside voice mode and a chat. Shown with the app in search in place of the first screenshots.
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
+
+## What's New in 2.5 (4000)
+Bots that work in the background, models from your phone, free local calls, and better battery life.
+
+• Workstreams. Ask any bot to work on something in the background: it hands the job to a chat of its own and tells you when it's done or needs your approval. The bot's chat shows what's running, to open, answer or stop. On the Dashboard and the Hermes API.
+• Models & Providers. Set your Hermes's main model, its fallbacks and helper models, add provider keys and your own endpoints, from Settings or for each bot in Edit Bot.
+• Local calls. A live call with no key and no bill: your words are heard on the device, and answers are read in your reading voice, Kokoro or any OpenAI-style speech server, ElevenLabs or the built-in voice. Any call can be put away as a bar over the chat while you keep reading.
+• Phone tools for bots. Give a bot its own phone tools in Edit Bot, so a health bot can read your Health data; every bot starts with your calendar and reminders. More from Apple Watch: ECG, wrist temperature, walking steadiness, cardio recovery, time in daylight, workout heart rate and routes.
+• Briefings your way. A weather briefing shows the weather card. Change Time on a briefing, or on anything Planned, moves when it runs. Give each Today tile its own color, or all of them one.
+• Reminders and timers. A reminder's card says it's set; restart a timer, change its length or its time, or cancel it, from the card. Reminders go into Apple Reminders first.
+• Bot photos: give a bot a photo for a face, from your library.
+• In step on every device. An open chat shows replies written on your other devices and is read again when you come back. What your agent says while it works folds into its steps, and a turn's activity sits under one summary.
+• Easier on the battery. Redde asks your Hermes for news less often while nothing is happening, and less again in Low Power Mode; the Mac stops when its window is out of sight. Your photo library is looked through on the charger, wake phrases settle down in a noisy room, and a call that goes on when locked lets the screen lock.
+• Also: calendar questions find events months ahead, and a copy of your calendar covers the next two months. Purchase cards show each store's price. Kanban opens Hermes's other boards. Retry in a group chat sends what the room said.
+• Fixes: in some cars (a 2022 Skoda Octavia), CarPlay disconnected as Redde started thinking; and Stop or Pause on the car's voice card could close Redde (GitHub #67). Catching up on a reply tries again while the network wakes (#66). Location and other notes no longer show in the chat on other apps (#72).
+
+Most of this takes the Redde plugin 1.27 on your Hermes: Settings → Redde Plugin offers the update.
+
+## Before submitting 2.5
+- The new name, "Redde: AI Agent Voice & Chat", goes in by hand: App Store Connect → the app → App Information → Name (the record's, shared by iPhone, iPad and Mac; the store script doesn't send it). It shows once a version is approved. Keywords lose the words now in the name and other companies' names (openai, ollama). Then tell the claimant and Apple (APP286553-D in the subject).
+- The build is 2.5 (294), iPhone, iPad and Mac, archived from main once everything since 2.4 (293) is committed and pushed.
+- Try the car once on 294 (the #67 change skips an audio mode switch in the car), and a Local call on a device.
+- Background processing: a new `BGProcessingTask` (`com.goosehouse.echo.photos`, needs external power) looks through the photo library on the charger, only with Photos on in Phone Tools. The `processing` background mode was already declared; nothing new to declare. Review notes can say so under PHONE TOOLS if asked.
+- App Privacy stays "Data Not Collected": provider keys typed in Models & Providers go only to the person's own Hermes, and the photo index never leaves the device.
+- The privacy policy: docs/privacy.md (Nov 10 lines: bot phone tools, bot photos, local calls) plus provider keys in Models & Providers. Publish it before submitting.
+- The plugin: main must serve 1.27.0 (pushed with this release). Publish a GitHub release for it.
+- Screenshots: 2.4's set still fits, but `08-bots` / `08-ipad-bots` were redrawn 11-11 without "Hermes" in the caption ("Each bot has a face, a voice and a chat of its own."): `scripts/app-store-push.py screenshots` sends just those two. The search-results picture (`creative/search-3840x2560.png`) now reads "Voice and chat, on your own server."; it goes up by hand (Product Page Information → Header and Search Results). A workstreams or Models & Providers shot is optional.
+- The website: "new in 2.5" at release (deploys are his word).
+- Answer and close GitHub #67 at release; #66 and #72 too.
 
 ## What's New in 2.4 (4000)
 Goals, an email inbox, memory you can see, and Apple Home.

@@ -142,12 +142,12 @@ def search():
     left = x0 + 30; width = vx - left - 120
     lines = ['Talk to', 'your own', 'AI agent.']
     f = fit(max(lines, key=len), width, start=236)
-    small = fit('Voice and chat for Hermes.', width, weight='Medium', start=96)
+    small = fit('Voice and chat, on your own server.', width, weight='Medium', start=96)
     lead = round(f.size * 1.08); gap = round(small.size * 0.7)
     y = cy - (lead * len(lines) + gap + small.size) // 2
     for i, line in enumerate(lines):
         d.text((left, y), line, font=f, fill=GOLD if i == 2 else WHITE, anchor='la'); y += lead
-    d.text((left, y + gap), 'Voice and chat for Hermes.', font=small, fill=MIST, anchor='la')
+    d.text((left, y + gap), 'Voice and chat, on your own server.', font=small, fill=MIST, anchor='la')
     save(canvas, 'search', 'search-3840x2560')
 
 header()

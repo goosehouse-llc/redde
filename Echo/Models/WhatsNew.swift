@@ -30,6 +30,26 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "2.5", items: [
+            Item(symbol: "square.stack.3d.up", title: String(localized: "Workstreams", comment: "What's New 2.5: a bot hands a job to a chat of its own that works in the background"),
+                 detail: String(localized: "Ask any bot to work on something in the background: it hands the job to a chat of its own and tells you when it's done or needs you. Its chat shows what's running, to open, answer or stop. On both connections, with the Redde plugin 1.23 on your Hermes.", comment: "What's New 2.5: workstreams")),
+            Item(symbol: "slider.horizontal.3", title: String(localized: "Models & Providers", comment: "What's New 2.5: the Models & Providers settings page"),
+                 detail: String(localized: "Set your Hermes's main model, its fallbacks and helper models, add provider keys and your own endpoints, from Settings → Model → Models & Providers, and for each bot in Edit Bot. It takes the Redde plugin 1.26 on your Hermes.", comment: "What's New 2.5: Models & Providers")),
+            Item(symbol: "phone.connection", title: String(localized: "Local calls", comment: "What's New 2.5: a live call with on-device listening and the reading voice"),
+                 detail: String(localized: "Pick Local call in Settings → Voice → Voice mode: a call with no key and no bill. Your words are heard on the device and answers are read in your reading voice: Kokoro or any OpenAI-style speech server, ElevenLabs or the built-in voice. Put any call away as a bar over the chat.", comment: "What's New 2.5: local calls and the call bar")),
+            Item(symbol: "heart.text.square", title: String(localized: "Phone tools for bots", comment: "What's New 2.5: bots get phone tools of their own"),
+                 detail: String(localized: "Give a bot phone tools of its own in Edit Bot → Phone Tools, so a health bot can read your Health data. Every bot starts with your calendar and reminders. And more from Apple Watch: ECG, wrist temperature, walking steadiness, workout heart rate and routes. It takes the Redde plugin 1.25.", comment: "What's New 2.5: phone tools for bots")),
+            Item(symbol: "cloud.sun", title: String(localized: "Briefings your way", comment: "What's New 2.5: weather card in briefings, Change Time, Today tile colors"),
+                 detail: String(localized: "A weather briefing shows the weather card. Change Time… on a briefing, or on anything in Planned, moves when it runs. Hold a Today tile to give it a color, or pick one for all of them in Settings → Appearance → Today Tiles.", comment: "What's New 2.5: briefings")),
+            Item(symbol: "timer", title: String(localized: "Reminders and timers", comment: "What's New 2.5: the reminder card"),
+                 detail: String(localized: "A reminder's card says it's set. From its menu, restart a timer, change its length or the time, or cancel it. Reminders go into Apple Reminders first.", comment: "What's New 2.5: the reminder card")),
+            Item(symbol: "person.crop.circle", title: String(localized: "Bot photos", comment: "What's New 2.5: a photo as a bot's face"),
+                 detail: String(localized: "Give a bot a photo for a face: Choose Photo in Change Face. It shows in Hermes Desktop too. On the Dashboard connection.", comment: "What's New 2.5: bot photos")),
+            Item(symbol: "arrow.triangle.2.circlepath", title: String(localized: "In step on every device", comment: "What's New 2.5: an open chat keeps up with other devices"),
+                 detail: String(localized: "An open chat shows replies written on your other devices, and is read again when you come back to Redde. What your agent says while it works folds into its steps.", comment: "What's New 2.5: other devices, working notes")),
+            Item(symbol: "battery.100percent", title: String(localized: "Easier on the battery", comment: "What's New 2.5: battery life work"),
+                 detail: String(localized: "Redde asks your Hermes for news less often while nothing is happening, and less again in Low Power Mode. Your photos are looked through on the charger, wake phrases settle down in a noisy room, and a call that goes on when locked lets the screen lock.", comment: "What's New 2.5: battery life")),
+        ]),
         Release(version: "2.4", items: [
             Item(symbol: "flag.checkered", title: String(localized: "Goals"),
                  detail: String(localized: "Tell your agent something you want to get done, in any chat or with New Goal (hold the New Conversation button). It makes a plan of steps on your Kanban board for you to approve, checks in on a schedule, and the goal's card at the top of your chats shows how far along you are. It takes the Redde plugin 1.16 on your Hermes.")),

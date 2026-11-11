@@ -1,6 +1,6 @@
 # App Review notes — the Mac app
 
-The notes for the Mac version of Hermes Redde (platform macOS, same App Store record as the iPhone
+The notes for the Mac version of Redde (platform macOS, same App Store record as the iPhone
 app). `scripts/app-store-push.py notes --mac` puts the test key in and sends them; they take plain
 text, 4,000 characters at most.
 

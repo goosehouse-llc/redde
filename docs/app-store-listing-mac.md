@@ -1,4 +1,4 @@
-# App Store listing — Hermes Redde for Mac
+# App Store listing — Redde: AI Agent Voice & Chat, for Mac
 
 The Mac app's own version page in App Store Connect: the same App Store record as the iPhone and
 iPad app (bundle id com.goosehouse.echo, one purchase for all three), platform macOS. Name,
@@ -11,10 +11,10 @@ Not claimed: voice mode, live voice, phone tools, notifications with Redde close
 push yet), CarPlay, the Watch, Siri, wake phrases, calls, alarms, the terminal.
 
 ## Promotional text (170, editable without a new build)
-New: Redde on the Mac, a native app for your Hermes agent. One purchase with iPhone and iPad, and your servers and settings follow you with iCloud.
+New in 2.5: bots that work in the background, your agent's models and provider keys set from the Mac, bot photos, and chats that keep up with your other devices.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
-assistant,ai,agent,self-hosted,llm,ollama,bots,chat,private,openai,client,mac,macos,local,llama
+assistant,self-hosted,llm,bots,private,client,mac,macos,local,chatbot,homelab,desktop
 
 ## Description (4000)
 
@@ -51,6 +51,23 @@ A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible en
 
 Hermes is an open-source project by Nous Research. Redde is an independent client, not affiliated with it.
 
+## What's New in 2.5 (4000)
+Bots that work in the background, and your models set from the Mac.
+
+• Workstreams. Ask any bot to work on something in the background: it hands the job to a chat of its own and tells you when it's done or needs your approval. The bot's chat shows what's running, to open, answer or stop.
+• Models & Providers. Set your agent's main model, its fallbacks and helper models, add provider keys and your own endpoints, in Settings or for each bot in Edit Bot.
+• Bot photos: give a bot a photo for a face, from a file on your Mac.
+• Briefings your way. A weather briefing shows the weather card, Change Time moves when a briefing or a planned job runs, and each Today tile can have its own color.
+• In step on every device. An open chat shows replies written on your iPhone or iPad. What your agent says while it works folds into its steps, and a turn's activity sits under one summary.
+• Easier on your Mac. Redde asks your server for news less often while nothing is happening, and not at all while its window is hidden or the display is asleep.
+
+Most of this takes the Redde plugin 1.27 on your Hermes.
+
+## Before submitting the Mac's 2.5
+- Mac 2.5 (294), archived from the same commit as the iPhone's. Mac 2.4 (292) was still with App Review on 2026-11-11; App Store Connect may not take a new Mac version until it clears.
+- Only claimed after a look on the Mac: workstreams' strip and Work sheet, Models & Providers, Choose Photo in Change Face, the briefing weather card, the window-hidden pause. Drop a line from the What's New above if it isn't seen working.
+- The record's name changes to "Redde: AI Agent Voice & Chat" for the Mac too (APP286553-D).
+
 ## What's New in 2.4 (4000)
 
 ## Before submitting the Mac's 2.4
@@ -76,6 +93,6 @@ Your agent, ahead of your day, and new cards.
 ## What's New in 2.3 (4000)
 
 ## Before submitting the Mac's 2.3
-- In App Store Connect, Hermes Redde → Add Platform → macOS, if `copy --mac` can't make the version itself (the API may want the platform added first).
+- In App Store Connect, the app → Add Platform → macOS, if `copy --mac` can't make the version itself (the API may want the platform added first).
 - Try on a Mac with the App Store build (TestFlight): sign in on both connections, a bot chat, a group chat, an attachment, Settings → iCloud. Voice mode and phone tools are in the app but untried on a Mac: try them or say nothing of them (as here).
 - Once the Mac app is on sale, the iPad app no longer appears in the Mac App Store for Apple silicon Macs: the Mac gets this one (one bundle id).

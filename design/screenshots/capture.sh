@@ -134,8 +134,8 @@ sheet "$PHONE" ph-inbox     -echo.demoInbox two -echo.screen inbox "${CARDS[@]}"
 sheet "$PHONE" ph-reader    -echo.demoInbox two -echo.screen mailReader "${CARDS[@]}"
 sheet "$PHONE" ph-comingup  -echo.demoComingUp -echo.screen comingUp "${CARDS[@]}"
 sheet "$PHONE" ph-memory    -echo.demoMemory -echo.screen memory -theme paperWhite -appearance light "${FAST[@]}"
-shot "$PHONE" ph-today      -echo.demoInbox two -echo.demoGoals -echo.demoBriefings -echo.demoProjects -echo.demoBots \
-  -echo.screen sessions -displayName Sol -transport hermesServe -theme standard -appearance dark
+shot "$PHONE" ph-today      -echo.demoInbox two -echo.demoLists -echo.demoGoals -echo.demoBriefings -echo.demoProjects -echo.demoBots \
+  -echo.screen sessions "${CHATS[@]}" -displayName Sol -transport hermesServe -theme standard -appearance dark
 # Website only: the Kanban board (demo cards, no server) and typing with the keyboard up.
 shot "$PHONE" ph-kanban    -echo.demo -echo.demoKanban -echo.screen sessions -echo.section kanban -theme claudeCode -appearance dark "${FAST[@]}"
 # A headless simulator hides the software keyboard; turn that off for this one shot.
@@ -165,11 +165,11 @@ PADCARDS=(-echo.demoLibrary -theme standard -appearance dark "${FAST[@]}" "${CHA
 shot "$PAD" pad-day          -echo.demoAgenda tomorrow "${PADCARDS[@]}"
 clock "$PAD"
 shot "$PAD" pad-weather      -echo.demoCards weather "${PADCARDS[@]}"
-shot "$PAD" pad-purchase     -echo.demoCards purchase "${PADCARDS[@]}"
 clock "$PAD" 9:41
+shot "$PAD" pad-purchase     -echo.demoCards purchase "${PADCARDS[@]}"
 shot "$PAD" pad-approve      -echo.demoApprovalCard skill "${PADCARDS[@]}"
 # 2.4: the sidebar with the Today row and an empty pane, for the phone's sheets to be set over.
-TODAY=(-echo.demoInbox two -echo.demoGoals -echo.demoBriefings -echo.demoLibrary -displayName Sol "${FAST[@]}" "${CHATS[@]}")
+TODAY=(-echo.demoInbox two -echo.demoLists -echo.demoGoals -echo.demoBriefings -echo.demoLibrary -displayName Sol "${FAST[@]}" "${CHATS[@]}")
 shot "$PAD" pad-today        "${TODAY[@]}" -theme standard -appearance dark
 shot "$PAD" pad-today-paper  "${TODAY[@]}" -theme paperWhite -appearance light
 shot "$PAD" pad-settings     -echo.demo -echo.screen setup "${PADCARDS[@]}"

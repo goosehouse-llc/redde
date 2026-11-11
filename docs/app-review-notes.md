@@ -1,8 +1,8 @@
-**App Store name:** Hermes Redde · **Display name:** Redde · **Bundle ID:** com.goosehouse.echo · **SKU:** redde-ios (fixed when the record was created; internal only)
+**App Store name:** Redde: AI Agent Voice & Chat (Hermes Redde until 2.5) · **Display name:** Redde · **Bundle ID:** com.goosehouse.echo · **SKU:** redde-ios (fixed when the record was created; internal only)
 
 # App Review notes
 
-Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,936 with the placeholder and about 3,995 with a key in its place (2.4). Replace `<<REVIEW KEY>>` first, or let `scripts/app-store-push.py notes` put the key in and send them: until 1.8 the notes went in by hand, and from 1.1 to 1.7.1 with the placeholder still in them. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
+Paste the block below into App Store Connect → App Review Information → Notes. The field takes plain text, 4,000 characters at most; this is 3,940 with the placeholder and about 3,999 with a key in its place (2.5). Replace `<<REVIEW KEY>>` first, or let `scripts/app-store-push.py notes` put the key in and send them: until 1.8 the notes went in by hand, and from 1.1 to 1.7.1 with the placeholder still in them. Keep it under the limit when adding to it: the notes for 1.6 ran to 6,600 before they were cut.
 
 ```text
 Redde is a voice and chat client for a self-hosted AI assistant. It has no account; conversations go only to the server the user configures.
@@ -13,9 +13,9 @@ TO TEST
 3. Tap Test connection (it reports "Connected"), then Done.
 4. Type a question and tap the arrow, or tap the microphone and speak. Replies are read aloud.
 
-Hermes screens (Skills, Memory, Files, Plugins, bots, Terminal over SSH, Email, Goals) and the proactive features (Morning Ideas, heads-ups, watches) need a self-hosted Hermes server with the user's own plugin (Redde plugin 1.19); the app downloads and runs no code.
+Hermes screens (Skills, Memory, Files, Plugins, bots, Terminal, Email, Goals) and proactive features (Morning Ideas, watches) need a self-hosted Hermes server with the user's own plugin (Redde plugin 1.27); the app downloads and runs no code.
 
-EMAIL (2.4): the user's Hermes reads and sends mail through its plugin; the app shows the inbox and sends only email the user approved.
+EMAIL: the user's Hermes reads and sends mail; the app sends only email the user approved.
 
 OFF BY DEFAULT (Settings > Agent)
 Leave-By Alerts: the next day's events, Apple Maps travel times, a local notification.
@@ -33,14 +33,14 @@ NOTIFICATIONS AND CALLS (off by default)
 Settings > Notifications: the user's Hermes sends notifications through our relay, redde-push.goosehouse.org, to APNs, end-to-end encrypted (CryptoKit); the relay keeps only the push token. Calls from Agents: a VoIP push through the same relay, always reported to CallKit as an incoming call. Time-sensitive: leave-by alerts, a missed call, a key the agent asks for.
 
 LIVE VOICE (off by default)
-Settings > Voice > Voice mode: GPT-Live, Gemini Live, Grok Voice or ElevenLabs holds the call on the user's own key, over a WebSocket. The review account has none.
+Settings > Voice > Voice mode: GPT-Live, Gemini Live, Grok Voice or ElevenLabs on the user's own key (the review account has none), or Local call (on the device, no key).
 
 IN-APP PURCHASES
 Settings > About > Support Redde: three optional one-time tips (consumables) that unlock nothing.
 
 BACKGROUND MODES (iPhone)
 Audio: voice conversations continue in CarPlay and when the phone locks.
-Processing: only BGContinuedProcessingTaskRequest, so a reply keeps streaming after the phone locks.
+Processing: a reply keeps streaming after the phone locks (BGContinuedProcessingTaskRequest); on the charger, the Phone tools > Photos index, on the device (BGProcessingTask).
 Voice over IP: only Calls from Agents; each push is reported to CallKit.
 Background fetch: only Leave-By Alerts (BGAppRefreshTask), to refresh the time to leave with the traffic.
 
@@ -51,7 +51,7 @@ Health (read only, background delivery): Health in Settings > Agent; Phone tools
 HomeKit: only Phone tools > Apple Home.
 Reminders, Contacts, Photos, Alarms: only for Phone tools.
 Microphone: voice mode, dictation, and Wake Phrase (off by default) while Redde is on screen; transcribed on the device.
-Motion: nod or shake to answer, AirPods head movement, on the device.
+Motion: nod or shake to answer (AirPods too), on the device.
 Camera: the + menu, scanning a setup code, voice mode's camera button.
 
 APP TRANSPORT SECURITY
