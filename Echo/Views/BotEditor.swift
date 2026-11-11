@@ -224,6 +224,12 @@ struct BotEditor: View {
                             LabeledContent("Skills", value: skillsSummary)
                         }
                         .disabled(skills == nil)
+                        // Its keys, endpoints and default, fallback and helper models (2026-11-11).
+                        NavigationLink {
+                            ModelsProvidersView(profile: editing.name, owner: isMain ? mainName : title.nilIfEmpty ?? editing.label(mainName: mainName))
+                        } label: {
+                            Text("Models & Providers")
+                        }
                         // Its plugins, its own as its skills are (a profile's), changed at once.
                         NavigationLink {
                             PluginsView(profile: editing.name, owner: isMain ? mainName : title.nilIfEmpty ?? editing.label(mainName: mainName))

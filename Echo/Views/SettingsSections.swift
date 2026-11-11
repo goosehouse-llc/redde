@@ -171,6 +171,22 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            Picker(selection: $settings.todayColor) {
+                ForEach(Settings.TodayColor.allCases) { choice in
+                    if case let .color(card) = choice, let color = card.color(in: active) {
+                        Label { Text(choice.label) } icon: { Image(systemName: "circle.fill").foregroundStyle(color) }.tag(choice)
+                    } else {
+                        Text(choice.label).tag(choice)
+                    }
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Today Tiles", comment: "Settings → Appearance: the colour of the tiles in the chat list's Today row")
+                    Text("The Today row in the chat list: plain, each kind in its own color, or all in one.",
+                         comment: "Settings → Appearance: under Today Tiles")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Picker(selection: $settings.cardAppearance) {
                 ForEach(Settings.Appearance.allCases) { Text($0 == .system ? String(localized: "Automatic", comment: "Card Appearance: cards light or dark as the app is") : $0.label).tag($0) }
             } label: {
@@ -390,6 +406,14 @@ struct ModelSettings: View {
             } label: {
                 LabeledContent("Model") {
                     Text(modelSummary).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            // Keys, endpoints, the default, fallback and helper models on the server (2026-11-11).
+            if settings.transport != .chatCompletions {
+                NavigationLink {
+                    ModelsProvidersView(profile: settings.profileName ?? "default", owner: settings.headerTitle)
+                } label: {
+                    Text("Models & Providers")
                 }
             }
         } header: {

@@ -101,6 +101,8 @@ struct ConversationsList: View {
     @State private var voicingMain = false
     /// The bot whose schedules are open (`BotSchedulesView`).
     @State private var scheduling: HermesBot?
+    /// A bot added for the Hermes API alone, its Models & Providers open (no Edit Bot there).
+    @State private var modelsFor: HermesBot?
     /// The bot whose earlier chats are open (`EarlierChatsView`).
     @State private var earlierFor: HermesBot?
     @State private var showingHiddenBots = false
@@ -271,6 +273,12 @@ struct ConversationsList: View {
             .holdsWakePhrases(.voicePicker)
         }
         .sheet(item: $scheduling) { BotSchedulesView(bot: $0, mainName: settings.headerTitle) }
+        .sheet(item: $modelsFor) { bot in
+            NavigationStack {
+                ModelsProvidersView(profile: bot.name, owner: bot.label(mainName: settings.headerTitle))
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { modelsFor = nil } } }
+            }
+        }
         .sheet(item: $earlierFor) { bot in
             EarlierChatsView(bot: bot, mainName: settings.headerTitle,
                              read: { readEarlier($0, of: bot) }, bringBack: { bringBackEarlier($0, as: bot) })
@@ -1006,6 +1014,7 @@ struct ConversationsList: View {
         }
         if bot.viaAPI {
             // Added here for the Hermes API: its settings and face are the Dashboard's.
+            Button("Models & Providers…", systemImage: "cpu") { modelsFor = bot }
             if !bot.isDefault {
                 Button("Remove from Redde", systemImage: "minus.circle", role: .destructive) { removeAPIBot(bot) }
             }

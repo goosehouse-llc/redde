@@ -222,6 +222,7 @@ struct ContentView: View {
             NavigationStack {
                 switch demoDayPage {
                 case "activity": AgentActivityView(tab: .done)
+                case "models": ModelsProvidersView(profile: settings.profileName ?? "default", owner: settings.headerTitle)
                 case "comingUp": AgentActivityView(tab: .comingUp)   // with -echo.demoComingUp for its made-up day
                 case "pluginUpdates": PluginUpdatesView(agents: DemoDay.on ? DemoDay.pluginAgents : PluginUpdatesView.everyAgent())
                 case "calendars": CalendarsSettingsView()
@@ -1527,7 +1528,7 @@ struct ContentView: View {
         case "botGallery": showBotGallery = true
         case "roleFaces": showRoleFaces = true
         case "patch": showDemoPatch = true
-        case "activity", "comingUp", "pluginUpdates", "triggers", "calendars", "headsUps", "wrapUp", "watches", "goal", "goals", "phoneTools", "health", "usage", "memory", "memoryImport", "memoryManifest", "inbox", "mailSetup", "mailAdd", "mailRules", "mailLabels", "mailReader", "inboxCard", "mailBrief", "dailyJobs", "location", "chatListCards": demoDayPage = DevHooks.value("-echo.screen")
+        case "activity", "comingUp", "pluginUpdates", "triggers", "calendars", "headsUps", "wrapUp", "watches", "goal", "goals", "phoneTools", "health", "usage", "memory", "memoryImport", "memoryManifest", "inbox", "mailSetup", "mailAdd", "mailRules", "mailLabels", "mailReader", "inboxCard", "mailBrief", "dailyJobs", "location", "chatListCards", "models": demoDayPage = DevHooks.value("-echo.screen")
         case "aheadOfYourDay": showAheadOfYourDay = true
         #endif
         default: break

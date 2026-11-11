@@ -65,8 +65,8 @@ struct LiveTransportTests {
 /// an unmodified Hermes on loopback whose model endpoints answer "[<stub>:<model>]", so the reply
 /// says where a turn went. Skips when no lab is up.
 struct HermesLabTests {
-    private static let base = URL(string: "http://127.0.0.1:18642")!
-    private static let key = "labkey-labkey-labkey"
+    static let base = URL(string: "http://127.0.0.1:18642")!
+    static let key = "labkey-labkey-labkey"
     /// Stub A serves alpha and beta, stub B serves gamma.
     private static let stubs = ["alpha": "A", "beta": "A", "gamma": "B"]
 
@@ -3273,5 +3273,79 @@ struct HermesLabBotSectionsTests {
         look = try await meta()
         report(bot.sectionID == nil && look?["sectionId"] == nil && look?["sectionName"] == nil && look?["title"] == title
                && settings.botSectionsHere.sections.isEmpty, "deleted, it is off the bot and the rest stays", "\(String(describing: look))")
+    }
+}
+
+/// Models & Providers against a real Hermes (`lab.sh models --app`): the app's own services, over
+/// the Dashboard's routes and over the plugin's `/v1/redde/models` on the Hermes API, each through
+/// the same steps.
+@MainActor
+struct HermesLabModelsTests {
+    static let secret = "sk-or-lab-app-0123456789SECRET"
+
+    private func steps(_ service: any ModelSetupService, _ way: String) async throws {
+        func report(_ ok: Bool, _ what: String, _ detail: String = "") { HermesLabApprovalTests.report(ok, "Models (\(way)): \(what)", detail) }
+        var setup = try await service.load(refresh: false)
+        report(!setup.choices.isEmpty && !setup.helpers.isEmpty && setup.providerKeys.contains { $0.env == "OPENROUTER_API_KEY" },
+               "read: models, helpers and provider keys", "\(setup.choices.count) models, \(setup.helpers.count) helpers")
+
+        try await service.setKey("OPENROUTER_API_KEY", value: Self.secret)
+        setup = try await service.load(refresh: false)
+        let added = setup.addedKeys.first { $0.env == "OPENROUTER_API_KEY" }
+        report(added != nil && added?.preview?.contains("SECRET") == false, "a key added shows masked", "\(String(describing: added))")
+
+        let tested = try await service.testEndpoint(baseURL: "http://127.0.0.1:18802/v1", apiKey: nil, apiMode: "")
+        report(tested.models.contains("gamma"), "an endpoint tested lists its models", "\(tested)")
+        try await service.saveEndpoint(EndpointDraft(name: "App Lab B", baseURL: "http://127.0.0.1:18802/v1", model: "gamma", apiKey: nil))
+        setup = try await service.load(refresh: false)
+        guard let mine = setup.endpoints.first(where: { $0.name == "App Lab B" }) else { report(false, "the endpoint is saved", "\(setup.endpoints)"); return }
+
+        let outcome = try await service.setMain(provider: mine.provider, model: "gamma", confirmed: false)
+        setup = try await service.load(refresh: false)
+        report(outcome != .confirm("") && setup.mainModel == "gamma", "the default model set", "\(outcome) \(setup.mainProvider) \(setup.mainModel)")
+
+        let chain = [ModelSetup.Fallback(provider: "custom:my-local", model: "beta")]
+        try await service.setFallbacks(chain)
+        setup = try await service.load(refresh: false)
+        report(setup.fallbacks.map(\.id) == chain.map(\.id), "fallbacks saved and read", "\(setup.fallbacks)")
+
+        try await service.setHelper(task: "title_generation", provider: "custom:my-local", model: "beta")
+        setup = try await service.load(refresh: false)
+        report(setup.helpers.first { $0.task == "title_generation" }?.model == "beta", "a helper on a model of its own")
+        try await service.setHelper(task: "__reset__", provider: "auto", model: "")
+        setup = try await service.load(refresh: false)
+        report(setup.helpers.allSatisfy(\.followsMain), "helpers back on the default")
+
+        // Put things back: the default, no fallbacks, the endpoint and the key gone.
+        _ = try await service.setMain(provider: "custom:my-local", model: "alpha", confirmed: true)
+        try await service.setFallbacks([])
+        try await service.deleteEndpoint(mine.id)
+        try await service.removeKey("OPENROUTER_API_KEY")
+        setup = try await service.load(refresh: false)
+        report(!setup.endpoints.contains { $0.name == "App Lab B" } && setup.addedKeys.allSatisfy { $0.env != "OPENROUTER_API_KEY" } && setup.fallbacks.isEmpty,
+               "all put back", "\(setup.endpoints.map(\.name)) \(setup.addedKeys.map(\.env))")
+    }
+
+    @Test func overTheDashboard() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        try await steps(DashboardModelSetup(profile: "default", client: client), "Dashboard")
+    }
+
+    @Test func overTheHermesAPI() async throws {
+        var probe = URLRequest(url: HermesLabTests.base.appending(path: "health"))
+        probe.timeoutInterval = 2
+        guard (try? await URLSession.shared.data(for: probe)) != nil else {
+            print("LAB SKIP: no Hermes lab on 127.0.0.1:18642 (scripts/hermes-lab/lab.sh models --app)")
+            return
+        }
+        let settings = Settings(defaults: UserDefaults(suiteName: "lab-models-\(UUID().uuidString)")!)
+        settings.transport = .hermesSessions
+        settings.gatewayURL = HermesLabTests.base.absoluteString
+        let account = Keychain.account(.gatewayAPIKey, server: settings.activeServerID.uuidString)
+        let before = Keychain.read(account: account)
+        Keychain.write(account: account, value: HermesLabTests.key)
+        defer { if let before { Keychain.write(account: account, value: before) } else { Keychain.delete(account: account) } }
+        try await steps(APIModelSetup(profile: "default", settings: settings), "Hermes API")
     }
 }
