@@ -561,6 +561,19 @@ struct PhoneToolsTests {
     }
 }
 
+/// The calendar search: any word of the agent's search, a year ahead when no end is given.
+struct CalendarSearchTests {
+    @Test func aSearchFindsAnEventByAnyOfItsWords() {
+        let event: [String?] = ["Dad arrives NW 238", "Gate 12", nil]
+        #expect(DeviceCalendar.matches(event, query: "dad flight"))
+        #expect(DeviceCalendar.matches(event, query: "When does the NW 238 land"))
+        #expect(!DeviceCalendar.matches(event, query: "dentist"))
+        #expect(DeviceCalendar.matches(["PT"], query: "pt"), "a short search, as a whole")
+        #expect(DeviceCalendar.matches(event, query: ""))
+        #expect(DeviceCalendar.searchReach >= 365 * 86400)
+    }
+}
+
 /// Keep a Copy (issue 50, PR 51) and its Send Now: what reaches the plugin, when, and what the
 /// person is told when it doesn't.
 @MainActor
@@ -651,6 +664,9 @@ struct KeepACopyTests {
         #expect(abs(windows[0][0]) < 2 && abs(windows[0][1] - 60 * 86400) < 2, "ahead first: now to two months on")
         #expect(abs(windows[1][0] + 7 * 86400) < 2 && abs(windows[1][1]) < 2, "then the past week")
         #expect(asked.value.allSatisfy { $0.args["limit"]?.int == 500 && $0.info["copy_most"]?.int == 500 })
+        // The days it covers, for the plugin to ask the phone about the rest (11-10).
+        let covers = ["from", "to"].map { plugin.synced("calendar")?[$0]?.string.flatMap { DeviceDates.parse($0) }?.timeIntervalSince(now) ?? .nan }
+        #expect(abs(covers[0] + 7 * 86400) < 2 && abs(covers[1] - 60 * 86400) < 2, "the past week to two months on: \(covers)")
     }
 
     @Test func aFullTwoMonthsLeavesThePastWeekOut() async {
@@ -661,6 +677,8 @@ struct KeepACopyTests {
         await service.refreshCopies(now: now)
         #expect(plugin.synced("calendar")?["events"]?.array?.count == 500)
         #expect(asked.value.count == 1, "no room: the past week isn't fetched")
+        let covers = ["from", "to"].map { plugin.synced("calendar")?[$0]?.string.flatMap { DeviceDates.parse($0) }?.timeIntervalSince(now) ?? .nan }
+        #expect(abs(covers[0]) < 2 && abs(covers[1] - 499 * 3600) < 2, "full: from now to its last event, \(covers)")
     }
 
     @Test func thePastWeekFillsTheRoomLeftWithItsLatest() async {
@@ -673,6 +691,8 @@ struct KeepACopyTests {
         let events = plugin.synced("calendar")?["events"]?.array ?? []
         #expect(events.count == 500)
         #expect(events.prefix(2).compactMap { $0["title"]?.string } == ["b2", "b1"], "the two nearest now")
+        let from = plugin.synced("calendar")?["from"]?.string.flatMap { DeviceDates.parse($0) }?.timeIntervalSince(now) ?? .nan
+        #expect(abs(from + 20 * 3600) < 2, "from the earliest of the past week it kept: \(from)")
     }
 
     @Test func comingToTheFrontSendsAtMostEveryTenMinutes() async {

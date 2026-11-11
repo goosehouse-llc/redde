@@ -82,6 +82,12 @@ CACHE_KEEP = 30 * 86400.0
 CACHE_MAX = 1_500_000
 #: The most items in one copy.
 _COPY_ITEMS = 500
+#: What a calendar copy that doesn't say what it covers is taken to cover: the week before it was
+#: made to a month after, or, where it holds as many events as an older app sent (200), only to
+#: its last one. A copy answers only for days it covers; the rest are asked of the phone.
+_COPY_BEFORE = 7 * 86400.0
+_COPY_AFTER = 30 * 86400.0
+_COPY_FULL = 200
 #: Tool name -> kind the copy is for.
 _COPY_OF = {"phone_calendar_events": "calendar", "phone_reminders_list": "reminders"}
 #: The kinds of copies.
@@ -115,8 +121,9 @@ TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
                               "coming week), soonest first. " + _WHEN + " Runs through the Redde app on the phone: it answers "
                               "while Redde is open there, and, if the phone keeps a copy of its calendar on the server — Redde's "
                               "Settings, Phone tools, Keep a copy — from that copy with Redde closed, saying when it was last synced.", {
-        "start": _text("From when. Default: now."), "end": _text("Until when. Default: a week after the start."),
-        "query": _text("Only events with these words in the title, place or notes."),
+        "start": _text("From when. Default: now."), "end": _text("Until when. Default: a week after the start, or a year when searching with query."),
+        "query": _text("Find events by any of these words in the title, place or notes (a name, a place, a flight number): with no "
+                       "end it searches the coming year, so use it to find when something is rather than reading week by week."),
         "limit": _count("At most this many (default 50)."),
         "live": {"type": "boolean", "description": "Ask the phone now, instead of answering from Redde's copy of it, if the phone keeps one."},
     }, []),
@@ -479,6 +486,12 @@ class Phone:
         # Keep only dict items with a string title, only scalar values, strings capped at 1000 chars.
         plain = [_plain(item) for item in items if isinstance(item, dict) and isinstance(item.get("title"), str)]
         data = {"at": time.time(), key: plain}
+        # The days a calendar copy covers, as the app says (1.25.1): an event past them isn't in it,
+        # so a day past them isn't empty, only not known here.
+        if kind == "calendar":
+            since, until = _epoch(payload.get("from")), _epoch(payload.get("to"))
+            if since is not None and until is not None and since <= until:
+                data["from_ts"], data["to_ts"] = since, until
         self._write(self._folder("cache") / f"{kind}.json", data)
         return (len(plain), None)
 
@@ -498,7 +511,17 @@ class Phone:
         items = data.get(key)
         if not isinstance(items, list):
             return None
-        return {"at": at, "age": time.time() - at, key: items}
+        held = {"at": at, "age": time.time() - at, key: items}
+        if kind == "calendar":
+            since, until = data.get("from_ts"), data.get("to_ts")
+            if not isinstance(since, (int, float)) or not isinstance(until, (int, float)):
+                # An older app's copy says nothing of its days: taken to be the usual window, or,
+                # where it is full, to end at its last event.
+                starts = [s for s in (_start_of(item) for item in items if isinstance(item, dict)) if s is not None]
+                since = at - _COPY_BEFORE
+                until = max(starts) if len(items) >= _COPY_FULL and starts else at + _COPY_AFTER
+            held["from_ts"], held["to_ts"] = float(since), float(until)
+        return held
 
     def wipe(self, kind: str | None = None) -> None:
         """Unlink cache/<kind>.json (or both kinds when kind is None), ignoring OSError."""
@@ -513,6 +536,15 @@ class Phone:
                 (self.dir / "cache" / f"{kind}.json").unlink()
             except OSError:
                 pass
+
+    @staticmethod
+    def _covers(tool: str, args: dict, held: dict) -> bool:
+        """Whether the copy covers what is asked: for the calendar, every day of the window asked
+        about (a December day in a copy that ends in November was answered "nothing on", 11-10)."""
+        if _COPY_OF.get(tool) != "calendar" or "to_ts" not in held:
+            return True
+        start, end = _span(args)
+        return held["from_ts"] <= start and end <= held["to_ts"]
 
     def _copy_answer(self, tool: str, args: dict, held: dict, stale: bool = False) -> str:
         """Filter the held items with the module helpers into {"events": [...]} or
@@ -533,7 +565,65 @@ class Phone:
         if stale:
             result["note"] = (f"This is Redde's copy of its {kind} last synced "
                               f"{result['synced_minutes_ago']} minutes ago and things may have changed.")
+        if not self._covers(tool, args, held):
+            since, until = (time.strftime("%Y-%m-%d", time.localtime(held[k])) for k in ("from_ts", "to_ts"))
+            result["note"] = (f"The phone didn't answer, and Redde's copy of its calendar only covers {since} to {until}: "
+                              "what is shown is only what falls in that, and nothing can be said about the days outside it. "
+                              "Don't call those days free; say the calendar couldn't be read for them.")
         return json.dumps(result)
+
+    #: The most words of a search asked of the phone one by one.
+    _MOST_WORDS = 4
+
+    def _ask_phone(self, tool: str, args: dict, session: str | None = None, wait: float = WAIT, otherwise=None) -> str:
+        """`ask`, so that an older Redde searches the calendar as this plugin does. Redde 2.4 (293)
+        looks a week ahead when no end is given and for the whole of the search, and missed a
+        flight five weeks away that was searched for in other words (an iPad, 11-10). So a search
+        is sent with its end (a year on), and when several words find nothing, each word is asked
+        for on its own and the answers put together. A newer Redde finds it the first time."""
+        query = str(args.get("query") or "").strip()
+        if tool != "phone_calendar_events" or not query:
+            return self.ask(tool, args, session=session, wait=wait, otherwise=otherwise)
+        asked = dict(args)
+        if asked.get("end") is None:
+            asked["end"] = datetime.fromtimestamp(_span(args)[1]).strftime("%Y-%m-%d")
+        first = self.ask(tool, asked, session=session, wait=wait, otherwise=otherwise)
+        words = _words(query)[: self._MOST_WORDS]
+        try:
+            found = json.loads(first)
+        except ValueError:
+            return first
+        if len(words) < 2 or not isinstance(found, dict) or found.get("events") != [] or "synced_minutes_ago" in found:
+            return first
+        answers: list[str | None] = [None] * len(words)
+
+        def one(i: int, word: str) -> None:
+            answers[i] = self.ask(tool, {**asked, "query": word}, session=session, wait=wait, otherwise=lambda: None)
+
+        threads = [threading.Thread(target=one, args=(i, word), daemon=True) for i, word in enumerate(words)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(wait + 5)
+        events, seen, more = [], set(), 0
+        for text in answers:
+            try:
+                part = json.loads(text) if text else None
+            except ValueError:
+                part = None
+            if not isinstance(part, dict) or not isinstance(part.get("events"), list):
+                continue
+            more += int(part.get("more") or 0)
+            for event in part["events"]:
+                key = (event.get("title"), event.get("start"))
+                if key not in seen:
+                    seen.add(key)
+                    events.append(event)
+        if not events:
+            return first
+        events.sort(key=lambda event: _epoch(event.get("start")) or 0)
+        limit = _limit(args)
+        return json.dumps({"events": events[:limit], "more": more + max(0, len(events) - limit)})
 
     def read(self, tool: str, args: dict, session: str | None = None, wait: float = WAIT) -> str:
         """The tool handler for the two read tools:
@@ -545,19 +635,22 @@ class Phone:
         - else return self.ask(tool, args, session=session)."""
         live = args.pop("live", False)
         if live:
-            return self.ask(tool, args, session=session, wait=wait)
+            return self._ask_phone(tool, args, session=session, wait=wait)
         kind = _COPY_OF.get(tool)
         if kind is None:
-            return self.ask(tool, args, session=session, wait=wait)
+            return self._ask_phone(tool, args, session=session, wait=wait)
         if not self.offers(kind):
-            return self.ask(tool, args, session=session, wait=wait)
+            return self._ask_phone(tool, args, session=session, wait=wait)
         held = self.copy(kind)
         if held is None:
-            return self.ask(tool, args, session=session, wait=wait)
-        if held["age"] <= CACHE_FRESH:
+            return self._ask_phone(tool, args, session=session, wait=wait)
+        if held["age"] <= CACHE_FRESH and self._covers(tool, args, held):
             return self._copy_answer(tool, args, held)
+        if held["age"] <= CACHE_FRESH:
+            # Days the copy doesn't cover: the phone, and the copy for what it has if it doesn't answer.
+            return self._ask_phone(tool, args, session=session, wait=wait, otherwise=lambda: self._copy_answer(tool, args, held))
         # Older but still within CACHE_KEEP: ask the phone, fall back to copy.
-        return self.ask(tool, args, session=session, wait=wait,
+        return self._ask_phone(tool, args, session=session, wait=wait,
                         otherwise=lambda: self._copy_answer(tool, args, held, stale=True))
 
     # ---- the same call, from the phone's side
@@ -741,14 +834,46 @@ def _limit(args) -> int:
         return 50
 
 
+#: Words a search leaves out, as the app does (DeviceCalendar.matches).
+_FILLERS = {"the", "and", "for", "with", "from", "into", "onto", "our", "his", "her", "their", "my", "any", "all"}
+#: How far ahead a calendar search with no end looks (the app's searchReach).
+_SEARCH_REACH = 365 * 86400.0
+
+
+def _words(query: str) -> list[str]:
+    """A search's words, in order, once each: three letters or more and not a filler."""
+    found = []
+    for word in re.split(r"[^\w]+", query.lower()):
+        if len(word) >= 3 and word not in _FILLERS and word not in found:
+            found.append(word)
+    return found
+
+
 def _matches(item, query: str) -> bool:
-    """Whether a query (already lowercased) appears in the item's title, location or notes."""
+    """Whether any word of a query (already lowercased; three letters or more, not a filler) is in
+    the item's title, location or notes; a query with no such word, as a whole. The agent searches
+    in its own words ("dad flight"), which an event seldom has all of (11-10)."""
     if not query:
         return True
-    for key in ("title", "location", "notes"):
-        if query in str(item.get(key) or "").lower():
-            return True
-    return False
+    texts = [str(item.get(key) or "").lower() for key in ("title", "location", "notes")]
+    words = _words(query)
+    if not words:
+        return any(query in text for text in texts)
+    return any(word in text for word in words for text in texts)
+
+
+def _span(args) -> tuple[float, float]:
+    """The window the calendar tool is asked about, as epoch seconds: start default now, end
+    default start+7 days; a date-only end means the whole of that day (add one day)."""
+    now = time.time()
+    start = _epoch(args.get("start")) or now
+    end = _epoch(args.get("end"))
+    if end is None:
+        # A search looks a year ahead (a week missed a flight a month away, 11-10).
+        end = start + (_SEARCH_REACH if str(args.get("query") or "").strip() else 7 * 86400)
+    if isinstance(args.get("end"), str) and _readable(args["end"]) and "T" not in args["end"]:
+        end = end + 86400
+    return start, end
 
 
 def _window(items, args) -> tuple[list, int]:
@@ -756,15 +881,7 @@ def _window(items, args) -> tuple[list, int]:
     Mirrors the calendar tool's promise: start default now, end default start+7 days;
     a date-only end means the whole of that day (add one day).
     Returns (found[:limit], max(0, len(found) - limit))."""
-    from datetime import datetime
-    now = time.time()
-    start = _epoch(args.get("start")) or now
-    end = _epoch(args.get("end"))
-    if end is None:
-        end = start + 7 * 86400
-    # A date-only end means the whole of that day.
-    if isinstance(args.get("end"), str) and _readable(args["end"]) and "T" not in args["end"]:
-        end = end + 86400
+    start, end = _span(args)
     query = (args.get("query") or "").lower().strip()
     found = []
     for item in items:

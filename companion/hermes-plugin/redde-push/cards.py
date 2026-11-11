@@ -1007,8 +1007,11 @@ _NOT_DELIVERY = re.compile(r"\b(?:sort|order by|in order to|order of|work order|
 _ASKS_FLIGHT = re.compile(
     r"\bflights?\b[^.?!]*\b(?:on time|delayed|status|lands?|landed|landing|depart(?:s|ed|ing|ure)?|leaves?|leaving|gate|terminal|"
     r"boarding|cancel(?:l?ed)?|arrives?|arriving|tomorrow|today|tonight)\b|\b(?:my|our) (?:flight|connection|layover)s?\b"
-    r"|\bwhat gate\b|\bwhich terminal\b|\b[A-Z][A-Z0-9] ?\d{2,4} (?:on time|delayed|landed|departed|boarding)\b|\bmy itinerary\b", re.IGNORECASE)
-_NOT_FLIGHT = re.compile(r"\b(?:book|reserve|buy|cheap(?:est)?|fares?|prices?|deals?|flight (?:simulator|mode)|in-flight|points|miles program)\b", re.IGNORECASE)
+    r"|\bwhat gate\b|\bwhich terminal\b|\b[A-Z][A-Z0-9] ?\d{2,4} (?:on time|delayed|landed|departed|boarding)\b|\bmy itinerary\b"
+    # Someone flying ("when does dad fly in", 11-10: no card), or landing.
+    r"|\b(?:fly|flies|flying)\s+(?:in|into|out|back|home|down|up|over|to|from)\b|\b(?:when|what time)\b[^.?!]*\b(?:land|lands|landing)\b", re.IGNORECASE)
+_NOT_FLIGHT = re.compile(r"\b(?:book|reserve|buy|cheap(?:est)?|fares?|prices?|deals?|flight (?:simulator|mode)|in-flight|points|miles program|"
+                         r"fly fishing|drones?|kites?|birds?|planes? fly|how (?:do|does|can) \w+ fly)\b", re.IGNORECASE)
 #: Asked what to watch, or about a film or a series, in English: a 'show' card.
 _ASKS_SHOW = re.compile(
     r"\bwhat (?:should|can|could) (?:i|we) watch\b(?! out| for)|\bwhere (?:can|do|should) (?:i|we) (?:watch|stream)\b|\bworth watching\b"
@@ -1057,7 +1060,8 @@ RECIPE_NOTE = (f"[Redde: asked for a recipe. Look a real one up first with your 
                "don't write the ingredients or the steps out again.]")
 DELIVERY_NOTE = (f"[Redde: asked where a package is. Look it up first with your tools (the carrier's tracking, the order's email); {_NEVER_MADE_UP}. "
                  f"Then show it with {TOOL} as a 'delivery' card: " + SHAPES["delivery"] + ". Then answer in a line.")
-FLIGHT_NOTE = (f"[Redde: asked about a flight. Look it up first with your tools (the airline, a flight tracker, the booking's email); "
+FLIGHT_NOTE = (f"[Redde: asked about a flight. Look it up first with your tools (their calendar, searched by name or flight number over the "
+               f"coming months, the booking's email, the airline, a flight tracker); "
                f"{_NEVER_MADE_UP}, a gate or a terminal. Then show it with {TOOL} as a 'flight' card: " + SHAPES["flight"] + ". Then answer in a line.")
 SHOW_NOTE = (f"[Redde: asked about something to watch. Look it up first with your tools; {_NEVER_MADE_UP}, a year or where it streams. "
              f"Then show it with {TOOL} as a 'show' card: " + SHAPES["show"] + ". Then answer in a line: don't list them again.]")

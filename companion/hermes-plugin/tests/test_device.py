@@ -470,6 +470,57 @@ class CopyOfThePhone(unittest.TestCase):
         self.assertEqual(len(answer["events"]), 1)
         self.assertEqual(answer["events"][0]["title"], "Robert's birthday")
 
+    def test_a_search_matches_any_word_and_looks_a_year_ahead(self):
+        """The agent searches in its own words ("dad flight Lisbon"); an event has one of them,
+        and may be months away (a December flight asked about weeks ahead, 11-10)."""
+        _matches, _span = device._matches, device._span
+        flight = {"title": "NW 238 to Lisbon", "location": "Gate 12", "notes": "Dad's flight"}
+        self.assertTrue(_matches(flight, "dad flight lisbon"))
+        self.assertTrue(_matches(flight, "when is the flight"))
+        self.assertFalse(_matches(flight, "dentist"))
+        self.assertTrue(_matches({"title": "PT"}, "pt"))       # short query: as a whole
+        start, end = _span({"query": "flight"})
+        self.assertGreater(end - start, 360 * 86400)
+        start, end = _span({})
+        self.assertAlmostEqual(end - start, 7 * 86400, delta=5)
+
+    def test_an_older_app_is_asked_for_a_year_and_word_by_word(self):
+        """Redde 2.4 (293) looks a week ahead with no end and for the whole search: the plugin
+        gives it the end, and asks word by word when the whole search finds nothing (11-10)."""
+        self.phone.set_areas(["calendar"])
+        flight = {"title": "Dad arrives NW 238", "start": "2026-12-17T12:41:00-05:00"}
+        asked, result = [], {}
+        reader = threading.Thread(target=lambda: result.update(json.loads(
+            self.phone.read("phone_calendar_events", {"query": "dad flight"}, session="s1", wait=5))), daemon=True)
+        reader.start()
+        deadline = time.monotonic() + 10
+        while reader.is_alive() and time.monotonic() < deadline:
+            for request in self.phone.waiting():
+                args = request["args"]
+                asked.append(args)
+                found = [flight] if args["query"].lower() in flight["title"].lower() else []   # the whole phrase, as 2.4 does
+                self.phone.answer(request["id"], {"ok": True, "result": {"events": found, "more": 0}})
+            time.sleep(0.05)
+        reader.join(1)
+        self.assertEqual(result.get("events"), [flight])
+        self.assertEqual(asked[0]["query"], "dad flight")
+        self.assertTrue(all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", a["end"]) for a in asked), asked)
+        self.assertGreater(device._epoch(asked[0]["end"]) - time.time(), 360 * 86400)
+        self.assertEqual(sorted(a["query"] for a in asked[1:]), ["dad", "flight"])
+
+    def test_a_newer_app_that_finds_it_is_asked_once(self):
+        self.phone.set_areas(["calendar"])
+        result = {}
+        reader = threading.Thread(target=lambda: result.update(json.loads(
+            self.phone.read("phone_calendar_events", {"query": "dad flight", "end": "2026-12-31"}, session="s1", wait=5))), daemon=True)
+        reader.start()
+        request = waiting(self.phone)[0]
+        self.assertEqual(request["args"]["end"], "2026-12-31", "an end the agent gave is kept")
+        self.phone.answer(request["id"], {"ok": True, "result": {"events": [{"title": "Dad arrives"}], "more": 0}})
+        reader.join(5)
+        self.assertEqual(result["events"], [{"title": "Dad arrives"}])
+        self.assertEqual(self.phone.waiting(), [])
+
     # 3. Reminders copy
 
     def test_reminders_copy(self):
@@ -543,6 +594,78 @@ class CopyOfThePhone(unittest.TestCase):
         self.assertIn("events", answer)
         self.assertIn("note", answer)
         self.assertIn("copy", answer["note"].lower())
+
+    # Days a copy doesn't cover (1.25.1): asked of the phone, never "nothing on"
+
+    def _sync_covering(self, items, since, until):
+        from datetime import datetime
+        payload = {"events": items, "from": datetime.fromtimestamp(since).isoformat(), "to": datetime.fromtimestamp(until).isoformat()}
+        return device.slash(self.phone, ["sync", "calendar", b64(payload)])
+
+    def _read_beyond(self, args, wait=0.3, session=None):
+        got = {}
+
+        def read():
+            got["answer"] = json.loads(self.phone.read("phone_calendar_events", dict(args), session=session, wait=wait))
+
+        thread = threading.Thread(target=read, daemon=True)
+        thread.start()
+        return thread, got
+
+    def test_a_day_past_the_copy_is_asked_of_the_phone(self):
+        """A fresh copy that ends before the day asked about doesn't call that day empty: the phone
+        is asked, and its answer is the answer."""
+        from datetime import datetime
+        self.phone.set_areas(["calendar"])
+        now = time.time()
+        self.assertEqual(self._sync_covering(self._fresh_calendar(), now - 7 * 86400, now + 10 * 86400),
+                         "redde-push device sync calendar 4")
+        # Inside it: at once, from the copy.
+        inside = datetime.fromtimestamp(now + 2 * 86400).strftime("%Y-%m-%d")
+        answer = json.loads(self.phone.read("phone_calendar_events", {"start": inside, "end": inside}))
+        self.assertEqual([e["title"] for e in answer["events"]], ["Robert's birthday"])
+        self.assertNotIn("note", answer)
+        self.assertEqual(self.phone.waiting(), [])
+        # Past it: the phone.
+        later = datetime.fromtimestamp(now + 37 * 86400).strftime("%Y-%m-%d")
+        thread, got = self._read_beyond({"start": later, "end": later}, wait=5)
+        asked = waiting(self.phone, 1)
+        self.assertEqual(asked[0]["args"], {"start": later, "end": later})
+        self.phone.answer(asked[0]["id"], {"ok": True, "result": {"events": [{"title": "Clinic"}]}})
+        thread.join(5)
+        self.assertEqual(got["answer"]["events"][0]["title"], "Clinic")
+
+    def test_a_day_past_the_copy_with_no_phone_says_it_isnt_known(self):
+        """The phone not answering, the copy says what it has and that the rest isn't known."""
+        from datetime import datetime
+        self.phone.set_areas(["calendar"])
+        now = time.time()
+        self._sync_covering(self._fresh_calendar(), now - 7 * 86400, now + 10 * 86400)
+        later = datetime.fromtimestamp(now + 37 * 86400).strftime("%Y-%m-%d")
+        thread, got = self._read_beyond({"start": later, "end": later})
+        waiting(self.phone, 1)
+        thread.join(5)
+        self.assertEqual(got["answer"]["events"], [])
+        self.assertIn("only covers", got["answer"]["note"])
+        self.assertIn("Don't call those days free", got["answer"]["note"])
+        # A scheduled run, with no phone to ask: the same, at once.
+        answer = json.loads(self.phone.read("phone_calendar_events", {"start": later, "end": later},
+                                            session="cron_ab12cd34_20261104_070000", wait=30))
+        self.assertIn("only covers", answer["note"])
+
+    def test_an_older_apps_full_copy_ends_at_its_last_event(self):
+        """A copy with no days said, holding as many as an older app sent, covers only to its
+        last event; a smaller one, to a month on."""
+        self.phone.set_areas(["calendar"])
+        now = time.time()
+        full = [{"title": f"Visit {n}", "start_ts": now + n * 3600} for n in range(device._COPY_FULL)]
+        self._sync("calendar", full)
+        held = self.phone.copy("calendar")
+        self.assertAlmostEqual(held["to_ts"], now + (device._COPY_FULL - 1) * 3600, delta=1)
+        self._sync("calendar", self._fresh_calendar())
+        held = self.phone.copy("calendar")
+        self.assertAlmostEqual(held["to_ts"], held["at"] + device._COPY_AFTER, delta=1)
+        self.assertAlmostEqual(held["from_ts"], held["at"] - device._COPY_BEFORE, delta=1)
 
     def test_a_scheduled_run_answers_from_any_copy_at_once(self):
         """A scheduled job's run has no phone following it: an old copy answers at once, with

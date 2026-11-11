@@ -3,6 +3,23 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.25.1 (2026-11-10)
+
+- The copy of the calendar answers only for the days it covers. A day past it (more than two
+  months on, or past the last of a busy calendar's 500 events) was answered from the copy as
+  free; it is now asked of the phone, and if the phone doesn't answer, the agent is told the copy
+  doesn't reach that day rather than that nothing is on. The app says which days its copy covers;
+  an older app's copy is taken to cover the week before it to a month after, or to its last
+  event where it is full.
+- A calendar search finds an event by any of its words ("dad flight" finds "Dad arrives"), and
+  with no end given it looks a year ahead, not a week: a flight a month away was missed.
+- The same search works through Redde 2.4 and older, which look a week ahead and for the whole
+  search: the phone is given the year-long end, and when several words find nothing, each word
+  is asked for on its own.
+- "When does dad fly in?", "When is she flying home?" and "What time does the plane land?" now
+  ask for the flight card, and the agent is told to look the flight up in the calendar over the
+  coming months first. Fly fishing, drones and the like don't.
+
 ## 1.25.0 (2026-11-10)
 
 - A bot starts with the calendar and reminders phone tools: one the app hasn't set has those two,

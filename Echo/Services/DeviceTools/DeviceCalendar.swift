@@ -30,24 +30,24 @@ nonisolated enum DeviceCalendar {
         return store.calendars(for: .event).filter { CalendarChoice.shows($0.title, among: chosen) }
     }
 
-    /// `start`, `end` (default: now and a week on), `query` (words in the title, place or
-    /// notes), `limit`. `most` is the agent's 200, or Keep a Copy's larger fetch.
+    /// `start`, `end` (default: now and a week on; a year on for a search), `query` (any of its
+    /// words in the title, place or notes), `limit`. `most` is the agent's 200, or Keep a Copy's
+    /// larger fetch. A search looked a week ahead for "dad flight" and missed a flight a month
+    /// away (11-10).
     static func events(_ args: JSONValue, now: Date = .now, most: Int = 200) async throws -> JSONValue {
         guard await allowed(.event) else { throw DeviceToolError.refused(.calendar) }
         let start = try args.date("start") ?? now
-        var end = try args.date("end") ?? start.addingTimeInterval(7 * 86400)
+        let query = args["query"]?.string?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
+        var end = try args.date("end") ?? start.addingTimeInterval(query.isEmpty ? 7 * 86400 : searchReach)
         // "Up to the 14th" means the whole of the 14th.
         if let text = args["end"]?.string, DeviceDates.isDayOnly(text) { end = end.addingTimeInterval(86400) }
         guard end > start else { throw DeviceToolError("\"end\" has to be after \"start\".") }
-        let query = args["query"]?.string?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
         let store = EKEventStore()
         let calendars = shared(in: store)
         // None of the chosen calendars is on this phone: nothing to read (an empty list would be all).
         if calendars?.isEmpty == true { return .object(["events": .array([]), "more": .number(0)]) }
         let found = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars))
-            .filter { event in
-                query.isEmpty || [event.title, event.location, event.notes].contains { $0?.lowercased().contains(query) == true }
-            }
+            .filter { event in matches([event.title, event.location, event.notes], query: query) }
             .sorted { $0.startDate < $1.startDate }
         let limit = args.limit(default: 50, most: most)
         return .object([
@@ -55,6 +55,23 @@ nonisolated enum DeviceCalendar {
             "more": .number(Double(max(0, found.count - limit))),
         ])
     }
+
+    /// How far ahead a search with no end looks.
+    static let searchReach: TimeInterval = 365 * 86400
+
+    /// Whether any word of `query` (three letters or more, not a filler word) is in one of the
+    /// texts; a query with no such word, as a whole. The agent searches in its own words ("dad
+    /// flight"), which an event seldom has all of.
+    static func matches(_ texts: [String?], query: String) -> Bool {
+        let query = query.lowercased()
+        guard !query.isEmpty else { return true }
+        let haystack = texts.compactMap { $0?.lowercased() }
+        let words = query.split { !$0.isLetter && !$0.isNumber }.map(String.init).filter { $0.count >= 3 && !fillers.contains($0) }
+        if words.isEmpty { return haystack.contains { $0.contains(query) } }
+        return words.contains { word in haystack.contains { $0.contains(word) } }
+    }
+
+    private static let fillers: Set<String> = ["the", "and", "for", "with", "from", "into", "onto", "our", "his", "her", "their", "my", "any", "all"]
 
     /// `title`, `start`, and optionally `end`, `all_day`, `location`, `notes`, `calendar`.
     static func addEvent(_ args: JSONValue) async throws -> JSONValue {

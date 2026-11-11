@@ -410,7 +410,9 @@ final class DeviceToolsService {
         defer { isSendingCopy = false }
         do {
             if settings.phoneTools.access(.calendar) != .off {
-                try await syncCopy("calendar", ["events": .array(try await calendarCopy(now: now))])
+                let copy = try await calendarCopy(now: now)
+                try await syncCopy("calendar", ["events": .array(copy.events),
+                                                "from": .string(DeviceDates.string(copy.from)), "to": .string(DeviceDates.string(copy.to))])
             }
             if settings.phoneTools.access(.reminders) != .off {
                 // The ones still to do: done ones would crowd them out of the 200, and the
@@ -437,7 +439,9 @@ final class DeviceToolsService {
     /// Keep a Copy's events: the coming two months first, then as much of the past week as there
     /// is room for, the latest of it first. At 200 soonest-first, a busy calendar's copy ended
     /// a month out, with last week's events taking room (11-10). Chronological, as the tool's.
-    func calendarCopy(now: Date) async throws -> [JSONValue] {
+    /// With the days it covers, all of whose events it holds: the plugin answers from it only for
+    /// those, and asks the phone about the rest (a day past it was answered as free, 11-10).
+    func calendarCopy(now: Date) async throws -> (events: [JSONValue], from: Date, to: Date) {
         let most = Self.copyMost
         func fetch(from: TimeInterval, to: TimeInterval, limit: Int) async throws -> [JSONValue] {
             let args = JSONValue.object([
@@ -451,13 +455,28 @@ final class DeviceToolsService {
             }
             return events
         }
-        let ahead = Array(try await fetch(from: 0, to: 60 * 86400, limit: most).prefix(most))
-        guard ahead.count < most else { return ahead }
+        let ahead = Array(try await fetch(from: 0, to: Self.copyAhead, limit: most).prefix(most))
+        // Full: it reaches only as far as its last event (others may start the same minute).
+        guard ahead.count < most else { return (ahead, now, Self.start(of: ahead.last) ?? now) }
         // An event under way now is in both: kept once, from the fetch ahead.
         func key(_ event: JSONValue) -> String { "\(event["id"]?.string ?? "")|\(event["start"]?.string ?? "")" }
         let seen = Set(ahead.map(key))
-        let behind = try await fetch(from: -7 * 86400, to: 0, limit: most).filter { !seen.contains(key($0)) }
-        return behind.suffix(most - ahead.count) + ahead
+        let fetched = try await fetch(from: -Self.copyBehind, to: 0, limit: most)
+        let behind = fetched.filter { !seen.contains(key($0)) }
+        let kept = Array(behind.suffix(most - ahead.count))
+        // The past week whole, or from the earliest it kept; a past week of more than it fetched
+        // (soonest first, so its latest left out) only from now.
+        let from = fetched.count >= most ? now
+            : kept.count < behind.count ? Self.start(of: kept.first) ?? now : now.addingTimeInterval(-Self.copyBehind)
+        return (kept + ahead, from, now.addingTimeInterval(Self.copyAhead))
+    }
+
+    /// How far ahead and back Keep a Copy's calendar reaches.
+    static let copyAhead: TimeInterval = 60 * 86400
+    static let copyBehind: TimeInterval = 7 * 86400
+
+    private static func start(of event: JSONValue?) -> Date? {
+        event?["start"]?.string.flatMap { DeviceDates.parse($0) }
     }
 
     /// When the copy last reached the server, from this phone.
