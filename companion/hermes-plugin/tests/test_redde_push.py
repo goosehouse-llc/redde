@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import unittest.mock
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -585,6 +586,12 @@ class HookTests(unittest.TestCase):
         store = core.Store(Path(tempfile.mkdtemp()))
         offer = core.Offer(self.relay.url)
         self.phone = Phone(offer.link)
+        # Hermes's home, for what the plugin keeps there (task reports): never this Mac's own.
+        self.hermes_home = tempfile.TemporaryDirectory()
+        self.addCleanup(self.hermes_home.cleanup)
+        patched = unittest.mock.patch.dict("os.environ", {"HERMES_HOME": self.hermes_home.name})
+        patched.start()
+        self.addCleanup(patched.stop)
         store.add(offer.accept(self.phone.answer))
         plugin._store, plugin._pusher = store, core.Pusher(store)
         plugin._platforms.clear()
@@ -805,6 +812,8 @@ class HookTests(unittest.TestCase):
         plugin._on_reply(session_id="20261007_1", platform="desktop", turn_id="t3", assistant_response="Any time.")
         self.later.pass_(1000)
         self.assertEqual([(n["k"], n["b"]) for n in self.sent()], [("reply", "On it."), ("task", "The count is in: 12 files."), ("reply", "Any time.")])
+        # The agent said it itself: nothing kept for the chat, which has its words.
+        self.assertEqual(plugin._slash("tasks 20261007_1"), 'redde-push tasks {"tasks": []}')
 
     def test_a_task_no_turn_reports_comes_back_in_its_own_words(self):
         # Over the Hermes API (0.21.3 and later): the task finishes and nothing follows.
@@ -818,6 +827,11 @@ class HookTests(unittest.TestCase):
         plugin._on_task_done(parent_session_id="api_9", child_status="timeout", child_summary=None)
         self.later.pass_(core.Turns.REPORT + 1)
         self.assertEqual([(n["b"], n["d"]) for n in self.sent()[2:]], [("The task has finished.", "Ended: timeout")])
+        # Both kept for the chat, which shows them until Hermes's own row for them is there.
+        kept = json.loads(plugin._slash("tasks api_9").removeprefix("redde-push tasks "))["tasks"]
+        self.assertEqual([(r["summary"], r["about"], r["tasks"], r["failed"]) for r in kept],
+                         [("12 files.", "", 1, 0), ("", "Ended: timeout", 1, 1)])
+        self.assertEqual(json.loads(plugin._slash("tasks api_8").removeprefix("redde-push tasks ")), {"tasks": []})
         # A task a subagent handed on comes back to that subagent, and to nobody's phone.
         plugin._store.set_notify_all(True)
         plugin._on_turn(session_id="child_1", platform="subagent", turn_id="c1", parent_session_id="api_9")

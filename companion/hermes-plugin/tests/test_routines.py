@@ -258,6 +258,17 @@ class RoutinesTests(unittest.TestCase):
         self.assertNotIn("j", core.routine_note("default", "Sol", "Wrap-up", "Green.", brief="job1"), "none known: none said")
         self.assertNotIn("j", core.routine_note("scout", "Scout", "What to wear", "A coat.", session="s1"), "only a briefing's")
 
+    def test_a_weather_report_names_its_place_for_the_card(self):
+        """2026-11-11: the weather before the day as Redde's weather card, not only words."""
+        self.assertIn("WEATHER:", routines.CRON_NOTE)
+        made = self.notify_run("**WEATHER: Orlando, FL**\n\n**Warm and dry** — 84° by noon.")[0][1]
+        self.assertEqual(made["e"], "Orlando, FL")
+        self.assertEqual(made["b"], "**Warm and dry** — 84° by noon.", "the line is the card's, not the words'")
+        self.assertEqual(routines.weather_line("WEATHER: here\nSunny."), ("Sunny.", "here"))
+        for kept in ("Weather: sunny, 84°.", "The weather is fine.\nWEATHER: Orlando"):
+            self.assertEqual(routines.weather_line(kept), (kept, ""), kept)
+        self.assertNotIn("e", core.routine_note("default", "Sol", "Wrap-up", "Green.", brief="job1"))
+
     def test_silent_after_words_of_its_own_says_nothing(self):
         self.assertEqual(self.notify_run("A quiet day, nothing to report.\n\n[SILENT]"), [])
 

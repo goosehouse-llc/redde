@@ -56,8 +56,24 @@ CRON_NOTE = ("[Redde: your final answer reaches the user's phone exactly as you 
              "itself: no notes on what you are doing (\"Now let me…\", \"Here's the notification:\") and no \"---\" "
              "before it. If it runs past a few lines, open with the outcome in one short line all in bold, then give "
              "the details as a short numbered list, each point opening with a few words in bold; Redde lays that out "
-             "as cards. If there is nothing worth telling them, answer exactly [SILENT] and nothing else. Call "
+             "as cards. If it is a weather report, make its first line WEATHER: and the town or city it is for "
+             "(WEATHER: here, for where the user is now): Redde shows the forecast card from it and hides that line. "
+             "If there is nothing worth telling them, answer exactly [SILENT] and nothing else. Call "
              "deferred tools one at a time, each by its exact name.]")
+#: The run's `WEATHER: Orlando, FL` line (1.26.0, asked 2026-11-11: the weather before the day as the
+#: weather card), bold or not, in capitals ("Weather: sunny" is a line of the brief).
+_WEATHER_LINE = re.compile(r"\s*[*_]*\s*WEATHER\s*:\s*[*_]*\s*(.+?)\s*[*_]*\s*")
+
+
+def weather_line(words: str) -> tuple[str, str]:
+    """A run's answer without its first line `WEATHER: <place>`, and the place ("" when there is none)."""
+    text = (words or "").lstrip()
+    first, _, rest = text.partition("\n")
+    found = _WEATHER_LINE.fullmatch(first)
+    if not found:
+        return words, ""
+    place = found.group(1).strip("*_ .")
+    return rest.strip(), place if len(place) <= 120 else ""
 #: Ways a model opens with what it is doing rather than what it found.
 _NARRATION = re.compile(
     r"^(now\b|ok(ay)?\b|good\b|great\b|alright\b|all right\b|perfect\b|let me\b(?! know)|let's\b|i'll\b|i will\b|"
@@ -676,10 +692,12 @@ class Routines:
                             continue
                     from . import headsup   # (here: headsup's own imports reach back to this module)
                     event = headsup.recall(home, str(job.get("name") or "")) if told else {}
+                    words, weather = weather_line(words) if told and not failed else (words, "")
                     outgoing.append((profile, core.routine_note(profile, self.stores.name(home, profile), untagged(str(job.get("name") or "")),
                                                                 words, failed=failed, brief=str(job["id"]) if told else "",
                                                                 starts=str(event.get("starts") or ""), where=str(event.get("where") or ""),
-                                                                session=run_session(home, str(job["id"]), _instant(last)) if told else "")))
+                                                                session=run_session(home, str(job["id"]), _instant(last)) if told else "",
+                                                                weather=weather)))
             self.store.set_routine_runs(now)
         sent = 0
         for profile, made in outgoing:

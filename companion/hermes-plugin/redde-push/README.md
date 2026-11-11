@@ -340,6 +340,30 @@ one the gateway runs). With no Dashboard login, Redde sends the same commands to
 route on the API server: `POST /v1/redde/command` with `{"command": "…"}` and the main API key,
 answered `{"output": "…"}`.
 
+## Models & providers over the Hermes API (1.26.0)
+
+The Dashboard has routes for a profile's provider keys, its own endpoints, its main model, helper
+models and config; the Hermes API has none that write. So that Redde's Models & Providers page
+works on either connection, the plugin puts one route on the API server (`models.py`):
+`POST /v1/redde/models` with the main API key and `{"action": "…", "profile": "default" | "<bot>"}`.
+It runs Hermes's own functions in that profile's own home (a bot's keys go to
+`profiles/<bot>/.env`, its settings to its own config.yaml) and answers in the Dashboard's shapes:
+
+- `load` (`refresh`): the model picker's list, the provider keys (set or not, each only as Hermes's
+  «redacted» preview), the endpoints, the helper models, the fallbacks and this plugin's version.
+- `set_key`, `remove_key`: a provider's API key or an endpoint's (`HERMES_CUSTOM_…_API_KEY`), nothing
+  else; a «redacted» preview is refused.
+- `set_main`, `set_helper`: as the Dashboard's model assignment; neither takes a key.
+- `set_fallbacks`: the list replaced whole, each entry keeping what it had beyond provider, model
+  and base URL; the older `fallback_model` is taken out, as `hermes fallback` does.
+- `save_endpoint`, `activate_endpoint`, `delete_endpoint`, `test_endpoint`: as the Dashboard's
+  endpoint routes. The main model's own endpoint isn't deleted (409): Hermes would leave the main
+  model with no provider.
+
+No answer holds a key, none is logged, and no key is written into config.yaml: an older endpoint
+whose key is written there has it moved to .env behind `key_env` before the main model is pointed
+at it. A Hermes without one of the functions used answers that action 501.
+
 ## Requirements
 
 Hermes 0.21.0 or later; 0.21.3 or later is the one to have. On 0.21.0 the Dashboard stops a turn
@@ -469,3 +493,14 @@ with the google-workspace skill's Gmail sign-in gets that account over the Gmail
   of sending mail (himalaya, the google-workspace script, the Nous Gmail connector) are blocked.
 - State: `redde-push/mail/` under the main home (the inbox's small index, rules, the log, drafts,
   settings). The app's command is `/redde-push mail …` (see the repository's tmp/mail-contract.md).
+
+## Task reports in the chat (1.27.0)
+
+When a task the agent handed to a subagent finishes and no reply of the agent's reports it, the
+plugin tells the phone the task's own summary. It also keeps that report in the main home's
+`redde-push/task-reports.json` (0600, three days, ten per chat), and Redde asks for a chat's
+reports with `/redde-push tasks <session>` (over the Dashboard, or the plugin's route on the
+Hermes API). The app shows a report at the end of its chat until Hermes writes its own
+"[ASYNC DELEGATION …]" row there, which on the Dashboard happens only once a client is in the chat
+again; that row then stays open, so the chat says what the notification said.
+

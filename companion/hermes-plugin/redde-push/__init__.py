@@ -39,6 +39,8 @@ import time
 from pathlib import Path
 
 from . import calls, cards, core, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, watches, work, work_runs
+from . import models as model_settings   # (the Models & Providers route, 1.26.0)
+from . import tasks as task_reports   # (reports of handed-off tasks, 1.27.0)
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
 
 log = logging.getLogger("redde_push")
@@ -568,6 +570,12 @@ def _on_task_done(parent_session_id: str = "", child_status: str = "", child_sum
 def _tasks_came_back(session: str, tasks: list[tuple[str, str]]) -> None:
     """Tasks came back and Hermes started no turn to say so (`core.Turns`): their own words go."""
     summary, about = core.task_report(tasks)
+    # Kept for the chat (tasks.py, 1.27.0): until Hermes writes its own row for these, the chat
+    # has none of the words the notification is about to show.
+    try:
+        task_reports.keep(calls.caller(_home())[1], session, list(tasks), summary, about)
+    except Exception:
+        log.debug("redde-push: a task's report wasn't kept", exc_info=True)
     _state()[1].submit("task", session, _platforms.get(session, ""), body=summary or "The task has finished.", detail=about, now=_leaving)
 
 
@@ -623,6 +631,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["turn"]:
         # What goes to the agent with the app's next message (turnnote.py), kept in the main home.
         return turnnote.slash(calls.caller(_home())[1], words[1:])
+    if words and words[0] == "tasks":
+        # The task reports the phone was told of in a chat (tasks.py), kept in the main home.
+        return task_reports.slash(calls.caller(_home())[1], words[1:])
     if words[:1] == ["cards"]:
         # Cards in replies (cards.py): on unless the phone turned them off.
         return cards.slash(_home(), words[1:])
@@ -950,6 +961,11 @@ def register(ctx) -> None:
             register_handler("api_server", work_runs.wire(_slash))
         except Exception:
             log.debug("redde-push: no route on the Hermes API", exc_info=True)
+        # Models & providers over the Hermes API (models.py, 1.26.0): what the Dashboard's settings do.
+        try:
+            register_handler("api_server", model_settings.wire())
+        except Exception:
+            log.debug("redde-push: no models route on the Hermes API", exc_info=True)
     # Keys a bot asks for (keys.py): pasted into a card in Redde, straight into the profile's .env.
     keys.register(ctx, _home, _store_in, lambda home, profile: routines.Stores(calls.caller(home)[1]).name(home, profile))
     ctx.register_cli_command("redde-push", "Notifications on your iPhone, iPad or Mac from Redde", _cli_setup, _cli)

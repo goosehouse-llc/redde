@@ -781,6 +781,28 @@ workapi() {
   echo "\nAll checks passed."
 }
 
+# Models & Providers (models_check.py): keys, endpoints, the default, fallback and helper models,
+# for the main profile and a bot, over the Dashboard's routes and the plugin's /v1/redde/models.
+# With --app, then the app's own services (HermesLabModelsTests) on a fresh lab.
+models() {
+  local app=0
+  [[ "${1:-}" == --app ]] && { app=1; shift; }
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  (( app )) && { app_prepare HermesLabModelsTests || exit 1; }
+  for tag in $tags; do
+    echo "===== Hermes $tag / models"
+    if ! LAB_OWN_HOME=1 up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" models_check.py "${LAB_MODELS_WAY:-both}") || failed+=("$tag")
+    if (( app )); then
+      LAB_OWN_HOME=1 up "$tag" push || { failed+=("$tag (lab)"); continue; }
+      app_check || failed+=("$tag (app)")
+    fi
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Run On (runon_check.py): a scheduled job's own model, set by the Dashboard's job update, by the
 # plugin from a mark in its name (the Hermes API's way), and back to the main model by its command;
 # each run reaches the stub on the model it should. The push scenario (the plugin, two models).
@@ -971,6 +993,7 @@ case "${1:-}" in
   work) shift; work "$@" ;;
   workapi) shift; workapi "$@" ;;
   runon) shift; runon "$@" ;;
+  models) shift; models "$@" ;;
   calls) shift; calls "$@" ;;
   apibots) shift; apibots "$@" ;;
   search) shift; search "$@" ;;

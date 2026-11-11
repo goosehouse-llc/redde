@@ -3,6 +3,36 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.27.0 (2026-11-11)
+
+- A task's report stays in its chat (GitHub issue 63). When a task the agent handed off finishes
+  and no reply of the agent's says so, the phone is told the task's own summary. Opened from that
+  notification, the chat had none of those words: on the Dashboard, Hermes writes its row for the
+  task only once someone is in the chat again, and the agent's answer that follows says it
+  differently. The plugin now keeps each report it told the phone (three days, ten per chat, only
+  readable by you) and Redde asks for them with `/redde-push tasks <session>`: it shows the report
+  at the end of the chat until Hermes's row is there, keeps that row open rather than folded, and
+  a tap on the notification opens it.
+
+## 1.26.0 (2026-11-11)
+
+- Models and providers over the Hermes API. Redde's Models & Providers page sets a profile's
+  provider keys, its own endpoints, its main model, its helper models and its fallbacks over the
+  Hermes API as it does over the Dashboard: the plugin puts a route on the API server,
+  `POST /v1/redde/models`, that does it with Hermes's own functions, in that profile's own home,
+  and answers as the Dashboard does. A bot's settings go to the bot, not the main profile.
+- No key is ever sent back, logged or written into config.yaml: keys go to the profile's .env and
+  show only as Hermes's «redacted» preview. Only a provider's key or an endpoint's can be set from
+  there, and a preview pasted back is refused.
+- An endpoint the main model is on isn't removed: Hermes would have left the main model with no
+  provider. Another model first, then the endpoint.
+- An older endpoint whose key is written into config.yaml has it moved to .env when the main model
+  is pointed at it, rather than copied onto the main model as a second plaintext copy.
+- A weather report from a scheduled run shows as Redde's weather card. Runs are asked to start a
+  weather report with a `WEATHER: <town or city>` line (`WEATHER: here` for where the person is);
+  the plugin takes that line out and sends the place with the briefing (`e`), and Redde looks up
+  the forecast there. An older Redde shows the words as before.
+
 ## 1.25.2 (2026-11-10)
 
 - The calendar tool is shown to the agent outright, not behind tool search. Search showed it one
