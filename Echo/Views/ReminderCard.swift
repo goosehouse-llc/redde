@@ -6,19 +6,28 @@ import SwiftUI
 /// A set one says so, with where it lives; Change… and Cancel sit in its ⋯ menu (2026-11-10: two
 /// large buttons, always there, were easy to press by mistake, and nothing said it was set). They
 /// ask the agent with a message, and it changes or cancels it with the tool it set it with; the
-/// card then says what was asked.
+/// card then says what was asked. A timer restarts at its length, or takes a new one; the others
+/// take a new time from a picker (2026-11-10, asked), sent to the agent as the exact time.
 struct ReminderCard: View {
     let card: ReplyCard.Reminder
     let whole: ReplyCard
     @State private var answers = CardAnswers.shared
-    @State private var changing = false
+    @State private var editing: Editing?
     @State private var change = ""
+    @State private var newTime = Date.now
+    @State private var newMinutes = 10
     @FocusState private var focused: Bool
     @Environment(\.answerCard) private var answerer
     @Environment(\.pinnedCard) private var pinned
     @Environment(\.theme) private var theme
 
     private var answered: String? { answers.said[whole.key] }
+
+    /// What the card is open for: a time from the picker, a timer's length, or a change in words.
+    enum Editing { case time, length, words }
+
+    /// Its length in whole minutes, where a timer has one.
+    private var minutes: Int? { card.kind == .timer ? card.duration.flatMap { Self.minutes($0) } : nil }
 
     var body: some View {
         CardBox(spacing: 14) {
@@ -51,6 +60,7 @@ struct ReminderCard: View {
             if let answered {
                 place
                 AnsweredLine(text: answered.contains("tapped Cancel") ? String(localized: "Asked to cancel", comment: "Under a reminder card once Cancel was tapped")
+                             : answered.contains("tapped Restart") ? String(localized: "Asked to restart it", comment: "Under a timer card once Restart was tapped")
                              : String(localized: "Asked to change it", comment: "Under a reminder card once a change was sent"))
             } else if !card.isSet {
                 place
@@ -64,9 +74,13 @@ struct ReminderCard: View {
                         .disabled(answerer.busy)
                         .accessibilityHint(Text("Asks your agent to set it for real", comment: "VoiceOver hint: a reminder card's Set It"))
                 }
-            } else if changing, let answerer, !pinned {
+            } else if let editing, let answerer, !pinned {
                 place
-                changeField(answerer)
+                switch editing {
+                case .words: changeField(answerer)
+                case .time: timeField(answerer)
+                case .length: lengthField(answerer)
+                }
             } else {
                 setLine
             }
@@ -123,6 +137,14 @@ struct ReminderCard: View {
                         .chatFont(.caption).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
+                if left <= 0, answered == nil, editing == nil, let minutes, let answerer, !pinned {
+                    Button { restart(answerer, minutes) } label: {
+                        Label(String(localized: "timer.restart", defaultValue: "Restart", comment: "A timer card's button and menu item: start the timer again at its full length"), systemImage: "arrow.counterclockwise").chatFont(.subheadline, weight: .semibold)
+                    }
+                    .buttonStyle(.bordered).buttonBorderShape(.capsule).tint(theme.accent)
+                    .disabled(answerer.busy)
+                    .accessibilityHint(Text("Starts the timer again at its full length", comment: "VoiceOver hint: a timer card's Restart"))
+                }
             }
             .padding(12)
             .background(Color.primary.opacity(0.05), in: .rect(cornerRadius: 14))
@@ -132,8 +154,21 @@ struct ReminderCard: View {
 
     private func menu(_ answerer: CardAnswerer) -> some View {
         Menu {
-            Button { changing = true; focused = true } label: {
-                Label(String(localized: "Change…", comment: "A reminder card's button: tell the agent what to change"), systemImage: "pencil")
+            if let minutes {
+                Button { restart(answerer, minutes) } label: { Label(String(localized: "timer.restart", defaultValue: "Restart", comment: "A timer card's button and menu item: start the timer again at its full length"), systemImage: "arrow.counterclockwise") }
+                    .accessibilityHint(Text("Starts the timer again at its full length", comment: "VoiceOver hint: a timer card's Restart"))
+            }
+            if card.kind == .timer {
+                Button { newMinutes = minutes ?? 10; editing = .length } label: {
+                    Label(String(localized: "Change Length…", comment: "A timer card's menu: pick how long it runs"), systemImage: "timer")
+                }
+            } else {
+                Button { newTime = Self.startingTime(card); editing = .time } label: {
+                    Label(String(localized: "Change Time…", comment: "A reminder, alarm or scheduled message card's menu: pick a new time"), systemImage: "clock")
+                }
+            }
+            Button { editing = .words; focused = true } label: {
+                Label(String(localized: "Other Change…", comment: "A reminder card's menu: tell the agent in words what to change"), systemImage: "pencil")
             }
             .accessibilityHint(Text("Lets you say what to change", comment: "VoiceOver hint: a reminder card's Change"))
             Button(role: .destructive) { cancel(answerer) } label: {
@@ -158,22 +193,83 @@ struct ReminderCard: View {
                 .padding(.horizontal, 12).padding(.vertical, 10)
                 .background(Color.primary.opacity(0.06), in: .capsule)
                 .onSubmit { send(answerer) }
-            Button { send(answerer) } label: {
-                Image(systemName: "arrow.up").chatFont(.subheadline, weight: .bold).foregroundStyle(theme.userText)
-                    .frame(width: 36, height: 36).background(theme.accent, in: .circle)
-                    .frame(width: 44, height: 44).contentShape(.circle)
-            }
-            .buttonStyle(.plain)
-            .disabled(change.trimmingCharacters(in: .whitespaces).isEmpty || answerer.busy)
-            .accessibilityLabel(Text("Send", comment: "VoiceOver: a reminder card's send button for a change"))
+            closeButton
+            sendButton(disabled: change.trimmingCharacters(in: .whitespaces).isEmpty || answerer.busy) { send(answerer) }
         }
+    }
+
+    /// A new time: a day and a time, or a time of day where it repeats.
+    private func timeField(_ answerer: CardAnswerer) -> some View {
+        HStack(spacing: 8) {
+            if card.repeats != nil || card.at == nil && card.when != nil {
+                DatePicker(String(localized: "New time", comment: "VoiceOver: a reminder card's time picker"), selection: $newTime, displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+            } else {
+                DatePicker(String(localized: "New time", comment: "VoiceOver: a reminder card's time picker"), selection: $newTime, in: Date.now..., displayedComponents: [.date, .hourAndMinute])
+                    .labelsHidden()
+            }
+            Spacer(minLength: 0)
+            closeButton
+            sendButton(disabled: answerer.busy) { sendTime(answerer) }
+        }
+    }
+
+    /// A timer's new length, from a minute to a day, by the minute and then by five.
+    private func lengthField(_ answerer: CardAnswerer) -> some View {
+        HStack(spacing: 8) {
+            Stepper(value: Binding(get: { newMinutes }, set: { newMinutes = Self.stepped(from: newMinutes, to: $0) }), in: 1 ... Self.longestMinutes) {
+                Text(verbatim: Self.length(TimeInterval(newMinutes * 60))).chatFont(.headline).monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+            .accessibilityLabel(Text("Timer length", comment: "VoiceOver: a timer card's length stepper"))
+            closeButton
+            sendButton(disabled: answerer.busy) { sendLength(answerer) }
+        }
+    }
+
+    private var closeButton: some View {
+        Button { editing = nil } label: {
+            Image(systemName: "xmark").chatFont(.subheadline, weight: .semibold).foregroundStyle(.secondary)
+                .frame(width: 36, height: 36).background(Color.primary.opacity(0.06), in: .circle)
+                .frame(width: 44, height: 44).contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Don't Change", comment: "VoiceOver: closes a reminder card's change without sending"))
+    }
+
+    private func sendButton(disabled: Bool, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "arrow.up").chatFont(.subheadline, weight: .bold).foregroundStyle(theme.userText)
+                .frame(width: 36, height: 36).background(theme.accent, in: .circle)
+                .frame(width: 44, height: 44).contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .accessibilityLabel(Text("Send", comment: "VoiceOver: a reminder card's send button for a change"))
+    }
+
+    private func sendTime(_ answerer: CardAnswerer) {
+        let message = Self.move(card, to: newTime)
+        editing = nil
+        answerer.answer(whole, message.shown, message.said)
+    }
+
+    private func sendLength(_ answerer: CardAnswerer) {
+        let message = Self.lengthen(card, minutes: newMinutes)
+        editing = nil
+        answerer.answer(whole, message.shown, message.said)
+    }
+
+    private func restart(_ answerer: CardAnswerer, _ minutes: Int) {
+        let message = Self.restart(card, minutes: minutes)
+        answerer.answer(whole, message.shown, message.said)
     }
 
     private func send(_ answerer: CardAnswerer) {
         let said = change.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !said.isEmpty else { return }
         let message = Self.change(card, said)
-        changing = false
+        editing = nil
         answerer.answer(whole, message.shown, message.said)
     }
 
@@ -227,6 +323,74 @@ struct ReminderCard: View {
         }
         return (shown, "the user tapped Change on the reminder card for the \(card.kind.rawValue) \(named(card)) and wrote: \(said). Change it with the tool you set it with "
                     + "(or cancel it and set it again), then show a fresh 'reminder' card")
+    }
+
+    /// "Restart the timer “Pasta” (20 min)": again at its length, from now.
+    static func restart(_ card: ReplyCard.Reminder, minutes: Int) -> (shown: String, said: String) {
+        let length = length(TimeInterval(minutes * 60))
+        return (String(localized: "Restart the timer “\(card.title)” (\(length))", comment: "The message a timer card's Restart sends, with its length, e.g. 20 min"),
+                "the user tapped Restart on the reminder card for the timer \(named(card)): cancel it if it is still running, then set it again "
+                + "for \(minutes) minutes from now, with the same title, with the tool you set it with (phone_alarms_set for one on their iPhone), then show a fresh 'reminder' card with its id")
+    }
+
+    /// "Change the timer “Pasta” to 25 min": a new length, from now.
+    static func lengthen(_ card: ReplyCard.Reminder, minutes: Int) -> (shown: String, said: String) {
+        let length = length(TimeInterval(minutes * 60))
+        return (String(localized: "Change the timer “\(card.title)” to \(length)", comment: "The message a timer card's Change Length sends, e.g. to 25 min"),
+                "the user tapped Change Time on the reminder card for the timer \(named(card)) and picked a new length: cancel it if it is still running, then set it again "
+                + "for \(minutes) minutes from now, with the same title, with the tool you set it with (phone_alarms_set for one on their iPhone), then show a fresh 'reminder' card with its id")
+    }
+
+    /// "Move the reminder “Call dentist” to 4:00 PM": a time from the picker, exactly; a time of
+    /// day where it repeats.
+    static func move(_ card: ReplyCard.Reminder, to time: Date, now: Date = .now) -> (shown: String, said: String) {
+        let daily = card.repeats != nil || card.at == nil && card.when != nil
+        let words = daily || Calendar.current.isDate(time, inSameDayAs: now) ? time.formatted(date: .omitted, time: .shortened)
+                                                                              : time.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+        let shown = switch card.kind {
+        case .reminder, .timer: String(localized: "Move the reminder “\(card.title)” to \(words)", comment: "The message a reminder card's Change Time sends, e.g. to 4:00 PM")
+        case .alarm: String(localized: "Move the alarm “\(card.title)” to \(words)", comment: "The message an alarm card's Change Time sends, e.g. to 6:30 AM")
+        case .schedule: String(localized: "Move the scheduled message “\(card.title)” to \(words)", comment: "The message a scheduled message card's Change Time sends")
+        }
+        let exact = daily ? "the time of day \(Self.clockTime(time)), for every time it repeats"
+                          : ISO8601DateFormatter.string(from: time, timeZone: .current, formatOptions: [.withInternetDateTime])
+        return (shown, "the user tapped Change Time on the reminder card for the \(card.kind.rawValue) \(named(card)) and picked a new time: \(exact). "
+                + "Move it there with the tool you set it with (or cancel it and set it again), keeping its title and how it repeats, then show a fresh 'reminder' card with its id")
+    }
+
+    /// Where the picker starts: its own time while that is ahead, else an hour from now, on the hour.
+    static func startingTime(_ card: ReplyCard.Reminder, now: Date = .now, calendar: Calendar = .current) -> Date {
+        if let at = card.at, at > now || card.repeats != nil { return at }
+        let hour = now.addingTimeInterval(3600)
+        return calendar.dateInterval(of: .hour, for: hour)?.start ?? hour
+    }
+
+    /// "16:00": a time of day, for the agent.
+    static func clockTime(_ time: Date, calendar: Calendar = .current) -> String {
+        let parts = calendar.dateComponents([.hour, .minute], from: time)
+        return String(format: "%02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
+    }
+
+    /// The longest timer, a day, as the phone's alarms tool takes (`DeviceAlarms.longestTimer`,
+    /// which the Mac doesn't build).
+    static let longestMinutes = 24 * 60
+
+    /// Whole minutes, at least one.
+    static func minutes(_ seconds: TimeInterval) -> Int? {
+        seconds > 0 ? (seconds / 60).nearestInt(in: 1 ... longestMinutes) : nil
+    }
+
+    /// The stepper's next value: by the minute up to 10, by five past that.
+    static func stepped(from old: Int, to new: Int) -> Int {
+        let up = new > old
+        if old < 10 || (old == 10 && !up) { return new }
+        let next = up ? (old / 5 + 1) * 5 : (old - 1) / 5 * 5
+        return min(max(next, 1), Self.longestMinutes)
+    }
+
+    /// "20 min", "1 hr, 30 min".
+    static func length(_ seconds: TimeInterval) -> String {
+        Duration.seconds(seconds).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
     }
 
     private static func named(_ card: ReplyCard.Reminder) -> String {

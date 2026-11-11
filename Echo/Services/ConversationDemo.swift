@@ -954,7 +954,8 @@ extension Conversation {
             let vet = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: calendar.date(byAdding: .day, value: 1, to: .now) ?? .now)
             let made = card("""
             {"cards": [
-              {"type": "reminder", "kind": "timer", "title": "Pasta", "at": "\(at(Date.now.addingTimeInterval(19 * 60 + 42)))", "duration": "20 min", "where": "A timer on this iPhone"},
+              {"type": "reminder", "kind": "timer", "title": "Pasta", "at": "\(at(Date.now.addingTimeInterval(19 * 60 + 42)))", "duration": "20 min", "where": "A timer on this iPhone", "id": "7C1E2A40-0000-4000-8000-000000000001"},
+              {"type": "reminder", "kind": "timer", "title": "Tea", "at": "\(at(Date.now.addingTimeInterval(-90)))", "duration": "4 min", "where": "A timer on this iPhone", "id": "7C1E2A40-0000-4000-8000-000000000002"},
               {"type": "reminder", "title": "Call the vet about Pepper's shots", "at": "\(at(vet))", "where": "Reminders", "id": "x-apple-reminder://4F2A"},
               {"type": "reminder", "kind": "schedule", "title": "Send the weekly report", "at": "\(at(monday))", "repeat": "Every Monday at 9 AM", "where": "Hermes", "id": "cron_7f3a"}]}
             """, "reminder")

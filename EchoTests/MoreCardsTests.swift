@@ -113,6 +113,37 @@ struct MoreCardsTests {
         for kind in ReplyCard.Reminder.Kind.allCases { #expect(UIImage(systemName: ReminderCard.symbol(kind)) != nil) }
     }
 
+    /// 2026-11-10, asked: restart a timer or change its time from the card, sent as exact figures.
+    @Test func aReminderRestartsOrMovesFromTheCard() {
+        var pasta = ReplyCard.Reminder(title: "Pasta", kind: .timer, id: "7C1E")
+        pasta.duration = 1200
+        let restart = ReminderCard.restart(pasta, minutes: 20)
+        #expect(restart.shown == "Restart the timer “Pasta” (20 min)", "\(restart.shown)")
+        #expect(restart.said.contains("tapped Restart") && restart.said.contains("20 minutes from now") && restart.said.contains("(id 7C1E)"))
+        let longer = ReminderCard.lengthen(pasta, minutes: 90)
+        #expect(longer.shown == "Change the timer “Pasta” to 1 hr, 30 min", "\(longer.shown)")
+        #expect(longer.said.contains("90 minutes from now") && !longer.said.contains("tapped Restart"))
+        #expect(ReminderCard.minutes(1182) == 20 && ReminderCard.minutes(0) == nil && ReminderCard.minutes(9e9) == ReminderCard.longestMinutes)
+
+        let now = ISO8601DateFormatter().date(from: "2026-11-10T15:00:00Z")!
+        let later = now.addingTimeInterval(3 * 86_400)
+        let vet = ReplyCard.Reminder(title: "Call the vet", kind: .reminder, at: now.addingTimeInterval(600), id: "x-apple-reminder://4F2A")
+        let moved = ReminderCard.move(vet, to: later, now: now)
+        #expect(moved.shown.hasPrefix("Move the reminder “Call the vet” to "))
+        #expect(moved.said.contains("tapped Change Time") && moved.said.contains(ISO8601DateFormatter.string(from: later, timeZone: .current, formatOptions: [.withInternetDateTime])))
+        var weekly = ReplyCard.Reminder(title: "Report", kind: .schedule, at: now, id: "job1")
+        weekly.repeats = "Every Monday"
+        #expect(ReminderCard.move(weekly, to: later, now: now).said.contains("the time of day \(ReminderCard.clockTime(later)), for every time it repeats"))
+
+        // The stepper: by the minute to 10, then by five.
+        #expect(ReminderCard.stepped(from: 9, to: 10) == 10 && ReminderCard.stepped(from: 10, to: 11) == 15)
+        #expect(ReminderCard.stepped(from: 12, to: 11) == 10 && ReminderCard.stepped(from: 10, to: 9) == 9 && ReminderCard.stepped(from: 15, to: 16) == 20)
+        // The picker starts at its own time while ahead, else on the next hour but one.
+        #expect(ReminderCard.startingTime(vet, now: now) == vet.at)
+        let past = ReminderCard.startingTime(.init(title: "x", kind: .alarm, at: now.addingTimeInterval(-60)), now: now.addingTimeInterval(20 * 60))
+        #expect(past > now.addingTimeInterval(20 * 60) && Calendar.current.component(.minute, from: past) == 0)
+    }
+
     // MARK: Comparisons
 
     @Test func aComparisonHasItsOptionsRowsAndPick() throws {
