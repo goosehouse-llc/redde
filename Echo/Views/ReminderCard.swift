@@ -3,8 +3,10 @@ import SwiftUI
 /// What the agent set to come back (`ReplyCard.reminder`, asked 2026-10-30: "remind me to…", "set a
 /// timer for 20 minutes", "every Monday, tell me…"): what, when (how long from now, and the time),
 /// how it repeats, and where it lives; a timer counts down, drawn each second only where it counts.
-/// Change… and Cancel ask the agent with a message, and it changes or cancels it with the tool it
-/// set it with; the card then says what was asked.
+/// A set one says so, with where it lives; Change… and Cancel sit in its ⋯ menu (2026-11-10: two
+/// large buttons, always there, were easy to press by mistake, and nothing said it was set). They
+/// ask the agent with a message, and it changes or cancels it with the tool it set it with; the
+/// card then says what was asked.
 struct ReminderCard: View {
     let card: ReplyCard.Reminder
     let whole: ReplyCard
@@ -46,14 +48,12 @@ struct ReminderCard: View {
             }
             .accessibilityElement(children: .combine)
             if card.kind == .timer, let at = card.at { countdown(to: at) }
-            if let place = card.place {
-                Label(place, systemImage: Self.placeSymbol(place))
-                    .chatFont(.caption).foregroundStyle(.secondary)
-            }
             if let answered {
+                place
                 AnsweredLine(text: answered.contains("tapped Cancel") ? String(localized: "Asked to cancel", comment: "Under a reminder card once Cancel was tapped")
                              : String(localized: "Asked to change it", comment: "Under a reminder card once a change was sent"))
             } else if !card.isSet {
+                place
                 // Nothing behind it: say so, and offer to set it for real (2026-11-03).
                 Label(String(localized: "Nothing was set: this is only a card", comment: "Under a reminder card that no tool set"),
                       systemImage: "exclamationmark.triangle.fill")
@@ -64,10 +64,37 @@ struct ReminderCard: View {
                         .disabled(answerer.busy)
                         .accessibilityHint(Text("Asks your agent to set it for real", comment: "VoiceOver hint: a reminder card's Set It"))
                 }
-            } else if let answerer, !pinned {
-                if changing { changeField(answerer) } else { buttons(answerer) }
+            } else if changing, let answerer, !pinned {
+                place
+                changeField(answerer)
+            } else {
+                setLine
             }
         }
+    }
+
+    /// Where it lives, as the agent said.
+    @ViewBuilder private var place: some View {
+        if let place = card.place {
+            Label(place, systemImage: Self.placeSymbol(place))
+                .chatFont(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    /// "✓ Set · Reminders", and the menu to change or cancel it.
+    private var setLine: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).accessibilityHidden(true)
+            Text(String(localized: "reminder.set", defaultValue: "Set", comment: "Under a reminder, timer or alarm card: it was set"))
+                .chatFont(.caption, weight: .semibold)
+            if let place = card.place {
+                Text(verbatim: "·").foregroundStyle(.tertiary).accessibilityHidden(true)
+                Label(place, systemImage: Self.placeSymbol(place)).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            if let answerer, !pinned { menu(answerer) }
+        }
+        .chatFont(.caption)
     }
 
     /// The time left, large, and a ring of it where the timer's length is known: redrawn each
@@ -103,15 +130,23 @@ struct ReminderCard: View {
         }
     }
 
-    private func buttons(_ answerer: CardAnswerer) -> some View {
-        HStack(spacing: 10) {
-            Button { changing = true; focused = true } label: { TintedCapsule(title: String(localized: "Change…", comment: "A reminder card's button: tell the agent what to change")) }
-                .accessibilityHint(Text("Lets you say what to change", comment: "VoiceOver hint: a reminder card's Change"))
-            Button { cancel(answerer) } label: { TintedCapsule(title: String(localized: "Cancel", comment: "A reminder card's button: asks the agent to cancel it"), role: .destructive) }
-                .accessibilityHint(Text("Asks your agent to cancel it", comment: "VoiceOver hint: a reminder card's Cancel"))
+    private func menu(_ answerer: CardAnswerer) -> some View {
+        Menu {
+            Button { changing = true; focused = true } label: {
+                Label(String(localized: "Change…", comment: "A reminder card's button: tell the agent what to change"), systemImage: "pencil")
+            }
+            .accessibilityHint(Text("Lets you say what to change", comment: "VoiceOver hint: a reminder card's Change"))
+            Button(role: .destructive) { cancel(answerer) } label: {
+                Label(String(localized: "Cancel", comment: "A reminder card's button: asks the agent to cancel it"), systemImage: "xmark")
+            }
+            .accessibilityHint(Text("Asks your agent to cancel it", comment: "VoiceOver hint: a reminder card's Cancel"))
+        } label: {
+            Image(systemName: "ellipsis.circle").chatFont(.title3).foregroundStyle(.secondary)
+                .frame(width: 44, height: 44).contentShape(.rect)
         }
-        .buttonStyle(.plain)
         .disabled(answerer.busy)
+        .padding(.vertical, -10)   // its 44-point target, without making the line that tall
+        .accessibilityLabel("More for \(card.title)")
     }
 
     private func changeField(_ answerer: CardAnswerer) -> some View {
