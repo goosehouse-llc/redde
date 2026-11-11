@@ -538,7 +538,7 @@ struct VoiceView: View {
         if Self.demoOnCall, phase == .listening { return String(localized: "On a call") }
         if session.isLive {
             switch phase {
-            case .thinking where session.liveConnecting: return String(localized: "Calling \(session.liveEngine?.name ?? "GPT-Live")")
+            case .thinking where session.liveConnecting: return (session.liveEngine ?? .gptLive).calling
             case .idle: return session.isMuted ? String(localized: "Muted") : String(localized: "Ready")
             case .listening: return String(localized: "On a call")
             default: break

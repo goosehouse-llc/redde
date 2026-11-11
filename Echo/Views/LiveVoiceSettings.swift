@@ -26,7 +26,9 @@ struct LiveVoiceSettings: View {
                 .pickerStyle(.inline)
                 .labelsHidden()
             } footer: {
-                Text((engine.map { String(localized: "\($0.company)'s voice model talks and listens at the same time: interrupt it whenever you like, and it answers small talk at once and says \u{201C}let me check\u{201D} while your agent works. Anything real goes to your agent, as in a typed chat, and the voice says the answer in its own words.") }
+                Text((engine.map { $0 == .local
+                        ? String(localized: "A call that stays on your iPhone: it hears you, your agent answers everything, and the reading voice (Settings → Voice, or the bot's own) says the answer as it is written. No key, no voice service.")
+                        : String(localized: "\($0.company)'s voice model talks and listens at the same time: interrupt it whenever you like, and it answers small talk at once and says \u{201C}let me check\u{201D} while your agent works. Anything real goes to your agent, as in a typed chat, and the voice says the answer in its own words.") }
                      ?? String(localized: "Your iPhone hears you, your agent answers, and the reading voice (Settings → Voice) reads the answer out. Nothing goes anywhere but your server and that voice."))
                      + "\n\n" + String(localized: "For the main agent and every bot without its own choice (Edit Bot → Voice)."))
             }
@@ -41,26 +43,38 @@ struct LiveVoiceSettings: View {
                 Section {
                     Toggle("Group Chats as Calls", isOn: $settings.liveGroupCalls)
                 } footer: {
-                    settings.liveGroupCalls
-                        ? Text("Voice mode in a group chat is a \(engine.name) call: \(engine.company)'s voice hands what you say to the group, and each bot's reply is said in that bot's \(engine.name) voice (Edit Bot → Voice), the call switching to it for the reply. The call is billed for as long as it is open.")
-                        : Text("Voice mode in a group chat is Redde's: your iPhone hears you, and each bot's reply is read in its reading voice.")
-                }
-                Section("Calls use") {
-                    if engine == .gptLive {
-                        LabeledContent("Your Hermes's key") { Text(hermesState).foregroundStyle(.secondary).multilineTextAlignment(.trailing) }
+                    if engine == .local {
+                        settings.liveGroupCalls
+                            ? Text("Voice mode in a group chat is a local call: what you say goes to the group, and each bot's reply is said in that bot's reading voice.")
+                            : Text("Voice mode in a group chat is Redde's: your iPhone hears you, and each bot's reply is read in its reading voice.")
+                    } else {
+                        settings.liveGroupCalls
+                            ? Text("Voice mode in a group chat is a \(engine.name) call: \(engine.company)'s voice hands what you say to the group, and each bot's reply is said in that bot's \(engine.name) voice (Edit Bot → Voice), the call switching to it for the reply. The call is billed for as long as it is open.")
+                            : Text("Voice mode in a group chat is Redde's: your iPhone hears you, and each bot's reply is read in its reading voice.")
                     }
-                    SecretField(item: engine.keyItem, prompt: keyPrompt(engine), replacePrompt: String(localized: "Replace stored \(engine.company) key"),
-                                saveTitle: String(localized: "Save key"), removeTitle: String(localized: "Remove key"), optional: true, hasValue: $hasKey)
-                        .id(engine)
+                }
+                if let keyItem = engine.keyItem {
+                    Section("Calls use") {
+                        if engine == .gptLive {
+                            LabeledContent("Your Hermes's key") { Text(hermesState).foregroundStyle(.secondary).multilineTextAlignment(.trailing) }
+                        }
+                        SecretField(item: keyItem, prompt: keyPrompt(engine), replacePrompt: String(localized: "Replace stored \(engine.company) key"),
+                                    saveTitle: String(localized: "Save key"), removeTitle: String(localized: "Remove key"), optional: true, hasValue: $hasKey)
+                            .id(engine)
+                    }
                 }
                 Section {
-                    NavigationLink {
-                        LiveVoiceList(engine: engine,
-                                      selection: Binding(get: { settings.appLiveVoice(engine) },
-                                                         set: { settings.setAppLiveVoice($0 ?? engine.defaultVoice, for: engine) }),
-                                      name: settings.headerTitle)
-                    } label: {
-                        LabeledContent("Voice", value: engine.voiceName(settings.appLiveVoice(engine)))
+                    if engine.speaksInReadingVoice {
+                        LabeledContent("Reading voice", value: settings.replyVoice.name)
+                    } else {
+                        NavigationLink {
+                            LiveVoiceList(engine: engine,
+                                          selection: Binding(get: { settings.appLiveVoice(engine) },
+                                                             set: { settings.setAppLiveVoice($0 ?? engine.defaultVoice, for: engine) }),
+                                          name: settings.headerTitle)
+                        } label: {
+                            LabeledContent("Voice", value: engine.voiceName(settings.appLiveVoice(engine)))
+                        }
                     }
                     Picker("Hang up after quiet", selection: $settings.liveHangUp) {
                         ForEach(Settings.liveHangUps, id: \.self) { minutes in
@@ -76,7 +90,7 @@ struct LiveVoiceSettings: View {
         .navigationTitle("Voice Mode")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: settings.voiceEngine) {
-            hasKey = engine.map { Keychain.read($0.keyItem) != nil } ?? false
+            hasKey = engine?.keyItem.flatMap({ Keychain.read($0) }) != nil
             guard engine == .gptLive, reachesHermes else { asked = true; return }
             hermes = await LiveSetup.status(profile: nil, settings: settings, fresh: true)
             asked = true
@@ -96,10 +110,17 @@ struct LiveVoiceSettings: View {
         case .gemini: String(localized: "Gemini API key (Google AI Studio)")
         case .grok: String(localized: "xAI API key")
         case .elevenLabs: String(localized: "ElevenLabs API key")
+        case .local: ""
         }
     }
 
     private func footer(_ engine: LiveEngine) -> String {
+        if engine == .local {
+            return String(localized: "Calls speak in the reading voice of the bot you're talking with, at its speed: Kokoro or another speech server of yours (Settings → Voice), ElevenLabs, or this iPhone's own voice. Hermes's voice is the Dashboard's, so a call with it set speaks in this iPhone's voice.") + "\n\n"
+                + String(localized: "What you say is heard on this iPhone and goes only to your agent, as a typed message does; the agent's answers go only to the reading voice.") + " "
+                + LiveEngine.local.cost + " "
+                + String(localized: "A call hangs up when you tap the orb, say a stop phrase, leave voice mode, or after the quiet set here.")
+        }
         let key = engine == .gptLive
             ? String(localized: "Calls use the OpenAI key above, kept in your iPhone's Keychain, on either connection. Calls with your Hermes's own key (OPENAI_API_KEY, or voice.gpt_live.api_key in its config) come with the next Redde plugin.")
             : String(localized: "Calls use the \(engine.company) key above, kept in your iPhone's Keychain, on either connection.")

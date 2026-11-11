@@ -55,7 +55,7 @@ struct LiveVoiceList: View {
 
     private func listAccount() async {
         guard engine.voicesFromAccount, account.isEmpty else { return }
-        guard let key = Keychain.read(engine.keyItem)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
+        guard let key = engine.keyItem.flatMap({ Keychain.read($0) })?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
             listProblem = String(localized: "Save your \(engine.company) key first.")
             return
         }

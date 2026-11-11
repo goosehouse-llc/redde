@@ -130,6 +130,7 @@ struct LiveVoiceTests {
             case .gemini: call.receive(#"{"setupComplete":{}}"#)
             case .grok: call.receive(#"{"type":"session.updated","session":{}}"#)
             case .elevenLabs: call.receive(#"{"type":"conversation_initiation_metadata","conversation_initiation_metadata_event":{}}"#)
+            case .local: call.receive(LocalDialect.started)
             }
         }
 

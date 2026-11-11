@@ -2101,6 +2101,22 @@ back for it to say in its own words. Hermes keeps the model, tools, memory and a
   event heard; audio from before it still arriving is dropped. The agent's answer is the
   `client_tool_result`; progress a quiet `contextual_update`. Voices are the account's
   (`GET /v2/voices`), each with its own sample, so a preview plays that, no call needed.
+- **Local** (2026-11-10, asked by a user with a speech server of their own; `LocalCall.swift`):
+  a call with no voice service. `LocalCall` stands where `LiveCall` would: the same
+  `LiveCallAudio` (echo cancelling, the voice's queue, the gate that keeps its echo out), its
+  microphone handed as PCM16 to an on-device `SpeechAnalyzer` (`LocalHearing`, Redde's own
+  transcriber and language) instead of a socket, and never stopped between turns. A turn ends
+  once what is heard has stood still 1.2 s with the person quiet (2.5 s whatever the noise, 45 s
+  at most); `analyzer.finalize(through: nil)` finishes the words, which go to `LiveVoice` as the
+  person's transcript and a `delegated` event (`LocalDialect`, a wire of in-app JSON). The
+  dialect streams answers, so `LiveVoice` hands back each sentence as written (`say`); notes
+  for a voice model ("[Not to be read out…]", progress) are dropped, and a long wait is a short
+  spoken line. Sentences are said in the bot's reading voice (`LocalSpeech.reading`): the
+  Kokoro/OpenAI-style server's `/v1/audio/speech` as PCM, ElevenLabs' PCM, or
+  `AVSpeechSynthesizer.write` converted to 24 kHz; one a server fails on is said in the device's
+  voice. Fetched a sentence ahead, kept at most 8 s ahead of what plays (the queue holds a
+  minute). Words heard while it speaks stop it and drop the rest of that answer. The voice waits
+  for no `patience` here (`LiveCallAudio.patient`): it only ever answers after the turn ended.
 - **Hands-free off** (2026-10-25): one question, one answer, as Redde's own voice. The call
   hangs up three seconds after the voice has answered something asked (`LiveVoice.checkAnswered`),
   but not while a request is with the agent, not before the voice has said the agent's answer,

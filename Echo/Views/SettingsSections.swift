@@ -796,7 +796,7 @@ struct VoiceSettings: View {
     }
 
     /// Voice mode as it is set: Redde's own, or a call.
-    static func modeName(_ engine: LiveEngine?) -> String { engine.map { String(localized: "\($0.name) call") } ?? String(localized: "Listen and read aloud") }
+    static func modeName(_ engine: LiveEngine?) -> String { engine.map(\.callName) ?? String(localized: "Listen and read aloud") }
 
     /// Two choices, kept apart (2026-10-26: "Conversation can be set to Redde, but the next down is
     /// kokoro, hermes, elevenlabs"): who holds voice mode, and which voice reads replies aloud.
@@ -812,7 +812,9 @@ struct VoiceSettings: View {
         } header: {
             Text("Voice mode")
         } footer: {
-            Text(settings.voiceEngine.live.map { String(localized: "Voice mode is a \($0.name) call: \($0.company)'s voice talks and listens at once, and hands anything real to your agent. Bots can have their own (Edit Bot → Voice).") }
+            Text(settings.voiceEngine.live.map { $0 == .local
+                    ? String(localized: "Voice mode is a local call: your iPhone hears you, your agent answers, and the reading voice below says it. Bots can have their own (Edit Bot → Voice).")
+                    : String(localized: "Voice mode is a \($0.name) call: \($0.company)'s voice talks and listens at once, and hands anything real to your agent. Bots can have their own (Edit Bot → Voice).") }
                  ?? String(localized: "Your iPhone listens, your agent answers, and the reading voice below reads the answer out. Or make voice mode a live call with GPT-Live, Gemini Live, Grok Voice or ElevenLabs. Bots can have their own (Edit Bot → Voice)."))
         }
         Section {

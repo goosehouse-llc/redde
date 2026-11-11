@@ -33,7 +33,7 @@ nonisolated struct BotVoice: Codable, Equatable, Sendable {
 /// Who holds a bot's voice conversations (`BotVoice.conversation`), as Settings → Voice →
 /// Conversation does for the main agent and every bot without a choice of its own.
 nonisolated enum BotConversation: String, Codable, Sendable, CaseIterable {
-    case redde, gptLive, gemini, grok, elevenLabs
+    case redde, gptLive, gemini, grok, elevenLabs, local
     var live: LiveEngine? { LiveEngine(rawValue: rawValue) }
 }
 

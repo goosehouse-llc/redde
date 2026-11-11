@@ -14,7 +14,7 @@ struct ElevenLabsVoiceRows: View {
     @State private var holdsSession = false
 
     var body: some View {
-        SecretField(item: LiveEngine.elevenLabs.keyItem, prompt: String(localized: "ElevenLabs API key"),
+        SecretField(item: .elevenLabsLive, prompt: String(localized: "ElevenLabs API key"),
                     replacePrompt: String(localized: "Replace stored ElevenLabs key"),
                     saveTitle: String(localized: "Save key"), removeTitle: String(localized: "Remove key"), optional: true, hasValue: $hasKey)
         NavigationLink {

@@ -40051,6 +40051,112 @@
         }
       }
     },
+    "A call that stays on your iPhone: it hears you, your agent answers everything, and the reading voice (Settings → Voice, or the bot's own) says the answer as it is written. No key, no voice service." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et opkald, der bliver på din iPhone: den hører dig, din agent svarer på alt, og oplæsningsstemmen (Indstillinger → Stemme, eller bottens egen) siger svaret, mens det bliver skrevet. Ingen nøgle, ingen stemmetjeneste."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Anruf, der auf deinem iPhone bleibt: Es hört dich, dein Agent beantwortet alles, und die Vorlesestimme (Einstellungen → Stimme, oder die eigene des Bots) spricht die Antwort, während sie geschrieben wird. Kein Schlüssel, kein Sprachdienst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una llamada que se queda en tu iPhone: te oye, tu agente responde a todo y la voz de lectura (Ajustes → Voz, o la del propio bot) dice la respuesta a medida que se escribe. Sin clave, sin servicio de voz."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un appel qui reste sur votre iPhone : il vous entend, votre agent répond à tout, et la voix de lecture (Réglages → Voix, ou celle du bot) dit la réponse au fil de son écriture. Aucune clé, aucun service vocal."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una chiamata che resta sul tuo iPhone: ti ascolta, il tuo agente risponde a tutto, e la voce di lettura (Impostazioni → Voce, o quella del bot) dice la risposta man mano che viene scritta. Nessuna chiave, nessun servizio vocale."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneの中で完結する通話：iPhoneが聞き取り、エージェントがすべてに回答し、読み上げ音声（設定 → 音声、またはボット独自のもの）が回答を書かれるそばから話します。キーも音声サービスも不要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 안에서 이루어지는 통화: iPhone이 듣고, 에이전트가 모든 것에 답하며, 읽기 음성(설정 → 음성 또는 봇 자체 음성)이 답이 작성되는 대로 말합니다. 키도 음성 서비스도 필요 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En samtale som blir på iPhonen din: den hører deg, agenten din svarer på alt, og opplesningsstemmen (Innstillinger → Stemme, eller botens egen) sier svaret mens det skrives. Ingen nøkkel, ingen stemmetjeneste."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een gesprek dat op je iPhone blijft: hij hoort je, je agent beantwoordt alles, en de voorleesstem (Instellingen → Stem, of die van de bot zelf) zegt het antwoord terwijl het geschreven wordt. Geen sleutel, geen spraakdienst."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączenie, które zostaje na Twoim iPhonie: słyszy Cię, agent odpowiada na wszystko, a głos lektora (Ustawienia → Głos lub własny głos bota) wypowiada odpowiedź na bieżąco, w miarę jej pisania. Bez klucza, bez usługi głosowej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma chamada que fica no seu iPhone: ele ouve você, seu agente responde a tudo, e a voz de leitura (Ajustes → Voz, ou a do próprio bot) diz a resposta enquanto ela é escrita. Sem chave, sem serviço de voz."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Звонок, который остаётся на вашем iPhone: он слышит вас, агент отвечает на всё, а голос чтения («Настройки» → «Голос» или собственный голос бота) произносит ответ по мере того, как он пишется. Без ключа и без голосового сервиса."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett samtal som stannar på din iPhone: den hör dig, din agent svarar på allt och uppläsningsrösten (Inställningar → Röst, eller bottens egen) säger svaret medan det skrivs. Ingen nyckel, ingen rösttjänst."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone'unuzda kalan bir arama: sizi duyar, ajanınız her şeyi yanıtlar ve okuma sesi (Ayarlar → Ses ya da botun kendi sesi) yanıtı yazıldıkça söyler. Anahtar yok, ses hizmeti yok."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виклик, що лишається на вашому iPhone: він чує вас, агент відповідає на все, а голос читання (Параметри → Голос або власний голос бота) промовляє відповідь у міру того, як вона пишеться. Без ключа й без голосового сервісу."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一种留在你iPhone上的通话：iPhone聆听你说话，你的智能体回答一切，朗读声音（设置 → 语音，或机器人自己的）边写边说出回答。无需密钥，无需语音服务。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一種留在你 iPhone 上的通話：iPhone 聆聽你說話，你的代理回答一切，朗讀聲音（「設定」→「語音」，或機器人自己的）邊寫邊說出回答。不需金鑰，不需語音服務。"
+          }
+        }
+      }
+    },
     "A card on the board" : {
       "comment" : "Under a reply that made a card for another bot, before the card is read",
       "localizations" : {
@@ -42382,6 +42488,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iPhone 鎖定時即時通話仍會繼續：麥克風保持開啟（橘色圓點會顯示），服務會持續按分鐘計費，直到你掛斷或說出停止語，或通話自行結束：安靜一段時間後（「安靜後掛斷」），或在關閉免持時於回答之後。"
+          }
+        }
+      }
+    },
+    "A local call costs nothing by the minute: your iPhone hears you, and only what your agent says goes to the reading voice to be spoken." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et lokalt opkald koster intet pr. minut: din iPhone hører dig, og kun det, din agent siger, sendes til oplæsningsstemmen for at blive sagt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein lokaler Anruf kostet nichts pro Minute: Dein iPhone hört dich, und nur, was dein Agent sagt, geht an die Vorlesestimme, um gesprochen zu werden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una llamada local no cuesta nada por minuto: tu iPhone te oye y solo lo que dice tu agente va a la voz de lectura para decirse."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un appel local ne coûte rien à la minute : votre iPhone vous entend, et seul ce que dit votre agent va à la voix de lecture pour être prononcé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una chiamata locale non costa nulla al minuto: il tuo iPhone ti ascolta, e solo ciò che dice il tuo agente va alla voce di lettura per essere pronunciato."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカル通話は分単位の料金がかかりません：iPhoneが聞き取り、エージェントの発言だけが読み上げ音声に送られて話されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로컬 통화는 분당 요금이 없습니다. iPhone이 듣고, 에이전트가 말하는 내용만 읽기 음성으로 보내져 말해집니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En lokal samtale koster ingenting per minutt: iPhonen hører deg, og bare det agenten din sier, går til opplesningsstemmen for å bli sagt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een lokaal gesprek kost niets per minuut: je iPhone hoort je, en alleen wat je agent zegt gaat naar de voorleesstem om uitgesproken te worden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączenie lokalne nic nie kosztuje za minutę: iPhone Cię słyszy, a do głosu lektora trafia tylko to, co mówi agent, by zostało wypowiedziane."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma chamada local não custa nada por minuto: seu iPhone ouve você, e só o que o seu agente diz vai para a voz de leitura para ser falado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Локальный звонок ничего не стоит за минуту: iPhone слышит вас, и только то, что говорит агент, уходит голосу чтения, чтобы быть произнесённым."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett lokalt samtal kostar ingenting per minut: din iPhone hör dig, och bara det din agent säger går till uppläsningsrösten för att sägas."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerel arama dakika başına hiçbir şeye mal olmaz: iPhone'unuz sizi duyar ve yalnızca ajanınızın söyledikleri seslendirilmek üzere okuma sesine gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Локальний виклик нічого не коштує за хвилину: iPhone чує вас, і лише те, що каже агент, іде до голосу читання, щоб бути промовленим."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地通话不按分钟收费：你的iPhone聆听你说话，只有智能体说的内容会发送到朗读声音来说出。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本機通話不按分鐘計費：你的 iPhone 聆聽你說話，只有代理說的內容會傳送到朗讀聲音來說出。"
           }
         }
       }
@@ -93221,6 +93433,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通話需要你的 Hermes 上有 Redde 外掛 1.8.0 或以上版本。"
+          }
+        }
+      }
+    },
+    "Calls speak in the reading voice of the bot you're talking with, at its speed: Kokoro or another speech server of yours (Settings → Voice), ElevenLabs, or this iPhone's own voice. Hermes's voice is the Dashboard's, so a call with it set speaks in this iPhone's voice." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opkald taler med oplæsningsstemmen fra den bot, du taler med, i dens tempo: Kokoro eller en anden talesynteseserver, du selv har (Indstillinger → Stemme), ElevenLabs eller denne iPhones egen stemme. Hermes' stemme hører til Dashboardet, så et opkald med den valgt taler med denne iPhones stemme."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anrufe sprechen mit der Vorlesestimme des Bots, mit dem du redest, in seinem Tempo: Kokoro oder ein anderer eigener Sprachserver (Einstellungen → Stimme), ElevenLabs oder die eigene Stimme dieses iPhones. Die Stimme von Hermes gehört zum Dashboard, daher spricht ein Anruf mit ihr in der Stimme dieses iPhones."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las llamadas hablan con la voz de lectura del bot con el que hablas, a su velocidad: Kokoro u otro servidor de voz tuyo (Ajustes → Voz), ElevenLabs o la propia voz de este iPhone. La voz de Hermes es del Dashboard, así que una llamada con ella elegida habla con la voz de este iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les appels parlent avec la voix de lecture du bot avec lequel vous parlez, à sa vitesse : Kokoro ou un autre serveur de synthèse vocale à vous (Réglages → Voix), ElevenLabs, ou la voix propre de cet iPhone. La voix de Hermes est celle du Dashboard ; un appel avec elle choisie parle donc avec la voix de cet iPhone."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le chiamate parlano con la voce di lettura del bot con cui stai parlando, alla sua velocità: Kokoro o un altro tuo server di sintesi vocale (Impostazioni → Voce), ElevenLabs, o la voce di questo iPhone. La voce di Hermes è quella del Dashboard, quindi una chiamata con essa scelta parla con la voce di questo iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通話では、話しているボットの読み上げ音声がその速さで話します：Kokoroまたはご自身の別の音声合成サーバ（設定 → 音声）、ElevenLabs、またはこのiPhone自身の音声です。Hermesの音声はDashboard側のものなので、それを選んでいる場合はこのiPhoneの音声で話します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "통화는 대화 중인 봇의 읽기 음성으로 해당 속도에 맞춰 말합니다: Kokoro 또는 직접 운영하는 다른 음성 서버(설정 → 음성), ElevenLabs, 또는 이 iPhone 자체 음성입니다. Hermes의 음성은 Dashboard의 것이므로, 이를 선택한 경우 통화는 이 iPhone의 음성으로 말합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samtaler snakker med opplesningsstemmen til boten du snakker med, i dens tempo: Kokoro eller en annen talesyntesetjener du har selv (Innstillinger → Stemme), ElevenLabs eller denne iPhonens egen stemme. Stemmen til Hermes hører til Dashboardet, så en samtale med den valgt snakker med denne iPhonens stemme."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesprekken spreken met de voorleesstem van de bot met wie je praat, op zijn tempo: Kokoro of een andere eigen spraakserver (Instellingen → Stem), ElevenLabs of de eigen stem van deze iPhone. De stem van Hermes is die van het Dashboard, dus een gesprek met die stem gekozen spreekt met de stem van deze iPhone."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączenia mówią głosem lektora bota, z którym rozmawiasz, w jego tempie: Kokoro lub inny Twój serwer syntezy mowy (Ustawienia → Głos), ElevenLabs albo własny głos tego iPhone’a. Głos Hermesa należy do Dashboardu, więc połączenie z nim wybranym mówi głosem tego iPhone’a."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As chamadas falam com a voz de leitura do bot com quem você está falando, na velocidade dele: Kokoro ou outro servidor de voz seu (Ajustes → Voz), ElevenLabs ou a própria voz deste iPhone. A voz do Hermes é a do Dashboard, então uma chamada com ela escolhida fala com a voz deste iPhone."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В звонке говорит голос чтения бота, с которым вы разговариваете, в его темпе: Kokoro или другой ваш сервер синтеза речи («Настройки» → «Голос»), ElevenLabs или собственный голос этого iPhone. Голос Hermes принадлежит Dashboard, поэтому звонок с ним говорит голосом этого iPhone."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samtal talar med uppläsningsrösten för den bot du pratar med, i dess takt: Kokoro eller en annan egen talsyntesserver (Inställningar → Röst), ElevenLabs eller den här iPhonens egen röst. Hermes röst hör till Dashboarden, så ett samtal med den vald talar med den här iPhonens röst."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aramalar, konuştuğunuz botun okuma sesiyle ve onun hızında konuşur: Kokoro ya da size ait başka bir konuşma sunucusu (Ayarlar → Ses), ElevenLabs veya bu iPhone'un kendi sesi. Hermes'in sesi Dashboard'a aittir; bu yüzden o seçiliyken arama bu iPhone'un sesiyle konuşur."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У виклику говорить голос читання бота, з яким ви розмовляєте, у його темпі: Kokoro або інший ваш сервер синтезу мовлення (Параметри → Голос), ElevenLabs або власний голос цього iPhone. Голос Hermes належить Dashboard, тож виклик із ним говорить голосом цього iPhone."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通话使用你正在交谈的机器人的朗读声音，按它的语速说话：Kokoro或你自己的其他语音服务器（设置 → 语音）、ElevenLabs，或这台iPhone自带的声音。Hermes的声音属于Dashboard，因此选它时，通话会用这台iPhone的声音说话。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通話會使用你正在交談的機器人的朗讀聲音，以它的語速說話：Kokoro 或你自己的其他語音伺服器（「設定」→「語音」）、ElevenLabs，或這部 iPhone 本身的聲音。Hermes 的聲音屬於 Dashboard，因此選用它時，通話會以這部 iPhone 的聲音說話。"
           }
         }
       }
@@ -226705,6 +227023,218 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本機（僅儲存）"
+          }
+        }
+      }
+    },
+    "Local call" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokalt opkald"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokaler Anruf"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llamada local"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appel local"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiamata locale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカル通話"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로컬 통화"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokal samtale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokaal gesprek"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączenie lokalne"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chamada local"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Локальный звонок"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokalt samtal"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerel arama"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Локальний виклик"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地通话"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本機通話"
+          }
+        }
+      }
+    },
+    "Local calls" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokale opkald"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokale Anrufe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llamadas locales"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appels locaux"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiamate locali"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカル通話"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로컬 통화"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokale samtaler"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokale gesprekken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączenia lokalne"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chamadas locais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Локальные звонки"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokala samtal"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerel aramalar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Локальні виклики"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地通话"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本機通話"
           }
         }
       }
@@ -377651,6 +378181,112 @@
         }
       }
     },
+    "Starting the call" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starter opkaldet"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anruf wird gestartet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciando la llamada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Démarrage de l’appel"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvio della chiamata"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通話を開始中"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "통화 시작 중"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starter samtalen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesprek starten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozpoczynanie połączenia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciando a chamada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начинаем звонок"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Startar samtalet"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arama başlatılıyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Починаємо виклик"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在开始通话"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在開始通話"
+          }
+        }
+      }
+    },
     "Starting…" : {
       "comment" : "Under a reply that asked another bot: its turn hasn't begun yet",
       "localizations" : {
@@ -380526,6 +381162,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "仍在執行。"
+          }
+        }
+      }
+    },
+    "Still working on it." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arbejder stadig på det."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich bin noch dran."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sigo con ello."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je m’en occupe toujours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ci sto ancora lavorando."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まだ作業中です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 작업 중입니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jobber fortsatt med det."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik ben er nog mee bezig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nadal nad tym pracuję."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ainda estou trabalhando nisso."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всё ещё работаю над этим."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jobbar fortfarande på det."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hâlâ üzerinde çalışıyorum."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Досі працюю над цим."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仍在处理中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仍在處理中。"
           }
         }
       }
@@ -448220,6 +448962,112 @@
         }
       }
     },
+    "Voice mode in %@'s chat is a local call: your iPhone hears you, %@ answers, and %@'s reading voice below says it." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmetilstand i chatten med %@ er et lokalt opkald: din iPhone hører dig, %@ svarer, og oplæsningsstemmen for %@ nedenfor siger det."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Sprachmodus im Chat von %@ ist ein lokaler Anruf: Dein iPhone hört dich, %@ antwortet, und die Vorlesestimme von %@ unten spricht es."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El modo de voz en el chat de %@ es una llamada local: tu iPhone te oye, %@ responde y la voz de lectura de %@ de abajo lo dice."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le mode vocal dans la discussion de %@ est un appel local : votre iPhone vous entend, %@ répond, et la voix de lecture de %@ ci-dessous le dit."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La modalità vocale nella chat di %@ è una chiamata locale: il tuo iPhone ti ascolta, %@ risponde, e la voce di lettura di %@ qui sotto lo dice."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@のチャットの音声モードはローカル通話です：iPhoneが聞き取り、%2$@が回答し、以下の%3$@の読み上げ音声が話します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 채팅의 음성 모드는 로컬 통화입니다. iPhone이 듣고, %2$@이(가) 응답하며, 아래의 %3$@ 읽기 음성이 말합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmemodus i chatten til %@ er en lokal samtale: iPhonen hører deg, %@ svarer, og opplesningsstemmen til %@ nedenfor sier det."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spraakmodus in de chat van %@ is een lokaal gesprek: je iPhone hoort je, %@ antwoordt en de voorleesstem van %@ hieronder zegt het."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryb głosowy w czacie %@ to połączenie lokalne: iPhone Cię słyszy, %@ odpowiada, a głos lektora %@ poniżej to wypowiada."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O modo de voz na conversa de %@ é uma chamada local: seu iPhone ouve você, %@ responde, e a voz de leitura de %@ abaixo diz a resposta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голосовой режим в чате %@ — локальный звонок: iPhone слышит вас, %@ отвечает, а голос чтения %@ ниже произносит ответ."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Röstläget i %@s chatt är ett lokalt samtal: din iPhone hör dig, %@ svarar och uppläsningsrösten för %@ nedan säger det."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sohbetindeki sesli mod yerel bir aramadır: iPhone'unuz sizi duyar, %@ yanıtlar ve aşağıdaki %@ okuma sesi yanıtı söyler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голосовий режим у чаті %@ — локальний виклик: iPhone чує вас, %@ відповідає, а голос читання %@ нижче промовляє відповідь."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@聊天中的语音模式是本地通话：你的iPhone聆听你说话，%2$@回答，下方%3$@的朗读声音说出回答。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 聊天中的語音模式是本機通話：你的 iPhone 聆聽你說話，%2$@ 回答，再由下方 %3$@ 的朗讀聲音說出。"
+          }
+        }
+      }
+    },
     "Voice mode in %@'s chat is Redde's: your iPhone hears you, %@ answers, and the reading voice below reads it." : {
       "localizations" : {
         "da" : {
@@ -448432,6 +449280,112 @@
         }
       }
     },
+    "Voice mode in a group chat is a local call: what you say goes to the group, and each bot's reply is said in that bot's reading voice." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmetilstand i en gruppechat er et lokalt opkald: det, du siger, går til gruppen, og hver bots svar siges med dens oplæsningsstemme."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Sprachmodus in einem Gruppenchat ist ein lokaler Anruf: Was du sagst, geht an die Gruppe, und die Antwort jedes Bots wird mit seiner Vorlesestimme gesprochen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El modo de voz en un chat de grupo es una llamada local: lo que dices va al grupo y la respuesta de cada bot se dice con su voz de lectura."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le mode vocal dans une discussion de groupe est un appel local : ce que vous dites va au groupe, et la réponse de chaque bot est dite avec sa voix de lecture."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La modalità vocale in una chat di gruppo è una chiamata locale: ciò che dici va al gruppo, e la risposta di ogni bot viene detta con la sua voce di lettura."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループチャットの音声モードはローカル通話です：話した内容はグループに送られ、各ボットの返答はそれぞれの読み上げ音声で話されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "그룹 채팅의 음성 모드는 로컬 통화입니다. 말한 내용은 그룹으로 가고, 각 봇의 응답은 해당 봇의 읽기 음성으로 말해집니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmemodus i en gruppechat er en lokal samtale: det du sier, går til gruppen, og hver bots svar sies med opplesningsstemmen dens."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spraakmodus in een groepschat is een lokaal gesprek: wat je zegt gaat naar de groep, en het antwoord van elke bot wordt uitgesproken met zijn voorleesstem."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryb głosowy w czacie grupowym to połączenie lokalne: to, co mówisz, trafia do grupy, a odpowiedź każdego bota jest wypowiadana jego głosem lektora."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O modo de voz em uma conversa em grupo é uma chamada local: o que você diz vai para o grupo, e a resposta de cada bot é dita com a voz de leitura dele."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голосовой режим в групповом чате — локальный звонок: сказанное вами уходит в группу, а ответ каждого бота произносится его голосом чтения."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Röstläget i en gruppchatt är ett lokalt samtal: det du säger går till gruppen, och varje bots svar sägs med dess uppläsningsröst."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grup sohbetindeki sesli mod yerel bir aramadır: söyledikleriniz gruba gider ve her botun yanıtı kendi okuma sesiyle söylenir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голосовий режим у груповому чаті — локальний виклик: сказане вами йде до групи, а відповідь кожного бота промовляється його голосом читання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "群聊中的语音模式是本地通话：你说的话发送到群组，每个机器人的回复用它的朗读声音说出。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "群組聊天中的語音模式是本機通話：你說的話會傳送到群組，每個機器人的回覆會以它的朗讀聲音說出。"
+          }
+        }
+      }
+    },
     "Voice mode in a group chat is Redde's: your iPhone hears you, and each bot's reply is read in its reading voice." : {
       "localizations" : {
         "da" : {
@@ -448640,6 +449594,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "語音模式是 %@ 通話：%@ 的聲音可同時說話和聆聽，並將真正的工作交給你的代理。機器人可以有自己的設定（「編輯機器人」→「語音」）。"
+          }
+        }
+      }
+    },
+    "Voice mode is a local call: your iPhone hears you, your agent answers, and the reading voice below says it. Bots can have their own (Edit Bot → Voice)." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmetilstand er et lokalt opkald: din iPhone hører dig, din agent svarer, og oplæsningsstemmen nedenfor siger det. Bots kan have deres eget (Rediger bot → Stemme)."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Sprachmodus ist ein lokaler Anruf: Dein iPhone hört dich, dein Agent antwortet, und die Vorlesestimme unten spricht es. Bots können ihren eigenen haben (Bot bearbeiten → Stimme)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El modo de voz es una llamada local: tu iPhone te oye, tu agente responde y la voz de lectura de abajo lo dice. Los bots pueden tener el suyo (Editar bot → Voz)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le mode vocal est un appel local : votre iPhone vous entend, votre agent répond, et la voix de lecture ci-dessous le dit. Les bots peuvent avoir le leur (Modifier le bot → Voix)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La modalità vocale è una chiamata locale: il tuo iPhone ti ascolta, il tuo agente risponde, e la voce di lettura qui sotto lo dice. I bot possono avere la propria (Modifica bot → Voce)."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音声モードはローカル通話です：iPhoneが聞き取り、エージェントが回答し、以下の読み上げ音声が話します。ボットごとに設定できます（ボットを編集 → 音声）。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "음성 모드는 로컬 통화입니다. iPhone이 듣고, 에이전트가 응답하며, 아래의 읽기 음성이 말합니다. 봇마다 따로 설정할 수 있습니다(봇 편집 → 음성)."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmemodus er en lokal samtale: iPhonen hører deg, agenten din svarer, og opplesningsstemmen nedenfor sier det. Boter kan ha sin egen (Rediger bot → Stemme)."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spraakmodus is een lokaal gesprek: je iPhone hoort je, je agent antwoordt en de voorleesstem hieronder zegt het. Bots kunnen hun eigen keuze hebben (Wijzig bot → Stem)."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryb głosowy to połączenie lokalne: iPhone Cię słyszy, agent odpowiada, a głos lektora poniżej to wypowiada. Boty mogą mieć własny (Edytuj bota → Głos)."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O modo de voz é uma chamada local: seu iPhone ouve você, seu agente responde, e a voz de leitura abaixo diz a resposta. Os bots podem ter o seu próprio (Editar Bot → Voz)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голосовой режим — локальный звонок: iPhone слышит вас, агент отвечает, а голос чтения ниже произносит ответ. У ботов может быть свой («Изменить бота» → «Голос»)."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Röstläget är ett lokalt samtal: din iPhone hör dig, din agent svarar och uppläsningsrösten nedan säger det. Bottar kan ha sitt eget (Redigera bot → Röst)."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesli mod yerel bir aramadır: iPhone'unuz sizi duyar, ajanınız yanıtlar ve aşağıdaki okuma sesi yanıtı söyler. Botların kendi seçimi olabilir (Botu Düzenle → Ses)."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голосовий режим — локальний виклик: iPhone чує вас, агент відповідає, а голос читання нижче промовляє відповідь. Боти можуть мати власний (Редагувати бота → Голос)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语音模式是本地通话：你的iPhone聆听你说话，你的智能体回答，下方的朗读声音说出回答。机器人可以有自己的设置（编辑机器人 → 语音）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語音模式是本機通話：你的 iPhone 聆聽你說話，你的代理回答，再由下方的朗讀聲音說出。機器人可以有自己的設定（「編輯機器人」→「語音」）。"
           }
         }
       }
@@ -458754,6 +459814,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你想問 Redde 什麼？"
+          }
+        }
+      }
+    },
+    "What you say is heard on this iPhone and goes only to your agent, as a typed message does; the agent's answers go only to the reading voice." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det, du siger, høres på denne iPhone og går kun til din agent, som en skrevet besked gør; agentens svar går kun til oplæsningsstemmen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was du sagst, wird auf diesem iPhone gehört und geht nur an deinen Agenten, wie eine getippte Nachricht; die Antworten des Agenten gehen nur an die Vorlesestimme."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que dices se oye en este iPhone y va solo a tu agente, como un mensaje escrito; las respuestas del agente van solo a la voz de lectura."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que vous dites est entendu sur cet iPhone et ne va qu’à votre agent, comme un message tapé ; les réponses de l’agent ne vont qu’à la voix de lecture."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciò che dici viene ascoltato su questo iPhone e va solo al tuo agente, come un messaggio scritto; le risposte dell'agente vanno solo alla voce di lettura."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "話した内容はこのiPhoneで聞き取られ、入力したメッセージと同じくエージェントにだけ送られます。エージェントの回答は読み上げ音声にだけ送られます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "말한 내용은 이 iPhone에서 인식되어 입력한 메시지처럼 에이전트에게만 전달되며, 에이전트의 응답은 읽기 음성에만 전달됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det du sier, høres på denne iPhonen og går bare til agenten din, slik en skrevet melding gjør; agentens svar går bare til opplesningsstemmen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat je zegt wordt op deze iPhone gehoord en gaat alleen naar je agent, zoals een getypt bericht; de antwoorden van de agent gaan alleen naar de voorleesstem."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To, co mówisz, jest rozpoznawane na tym iPhonie i trafia tylko do agenta, tak jak wpisana wiadomość; odpowiedzi agenta trafiają tylko do głosu lektora."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que você diz é ouvido neste iPhone e vai só para o seu agente, como uma mensagem digitada; as respostas do agente vão só para a voz de leitura."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сказанное вами распознаётся на этом iPhone и уходит только вашему агенту, как набранное сообщение; ответы агента уходят только голосу чтения."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det du säger hörs på den här iPhonen och går bara till din agent, som ett skrivet meddelande; agentens svar går bara till uppläsningsrösten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Söyledikleriniz bu iPhone'da duyulur ve yazılı bir mesaj gibi yalnızca ajanınıza gider; ajanın yanıtları yalnızca okuma sesine gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сказане вами розпізнається на цьому iPhone і йде лише вашому агенту, як набране повідомлення; відповіді агента йдуть лише до голосу читання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你说的话在这台iPhone上识别，像输入的消息一样只发送给你的智能体；智能体的回答只发送到朗读声音。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你說的話會在這部 iPhone 上辨識，並像輸入的訊息一樣只傳送給你的代理；代理的回答只會傳送到朗讀聲音。"
           }
         }
       }

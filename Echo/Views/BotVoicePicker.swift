@@ -131,7 +131,7 @@ struct BotVoicePicker: View {
                 }
             }
             .pickerStyle(.menu)
-            if let engine {
+            if let engine, !engine.speaksInReadingVoice {
                 let inherited = String(localized: "As in Settings (\(engine.voiceName(settings.appLiveVoice(engine))))")
                 let own = picked?.liveVoices?[engine.rawValue].flatMap { engine.voicesFromAccount || engine.voices.contains($0) ? $0 : nil }
                 NavigationLink {
@@ -150,7 +150,9 @@ struct BotVoicePicker: View {
         } header: {
             Text("Voice mode")
         } footer: {
-            Text(engine.map { String(localized: "Voice mode in \(name)'s chat is a \($0.name) call: \($0.company)'s voice talks with you and hands anything real to \(name). Group chats, the car and Read aloud use the reading voice below.") }
+            Text(engine.map { $0 == .local
+                    ? String(localized: "Voice mode in \(name)'s chat is a local call: your iPhone hears you, \(name) answers, and \(name)'s reading voice below says it.")
+                    : String(localized: "Voice mode in \(name)'s chat is a \($0.name) call: \($0.company)'s voice talks with you and hands anything real to \(name). Group chats, the car and Read aloud use the reading voice below.") }
                  ?? String(localized: "Voice mode in \(name)'s chat is Redde's: your iPhone hears you, \(name) answers, and the reading voice below reads it."))
         }
     }
@@ -198,7 +200,7 @@ struct BotVoicePicker: View {
                     .urlFieldStyle()
             }
             if engine == .elevenLabs, !hasElevenLabsKey {
-                SecretField(item: LiveEngine.elevenLabs.keyItem, prompt: String(localized: "ElevenLabs API key"),
+                SecretField(item: .elevenLabsLive, prompt: String(localized: "ElevenLabs API key"),
                             replacePrompt: String(localized: "Replace stored ElevenLabs key"),
                             saveTitle: String(localized: "Save key"), removeTitle: String(localized: "Remove key"), optional: true,
                             hasValue: $hasElevenLabsKey)

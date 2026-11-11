@@ -176,7 +176,7 @@ final class SpeechRecognizer {
     /// Tells the analyzer the spoken-prefix words, so "Claude" is heard as Claude rather than
     /// "cloud", and any `extra` (wake phrases). Nothing when there are none; a context the analyzer
     /// can't take is ignored, so this can never break transcription.
-    private static func applySpokenPrefixHints(to analyzer: SpeechAnalyzer, extra: [String] = []) async {
+    static func applySpokenPrefixHints(to analyzer: SpeechAnalyzer, extra: [String] = []) async {
         let rules = Settings.shared.spokenPrefixes
         let strings = (rules.isEmpty ? [] : VoiceRouting.contextualStrings(for: rules)) + extra
         guard !strings.isEmpty else { return }

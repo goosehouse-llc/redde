@@ -310,6 +310,9 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
 
     private struct State {
         var socket: URLSessionWebSocketTask?
+        /// Where the microphone's audio goes instead, as PCM16 at the input rate: a call that listens
+        /// on the device itself (`LocalCall`).
+        var heardAudio: (@Sendable (Data) -> Void)?
         /// The microphone's level while the voice plays, averaged: its echo (`heard`); and until
         /// when it stays open after speech.
         var echo: Float = 0
@@ -390,6 +393,13 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     /// When nothing goes while the voice plays (`heard`): never, on the phone's own speaker, always.
     enum HalfDuplex: Sendable { case never, onSpeaker, always }
     private let halfDuplex: HalfDuplex
+    /// The voice waits for the person to have been quiet `patience` before it starts. Not in a call
+    /// that answers only once they have stopped (`LocalCall`): there nothing would say it again.
+    private let patient: Bool
+    /// The voice is quiet only once what was queued has played out (`ranDry`), never because
+    /// quieter sound arrived: a voice that comes seconds ahead of what plays (`LocalCall`'s) would
+    /// be quiet while it still speaks. The services' streams are told by what arrives.
+    private let quietWhenPlayed: Bool
     /// Whether the sound is on the phone's own speaker, looked at once a second (on `sending`).
     private var speakerCheckedAt: UInt64 = 0
     private var speakerNow = true
@@ -426,7 +436,7 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     private var pending = Data()
     private let state = OSAllocatedUnfairLock(initialState: State())
 
-    init(inputRate: Double, outputRate: Double, gain: Float = 1, halfDuplex: HalfDuplex = .never, measuring: Bool = false,
+    init(inputRate: Double, outputRate: Double, gain: Float = 1, halfDuplex: HalfDuplex = .never, patient: Bool = true, quietWhenPlayed: Bool = false, measuring: Bool = false,
          message: @escaping @Sendable (String) -> String) {
         wire = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: inputRate, channels: 1, interleaved: true)!
         playing = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: outputRate, channels: 1, interleaved: false)!
@@ -436,6 +446,8 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         self.message = message
         self.gain = gain
         self.halfDuplex = halfDuplex
+        self.patient = patient
+        self.quietWhenPlayed = quietWhenPlayed
     }
 
     private func onSpeaker() -> Bool {
@@ -474,6 +486,8 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
 
     /// The session has started: the microphone's audio goes to it from now on.
     func connect(_ socket: URLSessionWebSocketTask?) { state.withLock { $0.socket = socket } }
+    /// The microphone's audio to `heard` from now on, as PCM16 at the input rate (nil: nowhere).
+    func connect(heard: (@Sendable (Data) -> Void)?) { state.withLock { $0.heardAudio = heard } }
     func setMuted(_ muted: Bool) { state.withLock { $0.muted = muted } }
 
     /// The voice's sound held back, what is queued of it gone at once; or let through again.
@@ -540,6 +554,7 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         // itself changes the route) looks again once it has started the engine, and stops it.
         state.withLock { state in
             state.socket = nil
+            state.heardAudio = nil
             state.stopped = true
         }
         engine.stop()
@@ -662,12 +677,12 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         buffer.frameLength = AVAudioFrameCount(samples.count)
         samples.withUnsafeBufferPointer { channel.update(from: $0.baseAddress!, count: samples.count) }
         let level = Self.rms(buffer)
-        let (socket, muted) = state.withLock { state in
+        let (socket, heardAudio, muted) = state.withLock { state in
             state.input = level
             if level > 0.02 { state.lastLoud = mach_absolute_time() }
-            return (state.socket, state.muted)
+            return (state.socket, state.heardAudio, state.muted)
         }
-        guard let socket, !muted, let converter else { return }
+        guard socket != nil || heardAudio != nil, !muted, let converter else { return }
         // The echo gate: what is left of the voice's own sound in the microphone, under the echo
         // cancelling, was heard as the person by Gemini and ElevenLabs, which stopped to listen,
         // stopping and starting through a reply (Marta, 2026-10-25). Silence goes instead, the
@@ -716,6 +731,12 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
         if preRoll.count > keep { preRoll.removeFirst(preRoll.count - keep) }
         pending.append(open ? real : Data(count: real.count))
         guard pending.count >= sendBytes else { return }
+        if let heardAudio {
+            heardAudio(pending)
+            pending.removeAll(keepingCapacity: true)
+            return
+        }
+        guard let socket else { return }
         let message = message(pending.base64EncodedString())
         pending.removeAll(keepingCapacity: true)
         state.withLock { $0.stats.sent += message.utf8.count }
@@ -849,7 +870,7 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
                     state.speaking = true
                     if state.lastLoud != 0 { state.stats.replyGaps.append(Int(Self.seconds(now - state.lastLoud) * 1000)) }
                 }
-            } else if state.speaking, Self.seconds(now - state.lastAudible) > 0.5 {
+            } else if state.speaking, !quietWhenPlayed, Self.seconds(now - state.lastAudible) > 0.5 {
                 ends = true
                 state.speaking = false
             }
@@ -865,6 +886,7 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
     /// The voice begins: if the person spoke less than `patience` ago, it waits until they have
     /// been quiet that long.
     private func waitForQuiet(from now: UInt64) {
+        guard patient else { return }
         let (wait, after) = state.withLock { state -> (Int?, Double?) in
             guard state.spokeAt != 0 else { return (nil, nil) }
             let after = Self.seconds(now - state.spokeAt)

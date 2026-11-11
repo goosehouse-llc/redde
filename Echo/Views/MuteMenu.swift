@@ -33,7 +33,7 @@ struct LiveCallMark: View {
         Image(systemName: "phone.fill")
             .font(.caption2)
             .foregroundStyle(.secondary)
-            .accessibilityLabel("\(engine.name) calls")
+            .accessibilityLabel(engine == .local ? Text("Local calls") : Text("\(engine.name) calls"))
     }
 }
 

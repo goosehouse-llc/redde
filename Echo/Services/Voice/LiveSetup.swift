@@ -57,7 +57,8 @@ struct LiveSetup {
         let others = addressable(settings, besides: name)
         let plan: @MainActor @Sendable ([LiveLine]) -> LivePlan = { history in
             LivePlan(voice: voice, instructions: persona(name: name, engine: engine, others: others), history: history,
-                     agent: engine == .gptLive ? nil : LiveAgentTool(agentName: name))
+                     agent: engine == .gptLive ? nil : LiveAgentTool(agentName: name),
+                     speech: engine == .local ? LocalSpeech.reading(for: profile, settings: settings) : nil)
         }
         return try await connecting(profile: profile, settings: settings, engine: engine, plan: plan)
     }
@@ -69,7 +70,8 @@ struct LiveSetup {
         let (name, members) = (room.name, room.members.map(\.name))
         let plan: @MainActor @Sendable ([LiveLine]) -> LivePlan = { history in
             LivePlan(voice: voice, instructions: roomPersona(room: name, members: members, engine: engine),
-                     history: history, agent: engine == .gptLive ? nil : LiveAgentTool(agentName: name))
+                     history: history, agent: engine == .gptLive ? nil : LiveAgentTool(agentName: name),
+                     speech: engine == .local ? LocalSpeech.reading(for: speaker, settings: settings) : nil)
         }
         return try await connecting(profile: speaker, settings: settings, engine: engine, plan: plan)
     }
@@ -80,6 +82,12 @@ struct LiveSetup {
         // The Dashboard knows live voice turns where it has GPT-Live's endpoints (0.21.3 on).
         let hermes = BotDirectory.reachable(settings) ? await status(profile: profile, settings: settings) : nil
         let knows = hermes != nil && settings.transport == .hermesServe
+        // A local call goes to no service: the phone listens, the reading voice speaks.
+        if engine == .local {
+            return LiveSetup(label: "this device", hermesKnowsLiveTurns: knows) { history in
+                LiveConnection(url: LocalDialect.address, plan: plan(history))
+            }
+        }
         #if DEBUG
         // `-echo.liveEndpoint ws://…`: a stand-in for the service (scripts/live-standin.py, which
         // answers each engine's wire).
@@ -89,7 +97,7 @@ struct LiveSetup {
             }
         }
         #endif
-        if let key = Keychain.read(engine.keyItem)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
+        if let key = engine.keyItem.flatMap({ Keychain.read($0) })?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
             return LiveSetup(label: "Redde's \(engine.company) key", hermesKnowsLiveTurns: knows) { history in
                 let endpoint = try await engine.dialect.endpoint(key: key)
                 return LiveConnection(url: endpoint.url, headers: endpoint.headers, plan: plan(history))

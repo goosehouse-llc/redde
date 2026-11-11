@@ -5,9 +5,10 @@ import Foundation
 /// from the phone, with a key of its own kept in Redde, and speaks a wire of its own
 /// (`LiveDialect`); the rest of a call, the audio, the screen, handing requests to the agent, is
 /// the same for all (`LiveCall`, `LiveVoice`). Gemini and Grok asked 2026-10-25, for cost; then
-/// ElevenLabs, for its voices.
+/// ElevenLabs, for its voices. Then Local (asked 2026-11-10, "utiliser mon tts local pour les
+/// appels"): no service at all, the phone listens and the bot's reading voice speaks (`LocalCall`).
 nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
-    case gptLive, gemini, grok, elevenLabs
+    case gptLive, gemini, grok, elevenLabs, local
 
     var name: String {
         switch self {
@@ -15,6 +16,7 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gemini: "Gemini Live"
         case .grok: "Grok Voice"
         case .elevenLabs: "ElevenLabs"
+        case .local: String(localized: "Local")
         }
     }
 
@@ -24,16 +26,25 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gemini: "Google"
         case .grok: "xAI"
         case .elevenLabs: "ElevenLabs"
+        case .local: "Redde"
         }
     }
 
-    /// Its key, kept in Redde (and synced with iCloud Keychain like the others).
-    var keyItem: Keychain.Item {
+    /// Its calls, as voice mode's choices name them ("GPT-Live call").
+    var callName: String { self == .local ? String(localized: "Local call") : String(localized: "\(name) call") }
+
+    /// What a call says while it is set up.
+    var calling: String { self == .local ? String(localized: "Starting the call") : String(localized: "Calling \(name)") }
+
+    /// Its key, kept in Redde (and synced with iCloud Keychain like the others); none for a local
+    /// call, which goes to no service.
+    var keyItem: Keychain.Item? {
         switch self {
         case .gptLive: .openAILive
         case .gemini: .geminiLive
         case .grok: .grokVoice
         case .elevenLabs: .elevenLabsLive
+        case .local: nil
         }
     }
 
@@ -43,6 +54,7 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gemini: GeminiLiveDialect()
         case .grok: GrokVoiceDialect()
         case .elevenLabs: ElevenLabsDialect()
+        case .local: LocalDialect()
         }
     }
 
@@ -52,7 +64,7 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gptLive: LiveSetup.voiceGroups
         case .gemini: GeminiLiveDialect.voiceGroups
         case .grok: GrokVoiceDialect.voiceGroups
-        case .elevenLabs: []
+        case .elevenLabs, .local: []
         }
     }
 
@@ -64,6 +76,8 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
     /// so the person waited for all of it, and its model then said it in other words (asked
     /// 2026-10-27, quicker and more private: the agent's answers no longer reach that model).
     var answersReadAloud: Bool { self == .elevenLabs }
+    /// It speaks in each bot's reading voice (Settings → Voice, Edit Bot → Voice), not voices of its own.
+    var speaksInReadingVoice: Bool { self == .local }
     /// The voice nothing picked gives it; none for ElevenLabs: its agent's own.
     var defaultVoice: String { voices.first ?? "" }
 
@@ -79,7 +93,7 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gptLive: nil
         case .gemini: GeminiLiveDialect.styles[voice]
         case .grok: GrokVoiceDialect.styles[voice]
-        case .elevenLabs: nil
+        case .elevenLabs, .local: nil
         }
     }
 
@@ -90,6 +104,7 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gemini: String(localized: "Google bills the key's account about $0.005 a minute for what you say and $0.018 a minute for what the voice says (about $0.12 for ten minutes); a free tier is offered, whose conversations Google may use to improve its products.")
         case .grok: String(localized: "xAI bills the key's account $0.08 a minute.")
         case .elevenLabs: String(localized: "ElevenLabs bills the key's account by the minute past what its plan includes ($0.08 a minute), with the agent's language model on top; silence past ten seconds at a twentieth of that. The first call makes a voice agent named Redde voice in your ElevenLabs account.")
+        case .local: String(localized: "A local call costs nothing by the minute: your iPhone hears you, and only what your agent says goes to the reading voice to be spoken.")
         }
     }
 }
@@ -107,6 +122,8 @@ nonisolated struct LivePlan: Sendable, Equatable {
     var greeting: LiveGreeting?
     /// A voice preview: no agent to hand anything to.
     var preview = false
+    /// What a local call speaks with (`LocalCall`); nil for the others, whose service has the voice.
+    var speech: LocalSpeech?
 }
 
 /// A preview's line, and the language to say it in (the voice's group's).

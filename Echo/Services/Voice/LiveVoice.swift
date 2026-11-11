@@ -128,7 +128,7 @@ final class LiveVoice {
     private var answerCheck: Task<Void, Never>?
 
     init(conversation: Conversation, settings: Settings = .shared, engine: LiveEngine? = nil,
-         makeCall: @escaping (LiveCallListening, any LiveDialect) throws -> LiveCalling = { LiveCall(listener: $0, dialect: $1) },
+         makeCall: @escaping (LiveCallListening, any LiveDialect) throws -> LiveCalling = { LiveVoice.makeCall($0, $1) },
          setUp: @escaping LiveSetup.Resolver = LiveSetup.resolve,
          setUpRoom: @escaping LiveSetup.RoomResolver = { try await LiveSetup.resolveRoom($0, speaker: $1, settings: $2, engine: $3) },
          posting: Posting = Posting(),
@@ -144,6 +144,11 @@ final class LiveVoice {
         self.setUp = setUp
         self.setUpRoom = setUpRoom
         postEvery = posting
+    }
+
+    /// The call for `dialect`: on the device itself for a local one, else a WebSocket to its service.
+    static func makeCall(_ listener: LiveCallListening, _ dialect: any LiveDialect) -> LiveCalling {
+        dialect.engine == .local ? LocalCall(listener: listener) : LiveCall(listener: listener, dialect: dialect)
     }
 
     // MARK: - The call

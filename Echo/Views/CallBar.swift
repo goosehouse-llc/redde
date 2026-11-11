@@ -101,7 +101,7 @@ struct CallBar: View {
 
     /// The words the voice screen has under its orb, the name left out (it is the line above).
     private var state: String {
-        if session.liveConnecting { return String(localized: "Calling \(session.liveEngine?.name ?? "GPT-Live")") }
+        if session.liveConnecting { return (session.liveEngine ?? .gptLive).calling }
         if session.isMuted { return String(localized: "Muted") }
         return switch session.phase {
         case .thinking: String(localized: "Thinking")

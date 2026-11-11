@@ -162,7 +162,7 @@ final class LiveVoicePreview {
         // `-echo.liveEndpoint ws://…`: the stand-in (scripts/live-standin.py) plays a tone.
         if let lab = DevHooks.value("-echo.liveEndpoint").flatMap(URL.init(string:)) { return LiveEndpoint(url: lab) }
         #endif
-        guard let key = Keychain.read(engine.keyItem)?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
+        guard let key = engine.keyItem.flatMap({ Keychain.read($0) })?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
             throw LiveFailure(String(localized: "Hearing a voice needs your \(engine.company) key, in Settings → Voice → Voice mode."))
         }
         return try await engine.dialect.endpoint(key: key)

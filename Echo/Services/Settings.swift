@@ -178,7 +178,7 @@ final class Settings: ServeEndpoint {
     /// and listens at once and hands the real work to the agent (`LiveVoice`). Redde until chosen:
     /// a live call sends the microphone to its company and costs money by the minute.
     enum VoiceEngine: String, CaseIterable, Sendable {
-        case redde, gptLive, gemini, grok, elevenLabs
+        case redde, gptLive, gemini, grok, elevenLabs, local
         var live: LiveEngine? { LiveEngine(rawValue: rawValue) }
     }
     var voiceEngine: VoiceEngine {
