@@ -217,6 +217,9 @@ final class WatchRelayHost {
                 if turn.bot == nil { storedSession = id }
             case let .textDelta(delta):
                 turn.snapshot.text += delta
+            case .interim(_, true):
+                // Working text beside a tool call: the answer starts again.
+                turn.snapshot.text = ""
             case let .textFinal(text):
                 turn.snapshot.text = text
             case let .interrupt(interrupt, runtime):

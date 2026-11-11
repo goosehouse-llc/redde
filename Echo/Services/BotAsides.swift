@@ -55,6 +55,7 @@ enum BotTurns {
         stream: for try await event in transport.stream(request) {
             switch event {
             case let .textDelta(delta): written += delta
+            case .interim(_, true): written = ""    // working text beside a tool call, not the answer
             case let .textFinal(final): written = final
             case .interrupt:
                 departure.leave()   // it goes on in its chat once answered there

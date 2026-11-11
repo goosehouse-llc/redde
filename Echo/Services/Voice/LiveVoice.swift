@@ -564,6 +564,8 @@ final class LiveVoice {
             switch event {
             case let .textDelta(delta):
                 whole += delta
+            case .interim(_, true):
+                whole = ""    // working text beside a tool call, not the answer
             case let .toolStarted(name, _, _):
                 tool = name
                 changed()

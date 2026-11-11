@@ -246,6 +246,9 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
         var command: String?
         var description: String?
         var choices: [String]?
+        // assistant.commentary
+        var text: String?
+        var already_streamed: Bool?
         struct Usage: Decodable { var input_tokens: Int?; var output_tokens: Int?; var prompt_tokens: Int?; var completion_tokens: Int? }
     }
 
@@ -263,6 +266,9 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
             return (events, false)
         case "assistant.delta":
             return (env.delta.map { [.textDelta($0)] } ?? [], false)
+        case "assistant.commentary":
+            // Working text beside a tool call (`message.interim` on the other streams).
+            return ([.interim(text: env.text ?? "", alreadyStreamed: env.already_streamed ?? true)], false)
         case "assistant.completed":
             // The finished reply, and the only form with `MEDIA:<path>` tags resolved into
             // inline images — the deltas carry the bare tag. Replaces what streamed.
@@ -938,6 +944,8 @@ nonisolated struct HermesRuns: Sendable {
             if let delta = json["delta"]?.string, !delta.isEmpty { out.events = [.textDelta(delta)] }
         case "reasoning.available":
             if let text = json["text"]?.string, !text.isEmpty { out.events = [.reasoningDelta(text)] }
+        case "message.interim":
+            out.events = [.interim(text: json["text"]?.string ?? "", alreadyStreamed: json["already_streamed"]?.bool ?? true)]
         case "tool.started":
             let call = ToolActivity.unwrapped(name: json["tool"]?.string ?? json["tool_name"]?.string ?? "tool", args: json["args"])
             out.events = [.toolStarted(name: call.name, preview: json["preview"]?.string?.nilIfEmpty, args: ToolActivity.args(call.name, call.args))]

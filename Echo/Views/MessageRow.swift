@@ -34,6 +34,17 @@ struct MessageRow: View, Equatable {
             && a.turn == b.turn
     }
     /// An image-only message renders just its attachments — no empty text bubble.
+    /// The reply's own words: none for a row whose text is working beside its tool calls (it
+    /// shows in the turn's fold), and the last note for a finished reply that wrote nothing else,
+    /// stopped or failed after its notes, so it isn't left empty.
+    private var replyBody: String {
+        if turn?.foldsText == true { return "" }
+        if !isLive, message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, let last = message.notes.last {
+            return last.text
+        }
+        return message.text
+    }
+
     private var hasTextBubble: Bool {
         !(shownText.isEmpty && (!message.attachments.isEmpty || !namedPictures.isEmpty))
     }
@@ -165,8 +176,8 @@ struct MessageRow: View, Equatable {
             } else if message.role == .assistant, message.error == nil, hasTextBubble {
                 // A reply that went on to write a message as if from the person: what it said,
                 // then a warning in place of the made-up rest.
-                let invented = BotMessages.inventedTurn(in: message.text)
-                let said = ServeMedia.named(in: invented?.said ?? message.text).text
+                let invented = BotMessages.inventedTurn(in: replyBody)
+                let said = ServeMedia.named(in: invented?.said ?? replyBody).text
                 if !said.isEmpty {
                     // A file the reply only names in passing opens from its path.
                     replyText(said)
@@ -241,7 +252,7 @@ struct MessageRow: View, Equatable {
             }
             // The page of the first web link, with Link previews on (`LinkPreviewSlot`), once a
             // reply has finished.
-            if !isLive, !message.isSteer, message.error == nil, hasTextBubble { LinkPreviewSlot(text: message.text) }
+            if !isLive, !message.isSteer, message.error == nil, hasTextBubble, turn?.foldsText != true { LinkPreviewSlot(text: message.text) }
             // A map, places, the weather, the time the reply shows (`ReplyCards`), as soon as they're asked for.
             if message.role == .assistant, let cards = message.cards, !cards.isEmpty { ReplyCardsView(cards: cards, pending: isLive) }
             // Bots it handed work to (`message_agent`): each at work on it or done, a tap from its chat.
@@ -267,7 +278,7 @@ struct MessageRow: View, Equatable {
                     .foregroundStyle(.secondary)
                     .padding(.top, 2)
             }
-            if showActions, message.role == .assistant, !isLive, message.error == nil, !message.text.isEmpty {
+            if showActions, message.role == .assistant, !isLive, message.error == nil, !replyBody.isEmpty {
                 actionRow
                     .transition(.opacity)
             }
@@ -370,8 +381,9 @@ struct MessageRow: View, Equatable {
                                     .truncationMode(.head)
                             }
                         }
-                        if !segment.tools.isEmpty {
-                            toolRows(segment.tools, animated: isLive && segment.messageID == message.id, loadID: segment.messageID,
+                        if !segment.tools.isEmpty || !segment.notes.isEmpty {
+                            stepRows(segment.tools, notes: segment.notes, animated: isLive && segment.messageID == message.id,
+                                     loadID: segment.messageID,
                                      load: onLoadTurnToolDetails.map { loader in
                                          { @MainActor @Sendable in await loader(segment.messageID) }
                                      })
@@ -442,13 +454,37 @@ struct MessageRow: View, Equatable {
                     .monospacedDigit()
             }
             if open {
-                toolRows(tools, animated: isLive, loadID: message.id, load: onLoadToolDetails)
+                stepRows(tools, notes: message.notes, animated: isLive, loadID: message.id, load: onLoadToolDetails)
                     .modifier(FoldBody())
             }
         }
         .animation(.snappy(duration: 0.3), value: tools.count)
         .animation(.snappy(duration: 0.3), value: open)
         .animation(.snappy(duration: 0.3), value: openStep)
+    }
+
+    /// The tools and what the agent wrote between them (`WorkingNote`), in the order they came.
+    @ViewBuilder
+    private func stepRows(_ tools: [ToolActivity], notes: [WorkingNote], animated: Bool, loadID: UUID,
+                          load: (@MainActor @Sendable () async -> Void)?) -> some View {
+        if notes.isEmpty {
+            toolRows(tools, animated: animated, loadID: loadID, load: load)
+        } else {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(WorkingStep.steps(tools: tools, notes: notes)) { step in
+                    switch step {
+                    case let .tools(run):
+                        toolRows(run, animated: animated, loadID: loadID, load: load)
+                    case let .note(text, _):
+                        Text(text)
+                            .chatFont(.footnote)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+        }
     }
 
     /// Tool rows shared by a message's own fold and a grouped turn's chronological disclosure.

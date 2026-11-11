@@ -21,7 +21,8 @@ struct HermesRunsTests {
         #expect(try decode(#"{"event":"tool.completed","tool":"memory","duration":0.2,"error":false,"preview":"saved"}"#).events
                 == [.toolFinished(name: "memory", failed: false, output: "saved")])
         #expect(try decode(#"{"event":"tool.completed","tool":"terminal","error":true}"#).events == [.toolFinished(name: "terminal", failed: true)])
-        #expect(try decode(#"{"event":"message.interim","text":"x","already_streamed":true}"#).events.isEmpty)
+        // Working text beside a tool call goes with the steps (11-10).
+        #expect(try decode(#"{"event":"message.interim","text":"x","already_streamed":true}"#).events == [.interim(text: "x", alreadyStreamed: true)])
         #expect(try decode(#"{"event":"run.steered","accepted":true}"#).events.isEmpty)
     }
 

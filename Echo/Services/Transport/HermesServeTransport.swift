@@ -171,7 +171,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
 
     /// What only a turn under way sends.
     private static let turnEvents: Set<String> = [
-        "message.start", "message.delta", "reasoning.delta", "reasoning.available", "tool.start", "tool.complete",
+        "message.start", "message.delta", "message.interim", "reasoning.delta", "reasoning.available", "tool.start", "tool.complete",
         "approval.request", "clarify.request", "sudo.request", "secret.request",
     ]
 
@@ -210,6 +210,11 @@ nonisolated struct HermesServeTransport: HermesTransport {
             if let t = p["text"]?.string, !t.isEmpty { turn.streamed += t; continuation.yield(.textDelta(t)) }
         case "reasoning.delta", "reasoning.available":
             if let t = p["text"]?.string { continuation.yield(.reasoningDelta(t)) }
+        case "message.interim":
+            // What streamed so far was working text beside a tool call: the answer starts again.
+            let streamed = p["already_streamed"]?.bool ?? true
+            if streamed { turn.streamed = "" }
+            continuation.yield(.interim(text: p["text"]?.string ?? "", alreadyStreamed: streamed))
         case "tool.start":
             let name = p["name"]?.string ?? "tool"
             continuation.yield(.toolStarted(name: name, preview: p["context"]?.string, args: ToolActivity.args(name, p["args"])))

@@ -1143,6 +1143,10 @@ final class VoiceSession {
                     if metrics.firstTokenAt == nil { metrics.firstTokenAt = .now }
                     if phase == .thinking { phase = .speaking }
                     output.append(delta)
+                case .interim:
+                    // Working text beside a tool call, already being said as it came ("Let me
+                    // check the calendar"): out loud it tells the person what is going on.
+                    break
                 case .textFinal:
                     // The deltas have already been spoken; re-reading the finished text would
                     // say the whole reply twice. The transcript still gets the corrected copy.

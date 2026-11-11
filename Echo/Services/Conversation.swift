@@ -13,7 +13,13 @@ final class Conversation {
     private(set) var id = UUID()
     private(set) var createdAt = Date.now
     private(set) var messages: [Message] = [] { didSet { refreshHeader() } }
-    private(set) var isStreaming = false { didSet { if isStreaming != oldValue { watchHostTurns() } } }
+    private(set) var isStreaming = false {
+        didSet {
+            guard isStreaming != oldValue else { return }
+            if !isStreaming { ownTurnEndedAt = .now }
+            watchHostTurns()
+        }
+    }
     private(set) var statusLine: String?
     private(set) var lastError: String?
     /// An error from outside a turn, shown where a turn's is (the header's pinned-model menu).
@@ -27,6 +33,7 @@ final class Conversation {
         didSet {
             guard serverSessionID != oldValue else { return }
             watchHostTurns()
+            watchOtherDevices()
             // A model picked before the first message is kept with the session it made.
             if oldValue == nil, let serverSessionID, let unsentModel {
                 models.set(unsentModel, connection: settings.connectionKey, session: serverSessionID)
@@ -635,6 +642,16 @@ final class Conversation {
             // Inline data-URL images become photo attachments, like a received MMS.
             let (clean, images) = InlineImages.extract(from: text)
             update(replyID) { $0.text = clean; $0.attachments = images }
+        case let .interim(text, alreadyStreamed):
+            // Working text beside a tool call: it goes with the steps, and the reply starts again.
+            flushDeltas()
+            update(replyID) { message in
+                let note = alreadyStreamed ? message.text : text
+                if !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    message.notes.append(WorkingNote(text: note, afterTools: message.tools.count))
+                }
+                if alreadyStreamed { message.text = "" }
+            }
         case let .status(status):
             statusLine = status
         case let .prefill(processed, total, cached):
@@ -890,6 +907,97 @@ final class Conversation {
         }
     }
 
+    // MARK: Other devices
+
+    /// Whether Redde is in front: the open chat is only kept up with while it is (`EchoApp`).
+    static var appIsActive = true {
+        didSet { if appIsActive, !oldValue { current?.watchOtherDevices() } }
+    }
+    /// When a turn of this device's ended here: the host stamps a reply as it ends, later than it
+    /// started here, and that isn't news from elsewhere.
+    private var ownTurnEndedAt: Date?
+    /// The newest the host had last time it was asked: a change is only acted on once.
+    private var serverSeen: Date?
+    private var otherDevicesTask: Task<Void, Never>?
+    private var changesListener: (client: HermesServeClient, id: UUID)?
+    private var changeCheck: Task<Void, Never>?
+
+    /// Keeps the open chat up with what another device, or anything else, adds to it: asked of
+    /// the host every few seconds while Redde is in front and the chat is idle, and at once when
+    /// the Dashboard says its conversations changed or a reply's notification comes for it. A
+    /// reply written on the iPad never reached the iPhone's open chat (11-10): an idle chat hears
+    /// a turn's events only while its socket is attached to the session, which a reconnect ends,
+    /// and the Hermes API has nothing to hear at all.
+    func watchOtherDevices() {
+        otherDevicesTask?.cancel()
+        otherDevicesTask = nil
+        guard store === ConversationStore.shared, Self.current === self, connection.hasLedger,
+              let stored = serverSessionID, Self.appIsActive else { stopListeningForChanges(); return }
+        listenForChanges()
+        serverSeen = nil
+        otherDevicesTask = Task { [weak self] in
+            var lastNews = Date.now
+            var first = true
+            while !Task.isCancelled {
+                if !first {
+                    // Often while something is happening, then now and then.
+                    try? await Task.sleep(for: Date.now.timeIntervalSince(lastNews) < 120 ? .seconds(6) : .seconds(20))
+                }
+                first = false
+                guard let self, !Task.isCancelled, self.serverSessionID == stored, Self.appIsActive else { return }
+                if await self.checkOtherDevices(stored) { lastNews = .now }
+            }
+        }
+    }
+
+    /// Asks the host whether the chat has moved on; reads it again when it has. True when it had.
+    @discardableResult
+    func checkOtherDevices(_ stored: String? = nil) async -> Bool {
+        guard let stored = stored ?? serverSessionID, serverSessionID == stored, !isStreaming, outbox.isEmpty,
+              catchingUp == nil, let backend = SessionBackend.current(self),
+              let written = try? await backend.newestMessageAt(stored) else { return false }
+        guard serverSessionID == stored, !isStreaming else { return false }
+        // The first answer is where things stand; only what comes after it is news.
+        let seen = serverSeen
+        serverSeen = max(written, seen ?? .distantPast)
+        guard let seen, written > seen else { return false }
+        let here = [messages.last(where: { !$0.isAside })?.createdAt, ownTurnEndedAt].compactMap { $0 }.max()
+        guard Self.serverIsAhead(lastActive: written.timeIntervalSince1970, newest: here) else { return false }
+        try? await open(serverSession: stored)
+        return true
+    }
+
+    /// The Dashboard tells every connected app when its conversations change, attached or not.
+    private func listenForChanges() {
+        guard connection == .hermesServe else { stopListeningForChanges(); return }
+        let client = HermesServeClient.shared
+        guard changesListener?.client !== client else { return }
+        stopListeningForChanges()
+        let id = client.addListener { [weak self] event in
+            guard event.type == "sessions.changed" else { return }
+            MainActor.assumeIsolated { self?.changesHeard() }
+        }
+        changesListener = (client, id)
+    }
+
+    private func stopListeningForChanges() {
+        if let changesListener { changesListener.client.removeListener(changesListener.id) }
+        changesListener = nil
+        changeCheck?.cancel()
+        changeCheck = nil
+    }
+
+    /// One look a moment after the last of a burst of changes.
+    private func changesHeard() {
+        guard Self.appIsActive, !isStreaming else { return }
+        changeCheck?.cancel()
+        changeCheck = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            await self?.checkOtherDevices()
+        }
+    }
+
     private func stopWatchingHost() {
         hostWatch?.stop()
         hostWatch = nil
@@ -907,6 +1015,13 @@ final class Conversation {
     private func follow(_ joined: RejoinedTurn, stored: String) {
         lastError = nil
         clearFollowUps()
+        // A turn asked on another device: its question, which isn't here yet, over the reply.
+        let asked = joined.question.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !asked.isEmpty, let lastAsked = messages.last(where: { $0.role == .user && !$0.isAside }),
+           lastAsked.text.trimmingCharacters(in: .whitespacesAndNewlines) != asked,
+           messages.last?.role != .user || messages.last?.text.trimmingCharacters(in: .whitespacesAndNewlines) != asked {
+            messages.append(Message(role: .user, text: joined.question))
+        }
         // A turn under way may have put some of itself in the host's transcript already (a tool
         // call waiting on an approval): the reply goes on from it instead of beside it.
         let replyID: UUID

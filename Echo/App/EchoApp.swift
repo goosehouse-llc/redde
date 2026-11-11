@@ -99,6 +99,7 @@ struct EchoApp: App {
                     voiceSession.leftForeground(carPlayConnected: CarPlaySceneDelegate.isConnected)
                     PhotoLooking.shared.pause()
                     WhereYouAre.shared.wentBack()   // notes go to every device again, or the one in use
+                    Conversation.appIsActive = false   // the open chat stops asking the host for news
                 case .active:
                     lock.appDidBecomeActive()
                     CloudSync.shared.cameForward()
@@ -107,6 +108,8 @@ struct EchoApp: App {
                     // The app may have been closed while the agent worked: a conversation left
                     // without its reply fetches it, or picks the turn up where it stands.
                     Task { await conversation.catchUp() }
+                    Conversation.appIsActive = true
+                    conversation.watchOtherDevices()   // and keeps up while it is open (another device's turns)
                     Task { await CaptureInbox.shared.file() }   // notes taken offline
                     IdeasInbox.shared.reload()   // ideas that came while Redde was closed
                     BriefingsInbox.shared.reload()   // and briefings

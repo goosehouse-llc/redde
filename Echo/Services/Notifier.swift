@@ -326,7 +326,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     func presentation(pushKind kind: String?, sessionID: String?, room: String? = nil, bot: String? = nil) -> UNNotificationPresentationOptions {
         guard let kind else { return [] }
         PushService.shared.reload()   // the first note from a pairing confirms it
-        if let sessionID, sessionID == conversation?.serverSessionID, PushNote.Kind(rawValue: kind) != .paired { return [] }
+        if let sessionID, sessionID == conversation?.serverSessionID, PushNote.Kind(rawValue: kind) != .paired {
+            // On screen already, unless it was written on another device: the chat looks.
+            if let open = conversation { Task { await open.checkOtherDevices() } }
+            return []
+        }
         // The group chat on screen shows it already.
         if let room, room == GroupDirectory.shared.open?.id { return [] }
         // A chat the person muted: in the list, not over the screen.

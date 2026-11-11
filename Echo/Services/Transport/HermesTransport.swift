@@ -9,6 +9,10 @@ nonisolated enum TurnEvent: Sendable, Equatable {
     /// server rewrites `MEDIA:<path>` tags into inline images only in this final form, so a
     /// reply that sends a picture is wrong until it arrives.
     case textFinal(String)
+    /// The text so far is the agent's working, written beside a tool call, not its answer
+    /// (`message.interim`): it moves to the steps. `alreadyStreamed`: it came as text deltas;
+    /// otherwise `text` is it.
+    case interim(text: String, alreadyStreamed: Bool)
     /// Backend is doing something other than emitting text (tool call, thinking). Informational.
     case status(String)
     /// Prompt-processing progress before the first token (llama.cpp `return_progress`,

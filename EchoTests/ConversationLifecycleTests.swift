@@ -88,6 +88,27 @@ struct ConversationLifecycleTests {
         #expect(c.title == "New conversation" && !c.hasMessages)
     }
 
+    /// DeepSeek V4 wrote its train of thought beside its tool calls, and it filled the reply
+    /// (11-10). Hermes marks such text (`message.interim`); it goes with the steps.
+    @Test func workingTextBesideAToolCallGoesWithTheSteps() async throws {
+        let c = makeConversation(ScriptedTransport([
+            .textDelta("Let me check "), .textDelta("the calendar."), .interim(text: "Let me check the calendar.", alreadyStreamed: true),
+            .toolStarted(name: "phone_calendar_events", preview: nil), .toolFinished(name: "phone_calendar_events", failed: false),
+            .interim(text: "Hmm, wait.", alreadyStreamed: false),
+            .textDelta("Your flight is on July 8."), .done,
+        ]))
+        for await _ in c.send("When is my flight?") {}
+        try await Task.sleep(for: .milliseconds(150))
+        let reply = try #require(c.messages.last)
+        #expect(reply.text == "Your flight is on July 8.")
+        #expect(reply.notes == [WorkingNote(text: "Let me check the calendar.", afterTools: 0), WorkingNote(text: "Hmm, wait.", afterTools: 1)])
+        let steps = WorkingStep.steps(tools: reply.tools, notes: reply.notes)
+        #expect(steps.count == 3)
+        if case let .note(first, _) = steps.first { #expect(first == "Let me check the calendar.") } else { Issue.record("a note first") }
+        let saved = try JSONDecoder().decode(Message.self, from: JSONEncoder().encode(reply))
+        #expect(saved.notes == reply.notes, "kept with the chat")
+    }
+
     @Test func aHeldMessageNamesTheConversation() async throws {
         let c = makeConversation(SequencedTransport([.init(events: [], error: Self.offline)]))
         for await _ in c.send("are you there?") {}

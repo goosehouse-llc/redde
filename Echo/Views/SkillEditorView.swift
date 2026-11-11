@@ -148,6 +148,8 @@ struct SkillEditorView: View {
             var text = ""
             for try await event in transport.stream(TurnRequest(userText: prompt, history: [], sessionID: sessionID, model: nil, instructions: nil)) {
                 switch event {
+                case .interim(_, true):
+                    text = ""    // working text beside a tool call, not the draft
                 case let .textDelta(delta):
                     text += delta
                     draftProgress = String(localized: "\(text.count) characters…")

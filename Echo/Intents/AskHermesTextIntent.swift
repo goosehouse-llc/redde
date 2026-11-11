@@ -105,6 +105,7 @@ enum ShortcutRunner {
                 if !answered { answered = true; taken?() }
                 switch event {
                 case let .textDelta(delta): text += delta
+                case .interim(_, true): text = ""    // working text beside a tool call, not the answer
                 case let .sessionID(id) where settings.transport == .hermesServe:
                     // A chat the Dashboard has just made for the notes is given its name.
                     if thread == .notes, sessionID == nil, UserDefaults.standard.string(forKey: sessionKey + ".serve") != id {

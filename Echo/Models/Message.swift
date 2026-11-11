@@ -17,6 +17,9 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
     var reasoningStartedAt: Date?
     var reasoningEndedAt: Date?
     var tools: [ToolActivity] = []
+    /// What the agent wrote between its tool calls ("Let me check the calendar…"), moved out of
+    /// the reply into its steps when Hermes marks it as working text (`message.interim`).
+    var notes: [WorkingNote] = []
     /// The agent's own task list as this reply left it, when the reply changed it (`TodoList`).
     var todos: [TodoItem]?
     /// The cards this reply shows (a map, places, the weather), asked for with `redde_show`.
@@ -48,7 +51,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case id, role, text, createdAt, metrics, error, reasoning, reasoningStartedAt, reasoningEndedAt, tools, todos, subagents, attachments, isSteer
-        case delivered, cards, answering, reaction, reactionSaid
+        case delivered, cards, answering, reaction, reactionSaid, notes
     }
 
     init(from decoder: Decoder) throws {
@@ -63,6 +66,7 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
         reasoningStartedAt = try c.decodeIfPresent(Date.self, forKey: .reasoningStartedAt)
         reasoningEndedAt = try c.decodeIfPresent(Date.self, forKey: .reasoningEndedAt)
         tools = try c.decodeIfPresent([ToolActivity].self, forKey: .tools) ?? []
+        notes = try c.decodeIfPresent([WorkingNote].self, forKey: .notes) ?? []
         todos = try c.decodeIfPresent([TodoItem].self, forKey: .todos)
         subagents = try c.decodeIfPresent([SubagentActivity].self, forKey: .subagents) ?? []
         attachments = try c.decodeIfPresent([Attachment].self, forKey: .attachments) ?? []
@@ -72,6 +76,43 @@ nonisolated struct Message: Identifiable, Equatable, Sendable, Codable {
         answering = try c.decodeIfPresent(String.self, forKey: .answering)
         reaction = try c.decodeIfPresent(String.self, forKey: .reaction)
         reactionSaid = try c.decodeIfPresent(Bool.self, forKey: .reactionSaid) ?? false
+    }
+}
+
+/// Text the agent wrote on its way to an answer, beside its tool calls: kept with the steps, not
+/// in the reply. DeepSeek V4 with its thinking off writes its whole train of thought this way
+/// ("Let me check… wait, it says…"), and it filled the reply (11-10).
+nonisolated struct WorkingNote: Codable, Equatable, Sendable {
+    var text: String
+    /// How many of the reply's tool calls came before it.
+    var afterTools: Int
+}
+
+/// One line of a reply's steps: a run of tool calls, or a note written between them.
+nonisolated enum WorkingStep: Identifiable, Equatable, Sendable {
+    case tools([ToolActivity])
+    case note(String, at: Int)
+
+    var id: String {
+        switch self {
+        case let .tools(tools): "tools-" + (tools.first.map { "\($0.id)" } ?? "")
+        case let .note(_, at): "note-\(at)"
+        }
+    }
+
+    /// The tools and the notes in the order they came.
+    static func steps(tools: [ToolActivity], notes: [WorkingNote]) -> [WorkingStep] {
+        var steps: [WorkingStep] = []
+        var from = 0
+        for (i, note) in notes.enumerated() {
+            let upTo = min(max(note.afterTools, from), tools.count)
+            if upTo > from { steps.append(.tools(Array(tools[from..<upTo]))) }
+            from = upTo
+            let text = note.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !text.isEmpty { steps.append(.note(text, at: i)) }
+        }
+        if from < tools.count { steps.append(.tools(Array(tools[from...]))) }
+        return steps
     }
 }
 

@@ -9,6 +9,9 @@ nonisolated struct AssistantTurnActivity: Equatable, Sendable {
         let reasoningStartedAt: Date?
         let reasoningEndedAt: Date?
         let tools: [ToolActivity]
+        /// What the agent wrote beside these tool calls: the row's own text when it isn't the
+        /// turn's answer, then the notes the reply kept while it streamed.
+        var notes: [WorkingNote] = []
 
         var id: UUID { messageID }
     }
@@ -22,6 +25,9 @@ nonisolated struct AssistantTurnActivity: Equatable, Sendable {
         let activity: AssistantTurnActivity?
         /// More than one assistant message belongs to this visual turn, so their own folds hide.
         let isGrouped: Bool
+        /// The row's text is working beside its tool calls, not the answer: it shows in the
+        /// turn's fold instead of a bubble of its own.
+        var foldsText = false
     }
 
     let segments: [Segment]
@@ -63,11 +69,11 @@ nonisolated struct AssistantTurnActivity: Equatable, Sendable {
             }
             let run = Array(messages[start..<index])
             let grouped = run.count > 1
-            let activity = grouped ? AssistantTurnActivity(messages: run) : nil
             let liveOwner = liveMessageID.flatMap { id in run.contains(where: { $0.id == id }) ? id : nil }
             let owner = liveOwner
                 ?? run.last(where: { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })?.id
                 ?? run.last?.id
+            let activity = grouped ? AssistantTurnActivity(messages: run, owner: owner) : nil
             for (offset, message) in run.enumerated() {
                 result[message.id] = Placement(
                     showsSpeaker: offset == 0,
@@ -75,19 +81,28 @@ nonisolated struct AssistantTurnActivity: Equatable, Sendable {
                     isFinal: message.id == owner,
                     isLiveTurn: liveOwner != nil,
                     activity: message.id == owner ? activity : nil,
-                    isGrouped: grouped
+                    isGrouped: grouped,
+                    foldsText: grouped && Self.isWorking(message, owner: owner)
                 )
             }
         }
         return result
     }
 
-    private init?(messages: [Message]) {
+    /// A row of a grouped turn whose text came with tool calls and isn't the answer: the agent's
+    /// working ("Let me check the calendar…"), as Hermes stores text written beside a tool call.
+    static func isWorking(_ message: Message, owner: UUID?) -> Bool {
+        message.id != owner && !message.tools.isEmpty && message.error == nil
+            && !message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private init?(messages: [Message], owner: UUID?) {
         segments = messages.compactMap { message in
             guard !message.reasoning.isEmpty || !message.tools.isEmpty else { return nil }
+            let own = Self.isWorking(message, owner: owner) ? [WorkingNote(text: message.text, afterTools: 0)] : []
             return Segment(messageID: message.id, reasoning: message.reasoning,
                            reasoningStartedAt: message.reasoningStartedAt,
-                           reasoningEndedAt: message.reasoningEndedAt, tools: message.tools)
+                           reasoningEndedAt: message.reasoningEndedAt, tools: message.tools, notes: own + message.notes)
         }
         if segments.isEmpty { return nil }
     }
