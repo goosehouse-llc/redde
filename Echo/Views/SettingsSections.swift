@@ -137,7 +137,7 @@ struct AppearanceSettings: View {
             Toggle(isOn: $settings.botPictures) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Pictures from Hermes")
-                    Text("A bot with a picture set in Hermes Desktop shows that picture instead of its face.")
+                    Text("A bot with a picture, from Change Face or Hermes Desktop, shows that picture instead of its face.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import SwiftUI
 import Testing
 import UIKit
@@ -934,5 +935,54 @@ struct BotsTests {
         var told = answer
         told.delivered?.noted = true
         #expect(Conversation.keepingAsides(of: [told], in: host).count == 3, "one the agent was told of comes back from the host")
+    }
+}
+
+/// A photo picked on the phone for a bot's picture (2026-11-10).
+struct BotPhotoTests {
+    /// A 1200 × 800 photo with a place in its metadata, as a camera writes it.
+    private func cameraPhoto() throws -> Data {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1200, height: 800), format: {
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1; return format
+        }()).image { context in
+            UIColor.red.setFill(); context.fill(CGRect(x: 0, y: 0, width: 200, height: 800))     // the sides cropped off
+            UIColor.blue.setFill(); context.fill(CGRect(x: 200, y: 0, width: 800, height: 800))  // the middle square kept
+            UIColor.red.setFill(); context.fill(CGRect(x: 1000, y: 0, width: 200, height: 800))
+        }
+        let out = NSMutableData()
+        let destination = try #require(CGImageDestinationCreateWithData(out, "public.jpeg" as CFString, 1, nil))
+        let gps: [CFString: Any] = [kCGImagePropertyGPSLatitude: 28.4, kCGImagePropertyGPSLatitudeRef: "N",
+                                    kCGImagePropertyGPSLongitude: 81.3, kCGImagePropertyGPSLongitudeRef: "W"]
+        CGImageDestinationAddImage(destination, try #require(image.cgImage), [kCGImagePropertyGPSDictionary: gps] as CFDictionary)
+        #expect(CGImageDestinationFinalize(destination))
+        return out as Data
+    }
+
+    @Test func aPhotoIsSentAsItsMiddleSquareSmallAndWithoutWhereItWasTaken() async throws {
+        let original = try cameraPhoto()
+        let source = try #require(CGImageSourceCreateWithData(original as CFData, nil))
+        let before = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+        #expect(before?[kCGImagePropertyGPSDictionary] != nil, "the test photo says where it was taken")
+
+        let sent = try #require(await BotPictures.prepare(original))
+        let read = try #require(CGImageSourceCreateWithData(sent as CFData, nil))
+        #expect(CGImageSourceGetType(read) as String? == "public.jpeg")
+        let properties = CGImageSourceCopyPropertiesAtIndex(read, 0, nil) as? [CFString: Any]
+        #expect(properties?[kCGImagePropertyGPSDictionary] == nil)
+        #expect(properties?[kCGImagePropertyPixelWidth] as? Int == BotPictures.sentSide)
+        #expect(properties?[kCGImagePropertyPixelHeight] as? Int == BotPictures.sentSide)
+        #expect(sent.count < 2_000_000, "Hermes takes up to 2 MB")
+        // The sides are gone: its corners are the middle's blue, not the red.
+        let image = try #require(UIImage(data: sent)?.cgImage)
+        let pixel = try #require(image.cropping(to: CGRect(x: 2, y: 2, width: 1, height: 1)))
+        var rgba = [UInt8](repeating: 0, count: 4)
+        let context = try #require(CGContext(data: &rgba, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                                             space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.draw(pixel, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        #expect(rgba[2] > 200 && rgba[0] < 60, "\(rgba)")
+    }
+
+    @Test func notAPictureIsNothing() async {
+        #expect(await BotPictures.prepare(Data("not a photo".utf8)) == nil)
     }
 }

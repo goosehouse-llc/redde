@@ -1,3 +1,4 @@
+import ImageIO
 import Observation
 #if canImport(UIKit)
 #if canImport(UIKit)
@@ -58,6 +59,53 @@ final class BotPictures {
         } catch {
             asked.remove(key)   // not reachable now: ask again next time it is drawn
         }
+    }
+
+    /// A picture given on this phone (`BotFacePicker`), or taken away (nil): shown at once, without
+    /// waiting for the server to be asked again.
+    func set(_ profile: String, _ jpeg: Data?) async {
+        let key = Self.key(profile)
+        asked.insert(key)
+        guard let jpeg, let small = await Self.small(jpeg) else {
+            images[key] = nil
+            try? FileManager.default.removeItem(at: file(key))
+            return
+        }
+        images[key] = small
+        let target = file(key)
+        try? FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? small.pngData()?.write(to: target, options: .atomic)
+    }
+
+    /// The side, in pixels, of a picture sent from this phone: twice what is kept, for Hermes
+    /// Desktop's larger faces.
+    nonisolated static let sentSide = 768
+
+    /// A photo made ready to send as a bot's picture: the middle square, `sentSide` across, upright,
+    /// as a JPEG well under Hermes's 2 MB, with nothing of the original's metadata (where it was
+    /// taken, the camera): only the pixels are drawn again. Nil when it can't be read as an image.
+    @concurrent static func prepare(_ data: Data) async -> Data? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        // Decoded at little more than needed: the shorter side about `sentSide` once cropped.
+        let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                                        kCGImageSourceThumbnailMaxPixelSize: sentSide * 3,
+                                        kCGImageSourceCreateThumbnailWithTransform: true]
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        let short = min(image.width, image.height)
+        let square = CGRect(x: (image.width - short) / 2, y: (image.height - short) / 2, width: short, height: short)
+        guard let cropped = image.cropping(to: square) else { return nil }
+        let side = min(sentSide, short)
+        guard let context = CGContext(data: nil, width: side, height: side, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(cropped, in: CGRect(x: 0, y: 0, width: side, height: side))
+        guard let drawn = context.makeImage() else { return nil }
+        let out = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(out, "public.jpeg" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, drawn, [kCGImageDestinationLossyCompressionQuality: 0.85] as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return out as Data
     }
 
     #if DEBUG && canImport(UIKit)

@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 /// Picking a bot's face (the chat list's Bots, and a bot's chat's ••• menu): its shape, eyes, mouth,
@@ -5,6 +6,8 @@ import SwiftUI
 /// every Redde on it shows the same face (`HermesServeClient.setFace`); "Its Own Face" goes back to
 /// the one its name gives. Redde's own bubble isn't offered: no other bot can have it. For a bot
 /// not made yet (New Bot), `choose` is given the face instead, and nothing is written.
+/// A photo from this phone can stand in for the face (asked 2026-11-10): kept where Hermes Desktop
+/// keeps the picture it sets (`setBotPicture`), so both show it.
 struct BotFacePicker: View {
     let bot: HermesBot
     /// What the bot is called here.
@@ -16,6 +19,14 @@ struct BotFacePicker: View {
     private let current: BotFace
     @State private var saving = false
     @State private var problem: String?
+    /// A photo picked here, made ready to send (`BotPictures.prepare`), and as shown.
+    @State private var photoItem: PhotosPickerItem?
+    @State private var photo: Data?
+    @State private var photoImage: PlatformImage?
+    @State private var readingPhoto = false
+    /// The picture it has is to be taken away.
+    @State private var removingPhoto = false
+    @State private var settings = Settings.shared
 
     init(bot: HermesBot, name: String, current: BotFace, onSaved: @escaping () -> Void = {}, choose: ((BotFace?) -> Void)? = nil) {
         self.bot = bot
@@ -96,13 +107,12 @@ struct BotFacePicker: View {
         NavigationStack {
             Form {
                 Section {
-                    BotAvatar(face: face, size: 132)
+                    preview
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
-                        .accessibilityElement()
-                        .accessibilityLabel("\(name)'s face: \(Self.describe(face))")
                 }
                 .listRowBackground(Color.clear)
+                if choose == nil { photoSection }
                 // Redde's own bubble is the main agent's alone.
                 Section("Shape") { row(bot.isDefault ? [.bubble] + BotFace.Shape.given : BotFace.Shape.given, \.shape) }
                 Section("Eyes") { row(BotFace.Eyes.allCases, \.eyes) }
@@ -131,7 +141,7 @@ struct BotFacePicker: View {
                     if saving {
                         ProgressView()
                     } else {
-                        Button("Save") { save(face) }.disabled(face == current)
+                        Button("Save") { save(face) }.disabled(face == current && photo == nil && !removingPhoto || readingPhoto)
                     }
                 }
             }
@@ -225,12 +235,89 @@ struct BotFacePicker: View {
         Task {
             defer { saving = false }
             do {
-                try await HermesServeClient.shared.setFace(picked, for: bot)
+                if let photo {
+                    try await HermesServeClient.shared.setBotPicture(photo, for: bot.name)
+                    await BotPictures.shared.set(bot.name, photo)
+                    self.photo = nil
+                } else if removingPhoto {
+                    try await HermesServeClient.shared.setBotPicture(nil, for: bot.name)
+                    await BotPictures.shared.set(bot.name, nil)
+                    removingPhoto = false
+                }
+                // The face too, when it changed (or goes back to its own).
+                if picked == nil || picked != current {
+                    try await HermesServeClient.shared.setFace(picked, for: bot)
+                }
                 onSaved()
                 dismiss()
             } catch {
                 problem = error.localizedDescription
                 if error is BotFaceProblem { onSaved() }
+            }
+        }
+    }
+
+    /// It has a picture, or will once saved.
+    private var hasPhoto: Bool { photo != nil || (bot.hasPicture && !removingPhoto) }
+
+    /// The bot as it will be shown: the photo picked here, the picture it has, or the face.
+    @ViewBuilder private var preview: some View {
+        let size: CGFloat = 132
+        if let photoImage {
+            Image(uiImage: photoImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size * 0.9, height: size * 0.9)
+                .clipShape(.rect(cornerRadius: size * 0.24, style: .continuous))
+                .frame(width: size, height: size)
+                .accessibilityLabel("\(name)'s photo")
+        } else {
+            BotAvatar(face: Self.with(face, \.picture, hasPhoto ? bot.name : nil), size: size)
+                .accessibilityElement()
+                .accessibilityLabel(hasPhoto ? Text("\(name)'s photo") : Text("\(name)'s face: \(Self.describe(face))"))
+        }
+    }
+
+    private var photoSection: some View {
+        Section {
+            PhotosPicker(selection: $photoItem, matching: .images) {
+                if hasPhoto { Label("Choose Another Photo", systemImage: "photo") } else { Label("Choose Photo", systemImage: "photo") }
+            }
+            .disabled(saving || readingPhoto)
+            if hasPhoto {
+                Button("Remove Photo", systemImage: "xmark.circle", role: .destructive) {
+                    photo = nil
+                    photoImage = nil
+                    photoItem = nil
+                    removingPhoto = bot.hasPicture
+                }
+                .disabled(saving || readingPhoto)
+            }
+        } header: {
+            Text("Photo")
+        } footer: {
+            if settings.botPictures {
+                Text("A photo shows instead of the face wherever Redde and Hermes Desktop show \(name). It's cropped to a square and sent without where it was taken.",
+                     comment: "Bot face picker: what a bot's photo does; the bot's name")
+            } else {
+                Text("A photo shows instead of the face wherever Redde and Hermes Desktop show \(name). On this device, Pictures from Hermes is off in Settings, so the face shows.",
+                     comment: "Bot face picker: what a bot's photo does, with bot pictures turned off on this device; the bot's name")
+            }
+        }
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            readingPhoto = true
+            problem = nil
+            Task {
+                defer { readingPhoto = false }
+                let data = try? await item.loadTransferable(type: Data.self)
+                guard let data, let jpeg = await BotPictures.prepare(data) else {
+                    problem = String(localized: "That photo couldn't be read. Try another one.")
+                    return
+                }
+                photo = jpeg
+                photoImage = ImageThumbnail.decode(jpeg, maxPixel: 400)
+                removingPhoto = false
             }
         }
     }

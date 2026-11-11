@@ -536,6 +536,21 @@ extension HermesServeClient {
         return Data(base64Encoded: String(url[comma.upperBound...]))
     }
 
+    /// Gives a bot a picture from this phone (a JPEG, `BotPictures.prepare`), or (nil) takes its
+    /// picture away: `profiles.set_asset`, where Hermes Desktop keeps the one it sets (asked
+    /// 2026-11-10), so Hermes Desktop and Redde on every device show it.
+    func setBotPicture(_ jpeg: Data?, for profile: String) async throws {
+        try await ensureConnected()
+        var params: [String: JSONValue] = ["name": .string(profile), "asset": .string("avatar")]
+        if let jpeg {
+            params["data"] = .string("data:image/jpeg;base64," + jpeg.base64EncodedString())
+        } else {
+            params["clear"] = .bool(true)
+        }
+        let result = try await call("profiles.set_asset", params: .object(params), timeout: 60)
+        guard result["ok"]?.bool == true else { throw TransportError.malformed(String(localized: "Hermes didn't keep the photo")) }
+    }
+
     /// The server's bots (`profiles.list`, the same on Hermes 0.21.0 to 0.22.2).
     func bots() async throws -> BotRoster {
         try await ensureConnected()

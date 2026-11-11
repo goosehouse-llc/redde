@@ -18435,6 +18435,112 @@
         }
       }
     },
+    "%@'s photo" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto af %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto von %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo de %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto di %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@の写真"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@의 사진"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilde av %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto van %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdjęcie: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto de %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto av %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ fotoğrafı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@的照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@的照片"
+          }
+        }
+      }
+    },
     "%@'s replies are read in your Hermes's own voice, the one it is set up with, the same for every bot that reads with Hermes. Pick On-device, Kokoro or ElevenLabs for a voice of its own." : {
       "localizations" : {
         "da" : {
@@ -39203,6 +39309,7 @@
       }
     },
     "A bot with a picture set in Hermes Desktop shows that picture instead of its face." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -39304,6 +39411,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 Hermes Desktop 中設定了圖片的機器人，會顯示該圖片而非它的臉孔。"
+          }
+        }
+      }
+    },
+    "A bot with a picture, from Change Face or Hermes Desktop, shows that picture instead of its face." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bot med et billede, fra Skift ansigt eller Hermes Desktop, viser billedet i stedet for sit ansigt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Bot mit einem Bild aus „Gesicht ändern“ oder Hermes Desktop zeigt dieses Bild statt seines Gesichts."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un bot con una imagen, de Cambiar cara o de Hermes Desktop, muestra esa imagen en lugar de su cara."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un bot avec une image, choisie dans Changer de visage ou dans Hermes Desktop, affiche cette image au lieu de son visage."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un bot con un’immagine, da Cambia viso o da Hermes Desktop, mostra quell’immagine al posto del suo viso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「顔を変更」またはHermes Desktopで画像を設定したボットは、顔の代わりにその画像を表示します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "얼굴 변경 또는 Hermes Desktop에서 사진을 설정한 봇은 얼굴 대신 그 사진을 표시합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bot med et bilde, fra Bytt ansikt eller Hermes Desktop, viser bildet i stedet for ansiktet sitt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een bot met een afbeelding, uit Wijzig gezicht of Hermes Desktop, toont die afbeelding in plaats van zijn gezicht."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bot z obrazem, ustawionym w Zmień twarz lub w Hermes Desktop, pokazuje ten obraz zamiast swojej twarzy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um bot com uma imagem, de Mudar Rosto ou do Hermes Desktop, mostra essa imagem no lugar do rosto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бот с изображением из «Сменить лицо» или Hermes Desktop показывает это изображение вместо своего лица."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bot med en bild, från Byt ansikte eller Hermes Desktop, visar bilden i stället för sitt ansikte."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yüzü Değiştir'den veya Hermes Desktop'tan resmi olan bir bot, yüzü yerine o resmi gösterir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бот із зображенням зі «Змінити обличчя» або Hermes Desktop показує це зображення замість свого обличчя."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“更改面孔”或 Hermes Desktop 中设置了图片的机器人，会显示该图片而不是面孔。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「更換臉孔」或 Hermes Desktop 設定了圖片的機器人，會顯示該圖片而不是臉孔。"
           }
         }
       }
@@ -43764,6 +43977,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PDF"
+          }
+        }
+      }
+    },
+    "A photo shows instead of the face wherever Redde and Hermes Desktop show %@. It's cropped to a square and sent without where it was taken." : {
+      "comment" : "Bot face picker: what a bot's photo does; the bot's name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et foto vises i stedet for ansigtet overalt, hvor Redde og Hermes Desktop viser %@. Det beskæres til et kvadrat og sendes uden oplysninger om, hvor det blev taget."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Foto erscheint statt des Gesichts überall, wo Redde und Hermes Desktop %@ zeigen. Es wird quadratisch zugeschnitten und ohne Aufnahmeort gesendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una foto se muestra en lugar de la cara en todos los sitios donde Redde y Hermes Desktop muestran a %@. Se recorta en cuadrado y se envía sin el lugar donde se tomó."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une photo s’affiche à la place du visage partout où Redde et Hermes Desktop affichent %@. Elle est recadrée en carré et envoyée sans le lieu où elle a été prise."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una foto appare al posto del viso ovunque Redde e Hermes Desktop mostrano %@. Viene ritagliata a quadrato e inviata senza il luogo in cui è stata scattata."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ReddeとHermes Desktopで%@が表示されるすべての場所で、顔の代わりに写真が表示されます。写真は正方形に切り取られ、撮影場所の情報なしで送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde와 Hermes Desktop에서 %@이(가) 표시되는 모든 곳에 얼굴 대신 사진이 표시됩니다. 사진은 정사각형으로 잘리고 촬영 위치 없이 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et bilde vises i stedet for ansiktet overalt der Redde og Hermes Desktop viser %@. Det beskjæres til et kvadrat og sendes uten hvor det ble tatt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een foto verschijnt in plaats van het gezicht overal waar Redde en Hermes Desktop %@ tonen. Hij wordt vierkant bijgesneden en verstuurd zonder de plek waar hij is gemaakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdjęcie pojawia się zamiast twarzy wszędzie, gdzie Redde i Hermes Desktop pokazują %@. Jest przycinane do kwadratu i wysyłane bez miejsca, w którym je zrobiono."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma foto aparece no lugar do rosto em todo lugar onde o Redde e o Hermes Desktop mostram %@. Ela é cortada em quadrado e enviada sem o local onde foi tirada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото показывается вместо лица везде, где Redde и Hermes Desktop показывают %@. Оно обрезается до квадрата и отправляется без места съёмки."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett foto visas i stället för ansiktet överallt där Redde och Hermes Desktop visar %@. Det beskärs till en kvadrat och skickas utan var det togs."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ve Hermes Desktop'ın %@ botunu gösterdiği her yerde yüz yerine fotoğraf görünür. Fotoğraf kare kırpılır ve çekildiği yer bilgisi olmadan gönderilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото показується замість обличчя скрізь, де Redde і Hermes Desktop показують %@. Його обрізають до квадрата й надсилають без місця зйомки."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Redde 和 Hermes Desktop 显示%@的所有地方，都会用照片代替面孔。照片会被裁成正方形，并且发送时不含拍摄地点。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Redde 和 Hermes Desktop 顯示%@的所有地方，都會用照片代替臉孔。照片會裁成正方形，傳送時不含拍攝地點。"
+          }
+        }
+      }
+    },
+    "A photo shows instead of the face wherever Redde and Hermes Desktop show %@. On this device, Pictures from Hermes is off in Settings, so the face shows." : {
+      "comment" : "Bot face picker: what a bot's photo does, with bot pictures turned off on this device; the bot's name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et foto vises i stedet for ansigtet overalt, hvor Redde og Hermes Desktop viser %@. På denne enhed er Billeder fra Hermes slået fra i Indstillinger, så ansigtet vises."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Foto erscheint statt des Gesichts überall, wo Redde und Hermes Desktop %@ zeigen. Auf diesem Gerät ist „Bilder von Hermes“ in den Einstellungen aus, daher erscheint das Gesicht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una foto se muestra en lugar de la cara en todos los sitios donde Redde y Hermes Desktop muestran a %@. En este dispositivo, Imágenes de Hermes está desactivado en Ajustes, así que se muestra la cara."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une photo s’affiche à la place du visage partout où Redde et Hermes Desktop affichent %@. Sur cet appareil, Images d’Hermes est désactivé dans Réglages : le visage s’affiche donc."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una foto appare al posto del viso ovunque Redde e Hermes Desktop mostrano %@. Su questo dispositivo Immagini da Hermes è disattivato in Impostazioni, quindi appare il viso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ReddeとHermes Desktopで%@が表示されるすべての場所で、顔の代わりに写真が表示されます。このデバイスでは設定の「Hermesからの画像」がオフのため、顔が表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde와 Hermes Desktop에서 %@이(가) 표시되는 모든 곳에 얼굴 대신 사진이 표시됩니다. 이 기기에서는 설정의 ‘Hermes에서 온 사진’이 꺼져 있어 얼굴이 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et bilde vises i stedet for ansiktet overalt der Redde og Hermes Desktop viser %@. På denne enheten er Bilder fra Hermes slått av i Innstillinger, så ansiktet vises."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een foto verschijnt in plaats van het gezicht overal waar Redde en Hermes Desktop %@ tonen. Op dit apparaat staat Afbeeldingen van Hermes uit in Instellingen, dus het gezicht verschijnt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdjęcie pojawia się zamiast twarzy wszędzie, gdzie Redde i Hermes Desktop pokazują %@. Na tym urządzeniu opcja Obrazy z Hermesa jest wyłączona w Ustawieniach, więc widać twarz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma foto aparece no lugar do rosto em todo lugar onde o Redde e o Hermes Desktop mostram %@. Neste dispositivo, Imagens do Hermes está desativado em Ajustes, então o rosto aparece."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото показывается вместо лица везде, где Redde и Hermes Desktop показывают %@. На этом устройстве «Изображения от Hermes» выключены в Настройках, поэтому показывается лицо."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett foto visas i stället för ansiktet överallt där Redde och Hermes Desktop visar %@. På den här enheten är Bilder från Hermes av i Inställningar, så ansiktet visas."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ve Hermes Desktop'ın %@ botunu gösterdiği her yerde yüz yerine fotoğraf görünür. Bu aygıtta Ayarlar'da Hermes'ten resimler kapalı, bu yüzden yüz görünür."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото показується замість обличчя скрізь, де Redde і Hermes Desktop показують %@. На цьому пристрої «Зображення від Hermes» вимкнено в Параметрах, тож показується обличчя."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Redde 和 Hermes Desktop 显示%@的所有地方，都会用照片代替面孔。此设备的设置中关闭了“来自Hermes的图片”，所以显示面孔。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Redde 和 Hermes Desktop 顯示%@的所有地方，都會用照片代替臉孔。此裝置的設定中關閉了「來自 Hermes 的圖片」，所以顯示臉孔。"
           }
         }
       }
@@ -102817,6 +103244,112 @@
         }
       }
     },
+    "Choose Another Photo" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vælg et andet foto"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anderes Foto wählen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir otra foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir une autre photo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli un’altra foto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別の写真を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 사진 선택"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg et annet bilde"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies een andere foto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz inne zdjęcie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher Outra Foto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать другое фото"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj ett annat foto"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başka Fotoğraf Seç"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вибрати інше фото"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择其他照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇其他照片"
+          }
+        }
+      }
+    },
     "Choose Model…" : {
       "localizations" : {
         "da" : {
@@ -102919,6 +103452,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇模型…"
+          }
+        }
+      }
+    },
+    "Choose Photo" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vælg foto"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto wählen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir une photo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli foto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진 선택"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg bilde"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies foto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz zdjęcie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher Foto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать фото"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj foto"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf Seç"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вибрати фото"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇照片"
           }
         }
       }
@@ -183733,6 +184372,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hermes 未保留臉孔"
+          }
+        }
+      }
+    },
+    "Hermes didn't keep the photo" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes gemte ikke fotoet"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes hat das Foto nicht gespeichert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes no guardó la foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes n’a pas gardé la photo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes non ha salvato la foto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesが写真を保存しませんでした"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes가 사진을 저장하지 않았습니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes lagret ikke bildet"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes heeft de foto niet bewaard"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes nie zachował zdjęcia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Hermes não guardou a foto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes не сохранил фото"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes sparade inte fotot"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes fotoğrafı saklamadı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes не зберіг фото"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes没有保存照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 沒有儲存照片"
           }
         }
       }
@@ -324068,6 +324813,112 @@
         }
       }
     },
+    "Remove Photo" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fjern foto"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto entfernen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer la photo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi foto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を削除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진 제거"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fjern bilde"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijder foto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń zdjęcie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover Foto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить фото"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta bort foto"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğrafı Kaldır"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видалити фото"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除照片"
+          }
+        }
+      }
+    },
     "Remove Plugin" : {
       "localizations" : {
         "da" : {
@@ -395568,6 +396419,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "透過 Hermes API 無法為工作設定該模型名稱。"
+          }
+        }
+      }
+    },
+    "That photo couldn't be read. Try another one." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoet kunne ikke læses. Prøv et andet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Foto konnte nicht gelesen werden. Versuche ein anderes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo leer esa foto. Prueba con otra."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de lire cette photo. Essayez-en une autre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile leggere la foto. Provane un’altra."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この写真を読み込めませんでした。別の写真を試してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 사진을 읽을 수 없습니다. 다른 사진을 선택하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildet kunne ikke leses. Prøv et annet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die foto kon niet worden gelezen. Probeer een andere."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się odczytać tego zdjęcia. Spróbuj innego."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível ler essa foto. Tente outra."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось прочитать это фото. Попробуйте другое."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotot kunde inte läsas. Prova ett annat."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu fotoğraf okunamadı. Başka birini dene."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося прочитати це фото. Спробуйте інше."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取这张照片。请换一张试试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法讀取這張照片。請換一張試試。"
           }
         }
       }
