@@ -60,6 +60,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
         if settings.useKokoro, let kokoro = settings.kokoroBaseURL {
             connection.kokoroURL = kokoro.absoluteString
             connection.kokoroVoice = settings.kokoroVoice
+            connection.kokoroModel = settings.speechModelOrDefault
             connection.voiceSpeed = settings.voiceSpeed
         }
         // The bots, which the phone talks to for the watch over the Dashboard, whichever road the

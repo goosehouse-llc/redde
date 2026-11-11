@@ -295,6 +295,12 @@ final class Settings: ServeEndpoint {
     var kokoroVoice: String {
         didSet { store(kokoroVoice, forKey: Keys.kokoroVoice) }
     }
+    /// The `model` the speech server is asked for: Kokoro-FastAPI's "kokoro" unless another
+    /// server that answers OpenAI's /v1/audio/speech wants its own ("tts-1", "piper"…). Empty,
+    /// "kokoro" (`speechModelOrDefault`).
+    var speechModel: String {
+        didSet { store(speechModel, forKey: Keys.speechModel) }
+    }
     /// The ElevenLabs voice replies are read in (a voice id of the person's account); empty, the
     /// account's first voice.
     var elevenLabsVoice: String {
@@ -921,6 +927,12 @@ final class Settings: ServeEndpoint {
     nonisolated static let defaultContextWindow = 131_072
     nonisolated static let defaultKokoroURL = ""
     nonisolated static let defaultKokoroVoice = "am_onyx(2)+bm_george(1)"
+    nonisolated static let defaultSpeechModel = "kokoro"
+
+    var speechModelOrDefault: String {
+        let typed = speechModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        return typed.isEmpty ? Self.defaultSpeechModel : typed
+    }
 
     var kokoroBaseURL: URL? {
         let raw = kokoroURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -962,6 +974,7 @@ final class Settings: ServeEndpoint {
         static let replyVoice = "replyVoice"
         static let kokoroURL = "kokoroURL"
         static let kokoroVoice = "kokoroVoice"
+        static let speechModel = "speechModel"
         static let elevenLabsVoice = "elevenLabsVoice"
         static let voiceSpeed = "voiceSpeed"
         static let speechLanguage = "speechLanguage"
@@ -1068,6 +1081,7 @@ final class Settings: ServeEndpoint {
             ?? (defaults.bool(forKey: Keys.useKokoro) ? .kokoro : .onDevice)
         kokoroURL = defaults.string(forKey: Keys.kokoroURL) ?? Self.defaultKokoroURL
         kokoroVoice = defaults.string(forKey: Keys.kokoroVoice) ?? Self.defaultKokoroVoice
+        speechModel = defaults.string(forKey: Keys.speechModel) ?? ""
         elevenLabsVoice = defaults.string(forKey: Keys.elevenLabsVoice) ?? ""
         // "kokoroSpeed" was this setting's name for one build; carry the value over.
         let storedSpeed = defaults.double(forKey: Keys.voiceSpeed)
@@ -1207,7 +1221,7 @@ final class Settings: ServeEndpoint {
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
-        Keys.replyVoice, Keys.kokoroURL,
+        Keys.replyVoice, Keys.kokoroURL, Keys.speechModel,
         Keys.kokoroVoice, Keys.elevenLabsVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
         Keys.botOrder, Keys.botSections, Keys.apiBots, Keys.botVoices, Keys.mutes, Keys.wakePhrases,
     ]
@@ -1281,6 +1295,7 @@ final class Settings: ServeEndpoint {
         case Keys.replyVoice: replyVoice = pick(ReplyVoice.onDevice)
         case Keys.kokoroURL: kokoroURL = text(Self.defaultKokoroURL)
         case Keys.kokoroVoice: kokoroVoice = text(Self.defaultKokoroVoice)
+        case Keys.speechModel: speechModel = text()
         case Keys.elevenLabsVoice: elevenLabsVoice = text()
         case Keys.voiceSpeed: voiceSpeed = (value as? Double).flatMap { $0 > 0 ? $0 : nil } ?? 1.0
         case Keys.speechLanguage: speechLanguage = text()
@@ -1508,6 +1523,7 @@ final class Settings: ServeEndpoint {
         replyVoice = .onDevice
         kokoroURL = Self.defaultKokoroURL
         kokoroVoice = Self.defaultKokoroVoice
+        speechModel = ""
         elevenLabsVoice = ""
         voiceSpeed = 1.0
         speechLanguage = ""
@@ -1620,6 +1636,7 @@ final class Settings: ServeEndpoint {
         if let v = dict["serveUsername"] as? String { serveUsername = v }
         if let v = dict["kokoroURL"] as? String { kokoroURL = v }
         if let v = dict["kokoroVoice"] as? String { kokoroVoice = v }
+        if let v = dict["speechModel"] as? String { speechModel = v }
         if let v = dict["voiceSpeed"] as? Double { voiceSpeed = v }
         if let v = dict["transport"] as? String, let t = Transport(rawValue: v) { transport = t }
         if let v = dict["contextWindow"] as? Int { contextWindow = v }

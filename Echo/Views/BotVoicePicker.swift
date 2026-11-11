@@ -13,6 +13,8 @@ struct BotVoicePicker: View {
     @Environment(\.dismiss) private var dismiss
     @State private var settings = Settings.shared
     @State private var kokoroVoices: [String] = []
+    /// The speech server names no voices (`SpeechServer`): its voice is typed.
+    @State private var unlisted = false
     /// ElevenLabs: the account's voices.
     @State private var elevenLabsVoices: [ElevenLabsVoice] = []
     /// Kokoro: a blend being typed (`KokoroBlend`).
@@ -52,18 +54,8 @@ struct BotVoicePicker: View {
                     } footer: {
                         Text("Automatic gives \(name) a voice of its own, not \(mainName)'s and not another bot's while there are voices to go round. It reads \(name)'s replies in voice mode, in group chats and in the car.")
                     }
-                    if engine == .kokoro { blendSection }
-                    Section(engine == .kokoro ? String(localized: "Kokoro voices")
-                            : engine == .elevenLabs ? String(localized: "Your ElevenLabs voices") : String(localized: "Voices on this iPhone")) {
-                        if loading { ProgressView() }
-                        ForEach(choices, id: \.id) { choice in
-                            row(choice.name, detail: choice.detail, chosen: isPicked(choice.id), voice: choice.voice) { set(choice.voice) }
-                        }
-                        if engine == .onDevice {
-                            Text("More voices, and better ones, come from Settings → Accessibility → Spoken Content → Voices.")
-                                .font(.footnote).foregroundStyle(.secondary)
-                        }
-                    }
+                    if engine == .kokoro { if unlisted { typedSection } else { blendSection } }
+                    if !(engine == .kokoro && unlisted) { voicesSection }
                 }
             }
             .navigationTitle("\(name)'s Voice")
@@ -76,6 +68,20 @@ struct BotVoicePicker: View {
             }
         }
         .holdsWakePhrases(.voicePicker)
+    }
+
+    private var voicesSection: some View {
+                    Section(engine == .kokoro ? String(localized: "Kokoro voices")
+                            : engine == .elevenLabs ? String(localized: "Your ElevenLabs voices") : String(localized: "Voices on this iPhone")) {
+                        if loading { ProgressView() }
+                        ForEach(choices, id: \.id) { choice in
+                            row(choice.name, detail: choice.detail, chosen: isPicked(choice.id), voice: choice.voice) { set(choice.voice) }
+                        }
+                        if engine == .onDevice {
+                            Text("More voices, and better ones, come from Settings → Accessibility → Spoken Content → Voices.")
+                                .font(.footnote).foregroundStyle(.secondary)
+                        }
+                    }
     }
 
     private struct Choice {
@@ -185,6 +191,31 @@ struct BotVoicePicker: View {
         }
     }
 
+    /// A voice by its name, for a speech server that names none of its own: heard, then used.
+    private var typedSection: some View {
+        let typed = blend.trimmingCharacters(in: .whitespaces)
+        return Section {
+            if let current = picked?.kokoro {
+                row(current, detail: String(localized: "\(name)'s voice"), chosen: true, voice: BotVoice(kokoro: current)) {}
+            }
+            TextField(String(localized: "Voice name", comment: "Edit Bot → Voice: a speech server's voice, typed"), text: $blend)
+                .font(.callout.monospaced())
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            HStack {
+                Button("Hear It") { play(BotVoice(kokoro: typed)) }.disabled(typed.isEmpty)
+                Spacer()
+                Button(String(localized: "Use This Voice", comment: "Edit Bot → Voice: use the typed speech server voice")) { set(BotVoice(kokoro: typed)) }
+                    .disabled(typed.isEmpty || picked?.kokoro == typed)
+            }
+            .buttonStyle(.borderless)
+        } header: {
+            Text("Its own voice", comment: "Edit Bot → Voice: the header over a typed speech server voice")
+        } footer: {
+            Text("This server doesn't list its voices: type the name of one it has.")
+        }
+    }
+
     /// Which voice reads its replies: Settings', or one of its own, with what that one still needs.
     private var readerSection: some View {
         Section {
@@ -258,6 +289,7 @@ struct BotVoicePicker: View {
         switch engine {
         case .kokoro:
             let id = BotVoices.kokoro(for: bot.name, picked: others, main: settings.kokoroVoice, available: kokoroVoices, names: names)
+            if id == nil, unlisted { return String(localized: "\(mainName)'s voice: the server doesn't list others to pick from") }
             return id.map(Self.kokoroName) ?? String(localized: "\(mainName)'s voice, for now: the server has no other voice in its language")
         case .onDevice:
             let installed = AVSpeechSynthesisVoice.speechVoices().map {
@@ -326,7 +358,13 @@ struct BotVoicePicker: View {
             guard let server = settings.kokoroBaseURL else { return }
             loading = true
             defer { loading = false }
-            kokoroVoices = (try? await KokoroPlayer.voiceIDs(baseURL: server)) ?? []
+            do {
+                kokoroVoices = try await KokoroPlayer.voiceIDs(baseURL: server)
+                unlisted = kokoroVoices.isEmpty
+            } catch {
+                kokoroVoices = []
+                unlisted = KokoroPlayer.isUnlisted(error)
+            }
         case .elevenLabs:
             guard let key = ElevenLabsSpeech.key else { return }
             loading = true
@@ -340,7 +378,8 @@ struct BotVoicePicker: View {
     /// "am_adam" → "Adam (American, male)".
     static func kokoroName(_ id: String) -> String {
         let parts = id.split(separator: "_", maxSplits: 1)
-        guard parts.count == 2, parts[0].count == 2 else { return id }
+        // Another server's names ("alloy", "en_US-amy-medium") are shown as they are.
+        guard parts.count == 2, parts[0].count == 2, SpokenLanguage.kokoroLanguage(of: id) != nil else { return id }
         let accent: [Character: String] = [
             "a": String(localized: "American", comment: "A Kokoro voice's accent"), "b": String(localized: "British", comment: "A Kokoro voice's accent"),
             "e": String(localized: "Spanish", comment: "A Kokoro voice's accent"), "f": String(localized: "French", comment: "A Kokoro voice's accent"),

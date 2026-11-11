@@ -147,7 +147,7 @@ The code name is Echo: targets, folders, the bundle ID (`com.goosehouse.echo`) a
 
 To prefill your own servers in development builds, add a git-ignored
 `Echo/Resources/LocalDefaults.json` with any of `transport`, `gatewayURL`, `serveURL`,
-`serveUsername`, `fastLaneURL`, `fastLaneModel`, `kokoroURL`, `kokoroVoice`, `contextWindow`. It is
+`serveUsername`, `fastLaneURL`, `fastLaneModel`, `kokoroURL`, `kokoroVoice`, `speechModel`, `contextWindow`. It is
 applied once on first launch and never ships.
 
 ### Tests

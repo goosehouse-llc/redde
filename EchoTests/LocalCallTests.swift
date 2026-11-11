@@ -62,6 +62,38 @@ struct LocalCallTests {
         #expect(said.allSatisfy { $0["id"]?.string == "turn_1" })
     }
 
+    /// Hands-free off: the call ends once the answer has played. It plays as it is written, so
+    /// the voice is already speaking when the agent finishes, and no start of speaking comes after
+    /// to say it was heard (the call stayed open, 2026-11-10); quiet comes once it has all played.
+    @Test func aLocalCallEndsOnceItsAnswerHasPlayed() async throws {
+        let harness = Harness(reply: [.textDelta("Your meeting is at 4 pm. "), .textDelta("It's with Ana. "), .textDelta("Bring the notes.")],
+                              answerPace: .milliseconds(300), posting: LiveVoiceTests.quickly, engine: .local)
+        harness.live.endsAfterAnswer = { true }
+        await harness.connect()
+        harness.call.receive(LocalDialect.heard("When is my meeting?"))
+        harness.call.receive(LocalDialect.delegated("turn_1"))
+        try await LiveVoiceTests.until { harness.call.sent("say").count >= 1 }
+        harness.call.state(.speaking)   // the first sentence plays while the rest is written
+        try await LiveVoiceTests.until { harness.call.sent("say").count == 3 }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(harness.live.state != .ended, "not while the answer plays")
+        harness.call.state(.quiet)
+        try await LiveVoiceTests.until { harness.live.state == .ended }
+    }
+
+    /// All of it played before the agent was done (a short answer, a quick voice): it ends then.
+    @Test func aLocalCallEndsWhenTheAnswerPlayedBeforeTheAgentFinished() async throws {
+        let harness = Harness(answerAfter: .milliseconds(150), posting: LiveVoiceTests.quickly, engine: .local)
+        harness.live.endsAfterAnswer = { true }
+        await harness.connect()
+        harness.call.receive(LocalDialect.heard("When is my meeting?"))
+        harness.call.receive(LocalDialect.delegated("turn_1"))
+        try await LiveVoiceTests.until { harness.call.sent("say").count == 2 }
+        harness.call.state(.speaking)
+        harness.call.state(.quiet)
+        try await LiveVoiceTests.until { harness.live.state == .ended }
+    }
+
     /// The reading voice of the bot the call is with, at its speed: the speech server's, or the
     /// device's where it has none (Hermes's voice is the Dashboard's to play).
     @Test func theCallSpeaksInTheBotsReadingVoice() {
@@ -72,9 +104,9 @@ struct LocalCallTests {
         settings.voiceSpeed = 1.2
         let server = URL(string: "http://kokoro.invalid:8880")
         #expect(settings.kokoroBaseURL == server)
-        #expect(LocalSpeech.reading(for: nil, settings: settings) == .server(server!, voice: "af_heart", speed: 1.2))
+        #expect(LocalSpeech.reading(for: nil, settings: settings) == .server(server!, model: "kokoro", voice: "af_heart", speed: 1.2))
         settings.botVoicesHere = ["home": BotVoice(kokoro: "am_adam", speed: 0.9)]
-        #expect(LocalSpeech.reading(for: "home", settings: settings) == .server(server!, voice: "am_adam", speed: 0.9))
+        #expect(LocalSpeech.reading(for: "home", settings: settings) == .server(server!, model: "kokoro", voice: "am_adam", speed: 0.9))
         settings.replyVoice = .hermes
         #expect(LocalSpeech.reading(for: nil, settings: settings).isDevice)
         settings.replyVoice = .kokoro
@@ -87,7 +119,7 @@ struct LocalCallTests {
         let server = try await DroppingSpeechServer.start(drops: 0, seconds: 0.3)
         defer { server.stop() }
         var sound = Data()
-        for try await piece in LocalSpeech.server(server.baseURL, voice: "af_heart", speed: 1).pcm("Hello there.") { sound.append(piece) }
+        for try await piece in LocalSpeech.server(server.baseURL, model: "kokoro", voice: "af_heart", speed: 1).pcm("Hello there.") { sound.append(piece) }
         #expect(sound.count == Int(LocalSpeech.rate * 0.3) * 2)
         #expect(server.connections == 1)
     }
@@ -97,8 +129,8 @@ struct LocalCallTests {
         let server = try await DroppingSpeechServer.start(drops: 100)
         defer { server.stop() }
         await #expect(throws: (any Error).self) {
-            for try await _ in LocalSpeech.server(server.baseURL, voice: "af_heart", speed: 1).pcm("Hello.") {}
+            for try await _ in LocalSpeech.server(server.baseURL, model: "kokoro", voice: "af_heart", speed: 1).pcm("Hello.") {}
         }
-        #expect(LocalSpeech.server(server.baseURL, voice: "af_heart", speed: 1.1).fallback.isDevice)
+        #expect(LocalSpeech.server(server.baseURL, model: "kokoro", voice: "af_heart", speed: 1.1).fallback.isDevice)
     }
 }

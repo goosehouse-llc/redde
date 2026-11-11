@@ -57,17 +57,23 @@ struct LiveVoiceTests {
         let reply: [TurnEvent]
         /// How long the agent takes to start answering.
         let after: Duration
-        init(reply: [TurnEvent], after: Duration = .zero) {
+        /// How long it takes between one piece of its answer and the next.
+        let between: Duration
+        init(reply: [TurnEvent], after: Duration = .zero, between: Duration = .zero) {
             self.reply = reply
             self.after = after
+            self.between = between
         }
         nonisolated func stream(_ request: TurnRequest) -> AsyncThrowingStream<TurnEvent, Error> {
             lock.withLock { kept.append(request) }
-            let reply = reply, after = after
+            let reply = reply, after = after, between = between
             return AsyncThrowingStream { continuation in
                 Task {
                     if after > .zero { try? await Task.sleep(for: after) }
-                    for event in reply { continuation.yield(event) }
+                    for (index, event) in reply.enumerated() {
+                        if index > 0, between > .zero { try? await Task.sleep(for: between) }
+                        continuation.yield(event)
+                    }
                     continuation.yield(.done)
                     continuation.finish()
                 }
@@ -88,14 +94,14 @@ struct LiveVoiceTests {
         let engine: LiveEngine
 
         init(reply: [TurnEvent] = [.textDelta("Your meeting is at 4 pm. "), .textDelta("It's with Ana.")], hangUp: Int = 2,
-             answerAfter: Duration = .zero, posting: LiveVoice.Posting = LiveVoice.Posting(), engine: LiveEngine = .gptLive) {
+             answerAfter: Duration = .zero, answerPace: Duration = .zero, posting: LiveVoice.Posting = LiveVoice.Posting(), engine: LiveEngine = .gptLive) {
             self.engine = engine
             settings = Settings(defaults: UserDefaults(suiteName: "live-\(UUID().uuidString)")!)
             settings.transport = .chatCompletions
             settings.fastLaneURL = "http://example.invalid:11500"
             settings.fastLaneModel = "test"
             settings.liveHangUp = hangUp
-            transport = RecordingTransport(reply: reply, after: answerAfter)
+            transport = RecordingTransport(reply: reply, after: answerAfter, between: answerPace)
             let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "live-\(UUID().uuidString)"))
             conversation = Conversation(settings: settings, store: store, transportOverride: transport)
             let call = call, opened = opened, roomSpeakers = roomSpeakers

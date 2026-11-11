@@ -1565,7 +1565,11 @@ Replies are spoken sentence by sentence while they stream, by AVSpeechSynthesize
 the user's Hermes or ElevenLabs (Settings → Voice: On-device, Kokoro, Hermes, ElevenLabs; `Settings.replyVoice`, which
 took over the old Kokoro switch). Kokoro: one PCM streaming request per sentence, decoded ~100 ms
 at a time onto an `AVAudioPlayerNode`, fetched ahead and played in order, with the built-in voice
-as the fallback. Measured 2026-10-20 on a 64 GB Mac (Kokoro-FastAPI 0.7.2-rc1 on MPS, the same
+as the fallback. Any other server that answers OpenAI's `/v1/audio/speech` works the same way
+(`SpeechServer`): Settings → Reading voice → Model is the `model` it is asked for ("kokoro" when
+empty; synced, handed to the watch), its voices are read from `/v1/audio/voices` in any of the
+usual shapes or typed where it lists none (Settings, and Edit Bot → Voice), and WAV it sends at
+another rate or in stereo is converted to 24 kHz mono as it arrives (`SpeechPCM`). Measured 2026-10-20 on a 64 GB Mac (Kokoro-FastAPI 0.7.2-rc1 on MPS, the same
 GPU as the agent's model): a 5-second sentence in ~0.45 s alone and ~0.85 s while the model writes,
 and about a second more the first time a sentence of a new length is made (MPS compiles a program
 for each input shape). Left running for days that server grew to 26 GB (19 GB compressed), and one

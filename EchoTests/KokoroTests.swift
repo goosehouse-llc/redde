@@ -36,7 +36,7 @@ struct KokoroTests {
             Task {
                 // Simulate the model's TTFT: the first sentence arrives a moment after the reply starts.
                 try? await Task.sleep(for: .milliseconds(300))
-                player.enqueue("Echo is speaking through Kokoro.", baseURL: base, voice: TestEndpoints.kokoroVoice)
+                player.enqueue("Echo is speaking through Kokoro.", baseURL: base, model: "kokoro", voice: TestEndpoints.kokoroVoice)
                 player.finish()
             }
             Task {
@@ -93,12 +93,13 @@ nonisolated final class DroppingSpeechServer: @unchecked Sendable {
 
     private init(listener: NWListener, port: UInt16) { self.listener = listener; self.port = port }
 
-    static func start(drops: Int, seconds: Double = 0.3) async throws -> DroppingSpeechServer {
+    /// `sound`, what it answers with, in place of `seconds` of silence (a WAV file, for one).
+    static func start(drops: Int, seconds: Double = 0.3, sound: Data? = nil) async throws -> DroppingSpeechServer {
         let parameters = NWParameters.tcp
         parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
         let listener = try NWListener(using: parameters)
         let box = Box()
-        let pcm = Data(count: Int(KokoroPlayer.sampleRate * seconds) * 2)   // 16-bit silence
+        let pcm = sound ?? Data(count: Int(KokoroPlayer.sampleRate * seconds) * 2)   // 16-bit silence
         listener.newConnectionHandler = { connection in
             connection.start(queue: queue)
             connection.receive(minimumIncompleteLength: 1, maximumLength: 64 * 1024) { _, _, _, _ in
@@ -167,7 +168,7 @@ struct KokoroFailureTests {
         var failed: [String] = []
         player.onFailure = { failed.append($0) }
         let drained = await playToTheEnd(player) {
-            player.enqueue("Said in Kokoro's voice after all.", baseURL: server.baseURL, voice: "af_heart")
+            player.enqueue("Said in Kokoro's voice after all.", baseURL: server.baseURL, model: "kokoro", voice: "af_heart")
         }
         player.release()
         #expect(drained)
@@ -185,7 +186,7 @@ struct KokoroFailureTests {
         let drained = await playToTheEnd(player) {
             // A second of the sentence before, already in hand, and then one that can't be had.
             player.enqueue(samples: [[Float](repeating: 0, count: Int(KokoroPlayer.sampleRate))], text: "One second.")
-            player.enqueue("Then one that never comes.", baseURL: server.baseURL, voice: "af_heart")
+            player.enqueue("Then one that never comes.", baseURL: server.baseURL, model: "kokoro", voice: "af_heart")
         }
         player.release()
         #expect(drained)
@@ -226,7 +227,7 @@ struct KokoroPrefetchTests {
                 done.resume(returning: true)
             }
             player.begin()   // as a reply's start does: a stop, which leaves what was fetched ahead
-            player.enqueue(text, baseURL: server, voice: voice)
+            player.enqueue(text, baseURL: server, model: "kokoro", voice: voice)
             player.finish()
             Task {
                 try? await Task.sleep(for: .seconds(10))
@@ -241,14 +242,14 @@ struct KokoroPrefetchTests {
         let server = try await DroppingSpeechServer.start(drops: 0)
         defer { server.stop() }
         let player = KokoroPlayer()
-        player.prefetch("Falls Loop is open.", baseURL: server.baseURL, voice: "am_adam")
-        player.prefetch("Falls Loop is open.", baseURL: server.baseURL, voice: "am_adam")   // the same again: left as it is
+        player.prefetch("Falls Loop is open.", baseURL: server.baseURL, model: "kokoro", voice: "am_adam")
+        player.prefetch("Falls Loop is open.", baseURL: server.baseURL, model: "kokoro", voice: "am_adam")   // the same again: left as it is
         try await Task.sleep(for: .milliseconds(300))
         #expect(server.connections == 1)
         #expect(await play(player, "Falls Loop is open.", server: server.baseURL, voice: "am_adam"))
         #expect(server.connections == 1, "played from what was fetched")
         // In another voice it is another sentence.
-        player.prefetch("Bring layers.", baseURL: server.baseURL, voice: "am_adam")
+        player.prefetch("Bring layers.", baseURL: server.baseURL, model: "kokoro", voice: "am_adam")
         try await Task.sleep(for: .milliseconds(300))
         #expect(await play(player, "Bring layers.", server: server.baseURL, voice: "bf_emma"))
         #expect(server.connections == 3)

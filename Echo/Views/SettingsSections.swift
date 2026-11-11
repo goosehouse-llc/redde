@@ -781,6 +781,7 @@ struct VoiceSettings: View {
                 + String(localized: "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice. Download more voices in the iPhone's Settings → Accessibility → Read & Speak → Voices.") + " "
         case .kokoro:
             String(localized: "Streams audio from a Kokoro-compatible TTS server and starts playing before the sentence finishes. Falls back to the on-device voice if the server is unreachable.") + " "
+                + String(localized: "Any other speech server that answers OpenAI's /v1/audio/speech works too: give the model it wants, and type a voice it has if it doesn't list them.") + " "
                 + String(localized: "“Voice for replies”: Match each reply picks a voice for the language each reply is written in, so a reply in Spanish gets a Spanish voice (the built-in one when Kokoro has none for it).") + " "
         case .elevenLabs:
             String(localized: "ElevenLabs reads replies out on your own key, the one live calls with ElevenLabs use, starting before the sentence is finished, in any language. Each bot reads in an ElevenLabs voice of its own (Edit Bot → Voice), in group chats too. The reply's text goes from your iPhone to ElevenLabs, which bills your account by the character. ElevenLabs takes speeds from 0.7× to 1.2×. Falls back to the on-device voice without a key or a connection; the watch reads with its own.") + " "
@@ -834,6 +835,15 @@ struct VoiceSettings: View {
             if settings.useKokoro {
                 TextField("http://your-tts-server:8880", text: $settings.kokoroURL)
                     .urlFieldStyle()
+                LabeledContent {
+                    TextField(Settings.defaultSpeechModel, text: $settings.speechModel)
+                        .multilineTextAlignment(.trailing)
+                        .font(.callout.monospaced())
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } label: {
+                    Text("Model")
+                }
                 NavigationLink {
                     KokoroVoicesView()
                 } label: {

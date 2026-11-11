@@ -193,7 +193,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
             return
         }
         guard reader(of: speaker) == .kokoro, let base = Settings.shared.kokoroBaseURL else { return }
-        player.prefetch(spoken, baseURL: base, voice: kokoroVoice(of: speaker), speed: speed(of: speaker))
+        player.prefetch(spoken, baseURL: base, model: Settings.shared.speechModelOrDefault, voice: kokoroVoice(of: speaker), speed: speed(of: speaker))
     }
 
     /// The bot's own built-in voice for `language`, when it has one there: looked up once a reply
@@ -423,7 +423,7 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
             if voice != nil || sentToKokoro {
                 isSpeaking = true
                 sentToKokoro = true
-                player.enqueue(spoken, baseURL: base, voice: voice ?? replyKokoroVoice,
+                player.enqueue(spoken, baseURL: base, model: Settings.shared.speechModelOrDefault, voice: voice ?? replyKokoroVoice,
                                speed: speed(of: speaker))
                 return
             }

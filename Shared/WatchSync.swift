@@ -38,6 +38,8 @@ nonisolated struct WatchConnection: Codable, Equatable, Sendable {
     var kokoroURL: String?
     var kokoroVoice: String?
     var voiceSpeed: Double?
+    /// The model that server is asked for (`SpeechServer`); absent, "kokoro".
+    var kokoroModel: String?
     /// The person's own headers for a server behind a reverse proxy, sent with each Hermes API
     /// request. Optional like the rest: an older copy has none.
     var headers: [String: String]?

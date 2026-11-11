@@ -16,8 +16,9 @@ import os
 /// What a local call speaks with: the reading voice of the bot it is with (Settings → Voice, Edit
 /// Bot → Voice), at that bot's speed.
 nonisolated enum LocalSpeech: Sendable, Equatable {
-    /// A speech server of the person's own at this address (Settings → Voice → Kokoro), in one of its voices.
-    case server(URL, voice: String, speed: Double)
+    /// A speech server of the person's own at this address (Settings → Voice → Kokoro), asked for
+    /// its `model` (`SpeechServer`), in one of its voices.
+    case server(URL, model: String, voice: String, speed: Double)
     case elevenLabs(voice: String, key: String, speed: Double)
     /// The device's own voice: this one, by its identifier, else the language's best.
     case device(voice: String?, language: String, speed: Double)
@@ -38,7 +39,7 @@ nonisolated enum LocalSpeech: Sendable, Equatable {
                 let known = KokoroPlayer.knownVoiceIDs.withLock { $0 }
                 let voice = BotVoices.kokoro(for: profile, picked: picked, main: settings.kokoroVoice,
                                              available: known.server == server ? known.ids : [], names: names)
-                return .server(server, voice: voice ?? settings.kokoroVoice, speed: speed)
+                return .server(server, model: settings.speechModelOrDefault, voice: voice ?? settings.kokoroVoice, speed: speed)
             }
         case .elevenLabs:
             if let key = ElevenLabsSpeech.key {
@@ -63,7 +64,7 @@ nonisolated enum LocalSpeech: Sendable, Equatable {
     /// One sentence, as mono 16-bit PCM at `rate`, in pieces as it comes.
     func pcm(_ text: String) -> AsyncThrowingStream<Data, Error> {
         switch self {
-        case let .server(address, voice, speed): Self.fromServer(text, address: address, voice: voice, speed: speed)
+        case let .server(address, model, voice, speed): Self.fromServer(text, address: address, model: model, voice: voice, speed: speed)
         case let .elevenLabs(voice, key, speed): ElevenLabsSpeech.pcm(text, voice: voice, speed: speed, previous: nil, key: key)
         case let .device(voice, language, speed): Self.fromDevice(text, voice: voice, language: language, speed: speed)
         }
@@ -77,43 +78,32 @@ nonisolated enum LocalSpeech: Sendable, Equatable {
         let language = settings.speechLanguage.isEmpty ? AVSpeechSynthesisVoice.currentLanguageCode() : settings.speechLanguage
         return switch self {
         case .device: self
-        case let .server(_, _, speed), let .elevenLabs(_, _, speed): .device(voice: nil, language: language, speed: speed)
+        case let .server(_, _, _, speed), let .elevenLabs(_, _, speed): .device(voice: nil, language: language, speed: speed)
         }
     }
 
     private static let log = Logger(subsystem: "com.goosehouse.echo", category: "live")
 
-    /// The speech server's `/v1/audio/speech`, as Kokoro answers it (`KokoroPlayer`): PCM, streamed.
-    private static func fromServer(_ text: String, address: URL, voice: String, speed: Double) -> AsyncThrowingStream<Data, Error> {
-        struct Body: Encodable {
-            var model = "kokoro"; var input: String; var voice: String
-            var speed: Double
-            var response_format = "pcm"; var stream = true
-        }
-        return AsyncThrowingStream { pieces in
+    /// The speech server's `/v1/audio/speech` (`SpeechServer`), as Kokoro answers it: PCM, streamed;
+    /// WAV at another rate is read and converted (`SpeechPCM`).
+    private static func fromServer(_ text: String, address: URL, model: String, voice: String, speed: Double) -> AsyncThrowingStream<Data, Error> {
+        AsyncThrowingStream { pieces in
             let work = Task {
                 do {
                     let request = try StreamingHTTP.makeRequest(url: address.appending(path: "v1/audio/speech"), apiKey: nil,
-                                                                body: Body(input: text, voice: voice, speed: speed))
+                                                                body: SpeechServer.body(text, model: model, voice: voice, speed: speed))
                     let (http, data) = try await ChunkedResponse.start(request, session: StreamingHTTP.session)
                     guard (200 ..< 300).contains(http.statusCode) else { throw TransportError.http(status: http.statusCode, body: "") }
                     var pending: [UInt8] = []
-                    var checked = false
+                    var sound = SpeechPCM(rate: rate)
                     for try await chunk in data {
-                        pending.append(contentsOf: chunk)
-                        if !checked, pending.count >= 44 {
-                            checked = true
-                            // A server that answers "pcm" with a WAV file: its header isn't sound.
-                            if let found = KokoroPlayer.stripWavHeader(&pending), found != rate {
-                                log.warning("speech server sends \(found) Hz, the call plays \(rate) Hz")
-                            }
-                        }
-                        let whole = pending.count & ~1
-                        guard checked, whole >= 4_800 else { continue }
-                        pieces.yield(Data(pending[..<whole]))
-                        pending.removeFirst(whole)
+                        pending.append(contentsOf: sound.feed(chunk))
+                        guard pending.count >= 4_800 else { continue }
+                        pieces.yield(Data(pending))
+                        pending.removeAll(keepingCapacity: true)
                     }
-                    if pending.count >= 2 { pieces.yield(Data(pending[..<(pending.count & ~1)])) }
+                    pending.append(contentsOf: sound.finish())
+                    if !pending.isEmpty { pieces.yield(Data(pending)) }
                     pieces.finish()
                 } catch is CancellationError {
                     pieces.finish()

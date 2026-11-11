@@ -22,6 +22,8 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegat
 
     struct Kokoro {
         var url: URL
+        /// What the server is asked for: "kokoro", or another OpenAI-style speech server's model.
+        var model: String
         var voice: String
         var speed: Double
     }
@@ -96,13 +98,13 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegat
     /// One whole reply as WAV. The phone streams PCM sentence by sentence; a watch reply is short.
     nonisolated private static func kokoroAudio(_ text: String, _ kokoro: Kokoro) async throws -> Data {
         struct Body: Encodable {
-            var model = "kokoro"; var input: String; var voice: String; var speed: Double
+            var model: String; var input: String; var voice: String; var speed: Double
             var response_format = "wav"; var stream = false
         }
         var request = URLRequest(url: kokoro.url.appending(path: "v1/audio/speech"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(Body(input: text, voice: kokoro.voice, speed: kokoro.speed))
+        request.httpBody = try JSONEncoder().encode(Body(model: kokoro.model, input: text, voice: kokoro.voice, speed: kokoro.speed))
         request.timeoutInterval = 60
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {

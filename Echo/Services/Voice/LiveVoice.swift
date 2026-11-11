@@ -727,8 +727,11 @@ final class LiveVoice {
             send(dialect.answer(answered ? whole + "\n\n" + checked : whole, to: id, final: true, eventID: nextID("say")))
         }
         collecting = false
-        // An answer to say: the call goes on until the voice has said it.
-        answerUnsaid = spokenAnything || !dialect.streamsAnswers || handingOff
+        // An answer to say: the call goes on until the voice has said it. A local call's voice
+        // speaks it as it is written and is quiet only once all of it has played, so nothing is
+        // left to wait for a start of speaking: it had often started before the agent finished,
+        // and the call never hung up (2026-11-10). Its quiet is what says it is done.
+        answerUnsaid = handingOff || !engine.speaksInReadingVoice && (spokenAnything || !dialect.streamsAnswers)
         delegation = nil
         tool = nil
         posting?.cancel()

@@ -4,7 +4,7 @@ import Foundation
 import Observation
 import os
 
-/// Streams speech from a Kokoro (OpenAI-compatible) TTS server on the tailnet, or from the
+/// Streams speech from a Kokoro (or another OpenAI-compatible, `SpeechServer`) TTS server, or from the
 /// person's Hermes (`HermesSpeech`), and plays it as the bytes arrive. One request per sentence,
 /// a couple fetched ahead, played strictly in order.
 /// Kokoro's wire format: `response_format: pcm` = 24 kHz, 16-bit signed little-endian, mono.
@@ -58,7 +58,7 @@ final class KokoroPlayer {
 
     /// Who speaks a sentence.
     private enum Source {
-        case kokoro(baseURL: URL, voice: String, speed: Double)
+        case kokoro(baseURL: URL, model: String, voice: String, speed: Double)
         /// The Dashboard at `server`, with the voice its Hermes is set up with.
         case hermes(HermesServeClient, server: URL)
         /// ElevenLabs, on the person's key (`ElevenLabsSpeech`), after the sentence before.
@@ -73,7 +73,7 @@ final class KokoroPlayer {
         /// What a prefetched sentence is matched by: its words, voice, speed and server.
         var key: String? {
             switch source {
-            case let .kokoro(baseURL, voice, speed): "\(baseURL.absoluteString)|\(voice)|\(speed)|\(text)"
+            case let .kokoro(baseURL, model, voice, speed): "\(baseURL.absoluteString)|\(model)|\(voice)|\(speed)|\(text)"
             case let .elevenLabs(voice, speed, _, _): "elevenlabs|\(voice)|\(speed)|\(text)"
             default: nil
             }
@@ -152,8 +152,8 @@ final class KokoroPlayer {
         startEngine(reason: "warmup")
     }
 
-    func enqueue(_ text: String, baseURL: URL, voice: String, speed: Double = 1.0) {
-        let sentence = Sentence(text: text, source: .kokoro(baseURL: baseURL, voice: voice, speed: speed))
+    func enqueue(_ text: String, baseURL: URL, model: String, voice: String, speed: Double = 1.0) {
+        let sentence = Sentence(text: text, source: .kokoro(baseURL: baseURL, model: model, voice: voice, speed: speed))
         if let early = prefetched, early.key == sentence.key {
             prefetched = nil
             enqueue(early)
@@ -164,8 +164,8 @@ final class KokoroPlayer {
 
     /// Fetches a sentence now that will be enqueued later, so it plays the moment it is (see
     /// `prefetched`). The same one again is left as it is; another lets the last one go.
-    func prefetch(_ text: String, baseURL: URL, voice: String, speed: Double = 1.0) {
-        let sentence = Sentence(text: text, source: .kokoro(baseURL: baseURL, voice: voice, speed: speed))
+    func prefetch(_ text: String, baseURL: URL, model: String, voice: String, speed: Double = 1.0) {
+        let sentence = Sentence(text: text, source: .kokoro(baseURL: baseURL, model: model, voice: voice, speed: speed))
         guard prefetched?.key != sentence.key else { return }
         prefetched?.fetch?.cancel()
         prefetched = sentence
@@ -294,19 +294,28 @@ final class KokoroPlayer {
         AudioSessionController.shared.refreshRoute()
     }
 
-    /// The server's voice ids ("af_heart", "ef_dora", …), sorted.
+    /// The server's voice ids ("af_heart", "ef_dora", …), sorted. A server with no list of its
+    /// voices (`isUnlisted`) is told by its answer: not found, or nothing that reads as a list.
     nonisolated static func voiceIDs(baseURL: URL) async throws -> [String] {
-        struct Envelope: Decodable { var voices: [Entry]; struct Entry: Decodable { var id: String } }
         var request = URLRequest(url: baseURL.appending(path: "v1/audio/voices"))
         request.timeoutInterval = 6
-        let (data, _) = try await URLSession.shared.data(for: request)
-        let ids = try JSONDecoder().decode(Envelope.self, from: data).voices.map(\.id).sorted()
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200 ..< 300).contains(http.statusCode) {
+            throw TransportError.http(status: http.statusCode, body: "")
+        }
+        guard let ids = SpeechServer.voiceIDs(in: data) else { throw URLError(.cannotParseResponse) }
         knownVoiceIDs.withLock { $0 = (baseURL, ids) }
         return ids
     }
 
     /// The server's voices as last listed, for what can't wait on a list of its own (the bots'
     /// voices handed to the watch, `WatchLink.watchBots`).
+    /// The server answered, but names no voices: they are typed instead.
+    nonisolated static func isUnlisted(_ error: Error) -> Bool {
+        if case let TransportError.http(status, _) = error { return [404, 405, 501].contains(status) }
+        return (error as? URLError)?.code == .cannotParseResponse
+    }
+
     nonisolated static let knownVoiceIDs = OSAllocatedUnfairLock<(server: URL?, ids: [String])>(initialState: (nil, []))
 
     // MARK: - Fetch
@@ -320,12 +329,12 @@ final class KokoroPlayer {
         guard sentence.fetch == nil else { return }
         let text = sentence.text, continuation = sentence.continuation
         switch sentence.source {
-        case let .kokoro(baseURL, voice, speed):
+        case let .kokoro(baseURL, model, voice, speed):
             sentence.fetch = Task { [weak self] in
                 // The bytes are decoded off the main actor (`@concurrent`: with approachable
                 // concurrency a plain nonisolated async function runs on its caller's actor, here
                 // the main one); only the bookkeeping hops back.
-                if await Self.fetch(text, baseURL: baseURL, voice: voice, speed: speed, into: continuation) {
+                if await Self.fetch(text, baseURL: baseURL, model: model, voice: voice, speed: speed, into: continuation) {
                     self?.lastRequestAt = .now
                 }
             }
@@ -344,18 +353,13 @@ final class KokoroPlayer {
     }
 
     /// Streams one sentence's PCM into `chunks`, ~100 ms per buffer. Returns whether it completed.
-    @concurrent nonisolated private static func fetch(_ text: String, baseURL: URL, voice: String, speed: Double,
+    @concurrent nonisolated private static func fetch(_ text: String, baseURL: URL, model: String, voice: String, speed: Double,
                                           into chunks: AsyncThrowingStream<AVAudioPCMBuffer, Error>.Continuation) async -> Bool {
-        struct Body: Encodable {
-            var model = "kokoro"; var input: String; var voice: String
-            var speed: Double = 1.0
-            var response_format = "pcm"; var stream = true
-        }
         let format = makeFormat()
         do {
             let request = try StreamingHTTP.makeRequest(
                 url: baseURL.appending(path: "v1/audio/speech"), apiKey: nil,
-                body: Body(input: text, voice: voice, speed: speed))
+                body: SpeechServer.body(text, model: model, voice: voice, speed: speed))
             let sentAt = Date()
             let (http, data) = try await ChunkedResponse.start(request, session: StreamingHTTP.session)
             log.info("kokoro headers after \(Date().timeIntervalSince(sentAt), format: .fixed(precision: 3))s")
@@ -365,17 +369,11 @@ final class KokoroPlayer {
             }
             var pending: [UInt8] = []
             pending.reserveCapacity(9600)
-            var checkedHeader = false
+            // Some servers answer "pcm" with a WAV file, at their own rate: its header read as
+            // sound was a click at the start of every sentence, and another rate the wrong pitch.
+            var sound = SpeechPCM(rate: sampleRate)
             for try await chunk in data {
-                pending.append(contentsOf: chunk)
-                if !checkedHeader, pending.count >= 44 {
-                    checkedHeader = true
-                    // Some servers answer "pcm" with a WAV container; decoding its header as
-                    // samples is the click at the start of every sentence.
-                    if let rate = stripWavHeader(&pending), rate != sampleRate {
-                        log.warning("kokoro stream is \(rate) Hz, player expects \(sampleRate) Hz; pitch will be off")
-                    }
-                }
+                pending.append(contentsOf: sound.feed(chunk))
                 // ~100 ms of audio per buffer keeps startup snappy without a callback storm.
                 if let buffer = drainFrames(&pending, minimum: 4800, format: format) {
                     if !firstChunkLogged {
@@ -386,6 +384,7 @@ final class KokoroPlayer {
                 }
                 if Task.isCancelled { chunks.finish(); return false }
             }
+            pending.append(contentsOf: sound.finish())
             if let buffer = drainFrames(&pending, minimum: 2, format: format) { chunks.yield(buffer) }
             chunks.finish()
             return true

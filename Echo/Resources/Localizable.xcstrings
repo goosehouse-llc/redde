@@ -19813,6 +19813,112 @@
         }
       }
     },
+    "%@'s voice: the server doesn't list others to pick from" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@s stemme: serveren viser ikke andre at vælge imellem"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@s Stimme: Der Server listet keine anderen zur Auswahl"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La voz de %@: el servidor no ofrece otras para elegir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La voix de %@ : le serveur n’en propose pas d’autres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La voce di %@: il server non ne elenca altre tra cui scegliere"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@の声：サーバーにはほかに選べる声の一覧がありません"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@의 목소리: 서버에 고를 수 있는 다른 목소리 목록이 없습니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@s stemme: serveren viser ingen andre å velge mellom"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De stem van %@: de server toont geen andere om uit te kiezen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Głos %@: serwer nie podaje innych do wyboru"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A voz de %@: o servidor não lista outras para escolher"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голос %@: сервер не предлагает другие на выбор"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@s röst: servern visar inga andra att välja bland"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sesi: sunucu seçilecek başka ses listelemiyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голос %@: сервер не пропонує інших на вибір"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@的声音：服务器没有列出其他可选的声音"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@的聲音：伺服器沒有列出其他可選的聲音"
+          }
+        }
+      }
+    },
     "%@'s wake phrase" : {
       "localizations" : {
         "da" : {
@@ -67182,6 +67288,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "任何相容 OpenAI 的端點，中間沒有代理：llama.cpp、llama-swap、vLLM、Ollama 或託管供應商。沒有工具或記憶，延遲最低。"
+          }
+        }
+      }
+    },
+    "Any other speech server that answers OpenAI's /v1/audio/speech works too: give the model it wants, and type a voice it has if it doesn't list them." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enhver anden taleserver, der svarer på OpenAIs /v1/audio/speech, virker også: angiv den model, den vil have, og skriv en stemme, den har, hvis den ikke viser dem."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeder andere Sprachserver, der OpenAIs /v1/audio/speech beantwortet, geht auch: Gib das Modell an, das er erwartet, und tippe eine seiner Stimmen ein, wenn er sie nicht auflistet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cualquier otro servidor de voz que responda a /v1/audio/speech de OpenAI también sirve: indica el modelo que pide y escribe una voz que tenga si no las enumera."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout autre serveur vocal qui répond à /v1/audio/speech d’OpenAI fonctionne aussi : indiquez le modèle qu’il attend, et tapez une de ses voix s’il ne les liste pas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funziona anche qualsiasi altro server vocale che risponde a /v1/audio/speech di OpenAI: indica il modello che vuole e scrivi una voce che ha, se non le elenca."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAIの/v1/audio/speechに応答するほかの音声サーバーも使えます。必要なモデルを入力し、声の一覧がなければ、そのサーバーにある声の名前を入力してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI의 /v1/audio/speech에 응답하는 다른 음성 서버도 쓸 수 있습니다. 서버가 원하는 모델을 입력하고, 목소리 목록이 없으면 서버에 있는 목소리 이름을 입력하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle andre taleservere som svarer på OpenAIs /v1/audio/speech, fungerer også: oppgi modellen den vil ha, og skriv inn en stemme den har hvis den ikke viser dem."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elke andere spraakserver die OpenAI’s /v1/audio/speech beantwoordt, werkt ook: geef het model op dat hij wil, en typ een stem die hij heeft als hij ze niet opsomt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Działa też każdy inny serwer mowy, który odpowiada na /v1/audio/speech OpenAI: podaj model, którego wymaga, i wpisz głos, który ma, jeśli ich nie wymienia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer outro servidor de voz que responda ao /v1/audio/speech da OpenAI também funciona: informe o modelo que ele pede e digite uma voz que ele tenha, se ele não as listar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подойдёт и любой другой сервер речи, который отвечает на /v1/audio/speech от OpenAI: укажите нужную ему модель и введите имя его голоса, если он их не перечисляет."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alla andra talservrar som svarar på OpenAI:s /v1/audio/speech fungerar också: ange modellen den vill ha och skriv en röst den har om den inte listar dem."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI’nin /v1/audio/speech isteğine yanıt veren başka herhangi bir konuşma sunucusu da olur: istediği modeli girin, sesleri listelemiyorsa sahip olduğu bir sesin adını yazın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Підійде й будь-який інший сервер мовлення, що відповідає на /v1/audio/speech від OpenAI: вкажіть потрібну йому модель і введіть ім’я його голосу, якщо він їх не перелічує."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任何响应 OpenAI /v1/audio/speech 的其他语音服务器也可以用：填上它需要的模型；如果它不列出声音，就输入它有的一个声音名称。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任何回應 OpenAI /v1/audio/speech 的其他語音伺服器也可以用：填上它需要的模型；如果它不列出聲音，就輸入它有的一個聲音名稱。"
           }
         }
       }
@@ -213049,6 +213261,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "它自己的速度"
+          }
+        }
+      }
+    },
+    "Its own voice" : {
+      "comment" : "Edit Bot → Voice: the header over a typed speech server voice",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin egen stemme"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eigene Stimme"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su propia voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sa propre voix"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sua voce"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "専用の声"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "전용 목소리"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin egen stemme"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een eigen stem"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Własny głos"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voz própria"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свой голос"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Egen röst"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kendi sesi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Власний голос"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "专属声音"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專屬聲音"
           }
         }
       }
@@ -426584,6 +426903,218 @@
         }
       }
     },
+    "This server doesn't list its voices: type the name of one it has." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveren viser ikke sine stemmer: skriv navnet på en, den har."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Server listet seine Stimmen nicht auf: Tippe den Namen einer seiner Stimmen ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este servidor no enumera sus voces: escribe el nombre de una que tenga."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce serveur ne liste pas ses voix : tapez le nom d’une voix qu’il possède."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo server non elenca le sue voci: scrivi il nome di una che ha."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このサーバーは声の一覧を出しません。サーバーにある声の名前を入力してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 서버는 목소리 목록을 제공하지 않습니다. 서버에 있는 목소리 이름을 입력하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne serveren viser ikke stemmene sine: skriv navnet på en den har."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze server somt zijn stemmen niet op: typ de naam van een stem die hij heeft."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten serwer nie wymienia swoich głosów: wpisz nazwę jednego z nich."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este servidor não lista as vozes dele: digite o nome de uma que ele tenha."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот сервер не перечисляет свои голоса: введите имя одного из них."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servern listar inte sina röster: skriv namnet på en som den har."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu sunucu seslerini listelemiyor: sahip olduğu bir sesin adını yazın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей сервер не перелічує свої голоси: введіть ім’я одного з них."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此服务器不列出它的声音：请输入它有的一个声音名称。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此伺服器不列出它的聲音：請輸入它有的一個聲音名稱。"
+          }
+        }
+      }
+    },
+    "This server doesn't list its voices. Type the name of one it has above." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveren viser ikke sine stemmer. Skriv navnet på en, den har, ovenfor."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Server listet seine Stimmen nicht auf. Tippe oben den Namen einer seiner Stimmen ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este servidor no enumera sus voces. Escribe arriba el nombre de una que tenga."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce serveur ne liste pas ses voix. Tapez ci-dessus le nom d’une voix qu’il possède."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo server non elenca le sue voci. Scrivi sopra il nome di una che ha."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このサーバーは声の一覧を出しません。上に、サーバーにある声の名前を入力してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 서버는 목소리 목록을 제공하지 않습니다. 위에 서버에 있는 목소리 이름을 입력하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne serveren viser ikke stemmene sine. Skriv navnet på en den har ovenfor."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze server somt zijn stemmen niet op. Typ hierboven de naam van een stem die hij heeft."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten serwer nie wymienia swoich głosów. Wpisz powyżej nazwę jednego z nich."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este servidor não lista as vozes dele. Digite acima o nome de uma que ele tenha."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот сервер не перечисляет свои голоса. Введите выше имя одного из них."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servern listar inte sina röster. Skriv namnet på en som den har ovan."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu sunucu seslerini listelemiyor. Yukarıya sahip olduğu bir sesin adını yazın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей сервер не перелічує свої голоси. Введіть вище ім’я одного з них."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此服务器不列出它的声音。请在上方输入它有的一个声音名称。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此伺服器不列出它的聲音。請在上方輸入它有的一個聲音名稱。"
+          }
+        }
+      }
+    },
     "This server has no profile by that name; it may have been renamed or deleted. Pick another under Settings → Profile." : {
       "localizations" : {
         "da" : {
@@ -447060,6 +447591,113 @@
         }
       }
     },
+    "Use This Voice" : {
+      "comment" : "Edit Bot → Voice: use the typed speech server voice",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brug denne stemme"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Stimme verwenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar esta voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser cette voix"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa questa voce"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この声を使う"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 목소리 사용"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bruk denne stemmen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik deze stem"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Użyj tego głosu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar esta voz"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Использовать этот голос"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd den här rösten"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu sesi kullan"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Використати цей голос"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用这个声音"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用這個聲音"
+          }
+        }
+      }
+    },
     "Use Where I Am" : {
       "localizations" : {
         "da" : {
@@ -451214,6 +451852,113 @@
         }
       }
     },
+    "Voice name" : {
+      "comment" : "Edit Bot → Voice: a speech server's voice, typed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmens navn"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name der Stimme"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre de la voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom de la voix"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome della voce"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "声の名前"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "목소리 이름"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmens navn"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naam van de stem"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nazwa głosu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome da voz"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя голоса"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Röstens namn"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ses adı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ім’я голосу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "声音名称"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聲音名稱"
+          }
+        }
+      }
+    },
     "Voice on iPhone 11 and iPhone SE" : {
       "localizations" : {
         "da" : {
@@ -451853,6 +452598,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "清晰"
+          }
+        }
+      }
+    },
+    "Voices" : {
+      "comment" : "A speech server's voices, as it names them",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmer"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stimmen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voces"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voix"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voci"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "声"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "목소리"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stemmen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Głosy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vozes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голоса"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Röster"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голоси"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "声音"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聲音"
           }
         }
       }
