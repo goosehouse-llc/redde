@@ -46,4 +46,47 @@ final class TodayStripUITests: XCTestCase {
         brief.tap()
         XCTAssertTrue(app.navigationBars.buttons["Done"].waitForExistence(timeout: 5), "The briefing didn't open")
     }
+
+    /// 2026-11-11: a held tile lifted the whole row, every tile with it. Its menu opens, with the
+    /// tile's own colour on it; the screenshots kept with the result show what lifted (only the
+    /// held tile, since the fix) and the tile in teal.
+    func testHoldingATileOpensItsMenu() {
+        let app = openDrawer()
+        let brief = app.buttons.matching(NSPredicate(format: "label MATCHES %@", #"^\d{1,2}:\d{2}\s?[AP]M.*"#)).firstMatch
+        XCTAssertTrue(brief.waitForExistence(timeout: 5), "No briefing tile")
+        brief.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Later"].waitForExistence(timeout: 5), "No menu")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "held-tile"
+        shot.lifetime = .keepAlways
+        add(shot)
+        // Its own colour (asked 2026-11-11), from the same menu.
+        app.buttons["Tile Color"].tap()
+        XCTAssertTrue(app.buttons["Like the Other Tiles"].waitForExistence(timeout: 5), "No colours")
+        app.buttons["Teal"].tap()
+        let colored = XCTAttachment(screenshot: app.screenshot())
+        colored.name = "teal-tile"
+        colored.lifetime = .keepAlways
+        add(colored)
+        // Back to the others' colour, so the next run starts plain.
+        brief.press(forDuration: 1.2)
+        app.buttons["Tile Color"].tap()
+        app.buttons["Like the Other Tiles"].tap()
+    }
+
+    /// 2026-11-11: holding the second tile (a to-do list after the inbox) brought up the first's
+    /// menu: the strip is one row of the list, and a row keeps one hold menu. Each tile has its own.
+    func testHoldingTheSecondTileOpensItsOwnMenu() {
+        let app = openDrawer()
+        let goal = tile(app, "Run a 10K by March")
+        XCTAssertTrue(goal.waitForExistence(timeout: 5), "No goal tile")
+        reach(app, goal)
+        goal.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Tile Color"].waitForExistence(timeout: 5), "No menu")
+        XCTAssertFalse(app.buttons["Later"].exists, "The briefing's menu came up for the goal")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "held-goal"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
 }

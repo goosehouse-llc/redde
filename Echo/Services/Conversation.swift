@@ -823,7 +823,11 @@ final class Conversation {
     /// issue 40). And it asks the session itself, by id, not by hunting the session list for its
     /// row: a bot's chat is hidden and every list leaves those out, so for one of those the list
     /// never answered and nothing was fetched at all (GitHub issue 66).
-    func catchUp() async {
+    ///
+    /// `always` (asked 2026-11-11: "Can we just have it auto refresh as soon as the app opens"):
+    /// when Redde opens, or comes back from the background, the open chat is read again whatever
+    /// the host says, so a reply from another device is there without waiting on the check.
+    func catchUp(always: Bool = false) async {
         await initialLoad?.value   // at launch the conversation may still be coming off the disk
         guard connection.hasLedger, !isStreaming, let stored = serverSessionID else { return }
         defer { catchingUp = nil }
@@ -831,9 +835,9 @@ final class Conversation {
         let stillHere: @MainActor () throws -> Void = { [weak self] in
             guard let self, self.serverSessionID == stored, !self.isStreaming else { throw CancellationError() }
         }
-        if endsUnanswered {
+        if endsUnanswered || always {
             catchingUp = .loading
-            try? await Self.untilReachable { try stillHere(); try await self.open(serverSession: stored) }
+            try? await Self.untilReachable { try stillHere(); try await self.reloadOpen(stored) }
             return
         }
         catchingUp = .checking
@@ -843,7 +847,20 @@ final class Conversation {
                                  newest: messages.last(where: { !$0.isAside })?.createdAt),
               serverSessionID == stored, !isStreaming else { return }
         catchingUp = .loading
-        try? await open(serverSession: stored)
+        try? await reloadOpen(stored)
+    }
+
+    /// Reads the open chat again from the host, in the store it lives in: a bot's chat by its bot,
+    /// another profile's by that profile, under the name it has. Read again by its id alone, a
+    /// bot's chat on the Hermes API was looked for in the main profile, which hasn't got it, and
+    /// stayed as it was (2026-11-11, the iPad not showing the newest message).
+    func reloadOpen(_ stored: String) async throws {
+        let summary = HermesSessionsAPI.SessionSummary(id: stored, title: name)
+        if connection == .hermesSessions {
+            try await loadLedgerSession(summary, bot: bot, elsewhere: elsewhere)
+        } else {
+            try await loadServeSession(summary, bot: bot, elsewhere: elsewhere)
+        }
     }
 
     /// Tries again, a little later each time, while what failed was the connection: just after
@@ -963,7 +980,7 @@ final class Conversation {
         guard let seen, written > seen else { return false }
         let here = [messages.last(where: { !$0.isAside })?.createdAt, ownTurnEndedAt].compactMap { $0 }.max()
         guard Self.serverIsAhead(lastActive: written.timeIntervalSince1970, newest: here) else { return false }
-        try? await open(serverSession: stored)
+        try? await reloadOpen(stored)
         return true
     }
 

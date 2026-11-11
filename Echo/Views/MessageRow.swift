@@ -1147,7 +1147,10 @@ private struct ReplyPress<Menu: View, Palette: View>: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .contextMenu { if !inline { menu() } }
+            // No menu at all where the press selects: an empty one still shrinks the reply as the
+            // finger goes down, and on the iPad its press took the touch from the selection
+            // (2026-11-11). The optional form drops it without changing the view's identity.
+            .contextMenu(inline ? nil : ContextMenu { menu() })
             #if os(iOS)
             .gesture(ReplyLongPress { if inline { onPress($0) } })
             #endif

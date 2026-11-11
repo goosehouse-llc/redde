@@ -248,6 +248,16 @@ enum CronBackend {
         }
     }
 
+    /// Changes when a job runs and nothing else (Change Time, 2026-11-11): Hermes reads the new
+    /// schedule and works out the next run from it, on both backends.
+    func reschedule(_ id: String, schedule: String, profile: String? = nil) async throws {
+        let fields: JSONValue = .object(["schedule": .string(schedule)])
+        switch self {
+        case .serve: _ = try await HermesServeClient.shared.restJSON("PUT", Self.scoped("api/cron/jobs/\(id)", profile), body: .object(["updates": fields]))
+        case let .apiServer(api): _ = try await api.requestJSON("PATCH", "api/jobs/\(id)", body: fields)
+        }
+    }
+
     /// Renames a job and changes nothing else (both backends take a name alone).
     func rename(_ id: String, to name: String, profile: String? = nil) async throws {
         let fields: JSONValue = .object(["name": .string(name)])

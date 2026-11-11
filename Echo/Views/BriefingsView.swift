@@ -35,6 +35,12 @@ final class BriefingsInbox {
             if DevHooks.value("-echo.demoBriefings") == "day" { briefings.insert(Self.demoDayBrief, at: 0) }
             // `-echo.demoBriefings report`: a watch's long report first, as a model writes one (`ReportView`).
             if DevHooks.value("-echo.demoBriefings") == "report" { briefings.insert(Self.demoReport, at: 0) }
+            // `-echo.demoBriefings weather`: a weather run first, its place on its first line (plugin 1.26.0).
+            if DevHooks.value("-echo.demoBriefings") == "weather" {
+                briefings.insert(AgentBriefing(id: "demo/wx", title: "Weather before your day", agent: "Sol",
+                                               text: "WEATHER: Orlando, FL\n\n**Warm and mostly dry.** A shower is possible after 4 PM; take an umbrella for the walk home.",
+                                               at: .now.addingTimeInterval(-60), failed: false), at: 0)
+            }
             // `-echo.demoBriefings wrapup`: the wrap-up first.
             if DevHooks.value("-echo.demoBriefings") == "wrapup" { briefings.insert(briefings.removeLast(), at: 0) }
             // `-echo.openBriefing`: the first one open, a moment after launch.
@@ -259,6 +265,7 @@ extension AgentBriefing {
         if isHeadsUp { return "bell.badge" }
         if title == EveningWrapUp.title { return "moon.stars" }
         if dayBrief != nil { return "calendar" }
+        if forecastPlace != nil { return "cloud.sun" }
         return "doc.text"
     }
 
@@ -268,7 +275,7 @@ extension AgentBriefing {
     var isAboutTheDay: Bool {
         if isHeadsUp || dayBrief != nil || week != nil || [EveningWrapUp.title, WeekAhead.title].contains(title) { return true }
         let words = Set(title.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init))
-        return !words.isDisjoint(with: ["brief", "briefing", "morning", "evening", "daily", "today", "tonight", "agenda", "wrap", "schedule", "calendar"])
+        return !words.isDisjoint(with: ["brief", "briefing", "morning", "evening", "daily", "today", "tonight", "agenda", "wrap", "schedule", "calendar", "weather", "forecast"])
     }
 
     /// What the person's word on it is about, for the jobs that make them (`AgentFeedback`): a
@@ -465,8 +472,10 @@ struct BriefingCard: View {
                 if let found = briefing.mapPlace {
                     Label(found.address, systemImage: "mappin.and.ellipse").chatFont(.footnote, weight: .medium).lineLimit(1)
                 }
+                let forecast = briefing.forecastPlace
+                if let forecast { BriefingForecast(place: forecast, compact: true) }
                 Text(briefing.plainText).chatFont(.subheadline).opacity(0.75)
-                    .lineLimit(briefing.startsAt == nil && briefing.mapPlace == nil ? 4 : 2)
+                    .lineLimit(briefing.startsAt == nil && briefing.mapPlace == nil && forecast == nil ? 4 : 2)
                 Spacer(minLength: 0)
             }
         }
@@ -600,6 +609,7 @@ extension AgentBriefing {
         if isHeadsUp { return "bell.badge.fill" }
         if title == EveningWrapUp.title { return "moon.stars.fill" }
         if title == WeekAhead.title || dayBrief != nil { return "calendar" }
+        if forecastPlace != nil { return "cloud.sun.fill" }
         return "doc.text.fill"
     }
 }
@@ -642,6 +652,7 @@ struct BriefingSheet: View {
     let briefing: AgentBriefing
     @Environment(\.dismiss) private var dismiss
     @State private var noted = 0
+    @State private var retiming = false
 
     var body: some View {
         NavigationStack {
@@ -658,6 +669,7 @@ struct BriefingSheet: View {
                         WeekCalendarView(plan: week)
                     } else {
                         if let day = briefing.dayBrief { DayBriefAgenda(brief: day) }
+                        if let place = briefing.forecastPlace { BriefingForecast(place: place) }
                         if let starts = briefing.startsAt { EventCard(briefing: briefing, starts: starts) }
                         // Under the day's card, only what it doesn't show already.
                         let words = briefing.dayBrief == nil ? briefing.shownText : DayBrief.withoutSchedule(briefing.shownText)
@@ -689,6 +701,14 @@ struct BriefingSheet: View {
                 ToolbarItem(placement: .secondaryAction) {
                     Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = briefing.text }
                 }
+                if briefing.job != nil {
+                    // When its job runs (asked 2026-11-11).
+                    ToolbarItem(placement: .secondaryAction) {
+                        Button { retiming = true } label: {
+                            Label { Text("Change Time…", comment: "A briefing's menu: pick when its job runs") } icon: { Image(systemName: "clock.arrow.circlepath") }
+                        }
+                    }
+                }
                 if briefing.openableRun != nil {
                     // The run's own session, to ask on in it (GitHub issue 62).
                     ToolbarItem(placement: .secondaryAction) {
@@ -709,6 +729,7 @@ struct BriefingSheet: View {
                 }
             }
             .sensoryFeedback(.success, trigger: noted)
+            .sheet(isPresented: $retiming) { BriefingTimeSheet(briefing: briefing) }
         }
     }
 }

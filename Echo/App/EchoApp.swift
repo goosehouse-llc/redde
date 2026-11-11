@@ -46,6 +46,8 @@ struct EchoApp: App {
     @State private var settings = Settings.shared
     @State private var lock = AppLock.shared
     @Environment(\.scenePhase) private var scenePhase
+    /// Redde has come forward once in this run: the first time is its opening.
+    @State private var cameForwardBefore = false
 
     var body: some Scene {
         WindowGroup {
@@ -106,8 +108,12 @@ struct EchoApp: App {
                     WhereYouAre.shared.cameForward()   // notes come here while Redde is on screen
                     WatchLink.shared.push()   // settings may have changed since the watch last heard
                     // The app may have been closed while the agent worked: a conversation left
-                    // without its reply fetches it, or picks the turn up where it stands.
-                    Task { await conversation.catchUp() }
+                    // without its reply fetches it, or picks the turn up where it stands. Opened,
+                    // or back from the background, the open chat is read again outright (asked
+                    // 2026-11-11); back from a glance at Control Center, only if the host moved on.
+                    let opened = !Conversation.appIsActive || !cameForwardBefore
+                    cameForwardBefore = true
+                    Task { await conversation.catchUp(always: opened) }
                     Conversation.appIsActive = true
                     conversation.watchOtherDevices()   // and keeps up while it is open (another device's turns)
                     Task { await CaptureInbox.shared.file() }   // notes taken offline

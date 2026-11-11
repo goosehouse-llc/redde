@@ -162,4 +162,36 @@ struct AgentBriefingsTests {
         #expect(EveningWrapUp.name.hasPrefix("[redde-notify] "), "its answer reaches the phone")
         #expect(!HeadsUps.name.hasPrefix("[redde-notify]"), "the morning's planning says nothing itself")
     }
+
+    /// 2026-11-11: the weather before the day as the weather card. The plugin sends the place its
+    /// run named (`e`); a `WEATHER:` line that reaches the phone is taken out of the words.
+    @Test func aWeatherBriefingNamesItsForecastsPlace() throws {
+        let store = defaults()
+        let json: [String: Any] = ["v": 1, "k": "routine", "at": 1_800_000_000, "p": "default", "t": "Weather before your day",
+                                   "b": "Warm and dry.", "x": "brief", "i": "wx", "e": "Orlando, FL"]
+        #expect(AgentBriefing.take(try JSONDecoder().decode(PushNote.self, from: JSONSerialization.data(withJSONObject: json)),
+                                   now: Date(timeIntervalSince1970: 1_800_000_100), in: store))
+        let kept = try #require(AgentBriefing.all(in: store, now: Date(timeIntervalSince1970: 1_800_000_100)).first)
+        #expect(kept.weather == "Orlando, FL")
+        #expect(kept.forecastPlace == "Orlando, FL")
+        #expect(kept.isAboutTheDay)
+        var sent = AgentBriefing(id: "wx/2", title: "Morning", agent: "Sol", text: "**WEATHER: Paris**\n\nRain by noon.", at: .now, failed: false)
+        #expect(sent.forecastPlace == "Paris")
+        #expect(sent.shownText == "Rain by noon.")
+        sent.failed = true
+        #expect(sent.forecastPlace == nil, "a run that failed has no forecast")
+        let plain = AgentBriefing(id: "b/1", title: "Morning", agent: "Sol", text: "Weather: sunny, 84°.\nThe vet at 3.", at: .now, failed: false)
+        #expect(plain.forecastPlace == nil, "a line of the brief in its own words isn't the card's")
+        #expect(plain.shownText.hasPrefix("Weather: sunny"))
+        #expect(AgentBriefing.namesWeather("Morning forecast") && !AgentBriefing.namesWeather("Evening wrap-up"))
+    }
+
+    @Test func theTodayTilesColourIsSavedByItsName() {
+        for choice in Settings.TodayColor.allCases { #expect(Settings.TodayColor(rawValue: choice.rawValue) == choice) }
+        #expect(Settings.TodayColor(rawValue: "") == .plain)
+        #expect(Settings.TodayColor(rawValue: "yellow") == .color(.yellow))
+        #expect(Settings.TodayColor(rawValue: "nothing") == nil)
+        let names = Settings.TodayColor.allCases.map(\.rawValue)
+        #expect(Set(names).count == names.count, "Plain once")
+    }
 }

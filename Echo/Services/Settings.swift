@@ -584,6 +584,52 @@ final class Settings: ServeEndpoint {
     var cardColor: CardColor {
         didSet { store(cardColor.rawValue, forKey: Keys.cardColor) }
     }
+    /// Settings → Appearance → Today Tiles (asked 2026-11-11: "allow me the option to change the
+    /// color of the Today tabs in the drawer"): the chat list's Today tiles on the theme's surface,
+    /// each washed in its own kind's colour (the inbox the accent, a list green, a briefing
+    /// yellow, a goal its bot's), or all in one of the cards' colours, solid ones solid.
+    enum TodayColor: Hashable, Identifiable, RawRepresentable {
+        case plain, byKind
+        case color(CardColor)
+        static var allCases: [TodayColor] { [.plain, .byKind] + CardColor.allCases.filter { $0 != .plain }.map(TodayColor.color) }
+        init?(rawValue: String) {
+            switch rawValue {
+            case "plain", "": self = .plain
+            case "byKind": self = .byKind
+            default:
+                guard let color = CardColor(rawValue: rawValue), color != .plain else { return nil }
+                self = .color(color)
+            }
+        }
+        var rawValue: String {
+            switch self {
+            case .plain: "plain"
+            case .byKind: "byKind"
+            case let .color(color): color.rawValue
+            }
+        }
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .plain: CardColor.plain.label
+            case .byKind: String(localized: "By Kind", comment: "Today Tiles setting: each tile in its own kind's colour (the inbox, a list, a briefing, a goal)")
+            case let .color(color): color.label
+            }
+        }
+    }
+    var todayColor: TodayColor {
+        didSet { store(todayColor.rawValue, forKey: Keys.todayColor) }
+    }
+    /// One tile's own colour, picked on its hold menu (asked 2026-11-11), by the tile's key
+    /// (`TodayStrip`'s "inbox", "list:<id>", "brief:<job>", "goal:<id>"): a `TodayColor` raw
+    /// value; a tile not in it follows `todayColor`.
+    var todayTileColors: [String: String] {
+        didSet { store(todayTileColors, forKey: Keys.todayTileColors) }
+    }
+    /// The colour a Today tile is drawn in.
+    func todayColor(forTile key: String) -> TodayColor {
+        todayTileColors[key].flatMap(TodayColor.init(rawValue:)) ?? todayColor
+    }
     /// Settings → Appearance → Card Appearance (asked 2026-11-06: "Allow for light dark selection
     /// on calendar and other cards"): cards drawn light or dark whatever the app is, or as it is.
     /// A solid card colour (white, black) keeps its own.
@@ -1014,6 +1060,8 @@ final class Settings: ServeEndpoint {
         static let botColors = "botColors"
         static let eventColor = "eventColor"
         static let cardColor = "cardColor"
+        static let todayColor = "todayColor"
+        static let todayTileColors = "todayTileColors"
         static let cardAppearance = "cardAppearance"
         static let chatFont = "chatFont"
         static let agendaCalendars = CalendarChoice.key
@@ -1136,6 +1184,8 @@ final class Settings: ServeEndpoint {
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
         eventColor = EventColor(rawValue: defaults.string(forKey: Keys.eventColor) ?? "") ?? .byCalendar
         cardColor = CardColor(rawValue: defaults.string(forKey: Keys.cardColor) ?? "") ?? .plain
+        todayColor = TodayColor(rawValue: defaults.string(forKey: Keys.todayColor) ?? "") ?? .plain
+        todayTileColors = defaults.dictionary(forKey: Keys.todayTileColors) as? [String: String] ?? [:]
         cardAppearance = Appearance(rawValue: defaults.string(forKey: Keys.cardAppearance) ?? "") ?? .system
         chatFont = ChatFont(rawValue: defaults.string(forKey: Keys.chatFont) ?? "") ?? .theme
         agendaCalendars = defaults.stringArray(forKey: Keys.agendaCalendars) ?? []
@@ -1215,7 +1265,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.cardAppearance, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.cardAppearance, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.pinnedModels, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
@@ -1245,6 +1295,8 @@ final class Settings: ServeEndpoint {
         case Keys.botColors: botColors = flag(true)
         case Keys.eventColor: eventColor = pick(EventColor.byCalendar)
         case Keys.cardColor: cardColor = pick(CardColor.plain)
+        case Keys.todayColor: todayColor = pick(TodayColor.plain)
+        case Keys.todayTileColors: todayTileColors = value as? [String: String] ?? [:]
         case Keys.cardAppearance: cardAppearance = pick(Appearance.system)
         case Keys.chatFont: chatFont = pick(ChatFont.theme)
         case Keys.agendaCalendars: agendaCalendars = value as? [String] ?? []
@@ -1560,6 +1612,8 @@ final class Settings: ServeEndpoint {
         botColors = true
         eventColor = .byCalendar
         cardColor = .plain
+        todayColor = .plain
+        todayTileColors = [:]
         cardAppearance = .system
         agendaCalendars = []
         currentLocation = false

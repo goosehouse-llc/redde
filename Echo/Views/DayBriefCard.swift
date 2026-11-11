@@ -16,15 +16,17 @@ extension AgentBriefing {
         /// frame of a deck's drag before (UAT 2.3.1 review, 2026-10-31).
         let plain: String
         let day: DayBrief?
+        /// The place a `WEATHER:` line named, taken out of `shown`.
+        let weather: String?
     }
 
     private static var readings: [String: Reading] = [:]
 
     private var reading: Reading {
         if let kept = Self.readings[id], kept.text == text { return kept }
-        let shown = DayBrief.withoutNarration(text)
+        let (shown, weather) = Self.withoutWeatherLine(DayBrief.withoutNarration(text))
         let reading = Reading(text: text, shown: shown, plain: PlainText.display(shown),
-                              day: readsAsDay ? DayBrief.read(title: title, text: shown, at: at) : nil)
+                              day: readsAsDay ? DayBrief.read(title: title, text: shown, at: at) : nil, weather: weather)
         Self.readings[id] = reading
         return reading
     }
@@ -37,6 +39,36 @@ extension AgentBriefing {
 
     /// One day's calendar, when it reads as one.
     var dayBrief: DayBrief? { reading.day }
+
+    /// Where its forecast card is for (asked 2026-11-11: the weather before the day "as the weather
+    /// card, not just text"): the place the run named (the plugin's `WEATHER:` line, 1.26.0), or,
+    /// for a job named for the weather, where the phone is, with Current Location on. Nil for any
+    /// other briefing, and for one that failed.
+    var forecastPlace: String? {
+        guard !failed, !isHeadsUp else { return nil }
+        let named = weather ?? reading.weather
+        if let named, !CurrentLocation.meansHere(named) { return named }
+        guard named != nil || Self.namesWeather(title), CurrentLocation.standIn(for: "here") != nil else { return nil }
+        return CurrentLocation.kept()?.words ?? "here"
+    }
+
+    /// A job's name about the weather ("Weather before your day", "Morning forecast").
+    static func namesWeather(_ title: String) -> Bool {
+        let words = Set(title.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init))
+        return !words.isDisjoint(with: ["weather", "forecast"])
+    }
+
+    /// A first line `WEATHER: Orlando, FL` out of the words, and its place: as the plugin asks a
+    /// run to write it, bold or not, in capitals ("Weather: sunny" is a line of the brief). The
+    /// plugin takes it out itself; one that reaches the phone is taken out here.
+    static func withoutWeatherLine(_ text: String) -> (text: String, place: String?) {
+        let trimmed = text.drop { $0.isWhitespace }
+        let line = trimmed.prefix { !$0.isNewline }
+        guard let match = line.wholeMatch(of: /\s*[*_]*\s*WEATHER\s*:\s*[*_]*\s*(.+?)\s*[*_]*\s*/) else { return (text, nil) }
+        let place = String(match.1).trimmingCharacters(in: CharacterSet(charactersIn: "*_ ."))
+        let rest = String(trimmed.dropFirst(line.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        return (rest, place.isEmpty || place.count > 120 ? nil : place)
+    }
 
     /// A briefing with a look of its own isn't read as a day: a heads-up (its event's card), the
     /// Week Ahead (`WeekPlan`), the wrap-up, Morning Ideas; nor one that failed.

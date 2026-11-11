@@ -765,6 +765,73 @@ func shade(light: (Double, Double, Double), dark: (Double, Double, Double)) -> C
 
 // MARK: - Weather
 
+/// A briefing's forecast (asked 2026-11-11: the weather before the day "as the weather card, not
+/// just text"): looked up on the phone for the place the run named, as a reply's card is
+/// (`CardLookup`), so it is the forecast as it stands when looked at. The whole card in the
+/// briefing's sheet; the reading now in a strip on the deck's card (`compact`), or in a line on
+/// a Today tile (`line`).
+struct BriefingForecast: View {
+    let place: String
+    var compact = false
+    var line = false
+    @State private var card: ReplyCard.Weather?
+    @State private var tried = false
+
+    private var units: String { MeasureUnits.temperature }
+    private var blank: ReplyCard.Weather { .init(place: place, units: units, now: nil, hours: [], days: []) }
+
+    var body: some View {
+        Group {
+            if let card, card.hasReading {
+                if line { brief(card) } else if compact { glance(card) } else { WeatherCard(card: card) }
+            } else if !compact && !line {
+                WeatherCard(card: blank, pending: !tried)
+            } else {
+                // Something to hang the lookup on: an empty group runs no task.
+                Color.clear.frame(width: 0, height: 0)
+            }
+        }
+        .task(id: place + units) {
+            if case let .weather(found)? = await CardLookup.shared.fill([.weather(blank)]).first, found.hasReading { card = found }
+            tried = true
+        }
+    }
+
+    private func brief(_ card: ReplyCard.Weather) -> some View {
+        HStack(spacing: 4) {
+            if let now = card.now {
+                Image(systemName: WeatherCard.symbol(now.condition, night: now.night == true)).symbolRenderingMode(.multicolor)
+                Text(verbatim: (now.temperature.nearestInt.map(String.init) ?? "–") + "°").monospacedDigit()
+                if let high = now.high?.nearestInt, let low = now.low?.nearestInt {
+                    Text(verbatim: "\(high)° / \(low)°").monospacedDigit().foregroundStyle(.secondary)
+                }
+            }
+        }
+        .lineLimit(1).minimumScaleFactor(0.8)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func glance(_ card: ReplyCard.Weather) -> some View {
+        let shown = WeatherCard.Shown(card)
+        return HStack(spacing: 10) {
+            if let now = card.now {
+                Image(systemName: WeatherCard.symbol(now.condition, night: now.night == true))
+                    .symbolRenderingMode(.multicolor).chatFont(size: 30).frame(width: 40)
+                Text(verbatim: (now.temperature.nearestInt.map(String.init) ?? "–") + "°")
+                    .chatFont(size: 34, weight: .light, design: .rounded).monospacedDigit()
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                if !shown.sky.isEmpty { Text(shown.sky).chatFont(.subheadline, weight: .semibold).lineLimit(1).minimumScaleFactor(0.8) }
+                Text(shown.callout?.title ?? card.place).chatFont(.footnote).opacity(0.75).lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 6).padding(.horizontal, 10)
+        .background(.white.opacity(0.4), in: .rect(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// The weather somewhere (its look approved 2026-10-30): the reading now in large type; a callout
 /// when rain is likely in the hours ahead; those hours, each with how likely rain is drawn to
 /// scale; then the next days on the week's scale. What it shows is worked out once, as the card is

@@ -14,6 +14,8 @@ struct TodayStrip: View {
     @State private var briefings = BriefingsInbox.shared
     @State private var lists = TodayLists.shared
     @AppStorage("chatList.open.today") private var isOpen = true
+    /// A briefing whose job's time is being changed (asked 2026-11-11).
+    @State private var retiming: AgentBriefing?
     @Environment(\.theme) private var theme
 
     static let tileWidth: CGFloat = 150
@@ -43,6 +45,7 @@ struct TodayStrip: View {
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                     .selectionDisabled()
+                    .sheet(item: $retiming) { BriefingTimeSheet(briefing: $0) }
                 }
             } header: {
                 FoldingHeader(title: String(localized: "Today", comment: "The chat list's row of tiles: the inbox, briefings and goals"),
@@ -60,12 +63,10 @@ struct TodayStrip: View {
             : [important > 0 ? String(localized: "\(important) important", comment: "The chat list's Inbox row") : nil,
                reply > 0 ? String(localized: "\(reply) to answer", comment: "The chat list's Inbox row") : nil]
                 .compactMap(\.self).joined(separator: " · ")
-        return Button { mail.showingInbox = true } label: {
-            TodayTile(kind: Text("Inbox", comment: "The chat list's row for email"), symbol: "envelope.fill", tint: theme.accent,
-                      title: account.unread > 0 ? String(localized: "\(account.unread) new", comment: "Today strip: unread emails") : String(localized: "All read", comment: "Today strip: no unread email"),
-                      detail: line)
-        }
-        .buttonStyle(.plain)
+        let tile = TodayTile(key: "inbox", kind: Text("Inbox", comment: "The chat list's row for email"), symbol: "envelope.fill", tint: theme.accent, wash: theme.accent,
+                             title: account.unread > 0 ? String(localized: "\(account.unread) new", comment: "Today strip: unread emails") : String(localized: "All read", comment: "Today strip: no unread email"),
+                             detail: line)
+        return tileButton(tile, open: { mail.showingInbox = true }) { TileColorMenu(key: tile.key) }
         .accessibilityHint(Text("Opens your email", comment: "VoiceOver hint: the chat list's Inbox row"))
     }
 
@@ -77,12 +78,9 @@ struct TodayStrip: View {
         let detail = open.isEmpty
             ? (list.items.isEmpty ? String(localized: "Nothing on it yet", comment: "Today strip: an empty to-do list") : "")
             : open.prefix(4).map(\.text).formatted(.list(type: .and, width: .narrow))
-        return Button { lists.shownID = list.id } label: {
-            TodayTile(kind: kind, symbol: open.isEmpty && !list.items.isEmpty ? "checkmark.circle.fill" : "checklist",
-                      tint: .green, title: list.title, detail: detail)
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
+        let tile = TodayTile(key: "list:" + list.id, kind: kind, symbol: open.isEmpty && !list.items.isEmpty ? "checkmark.circle.fill" : "checklist",
+                             tint: .green, wash: .green, title: list.title, detail: detail)
+        return tileButton(tile, open: { lists.shownID = list.id }) {
             if !list.finished.isEmpty {
                 Button { lists.clearDone(in: list) } label: {
                     Label { Text("Clear Done", comment: "A to-do list: remove the items checked off") } icon: { Image(systemName: "checkmark.circle.badge.xmark") }
@@ -91,6 +89,7 @@ struct TodayStrip: View {
             Button(role: .destructive) { lists.delete(list) } label: {
                 Label { Text("Delete List", comment: "A to-do list: delete the whole list") } icon: { Image(systemName: "trash") }
             }
+            TileColorMenu(key: tile.key)
         }
         .accessibilityHint(Text("Opens the list", comment: "VoiceOver hint: a to-do list's tile on the chat list"))
     }
@@ -103,12 +102,10 @@ struct TodayStrip: View {
             }
             return briefing.plainText.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
         }()
-        return Button { briefings.show(briefing) } label: {
-            TodayTile(kind: Text(verbatim: when), symbol: briefing.failed ? "exclamationmark.triangle.fill" : briefing.symbol,
-                      tint: briefing.failed ? .red : .yellow, title: briefing.heading, detail: detail)
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
+        let tile = TodayTile(key: "brief:" + briefing.jobKey, kind: Text(verbatim: when), symbol: briefing.failed ? "exclamationmark.triangle.fill" : briefing.symbol,
+                             tint: briefing.failed ? .red : .yellow, wash: briefing.failed ? .red : .yellow, title: briefing.heading, detail: detail,
+                             forecast: briefing.forecastPlace)
+        return tileButton(tile, open: { briefings.show(briefing) }) {
             Button { briefings.markJobRead(briefing) } label: {
                 Label { Text("Done") } icon: { Image(systemName: "checkmark") }
             }
@@ -120,36 +117,84 @@ struct TodayStrip: View {
                     Label { Text("All Briefings") } icon: { Image(systemName: "list.bullet") }
                 }
             }
+            if briefing.job != nil {
+                Button { retiming = briefing } label: {
+                    Label { Text("Change Time…", comment: "A briefing's menu: pick when its job runs") } icon: { Image(systemName: "clock.arrow.circlepath") }
+                }
+            }
+            TileColorMenu(key: tile.key)
         }
+    }
+
+    /// A tile that opens on a tap and holds up its own menu on a press. A menu button, not a
+    /// context menu: the strip is one row of the list, and a row keeps one context menu, so a
+    /// press on any tile lifted the whole row (2026-11-11) and then, with a menu on each tile,
+    /// brought up the first tile's menu whichever was pressed.
+    private func tileButton<Items: View>(_ tile: TodayTile, open: @escaping () -> Void,
+                                         @ViewBuilder menu: () -> Items) -> some View {
+        Menu { menu() } label: { tile } primaryAction: { open() }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
     }
 
     private func goalTile(_ goal: GoalReport) -> some View {
         let face = DeckCard.face(profile: goal.profile)
         let color = BotAvatar.colors(of: face, theme: theme).deep
-        return Button { openGoal(goal) } label: {
-            TodayTile(kind: goal.total > 0 ? Text("\(goal.done) of \(goal.total) steps", comment: "Today strip: a goal's progress")
+        let tile = TodayTile(key: "goal:" + goal.id, kind: goal.total > 0 ? Text("\(goal.done) of \(goal.total) steps", comment: "Today strip: a goal's progress")
                                            : Text("Goal", comment: "Today strip: a goal's tile"),
-                      ring: (goal.done, goal.total, color),
+                      ring: (goal.done, goal.total, color), wash: color,
                       title: goal.title,
                       detail: goal.next.map { String(localized: "Next: \($0)", comment: "Today strip: a goal's next step") }
                           ?? GoalReport.plain(goal.headline))
-        }
-        .buttonStyle(.plain)
+        return tileButton(tile, open: { openGoal(goal) }) { TileColorMenu(key: tile.key) }
     }
 }
 
 /// One tile of the Today strip: what it is (a symbol or a goal's ring, and a word), a line in bold
-/// and a line under it, on the theme's surface.
+/// and a line under it, on the theme's surface, in the colour Settings → Appearance → Today Tiles
+/// gives it (`wash` its kind's own).
 private struct TodayTile: View {
+    /// Which tile it is, for its own colour (`Settings.todayTileColors`).
+    let key: String
     let kind: Text
     var symbol: String?
     var tint: Color = .accentColor
     var ring: (done: Int, total: Int, color: Color)?
+    var wash: Color = .accentColor
     let title: String
     let detail: String
+    /// A weather briefing's place: its reading now, in a line over the words.
+    var forecast: String?
     @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        let choice = Settings.shared.todayColor(forTile: key)
+        let solid: (color: Color, scheme: ColorScheme)? = if case let .color(card) = choice, let drawn = card.solid, let color = card.color(in: theme) {
+            (color, drawn)
+        } else { nil }
+        let tinted: Color? = switch choice {
+        case .plain: nil
+        case .byKind: wash
+        case let .color(card): solid == nil ? card.color(in: theme) : nil
+        }
+        content
+            .environment(\.colorScheme, solid?.scheme ?? scheme)
+            .background {
+                let shape = RoundedRectangle(cornerRadius: 16)
+                if let solid {
+                    shape.fill(solid.color)
+                } else {
+                    shape.fill(theme.surfaceColor)
+                    if let tinted { shape.fill(tinted.opacity(scheme == .dark ? 0.3 : 0.2)) }
+                }
+            }
+            .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.separator.opacity(0.6), lineWidth: 0.5) }
+            .contentShape(.rect(cornerRadius: 16))
+            .accessibilityElement(children: .combine)
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 if let ring {
@@ -162,16 +207,38 @@ private struct TodayTile: View {
             .chatFont(.caption, weight: .semibold)
             .foregroundStyle(.secondary)
             Spacer(minLength: 0)
-            Text(title).chatFont(.subheadline, weight: .semibold).lineLimit(2)
+            Text(title).chatFont(.subheadline, weight: .semibold).lineLimit(forecast == nil ? 2 : 1)
+            if let forecast { BriefingForecast(place: forecast, line: true).chatFont(.subheadline, weight: .semibold) }
             if !detail.isEmpty {
-                Text(detail).chatFont(.caption).foregroundStyle(.secondary).lineLimit(2)
+                Text(detail).chatFont(.caption).foregroundStyle(.secondary).lineLimit(forecast == nil ? 2 : 1)
             }
         }
         .padding(12)
         .frame(width: TodayStrip.tileWidth, height: TodayStrip.tileHeight, alignment: .topLeading)
-        .background(theme.surfaceColor, in: .rect(cornerRadius: 16))
-        .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.separator.opacity(0.6), lineWidth: 0.5) }
-        .contentShape(.rect(cornerRadius: 16))
-        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A Today tile's own colour, on its hold menu (asked 2026-11-11): like the others (Settings →
+/// Appearance → Today Tiles), plain, or one of the colours.
+private struct TileColorMenu: View {
+    let key: String
+    @State private var settings = Settings.shared
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Picker(selection: Binding(get: { settings.todayTileColors[key] ?? "" },
+                                  set: { settings.todayTileColors[key] = $0.isEmpty ? nil : $0 })) {
+            Text("Like the Other Tiles", comment: "A Today tile's colour menu: follow Settings → Appearance → Today Tiles").tag("")
+            ForEach(Settings.TodayColor.allCases.filter { $0 != .byKind }) { choice in
+                if case let .color(card) = choice, let color = card.color(in: theme) {
+                    Label { Text(choice.label) } icon: { Image(systemName: "circle.fill").foregroundStyle(color) }.tag(choice.rawValue)
+                } else {
+                    Text(choice.label).tag(choice.rawValue)
+                }
+            }
+        } label: {
+            Label { Text("Tile Color", comment: "A Today tile's hold menu: the colour of this one tile") } icon: { Image(systemName: "paintpalette") }
+        }
+        .pickerStyle(.menu)
     }
 }

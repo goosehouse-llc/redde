@@ -200,6 +200,8 @@ struct ComingUpList: View {
     /// A job's full details (its sheet), and one being edited from them.
     @State private var details: CronJob?
     @State private var editing: CronJob?
+    /// A job whose time is being changed (Change Time, 2026-11-11).
+    @State private var retiming: CronJob?
 
     private var upcoming: [ComingUp.Item] { model.items.filter { !$0.paused } }
     private var paused: [ComingUp.Item] { model.items.filter(\.paused) }
@@ -274,6 +276,7 @@ struct ComingUpList: View {
             }
         }
         .sheet(item: $editing) { job in CronJobEditor(job: job) { await model.load() } }
+        .sheet(item: $retiming) { job in JobTimeSheet(job: job) { Task { await model.load() } } }
         .confirmationDialog(dialogTitle, isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
                             titleVisibility: .visible, presenting: asking) { item in
             if ComingUp.skipWay(item, now: .now) == .cancel {
@@ -331,6 +334,9 @@ struct ComingUpList: View {
         .contextMenu {
             if let job = item.job {
                 Button(String(localized: "Details"), systemImage: "info.circle") { details = job }
+                Button { retiming = job } label: {
+                    Label { Text("Change Time…", comment: "A briefing's menu: pick when its job runs") } icon: { Image(systemName: "clock.arrow.circlepath") }
+                }
                 Divider()
             }
             actions(item, swipe: false)

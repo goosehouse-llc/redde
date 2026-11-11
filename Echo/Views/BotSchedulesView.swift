@@ -183,25 +183,7 @@ struct RoutineEditor: View {
                 } footer: {
                     Text("As you would ask it in its chat. Its answer comes into the chat, with a notification.")
                 }
-                Section("When") {
-                    if let custom {
-                        LabeledContent("Schedule", value: custom)
-                        Button("Pick a Time Instead") { self.custom = nil }
-                    } else {
-                        Picker("Repeat", selection: $when.repeats) {
-                            ForEach(RoutineWhen.Repeat.allCases) { Text($0.title).tag($0) }
-                        }
-                        switch when.repeats {
-                        case .hours:
-                            Stepper(String(localized: "Every \(when.everyHours) hours"), value: $when.everyHours, in: 1 ... 23)
-                        case .once:
-                            DatePicker("At", selection: $when.once, in: Date.now..., displayedComponents: [.date, .hourAndMinute])
-                        default:
-                            DatePicker("At", selection: timeOfDay, displayedComponents: .hourAndMinute)
-                            if when.repeats == .weekly { weekdays }
-                        }
-                    }
-                }
+                RoutineWhenSection(when: $when, custom: $custom)
                 if let job {
                     // Which model it runs on (Run On, 2026-11-03), in the bot's own store.
                     RunOnSection(job: { var mine = job; mine.profile = mine.profile ?? bot.name; return mine }(), changed: onDone)
@@ -233,32 +215,6 @@ struct RoutineEditor: View {
         .interactiveDismissDisabled(working)
     }
 
-    /// The hour and minute, as a time picker shows them.
-    private var timeOfDay: Binding<Date> {
-        Binding(get: {
-            Calendar.current.date(bySettingHour: when.hour, minute: when.minute, second: 0, of: .now) ?? .now
-        }, set: { date in
-            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-            when.hour = parts.hour ?? 7
-            when.minute = parts.minute ?? 0
-        })
-    }
-
-    private var weekdays: some View {
-        HStack(spacing: 6) {
-            ForEach(0 ..< 7, id: \.self) { day in
-                let on = when.days.contains(day)
-                Button(Calendar.current.veryShortWeekdaySymbols[day]) {
-                    if on, when.days.count > 1 { when.days.remove(day) } else { when.days.insert(day) }
-                }
-                .buttonStyle(.bordered)
-                .tint(on ? .accentColor : .secondary)
-                .accessibilityLabel(Calendar.current.weekdaySymbols[day])
-                .accessibilityAddTraits(on ? .isSelected : [])
-            }
-        }
-    }
-
     private func fill() {
         guard let job, title.isEmpty else { return }
         title = job.title
@@ -282,6 +238,62 @@ struct RoutineEditor: View {
                 dismiss()
             } catch {
                 problem = error.localizedDescription
+            }
+        }
+    }
+}
+
+/// When a job runs, in a form: how often, and the time (and days, or the date for a one-off); a
+/// schedule Redde can't put in its own words is shown as it is until the person picks a time. A
+/// bot's routine (`RoutineEditor`) and Change Time (`JobTimeSheet`) both use it.
+struct RoutineWhenSection: View {
+    @Binding var when: RoutineWhen
+    @Binding var custom: String?
+
+    var body: some View {
+        Section("When") {
+            if let custom {
+                LabeledContent("Schedule", value: custom)
+                Button("Pick a Time Instead") { self.custom = nil }
+            } else {
+                Picker("Repeat", selection: $when.repeats) {
+                    ForEach(RoutineWhen.Repeat.allCases) { Text($0.title).tag($0) }
+                }
+                switch when.repeats {
+                case .hours:
+                    Stepper(String(localized: "Every \(when.everyHours) hours"), value: $when.everyHours, in: 1 ... 23)
+                case .once:
+                    DatePicker("At", selection: $when.once, in: Date.now..., displayedComponents: [.date, .hourAndMinute])
+                default:
+                    DatePicker("At", selection: timeOfDay, displayedComponents: .hourAndMinute)
+                    if when.repeats == .weekly { weekdays }
+                }
+            }
+        }
+    }
+
+    /// The hour and minute, as a time picker shows them.
+    private var timeOfDay: Binding<Date> {
+        Binding(get: {
+            Calendar.current.date(bySettingHour: when.hour, minute: when.minute, second: 0, of: .now) ?? .now
+        }, set: { date in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            when.hour = parts.hour ?? 7
+            when.minute = parts.minute ?? 0
+        })
+    }
+
+    private var weekdays: some View {
+        HStack(spacing: 6) {
+            ForEach(0 ..< 7, id: \.self) { day in
+                let on = when.days.contains(day)
+                Button(Calendar.current.veryShortWeekdaySymbols[day]) {
+                    if on, when.days.count > 1 { when.days.remove(day) } else { when.days.insert(day) }
+                }
+                .buttonStyle(.bordered)
+                .tint(on ? .accentColor : .secondary)
+                .accessibilityLabel(Calendar.current.weekdaySymbols[day])
+                .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
     }

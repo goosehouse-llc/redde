@@ -126,6 +126,9 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     /// On a briefing's (Redde's plugin 1.21.1): the session its run was in, which a tap can open
     /// (`Settings.briefingTapsOpenRun`, GitHub issue 62).
     var j: String?
+    /// On a briefing's (Redde's plugin 1.26.0): the place its weather is for, from the run's
+    /// `WEATHER:` line ("here" for where the person is), for the forecast card.
+    var e: String?
 
     nonisolated struct Idea: Codable, Equatable, Sendable {
         var t: String?

@@ -29,6 +29,8 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
     var job: String?
     /// The session its run was in (the note's `j`, plugin 1.21.1), to ask on in it (GitHub issue 62).
     var runSession: String?
+    /// Where its weather is for (the note's `e`, plugin 1.26.0): Redde shows the forecast card.
+    var weather: String?
 
     /// The run's session, where the app can open it: the main agent's (a bot's is in its own
     /// profile, which a session id alone doesn't reach).
@@ -96,6 +98,7 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
         briefing.profile = note.p
         briefing.job = note.i.flatMap { $0.isEmpty ? nil : $0 }
         briefing.runSession = note.j.flatMap { $0.isEmpty ? nil : $0 }
+        briefing.weather = note.e.flatMap { $0.isEmpty ? nil : String($0.prefix(120)) }
         // A job the person said not to show (`JobNotices`): not kept at all.
         if JobNotices.choice(for: briefing.jobKey, in: defaults) == .hidden { return false }
         var before = all(in: defaults, now: now).filter { $0.id != briefing.id }
