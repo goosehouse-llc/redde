@@ -704,6 +704,8 @@ final class GroupFeed {
     /// Approvals and retries answered here and not yet gone from the state: their cards hide.
     private(set) var answering: Set<String> = []
     private(set) var problem: String?
+    /// When reading the room first failed for a dropped connection, while it still does.
+    @ObservationIgnored private var droppedSince: Date?
     /// Replies being written now (`GroupDraft`), each until the room has it.
     private(set) var drafts: [GroupDraft] = []
     /// Each live session's last event read.
@@ -810,6 +812,7 @@ final class GroupFeed {
             if let current, !current.members.isEmpty, current.members != room.members { room.members = current.members }
             if state != self.state { self.state = state }
             if problem != nil { problem = nil }
+            droppedSince = nil
         } catch {
             failed(error)
         }
@@ -819,18 +822,29 @@ final class GroupFeed {
     /// completed" said nothing). A read that was cut short as the screen changed is no problem at
     /// all (nil); a connection that dropped is said as that, and the room is read again by itself;
     /// anything else in its own words, which name Hermes's refusal or the answer Redde couldn't read.
-    nonisolated static func words(for error: Error, sending: Bool = false) -> String? {
+    /// Reads go on every few seconds with no last try, so a drop that lasts says so: after
+    /// `stillDown`, "Still can't reach Hermes (since 4:12 PM)." (`droppedSince`, the first failed read).
+    nonisolated static func words(for error: Error, sending: Bool = false, droppedSince: Date? = nil, now: Date = .now) -> String? {
         if error is CancellationError || (error as? URLError)?.code == .cancelled { return nil }
         if NetworkFailure.isConnectivity(error) {
-            return sending ? String(localized: "Couldn't send: the connection to Hermes dropped. Send it again in a moment.")
-                           : String(localized: "The connection to Hermes dropped. Redde is trying again.")
+            if sending { return String(localized: "Couldn't send: the connection to Hermes dropped. Send it again in a moment.") }
+            if let droppedSince, now.timeIntervalSince(droppedSince) >= stillDown {
+                let since = droppedSince.formatted(date: .omitted, time: .shortened)
+                return String(localized: "Still can't reach Hermes (since \(since)).",
+                              comment: "Under a group chat: every read of the room has failed for a while; when the first one did, e.g. 4:12 PM")
+            }
+            return String(localized: "The connection to Hermes dropped. Redde is trying again.")
         }
         return sending ? String(localized: "Couldn't send: \(error.localizedDescription)") : error.localizedDescription
     }
 
+    /// How long reads fail before the line says the drop is lasting (GitHub issue 71).
+    nonisolated static let stillDown: TimeInterval = 30
+
     /// One of the room's calls failed: said, unless there is nothing to say.
     private func failed(_ error: Error, sending: Bool = false) {
-        if let words = Self.words(for: error, sending: sending) { problem = words }
+        if !sending, NetworkFailure.isConnectivity(error), droppedSince == nil { droppedSince = .now }
+        if let words = Self.words(for: error, sending: sending, droppedSince: droppedSince) { problem = words }
     }
 
     /// Each Hermes Desktop message's number here, by its key: the same message keeps its row.
@@ -848,6 +862,7 @@ final class GroupFeed {
             let fresh = Self.events(of: room, numbering: &desktopSeqs)
             if fresh != events { events = fresh }
             if problem != nil { problem = nil }
+            droppedSince = nil
         } catch {
             failed(error)
         }

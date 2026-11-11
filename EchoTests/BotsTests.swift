@@ -466,6 +466,12 @@ struct BotsTests {
         #expect(GroupFeed.words(for: TransportError.unreachable("not connected to Hermes Dashboard")) == "The connection to Hermes dropped. Redde is trying again.")
         #expect(GroupFeed.words(for: CancellationError()) == nil)
         #expect(GroupFeed.words(for: URLError(.cancelled)) == nil)
+        // Reads go on with no last try: a drop that lasts says since when (issue 71's follow-up).
+        let down = Date(timeIntervalSince1970: 1_762_900_000)
+        #expect(GroupFeed.words(for: gone, droppedSince: down, now: down.addingTimeInterval(10)) == "The connection to Hermes dropped. Redde is trying again.")
+        let since = down.formatted(date: .omitted, time: .shortened)
+        #expect(GroupFeed.words(for: gone, droppedSince: down, now: down.addingTimeInterval(GroupFeed.stillDown)) == "Still can't reach Hermes (since \(since)).")
+        #expect(GroupFeed.words(for: gone, sending: true, droppedSince: down, now: down.addingTimeInterval(300)) == "Couldn't send: the connection to Hermes dropped. Send it again in a moment.")
         let refused = HermesServeClient.RPCError(code: 4001, message: "invalid_params")
         #expect(GroupFeed.words(for: refused) == "invalid_params (4001)")
         #expect(GroupFeed.words(for: refused, sending: true) == "Couldn't send: invalid_params (4001)")
