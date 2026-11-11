@@ -32,9 +32,17 @@ nonisolated enum PhotoLook {
     }
 
     /// The text in the picture, as far as it could be read with some confidence.
-    static func text(in picture: CGImage) async throws -> String {
+    /// Whether the quick reading knows the person's language: it reads English, French, Italian,
+    /// German, Spanish and Portuguese only, so anyone else's library is read carefully throughout.
+    nonisolated static var readsQuickly: Bool {
+        ["en", "fr", "it", "de", "es", "pt"].contains(Locale.preferredLanguages.first.map { Locale(identifier: $0).language.languageCode?.identifier ?? "" } ?? "")
+    }
+
+    /// `carefully` reads slowly and well; otherwise quickly, for working through the library
+    /// (several times less work for the phone, and enough to find a receipt or a sign by).
+    static func text(in picture: CGImage, carefully: Bool = true) async throws -> String {
         var request = RecognizeTextRequest()
-        request.recognitionLevel = .accurate
+        request.recognitionLevel = carefully ? .accurate : .fast
         request.automaticallyDetectsLanguage = true
         let lines = try await request.perform(on: picture).compactMap { $0.topCandidates(1).first }.filter { $0.confidence >= 0.5 }
         return String(lines.map(\.string).joined(separator: " ").prefix(600))

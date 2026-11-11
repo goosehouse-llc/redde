@@ -1,6 +1,9 @@
 import Foundation
 import Observation
 import Photos
+#if os(iOS)
+import BackgroundTasks
+#endif
 #if canImport(UIKit)
 import UIKit
 #else
@@ -17,7 +20,9 @@ import os
 /// when Photos is turned off in Settings → Phone tools. Pictures are looked at newest first: a
 /// search waits a while for the ones it asks about (`cover`), and the rest are worked through
 /// while Redde is open (`catchUp`), slower, and not at all while the phone is saving power or
-/// running hot.
+/// running hot. On battery only the newest pictures are worked through, one at a time; the rest
+/// wait for the charger, while Redde is open or overnight in the background (`PhotoLooking`).
+/// It was hours of the phone's hardest work on a large library (battery review, 2026-11-11).
 actor PhotoIndex {
     static let shared = PhotoIndex()
 
@@ -42,7 +47,8 @@ actor PhotoIndex {
     }
 
     private let file: URL
-    private let look: @Sendable (Mark) async throws -> PhotoSeen
+    /// Looks at a picture; `pressing` when a search waits for it (its text read more carefully).
+    private let look: @Sendable (Mark, _ pressing: Bool) async throws -> PhotoSeen
     private var known: [String: (edited: Double, seen: PhotoSeen)]?
     private var handle: FileHandle?
     /// Asked about by a search, and everything else; both with the next one to look at last.
@@ -53,11 +59,20 @@ actor PhotoIndex {
     /// Pictures that couldn't be looked at: left alone until Redde is next started.
     private var failed: Set<String> = []
     private var waitingForEase = false
+    /// On the charger (or a Mac): the whole library is worked through, two at a time. On battery,
+    /// only the newest `onBattery` pictures, one at a time.
+    private var charging = true
+    private var recent: Set<String> = []
+    nonisolated static let onBattery = 200
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "photo-index")
 
     init(file: URL? = nil, look: (@Sendable (Mark) async throws -> PhotoSeen)? = nil) {
         self.file = file ?? URL.applicationSupportDirectory.appending(path: "PhotoIndex/seen.jsonl")
-        self.look = look ?? { try await PhotoIndex.lookInLibrary($0) }
+        if let look {
+            self.look = { @Sendable mark, _ in try await look(mark) }
+        } else {
+            self.look = { @Sendable mark, pressing in try await PhotoIndex.lookInLibrary(mark, pressing: pressing) }
+        }
     }
 
     // MARK: - What is known
@@ -162,8 +177,24 @@ actor PhotoIndex {
         let gone = all.keys.count(where: { !ids.contains($0) })
         if gone > max(50, all.count / 10) { tidy(keeping: ids) }
         backlog = marks.filter { !isCurrent($0) && !failed.contains($0.id) }.reversed()
+        recent = Set(marks.prefix(Self.onBattery).map(\.id))
         pump()
     }
+
+    /// On the charger or off it: the rest of the library is worked through, or waits for it.
+    func setCharging(_ on: Bool) {
+        guard on != charging else { return }
+        charging = on
+        pump()
+    }
+
+    /// Whether pictures are left that wait for the charger (the background run's to do).
+    func waitsForCharger() -> Bool { !backlog.isEmpty && !charging }
+
+    /// Whether any of the library is still to be looked at.
+    func hasBacklog() -> Bool { !backlog.isEmpty }
+    /// On battery with nothing going: what is left waits for the charger.
+    func idleOnBattery() -> Bool { !charging && running.isEmpty && urgent.isEmpty }
 
     /// Stops working through the library. What a search asks about is still looked at.
     func rest() { backlog = [] }
@@ -186,7 +217,10 @@ actor PhotoIndex {
             }
             return nil
         }
-        while let mark = backlog.popLast() {
+        while let mark = backlog.last {
+            // On battery the newest alone; the rest stay for the charger.
+            if !charging, !recent.contains(mark.id) { return nil }
+            backlog.removeLast()
             if !running.contains(mark.id), !isCurrent(mark), !failed.contains(mark.id) { return mark }
         }
         return nil
@@ -198,12 +232,13 @@ actor PhotoIndex {
     }
 
     private func pump() {
-        // A search has three going at once; the library is worked through two at a time.
-        while running.count < (urgent.isEmpty ? 2 : 3), let mark = next() {
+        // A search has three going at once; the library is worked through two at a time on the
+        // charger, one on battery.
+        while running.count < (urgent.isEmpty ? (charging ? 2 : 1) : 3), let mark = next() {
             running.insert(mark.id)
             let pressing = awaited.contains(mark.id)
             Task.detached(priority: pressing ? .userInitiated : .utility) { [look] in
-                let seen = try? await look(mark)
+                let seen = try? await look(mark, pressing)
                 await self.finished(mark, seen)
             }
         }
@@ -235,13 +270,14 @@ actor PhotoIndex {
     /// Looks at one picture in the library: what is in it, from the small copy the phone always
     /// has, and its text when it is the kind of picture that has some, from a larger one. A
     /// picture whose larger copy is only in iCloud is not fetched for this, and goes unread.
-    nonisolated static func lookInLibrary(_ mark: Mark) async throws -> PhotoSeen {
+    /// The library's own text is read quickly; a picture a search waits for, carefully.
+    nonisolated static func lookInLibrary(_ mark: Mark, pressing: Bool) async throws -> PhotoSeen {
         guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [mark.id], options: nil).firstObject,
               let small = await picture(of: asset, edge: PhotoLook.glance) else { throw DeviceToolError("The picture couldn't be looked at.") }
         var seen = PhotoSeen(labels: try await PhotoLook.labels(in: small))
         if asset.mediaType == .image, asset.mediaSubtypes.contains(.photoScreenshot) || PhotoLook.hasSomethingToRead(seen.labels),
            let large = await picture(of: asset, edge: PhotoLook.reading) {
-            seen.text = (try? await PhotoLook.text(in: large)) ?? ""
+            seen.text = (try? await PhotoLook.text(in: large, carefully: pressing || !PhotoLook.readsQuickly)) ?? ""
         }
         return seen
     }
@@ -260,7 +296,8 @@ actor PhotoIndex {
 }
 
 /// Keeps the library being looked at while Redde is open and Photos is on in Settings → Phone
-/// tools, and says how far that has got.
+/// tools, and says how far that has got. On battery only the newest pictures are looked at; the
+/// rest while the phone is charging, with Redde open or overnight (`registerOvernight`).
 @Observable
 final class PhotoLooking {
     static let shared = PhotoLooking()
@@ -272,6 +309,7 @@ final class PhotoLooking {
     private(set) var isWorking = false
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private let index: PhotoIndex
+    @ObservationIgnored private var powerWatch: NSObjectProtocol?
 
     init(index: PhotoIndex = .shared) { self.index = index }
 
@@ -286,19 +324,33 @@ final class PhotoLooking {
         }
         let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         guard task == nil, status == .authorized || status == .limited else { return }
+        watchPower()
+        let charging = Self.isCharging
         task = Task { [weak self, index] in
-            let marks = await Task.detached(priority: .utility) { PhotoIndex.library() }.value
-            await index.catchUp(marks)
-            while !Task.isCancelled {
-                let standing = await index.standing()
-                self?.total = marks.count
-                self?.looked = min(standing.looked, marks.count)
-                self?.isWorking = standing.waiting > 0
-                if standing.waiting == 0 { break }
-                try? await Task.sleep(for: .seconds(1))
-            }
+            await index.setCharging(charging)
+            await self?.work(index)
             if !Task.isCancelled { self?.task = nil }
         }
+    }
+
+    /// Works through the library until it is done or there is nothing more to do now.
+    private func work(_ index: PhotoIndex) async {
+        let marks = await Task.detached(priority: .utility) { PhotoIndex.library() }.value
+        await index.catchUp(marks)
+        while !Task.isCancelled {
+            let standing = await index.standing()
+            total = marks.count
+            looked = min(standing.looked, marks.count)
+            // What waits for the charger is left for it: no reason to keep asking meanwhile.
+            let waits = await index.waitsForCharger(), idle = await index.idleOnBattery()
+            let parked = waits && idle
+            isWorking = standing.waiting > 0 && !parked
+            if standing.waiting == 0 || parked { break }
+            try? await Task.sleep(for: .seconds(1))
+        }
+        #if os(iOS)
+        if await index.hasBacklog() { Self.scheduleOvernight() }
+        #endif
     }
 
     /// Redde has left the screen.
@@ -307,4 +359,66 @@ final class PhotoLooking {
         task = nil
         Task { [index] in await index.rest() }
     }
+
+    // MARK: The charger
+
+    private static var isCharging: Bool {
+        #if os(iOS)
+        let state = UIDevice.current.batteryState
+        return state == .charging || state == .full
+        #else
+        return true
+        #endif
+    }
+
+    private func watchPower() {
+        #if os(iOS)
+        guard powerWatch == nil else { return }
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        powerWatch = NotificationCenter.default.addObserver(forName: UIDevice.batteryStateDidChangeNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated {
+                let looking = PhotoLooking.shared
+                let charging = Self.isCharging
+                Task { [index = looking.index] in await index.setCharging(charging) }
+                // Plugged in with Redde open: the rest of the library now.
+                if charging, looking.task == nil, Conversation.appIsActive { looking.resume() }
+            }
+        }
+        #endif
+    }
+
+    // MARK: Overnight (the iPhone's)
+
+    #if os(iOS)
+    /// The background run's identifier, in `BGTaskSchedulerPermittedIdentifiers`.
+    nonisolated static let overnightID = "com.goosehouse.echo.photos"
+
+    /// At launch, before it finishes (`PushDelegate`): the library looked through on the
+    /// charger while the phone isn't in use, as iOS chooses (overnight, as a rule).
+    nonisolated static func registerOvernight() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: overnightID, using: .main) { task in
+            nonisolated(unsafe) let task = task
+            let work = Task { @MainActor in
+                let looking = PhotoLooking.shared
+                guard Settings.shared.phoneTools.access(.photos) != .off else { task.setTaskCompleted(success: true); return }
+                await looking.index.setCharging(true)
+                await looking.work(looking.index)
+                await looking.index.rest()
+                task.setTaskCompleted(success: !Task.isCancelled)
+            }
+            task.expirationHandler = {
+                work.cancel()
+                Task { await PhotoIndex.shared.rest() }
+            }
+        }
+    }
+
+    static func scheduleOvernight() {
+        guard !ProcessInfo.processInfo.isiOSAppOnMac else { return }
+        let request = BGProcessingTaskRequest(identifier: overnightID)
+        request.requiresExternalPower = true
+        request.requiresNetworkConnectivity = false
+        try? BGTaskScheduler.shared.submit(request)   // the simulator refuses it
+    }
+    #endif
 }

@@ -192,6 +192,27 @@ struct PhotoSearchTests {
         #expect(await index.standing().waiting == 0)
     }
 
+    /// On battery only the newest pictures are looked at; the rest wait for the charger, and are
+    /// looked at once it is plugged in (battery review, 2026-11-11).
+    @Test func onBatteryOnlyTheNewestAreLookedAt() async throws {
+        let looker = Looker()
+        let index = PhotoIndex(file: Self.file()) { try await looker.look($0) }
+        await index.setCharging(false)
+        let library = (0 ..< (PhotoIndex.onBattery + 30)).map { PhotoIndex.Mark(id: "p\($0)") }
+        await index.catchUp(library)
+        for _ in 0 ..< 400 where !(await index.idleOnBattery() && looker.looks.count >= PhotoIndex.onBattery) {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(looker.looks.count == PhotoIndex.onBattery)
+        #expect(looker.looks["p0"] == 1, "newest first")
+        #expect(looker.looks["p\(PhotoIndex.onBattery)"] == nil)
+        #expect(await index.waitsForCharger())
+        await index.setCharging(true)
+        for _ in 0 ..< 400 where await index.standing().waiting > 0 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(looker.looks.count == library.count)
+        #expect(!(await index.waitsForCharger()))
+    }
+
     // MARK: What the person is told
 
     @Test func askingSaysWhatTheAgentIsTold() {

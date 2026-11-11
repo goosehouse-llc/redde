@@ -966,9 +966,18 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     /// A bar button that does whatever its place on the bar does now (`barKinds`).
     private func barButton(slot: Int) -> CPBarButton {
-        CPBarButton(title: " ") { [weak self] _ in
+        Self.barButton { [weak self] in
             guard let self, let kind = self.barKinds[slot] else { return }
             self.pressed(kind)
+        }
+    }
+
+    /// CarPlay can call a bar button's handler off the main queue (an XPC queue: Stop crashed
+    /// the app on the main-actor check, issue #67). Formed here, nonisolated, the handler goes
+    /// to the main actor before it touches anything.
+    private nonisolated static func barButton(_ press: @escaping @MainActor () -> Void) -> CPBarButton {
+        CPBarButton(title: " ") { _ in
+            Task { @MainActor in press() }
         }
     }
 

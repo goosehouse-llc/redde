@@ -6,6 +6,7 @@
 	<array>
 		<string>com.goosehouse.echo.turn.*</string>
 		<string>com.goosehouse.echo.leaveby</string>
+		<string>com.goosehouse.echo.photos</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>

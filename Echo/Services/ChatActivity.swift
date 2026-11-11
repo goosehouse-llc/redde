@@ -224,8 +224,40 @@ final class ChatActivity {
         guard listener == nil else { return }
         listener = dashboard.addListener { [weak self] event in
             guard event.type == "sessions.changed" else { return }
-            MainActor.assumeIsolated { self?.changes += 1 }
+            MainActor.assumeIsolated {
+                self?.changes += 1
+                self?.wake()
+            }
         }
+    }
+
+    /// Whether anything is under way, here or on the host: the list looks often while so.
+    func isBusy(_ conversation: Conversation) -> Bool {
+        !live.isEmpty || !liveRooms.isEmpty || conversation.isStreaming || conversation.pendingInterrupt != nil
+    }
+
+    @ObservationIgnored private var napping: CheckedContinuation<Void, Never>?
+
+    /// Waits this long, or until the Dashboard says its conversations changed, whichever is
+    /// first: the list can wait long between looks while nothing is happening and still mark a
+    /// turn another device starts at once.
+    func nap(for wait: Duration) async {
+        wake()
+        let timer = Task { [weak self] in
+            try? await Task.sleep(for: wait)
+            self?.wake()
+        }
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { napping = $0 }
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.wake() }
+        }
+        timer.cancel()
+    }
+
+    private func wake() {
+        napping?.resume()
+        napping = nil
     }
 
     // MARK: - Telling it

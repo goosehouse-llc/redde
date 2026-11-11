@@ -155,6 +155,7 @@ targets:
         BGTaskSchedulerPermittedIdentifiers:
           - com.goosehouse.echo.turn.*
           - com.goosehouse.echo.leaveby
+          - com.goosehouse.echo.photos
         # `audio`: a voice conversation goes on when Redde isn't in front — the car screen switched
         # to navigation, the phone locked in a pocket — so listening and the spoken reply aren't
         # cut off with the foreground. Without it iOS stops the microphone and silences playback.

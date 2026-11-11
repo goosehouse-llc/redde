@@ -34,6 +34,7 @@ struct ConversationsList: View {
     @State private var store = ConversationStore.shared
     /// Working, Needs you and Unread, for the rows.
     @State private var activity = ChatActivity.shared
+    @State private var pace = Pace.shared
     @State private var settings = Settings.shared
     @State private var drafts = Drafts.shared
     @State private var ledger: [HermesSessionsAPI.SessionSummary] = []
@@ -604,7 +605,7 @@ struct ConversationsList: View {
         .onChange(of: isShowing) { _, showing in
             if showing, usesLedger { Task { await refresh() } }
         }
-        .modifier(WatchingActivity(key: "\(settings.connectionKey)|\(isShowing)|\(scenePhase == .active)",
+        .modifier(WatchingActivity(key: "\(settings.connectionKey)|\(isShowing)|\(scenePhase == .active && pace.onScreen)",
                                    openID: conversation.serverSessionID, watch: watchActivity, opened: openChanged))
         .onChange(of: query, initial: true) { filterLedger() }
         .task(id: "\(query)|\(settings.connectionKey)") { await searchMessages() }
@@ -2147,7 +2148,7 @@ struct ConversationsList: View {
     /// one waiting on the person), and the conversations fetched again when a turn ends or, at
     /// most every thirty seconds, when the Dashboard says they changed.
     private func watchActivity() async {
-        guard usesLedger, isShowing, scenePhase == .active else { return }
+        guard usesLedger, isShowing, scenePhase == .active, pace.onScreen else { return }
         #if DEBUG
         if DevHooks.demoProjects { return }
         #endif
@@ -2169,7 +2170,8 @@ struct ConversationsList: View {
                 // whole list was fetched again for each bot's turn, some seven calls a time).
                 await groups.refresh()
                 activity.listed(groups.rooms)
-            } else if botsHere, settings.showBots, Date.now.timeIntervalSince(botsAt) >= 15 {
+            } else if botsHere, settings.showBots,
+                      Date.now.timeIntervalSince(botsAt) >= (activity.isBusy(conversation) ? 15 : (pace.saving ? 180 : 60)) {
                 // The bots' chats and workers, which the gateway's list doesn't all show (a bot's
                 // worker runs on its own): their last activity, now and then.
                 botsAt = .now
@@ -2182,8 +2184,11 @@ struct ConversationsList: View {
                     activity.listed(groups.rooms)
                 }
             }
-            // A host that can't be asked is asked less often.
-            try? await Task.sleep(for: reached ? .seconds(4) : .seconds(30))
+            // Every few seconds while something is under way; while nothing is, now and then, or
+            // at once when the Dashboard says its conversations changed (a turn another device
+            // started). A host that can't be asked is asked less often.
+            await activity.nap(for: reached ? pace.wait(busy: activity.isBusy(conversation), .seconds(4), idle: .seconds(20))
+                                             : pace.wait(busy: false, .seconds(30), idle: .seconds(30)))
         }
     }
 

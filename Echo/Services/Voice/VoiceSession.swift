@@ -257,6 +257,9 @@ final class VoiceSession {
     /// How long a wait for the reply holds the screen on. Past it the phone may lock: the reply
     /// carries on regardless, and a screen held on through a ten-minute task is a flat battery.
     var awakeWhileThinking: Duration = .seconds(120)
+    /// On a call that goes on locked: how long the screen stays on after the voice last started
+    /// or stopped talking.
+    var awakeInCall: Duration = .seconds(60)
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "voice")
     private var metrics = VoiceMetrics()
     private var replyTask: Task<Void, Never>?
@@ -728,6 +731,21 @@ final class VoiceSession {
     private func updateScreenAwake() {
         awakeTimeout?.cancel()
         awakeTimeout = nil
+        // A call that goes on with the phone locked needn't hold the screen on for the whole of
+        // it, its face drawn all the while: a minute after the voice last started or stopped
+        // talking, auto-lock has it back (battery review, 2026-11-11). One that would hang up
+        // when locked keeps the screen on, as before.
+        if live != nil, liveWhenLocked() {
+            let on = phase != .idle && !isErrored
+            setScreenAwake(on)
+            guard on else { return }
+            awakeTimeout = Task { [weak self, awakeInCall] in
+                try? await Task.sleep(for: awakeInCall)
+                guard let self, !Task.isCancelled, live != nil else { return }
+                setScreenAwake(false)
+            }
+            return
+        }
         let wanted: Bool
         switch phase {
         case .listening: wanted = true

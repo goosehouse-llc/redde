@@ -55,6 +55,9 @@ final class WakeListener {
     /// Not before then: after it couldn't open, or an interruption.
     @ObservationIgnored private var retryAt = ContinuousClock.now
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
+    /// Voices heard that weren't a wake phrase, lately (`WakeEase`): a television, a podcast or
+    /// passengers raise the bar, and with it the speech analysis's work (battery review, 2026-11-11).
+    @ObservationIgnored private var ease = WakeEase()
 
     /// How long it holds before it opens afresh: one analyzer for hours on end isn't asked of it
     /// anywhere else.
@@ -102,6 +105,7 @@ final class WakeListener {
 
     /// Looks at once whether it should be listening (a setting changed), rather than at the next tick.
     func evaluate() {
+        keepTicking()
         let want = wanted()
         if want, !running, ContinuousClock.now >= retryAt {
             start()
@@ -171,17 +175,23 @@ final class WakeListener {
         leavingScene = leaving
         evaluate()
         leavingScene = nil
+        keepTicking(leaving: leaving)
+    }
+
+    /// The ticker, while wake phrases are on and a scene is in front; none with them off.
+    private func keepTicking(leaving: ObjectIdentifier? = nil) {
         let anyInFront = UIApplication.shared.connectedScenes.contains {
             $0.activationState == .foregroundActive && ObjectIdentifier($0) != leaving
         }
-        if anyInFront, ticker == nil {
+        if anyInFront, Settings.shared.wakeListening, ticker == nil {
             ticker = Task { [weak self] in
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .seconds(2))
+                    guard Settings.shared.wakeListening else { self?.ticker = nil; return }
                     self?.evaluate()
                 }
             }
-        } else if !anyInFront {
+        } else if !anyInFront || !Settings.shared.wakeListening {
             ticker?.cancel()
             ticker = nil
         }
@@ -267,8 +277,8 @@ final class WakeListener {
     /// with no echo cancellation; the car's noise sets its own floor. A start, to be tuned on the phone.
     private func watch() {
         var detector = BargeInDetector(minimum: -46)
-        detector.margin = 12
-        detector.hold = 0.12
+        detector.margin = ease.margin
+        detector.hold = ease.hold
         detector.settle = 0.3
         detector.rearm()
         recognizer.watchForVoice(detector) { [weak self] in self?.voiceHeard() }
@@ -276,6 +286,11 @@ final class WakeListener {
 
     private func voiceHeard() {
         guard running, recognizer.state == .holding else { return }
+        // Resting after a run of voices that were never a phrase: heard, not transcribed.
+        guard !ease.resting(at: .now) else {
+            watch()
+            return
+        }
         recognizer.beginTranscribing(withHeldAudio: true, endsOnSilence: false)
         #if DEBUG
         note("a voice: transcribing")
@@ -313,6 +328,7 @@ final class WakeListener {
                     note(text.isEmpty ? "nothing in it" : "not a wake phrase", said: text.nilIfEmpty)
                     #endif
                     recognizer.holdAgain(finalizing: true)
+                    if let changed = ease.falseStart(at: .now) { note(changed) }
                     watch()
                     return
                 }
@@ -323,6 +339,7 @@ final class WakeListener {
             let wordless = now - changedAt
             guard (wordless > .seconds(1) && now - loudAt > .milliseconds(500)) || wordless > .seconds(3)
                     || now - phrase.at > .seconds(15) else { continue }
+            ease.heard()
             let final = await recognizer.stop()
             ended(final, volatile: said, heard: phrase.target)
             return
@@ -351,5 +368,54 @@ final class WakeListener {
         } else {
             LaunchRouter.shared.requestWake(profile: target.profile, asking: asking)
         }
+    }
+}
+
+/// How hard the wake listener listens: a voice must be this far over the room, for this long,
+/// before it is transcribed. A run of voices that weren't a wake phrase (five in a minute) raises
+/// the bar a step, up to three; three quiet minutes lower it a step; a phrase heard puts it back.
+/// At the top step, another such run rests the transcribing for twenty seconds.
+nonisolated struct WakeEase {
+    private(set) var step = 0
+    private var falseStarts: [ContinuousClock.Instant] = []
+    private var restUntil: ContinuousClock.Instant?
+    private var lastFalse: ContinuousClock.Instant?
+
+    static let top = 3
+    static let run = 5
+    static let window: Duration = .seconds(60)
+    static let calm: Duration = .seconds(180)
+    static let rest: Duration = .seconds(20)
+
+    var margin: Float { 12 + 4 * Float(step) }
+    var hold: TimeInterval { 0.12 + 0.06 * Double(step) }
+
+    func resting(at now: ContinuousClock.Instant) -> Bool { restUntil.map { now < $0 } ?? false }
+
+    /// A voice that wasn't a phrase. Says what changed, if anything did.
+    mutating func falseStart(at now: ContinuousClock.Instant) -> String? {
+        calmDown(at: now)
+        lastFalse = now
+        falseStarts.append(now)
+        falseStarts.removeAll { now - $0 > Self.window }
+        guard falseStarts.count >= Self.run else { return nil }
+        falseStarts = []
+        if step < Self.top {
+            step += 1
+            return "many voices that weren't a phrase; listening harder (step \(step))"
+        }
+        restUntil = now + Self.rest
+        return "many voices that weren't a phrase; resting for \(Int(Self.rest.components.seconds)) s"
+    }
+
+    /// A phrase was heard: back to listening as at first.
+    mutating func heard() { self = WakeEase() }
+
+    /// A step down for each quiet spell since the last voice that wasn't a phrase.
+    private mutating func calmDown(at now: ContinuousClock.Instant) {
+        guard let lastFalse, step > 0 else { return }
+        let quiet = now - lastFalse
+        let steps = Int(quiet.components.seconds / Self.calm.components.seconds)
+        if steps > 0 { step = max(0, step - steps) }
     }
 }

@@ -957,8 +957,12 @@ final class Conversation {
             var first = true
             while !Task.isCancelled {
                 if !first {
-                    // Often while something is happening, then now and then.
-                    try? await Task.sleep(for: Date.now.timeIntervalSince(lastNews) < 120 ? .seconds(6) : .seconds(20))
+                    // Often while something is happening, then now and then. The Dashboard says at
+                    // once when its conversations change (`listenForChanges`), so there the look
+                    // is only in case that was missed; Low Power Mode asks less often again.
+                    let recent = Date.now.timeIntervalSince(lastNews) < 120
+                    let idle: Duration = self?.connection == .hermesServe ? .seconds(60) : .seconds(20)
+                    try? await Task.sleep(for: Pace.shared.wait(busy: recent, .seconds(6), idle: idle))
                 }
                 first = false
                 guard let self, !Task.isCancelled, self.serverSessionID == stored, Self.appIsActive else { return }

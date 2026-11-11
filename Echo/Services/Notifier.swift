@@ -806,6 +806,8 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
         #endif
         // Leave-By Alerts' background refresh: registered before launch finishes, as iOS requires.
         LeaveByAlerts.registerRefresh()
+        // And the photo library's overnight look on the charger (`PhotoLooking`).
+        PhotoLooking.registerOvernight()
         return true
     }
 

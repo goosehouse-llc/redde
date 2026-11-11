@@ -135,6 +135,9 @@ final class AudioSessionController {
         guard activeMode != .playback else { return }
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playback, mode: .spokenAudio, options: [])
+        // Not voice mode's few-millisecond buffers (`activateForVoice`), which the session kept:
+        // nothing here needs them, and each wakes the audio hardware (battery review, 2026-11-11).
+        try? session.setPreferredIOBufferDuration(Self.relaxedBuffer)
         try session.setActive(true, options: [])
         activeMode = .playback
         updateRouteFacts()
@@ -145,6 +148,9 @@ final class AudioSessionController {
     /// Bluetooth headphones stay in their music mode, so the phone's own microphone listens; in the
     /// car, the car's. A session its owner never let go of ends first, other audio told, so music
     /// paused for it starts again.
+    /// The IO buffer while only playing or listening for a wake phrase.
+    nonisolated static let relaxedBuffer: TimeInterval = 0.04
+
     func activateForWake() throws {
         guard activeMode != .wake else { return }
         let session = AVAudioSession.sharedInstance()
@@ -157,6 +163,9 @@ final class AudioSessionController {
         // The keyboard's haptics and clicks, and the system's, go on while it listens: iOS turns
         // them off for an app recording, and the composer's keyboard went still (2026-10-27).
         try? session.setAllowHapticsAndSystemSoundsDuringRecording(true)
+        // Listening for a phrase can take its sound in larger pieces than a conversation, and
+        // the hardware wakes some ten times less often for it.
+        try? session.setPreferredIOBufferDuration(Self.relaxedBuffer)
         try session.setActive(true, options: [])
         activeMode = .wake
         headsetSeen = false
@@ -242,6 +251,10 @@ final class AudioSessionController {
     func setReplying(_ on: Bool) {
         guard activeMode == .voice, !headsetSeen else { return }
         let session = AVAudioSession.sharedInstance()
+        // Not in the car: the mode change sets the car's main audio up again as speech
+        // recognition instead of telephony, which some head units refuse, and CarPlay drops
+        // ("iPhone disconnected" at Thinking on a 2022 Skoda Octavia, issue #67; the reporter's fix).
+        guard !session.currentRoute.outputs.contains(where: { $0.portType == .carAudio }) else { return }
         let target: AVAudioSession.Mode = on ? .default : listeningMode
         guard session.mode != target else { return }
         do {

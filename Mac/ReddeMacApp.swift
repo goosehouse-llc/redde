@@ -15,6 +15,7 @@ struct ReddeMacApp: App {
     @State private var lock = AppLock.shared
     @State private var zoom = TextZoom.shared
     @Environment(\.scenePhase) private var scenePhase
+    @State private var screensAsleep = false
 
     /// The theme, made again as the text zoom changes: its fonts take the zoom (`TextZoom`).
     private var theme: ResolvedTheme {
@@ -140,6 +141,7 @@ struct ReddeMacApp: App {
                     lock.appWillResignActive()
                     ConversationStore.shared.saveNow()
                     Drafts.shared.saveNow()
+                    if phase == .background { sightChanged() }
                 case .active:
                     lock.appDidBecomeActive()
                     CloudSync.shared.cameForward()
@@ -159,6 +161,20 @@ struct ReddeMacApp: App {
                     Mutes.publish()
                 @unknown default: break
                 }
+            }
+            // Out of sight (hidden, minimised, covered, the display asleep), the chat list and the
+            // open chat stop asking the host for news, and ask again as the window shows: the
+            // Mac had never told the open chat it went to the back (battery review, 2026-11-11).
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeOcclusionStateNotification)) { _ in
+                sightChanged()
+            }
+            .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidSleepNotification)) { _ in
+                screensAsleep = true
+                sightChanged()
+            }
+            .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidWakeNotification)) { _ in
+                screensAsleep = false
+                sightChanged()
             }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                 ConversationStore.shared.saveNow()
@@ -188,6 +204,19 @@ struct ReddeMacApp: App {
 
     static let settingsWindow = "settings"
     static let mainWindow = "main"
+
+    /// Whether any of Redde's windows can be seen, the display awake.
+    private func sightChanged() {
+        let seen = NSApp.occlusionState.contains(.visible) && !screensAsleep
+        guard seen != Pace.shared.onScreen else { return }
+        Pace.shared.onScreen = seen
+        Conversation.appIsActive = seen   // back in sight: the open chat keeps up again
+        if seen {
+            Task { await conversation.catchUp() }
+        } else {
+            conversation.watchOtherDevices()   // stops it while out of sight
+        }
+    }
 }
 
 /// A menu drawn as the iPhone draws one: its label alone, without the Mac's bezel and arrow.
