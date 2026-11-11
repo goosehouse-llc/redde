@@ -67,6 +67,9 @@ final class Conversation {
     /// (or of this conversation) the notification was about, so another chat on screen meanwhile
     /// doesn't take it; taken by the transcript once that chat's messages are in.
     var readFromReply: String?
+    /// With `readFromReply`: the notification was a finished task's, which may be one the plugin
+    /// kept the report of (`TaskReports`): the transcript opens that report, or Hermes's row for it.
+    var readFromTask = false
     /// API-server run id of the turn in flight (sessions transport).
     private(set) var currentRunID: String?
 

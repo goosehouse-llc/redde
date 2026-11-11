@@ -41,6 +41,9 @@ struct TranscriptView: View {
     @State private var leftAt: (messages: Int, lastLength: Int)?
     @State private var serve = HermesServeClient.shared
     @State private var store = ConversationStore.shared
+    /// Reports of handed-off tasks the plugin kept for this chat (GitHub issue 63).
+    @State private var taskReports = TaskReports.shared
+    @Environment(\.scenePhase) private var scenePhase
     /// The reply the speaker button is reading, so only its button turns into Stop.
     @State private var readingID: UUID?
     /// "Copied", from a row.
@@ -143,11 +146,38 @@ struct TranscriptView: View {
         withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) }
     }
 
-    /// Opened from a reply's notification, and its chat's messages are in (`readFromReply`).
+    /// Opened from a reply's notification, and its chat's messages are in (`readFromReply`). A
+    /// task's may end on Hermes's row for the task, or on nothing of it yet.
     private var readsFromReply: Bool {
         guard let wanted = conversation.readFromReply else { return false }
         return (wanted == conversation.serverSessionID || wanted == conversation.id.uuidString)
-            && conversation.messages.last?.role == .assistant
+            && (conversation.messages.last?.role == .assistant || (conversation.readFromTask && !conversation.messages.isEmpty))
+    }
+
+    /// Where the chat's task reports go: computed only for a chat the plugin kept any for.
+    private var taskLayout: TaskReportLayout {
+        let reports = taskReports.reports(for: conversation.serverSessionID)
+        return reports.isEmpty ? TaskReportLayout() : TaskReports.layout(reports, in: conversation.messages)
+    }
+
+    private static func reportRow(_ report: TaskReport) -> String { "task-report-" + report.id }
+
+    /// A task's notification was tapped: what it showed. Its report's card while Hermes hasn't put
+    /// it in the chat; else Hermes's row for it (kept open); else, the agent having said it, the
+    /// newest reply (nil: as a reply's).
+    private func taskTarget() async -> AnyHashable? {
+        await taskReports.refresh(session: conversation.serverSessionID)
+        let reports = taskReports.reports(for: conversation.serverSessionID)
+        guard let newest = reports.max(by: { $0.at < $1.at }) else { return nil }
+        let layout = TaskReports.layout([newest], in: conversation.messages)
+        if let waiting = layout.waiting.first { return Self.reportRow(waiting) }
+        // (Its row, unless the person has written since: then it is no longer what's new.)
+        if let row = layout.openNotices.first, let at = conversation.messages.firstIndex(where: { $0.id == row }),
+           !conversation.messages[at...].contains(where: { $0.role == .user && $0.delivered == nil }) {
+            page.reveal(at, in: conversation.messages)
+            return row
+        }
+        return nil
     }
 
     /// The newest reply from its first line, where the notification's words begin: a long one
@@ -155,6 +185,23 @@ struct TranscriptView: View {
     /// Again a moment later, for rows still growing as they load, unless the reader moved.
     private func startAtReply(_ proxy: ScrollViewProxy) {
         conversation.readFromReply = nil
+        if conversation.readFromTask {
+            conversation.readFromTask = false
+            following = false
+            Task {
+                guard let target = await taskTarget() else {
+                    if conversation.messages.last?.role == .assistant { startAtReply(proxy) } else { scrollToBottom(proxy, force: true) }
+                    return
+                }
+                for wait in [60, 200, 500] {
+                    try? await Task.sleep(for: .milliseconds(wait))
+                    guard scrollPhase == .idle else { return }
+                    following = false
+                    proxy.scrollTo(target, anchor: .top)
+                }
+            }
+            return
+        }
         guard let position = conversation.messages.lastIndex(where: { $0.role == .assistant }) else { return }
         let id = conversation.messages[position].id
         page.reveal(position, in: conversation.messages)
@@ -260,6 +307,10 @@ struct TranscriptView: View {
                             .foregroundStyle(.secondary)
                             .padding(.leading, 6)
                     }
+                    // A task's report its notification told, before Hermes put it in the chat.
+                    ForEach(taskLayout.waiting) { report in
+                        TaskReportCard(report: report).id(Self.reportRow(report))
+                    }
                     // Row identity is prefixed: a message moving between the transcript and the outbox
                     // keeps its UUID, and the stack would otherwise reuse the old bubble for it.
                     ForEach(Array(conversation.outbox.enumerated()), id: \.element.rowID) { index, item in
@@ -279,6 +330,8 @@ struct TranscriptView: View {
                 .padding()
                 .frame(maxWidth: 820)
                 .frame(maxWidth: .infinity)
+                // Hermes's task rows a notification showed the words of stay open.
+                .environment(\.openTaskNotices, taskLayout.openNotices)
                 // The rows as scroll targets, so the one at the top can be noted (`topRow`).
                 .scrollTargetLayout()
                 // Swipe left: each message's time.
@@ -393,6 +446,14 @@ struct TranscriptView: View {
             .onChange(of: following) { noteForLayout() }
             .onChange(of: conversation.id) { settlePage(reset: true); following = true; recomputeDayLabels(); recomputeMatches(); scrollToBottom(proxy, force: true) }
             .onChange(of: readsFromReply, initial: true) { _, ready in if ready { startAtReply(proxy) } }
+            // The chat's task reports: when it opens, when a task's notification says there's news,
+            // and when Redde comes back to the front.
+            .task(id: "\(conversation.serverSessionID ?? "")#\(taskReports.nudges)") {
+                await taskReports.refresh(session: conversation.serverSessionID)
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { Task { await taskReports.refresh(session: conversation.serverSessionID) } }
+            }
             .onChange(of: conversation.messages.count, initial: true) {
                 // Earlier messages the reader loaded stay; otherwise the page is sized afresh.
                 settlePage()

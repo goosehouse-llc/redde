@@ -960,6 +960,7 @@ struct DeliveredMessage: View {
     @State private var showingOutput = false
     /// A bot's reply, opened.
     @State private var open = false
+    @Environment(\.openTaskNotices) private var openTaskNotices
 
     private var bot: HermesBot? {
         guard let profile = delivered.profile, directory.key == settings.connectionKey else { return nil }
@@ -1026,7 +1027,10 @@ struct DeliveredMessage: View {
         // reads (and hears) is this bot's answer, which follows it. So does what a schedule came
         // up with, which the bot answers next.
         // A task's notice too, once the agent answered it (over the Hermes API it doesn't: shown open).
-        let folds = (delivered.kind == .reply || delivered.kind == .routine || (delivered.kind == .task && delivered.noted == true)) && !unanswered
+        // But not one whose words a notification showed (`TaskReports`): those stay open, or the
+        // chat it opened read as something else than it said (GitHub #63).
+        let folds = (delivered.kind == .reply || delivered.kind == .routine
+                     || (delivered.kind == .task && delivered.noted == true && !openTaskNotices.contains(message.id))) && !unanswered
         return VStack(alignment: .leading, spacing: 6) {
             if folds {
                 Button {

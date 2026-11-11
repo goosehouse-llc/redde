@@ -326,6 +326,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     func presentation(pushKind kind: String?, sessionID: String?, room: String? = nil, bot: String? = nil) -> UNNotificationPresentationOptions {
         guard let kind else { return [] }
         PushService.shared.reload()   // the first note from a pairing confirms it
+        // A task's: the chat on screen asks for the report the plugin may have kept (`TaskReports`).
+        if PushNote.Kind(rawValue: kind) == .task { TaskReports.shared.nudge() }
         if let sessionID, sessionID == conversation?.serverSessionID, PushNote.Kind(rawValue: kind) != .paired {
             // On screen already, unless it was written on another device: the chat looks.
             if let open = conversation { Task { await open.checkOtherDevices() } }
@@ -404,6 +406,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         if action == UNNotificationDefaultActionIdentifier, let sessionID {
             // A reply's or a finished task's: read from the start of the reply it showed.
             if PushNote.Kind(rawValue: kind ?? "").map({ $0 == .reply || $0 == .task }) == true {
+                conversation?.readFromTask = kind == PushNote.Kind.task.rawValue
                 conversation?.readFromReply = sessionID
             }
             LaunchRouter.shared.requestSession(sessionID)
