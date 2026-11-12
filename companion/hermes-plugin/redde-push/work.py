@@ -54,7 +54,7 @@ REPORT_WAIT = 600
 #: Kept this long after they end, then forgotten (the chats stay in Hermes).
 KEPT_FOR = 30 * 86400
 
-STATUSES = ("starting", "working", "needs_you", "done", "failed", "stopped")
+# A run is starting, working, needs_you, done, failed or stopped; these three are still going.
 OPEN = ("starting", "working", "needs_you")
 
 DESCRIPTION = (

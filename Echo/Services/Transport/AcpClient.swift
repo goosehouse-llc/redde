@@ -139,12 +139,6 @@ final class AcpClient {
         settings.acpEndpoint.map(client(for:))
     }
 
-    /// Closes every link (a server switch, Settings changed).
-    static func closeAll() {
-        for client in clients.values { client.close() }
-        clients = [:]
-    }
-
     let endpoint: AcpEndpoint
     private(set) var info: Info?
     /// Each session's config options (the model picker's), as last said.
@@ -498,8 +492,6 @@ final class AcpClient {
         guard let open = openRequests.removeValue(forKey: id) else { return }
         reply(to: open.raw, result: AcpPermission.reply(choice: choice, options: open.options))
     }
-
-    func hasOpenRequest(_ id: String) -> Bool { openRequests[id] != nil }
 
     /// Picks a model for a session, when it offers one and it isn't the current one.
     func setModel(_ session: String, value: String) async throws {

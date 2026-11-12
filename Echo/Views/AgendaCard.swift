@@ -883,11 +883,6 @@ extension AgendaCard {
         }
     }
 
-    /// "Fri, Oct 30".
-    static func dateName(_ day: String, calendar: Calendar = .current) -> String {
-        date(of: day, calendar: calendar).map { $0.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()) } ?? day
-    }
-
     nonisolated static func date(of day: String, calendar: Calendar = .current) -> Date? {
         let parts = day.split(separator: "-").compactMap { Int($0) }
         guard parts.count == 3 else { return nil }

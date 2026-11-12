@@ -162,10 +162,6 @@ struct FileViewer: View {
         }
     }
 
-    /// Whether an attachment opens as Markdown.
-    static func isMarkdown(_ attachment: Attachment) -> Bool {
-        ["md", "markdown"].contains((attachment.filename as NSString).pathExtension.lowercased()) || attachment.mimeType == "text/markdown"
-    }
 }
 
 /// A Markdown file shown as it reads, the way replies are: with Done, and Share for the file.

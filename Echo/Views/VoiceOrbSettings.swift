@@ -93,13 +93,6 @@ enum OrbLight: String, CaseIterable, Identifiable {
         }
     }
 
-    var detail: String {
-        switch self {
-        case .nebula: String(localized: "Colour drifting and turning")
-        case .aurora: String(localized: "Ribbons of light sweeping across")
-        case .core: String(localized: "A pulsing heart with sparks around it")
-        }
-    }
 }
 
 /// The Voice orb rows of the Appearance section: the face (collapsed to the current orb, expands

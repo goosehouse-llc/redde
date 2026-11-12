@@ -568,10 +568,6 @@ SUGGEST_EVERY = 86400    # looked for at most daily
 MONTH = 30 * 86400
 
 
-def _domain_of(address: str) -> str:
-    return (address or "").rsplit("@", 1)[-1].lower()
-
-
 def find_suggestions(kept: dict, entries: list[dict], account: str, can_label: bool, now: float) -> list[dict]:
     """Patterns in what's already kept and logged, no model: the person's own repeated actions, unread
     newsletters, receipts, PDFs from one sender, people they keep replying to. Each one a proposed

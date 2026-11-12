@@ -44,9 +44,8 @@ import re
 import threading
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 TOOLSET = "redde_phone"
 #: How long a call waits for the phone, in seconds: a person may have to say yes on it.
@@ -769,30 +768,6 @@ def _limit(args: dict) -> int:
         return max(1, min(200, int(args.get("limit") or 50)))
     except (TypeError, ValueError):
         return 50
-
-
-def _zone(name):
-    try:
-        return ZoneInfo(str(name)) if name else timezone.utc
-    except (ValueError, ZoneInfoNotFoundError):
-        return timezone.utc
-
-
-def _moment(text, zone, day_end: bool = False):
-    """A date as the phone writes it, or the agent: with an offset, or in the phone's own zone.
-    A day alone is its first moment, or with `day_end` the first moment of the next."""
-    text = str(text or "").strip()
-    if not text:
-        return None
-    try:
-        moment = datetime.fromisoformat(text.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    if moment.tzinfo is None:
-        moment = moment.replace(tzinfo=zone)
-    if day_end and re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
-        moment += timedelta(days=1)
-    return moment
 
 
 def _readable(when: str) -> bool:

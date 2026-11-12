@@ -17,7 +17,6 @@ struct MemoryView: View {
     @State private var undo: (target: AgentMemory.Target, id: AgentMemoryModel.Row.ID, text: String)?
     @State private var importing = false
     @State private var confirmingDiscard = false
-    @Environment(\.dismiss) private var dismiss
     @FocusState private var focused: AgentMemoryModel.Row.ID?
 
     init(profile: String? = nil, owner: String? = nil, focus: String? = nil, model: AgentMemoryModel? = nil) {

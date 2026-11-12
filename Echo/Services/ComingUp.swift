@@ -108,7 +108,6 @@ nonisolated enum ComingUp {
         /// A Leave-By Alert skipped on this device.
         var skipped = false
 
-        var oneOff: Bool { job?.isOneOff ?? true }
     }
 
     /// The daily jobs Redde makes, by name (`DailyJob`'s: `MorningIdeas.name` and the rest, which

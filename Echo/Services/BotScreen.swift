@@ -417,8 +417,6 @@ final class BotScreenStream {
     /// The stream ended, with how.
     var onEnd: ((BotScreen.Ended) -> Void)?
 
-    var isOpen: Bool { task != nil }
-
     func open(_ task: URLSessionWebSocketTask) {
         close(handBack: false)
         self.task = task

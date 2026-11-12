@@ -216,7 +216,6 @@ struct PillFlow: Layout {
 }
 
 struct SudoCard: View {
-    @Environment(\.theme) private var theme
     let respond: (String) -> Void
     @State private var password = ""
 
@@ -247,7 +246,6 @@ struct SudoCard: View {
 }
 
 struct SecretCard: View {
-    @Environment(\.theme) private var theme
     let request: SecretRequest
     let respond: (String) -> Void
     @State private var value = ""

@@ -687,21 +687,6 @@ private struct StoreMark: View {
     }
 }
 
-/// "In stock" in green, "Out of stock" in orange: small, by the price.
-private struct StockTag: View {
-    let text: String
-    let inStock: Bool
-
-    var body: some View {
-        let colour = inStock ? PurchaseCard.good : PurchaseCard.bad
-        HStack(spacing: 4) {
-            Circle().fill(colour).frame(width: 6, height: 6).accessibilityHidden(true)
-            Text(text).chatFont(.caption, weight: .semibold).foregroundStyle(colour).lineLimit(1)
-        }
-        .fixedSize()
-    }
-}
-
 /// A product's badge ("Best overall"), in its colour.
 private struct BadgeTag: View {
     let text: String

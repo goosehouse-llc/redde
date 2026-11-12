@@ -954,12 +954,6 @@ struct ContentView: View {
         return settings.theme.resolved(with: colors, font: settings.chatFont)
     }
 
-    /// Another profile's chat (opened with All Profiles on) says whose it is where the agent's
-    /// name goes.
-    private func profileTitle(_ name: String) -> String {
-        ProfileCatalog.known(settings: settings).first { $0.name == name }?.title ?? name
-    }
-
     private var headerTitle: String {
         if let bot = conversation.bot { return bot.name }
         if conversation.isIncognito { return IncognitoNote.title }

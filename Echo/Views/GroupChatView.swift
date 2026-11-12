@@ -25,7 +25,6 @@ struct GroupChatView: View {
     /// This screen, to `LayoutCarry`: built again in the other layout (an iPhone Duo opened or
     /// closed), the new one takes the room's feed, voice and draft over from it.
     @State private var me = UUID()
-    @Environment(Conversation.self) private var conversation
     /// Find in this chat: open, what is looked for, and which match is the one shown.
     @State private var finding = false
     @State private var findText = ""

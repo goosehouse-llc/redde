@@ -476,11 +476,6 @@ nonisolated struct MailLogEntry: Codable, Identifiable, Equatable, Sendable {
         by = v["by"]?.string ?? "you"
     }
 
-    init(id: String, at: Date, rule: String?, action: String, account: String, ids: [String], title: String, undone: Bool = false, by: String) {
-        self.id = id; self.at = at; self.rule = rule; self.action = action; self.account = account
-        self.ids = ids; self.title = title; self.undone = undone; self.by = by
-    }
-
     /// Undo makes sense for these (a notification can't be taken back).
     var undoable: Bool { !undone && gone != true && action != "notify" }
 }
@@ -600,7 +595,6 @@ nonisolated enum MailError: LocalizedError, Equatable {
         }
     }
 
-    var code: String? { if case let .server(code, _) = self { code } else { nil } }
 }
 
 /// Reading the plugin's answers (`redde-push mail {…}`).
@@ -798,7 +792,6 @@ nonisolated struct MailSetup: Sendable {
         return out
     }
 
-    var accountID: String { MailSecrets.accountID(key: key) }
 }
 
 /// The inbox as last seen, in the app group: the chat list's row and the Inbox show it at once,
@@ -823,7 +816,6 @@ nonisolated struct MailSnapshot: Codable, Equatable, Sendable {
         defaults?.set(data, forKey: Self.key)
     }
 
-    static func clear(in defaults: UserDefaults? = NeedsYou.shared) { defaults?.removeObject(forKey: key) }
 }
 
 /// The inbox, the rules and the setup: asked of the plugin only when a page opens or he pulls to

@@ -6,7 +6,6 @@ import SwiftUI
 struct GatewayView: View {
     @State private var model: GatewayModel
     @State private var confirming: GatewayModel.Work?
-    @Environment(\.theme) private var theme
 
     init(source: (any GatewayAdministering)? = nil) {
         _model = State(initialValue: GatewayModel(source: source ?? Self.defaultSource))

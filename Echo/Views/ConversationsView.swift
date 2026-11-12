@@ -161,7 +161,6 @@ struct ConversationsList: View {
             case .made: String(localized: "Made", comment: "The list's section with the pages, pictures and files the agents made")
             }
         }
-        var icon: String { switch self { case .sessions: "bubble.left.and.bubble.right"; case .planned: "calendar.badge.clock"; case .kanban: "rectangle.split.3x1"; case .made: "square.stack" } }
     }
     /// Chats, Cron or Kanban: kept across launches, and shared with the iPad's detail pane.
     @AppStorage(Self.sectionKey) private var section: Tab = .sessions
@@ -2491,7 +2490,6 @@ struct ProjectSessionsView: View {
     let currentID: String?
     /// Starts a conversation in this project (its folder); nil where that isn't offered.
     var startNew: ((HermesServeClient.Project) -> Void)? = nil
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.sidePanelParked) private var panelParked
     @State private var lanes: [HermesServeClient.Project.Lane] = []
     @State private var error: String?

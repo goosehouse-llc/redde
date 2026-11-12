@@ -24,9 +24,6 @@ enum SessionBackend {
         return settings.transport == .hermesServe ? .serve(.shared) : conversation.ledgerAPI(profile: nil).map(SessionBackend.ledger)
     }
 
-    /// An ACP chat can't be renamed, pinned, marked or archived: the menus leave those out.
-    var isACP: Bool { if case .acp = self { true } else { false } }
-
     private static var notOnACP: AcpError {
         AcpError(code: -32601, message: String(localized: "This agent doesn't keep that for its chats.", comment: "A chat list action an ACP agent can't do"))
     }

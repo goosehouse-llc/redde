@@ -287,8 +287,6 @@ nonisolated struct PluginOutcome: Equatable, Sendable {
     var missingKeys: [String] = []
     var notes: [String] = []
 
-    init(name: String) { self.name = name }
-
     init(_ json: JSONValue, name fallback: String) {
         name = json["plugin_name"]?.string?.nilIfEmpty ?? json["name"]?.string?.nilIfEmpty ?? fallback
         restartRequired = json["restart_required"]?.bool == true && json["gateway_reloaded"]?.bool != true

@@ -13,7 +13,6 @@ struct PluginUpdatesView: View {
     /// Being updated, and how each went.
     @State private var updating: Set<String> = []
     @State private var outcomes: [String: String] = [:]
-    @State private var settings = Settings.shared
     private let client = HermesServeClient.shared
 
     private var updates: [PluginUpdateCheck] { checks.filter(\.state.hasUpdate) }

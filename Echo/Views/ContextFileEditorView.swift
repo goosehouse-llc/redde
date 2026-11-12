@@ -9,7 +9,6 @@ struct ContextFileEditorView: View {
     let file: String
     let purpose: String
 
-    @Environment(\.dismiss) private var dismiss
     @State private var content = ""
     @State private var original: String?
     /// Where the file is on the host, once known.

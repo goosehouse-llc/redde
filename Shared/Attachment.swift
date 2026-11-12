@@ -151,11 +151,6 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
         return image(source: source, filename: filename ?? fileURL.lastPathComponent)
     }
 
-    static func image(data: Data, filename: String = "photo.jpg") -> Attachment? {
-        guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary) else { return nil }
-        return image(source: source, filename: filename)
-    }
-
     private static func image(source: CGImageSource, filename: String) -> Attachment? {
         guard let cg = downsample(source, maxPixelSize: Int(maxImageEdge)) else { return nil }
         let out = NSMutableData()

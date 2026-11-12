@@ -10,7 +10,6 @@ struct FlightCard: View {
     let card: ReplyCard.Trip
     let whole: ReplyCard
     private let legs: [Leg]
-    @Environment(\.theme) private var theme
 
     init(card: ReplyCard.Trip, whole: ReplyCard) {
         self.card = card

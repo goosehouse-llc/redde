@@ -231,7 +231,6 @@ nonisolated struct LocalDialect: LiveDialect {
         encode(.object(["type": .string("transcript"), "speaker": .string("person"), "text": .string(text)]))
     }
     static func delegated(_ id: String) -> String { encode(.object(["type": .string("delegated"), "id": .string(id)])) }
-    static func failed(_ message: String) -> String { encode(.object(["type": .string("failed"), "message": .string(message)])) }
 }
 
 // MARK: - The call
@@ -267,7 +266,6 @@ final class LocalCall: LiveCalling {
     private var loudAt: ContinuousClock.Instant?
     private var turnStarted: ContinuousClock.Instant?
     private var ending = false
-    private let log = Logger(subsystem: "com.goosehouse.echo", category: "live")
 
     /// What is heard standing still this long, the person quiet for `quiet`, ends their turn (as
     /// Redde's own voice mode: `SpeechRecognizer.silenceTimeout`); standing still for `stuck` ends

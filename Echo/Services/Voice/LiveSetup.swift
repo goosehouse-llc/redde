@@ -33,7 +33,6 @@ struct LiveSetup {
         ("Japanese", ["harema", "shida"]),
         ("Korean", ["noeul"]),
     ]
-    nonisolated static let voices = voiceGroups.flatMap(\.voices)
     nonisolated static let endpoint = URL(string: "wss://api.openai.com/v1/live/sessions")!
     /// The call's audio both ways. OpenAI takes 24 kHz (its default) or 16 kHz PCM16 over a
     /// WebSocket, sent raw; 16 kHz is a third less data (about 0.35 Mbit/s each way) for speech.

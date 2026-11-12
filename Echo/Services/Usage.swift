@@ -58,7 +58,6 @@ nonisolated struct UsageSpend: Equatable, Sendable {
     /// Models that used tokens with no cost recorded, busiest first.
     var noCostModels: [String] = []
 
-    var isEmpty: Bool { estimated == 0 && reported == 0 && noCostModels.isEmpty }
 }
 
 nonisolated struct UsageDay: Identifiable, Equatable, Sendable {
@@ -299,10 +298,6 @@ final class UsageModel {
         /// The Hermes API; `profile`, an API bot's (its own address and key), nil for the app's.
         case api(HermesSessionsAPI, profile: String?)
 
-        var origin: UsageReport.Origin {
-            if case .dashboard = self { .dashboard } else { .api }
-        }
-
         /// The connection Settings has: the Dashboard where its login is there (all profiles), else
         /// the Hermes API.
         static func current(dashboard: Bool) -> Source? {
@@ -319,8 +314,6 @@ final class UsageModel {
             }
         }
 
-        init(dashboard client: HermesServeClient) { self = .dashboard(client) }
-        init(api: HermesSessionsAPI, profile: String?) { self = .api(api, profile: profile) }
     }
 
     private(set) var report: UsageReport?

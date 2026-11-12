@@ -45901,6 +45901,7 @@
       }
     },
     "A pulsing heart with sparks around it" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -111976,6 +111977,7 @@
       }
     },
     "Colour drifting and turning" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -345610,6 +345612,7 @@
       }
     },
     "Ribbons of light sweeping across" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {

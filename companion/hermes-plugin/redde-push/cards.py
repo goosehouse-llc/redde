@@ -67,7 +67,6 @@ MAX_PRODUCTS = 6
 MAX_DEVICES = 12
 MAX_COMPARED = 4
 MAX_GAMES = 6
-DEVICE_KINDS = ("light", "switch", "climate", "cover", "lock", "sensor", "fan", "media")
 REMINDER_KINDS = ("reminder", "timer", "alarm", "schedule")
 GAME_STATUSES = ("final", "live", "upcoming")
 MAX_EVENTS = 50

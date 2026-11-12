@@ -64,7 +64,6 @@ actor PhotoIndex {
     private var charging = true
     private var recent: Set<String> = []
     nonisolated static let onBattery = 200
-    private let log = Logger(subsystem: "com.goosehouse.echo", category: "photo-index")
 
     init(file: URL? = nil, look: (@Sendable (Mark) async throws -> PhotoSeen)? = nil) {
         self.file = file ?? URL.applicationSupportDirectory.appending(path: "PhotoIndex/seen.jsonl")

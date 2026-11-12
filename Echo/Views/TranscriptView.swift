@@ -40,7 +40,6 @@ struct TranscriptView: View {
     /// the last one.
     @State private var leftAt: (messages: Int, lastLength: Int)?
     @State private var serve = HermesServeClient.shared
-    @State private var store = ConversationStore.shared
     /// Reports of handed-off tasks the plugin kept for this chat (GitHub issue 63).
     @State private var taskReports = TaskReports.shared
     @Environment(\.scenePhase) private var scenePhase

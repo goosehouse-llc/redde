@@ -75,8 +75,6 @@ final class BriefingsInbox {
         }
     }
 
-    var unread: [AgentBriefing] { briefings.filter { !$0.read } }
-
     /// The deck: each job once, its newest run not read yet, less the ones over (2026-11-05).
     var deck: [AgentBriefing] { AgentBriefing.deck(briefings).map(\.briefing) }
     /// How many earlier runs of each card's job are unread under it, by the card's id.
@@ -241,12 +239,6 @@ final class BriefingsInbox {
     /// Done with a card: every run of its job read.
     func markJobRead(_ briefing: AgentBriefing) {
         AgentBriefing.markJobRead(briefing.jobKey)
-        reload()
-    }
-
-    func remove(_ briefing: AgentBriefing) {
-        AgentBriefing.remove(briefing.id)
-        LaterReminder.cancel(briefing.id)
         reload()
     }
 

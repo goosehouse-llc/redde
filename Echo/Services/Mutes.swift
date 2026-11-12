@@ -48,7 +48,6 @@ enum Mutes {
     }
 
     static func isMuted(bot profile: String, settings: Settings = .shared) -> Bool { isMuted("bot:" + profile, settings: settings) }
-    static func isMuted(room: String, settings: Settings = .shared) -> Bool { isMuted("room:" + room, settings: settings) }
 
     static func mute(_ item: String, for span: MuteSpan, settings: Settings = .shared, now: Date = .now) {
         var here = settings.mutesHere.filter { $0.value > now }   // (the ones run out go)
