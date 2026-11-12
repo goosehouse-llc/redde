@@ -368,7 +368,7 @@ struct ConversationsList: View {
         #endif
     }
 
-    private var showsProfileMenu: Bool { settings.transport != .chatCompletions && (allProfiles || menuProfiles.count > 1) }
+    private var showsProfileMenu: Bool { settings.transport.isHermes && (allProfiles || menuProfiles.count > 1) }
 
     private var profileMenu: some View { profileMenu(inTitle: false) }
 
@@ -1744,7 +1744,9 @@ struct ConversationsList: View {
     private func ownButton(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
         let marks = marks(session)
         // The open conversation is read whatever it is marked: leaving it marks it read again.
-        let canMark = session.id != conversation.serverSessionID
+        let canMark = session.id != conversation.serverSessionID && settings.transport.isHermes
+        // ACP version 1 has no pins, names, archive or forks for a chat (`SessionBackend.acp`).
+        let hermes = settings.transport.isHermes
         return Button { if !selecting { open(session) } } label: { ledgerRow(session, hasDraft: hasDraft, marks: marks) }
             .buttonStyle(.plain)
             .opensConversation()
@@ -1760,16 +1762,20 @@ struct ConversationsList: View {
                     }
                     .tint(Settings.shared.resolvedTheme.accent)
                 }
-                Button { setPinned(session, !(session.pinned ?? false)) } label: {
-                    Label(session.pinned == true ? String(localized: "Unpin") : String(localized: "Pin", comment: "Pins the conversation to the top of the list"),
-                          systemImage: session.pinned == true ? "pin.slash" : "pin")
+                if hermes {
+                    Button { setPinned(session, !(session.pinned ?? false)) } label: {
+                        Label(session.pinned == true ? String(localized: "Unpin") : String(localized: "Pin", comment: "Pins the conversation to the top of the list"),
+                              systemImage: session.pinned == true ? "pin.slash" : "pin")
+                    }
+                    .tint(.orange)
                 }
-                .tint(.orange)
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button(role: .destructive) { delete(session) } label: { Label("Delete", systemImage: "trash") }
-                Button { archive(session) } label: { Label("Archive", systemImage: "archivebox") }
-                    .tint(.gray)
+                if hermes {
+                    Button { archive(session) } label: { Label("Archive", systemImage: "archivebox") }
+                        .tint(.gray)
+                }
             }
             .contextMenu {
                 if canMark {
@@ -1778,14 +1784,16 @@ struct ConversationsList: View {
                         setUnread(session, !marks.unread)
                     }
                 }
-                Button("Usage & cost", systemImage: "chart.bar") { usageFor = session }
-                Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
-                Button(session.pinned == true ? String(localized: "Unpin") : String(localized: "Pin", comment: "Pins the conversation to the top of the list"),
-                       systemImage: "pin") { setPinned(session, !(session.pinned ?? false)) }
-                Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) }
+                if hermes {
+                    Button("Usage & cost", systemImage: "chart.bar") { usageFor = session }
+                    Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
+                    Button(session.pinned == true ? String(localized: "Unpin") : String(localized: "Pin", comment: "Pins the conversation to the top of the list"),
+                           systemImage: "pin") { setPinned(session, !(session.pinned ?? false)) }
+                    Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) }
+                }
                 moveMenu(for: session)
                 Button("Export as Markdown", systemImage: "square.and.arrow.up") { export(session) }
-                Button("Archive", systemImage: "archivebox") { archive(session) }
+                if hermes { Button("Archive", systemImage: "archivebox") { archive(session) } }
                 Divider()
                 Button("Delete", systemImage: "trash", role: .destructive) { delete(session) }
             }
@@ -2237,6 +2245,8 @@ struct ConversationsList: View {
             } else {
                 try await conversation.loadServeSession(session, elsewhere: route)
             }
+        } else if settings.transport == .acp {
+            try await conversation.loadAcpSession(session)
         } else if viaServe {
             try await conversation.loadServeSession(session)
         } else {

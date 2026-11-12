@@ -276,6 +276,7 @@ struct SessionDetailsView: View {
         case .hermesServe: String(localized: "Hermes Dashboard", comment: "Session Details: the connection")
         case .hermesSessions: String(localized: "Hermes API", comment: "Session Details: the connection")
         case .chatCompletions: String(localized: "Straight to the model", comment: "Session Details: the fast lane connection")
+        case .acp: String(localized: "Agent Client Protocol", comment: "Session Details: the connection to an ACP agent")
         }
     }
 

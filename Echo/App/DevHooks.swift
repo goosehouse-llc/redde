@@ -201,7 +201,7 @@ import WidgetKit
 ///   a server by name five seconds after launch.
 ///
 /// Environment (`SIMCTL_CHILD_<NAME>=value`, so secrets stay out of arguments and logs; an empty
-/// value deletes): `ECHO_TEST_SERVE_PASSWORD`, `ECHO_TEST_GATEWAY_KEY`, `ECHO_TEST_PROFILE_KEY`
+/// value deletes): `ECHO_TEST_SERVE_PASSWORD`, `ECHO_TEST_GATEWAY_KEY`, `ECHO_TEST_ACP_TOKEN` (the agent bridge's), `ECHO_TEST_PROFILE_KEY`
 /// (the selected profile's Hermes API key). `ECHO_TEST_SERVE_SIGNIN`, empty, forgets a browser
 /// sign-in to the Dashboard (there is nothing to set it to: signing in takes the browser).
 /// `ECHO_TEST_API_BOT`, "<profile>:<its API key>", adds a bot for the Hermes API alone.
@@ -465,6 +465,7 @@ enum DevHooks {
         if let v = env["ECHO_TEST_SERVE_PASSWORD"] { Keychain.write(.serveDashboardPassword, value: v) }
         if env["ECHO_TEST_SERVE_SIGNIN"] == "" { Keychain.delete(.serveSignIn) }
         if let v = env["ECHO_TEST_GATEWAY_KEY"] { Keychain.write(.gatewayAPIKey, value: v) }
+        if let v = env["ECHO_TEST_ACP_TOKEN"] { Keychain.write(.acpToken, value: v) }
         if let v = env["ECHO_TEST_PROFILE_KEY"], let profile = settings.profileName {
             Keychain.write(account: Keychain.profileAccount(profile), value: v)
         }

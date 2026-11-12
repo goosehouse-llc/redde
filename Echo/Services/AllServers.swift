@@ -37,6 +37,12 @@ enum AllServers {
         case .hermesSessions:
             guard let api = api(for: server) else { throw TransportError.noAPIKey }
             found = try await api.listSessions()
+        case .acp:
+            let token = Keychain.read(account: Keychain.account(.acpToken, server: server.id.uuidString))
+            guard let endpoint = AcpEndpoint.make(address: server.acpURL, agent: server.acpAgent, token: token, folder: server.acpFolder) else {
+                throw TransportError.noAPIKey
+            }
+            found = AcpSessions.summaries(try await AcpClient.client(for: endpoint).listSessions())
         case .chatCompletions: return []
         }
         return found.filter { $0.title != BotChat.title && !($0.title ?? "").hasPrefix("Group: ") }.map { row in

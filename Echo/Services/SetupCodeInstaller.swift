@@ -210,6 +210,9 @@ extension ConnectionTester {
         case .chatCompletions:
             guard let url = settings.activeBaseURL else { return .failed(String(localized: "The endpoint address isn't a valid URL.")) }
             return await fastLane(url: url, apiKey: Keychain.read(.fastLaneAPIKey), model: settings.fastLaneModel)
+        case .acp:
+            guard let endpoint = settings.acpEndpoint else { return .failed(String(localized: "The agent bridge's address isn't valid.", comment: "ACP connection test")) }
+            return await acp(endpoint)
         }
     }
 }

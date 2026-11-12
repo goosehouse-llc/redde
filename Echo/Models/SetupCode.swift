@@ -232,6 +232,7 @@ nonisolated struct SetupCode: Equatable, Sendable {
             case .hermesServe: "dashboard"
             case .hermesSessions: "api"
             case .chatCompletions: "model"
+            case .acp: "acp"
             }
             add("use", word)
         }

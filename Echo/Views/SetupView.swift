@@ -15,6 +15,8 @@ struct SetupView: View {
     /// Signed in to the Dashboard through a browser: no username or password needed.
     @State private var signedIn = false
     @State private var hasFastLaneKey = false
+    @State private var acpToken = ""
+    @State private var hasAcpToken = false
     /// Whether the Dashboard at the address asks for a login; nil until it answers.
     @State private var dashboardAsks: Bool?
     @State private var testing = false
@@ -152,6 +154,8 @@ struct SetupView: View {
                     } footer: {
                         Text("Straight to a model with no agent in between: llama.cpp, llama-swap, vLLM, Ollama, or a hosted provider.")
                     }
+                case .acp:
+                    AcpServerFields(settings: settings, token: $acpToken, hasToken: hasAcpToken)
                 }
 
                 Section {
@@ -201,6 +205,7 @@ struct SetupView: View {
         hasServePassword = Keychain.read(.serveDashboardPassword) != nil
         signedIn = HermesServeClient.shared.isSignedIn
         hasFastLaneKey = Keychain.read(.fastLaneAPIKey) != nil
+        hasAcpToken = Keychain.read(.acpToken) != nil
     }
 
     private func paste(_ strings: [String]) {
@@ -232,6 +237,7 @@ struct SetupView: View {
             settings.serveBaseURL != nil
                 && (dashboardMode == .open || signedIn || (!settings.serveUsername.isEmpty && (!servePassword.isEmpty || hasServePassword)))
         case .chatCompletions: settings.activeBaseURL != nil
+        case .acp: settings.acpEndpoint != nil && (!acpToken.isEmpty || hasAcpToken)
         }
     }
 
@@ -250,6 +256,7 @@ struct SetupView: View {
             settings.serveOpenAccess = false
         }
         if !fastLaneKey.isEmpty, Keychain.write(.fastLaneAPIKey, value: fastLaneKey) { hasFastLaneKey = true }
+        if !acpToken.isEmpty, Keychain.write(.acpToken, value: acpToken.trimmingCharacters(in: .whitespacesAndNewlines)) { hasAcpToken = true; acpToken = "" }
         HermesServeClient.shared.disconnect()
     }
 
@@ -271,6 +278,12 @@ struct SetupView: View {
         case .chatCompletions:
             guard let url = settings.activeBaseURL else { outcome = .failed(String(localized: "Enter a valid URL.")); return }
             outcome = await ConnectionTester.fastLane(url: url, apiKey: fastLaneKey.isEmpty ? Keychain.read(.fastLaneAPIKey) : fastLaneKey, model: settings.fastLaneModel)
+        case .acp:
+            let typed = acpToken.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let endpoint = AcpEndpoint.make(address: settings.acpURL, agent: settings.acpAgent,
+                                                  token: typed.isEmpty ? Keychain.read(.acpToken) : typed, folder: settings.acpFolder)
+            else { outcome = .failed(String(localized: "Enter a valid URL.")); return }
+            outcome = await ConnectionTester.acp(endpoint)
         }
     }
 

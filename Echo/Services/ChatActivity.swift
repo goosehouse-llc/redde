@@ -166,7 +166,7 @@ final class ChatActivity {
             if liveRooms != rooms { liveRooms = rooms }
             liveKey = key
             return reached
-        case .chatCompletions:
+        case .chatCompletions, .acp:
             live = [:]
             return true
         }
@@ -465,7 +465,7 @@ final class ChatActivity {
     /// reply finishes with the phone locked.
     func markRead(_ sessionID: String, conversation: Conversation, onlyOnScreen: Bool = false, settings: Settings = .shared) {
         if onlyOnScreen, !AppState.isActive { return }
-        guard settings.transport.hasLedger else { return }
+        guard settings.transport.isHermes else { return }
         if settings.transport == .hermesSessions { mark(sessionID, seenAt: Date.now.timeIntervalSince1970, key: settings.connectionKey) }
         if let at = markedAt[sessionID], Date.now.timeIntervalSince(at) < 2 { return }
         markedAt[sessionID] = .now
@@ -475,7 +475,7 @@ final class ChatActivity {
 
     /// The row's Mark as Unread.
     func markUnread(_ sessionID: String, conversation: Conversation, settings: Settings = .shared) {
-        guard settings.transport.hasLedger else { return }
+        guard settings.transport.isHermes else { return }
         if settings.transport == .hermesSessions { mark(sessionID, seenAt: 0, key: settings.connectionKey) }
         markedAt[sessionID] = nil
         guard let backend = SessionBackend.current(conversation, settings: settings) else { return }

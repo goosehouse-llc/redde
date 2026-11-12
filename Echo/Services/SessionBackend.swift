@@ -7,21 +7,34 @@ import Foundation
 enum SessionBackend {
     case serve(HermesServeClient)
     case ledger(HermesSessionsAPI)
+    /// An ACP agent's own sessions (`session/list`, `session/load`): no titles to set, pins,
+    /// unread marks or archive, which ACP version 1 hasn't got.
+    case acp(AcpClient)
 
     /// The backend for the active transport, or nil when it isn't configured yet.
     static func current(_ conversation: Conversation, settings: Settings = .shared) -> SessionBackend? {
-        settings.transport == .hermesServe ? .serve(.shared) : conversation.ledgerAPI().map(SessionBackend.ledger)
+        if settings.transport == .acp { return AcpClient.current(settings).map(SessionBackend.acp) }
+        return settings.transport == .hermesServe ? .serve(.shared) : conversation.ledgerAPI().map(SessionBackend.ledger)
     }
 
     /// The chat list's: the selected profile's sessions, whichever conversation is open (one of a
     /// bot's, or another profile's, goes by its own).
     static func list(_ conversation: Conversation, settings: Settings = .shared) -> SessionBackend? {
-        settings.transport == .hermesServe ? .serve(.shared) : conversation.ledgerAPI(profile: nil).map(SessionBackend.ledger)
+        if settings.transport == .acp { return AcpClient.current(settings).map(SessionBackend.acp) }
+        return settings.transport == .hermesServe ? .serve(.shared) : conversation.ledgerAPI(profile: nil).map(SessionBackend.ledger)
+    }
+
+    /// An ACP chat can't be renamed, pinned, marked or archived: the menus leave those out.
+    var isACP: Bool { if case .acp = self { true } else { false } }
+
+    private static var notOnACP: AcpError {
+        AcpError(code: -32601, message: String(localized: "This agent doesn't keep that for its chats.", comment: "A chat list action an ACP agent can't do"))
     }
 
     /// For a row of the list: its own profile's, when it is another's. On the Dashboard the row's
     /// profile was noted for its id when it was listed, so every call about it names it.
     static func owning(_ session: HermesSessionsAPI.SessionSummary, _ conversation: Conversation, settings: Settings = .shared) -> SessionBackend? {
+        if settings.transport == .acp { return list(conversation, settings: settings) }
         guard let route = session.elsewhere else { return list(conversation, settings: settings) }
         return route.viaAPI ? conversation.ledgerAPI(profile: route.profile).map(SessionBackend.ledger) : .serve(.shared)
     }
@@ -84,6 +97,7 @@ enum SessionBackend {
     /// Primary backend first, the other as a fallback — for features (model options) that any
     /// configured server can answer regardless of the active transport.
     static func available(_ conversation: Conversation, settings: Settings = .shared) -> [SessionBackend] {
+        if settings.transport == .acp { return AcpClient.current(settings).map { [.acp($0)] } ?? [] }
         let serve: SessionBackend? = HermesServeClient.shared.hasCredentials ? .serve(.shared) : nil
         let ledger = conversation.ledgerAPI().map(SessionBackend.ledger)
         let ordered = settings.transport == .hermesServe ? [serve, ledger] : [ledger, serve]
@@ -94,6 +108,7 @@ enum SessionBackend {
         switch self {
         case .serve(let client): try await client.listSessions()
         case .ledger(let api): try await api.listSessions()
+        case .acp(let client): AcpSessions.summaries(try await client.listSessions())
         }
     }
 
@@ -102,6 +117,7 @@ enum SessionBackend {
         switch self {
         case .serve(let client): await Conversation.readied(serveRows: try await client.history(stored: id))
         case .ledger(let api): await Conversation.readied(stored: try await api.messages(sessionID: id))
+        case .acp(let client): AcpHistory.messages(try await client.load(id))
         }
     }
 
@@ -122,6 +138,10 @@ enum SessionBackend {
         switch self {
         case .serve(let client): stored = try await client.transcript(stored: id, limit: 1)
         case .ledger(let api): stored = try await api.newestMessages(sessionID: id, limit: 1)
+        case .acp(let client):
+            // The agent's list says when each session last changed.
+            let row = AcpSessions.summaries(try await client.listSessions()).first { $0.id == id }
+            return row?.last_active.map { Date(timeIntervalSince1970: $0) }
         }
         return stored.last?.timestamp.map { Date(timeIntervalSince1970: $0) }
     }
@@ -130,6 +150,7 @@ enum SessionBackend {
         switch self {
         case .serve(let client): try await client.updateSession(stored: id, title: title)
         case .ledger(let api): try await api.updateSession(id: id, title: title)
+        case .acp: throw Self.notOnACP
         }
     }
 
@@ -137,6 +158,7 @@ enum SessionBackend {
         switch self {
         case .serve(let client): try await client.updateSession(stored: id, pinned: pinned)
         case .ledger(let api): try await api.updateSession(id: id, pinned: pinned)
+        case .acp: throw Self.notOnACP
         }
     }
 
@@ -145,6 +167,7 @@ enum SessionBackend {
         switch self {
         case .serve(let client): try await client.updateSession(stored: id, unread: unread)
         case .ledger(let api): try await api.updateSession(id: id, unread: unread)
+        case .acp: throw Self.notOnACP
         }
     }
 
@@ -152,6 +175,7 @@ enum SessionBackend {
         switch self {
         case .serve(let client): try await client.updateSession(stored: id, archived: true)
         case .ledger(let api): try await api.updateSession(id: id, archived: true)
+        case .acp: throw Self.notOnACP
         }
     }
 
@@ -159,6 +183,7 @@ enum SessionBackend {
         switch self {
         case .serve(let client): try await client.deleteSession(stored: id)
         case .ledger(let api): try await api.deleteSession(id: id)
+        case .acp(let client): try await client.deleteSession(id)
         }
     }
 
@@ -171,6 +196,8 @@ enum SessionBackend {
             return nil
         case .ledger(let api):
             return try await api.forkSession(id: id, title: title)
+        case .acp:
+            throw Self.notOnACP
         }
     }
 
@@ -178,6 +205,7 @@ enum SessionBackend {
         switch self {
         case .serve(let client): try await client.modelOptions(refresh: refresh)
         case .ledger(let api): try await api.modelOptions(refresh: refresh)
+        case .acp(let client): client.modelChoices(session: nil)
         }
     }
 }

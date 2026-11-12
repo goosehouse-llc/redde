@@ -15,7 +15,7 @@ struct WorkStrip: View {
         #if DEBUG
         if Workstreams.demo { return conversation.bot?.profile ?? "default" }
         #endif
-        guard Settings.shared.transport != .chatCompletions, conversation.serverSessionID != nil else { return nil }
+        guard Settings.shared.transport.isHermes, conversation.serverSessionID != nil else { return nil }
         return conversation.bot?.profile ?? conversation.elsewhere?.profile ?? "default"
     }
 

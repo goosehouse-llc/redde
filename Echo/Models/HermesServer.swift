@@ -20,6 +20,11 @@ nonisolated struct HermesServer: Codable, Identifiable, Equatable, Sendable {
     /// who reaches its address can use the agent (asked 2026-10-30). No secret goes with it: the
     /// Dashboard's session token is read off its page each time and never stored.
     var serveOpenAccess = false
+    /// An ACP agent's address, which of the bridge's agents, and the folder new chats work in
+    /// (`Transport.acp`); its token is in the Keychain.
+    var acpURL = ""
+    var acpAgent = ""
+    var acpFolder = ""
 
     init(id: UUID, name: String, transport: Transport = .hermesServe, gatewayURL: String = "", serveURL: String = "",
          serveUsername: String = "", cfAccessClientID: String = "", gatewayModel: String = "", gatewayProvider: String = "",
@@ -48,15 +53,19 @@ nonisolated struct HermesServer: Codable, Identifiable, Equatable, Sendable {
         hermesProfile = try c.decodeIfPresent(String.self, forKey: .hermesProfile) ?? ""
         hermesProfileHome = try c.decodeIfPresent(String.self, forKey: .hermesProfileHome) ?? ""
         serveOpenAccess = try c.decodeIfPresent(Bool.self, forKey: .serveOpenAccess) ?? false
+        acpURL = try c.decodeIfPresent(String.self, forKey: .acpURL) ?? ""
+        acpAgent = try c.decodeIfPresent(String.self, forKey: .acpAgent) ?? ""
+        acpFolder = try c.decodeIfPresent(String.self, forKey: .acpFolder) ?? ""
     }
 
     /// Its name, else the host of whichever address it uses, else a placeholder.
     var title: String {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { return trimmed }
-        let primary = transport == .hermesSessions ? [gatewayURL, serveURL] : [serveURL, gatewayURL]
+        let primary = transport == .acp ? [acpURL] : transport == .hermesSessions ? [gatewayURL, serveURL] : [serveURL, gatewayURL]
         for raw in primary {
-            if let host = URL(string: raw.trimmingCharacters(in: .whitespacesAndNewlines))?.host(), !host.isEmpty {
+            let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let host = URL(string: text.contains("://") ? text : "ws://" + text)?.host(), !host.isEmpty {
                 return host
             }
         }

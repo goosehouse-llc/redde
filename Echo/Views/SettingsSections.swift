@@ -357,17 +357,22 @@ struct ProfileSettings: View {
                         Label("Server", systemImage: "server.rack")
                     }
                 }
-                NavigationLink { ProfilePickerView() } label: {
-                    LabeledContent {
-                        Text(settings.profileName ?? String(localized: "Default", comment: "The Hermes server's main profile")).foregroundStyle(.secondary).lineLimit(1)
-                    } label: {
-                        Label("Profile", systemImage: "person.2")
+                if settings.transport.isHermes {
+                    NavigationLink { ProfilePickerView() } label: {
+                        LabeledContent {
+                            Text(settings.profileName ?? String(localized: "Default", comment: "The Hermes server's main profile")).foregroundStyle(.secondary).lineLimit(1)
+                        } label: {
+                            Label("Profile", systemImage: "person.2")
+                        }
                     }
                 }
             } header: {
-                Text("Hermes server")
+                settings.transport == .acp ? Text("Agent", comment: "Settings: the section of the ACP agent's server") : Text("Hermes server")
             } footer: {
-                Text(String(localized: "The server and agent profile Redde talks to. Chats, skills, tools, cron jobs and memory all follow them.")
+                settings.transport == .acp
+                ? Text("The computer Redde reaches the agent on, through the Redde bridge. Chats are the agent's own: it keeps them, and they show on every device.",
+                       comment: "Settings: footer of the ACP agent's server section")
+                : Text(String(localized: "The server and agent profile Redde talks to. Chats, skills, tools, cron jobs and memory all follow them.")
                      + (BotDirectory.reachable(settings)
                         ? " " + String(localized: "Bots are your other profiles, as Hermes Desktop shows them: each has one chat of its own, listed under Bots once the server has more than one profile.")
                             + (settings.transport == .hermesSessions ? " " + String(localized: "On the Hermes API they go by the Dashboard's login.") : "")
@@ -392,8 +397,11 @@ struct TransportSettings: View {
             .pickerStyle(.inline)
             .labelsHidden()
             Button("Set up connection…", systemImage: "network") { showSetup = true }
-            Button("Set up another device…", systemImage: "qrcode") { sharing = settings.activeServer }
-                .sheet(item: $sharing) { SetupCodeView(server: $0) }
+            // A setup code doesn't carry an agent bridge yet (docs/acp.md, phase 2).
+            if settings.transport != .acp {
+                Button("Set up another device…", systemImage: "qrcode") { sharing = settings.activeServer }
+                    .sheet(item: $sharing) { SetupCodeView(server: $0) }
+            }
         } header: {
             Text("Connection")
         } footer: {
@@ -420,7 +428,7 @@ struct ModelSettings: View {
                 }
             }
             // Keys, endpoints, the default, fallback and helper models on the server (2026-11-11).
-            if settings.transport != .chatCompletions {
+            if settings.transport.isHermes {
                 NavigationLink {
                     ModelsProvidersView(profile: settings.profileName ?? "default", owner: settings.headerTitle)
                 } label: {

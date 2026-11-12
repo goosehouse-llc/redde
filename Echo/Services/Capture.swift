@@ -146,7 +146,7 @@ enum CaptureFiler {
     static func deliver(_ notes: [CaptureInbox.Note], settings: Settings = .shared, store: ConversationStore = .shared,
                         defaults: UserDefaults = .standard) async throws {
         guard !notes.isEmpty else { return }
-        guard settings.transport.hasLedger else {
+        guard settings.transport.isHermes else {
             try keep(notes, store: store, defaults: defaults)
             return
         }

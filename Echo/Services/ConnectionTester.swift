@@ -121,3 +121,27 @@ nonisolated final class NoRedirectSession: NSObject, URLSessionTaskDelegate, Sen
         completionHandler(nil)
     }
 }
+
+extension ConnectionTester {
+    /// An ACP agent: the link opens and the agent answers `initialize`.
+    @MainActor
+    static func acp(_ endpoint: AcpEndpoint) async -> Outcome {
+        let client = AcpClient.client(for: endpoint)
+        client.close()
+        do {
+            try await client.ensureConnected()
+            let name = client.info?.name ?? String(localized: "the agent", comment: "ACP connection test")
+            return client.info?.bridge != nil
+                ? .ok(String(localized: "Connected to \(name) through the Redde bridge.", comment: "ACP connection test"))
+                : .ok(String(localized: "Connected to \(name).", comment: "ACP connection test"))
+        } catch let error as TransportError {
+            return .failed(error.localizedDescription)
+        } catch let error as AcpError {
+            return .failed(error.message)
+        } catch {
+            let refused = (error as? URLError)?.code == .badServerResponse
+            return .failed(refused ? String(localized: "The bridge turned the token away, or nothing at that address speaks ACP.", comment: "ACP connection test")
+                                   : error.localizedDescription)
+        }
+    }
+}

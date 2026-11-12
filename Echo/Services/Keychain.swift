@@ -36,6 +36,8 @@ nonisolated enum Keychain {
         case pangolinDashboard = "pangolin-dashboard"
         case pangolinAPI = "pangolin-api"
         case pushRegisterSecret = "push-register-secret"
+        /// An ACP agent's token: the Redde bridge's, or `goose serve`'s secret key.
+        case acpToken = "acp-token"
         /// This device's SSH key for the terminal (`SSHIdentity`), Ed25519, raw and base64: app-wide.
         case sshKey = "ssh-key"
     }
@@ -53,7 +55,7 @@ nonisolated enum Keychain {
     /// live calls' (GPT-Live, Gemini Live, Grok Voice). Never a browser sign-in (each device refreshes its own tokens), the push
     /// registration secret or this device's SSH key.
     static let syncable: [Item] = [.gatewayAPIKey, .serveDashboardPassword, .cfAccessClientSecret, .customHeaders, .pangolinDashboard,
-                                   .pangolinAPI, .fastLaneAPIKey, .openAILive, .geminiLive, .grokVoice, .elevenLabsLive]
+                                   .pangolinAPI, .acpToken, .fastLaneAPIKey, .openAILive, .geminiLive, .grokVoice, .elevenLabsLive]
     static func isSyncable(account: String) -> Bool {
         syncable.contains { account == $0.rawValue || account.hasPrefix($0.rawValue + "@") || account.hasPrefix($0.rawValue + ".") }
     }
@@ -63,7 +65,7 @@ nonisolated enum Keychain {
 
     /// Items that belong to one Hermes server.
     static let serverScoped: Set<Item> = [.gatewayAPIKey, .serveDashboardPassword, .serveSignIn, .cfAccessClientSecret, .customHeaders,
-                                          .pangolinDashboard, .pangolinAPI]
+                                          .pangolinDashboard, .pangolinAPI, .acpToken]
     /// Where Settings records the active server. Read here directly (UserDefaults is thread-safe),
     /// so a secret read can never happen before the scope is known.
     static let activeServerKey = "activeServerID"

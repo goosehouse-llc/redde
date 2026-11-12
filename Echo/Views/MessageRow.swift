@@ -806,7 +806,7 @@ struct MessageRow: View, Equatable {
         if let conversation, !isLive {
             Button("Remember This", systemImage: "brain.head.profile") { conversation.send(AgentMemory.rememberMessage(PlainText.display(message.text))) }
             // What was done for this reply, kept to do again (asked 2026-11-04): the chat menu's, for one reply.
-            if conversation.connection.hasLedger, !conversation.isIncognito, !conversation.isWorkerTranscript, !conversation.isStreaming {
+            if conversation.connection.isHermes, !conversation.isIncognito, !conversation.isWorkerTranscript, !conversation.isStreaming {
                 Button("Make This a Routine…", systemImage: "repeat") { RoutineAsk.shared.reply = message.id }
             }
         }

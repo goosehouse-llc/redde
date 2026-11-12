@@ -48129,6 +48129,113 @@
         }
       }
     },
+    "A tool call" : {
+      "comment" : "An approval card over ACP that names no command",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et værktøjskald"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Toolaufruf"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una llamada a herramienta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un appel d’outil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una chiamata a uno strumento"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ツールの呼び出し"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "도구 호출"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et verktøykall"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een toolaanroep"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wywołanie narzędzia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma chamada de ferramenta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вызов инструмента"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett verktygsanrop"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir araç çağrısı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виклик інструмента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具调用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具呼叫"
+          }
+        }
+      }
+    },
     "A voice of yours" : {
       "localizations" : {
         "da" : {
@@ -57979,6 +58086,113 @@
         }
       }
     },
+    "Agent (claude, codex, hermes…)" : {
+      "comment" : "ACP connection field",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent (claude, codex, hermes…)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent (claude, codex, hermes…)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agente (claude, codex, hermes…)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent (claude, codex, hermes…)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agente (claude, codex, hermes…)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェント（claude、codex、hermes…）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트(claude, codex, hermes…)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent (claude, codex, hermes…)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent (claude, codex, hermes…)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent (claude, codex, hermes…)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agente (claude, codex, hermes…)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент (claude, codex, hermes…)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent (claude, codex, hermes…)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan (claude, codex, hermes…)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент (claude, codex, hermes…)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体（claude、codex、hermes…）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理（claude、codex、hermes…）"
+          }
+        }
+      }
+    },
     "Agent Activity" : {
       "localizations" : {
         "da" : {
@@ -58081,6 +58295,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "代理活動"
+          }
+        }
+      }
+    },
+    "Agent bridge" : {
+      "comment" : "Setup and Settings: the ACP connection's section",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentbro"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent-Bridge"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puente del agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passerelle d’agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bridge dell'agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントブリッジ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트 브리지"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentbro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentbrug"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostek agenta"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ponte do agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мост агента"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentbrygga"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan köprüsü"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Міст агента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体桥接"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理橋接"
+          }
+        }
+      }
+    },
+    "Agent Client Protocol" : {
+      "comment" : "Session Details: the connection to an ACP agent",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent Client Protocol"
           }
         }
       }
@@ -102603,6 +103031,113 @@
         }
       }
     },
+    "Changed %@" : {
+      "comment" : "A tool step's detail: a file the agent edited",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ændrede %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ geändert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se cambió %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifié : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modificato %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@を変更"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 변경됨"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endret %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ gewijzigd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmieniono %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alterou %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменено: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ändrade %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ değiştirildi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Змінено %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已更改%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已更改 %@"
+          }
+        }
+      }
+    },
     "Changes" : {
       "localizations" : {
         "da" : {
@@ -114887,6 +115422,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "透過你 Hermes 的 Google 登入連接"
+          }
+        }
+      }
+    },
+    "Connected to %@ through the Redde bridge." : {
+      "comment" : "ACP connection test",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forbundet til %@ via Redde-broen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Über die Redde-Bridge mit %@ verbunden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado con %@ a través del puente de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecté à %@ via la passerelle Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connesso con %@ tramite il bridge di Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeブリッジ経由で%@に接続しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 브리지를 통해 %@에 연결됨."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koblet til %@ via Redde-broen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbonden met %@ via de Redde-brug."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączono z %@ przez mostek Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado com %@ pela ponte do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключено к %@ через мост Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansluten till %@ via Redde-bryggan."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde köprüsü üzerinden bağlandı: %@."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Під’єднано до %@ через міст Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已通过Redde桥接连接到%@。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已透過 Redde 橋接連線到 %@。"
+          }
+        }
+      }
+    },
+    "Connected to %@." : {
+      "comment" : "ACP connection test",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forbundet til %@."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit %@ verbunden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado con %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecté à %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connesso con %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@に接続しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@에 연결됨."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koblet til %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbonden met %@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączono z %@."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado com %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключено к %@."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansluten till %@."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlandı: %@."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Під’єднано до %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已连接到%@。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已連線到 %@。"
           }
         }
       }
@@ -168383,6 +169132,113 @@
         }
       }
     },
+    "Folder on the computer (optional)" : {
+      "comment" : "ACP connection field: where new chats work",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mappe på computeren (valgfri)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordner auf dem Computer (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carpeta en el ordenador (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dossier sur l’ordinateur (facultatif)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartella sul computer (facoltativa)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コンピュータ上のフォルダ（任意）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "컴퓨터의 폴더(선택 사항)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mappe på datamaskinen (valgfritt)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map op de computer (optioneel)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder na komputerze (opcjonalnie)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasta no computador (opcional)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Папка на компьютере (необязательно)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapp på datorn (valfritt)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilgisayardaki klasör (isteğe bağlı)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Папка на комп’ютері (необов’язково)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "电脑上的文件夹（可选）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電腦上的檔案夾（選填）"
+          }
+        }
+      }
+    },
     "Folds New Bot, Topology and the hidden bots into one tile" : {
       "localizations" : {
         "da" : {
@@ -203700,6 +204556,7 @@
       }
     },
     "Image" : {
+      "comment" : "As in \"Image attachments aren't supported on …\"",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -273013,6 +273870,113 @@
         }
       }
     },
+    "not connected to the agent" : {
+      "comment" : "ACP",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ikke forbundet til agenten"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nicht mit dem Agenten verbunden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sin conexión con el agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "non connecté à l’agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "non connesso all'agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントに接続されていません"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트에 연결되지 않음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ikke koblet til agenten"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "niet verbonden met de agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "brak połączenia z agentem"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sem conexão com o agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "нет подключения к агенту"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "inte ansluten till agenten"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ajana bağlı değil"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "немає з’єднання з агентом"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未连接到智能体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未連線到代理"
+          }
+        }
+      }
+    },
     "Not connected: the server's key wasn't trusted." : {
       "localizations" : {
         "da" : {
@@ -299883,6 +300847,113 @@
         }
       }
     },
+    "Other agent (ACP)" : {
+      "comment" : "A connection: Claude Code, Codex and other agents through the Agent Client Protocol",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anden agent (ACP)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anderer Agent (ACP)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otro agente (ACP)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autre agent (ACP)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altro agente (ACP)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "その他のエージェント（ACP）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기타 에이전트(ACP)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annen agent (ACP)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere agent (ACP)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inny agent (ACP)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outro agente (ACP)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другой агент (ACP)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annan agent (ACP)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diğer ajan (ACP)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Інший агент (ACP)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他智能体（ACP）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他代理（ACP）"
+          }
+        }
+      }
+    },
     "Other Change…" : {
       "comment" : "A reminder card's menu: tell the agent in words what to change",
       "localizations" : {
@@ -326381,6 +327452,113 @@
         }
       }
     },
+    "Redde couldn't reach the agent at %@: %@" : {
+      "comment" : "An ACP connection that failed to open",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kunne ikke nå agenten på %@: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde konnte den Agenten unter %@ nicht erreichen: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde no pudo contactar con el agente en %@: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde n’a pas pu joindre l’agent à %@ : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde non è riuscito a raggiungere l'agente su %@: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeは%1$@のエージェントに接続できませんでした：%2$@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 %1$@의 에이전트에 연결할 수 없음: %2$@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kunne ikke nå agenten på %@: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan de agent op %@ niet bereiken: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde nie może połączyć się z agentem pod adresem %@: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde não conseguiu acessar o agente em %@: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde не удалось связаться с агентом по адресу %@: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kunde inte nå agenten på %@: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde, %@ adresindeki ajana ulaşamadı: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde не вдалося зв’язатися з агентом за адресою %@: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde无法连接位于%@的智能体：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 無法連線到位於 %@ 的代理：%@"
+          }
+        }
+      }
+    },
     "Redde couldn't reach your Hermes to %@. Open Redde to answer. (%@)" : {
       "localizations" : {
         "da" : {
@@ -338761,6 +339939,113 @@
         }
       }
     },
+    "Replace stored token" : {
+      "comment" : "ACP connection field",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstat gemt token"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gespeichertes Token ersetzen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reemplazar el token guardado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplacer le jeton enregistré"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sostituisci il token salvato"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存済みのトークンを置き換え"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장된 토큰 대치"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstatt lagret token"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vervang bewaard token"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zastąp zapisany token"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Substituir o token salvo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заменить сохраненный токен"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ersätt sparad token"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kayıtlı token'ı değiştir"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замінити збережений токен"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "替换已存储的令牌"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取代儲存的權杖"
+          }
+        }
+      }
+    },
     "Replace?" : {
       "localizations" : {
         "da" : {
@@ -346449,6 +347734,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 %@ 上執行快速工作"
+          }
+        }
+      }
+    },
+    "Run Redde's bridge on the computer with your agents (Claude Code, Codex, Gemini CLI, Goose, Hermes and others that speak ACP). `python3 redde_bridge.py --print-setup` shows the address and token. A server that speaks ACP itself, such as `goose serve`, works too." : {
+      "comment" : "Setup and Settings: the ACP connection's footer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kør Reddes bro på computeren med dine agenter (Claude Code, Codex, Gemini CLI, Goose, Hermes og andre, der taler ACP). `python3 redde_bridge.py --print-setup` viser adressen og tokenet. En server, der selv taler ACP, f.eks. `goose serve`, virker også."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starte die Redde-Bridge auf dem Computer mit deinen Agenten (Claude Code, Codex, Gemini CLI, Goose, Hermes und andere, die ACP sprechen). `python3 redde_bridge.py --print-setup` zeigt Adresse und Token an. Ein Server, der selbst ACP spricht, etwa `goose serve`, funktioniert auch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ejecuta el puente de Redde en el ordenador con tus agentes (Claude Code, Codex, Gemini CLI, Goose, Hermes y otros que hablan ACP). `python3 redde_bridge.py --print-setup` muestra la dirección y el token. También funciona un servidor que habla ACP por sí mismo, como `goose serve`."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lancez la passerelle Redde sur l’ordinateur où se trouvent vos agents (Claude Code, Codex, Gemini CLI, Goose, Hermes et les autres qui parlent ACP). `python3 redde_bridge.py --print-setup` affiche l’adresse et le jeton. Un serveur qui parle lui-même ACP, comme `goose serve`, fonctionne aussi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvia il bridge di Redde sul computer con i tuoi agenti (Claude Code, Codex, Gemini CLI, Goose, Hermes e altri che parlano ACP). `python3 redde_bridge.py --print-setup` mostra l'indirizzo e il token. Funziona anche un server che parla ACP da sé, come `goose serve`."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェント（Claude Code、Codex、Gemini CLI、Goose、HermesなどACPに対応するもの）があるコンピュータでReddeのブリッジを実行してください。`python3 redde_bridge.py --print-setup`でアドレスとトークンが表示されます。`goose serve`のように、ACPに直接対応するサーバも使用できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트(Claude Code, Codex, Gemini CLI, Goose, Hermes 및 ACP를 지원하는 기타 에이전트)가 있는 컴퓨터에서 Redde 브리지를 실행하십시오. `python3 redde_bridge.py --print-setup`을 실행하면 주소와 토큰이 표시됩니다. `goose serve`처럼 ACP를 직접 지원하는 서버도 사용할 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kjør Reddes bro på datamaskinen med agentene dine (Claude Code, Codex, Gemini CLI, Goose, Hermes og andre som snakker ACP). `python3 redde_bridge.py --print-setup` viser adressen og tokenet. En tjener som selv snakker ACP, for eksempel `goose serve`, fungerer også."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start de Redde-brug op de computer met je agents (Claude Code, Codex, Gemini CLI, Goose, Hermes en andere die ACP spreken). `python3 redde_bridge.py --print-setup` toont het adres en het token. Een server die zelf ACP spreekt, zoals `goose serve`, werkt ook."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uruchom mostek Redde na komputerze z agentami (Claude Code, Codex, Gemini CLI, Goose, Hermes i innymi obsługującymi ACP). `python3 redde_bridge.py --print-setup` pokazuje adres i token. Działa też serwer, który sam obsługuje ACP, np. `goose serve`."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rode a ponte do Redde no computador com seus agentes (Claude Code, Codex, Gemini CLI, Goose, Hermes e outros que falam ACP). `python3 redde_bridge.py --print-setup` mostra o endereço e o token. Um servidor que fala ACP por conta própria, como `goose serve`, também funciona."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запустите мост Redde на компьютере с вашими агентами (Claude Code, Codex, Gemini CLI, Goose, Hermes и другими, поддерживающими ACP). `python3 redde_bridge.py --print-setup` покажет адрес и токен. Подойдет и сервер, который сам поддерживает ACP, например `goose serve`."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kör Reddes brygga på datorn med dina agenter (Claude Code, Codex, Gemini CLI, Goose, Hermes och andra som talar ACP). `python3 redde_bridge.py --print-setup` visar adressen och token. En server som själv talar ACP, till exempel `goose serve`, fungerar också."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde'nin köprüsünü ajanlarınızın bulunduğu bilgisayarda çalıştırın (Claude Code, Codex, Gemini CLI, Goose, Hermes ve ACP destekleyen diğerleri). `python3 redde_bridge.py --print-setup` adresi ve token'ı gösterir. `goose serve` gibi ACP'yi doğrudan destekleyen bir sunucu da çalışır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запустіть міст Redde на комп’ютері з вашими агентами (Claude Code, Codex, Gemini CLI, Goose, Hermes та іншими, що підтримують ACP). `python3 redde_bridge.py --print-setup` покаже адресу й токен. Підійде й сервер, який сам підтримує ACP, наприклад `goose serve`."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在装有智能体（Claude Code、Codex、Gemini CLI、Goose、Hermes及其他支持ACP的智能体）的电脑上运行Redde桥接。`python3 redde_bridge.py --print-setup`会显示地址和令牌。也可以使用本身支持ACP的服务器，例如`goose serve`。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在裝有代理（Claude Code、Codex、Gemini CLI、Goose、Hermes 及其他支援 ACP 的代理）的電腦上執行 Redde 橋接。`python3 redde_bridge.py --print-setup` 會顯示位址和權杖。本身支援 ACP 的伺服器（例如 `goose serve`）也能使用。"
           }
         }
       }
@@ -410584,6 +411976,113 @@
         }
       }
     },
+    "the agent" : {
+      "comment" : "ACP connection test",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agenten"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dem Agenten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "el agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l’agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l'agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agenten"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "de agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agentem"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "o agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "агенту"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agenten"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ajan"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "агента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理"
+          }
+        }
+      }
+    },
     "The agent asked you something." : {
       "localizations" : {
         "da" : {
@@ -410686,6 +412185,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "代理問了你一個問題。"
+          }
+        }
+      }
+    },
+    "The agent bridge's address isn't valid." : {
+      "comment" : "ACP connection test",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentbroens adresse er ikke gyldig."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Adresse der Agent-Bridge ist ungültig."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dirección del puente del agente no es válida."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’adresse de la passerelle d’agent n’est pas valide."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'indirizzo del bridge dell'agente non è valido."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントブリッジのアドレスが無効です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트 브리지 주소가 유효하지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adressen til agentbroen er ikke gyldig."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het adres van de agentbrug is ongeldig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adres mostka agenta jest nieprawidłowy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O endereço da ponte do agente não é válido."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адрес моста агента недействителен."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentbryggans adress är inte giltig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan köprüsünün adresi geçerli değil."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адреса моста агента недійсна."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体桥接的地址无效。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理橋接的位址無效。"
+          }
+        }
+      }
+    },
+    "The agent declined to answer." : {
+      "comment" : "Under a reply over ACP",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten afviste at svare."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Agent hat die Antwort verweigert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El agente se negó a responder."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’agent a refusé de répondre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'agente si è rifiutato di rispondere."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントは回答を拒否しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 응답을 거부했습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten avslo å svare."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De agent weigerde te antwoorden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent odmówił odpowiedzi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O agente se recusou a responder."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент отказался отвечать."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten avböjde att svara."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan yanıt vermeyi reddetti."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент відмовився відповідати."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体拒绝回答。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理拒絕回答。"
           }
         }
       }
@@ -411110,6 +412823,327 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "代理在完成前停止了（在其他地方被停止，或 Hermes 重新啟動）。"
+          }
+        }
+      }
+    },
+    "The agent stopped running on the host." : {
+      "comment" : "Under a reply over ACP: its process ended",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten stoppede med at køre på værten."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Agent läuft auf dem Host nicht mehr."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El agente dejó de ejecutarse en el host."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’agent s’est arrêté sur l’hôte."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'agente ha smesso di funzionare sull'host."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホスト上でエージェントの実行が終了しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "호스트에서 에이전트 실행이 중지되었습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten sluttet å kjøre på verten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De agent draait niet meer op de host."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent przestał działać na hoście."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O agente parou de rodar no host."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент перестал работать на хосте."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten slutade köras på värden."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan ana makinede çalışmayı durdurdu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент перестав працювати на хості."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体已在主机上停止运行。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理已在主機上停止執行。"
+          }
+        }
+      }
+    },
+    "The agent stopped: it reached its limit of steps for one turn." : {
+      "comment" : "Under a reply over ACP",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten stoppede: Den nåede sin grænse for antal skridt pr. svar."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Agent hat gestoppt: Er hat sein Schrittlimit für eine Runde erreicht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El agente se detuvo: alcanzó su límite de pasos para un turno."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’agent s’est arrêté : il a atteint sa limite d’étapes pour un tour."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'agente si è fermato: ha raggiunto il limite di passaggi per un turno."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントが停止しました：1ターンあたりのステップ数の上限に達しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 중지됨: 한 턴의 단계 한도에 도달했습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten stoppet: Den nådde grensen for antall skritt per svar."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De agent is gestopt: hij heeft zijn limiet aan stappen voor één beurt bereikt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent zatrzymał się: osiągnął limit kroków na jedną odpowiedź."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O agente parou: atingiu o limite de etapas de uma rodada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент остановился: достигнут лимит шагов на один ответ."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten stoppade: den nådde gränsen för antal steg per svar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan durdu: bir turdaki adım sınırına ulaştı."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент зупинився: досягнуто ліміту кроків на одну відповідь."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体已停止：已达到单轮的步骤上限。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理已停止：已達到單輪的步驟上限。"
+          }
+        }
+      }
+    },
+    "The agent stopped: it reached its token limit." : {
+      "comment" : "Under a reply over ACP",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten stoppede: Den nåede sin tokengrænse."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Agent hat gestoppt: Er hat sein Tokenlimit erreicht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El agente se detuvo: alcanzó su límite de tokens."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’agent s’est arrêté : il a atteint sa limite de jetons."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'agente si è fermato: ha raggiunto il limite di token."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントが停止しました：トークンの上限に達しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 중지됨: 토큰 한도에 도달했습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten stoppet: Den nådde tokengrensen sin."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De agent is gestopt: hij heeft zijn tokenlimiet bereikt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent zatrzymał się: osiągnął limit tokenów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O agente parou: atingiu o limite de tokens."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент остановился: достигнут лимит токенов."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten stoppade: den nådde sin tokengräns."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan durdu: token sınırına ulaştı."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент зупинився: досягнуто ліміту токенів."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体已停止：已达到Token上限。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理已停止：已達到 Token 上限。"
           }
         }
       }
@@ -413131,6 +415165,113 @@
         }
       }
     },
+    "The bridge turned the token away, or nothing at that address speaks ACP." : {
+      "comment" : "ACP connection test",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Broen afviste tokenet, eller intet på den adresse taler ACP."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Bridge hat das Token abgelehnt, oder unter dieser Adresse spricht nichts ACP."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El puente rechazó el token, o nada en esa dirección habla ACP."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La passerelle a refusé le jeton, ou rien à cette adresse ne parle ACP."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il bridge ha rifiutato il token, oppure a quell'indirizzo niente parla ACP."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブリッジがトークンを拒否したか、そのアドレスにACPに対応するものがありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "브리지가 토큰을 거부했거나 해당 주소에 ACP를 지원하는 항목이 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Broen avviste tokenet, eller ingenting på den adressen snakker ACP."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De brug heeft het token geweigerd, of niets op dat adres spreekt ACP."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostek odrzucił token albo pod tym adresem nic nie obsługuje ACP."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A ponte recusou o token, ou nada nesse endereço fala ACP."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мост отклонил токен, или по этому адресу нет ничего, что поддерживает ACP."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bryggan avvisade token, eller så finns inget som talar ACP på den adressen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Köprü token'ı reddetti ya da bu adreste ACP destekleyen bir şey yok."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Міст відхилив токен, або за цією адресою ніщо не підтримує ACP."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "桥接拒绝了令牌，或该地址上没有支持ACP的服务。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橋接拒絕了權杖，或該位址上沒有支援 ACP 的服務。"
+          }
+        }
+      }
+    },
     "The browser came back without signing in. Try again." : {
       "localizations" : {
         "da" : {
@@ -414617,6 +416758,113 @@
         }
       }
     },
+    "The computer Redde reaches the agent on, through the Redde bridge. Chats are the agent's own: it keeps them, and they show on every device." : {
+      "comment" : "Settings: footer of the ACP agent's server section",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Computeren, hvor Redde når agenten, via Redde-broen. Chattene tilhører agenten: Den gemmer dem, og de vises på alle enheder."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Computer, über den Redde den Agenten erreicht, mithilfe der Redde-Bridge. Die Chats gehören dem Agenten: Er bewahrt sie auf, und sie erscheinen auf jedem Gerät."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El ordenador desde el que Redde contacta con el agente, a través del puente de Redde. Los chats son del propio agente: él los guarda y se ven en todos los dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’ordinateur par lequel Redde joint l’agent, via la passerelle Redde. Les discussions appartiennent à l’agent : il les conserve, et elles s’affichent sur chaque appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il computer tramite cui Redde raggiunge l'agente, con il bridge di Redde. Le chat sono dell'agente: le conserva lui e compaiono su ogni dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ReddeがReddeブリッジ経由でエージェントに接続するコンピュータです。チャットはエージェント自身のものです。エージェントが保持し、すべてのデバイスに表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 Redde 브리지를 통해 에이전트에 연결하는 컴퓨터입니다. 채팅은 에이전트가 소유합니다. 에이전트가 채팅을 보관하며 모든 기기에 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datamaskinen der Redde når agenten, via Redde-broen. Chattene tilhører agenten: Den tar vare på dem, og de vises på alle enheter."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De computer waarlangs Redde de agent bereikt, via de Redde-brug. De chats zijn van de agent zelf: hij bewaart ze, en ze staan op elk apparaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komputer, przez który Redde łączy się z agentem za pomocą mostka Redde. Czaty należą do agenta: to on je przechowuje i są widoczne na każdym urządzeniu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O computador pelo qual o Redde acessa o agente, com a ponte do Redde. As conversas são do próprio agente: ele as guarda, e elas aparecem em todos os dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Компьютер, через который Redde связывается с агентом с помощью моста Redde. Чаты принадлежат агенту: он хранит их, и они видны на всех устройствах."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datorn där Redde når agenten, via Redde-bryggan. Chattarna tillhör agenten: den sparar dem, och de visas på alla enheter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde'nin, Redde köprüsü üzerinden ajana ulaştığı bilgisayar. Sohbetler ajanın kendisine aittir: onları ajan saklar ve her aygıtta görünürler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Комп’ютер, через який Redde зв’язується з агентом за допомогою моста Redde. Чати належать агентові: він їх зберігає, і вони видні на всіх пристроях."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde通过Redde桥接访问智能体所在的这台电脑。聊天归智能体所有：由智能体保存，并在所有设备上显示。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 透過 Redde 橋接連線到代理所在的這部電腦。聊天屬於代理本身：由代理保存，並顯示在每部裝置上。"
+          }
+        }
+      }
+    },
     "the connection closed." : {
       "comment" : "Follows \"Couldn't reach the server:\"",
       "localizations" : {
@@ -415356,6 +417604,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "與 Hermes 的連線已中斷。Redde 正在重試。"
+          }
+        }
+      }
+    },
+    "the connection to the agent closed" : {
+      "comment" : "ACP",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "forbindelsen til agenten blev lukket"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "die Verbindung zum Agenten wurde geschlossen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "se cerró la conexión con el agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "la connexion à l’agent s’est fermée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "la connessione all'agente si è chiusa"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントへの接続が閉じられました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트와의 연결이 종료됨"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tilkoblingen til agenten ble lukket"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "de verbinding met de agent is gesloten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "połączenie z agentem zostało zamknięte"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a conexão com o agente foi fechada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "подключение к агенту закрыто"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "anslutningen till agenten stängdes"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ajanla bağlantı kapandı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "з’єднання з агентом закрито"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与智能体的连接已关闭"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "與代理的連線已關閉"
+          }
+        }
+      }
+    },
+    "the connection to the agent dropped" : {
+      "comment" : "ACP",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "forbindelsen til agenten blev afbrudt"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "die Verbindung zum Agenten wurde unterbrochen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "se perdió la conexión con el agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "la connexion à l’agent a été interrompue"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "la connessione all'agente si è interrotta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントへの接続が切断されました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트와의 연결이 끊어짐"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tilkoblingen til agenten ble brutt"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "de verbinding met de agent is verbroken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "połączenie z agentem zostało zerwane"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a conexão com o agente caiu"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "подключение к агенту прервано"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "anslutningen till agenten bröts"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ajanla bağlantı koptu"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "з’єднання з агентом перервано"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与智能体的连接已断开"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "與代理的連線已中斷"
           }
         }
       }
@@ -431131,6 +433593,327 @@
         }
       }
     },
+    "this agent" : {
+      "comment" : "As in \"… aren't supported on this agent\"",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "denne agent"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "diesen Agenten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cet agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "questo agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このエージェント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 에이전트"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "denne agenten"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deze agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tym agencie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "este agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "этого агента"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "den här agenten"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bu ajan"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "цьому агенті"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此智能体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此代理"
+          }
+        }
+      }
+    },
+    "This agent can't delete its chats." : {
+      "comment" : "ACP",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne agent kan ikke slette sine chats."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Agent kann seine Chats nicht löschen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este agente no puede eliminar sus chats."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet agent ne peut pas supprimer ses discussions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo agente non può eliminare le sue chat."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このエージェントはチャットを削除できません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 에이전트는 채팅을 삭제할 수 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne agenten kan ikke slette chattene sine."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze agent kan zijn chats niet verwijderen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten agent nie może usuwać swoich czatów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este agente não consegue apagar suas conversas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот агент не может удалять свои чаты."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här agenten kan inte radera sina chattar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu ajan sohbetlerini silemez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей агент не може видаляти свої чати."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此智能体无法删除其聊天。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此代理無法刪除其聊天。"
+          }
+        }
+      }
+    },
+    "This agent doesn't keep that for its chats." : {
+      "comment" : "A chat list action an ACP agent can't do",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne agent gemmer ikke det for sine chats."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Agent speichert das für seine Chats nicht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este agente no guarda eso para sus chats."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet agent ne conserve pas cela pour ses discussions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo agente non lo conserva per le sue chat."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このエージェントはチャットのその情報を保持していません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 에이전트는 채팅에 대해 해당 정보를 보관하지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne agenten tar ikke vare på det for chattene sine."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze agent bewaart dat niet voor zijn chats."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten agent nie przechowuje tego dla swoich czatów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este agente não guarda isso nas conversas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот агент не хранит это для своих чатов."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här agenten sparar inte det för sina chattar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu ajan sohbetleri için bunu saklamaz."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей агент не зберігає цього для своїх чатів."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此智能体不会为其聊天保留该信息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此代理不會為其聊天保留該資訊。"
+          }
+        }
+      }
+    },
     "This bot's face was changed somewhere else just now. Look again and pick once more." : {
       "localizations" : {
         "da" : {
@@ -443945,6 +446728,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今天，整天"
+          }
+        }
+      }
+    },
+    "Token" : {
+      "comment" : "ACP connection field: the Redde bridge's token",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeton"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "トークン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "토큰"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Токен"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Токен"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "令牌"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "權杖"
           }
         }
       }
@@ -486334,6 +489224,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已寫入快取"
+          }
+        }
+      }
+    },
+    "ws://your-computer:8765" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ws://your-computer:8765"
           }
         }
       }

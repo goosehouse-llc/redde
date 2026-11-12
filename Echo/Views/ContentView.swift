@@ -737,12 +737,12 @@ struct ContentView: View {
                             // The main agent's voice is the app's (asked 2026-10-25).
                             Button("Voice…", systemImage: "waveform") { voicingMain = true }
                         }
-                        if conversation.connection.hasLedger, !conversation.isIncognito, !conversation.isWorkerTranscript {
+                        if conversation.connection.isHermes, !conversation.isIncognito, !conversation.isWorkerTranscript {
                             Button("Make This a Routine…", systemImage: "repeat") { makingRoutine = true }
                                 .disabled(!conversation.hasMessages || conversation.isStreaming)
                         }
                         // Watching the agent work: its Bot Desktop, on the Dashboard (the view says why not elsewhere).
-                        if settings.transport.hasLedger, !conversation.isIncognito {
+                        if settings.transport.isHermes, !conversation.isIncognito {
                             Button("Agent's Screen", systemImage: "display") { showAgentScreen = true }
                         }
                         Menu {
@@ -756,7 +756,7 @@ struct ContentView: View {
                                     .keyboardShortcut("n", modifiers: [.command, .shift])
                             }
                             #if os(iOS)
-                            if settings.transport.hasLedger {
+                            if settings.transport.isHermes {
                                 Button("Terminal", systemImage: "apple.terminal") { showTerminal = true }
                             }
                             #endif
@@ -1003,7 +1003,7 @@ struct ContentView: View {
         switch conversation.connection {
         case .hermesServe: .dashboard(.shared, profile: conversation.routeProfile)
         case .hermesSessions: conversation.ledgerAPI().map(SessionDetailsSource.api)
-        case .chatCompletions: nil
+        case .chatCompletions, .acp: nil
         }
     }
 
@@ -1029,7 +1029,7 @@ struct ContentView: View {
             model: demo ? "qwen36-kapitsa" : modelChipLabel,
             modelChoice: demo ? String(localized: "Set on your server", comment: "Session Details: how the model was chosen") : choice,
             provider: picked?.provider?.nilIfEmpty,
-            reasoningEffort: settings.transport.hasLedger ? settings.reasoningEffort.nilIfEmpty : nil,
+            reasoningEffort: settings.transport.isHermes ? settings.reasoningEffort.nilIfEmpty : nil,
             context: demo ? ContextUsage(used: 84_600, window: 128_000) : conversation.contextUsage,
             project: projectName,
             sessionID: demo ? "20261102_081544_9f3c2a" : (conversation.isIncognito ? nil : conversation.serverSessionID),

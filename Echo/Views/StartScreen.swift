@@ -214,7 +214,7 @@ struct StartScreen: View {
 
     private func findHome() async {
         // The OpenAI-compatible connection is a bare model: no tools to offer.
-        guard settings.transport != .chatCompletions else { home = false; return }
+        guard settings.transport.isHermes else { home = false; return }
         let key = settings.connectionKey
         if let known = Self.homeByConnection[key] { home = known; return }
         let toolsets: [HermesSessionsAPI.Toolset]?

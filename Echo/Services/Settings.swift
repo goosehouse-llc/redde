@@ -12,6 +12,9 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
     case hermesSessions
     /// OpenAI-compatible `/v1/chat/completions` — used for the llama-swap "fast lane" straight to the model.
     case chatCompletions
+    /// An agent that speaks ACP (the Agent Client Protocol): Claude Code, Codex, Gemini CLI, Goose,
+    /// Hermes's own `hermes acp`…, through the Redde bridge on its host (`AcpClient`, docs/acp.md).
+    case acp
 
     var id: String { rawValue }
     var label: String {
@@ -19,6 +22,7 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
         case .hermesSessions: String(localized: "Hermes API (shared sessions)")
         case .hermesServe: String(localized: "Hermes Dashboard (WebSocket)")
         case .chatCompletions: String(localized: "OpenAI-compatible (direct to a model)")
+        case .acp: String(localized: "Other agent (ACP)", comment: "A connection: Claude Code, Codex and other agents through the Agent Client Protocol")
         }
     }
     /// Uses the API server (8642) with the bearer key.
@@ -29,8 +33,11 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
         let raw = try decoder.singleValueContainer().decode(String.self)
         self = Transport(rawValue: raw) ?? .hermesSessions
     }
-    /// Shows a server-side session list.
-    var hasLedger: Bool { self == .hermesSessions || self == .hermesServe }
+    /// Shows a server-side session list: the server keeps the conversation, and a turn left for
+    /// another chat goes on there.
+    var hasLedger: Bool { self == .hermesSessions || self == .hermesServe || self == .acp }
+    /// A Hermes connection: bots, steering, routines, the plugin and the rest Hermes alone has.
+    var isHermes: Bool { self == .hermesSessions || self == .hermesServe }
 }
 
 /// Non-secret configuration. The API key is *never* here — see `Keychain`.
@@ -861,6 +868,23 @@ final class Settings: ServeEndpoint {
     var serveOpenAccess: Bool {
         didSet { store(serveOpenAccess, forKey: Keys.serveOpenAccess); syncActiveServer() }
     }
+    /// An ACP agent's address (`Transport.acp`): the Redde bridge's, or a server that speaks ACP
+    /// itself. Its token lives in the Keychain (`Keychain.Item.acpToken`).
+    var acpURL: String {
+        didSet { store(acpURL, forKey: Keys.acpURL); syncActiveServer() }
+    }
+    /// Which of the bridge's agents (its id in the bridge's config); empty, the bridge's first.
+    var acpAgent: String {
+        didSet { store(acpAgent, forKey: Keys.acpAgent); syncActiveServer() }
+    }
+    /// The folder on the host new chats with the agent work in; empty leaves it to the bridge.
+    var acpFolder: String {
+        didSet { store(acpFolder, forKey: Keys.acpFolder); syncActiveServer() }
+    }
+    /// Where the ACP agent is, when it is set up.
+    var acpEndpoint: AcpEndpoint? {
+        AcpEndpoint.make(address: acpURL, agent: acpAgent, token: Keychain.read(.acpToken), folder: acpFolder)
+    }
     /// The Hermes profile Redde talks to; empty means the server's default profile. Nothing
     /// profile-related is sent for the default, so servers without profile support keep working.
     var hermesProfile: String {
@@ -1086,6 +1110,9 @@ final class Settings: ServeEndpoint {
         static let localDefaultsApplied = "localDefaultsApplied"
         static let pushRelayURL = "pushRelayURL"
         static let serveURL = "serveURL"
+        static let acpURL = "acpURL"
+        static let acpAgent = "acpAgent"
+        static let acpFolder = "acpFolder"
         static let serveUsername = "serveUsername"
         static let serveOpenAccess = "serveOpenAccess"
         static let hermesProfile = "hermesProfile"
@@ -1210,6 +1237,9 @@ final class Settings: ServeEndpoint {
         serveURL = defaults.string(forKey: Keys.serveURL) ?? Self.defaultServeURL
         serveUsername = defaults.string(forKey: Keys.serveUsername) ?? ""
         serveOpenAccess = defaults.bool(forKey: Keys.serveOpenAccess)
+        acpURL = defaults.string(forKey: Keys.acpURL) ?? ""
+        acpAgent = defaults.string(forKey: Keys.acpAgent) ?? ""
+        acpFolder = defaults.string(forKey: Keys.acpFolder) ?? ""
         hermesProfile = defaults.string(forKey: Keys.hermesProfile) ?? ""
         hermesProfileHome = defaults.string(forKey: Keys.hermesProfileHome) ?? ""
         cfAccessClientID = defaults.string(forKey: Keys.cfAccessClientID) ?? ""
@@ -1396,6 +1426,9 @@ final class Settings: ServeEndpoint {
         serveURL = after.serveURL
         serveUsername = after.serveUsername
         serveOpenAccess = after.serveOpenAccess
+        acpURL = after.acpURL
+        acpAgent = after.acpAgent
+        acpFolder = after.acpFolder
         cfAccessClientID = after.cfAccessClientID
         if transport != .chatCompletions { transport = after.transport }
         return true
@@ -1470,6 +1503,9 @@ final class Settings: ServeEndpoint {
         server.serveURL = serveURL
         server.serveUsername = serveUsername
         server.serveOpenAccess = serveOpenAccess
+        server.acpURL = acpURL
+        server.acpAgent = acpAgent
+        server.acpFolder = acpFolder
         server.cfAccessClientID = cfAccessClientID
         server.gatewayModel = gatewayModel
         server.gatewayProvider = gatewayProvider
@@ -1492,6 +1528,9 @@ final class Settings: ServeEndpoint {
         serveURL = target.serveURL
         serveUsername = target.serveUsername
         serveOpenAccess = target.serveOpenAccess
+        acpURL = target.acpURL
+        acpAgent = target.acpAgent
+        acpFolder = target.acpFolder
         cfAccessClientID = target.cfAccessClientID
         gatewayModel = target.gatewayModel
         gatewayProvider = target.gatewayProvider
@@ -1636,6 +1675,9 @@ final class Settings: ServeEndpoint {
         serveURL = Self.defaultServeURL
         serveUsername = ""
         serveOpenAccess = false
+        acpURL = ""
+        acpAgent = ""
+        acpFolder = ""
         hermesProfile = ""
         hermesProfileHome = ""
         cfAccessClientID = ""
@@ -1670,6 +1712,7 @@ final class Settings: ServeEndpoint {
             return serveBaseURL != nil && (DashboardSignIn.tokens(for: serveBaseURL, in: .keychain) != nil
                 || (!serveUsername.isEmpty && Keychain.read(.serveDashboardPassword) != nil) || serveOpenAccess)
         case .chatCompletions: return activeBaseURL != nil && !fastLaneModel.isEmpty
+        case .acp: return acpEndpoint != nil
         }
     }
 
@@ -1713,6 +1756,7 @@ final class Settings: ServeEndpoint {
     var activeBaseURL: URL? {
         if transport == .hermesServe { return serveBaseURL }
         if transport.usesGateway { return gatewayBaseURL }
+        if transport == .acp { return acpEndpoint?.socketURL }
         return Self.normalizedBase(fastLaneURL.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 

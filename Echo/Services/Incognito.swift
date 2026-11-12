@@ -57,6 +57,9 @@ extension Incognito {
                 case .hermesSessions:
                     guard let api else { return false }
                     try await api.deleteSession(id: entry.session)
+                case .acp:
+                    // The agent's own history; deleted where the agent can (`session/delete`).
+                    if let client = AcpClient.current(), client.info?.canDelete == true { try await client.deleteSession(entry.session) }
                 case .chatCompletions:
                     break
                 }

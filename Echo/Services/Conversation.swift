@@ -96,7 +96,7 @@ final class Conversation {
     }
 
     /// Steering is possible while a Hermes turn is streaming.
-    var canSteer: Bool { isStreaming && connection.hasLedger }
+    var canSteer: Bool { isStreaming && connection.isHermes }
 
     /// Nudge the running turn without cancelling it. Shows in the transcript as a steer note.
     /// `queued`: a message from the outbox sent this way (`sendQueuedNow`), which goes back to the
@@ -125,7 +125,7 @@ final class Conversation {
                 case .hermesSessions:
                     guard let runID, let api = self?.ledgerAPI() else { throw TransportError.malformed("no run to steer") }
                     accepted = try await api.steer(runID: runID, text: trimmed)
-                case .chatCompletions:
+                case .chatCompletions, .acp:
                     accepted = false
                 }
             } catch {
@@ -327,7 +327,7 @@ final class Conversation {
             return Self.finishedStream()
         }
         // A normal chat's message that tags bots goes to them (`BotAsides`).
-        if bot == nil, attachments.isEmpty, !isIncognito, connection.hasLedger, BotDirectory.available(settings, dashboard: dashboard) {
+        if bot == nil, attachments.isEmpty, !isIncognito, connection.isHermes, BotDirectory.available(settings, dashboard: dashboard) {
             let tagged = BotAsides.tagged(in: trimmed, roster: BotDirectory.shared.bots(for: settings.connectionKey), speaking: speakingProfile)
             if !tagged.isEmpty {
                 ask(trimmed, of: tagged)
@@ -355,7 +355,7 @@ final class Conversation {
     /// with no message of the person's to show, as the desktop app sends one. The agent answers by
     /// writing the page again, so the page is read again once it has (`refreshPage`).
     func sendFromPage(_ prompt: String, page: String, in messageID: UUID) -> PageSend {
-        guard connection.hasLedger else { return .unavailable }
+        guard connection.isHermes else { return .unavailable }
         guard !isStreaming, outbox.isEmpty else { return .busy }
         // A page is the agent's, in a conversation it has: never the first message of a new one.
         guard serverSessionID != nil else { return .unavailable }
@@ -422,7 +422,7 @@ final class Conversation {
         // waited for), and a fresh fix is asked for if that one is a few minutes old.
         if CurrentLocation.isOn, CurrentLocation.asksPlace(trimmed) { CurrentLocationService.shared.refresh() }
         // Asides to tagged bots since the agent last heard: told with this message, kept with it on the host.
-        if bot == nil, connection.hasLedger, fromPage == nil, let note = AsideNote.note(for: AsideNote.pending(in: messages)) {
+        if bot == nil, connection.isHermes, fromPage == nil, let note = AsideNote.note(for: AsideNote.pending(in: messages)) {
             request.userText += note
             for i in messages.indices where messages[i].isAside { messages[i].delivered?.noted = true }
         }
@@ -482,7 +482,7 @@ final class Conversation {
             do {
                 // A new conversation takes its model and provider at create, from a pick that
                 // may be older than the host's current providers; later turns are pinned.
-                if transportKind.hasLedger, request.sessionID == nil, let model = request.model?.nilIfEmpty {
+                if transportKind.isHermes, request.sessionID == nil, let model = request.model?.nilIfEmpty {
                     let provider = Self.liveProvider(for: model, saved: request.provider, in: await listedModels())
                     if provider != request.provider {
                         request.provider = provider
@@ -801,7 +801,7 @@ final class Conversation {
     /// agent is waiting on a person for gets its card back. That is how an approval announced by
     /// a notification can be answered after the app was closed.
     func rejoinIfWaiting() async {
-        guard connection == .hermesServe, !isStreaming, let stored = serverSessionID, let transport = makeTransport() else { return }
+        guard connection == .hermesServe || connection == .acp, !isStreaming, let stored = serverSessionID, let transport = makeTransport() else { return }
         let identity = identity
         let was = catchingUp
         catchingUp = .rejoining
@@ -864,7 +864,9 @@ final class Conversation {
     /// stayed as it was (2026-11-11, the iPad not showing the newest message).
     func reloadOpen(_ stored: String) async throws {
         let summary = HermesSessionsAPI.SessionSummary(id: stored, title: name)
-        if connection == .hermesSessions {
+        if connection == .acp {
+            try await loadAcpSession(summary)
+        } else if connection == .hermesSessions {
             try await loadLedgerSession(summary, bot: bot, elsewhere: elsewhere)
         } else {
             try await loadServeSession(summary, bot: bot, elsewhere: elsewhere)
@@ -956,7 +958,7 @@ final class Conversation {
     func watchOtherDevices() {
         otherDevicesTask?.cancel()
         otherDevicesTask = nil
-        guard store === ConversationStore.shared, Self.current === self, connection.hasLedger,
+        guard store === ConversationStore.shared, Self.current === self, connection.isHermes,
               let stored = serverSessionID, Self.appIsActive else { stopListeningForChanges(); return }
         listenForChanges()
         serverSeen = nil
@@ -1550,6 +1552,8 @@ final class Conversation {
             try await dashboard.withLiveSession(stored: sid) { runtime in
                 try await dashboard.setSessionModel(runtimeSession: runtime, model: model, provider: provider)
             }
+        case .acp:
+            try await AcpClient.current(settings)?.setModel(sid, value: model)
         case .chatCompletions:
             break
         }
@@ -1638,7 +1642,8 @@ final class Conversation {
 
     /// The Hermes API for a profile at /p/<profile>/ with its own key; nil, the app's.
     func ledgerAPI(profile: String?) -> HermesSessionsAPI? {
-        guard let endpoint = settings.gatewayEndpoint(profile: profile) else { return nil }
+        // An ACP server's record may still hold a Hermes address from before; it isn't this chat's.
+        guard settings.transport != .acp, let endpoint = settings.gatewayEndpoint(profile: profile) else { return nil }
         return HermesSessionsAPI(baseURL: endpoint.url, apiKey: endpoint.key, headers: settings.apiHeaders)
     }
 
@@ -1652,7 +1657,8 @@ final class Conversation {
         // A bot's chat is known by its title on the server: renaming it would lose it.
         guard bot == nil else { return }
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let sessionID = serverSessionID {
+        // ACP keeps no names for its chats: the name is this device's.
+        if let sessionID = serverSessionID, connection != .acp {
             guard !trimmed.isEmpty else { return }
             guard let backend = SessionBackend.current(self, settings: settings) else {
                 throw TransportError.malformed(SessionBackend.notConfiguredMessage)
@@ -1797,6 +1803,7 @@ final class Conversation {
             return HermesSessionsTransport(baseURL: api.baseURL, apiKey: api.apiKey, headers: api.headers)
         case .hermesServe: return HermesServeTransport(client: dashboard)
         case .chatCompletions: return ChatCompletionsTransport(baseURL: url, apiKey: Keychain.read(.fastLaneAPIKey))
+        case .acp: return settings.acpEndpoint.map(AcpTransport.init(endpoint:))
         }
     }
 
@@ -1817,7 +1824,10 @@ final class Conversation {
             return
         }
         #endif
-        if connection == .hermesSessions {
+        if connection == .acp {
+            // Answered on the agent's link; the bridge tells the other devices.
+            AcpClient.current(settings)?.answer(request: request.id, choice: choice)
+        } else if connection == .hermesSessions {
             let api = ledgerAPI()
             run {
                 guard let api else { throw TransportError.noAPIKey }
@@ -1884,6 +1894,28 @@ final class Conversation {
         Task {
             do { try await work() } catch { lastError = error.localizedDescription }
         }
+    }
+
+    /// An ACP agent's session: its history as the agent replays it (`session/load`), then the turn
+    /// under way in it joined, through the bridge. While a turn runs the bridge won't replay the
+    /// history (the two would mix): the copy kept here shows, and the turn is joined.
+    func loadAcpSession(_ summary: HermesSessionsAPI.SessionSummary) async throws {
+        guard let client = AcpClient.current(settings) else { throw TransportError.noAPIKey }
+        var messages: [Message]
+        do {
+            messages = AcpHistory.messages(try await client.load(summary.id))
+        } catch let error as AcpError where error.isBusy {
+            messages = []
+            if let kept = store.summaries.first(where: { $0.serverSessionID == summary.id }) {
+                if let cached = store.cachedRecord(id: kept.id) { messages = cached.restoredMessages }
+                else if let loaded = await store.loadRecord(id: kept.id) { messages = loaded.restoredMessages }
+            }
+            // The question of the turn under way is the bridge's; the turn joined brings its reply.
+            if messages.last?.role == .assistant, let last = messages.indices.last, messages[last].text.isEmpty { messages.removeLast() }
+        }
+        TodoList.resolve(&messages)
+        adopt(serverSession: summary, messages: messages)
+        await rejoinIfWaiting()
     }
 
     /// Resume a stored `hermes serve` session: history via `session.resume`. A bot's chat names
@@ -2130,7 +2162,9 @@ final class Conversation {
         guard settings.transport != .chatCompletions else {
             throw TransportError.malformed(String(localized: "that conversation is on a Hermes connection"))
         }
-        if viaAPI ?? (settings.transport == .hermesSessions) {
+        if settings.transport == .acp {
+            try await loadAcpSession(summary)
+        } else if viaAPI ?? (settings.transport == .hermesSessions) {
             try await loadLedgerSession(summary, elsewhere: profile.map { ProfileRoute(profile: $0, viaAPI: true) })
         } else {
             try await loadServeSession(summary, elsewhere: profile.map { ProfileRoute(profile: $0, viaAPI: false) })

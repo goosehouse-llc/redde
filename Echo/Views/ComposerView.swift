@@ -83,7 +83,7 @@ struct ComposerView: View {
             guard conversation.connection == .hermesServe else { return [] }
             speaking = bot.profile
         } else {
-            guard conversation.connection.hasLedger, !conversation.isIncognito, BotDirectory.available(settings) else { return [] }
+            guard conversation.connection.isHermes, !conversation.isIncognito, BotDirectory.available(settings) else { return [] }
             speaking = conversation.elsewhere?.profile ?? settings.profileName ?? "default"
         }
         let roster = BotDirectory.shared.roster?.listed ?? []

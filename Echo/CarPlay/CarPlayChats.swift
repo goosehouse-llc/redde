@@ -72,10 +72,10 @@ enum CarPlayChats {
         guard !chat.isCurrent else { return }
         switch chat.source {
         case .session(let session):
-            if settings.transport == .hermesServe {
-                try await conversation.loadServeSession(session)
-            } else {
-                try await conversation.loadLedgerSession(session)
+            switch settings.transport {
+            case .hermesServe: try await conversation.loadServeSession(session)
+            case .acp: try await conversation.loadAcpSession(session)
+            default: try await conversation.loadLedgerSession(session)
             }
         case .local(let id):
             guard let record = await store.loadRecord(id: id) else {

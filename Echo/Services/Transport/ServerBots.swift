@@ -701,7 +701,7 @@ final class BotDirectory {
         switch settings.transport {
         case .hermesServe: true
         case .hermesSessions: settings.serveBaseURL != nil && dashboard.hasCredentials
-        case .chatCompletions: false
+        case .chatCompletions, .acp: false
         }
     }
 

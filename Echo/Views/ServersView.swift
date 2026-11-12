@@ -75,8 +75,11 @@ struct ServersView: View {
 
     /// The connection and address underneath the name, plus the profile when it isn't Default.
     private func detail(_ server: HermesServer) -> String {
-        let address = server.transport == .hermesSessions ? server.gatewayURL : server.serveURL
-        let connection = server.transport == .hermesSessions ? "Hermes API" : "Hermes Dashboard"
+        let (connection, address): (String, String) = switch server.transport {
+        case .hermesSessions: ("Hermes API", server.gatewayURL)
+        case .acp: (server.acpAgent.isEmpty ? "ACP" : "ACP · \(server.acpAgent)", server.acpURL)
+        default: ("Hermes Dashboard", server.serveURL)
+        }
         var parts = [connection, address.isEmpty ? String(localized: "not set up", comment: "A server with no address yet") : address]
         if server.transport == .hermesServe, server.serveOpenAccess, server.serveUsername.isEmpty {
             parts.append(String(localized: "no sign-in", comment: "Servers list: a Dashboard used with no sign-in, open to anyone who reaches it"))

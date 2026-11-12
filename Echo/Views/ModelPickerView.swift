@@ -34,7 +34,7 @@ struct ModelPickerView: View {
         #if DEBUG
         if DevHooks.demoChatControls { return DemoChatControls.session }
         #endif
-        return settings.transport.hasLedger ? conversation.serverSessionID : nil
+        return settings.transport.isHermes ? conversation.serverSessionID : nil
     }
 
     private var byProvider: [(provider: String, name: String, models: [ModelChoice])] {
@@ -124,7 +124,8 @@ struct ModelPickerView: View {
             // Pinned first, for switching in a tap (asked 2026-11-07).
             if searchWords.isEmpty, listsModels, !settings.pinnedModelsHere.isEmpty { pinnedSection }
             // (searching, the box's results come straight under it)
-            if searchWords.isEmpty { effortAndControls }
+            // An ACP agent's effort and switches are its own; Redde only picks the model there.
+            if searchWords.isEmpty, settings.transport != .acp { effortAndControls }
 
             if fromSettings, !isFastLane {
                 Section {

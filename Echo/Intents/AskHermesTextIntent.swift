@@ -91,6 +91,10 @@ enum ShortcutRunner {
             sessionID = UserDefaults.standard.string(forKey: sessionKey + ".serve")
         case .chatCompletions:
             transport = ChatCompletionsTransport(baseURL: url, apiKey: Keychain.read(.fastLaneAPIKey))
+        case .acp:
+            guard let endpoint = settings.acpEndpoint else { throw IntentError.notConfigured }
+            transport = AcpTransport(endpoint: endpoint)
+            sessionID = UserDefaults.standard.string(forKey: sessionKey + ".acp")
         }
 
         let picked = settings.transport == .chatCompletions ? nil : ConversationModels.shared.turnModel(session: sessionID, settings: settings)
@@ -112,6 +116,8 @@ enum ShortcutRunner {
                         Task { try? await HermesServeClient.shared.updateSession(stored: id, title: thread.title) }
                     }
                     UserDefaults.standard.set(id, forKey: sessionKey + ".serve")
+                case let .sessionID(id) where settings.transport == .acp:
+                    UserDefaults.standard.set(id, forKey: sessionKey + ".acp")
                 default: break
                 }
             }
