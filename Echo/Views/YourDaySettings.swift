@@ -129,14 +129,6 @@ struct DailyJobsView: View {
 
     private func load() async {
         do {
-            #if DEBUG
-            if DevHooks.has("-echo.demoRunOn") {
-                var byName: [String: CronJob] = [:]
-                for daily in Self.jobs { byName[daily.name] = try await daily.find() }
-                found = byName
-                return
-            }
-            #endif
             // One look at the server's jobs for all five.
             guard let backend = CronBackend.current() else { return }
             let names = Set(Self.jobs.map(\.name))

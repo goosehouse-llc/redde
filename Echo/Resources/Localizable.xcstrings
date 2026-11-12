@@ -38344,6 +38344,7 @@
       }
     },
     "2" : {
+      "extractionState" : "stale",
       "shouldTranslate" : false
     },
     "5 minutes" : {
@@ -57768,6 +57769,7 @@
       }
     },
     "Adults" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -71553,6 +71555,7 @@
       }
     },
     "Applications" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -85534,6 +85537,7 @@
       }
     },
     "Backend" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -153612,6 +153616,7 @@
       }
     },
     "Email for the tickets" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -353079,6 +353084,7 @@
       }
     },
     "Sat 10:02" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -353185,6 +353191,7 @@
       }
     },
     "Saturday · Choose a time" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -445450,6 +445457,7 @@
       }
     },
     "tickets.oceanario.pt/en/saturday" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {

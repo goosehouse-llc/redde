@@ -37,14 +37,6 @@ final class ApprovalHistory {
         if let data = try? Data(contentsOf: file), let saved = try? JSONDecoder().decode([Entry].self, from: data) {
             entries = saved
         }
-        #if DEBUG
-        // `-echo.demoApprovals`: a few made-up answers, for screenshots (not saved).
-        if DevHooks.has("-echo.demoApprovals") {
-            entries = [Entry(at: .now.addingTimeInterval(-600), agent: "Coder", chat: "Fix the login page", command: "git apply claude-work-t_4f2a.patch", reason: "Puts Claude's change in place", choice: "once"),
-                       Entry(at: .now.addingTimeInterval(-3_600), agent: "Sol", chat: "Clean up downloads", command: "rm -rf ~/Downloads/old-installers", reason: "recursive delete", choice: "deny"),
-                       Entry(at: .now.addingTimeInterval(-90_000), agent: "Home", chat: "Hall lights", command: "systemctl restart homebridge", reason: "restarting a system service", choice: "always")]
-        }
-        #endif
     }
 
     func record(_ request: ApprovalRequest, choice: String, agent: String, chat: String?, at: Date = .now) {

@@ -169,7 +169,7 @@ enum AheadOfYourDay {
     }
 }
 
-/// What Turn On acts on: the server and this device, or stand-ins (tests, `-echo.demoAhead`).
+/// What Turn On acts on: the server and this device, or stand-ins (tests).
 protocol AheadOfYourDayHost: AnyObject {
     var plugin: any PushPluginManaging { get }
     /// What the connection can do and whether this device is paired; the plugin and the jobs are
@@ -306,12 +306,9 @@ final class AheadOfYourDaySetup {
         way = mode == .off ? .driving : mode
     }
 
-    /// The live host, or the made-up one (`-echo.demoAhead`).
+    /// The live host.
     static var defaultHost: any AheadOfYourDayHost {
-        #if DEBUG
-        if let demo = DevHooks.value("-echo.demoAhead") { return DemoAheadHost(demo) }
-        #endif
-        return LiveAheadHost()
+        LiveAheadHost()
     }
 
     var plan: AheadOfYourDay.Plan { AheadOfYourDay.plan(picked: picked, situation: situation) }
@@ -547,49 +544,3 @@ final class AheadOfYourDaySetup {
         return ListFormatter.localizedString(byJoining: names.filter { missing.contains($0.0) }.map(\.1))
     }
 }
-
-#if DEBUG
-/// A made-up server and device for the sheet's pictures (`-echo.demoAhead old|missing|there|restart|api|none`):
-/// the plugin as `DemoPushPlugin` has it (1.9.0 for `old`), no jobs yet, nothing paired; making a job
-/// and turning on Leave-By Alerts take a moment and change nothing. `api` is the Hermes API alone
-/// (no Dashboard: the plugin by the terminal, pairing by code, Location not allowed); `none` has no
-/// connection for jobs at all.
-final class DemoAheadHost: AheadOfYourDayHost {
-    private let scenario: String
-    let plugin: any PushPluginManaging
-    private var leaveBy = false
-
-    init(_ scenario: String) {
-        self.scenario = scenario
-        plugin = DemoPushPlugin(scenario == "restart" ? "old" : scenario, needsRestart: scenario == "restart")
-    }
-
-    func situation() -> AheadOfYourDay.Situation {
-        var situation = AheadOfYourDay.Situation()
-        situation.jobs = scenario != "none"
-        situation.dashboard = !["api", "none"].contains(scenario)
-        situation.pairsDirectly = situation.dashboard
-        return situation
-    }
-
-    func jobs() async throws -> [CronJob] { [] }
-
-    func setJob(_ daily: DailyJob, hour: Int, minute: Int, replacing job: CronJob?) async throws {
-        try await Task.sleep(for: .milliseconds(350))
-    }
-
-    func turnOnLeaveBy(_ way: LeaveTime.Mode) async -> Set<LeaveByAlerts.Missing> {
-        try? await Task.sleep(for: .milliseconds(500))
-        leaveBy = true
-        return scenario == "api" ? [.location] : []
-    }
-
-    var leaveByOn: Bool { leaveBy }
-
-    func paired() -> Bool { false }
-
-    func removeJob(_ job: CronJob) async throws { try await Task.sleep(for: .milliseconds(300)) }
-
-    func turnOffLeaveBy() async { leaveBy = false }
-}
-#endif

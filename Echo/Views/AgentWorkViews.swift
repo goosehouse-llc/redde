@@ -46,17 +46,10 @@ struct AgentWorkStrip: View {
         }
         .task(id: isLive) {
             // The terminal's output is the Dashboard's, and only worth hearing while the reply runs.
-            #if DEBUG
-            if isLive, AgentTerminalWatch.demoTail != nil { terminal.start(stored: ""); return }
-            #endif
             guard isLive, onDashboard, let stored = fileSource?.sessionID else { terminal.stop(); return }
             terminal.start(stored: stored)
         }
         .onDisappear { terminal.stop() }
-        #if DEBUG
-        // `-echo.demoBrowsing history`: the finished reply's steps open by themselves (screenshots).
-        .task { if !isLive, DevHooks.value("-echo.demoBrowsing") == "history" { showHistory = true } }
-        #endif
         .task(id: steps.contains { AgentBrowsing.usesScreen($0.tool) } && isLive) {
             guard isLive, onDashboard, steps.contains(where: { AgentBrowsing.usesScreen($0.tool) }) else { return }
             screenReady = await BotScreenProbe.shared.hasScreen(profile: fileSource?.profile)
@@ -298,16 +291,9 @@ final class ScreenshotCache {
 final class AgentTerminalWatch {
     private(set) var tail = TerminalTail()
     @ObservationIgnored private var listener: UUID?
-    #if DEBUG
-    /// `-echo.demoBrowsing`: what the live reply's terminal shows.
-    static var demoTail: TerminalTail?
-    #endif
 
     func start(stored: String) {
         guard listener == nil else { return }
-        #if DEBUG
-        if let demo = Self.demoTail { tail = demo; return }
-        #endif
         let client = HermesServeClient.shared
         listener = client.addListener { [weak self] event in
             guard event.type == "agent.terminal.output", client.isSession(event.sessionID, stored: stored),

@@ -39,23 +39,13 @@ struct SessionDetailsView: View {
     private var facts: SessionFacts? { model.facts }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            List {
-                overview
-                modelSection
-                contextSection.id("context")
-                usageSection
-                activitySection.id("end")
-                actions
-            }
-            #if DEBUG
-            // `-echo.demoSessionDetails usage|end`: the page scrolled there, for screenshots.
-            .task {
-                guard let anchor = DevHooks.value("-echo.demoSessionDetails"), ["context", "end"].contains(anchor) else { return }
-                try? await Task.sleep(for: .milliseconds(600))
-                proxy.scrollTo(anchor, anchor: anchor == "end" ? .bottom : .top)
-            }
-            #endif
+        List {
+            overview
+            modelSection
+            contextSection
+            usageSection
+            activitySection
+            actions
         }
         .navigationTitle("Session Details")
         .navigationBarTitleDisplayMode(.inline)

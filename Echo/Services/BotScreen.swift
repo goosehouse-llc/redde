@@ -234,22 +234,6 @@ final class BotScreenSession {
         self.isDashboard = isDashboard
     }
 
-    /// A screen to show in screenshots and previews (`-echo.demoBotScreen`).
-    static func demo(thumbnail: Data?, control: BotScreen.Control = .agent) -> BotScreenSession {
-        let session = BotScreenSession(profile: nil, host: nil, isDashboard: true)
-        var status = BotScreen.Status()
-        status.supported = true; status.installed = true; status.running = true; status.geometry = "1280x800"
-        session.availability = .ready(status)
-        session.thumbnail = thumbnail
-        if control == .you {
-            session.viewerID = "demo"; session.viewerHash = BotScreen.viewerHash("demo")
-            session.lease = BotScreen.Lease(holder: "human", viewerHash: session.viewerHash, epoch: 1)
-        } else if control == .someoneElse {
-            session.lease = BotScreen.Lease(holder: "human", viewerHash: "000000000000", epoch: 1)
-        }
-        return session
-    }
-
     var isDemo: Bool { host == nil && isDashboard }
 
     private func params(_ extra: [String: JSONValue] = [:]) -> JSONValue {

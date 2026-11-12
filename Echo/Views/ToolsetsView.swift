@@ -91,19 +91,6 @@ struct ToolsView: View {
     }
 
     private func load() async {
-        #if DEBUG
-        // `-echo.demoPlugins`: Hermes 0.22's toolsets, for the icon screenshots.
-        if PluginsDemo.on {
-            let rows = ["web", "browser", "terminal", "file", "vision", "image_gen", "tts", "memory", "cronjob", "kanban", "homeassistant", "delegation", "skills", "todo"]
-            toolsets = rows.enumerated().map { i, name in
-                HermesSessionsAPI.Toolset(name: name, label: name.replacingOccurrences(of: "_", with: " ").capitalized, description: nil,
-                                          enabled: i < 11, configured: true, tools: nil)
-            }
-            canToggle = true
-            loading = false
-            return
-        }
-        #endif
         canToggle = await HermesServeClient.shared.canUse()
         do {
             if canToggle {

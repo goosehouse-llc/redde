@@ -117,9 +117,6 @@ private struct DaySection: View {
             NewEventSheet(slot: slot) { adding = nil }
         }
         #endif
-        #if DEBUG
-        .task { if let slot = await DevHooks.demoNewEvent(day.timeline) { add(slot) } }
-        #endif
     }
 
     // MARK: Header

@@ -112,9 +112,6 @@ final class Workstreams {
 
     /// Those an agent started from one of its chats: open ones first, then those ended in the last day.
     func of(_ profile: String, chat: String?) -> [Workstream] {
-        #if DEBUG
-        if Self.demo { return Self.demoWork }
-        #endif
         let all = lists[key(profile)] ?? []
         let mine = chat.map { chat in all.filter { $0.chat == chat } } ?? all
         let day = Date.now.addingTimeInterval(-86_400)
@@ -123,9 +120,6 @@ final class Workstreams {
     }
 
     func refresh(_ profile: String) async {
-        #if DEBUG
-        if Self.demo { return }
-        #endif
         let key = key(profile)
         guard await reachable(), let output = try? await plugin("work list \(profile)") else { return }
         guard let parsed = Workstream.parse(output) else { available.remove(key); lists[key] = nil; return }
@@ -186,20 +180,3 @@ final class Workstreams {
         Task { await refresh(profile) }
     }
 }
-
-#if DEBUG
-extension Workstreams {
-    /// `-echo.demoWork`: the strip over any chat, and three in its sheet.
-    static var demo: Bool { DevHooks.has("-echo.demoWork") }
-
-    static let demoWork: [Workstream] = [
-        Workstream(id: "W3", title: "Compare the three quotes for the roof", status: .working, session: "demo-w3", chat: "", last: "", asked: "",
-                   created: .now.addingTimeInterval(-240), updated: .now, ended: nil),
-        Workstream(id: "W2", title: "Clean out old build folders", status: .needsYou, session: "demo-w2", chat: "", last: "",
-                   asked: "rm -rf ~/Projects/old-builds", created: .now.addingTimeInterval(-900), updated: .now.addingTimeInterval(-60), ended: nil),
-        Workstream(id: "W1", title: "Find a dentist open on Saturdays", status: .done, session: "demo-w1", chat: "",
-                   last: "Two are open Saturday mornings: **Bright Smile** (9–1) and **Elm Street Dental** (8–12). Both take new patients.",
-                   asked: "", created: .now.addingTimeInterval(-3000), updated: .now.addingTimeInterval(-1800), ended: .now.addingTimeInterval(-1800)),
-    ]
-}
-#endif

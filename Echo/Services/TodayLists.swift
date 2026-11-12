@@ -86,8 +86,7 @@ final class TodayLists {
 
     init() {
         #if DEBUG
-        // (`-echo.showList` opens the first in its sheet.)
-        if Self.demo { lists = Self.demoLists; available = true; if DevHooks.has("-echo.showList") { shownID = lists.first?.id }; return }
+        if Self.demo { lists = Self.demoLists; available = true; return }
         #endif
         restore()
     }

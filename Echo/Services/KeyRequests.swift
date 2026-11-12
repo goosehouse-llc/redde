@@ -201,21 +201,4 @@ final class KeyRequests {
             throw KeyRequestError.refused(words.dropFirst(3).joined(separator: " "))
         }
     }
-
-    #if DEBUG
-    /// `-echo.demoKeyRequest`: a request shown over the app, answered by nothing (screenshots).
-    func showDemo() {
-        let demo = KeyRequest(id: "demo0000demo0000", name: "JELLYFIN_API_KEY", profile: "jellyfin",
-                              why: "So the Jellyfin bot can search your library and start playback on the TV.",
-                              asker: "claude", askerName: "Coder", replace: false,
-                              publicKey: Curve25519.KeyAgreement.PrivateKey().publicKey.rawRepresentation,
-                              until: .now.addingTimeInterval(86_400))
-        reachable = { true }
-        plugin = { arguments in arguments.hasPrefix("keys list") ? "redde-push keys []" : "redde-push keys set JELLYFIN_API_KEY" }
-        restart = {}
-        canAnswer = true
-        pending = [demo]
-        showing = demo
-    }
-    #endif
 }

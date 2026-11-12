@@ -12,9 +12,6 @@ struct WorkStrip: View {
     /// The agent the chat is with, when its workstreams can be read: over the Dashboard or the
     /// Hermes API (Redde's plugin 1.23).
     private var profile: String? {
-        #if DEBUG
-        if Workstreams.demo { return conversation.bot?.profile ?? "default" }
-        #endif
         guard Settings.shared.transport.isHermes, conversation.serverSessionID != nil else { return nil }
         return conversation.bot?.profile ?? conversation.elsewhere?.profile ?? "default"
     }
@@ -34,9 +31,6 @@ struct WorkStrip: View {
         .animation(.easeOut(duration: 0.2), value: open.map(\.status.rawValue))
         .onAppear {
             follow(profile)
-            #if DEBUG
-            if Workstreams.demo, DevHooks.has("-echo.showWork") { showing = true }
-            #endif
         }
         .onDisappear { follow(nil) }
         .onChange(of: profile) { _, new in follow(new) }

@@ -44,15 +44,6 @@ final class TipJar {
     }
 
     func load() async {
-        #if DEBUG
-        // Dev hook for the App Review screenshot: sample tips, no StoreKit.
-        if DevHooks.has("-echo.demoTips") {
-            options = zip(Self.productIDs, [("A coffee", "$2.99"), ("A snack", "$4.99"), ("A dinner", "$9.99")])
-                .map { Option(id: $0, name: $1.0, price: $1.1) }
-            state = .ready
-            return
-        }
-        #endif
         guard products.isEmpty else { state = .ready; return }
         state = .loading
         do {

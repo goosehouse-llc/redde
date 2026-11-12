@@ -30,17 +30,7 @@ struct BotScreenView: View {
         self.profile = profile
         self.onContinue = onContinue
         let isDashboard = Settings.shared.transport == .hermesServe
-        var made = session ?? BotScreenSession(profile: profile, host: isDashboard ? HermesServeClient.shared : nil, isDashboard: isDashboard)
-        #if DEBUG
-        if session == nil, DevHooks.has("-echo.demoBotScreen") {
-            let control: BotScreen.Control = switch DevHooks.value("-echo.demoBotScreen") {
-            case "you": .you
-            case "other": .someoneElse
-            default: .agent
-            }
-            made = BotScreenSession.demo(thumbnail: BotScreenDemo.thumbnail(), control: control)
-        }
-        #endif
+        let made = session ?? BotScreenSession(profile: profile, host: isDashboard ? HermesServeClient.shared : nil, isDashboard: isDashboard)
         _session = State(initialValue: made)
     }
 

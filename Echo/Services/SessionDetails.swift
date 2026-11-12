@@ -294,7 +294,7 @@ final class SessionDetailsModel {
 
 #if DEBUG
 extension SessionDetailsModel {
-    /// `-echo.demoSessionDetails`: a long-running conversation on the Dashboard, for screenshots.
+    /// A long-running conversation on the Dashboard, for previews.
     static var demo: SessionDetailsModel {
         let now = Date.now
         var facts = SessionFacts(id: "20261102_081544_9f3c2a")

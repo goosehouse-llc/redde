@@ -19,59 +19,50 @@ struct AheadOfYourDayView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollViewReader { proxy in
-                Form {
-                    Section { header }
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-                    Section {
-                        ForEach(Part.allCases) { part in
-                            partRow(part)
-                            options(for: part)
-                        }
-                    } footer: {
-                        Text("Each has its own page in Settings → Your Day, to change its time or turn it off.", comment: "Ahead of Your Day: under the list of features")
+            Form {
+                Section { header }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                Section {
+                    ForEach(Part.allCases) { part in
+                        partRow(part)
+                        options(for: part)
                     }
-                    // Run On (2026-11-03): the quick jobs on a small model, offered once.
-                    QuickJobsOffer()
-                    // The watch templates that need a number or a link (2.4): New Watch, filled in there.
-                    Section {
-                        ForEach([WatchTemplate.Kind.package, .priceDrop]) { kind in
-                            Button { newWatch = kind } label: {
-                                Label { Text(kind.title).foregroundStyle(.primary) } icon: { Image(systemName: kind.symbol).foregroundStyle(theme.accent) }
-                            }
-                            .disabled(setup.phase == .running)
-                        }
-                    } header: {
-                        Text("More Watches", comment: "Ahead of Your Day: watch templates that open New Watch")
-                    } footer: {
-                        Text("Your agent keeps an eye on a parcel or a product's price and tells you only when it changes. All of them are in Settings → Your Day → Watches & Follow-ups.", comment: "Ahead of Your Day: under More Watches")
-                    }
-                    // Email (2.4): the inbox sorted on the Hermes, and the email watches above can read it.
-                    Section {
-                        NavigationLink { MailSettingsView() } label: {
-                            Label { Text("Connect Your Email", comment: "Ahead of Your Day: set up email").foregroundStyle(.primary) } icon: { Image(systemName: "envelope").foregroundStyle(theme.accent) }
-                        }
-                    } header: {
-                        Text("Email", comment: "Ahead of Your Day: the email section")
-                    } footer: {
-                        Text("Your inbox sorted into what's important, what needs a reply and what can wait, with one-tap archive, snooze and unsubscribe. Gmail, iCloud, Fastmail, Yahoo or any IMAP account.", comment: "Ahead of Your Day: under Email")
-                    }
-                    Section {
-                        if wantsJobs { connectionRow }
-                        pluginRow
-                        pairingRow
-                    } header: {
-                        Text("What It Takes", comment: "Ahead of Your Day: the section with the connection, the plugin and notifications")
-                    }
-                    .id("takes")
+                } footer: {
+                    Text("Each has its own page in Settings → Your Day, to change its time or turn it off.", comment: "Ahead of Your Day: under the list of features")
                 }
-                #if DEBUG
-                // `-echo.demoAheadRun bottom`: the steps' results in view, for the pictures.
-                .onChange(of: setup.phase) { _, phase in
-                    if phase == .finished, DevHooks.value("-echo.demoAheadRun") == "bottom" { withAnimation { proxy.scrollTo("takes", anchor: .top) } }
+                // Run On (2026-11-03): the quick jobs on a small model, offered once.
+                QuickJobsOffer()
+                // The watch templates that need a number or a link (2.4): New Watch, filled in there.
+                Section {
+                    ForEach([WatchTemplate.Kind.package, .priceDrop]) { kind in
+                        Button { newWatch = kind } label: {
+                            Label { Text(kind.title).foregroundStyle(.primary) } icon: { Image(systemName: kind.symbol).foregroundStyle(theme.accent) }
+                        }
+                        .disabled(setup.phase == .running)
+                    }
+                } header: {
+                    Text("More Watches", comment: "Ahead of Your Day: watch templates that open New Watch")
+                } footer: {
+                    Text("Your agent keeps an eye on a parcel or a product's price and tells you only when it changes. All of them are in Settings → Your Day → Watches & Follow-ups.", comment: "Ahead of Your Day: under More Watches")
                 }
-                #endif
+                // Email (2.4): the inbox sorted on the Hermes, and the email watches above can read it.
+                Section {
+                    NavigationLink { MailSettingsView() } label: {
+                        Label { Text("Connect Your Email", comment: "Ahead of Your Day: set up email").foregroundStyle(.primary) } icon: { Image(systemName: "envelope").foregroundStyle(theme.accent) }
+                    }
+                } header: {
+                    Text("Email", comment: "Ahead of Your Day: the email section")
+                } footer: {
+                    Text("Your inbox sorted into what's important, what needs a reply and what can wait, with one-tap archive, snooze and unsubscribe. Gmail, iCloud, Fastmail, Yahoo or any IMAP account.", comment: "Ahead of Your Day: under Email")
+                }
+                Section {
+                    if wantsJobs { connectionRow }
+                    pluginRow
+                    pairingRow
+                } header: {
+                    Text("What It Takes", comment: "Ahead of Your Day: the section with the connection, the plugin and notifications")
+                }
             }
             .navigationTitle(Text("Ahead of Your Day", comment: "The one-step setup of Morning Ideas, Heads-Ups, Leave-By Alerts, the Evening Wrap-up and the Week Ahead"))
             .navigationBarTitleDisplayMode(.inline)
@@ -93,12 +84,6 @@ struct AheadOfYourDayView: View {
         .task {
             AheadOfYourDay.markAnswered()
             await setup.load()
-            #if DEBUG
-            if DevHooks.has("-echo.demoAheadRun") {
-                try? await Task.sleep(for: .seconds(1))
-                await setup.turnOn()
-            }
-            #endif
         }
         .sheet(item: $newWatch) { kind in NewWatchView(text: "", template: kind) }
         .sheet(isPresented: $pairing, onDismiss: { setup.pairingChanged() }) {

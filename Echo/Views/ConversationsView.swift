@@ -2032,18 +2032,6 @@ struct ConversationsList: View {
                         opened(room: room)
                     }
                 }
-                // `-echo.demoMuted`: Scout and the demo group chat muted (screenshots).
-                if DevHooks.has("-echo.demoMuted"), !Mutes.isMuted("bot:scout") {
-                    Mutes.mute("bot:scout", for: .untilUnmuted)
-                    Mutes.mute("room:" + GroupRoom.demo.id, for: .eightHours)
-                }
-                // `-echo.topology`: the Topology map open (screenshots).
-                if DevHooks.has("-echo.topology"), !Self.openedDemoTopology {
-                    Self.openedDemoTopology = true
-                    showingTopology = true
-                }
-                // `-echo.botVoice <bot>`: that bot's voice being picked (screenshots).
-                if let which = DevHooks.value("-echo.botVoice") { voicing = Self.demoBots.bots.first { $0.name == which } }
                 // `-echo.botSchedules <bot>`: that bot's schedules open (screenshots).
                 if let which = DevHooks.value("-echo.botSchedules") { scheduling = Self.demoBots.bots.first { $0.name == which } }
                 // `-echo.botEditor new|<bot>`: New Bot, or that bot's settings, open (screenshots).
@@ -2714,8 +2702,6 @@ extension View {
 extension ConversationsList {
     /// `-echo.openGroup` has opened its group chat.
     static var openedDemoGroup = false
-    /// `-echo.topology` has opened the map.
-    static var openedDemoTopology = false
 
     /// Another server's chats, for `-echo.demoAllServers`.
     static var demoOtherServer: [HermesSessionsAPI.SessionSummary] {
@@ -2752,15 +2738,8 @@ extension ConversationsList {
                          "fixit": "gemma-4-12b"][bot.name]
             return bot
         } + extraDemoBots + claudeDemoBot
-        // `-echo.demoBotSections`: two of them in a "Work" section, as Hermes Desktop files them
-        // (taken in from the bots, as one made on the desktop is).
-        let filed = !DevHooks.has("-echo.demoBotSections") ? all : all.map { bot in
-            var bot = bot
-            if ["writer", "fixit"].contains(bot.name) { bot.sectionID = "sec-demo-work"; bot.sectionName = "Work" }
-            return bot
-        }
         // `-echo.demoBotCount 1`: the main profile alone.
-        return BotRoster(bots: DevHooks.value("-echo.demoBotCount") == "1" ? filed.filter(\.isDefault) : filed)
+        return BotRoster(bots: DevHooks.value("-echo.demoBotCount") == "1" ? all.filter(\.isDefault) : all)
     }
 
     /// `-echo.demoClaudeBot`: a coding bot that works through Claude Code, as the butler setup's (Topology).

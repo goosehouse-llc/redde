@@ -284,7 +284,6 @@ struct MemoryImportView: View {
     private var chosenFacts: [String] { chosenCandidates.filter { $0.kind != .note }.map(\.text) }
 
     var body: some View {
-        ScrollViewReader { scroller in
         List {
             if let result {
                 candidateSections(result)
@@ -301,15 +300,6 @@ struct MemoryImportView: View {
                 }
                 if let problem { problemSection(problem) }
             }
-        }
-        #if DEBUG
-        .task {
-            // Screenshots of the notes (`-echo.screen memoryImport -echo.memoryNotes`).
-            guard DevHooks.has("-echo.memoryNotes"), let note = result?.candidates.first(where: { $0.kind == .projectMemory }) else { return }
-            try? await Task.sleep(for: .milliseconds(400))
-            scroller.scrollTo(note.id, anchor: .top)
-        }
-        #endif
         }
         .navigationTitle("Import Memory")
         #if os(iOS)

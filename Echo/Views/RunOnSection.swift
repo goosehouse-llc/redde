@@ -65,17 +65,11 @@ struct RunOnSection: View {
     private func load() async {
         picked = RunOn.current(job)
         guard !loaded else { return }
-        #if DEBUG
-        if DevHooks.has("-echo.demoRunOn") { choices = RunOnDemo.choices; loaded = true; return }
-        #endif
         choices = (try? await CronBackend.current()?.modelOptions()) ?? []
         loaded = true
     }
 
     private func set(_ pick: RunOn.Pick, from old: RunOn.Pick) async {
-        #if DEBUG
-        if DevHooks.has("-echo.demoRunOn") { return }
-        #endif
         guard let backend = CronBackend.current() else { return }
         working = true
         defer { working = false }
@@ -192,22 +186,3 @@ struct QuickJobsOffer: View {
         }
     }
 }
-
-#if DEBUG
-/// `-echo.demoRunOn` (with `-echo.screen wrapUp`): a daily job on a small model of its own, and a
-/// made-up model list, for the pictures.
-enum RunOnDemo {
-    static let choices = [
-        ModelChoice(provider: "custom:local", providerName: "Local", model: "qwen3.6-35b-a3b", name: "qwen3.6-35b-a3b", isCurrent: true),
-        ModelChoice(provider: "custom:local", providerName: "Local", model: "gemma-3-12b", name: "gemma-3-12b", isCurrent: false),
-        ModelChoice(provider: "custom:local", providerName: "Local", model: "qwen3-4b", name: "qwen3-4b", isCurrent: false),
-    ]
-
-    static func job(named name: String) -> CronJob? {
-        CronJob(.object(["id": .string("demo-\(name.hashValue)"), "name": .string(name), "schedule": .string("0 21 * * *"),
-                         "model": .string("qwen3-4b"), "provider": .string("custom:local"),
-                         "last_run_at": .string(ISO8601DateFormatter().string(from: .now.addingTimeInterval(-20 * 3600))),
-                         "last_status": .string("ok")]))
-    }
-}
-#endif

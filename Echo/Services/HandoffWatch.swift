@@ -128,9 +128,6 @@ final class HandoffWatch {
     @ObservationIgnored private var lookers: [String: Int] = [:]
     @ObservationIgnored private var loop: Task<Void, Never>?
     @ObservationIgnored private var rosterRead: Date?
-    #if DEBUG
-    @ObservationIgnored var demo = false
-    #endif
 
     static let every: Duration = .seconds(4)
 
@@ -199,9 +196,6 @@ final class HandoffWatch {
     /// A card is read every few seconds while it waits or is worked on, and now and then once it is
     /// done (it may be moved back).
     private func readCards() async {
-        #if DEBUG
-        if demo { return }
-        #endif
         guard KanbanClient.isAvailable else { return }
         for id in cardLookers.keys where (cardNext[id] ?? .distantPast) <= .now {
             let settled = ["done", "archived"].contains(cards[id]?.status ?? "")
@@ -226,9 +220,6 @@ final class HandoffWatch {
     static let idle: TimeInterval = 20
 
     private func readDue() async {
-        #if DEBUG
-        if demo { return }
-        #endif
         guard !lookers.isEmpty else { return }
         let settings = Settings.shared
         let directory = BotDirectory.shared
@@ -257,24 +248,3 @@ final class HandoffWatch {
         return bots.first { $0.name == ref.profile }
     }
 }
-
-#if DEBUG
-extension HandoffWatch {
-    /// `-echo.demoHandoff` (with `-echo.demoBots -echo.demoMarks`): Scout at work on what Quill
-    /// asked, for the row under Quill's reply, and Quill at work for Scout, for the strip over its
-    /// chat; `-echo.demoHandoff answered`: Scout done.
-    func showDemo(_ value: String?) {
-        demo = true
-        let answered = value == "answered"
-        progress["scout"] = Handoff.Progress(phase: answered ? .answered : .working, from: "Quill", step: Handoff.step("web_search"), steps: 3,
-                                             asked: .now.addingTimeInterval(-40), lastActive: .now.addingTimeInterval(-3))
-        var card = KanbanTask(.object(["id": .string("t_10e4a128"), "title": .string("Make the lookout and paper bots"),
-                                       "status": .string(answered ? "done" : "running"), "assignee": .string("fixit")]))!
-        card.startedAt = .now.addingTimeInterval(-260)
-        card.latestSummary = answered ? "Both profiles made; waiting for your approval." : "Writing paper's toolset: Paperless, files, no terminal."
-        cards[card.id] = card
-        progress["writer"] = Handoff.Progress(phase: .working, from: "Scout", step: Handoff.step("read_file"), steps: 1,
-                                              asked: .now.addingTimeInterval(-20), lastActive: .now)
-    }
-}
-#endif

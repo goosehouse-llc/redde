@@ -17,7 +17,7 @@ struct PluginsView: View {
 
     var body: some View {
         List {
-            if !client.hasCredentials && !PluginsDemo.on {
+            if !client.hasCredentials {
                 ContentUnavailableView("Needs the Hermes Dashboard", systemImage: "puzzlepiece.extension",
                                        description: Text("Plugins are installed through the Hermes Dashboard: add its address and login in Settings. The Hermes API has no way to."))
             } else {
@@ -83,9 +83,6 @@ struct PluginsView: View {
     }
 
     private func load() async {
-        #if DEBUG
-        if PluginsDemo.on { installed = PluginsDemo.installed; return loading = false }
-        #endif
         guard client.hasCredentials else { return loading = false }
         loading = true
         defer { loading = false }
@@ -161,7 +158,7 @@ private struct PluginCatalogView: View {
     @State private var catalog: PluginCatalog?
     @State private var problem: String?
     @State private var query = ""
-    @State private var everyone = PluginsDemo.on
+    @State private var everyone = false
     @State private var category: String?
 
     private var tiers: Set<CatalogPlugin.Tier> { everyone ? Set(CatalogPlugin.Tier.allCases) : [.official, .verified] }
@@ -223,9 +220,6 @@ private struct PluginCatalogView: View {
     }
 
     private func load(refresh: Bool = false) async {
-        #if DEBUG
-        if PluginsDemo.on { return catalog = PluginsDemo.catalog }
-        #endif
         do {
             catalog = try await PluginCatalogStore.load(refresh: refresh)
             problem = nil
@@ -631,51 +625,9 @@ private struct OutcomeSheet: View {
 
 // MARK: - Screenshots
 
-/// `-echo.demoPlugins`: a few real catalog entries (their names, categories and pictures) and an
-/// installed list, with no server; with `-echo.screen settings -echo.settingsAnchor plugins|catalog|tools`
-/// (`SettingsView`) for the icon screenshots.
+#if DEBUG
+/// The pages `-echo.settingsAnchor plugins|catalog|tools|mcp` opens over Settings (`SettingsView`), for screenshots.
 enum PluginsDemo {
-    static var on: Bool {
-        #if DEBUG
-        DevHooks.has("-echo.demoPlugins")
-        #else
-        false
-        #endif
-    }
-
-    #if DEBUG
-    private static let official = "https://raw.githubusercontent.com/NousResearch/hermes-official-plugins/a4e311e433f1470b1fec15434deea6a05e8644eb"
-    static let catalog: PluginCatalog = {
-        func entry(_ name: String, _ tier: String, _ category: String, _ about: String, image: String? = nil, repo: String = "https://github.com/NousResearch/hermes-official-plugins") -> JSONValue {
-            var fields: [String: JSONValue] = ["name": .string(name), "tier": .string(tier), "category": .string(category), "description": .string(about),
-                                               "maintainer": .string(repo.contains("NousResearch") ? "NousResearch" : "Community"), "repo": .string(repo)]
-            if let image { fields["image"] = .string(image) }
-            return .object(fields)
-        }
-        let entries: [JSONValue] = [
-            entry("spotify", "official", "tools", "Spotify for Hermes: playback, devices, queue, search, playlists and albums.", image: official + "/assets/spotify.jpg"),
-            entry("homeassistant", "official", "platform", "Home Assistant gateway platform: state changes in, notifications out.", image: official + "/assets/homeassistant.jpg"),
-            entry("langfuse", "official", "general", "Langfuse observability: one trace per turn, one generation per model call."),
-            entry("blender", "official", "tools", "Blender Lab MCP server with a Blender workflow skill."),
-            entry("elevenlabs-music", "official", "tools", "ElevenLabs Music: describe a song or paste lyrics."),
-            entry("claude-subscription-directsdk", "official", "models", "Runs Hermes turns on a Claude subscription."),
-            entry("nvidia-broadcast", "verified", "tools", "NVIDIA Broadcast: camera, microphone and speaker effects.", repo: "https://github.com/NousResearch/hermes-nvidia"),
-            entry("github_app", "community", "tools", "GitHub and GitHub Enterprise tools with approval-gated writes.", repo: "https://github.com/example/github_app"),
-            entry("telegram-client", "community", "platform", "A Telegram client account for Hermes.", repo: "https://github.com/example/telegram-client"),
-            entry("accent-picker", "official", "desktop", "An accent colour picker for the Hermes Desktop status bar."),
-            entry("nvidia-app", "verified", "tools", "NVIDIA App control through its local MCP server.", repo: "https://github.com/NousResearch/hermes-nvidia"),
-            entry("markifact", "community", "tools", "Marketing data and reports through the Markifact MCP server.",
-                  image: "https://raw.githubusercontent.com/markifact/markifact-mcp/9a873931b6138970888d2a9102a8037dbbd174a5/assets/icon.png",
-                  repo: "https://github.com/markifact/markifact-mcp"),
-            entry("mermail", "community", "platform", "Agent email inboxes and workspace automation through Mermail.",
-                  image: "https://raw.githubusercontent.com/Nudgen-Marketing/mermail-skills/269a711bf683845d75009df4984bf25eee83b0bd/assets/logo.png",
-                  repo: "https://github.com/Nudgen-Marketing/mermail-skills"),
-            entry("voice-notes", "community", "voice", "Transcribe and file voice notes.", repo: "https://github.com/example/voice-notes"),
-        ]
-        return PluginCatalog(plugins: entries.compactMap(CatalogPlugin.init), generated: nil)
-    }()
-
-    /// The page `-echo.settingsAnchor plugins|catalog|tools` opens over Settings.
     struct Screen: View {
         let page: String
         var body: some View {
@@ -690,14 +642,5 @@ enum PluginsDemo {
             }
         }
     }
-
-    static let installed: [InstalledPlugin] = [
-        ["name": "spotify", "version": "1.2.0", "source": "git", "status": "enabled", "catalog_name": "spotify", "catalog_tier": "official"],
-        ["name": "nvidia-app", "version": "0.3.0", "source": "git", "status": "enabled", "catalog_name": "nvidia-app", "catalog_tier": "verified"],
-        ["name": "homeassistant", "version": "1.0.2", "source": "git", "status": "enabled", "catalog_name": "homeassistant", "catalog_tier": "official"],
-        ["name": "markifact", "version": "0.4.1", "source": "git", "status": "enabled", "catalog_name": "markifact", "catalog_tier": "community"],
-        ["name": "redde-push", "version": "1.20.0", "source": "git", "status": "enabled"],
-        ["name": "mermail", "version": "0.9.0", "source": "git", "status": "disabled", "catalog_name": "mermail", "catalog_tier": "community"],
-    ].compactMap { fields in InstalledPlugin(.object(fields.mapValues { JSONValue.string($0) })) }
-    #endif
 }
+#endif

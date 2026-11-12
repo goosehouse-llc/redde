@@ -315,13 +315,6 @@ final class PluginCatalogIndex {
 
     func prepare() async {
         if let loading { return await loading.value }
-        #if DEBUG
-        if PluginsDemo.on {
-            entries = Dictionary(PluginsDemo.catalog.plugins.map { ($0.name, Entry(picture: $0.image, category: $0.category)) }, uniquingKeysWith: { a, _ in a })
-            loading = Task {}
-            return
-        }
-        #endif
         let task = Task {
             let catalog = await Task.detached(priority: .utility) { try? await PluginCatalogStore.load() }.value
             guard let catalog else { return }

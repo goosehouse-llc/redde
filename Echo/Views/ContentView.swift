@@ -105,7 +105,7 @@ struct ContentView: View {
     /// `-echo.screen activity|pluginUpdates|triggers|watches`: that page, in a sheet (the day's video, `DemoDay`);
     /// `goal` and `goals` (with `-echo.demoGoals`) a goal's page and the list, for screenshots.
     @State private var demoDayPage: String?
-    /// `-echo.screen aheadOfYourDay`: Ahead of Your Day's sheet (screenshots; `-echo.demoAhead` for a made-up server).
+    /// `-echo.screen aheadOfYourDay`: Ahead of Your Day's sheet (screenshots).
     @State private var showAheadOfYourDay = false
     #endif
     @State private var showFiles = false
@@ -227,7 +227,7 @@ struct ContentView: View {
                 case "pluginUpdates": PluginUpdatesView(agents: DemoDay.on ? DemoDay.pluginAgents : PluginUpdatesView.everyAgent())
                 case "calendars": CalendarsSettingsView()
                 case "headsUps": DailyJobView(daily: HeadsUps.job)
-                case "wrapUp": DailyJobView(daily: EveningWrapUp.job)   // with -echo.demoRunOn
+                case "wrapUp": DailyJobView(daily: EveningWrapUp.job)
                 case "watches": WatchesView()
                 case "goal": GoalView(goalID: "g10k")   // with -echo.demoGoals
                 case "goals": GoalsListView()
@@ -245,7 +245,7 @@ struct ContentView: View {
                 case "mailReader": MailReaderView(thread: MailDemo.readerThread)
                 case "inboxCard": ScrollView { ReplyCardsView(cards: MailDemo.cards).padding() }
                 case "mailBrief": List { InboxSection(open: {}); BriefingsSection() }   // the deck's email page
-                case "dailyJobs": DailyJobsView()   // with -echo.demoRunOn
+                case "dailyJobs": DailyJobsView()
                 case "location": LocationSettingsView()
                 case "chatListCards": ChatListCardsSettingsView()
                 default: TriggersView()
@@ -297,34 +297,8 @@ struct ContentView: View {
             #if DEBUG
             if DevHooks.has("-echo.voiceView") { openVoice(fromOutside: true) }
             if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: DevHooks.has("-echo.handsFree"), fromOutside: true) }
-            // `-echo.callBar` with it: the call put away once it is up, as the chevron does (the lab).
-            if DevHooks.has("-echo.callBar") {
-                Task {
-                    for _ in 0..<100 where !(voiceSession.isLive && !voiceSession.liveConnecting) { try? await Task.sleep(for: .milliseconds(100)) }
-                    try? await Task.sleep(for: .seconds(2))
-                    voiceSession.moveToBar()
-                    showVoice = false
-                }
-            }
             // Once a demo conversation is in: one opened under the bar hangs up, as another chat does.
             if DevHooks.has("-echo.demoCallBar") { Task { try? await Task.sleep(for: .seconds(1.5)); voiceSession.poseBar() } }
-            // `-echo.livePreview <voice>`: that live voice's preview played (the engine whose voice
-            // it is), how it went in the live-measure log (with `-echo.liveMeasure`).
-            if let voice = DevHooks.value("-echo.livePreview") {
-                let preview = LiveVoicePreview(), began = ContinuousClock.now
-                let engine = LiveEngine.allCases.first { $0.voices.contains(voice) } ?? .gptLive
-                preview.play(voice, of: engine, as: settings.headerTitle, in: "English")
-                while preview.playing != nil { try? await Task.sleep(for: .milliseconds(100)) }
-                LiveMeasure.write("preview \(voice): \(preview.problem ?? "played") after \((ContinuousClock.now - began).formatted(.units(allowed: [.milliseconds], width: .narrow)))")
-            }
-            // `-echo.voiceHandoff`: the voice screen's face handed to Scout, back, then to Quill, as
-            // a spoken prefix does it (recording the transition).
-            if DevHooks.has("-echo.voiceHandoff") {
-                for bot in [BotRef(profile: "scout", name: "Scout"), nil, BotRef(profile: "writer", name: "Quill")] {
-                    try? await Task.sleep(for: .seconds(2.5))
-                    conversation.replaceForDemo(messages: conversation.messages, bot: bot)
-                }
-            }
             #endif
         }
         .onOpenURL { url in
@@ -964,22 +938,14 @@ struct ContentView: View {
     /// sheet from it (Rename, Export) waits for this one to go.
     private var sessionDetails: some View {
         NavigationStack {
-            #if DEBUG
-            if DevHooks.has("-echo.demoSessionDetails") {
-                SessionDetailsView(info: sessionInfo(demo: true), activity: SessionDetailsModel.demoActivity, source: nil, model: .demo)
-            } else {
-                detailsPage
-            }
-            #else
             detailsPage
-            #endif
         }
     }
 
     private var detailsPage: some View {
         let renames = conversation.bot == nil && !conversation.isIncognito && conversation.hasMessages
         return SessionDetailsView(
-            info: sessionInfo(demo: false), activity: SessionActivity.from(conversation.messages), source: sessionDetailsSource,
+            info: sessionInfo(), activity: SessionActivity.from(conversation.messages), source: sessionDetailsSource,
             rename: renames ? {
                 renameText = conversation.name ?? conversation.title
                 Task { try? await Task.sleep(for: .milliseconds(450)); showRename = true }
@@ -1001,7 +967,7 @@ struct ContentView: View {
         }
     }
 
-    private func sessionInfo(demo: Bool) -> SessionChatInfo {
+    private func sessionInfo() -> SessionChatInfo {
         let picked = conversation.turnModel
         let choice: String? = if settings.transport == .chatCompletions {
             nil
@@ -1015,18 +981,18 @@ struct ContentView: View {
             String(localized: "Set on your server", comment: "Session Details: how the model was chosen")
         }
         return SessionChatInfo(
-            title: demo ? "Move the blog to the new site" : headerTitle,
+            title: headerTitle,
             agent: conversation.bot?.name ?? settings.headerTitle,
             face: botFace,
             server: settings.transport.hasLedger ? settings.activeServer?.name.nilIfEmpty : nil,
             connection: conversation.connection,
-            model: demo ? "qwen36-kapitsa" : modelChipLabel,
-            modelChoice: demo ? String(localized: "Set on your server", comment: "Session Details: how the model was chosen") : choice,
+            model: modelChipLabel,
+            modelChoice: choice,
             provider: picked?.provider?.nilIfEmpty,
             reasoningEffort: settings.transport.isHermes ? settings.reasoningEffort.nilIfEmpty : nil,
-            context: demo ? ContextUsage(used: 84_600, window: 128_000) : conversation.contextUsage,
+            context: conversation.contextUsage,
             project: projectName,
-            sessionID: demo ? "20261102_081544_9f3c2a" : (conversation.isIncognito ? nil : conversation.serverSessionID),
+            sessionID: conversation.isIncognito ? nil : conversation.serverSessionID,
             isIncognito: conversation.isIncognito,
             startedHere: conversation.createdAt)
     }
@@ -1534,16 +1500,7 @@ struct ContentView: View {
         #endif
         default: break
         }
-        #if DEBUG
-        // `-echo.demoBotScreen [you|other]`: the Agent's Screen over a made-up desktop (screenshots).
-        if DevHooks.has("-echo.demoBotScreen") { showAgentScreen = true }
-        #endif
         // `-echo.demoDay routine`: Make This a Routine over the chat it seeded (`DemoDay`).
-        #if DEBUG
-        if DevHooks.has("-echo.demoSessionDetails") {
-            Task { try? await Task.sleep(for: .seconds(1)); showSessionDetails = true }
-        }
-        #endif
         if DemoDay.scene == "routine" {
             Task { try? await Task.sleep(for: .seconds(1.5)); makingRoutine = true }
         }
@@ -1609,7 +1566,6 @@ struct ContentView: View {
         let current = WhatsNew.currentVersion
         let isNewInstall = !settings.setupDone && !settings.isConfigured
         #if DEBUG
-        if DevHooks.has("-echo.whatsNew") { whatsNew = WhatsNew.highlights(of: current); return }
         if DevHooks.screenshotRun { return }   // App Store captures must not get a sheet on top
         #endif
         if isNewInstall { WhatsNew.markSeen(current); return }

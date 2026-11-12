@@ -149,10 +149,8 @@ struct GroupChatView: View {
                 }
                 .onChange(of: findText) { LayoutCarry.shared.group?.findText = findText }
                 #if DEBUG
-                // `-echo.groupFind <words>`: Find open on those words (screenshots).
+                // `-echo.groupVoice [bot]`: the voice screen open on the room (with that bot's reply being read).
                 .onAppear {
-                    if let words = DevHooks.value("-echo.groupFind") { findText = words; finding = true }
-                    // `-echo.groupVoice [bot]`: the voice screen open on the room (with that bot's reply being read).
                     if DevHooks.has("-echo.groupVoice") { openVoice(voiceScene) }
                 }
                 #endif

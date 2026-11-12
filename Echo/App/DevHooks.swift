@@ -29,19 +29,16 @@ import WidgetKit
 ///   `-echo.tour`, the app goes through what people do in it by itself, each step measured.
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 ///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`), and
-///   `-echo.demoWork` for the workstreams strip over the chat and its Work sheet (`-echo.showWork` opens it)
 ///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's) (`-echo.demoBotCount n`
 ///   for n bots, up to 12, where they fold, or 1 for the main profile alone; `-echo.demoPicture` gives Scout a picture from Hermes Desktop); with
 ///   `-echo.openGroup` its group chat is open, and `-echo.demoDraft` plays a bot's reply there as
-///   it is written; `-echo.groupFind <words>` opens Find in Chat on those words, and
-///   `-echo.groupVoice [bot]` the voice screen on the room (with that bot's reply being read; with
+///   it is written, and `-echo.groupVoice [bot]` the voice screen on the room (with that bot's reply being read; with
 ///   `-echo.demoDraft`, the sample reply read as it is written; with `-echo.demoRound`, a question
-///   and the three bots answering it in turn). `-echo.demoMuted` mutes Scout and the group chat.
+///   and the three bots answering it in turn).
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.demoLinkPreview`: link previews from made-up pages, with no network (`LinkPreviews.demo`).
 /// - `-echo.flipLayout [seconds]`: the layout swapped under the chat, as opening or closing an iPhone
 ///   Duo swaps it, on the Darwin notification `LayoutFlip.notification` and every so many seconds.
-/// - `-echo.incognito`: open on a new incognito chat.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
 /// - `-echo.demoFiles`: Settings → Files on sample folders, with no server (and the row unlocked).
@@ -54,8 +51,6 @@ import WidgetKit
 /// - `-echo.demoTodos`: a conversation in which the agent keeps a task list (the checklist under a reply).
 /// - `-echo.demoPhoneShot`: a short conversation in which the agent has used the phone four
 ///   times (the Phone tools store screenshot).
-/// - `-echo.demoHome`: Apple Home is a made-up house (`DemoHome`) and Phone tools › Apple Home is
-///   allowed: with `-echo.demoCards homekit`, the home card's Apple Home rows answer from it.
 /// - `-echo.demoPhone [settings]`: Phone tools switched on, each area set (in these settings
 ///   only: nothing of iOS's is asked for), and the agent using the phone played live: the
 ///   calendar, a reminder that Phone tools asks about for real, a photo found by what it
@@ -70,10 +65,6 @@ import WidgetKit
 /// - `-echo.demoDocument`: a reply that came with a Markdown file (a tile that opens in QuickLook),
 ///   then one that names its files by path (links that open them).
 /// - `-echo.demoPage`: a reply with a page the agent made, live in the chat, with buttons that talk back.
-/// - `-echo.demoBrowsing`: watching the agent work: a finished reply that browsed three pages, then
-///   one still browsing, with its terminal printing (`AgentWorkStrip`); `-echo.demoBrowsing history`
-///   opens the finished reply's steps (`AgentBrowsingHistory`). `-echo.demoBotScreen
-///   [you|other]`: the Agent's Screen over a made-up desktop, watched, driven by you, or by someone else.
 /// - `-echo.demoCards`: a reply with a map (a walk), three places and the weather, then the time in Tokyo (`ReplyCards`).
 ///   `-echo.demoCards weather` (or `places`): that card alone. `-echo.demoCards purchase`: headphones to buy, as a purchase
 ///   card (`PurchaseCard`); its pictures are drawn on the phone, and show with `-linkPreviews YES`; `pricecheck`: one vacuum at six stores. `home`, `reminder`,
@@ -84,19 +75,15 @@ import WidgetKit
 ///   (`ConversionCard`), a share and three more (`StockCard`); all made up, the recipe's picture and the posters drawn
 ///   on the phone (shown with `-linkPreviews YES`).
 /// - `-echo.demoAgenda`: what's on the calendar tomorrow, then the rest of the week with a free day, as agenda cards (`AgendaCard`); `-echo.demoAgenda tomorrow` the first alone.
-///   `-echo.demoAddEvent`: the first day with a timeline adds an event at its first free stretch, as a tap
-///   there does (Apple's editor on the iPhone, the message field's line on the Mac). `-agendaCalendars "(Family, Home)"`
-///   shows those calendars only; `-echo.screen calendars` opens Settings → Agent → Calendars.
+///   `-agendaCalendars "(Family, Home)"` shows those calendars only; `-echo.screen calendars` opens Settings → Agent → Calendars.
 /// - `-echo.demoBriefings`: the Week Ahead, a heads-up and a wrap-up in Briefings; `-echo.demoBriefings day`
 ///   a made-up daily meeting brief ahead of them (`DayBrief`: its calendar card from its own rows,
 ///   never the phone's calendar). `weather` puts a weather run first. `-echo.openBriefing` opens the first one a moment after launch.
 /// - `-echo.demoApprovalCard <coder|command|push|script|skill>`: an approval waiting, in words (`ApprovalSummary`);
 ///   `skill` is Coder's change put in place by the main agent, under the chat that asked for it (the store screenshot).
-/// - `-echo.demoQuestion <one|few|open>`: the agent's question card (Hermes's clarify), with
-///   choices, several questions, or one to answer in words.
 /// - `-echo.demoAsks`: cards answered with a tap: a review of a message, a choice of restaurants;
 ///   with `-echo.demoAsksMore`, a packing checklist and a booking form instead (`-echo.demoAsksListOnly`:
-///   the list alone; `-echo.demoPinned`: the list pinned to the chat list).
+///   the list alone).
 ///   `-echo.demoAsksReviewOnly`: the email alone; `-echo.demoAsksBooking`: a text's review, then a booking's (rows).
 /// - `-echo.demoPhotos [n]`: messages with two photos, one, and n (five by default), to look at
 ///   how pictures are set out together and at the full-screen viewer.
@@ -138,8 +125,7 @@ import WidgetKit
 /// - `-echo.voiceView`: open voice mode without listening. `-echo.voiceDemo ["<words>"]` poses it mid-listen;
 ///   with `-echo.voiceDemoPhase speaking`, mid-reply instead (the words are the reply's), for screenshots;
 ///   `-echo.autoVoice` opens it and starts listening (`-echo.handsFree` with it: hands-free, so a
-///   live call stays up after its first answer, to measure; `-echo.callBar` too: the call put away
-///   into its bar over the chat two seconds after it is up; `-echo.demoCallBar` alone: the bar with
+///   live call stays up after its first answer, to measure; `-echo.demoCallBar` alone: the bar with
 ///   no call under it, for pictures and `CallBarUITests`). More poses for the promo video:
 ///   `-echo.voiceDemoPhase thinking`; `-echo.voiceDemoPhase follow` (the pose follows the conversation
 ///   played into it, as `-echo.demoCall` does); `-echo.voiceDemoCall` (on a call: "On a call" while
@@ -148,7 +134,6 @@ import WidgetKit
 /// - `-echo.demoCall story [seconds]`: on a live call, a bedtime story asked for after that many
 ///   seconds and its answer written a word at a time (`Conversation.streamCallDemo`), for voice mode
 ///   posed with `-echo.voiceDemoPhase follow`.
-///   `-echo.voiceHandoff` hands its face to other bots and back, as spoken prefixes do.
 /// - `-echo.demoDay [morning|week|ideas|evening|home|dinner|packing|routine|watch|today|coffee|rain|approval|afternoon|leave|email|watchask|traffic|shipped]`: the "A day with Redde" video
 ///   (`DemoDay`), with `-echo.demoProjects -echo.demoBots -displayName Sol`: the agents Sol, Home and
 ///   Coder, a day's chats, canned answers to chats and @tags, sample Agent Activity and Plugin
@@ -169,22 +154,12 @@ import WidgetKit
 ///   none: the camera button shows, and a question asked with it on goes with a drawn picture.
 /// - `-echo.dictation`: listen with the transcriber an iPhone 11 or SE 2 gets (`Transcriber`),
 ///   on a device that has the newer one too.
-/// - `-echo.demoTips`: sample tips on Settings → About → Support Redde (App Review screenshot).
-/// - `-echo.whatsNew`: show this version's "What's New" sheet (any other `-echo.` flag hides it).
-///   Its "Set Up Ahead of Your Day…" button shows until it has been offered once
-///   (`-aheadOfYourDay.answered NO` brings it back for a launch).
-/// - `-echo.screen aheadOfYourDay`: Ahead of Your Day's sheet (`AheadOfYourDay`). With
-///   `-echo.demoAhead old|missing|there|restart|api|none` on a made-up server (`DemoAheadHost`: the
-///   plugin 1.9.0, none, current, 1.9.0 that needs a restart once updated, the Hermes API alone
-///   with Location not allowed, no connection for jobs); nothing is made and no setting changes.
-///   `-echo.demoAheadRun` presses Turn On a second after the sheet opens (`-echo.demoAheadRun bottom`:
-///   and then scrolls to What It Takes).
+/// - Any `-echo.` flag keeps this version's "What's New" sheet from showing.
+/// - `-echo.screen aheadOfYourDay`: Ahead of Your Day's sheet (`AheadOfYourDay`).
 /// - `-echo.switchProfile <name>`: switch profile five seconds after launch.
-/// - `-echo.botKokoro <profile> <voice>`: that bot's Kokoro voice, a blend too ("bf_emma(1)+af_heart(4)").
-/// - `-echo.wallpaper <RRGGBB>`: the theme in use gets that wallpaper ("none" takes it off).
 /// - `-echo.ringMe <profile> <seconds>`: that agent calls ("default" the main one) that many seconds
 ///   after launch, as if its push had come (`AgentCalls.ring`): CallKit without the relay. Calls
-///   must be on (Settings → Notifications → Calls from Agents), or `-echo.callsOn` turns them on.
+///   must be on (Settings → Notifications → Calls from Agents).
 /// - `-echo.askProfile <name>`: what Siri's "Ask <name> in Redde" does, at launch: the name is
 ///   made known, then voice mode is asked for on that profile ("default" is the main one).
 /// - `-echo.dropHint`: show the outline a drag over the chat brings up, without a drag.
@@ -222,18 +197,8 @@ enum DevHooks {
     }
 
     /// Any demo or screen flag: an App Store capture or a test, which the "What's New" sheet
-    /// must not cover (`-echo.whatsNew` shows it on purpose).
+    /// must not cover.
     static var screenshotRun: Bool { args.contains { $0.hasPrefix("-echo.") } }
-
-    private static var demoNewEventShown = false
-    /// `-echo.demoAddEvent`: once, a moment after the card shows, the first free stretch of the
-    /// first timeline (else 2 PM on it), to add an event at.
-    static func demoNewEvent(_ timeline: AgendaCard.Timeline?) async -> AgendaCard.Slot? {
-        guard has("-echo.demoAddEvent"), !demoNewEventShown, let timeline else { return nil }
-        demoNewEventShown = true
-        try? await Task.sleep(for: .seconds(2))
-        return timeline.free.first.flatMap(timeline.slot(for:)) ?? timeline.slot(atY: CGFloat(14 - timeline.firstHour) * AgendaCard.Timeline.hourHeight)
-    }
 
     static var demoKanban: Bool { has("-echo.demoKanban") }
     static var demoProjects: Bool { has("-echo.demoProjects") }
@@ -258,12 +223,6 @@ enum DevHooks {
     static func applyAtLaunch(conversation: Conversation, settings: Settings) {
         conversationsAtLaunch = Set(conversation.storeForContext.summaries.map(\.id))
         if has("-echo.demo") { conversation.seedDemo() }
-        // A reaction under every reply (`Reactions`), to look at its badge.
-        // By its place in the list, `-echo.demoReaction 1` for ❤️: an emoji in a launch argument
-        // can arrive mangled.
-        if let picked = value("-echo.demoReaction").flatMap(Int.init), Reactions.all.indices.contains(picked) {
-            for reply in conversation.messages where reply.role == .assistant { conversation.react(to: reply.id, with: Reactions.all[picked].emoji) }
-        }
         if has("-echo.demoShort") { conversation.keepFirstMessages(2) }
         if has("-echo.demoTwo") { conversation.keepFirstMessages(4) }
         // A message quoting the first reply, the last one quoted in the composer, and suggested replies.
@@ -285,22 +244,13 @@ enum DevHooks {
         if demoBots {
             if !DemoDay.on { conversation.seedBotDemo() }   // (the day's video starts on a chat of Sol's)
             BotDirectory.shared.set(ConversationsList.demoBots, key: settings.connectionKey)
-            if has("-echo.demoHandoff") { HandoffWatch.shared.showDemo(value("-echo.demoHandoff")) }
             #if canImport(UIKit)
             if has("-echo.demoPicture") { BotPictures.shared.seed("scout", BotPictures.demoPicture) }
             #endif
         }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
-        if has("-echo.incognito") { conversation.startIncognito() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
         if has("-echo.demoPhoneShot") { conversation.seedPhoneShotDemo() }
-        if has("-echo.demoHome") {
-            DeviceHome.layer = DemoHome()
-            var tools = settings.phoneTools
-            tools.on = true
-            tools.set(.home, .allow)
-            settings.phoneTools = tools
-        }
         if has("-echo.demoPhone") {
             var tools = PhoneToolsSettings()
             tools.on = true
@@ -331,12 +281,8 @@ enum DevHooks {
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }
         if has("-echo.demoPage") { conversation.seedPageDemo() }
         if has("-echo.demoCards") { conversation.seedCardsDemo(only: value("-echo.demoCards")) }
-        if has("-echo.demoBrowsing") { conversation.seedBrowsingDemo() }
         if has("-echo.demoAgenda") { conversation.seedAgendaDemo(tomorrowOnly: value("-echo.demoAgenda") == "tomorrow") }
-        // A key a bot asked for, its card open over the app, answered by nothing (screenshots).
-        if has("-echo.demoKeyRequest") { KeyRequests.shared.showDemo() }
         if has("-echo.demoAsks") { conversation.seedAsksDemo(more: has("-echo.demoAsksMore")) }
-        if let kind = value("-echo.demoQuestion") { conversation.seedQuestionDemo(kind) }
         if let kind = value("-echo.demoApprovalCard") { conversation.seedApprovalDemo(kind) }
         if has("-echo.demoPhotos") { conversation.seedPhotoDemo(count: value("-echo.demoPhotos").flatMap(Int.init) ?? 5) }
         if has("-echo.demoWidgets") {
@@ -511,32 +457,8 @@ enum DevHooks {
             LiveMeasure.write(lines.joined(separator: "\n"), to: "keychain-report.log")
         }
 
-        // `-echo.botKokoro <profile> <voice>`: that bot's Kokoro voice, a blend as well (Home's,
-        // set from the Mac 2026-10-26), its speed and conversation as they were.
-        if let at = args.firstIndex(of: "-echo.botKokoro"), at + 2 < args.count {
-            var record = settings.botVoicesHere[args[at + 1]] ?? BotVoice()
-            (record.kokoro, record.onDevice, record.elevenLabs, record.sameAsMain) = (args[at + 2], nil, nil, nil)
-            settings.botVoicesHere[args[at + 1]] = record
-        }
-
-        // `-echo.wallpaper <RRGGBB>|none`: the theme in use's wallpaper (screenshots).
-        if let hex = value("-echo.wallpaper") {
-            let key = settings.theme.rawValue
-            if hex == "none" {
-                settings.themeColors[key]?.wallpaper = nil
-            } else if hex.count == 6, let n = Int(hex, radix: 16) {
-                settings.themeColors[key, default: ThemeColors()].wallpaper = ThemeColors.RGB(
-                    red: Double((n >> 16) & 0xFF) / 255, green: Double((n >> 8) & 0xFF) / 255, blue: Double(n & 0xFF) / 255)
-            }
-        }
-
         #if os(iOS)
-        // `-echo.ringMe <profile> <seconds>` (and `-echo.callsOn`): an agent's call, without the relay.
-        if has("-echo.callsOn") {
-            settings.agentCalls = true
-            if settings.callersHere.isEmpty { settings.callersHere = ["default"] }
-            AgentCalls.shared.start()
-        }
+        // `-echo.ringMe <profile> <seconds>`: an agent's call, without the relay.
         if let at = args.firstIndex(of: "-echo.ringMe"), at + 1 < args.count {
             let profile = args[at + 1]
             let delay = at + 2 < args.count ? Double(args[at + 2]) ?? 5 : 5

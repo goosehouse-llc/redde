@@ -183,10 +183,10 @@ nonisolated enum DeviceHome {
     private static let lock = NSLock()
     nonisolated(unsafe) private static var chosen: (any HomeLayer)?
 
-    /// A stand-in is in use (a test, `-echo.demoHome`): no HomeKit, no question from iOS.
+    /// A stand-in is in use: no HomeKit, no question from iOS.
     static var standIn: Bool { lock.lock(); defer { lock.unlock() }; return chosen != nil }
 
-    /// The layer the tools and the card use: HomeKit, or the demo's under `-echo.demoHome`.
+    /// The layer the tools and the card use: HomeKit, or a stand-in set in its place.
     static var layer: any HomeLayer {
         get {
             lock.lock(); defer { lock.unlock() }
@@ -403,7 +403,7 @@ nonisolated struct NoHome: HomeLayer {
     func run(_ scene: HomeScene) async throws { throw DeviceHome.offPhone }
 }
 
-/// A made-up home, for tests and `-echo.demoHome`: it remembers what was done to it.
+/// A made-up home, for tests: it remembers what was done to it.
 nonisolated final class DemoHome: HomeLayer, @unchecked Sendable {
     private let lock = NSLock()
     private var state: HomeSnapshot

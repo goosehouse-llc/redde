@@ -51,9 +51,6 @@ struct DailyJob {
     }
 
     func find() async throws -> CronJob? {
-        #if DEBUG
-        if DevHooks.has("-echo.demoRunOn") { return RunOnDemo.job(named: name) }
-        #endif
         guard let backend = CronBackend.current() else { return nil }
         return try await backend.list().first { $0.name == name }
     }

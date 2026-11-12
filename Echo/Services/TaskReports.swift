@@ -67,10 +67,7 @@ final class TaskReports {
     @ObservationIgnored private var asking: Set<String> = []
 
     func reports(for session: String?) -> [TaskReport] {
-        #if DEBUG
-        if let demo = Self.demo { return demo }   // whatever chat is open, a demo's with no session too
-        #endif
-        return session.flatMap { bySession[$0] } ?? []
+        session.flatMap { bySession[$0] } ?? []
     }
 
     /// A task's notification came in or was tapped: the chat asks again.
@@ -79,9 +76,6 @@ final class TaskReports {
     /// Asks the plugin for one chat's reports. Says nothing when the plugin is older or the server
     /// can't be reached: what was known stays.
     func refresh(session: String?) async {
-        #if DEBUG
-        if Self.demo != nil { return }
-        #endif
         guard let session, !session.isEmpty, !asking.contains(session) else { return }
         asking.insert(session)
         defer { asking.remove(session) }
@@ -104,16 +98,6 @@ final class TaskReports {
         }
         return layout
     }
-
-    #if DEBUG
-    /// `-echo.demoTaskReport`: one report kept for whatever chat is open, two minutes old (with
-    /// `-echo.demoTaskReportOld`, older than every row, so the chat's task rows are its).
-    static let demo: [TaskReport]? = DevHooks.has("-echo.demoTaskReport")
-        ? [TaskReport(id: "demo", at: DevHooks.has("-echo.demoTaskReportOld") ? .distantPast : .now.addingTimeInterval(-120),
-                      summary: "Counted 12 PDF files in ~/Documents/Taxes. The newest is 2026 W-2.pdf, from Nov 3; two are duplicates of 2025 forms.",
-                      about: "", tasks: 1, failed: 0)]
-        : nil
-    #endif
 }
 
 extension EnvironmentValues {
