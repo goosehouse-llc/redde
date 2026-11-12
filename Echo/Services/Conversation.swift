@@ -1663,8 +1663,12 @@ final class Conversation {
         // A bot's chat is known by its title on the server: renaming it would lose it.
         guard bot == nil else { return }
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-        // ACP keeps no names for its chats: the name is this device's.
-        if let sessionID = serverSessionID, connection != .acp {
+        if connection == .acp {
+            // Named on the agent where it keeps names (Claude Code); otherwise the name is this device's.
+            if let sessionID = serverSessionID, !trimmed.isEmpty, let client = AcpClient.current(settings) {
+                _ = try await client.setTitle(sessionID, title: trimmed)
+            }
+        } else if let sessionID = serverSessionID {
             guard !trimmed.isEmpty else { return }
             guard let backend = SessionBackend.current(self, settings: settings) else {
                 throw TransportError.malformed(SessionBackend.notConfiguredMessage)

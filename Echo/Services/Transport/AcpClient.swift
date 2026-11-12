@@ -104,6 +104,8 @@ final class AcpClient {
         var canResume: Bool
         var takesImages: Bool
         var takesSystemPrompt: Bool
+        /// A chat can be renamed on the agent (`session/set_title`).
+        var canTitle: Bool = false
         /// Words can join a reply under way (`_session/steering`, Claude Code's `_meta.steering`).
         var steers: Bool = false
         /// The agent's slash commands as the bridge last heard them, for a chat with none yet.
@@ -273,6 +275,7 @@ final class AcpClient {
                     canDelete: has(sessions["delete"]), canResume: has(sessions["resume"]),
                     takesImages: caps["promptCapabilities"]?["image"]?.bool ?? false,
                     takesSystemPrompt: has(sessions["systemPrompt"]),
+                    canTitle: has(sessions["title"]),
                     steers: result["_meta"]?["steering"]?["supported"]?.bool ?? false,
                     commands: AcpCommand.list(.object(["availableCommands": redde?["commands"] ?? .null])))
     }
@@ -548,6 +551,15 @@ final class AcpClient {
             "_meta": .object(["steering": .object(["idleBehavior": .string("promptRequired")])]),
         ])
         return result["outcome"]?.string == "injected"
+    }
+
+    /// Names a chat on the agent, so its own list and every device show the name. False when the
+    /// agent keeps no names (`sessionCapabilities.title`).
+    func setTitle(_ session: String, title: String) async throws -> Bool {
+        try await ensureConnected()
+        guard info?.canTitle == true else { return false }
+        _ = try await call("session/set_title", ["sessionId": .string(session), "title": .string(title)])
+        return true
     }
 
     /// Answers an approval card with one of its choices (once, session, always, deny).

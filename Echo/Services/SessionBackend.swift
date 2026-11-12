@@ -147,7 +147,7 @@ enum SessionBackend {
         switch self {
         case .serve(let client): try await client.updateSession(stored: id, title: title)
         case .ledger(let api): try await api.updateSession(id: id, title: title)
-        case .acp: throw Self.notOnACP
+        case .acp(let client): if try await !client.setTitle(id, title: title) { throw Self.notOnACP }
         }
     }
 

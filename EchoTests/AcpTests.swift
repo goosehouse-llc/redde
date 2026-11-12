@@ -275,6 +275,8 @@ struct AcpTests {
         // Claude Code says words can join a reply under way.
         let claude = AcpClient.info(json(#"{"agentInfo": {"name": "@agentclientprotocol/claude-agent-acp", "title": "Claude Agent"}, "_meta": {"steering": {"supported": true}}}"#))
         #expect(claude.steers && claude.name == "Claude Agent")
+        #expect(!info.canTitle)
+        #expect(AcpClient.info(json(#"{"agentCapabilities": {"sessionCapabilities": {"title": {}}}}"#)).canTitle)
     }
 
     /// Claude Code's commands as it announces them, offered as "/…" is typed.

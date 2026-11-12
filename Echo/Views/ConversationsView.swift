@@ -1795,6 +1795,9 @@ struct ConversationsList: View {
                     Button(session.pinned == true ? String(localized: "Unpin") : String(localized: "Pin", comment: "Pins the conversation to the top of the list"),
                            systemImage: "pin") { setPinned(session, !(session.pinned ?? false)) }
                     Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) }
+                } else if settings.transport == .acp, AcpClient.current(settings)?.info?.canTitle == true {
+                    // Claude Code keeps names for its chats.
+                    Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
                 }
                 moveMenu(for: session)
                 Button("Export as Markdown", systemImage: "square.and.arrow.up") { export(session) }
