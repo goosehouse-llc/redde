@@ -46,7 +46,7 @@ from urllib.parse import parse_qs, urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import redde_push  # noqa: E402  (beside this file)
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -614,7 +614,7 @@ class Connection:
                 meta["redde"]["commands"] = agent.commands
             result["_meta"] = meta
             return result
-        if method in ("session/new", "session/load", "session/resume"):
+        if method in ("session/new", "session/load", "session/resume", "session/fork"):
             sid = params.get("sessionId")
             params = dict(params, cwd=agent.folder(params.get("cwd"), sid), mcpServers=params.get("mcpServers") or [])
             if method == "session/load":
@@ -628,7 +628,8 @@ class Connection:
                     session.loading = None
             else:
                 result = await agent.request(method, params)
-            sid = sid or (result or {}).get("sessionId")
+            # A fork is a new session, open in the agent already: it's the one to follow.
+            sid = (result or {}).get("sessionId") if method == "session/fork" else sid or (result or {}).get("sessionId")
             if sid:
                 session = agent.session(sid)
                 session.cwd = params["cwd"]

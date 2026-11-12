@@ -193,8 +193,9 @@ enum SessionBackend {
             return nil
         case .ledger(let api):
             return try await api.forkSession(id: id, title: title)
-        case .acp:
-            throw Self.notOnACP
+        case .acp(let client):
+            let cwd = AcpSessions.summaries(try await client.listSessions()).first { $0.id == id }?.cwd
+            return try await client.fork(id, cwd: cwd, title: title)
         }
     }
 

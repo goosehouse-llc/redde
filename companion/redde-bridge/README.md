@@ -115,6 +115,8 @@ Beyond plain ACP, it adds these extensions:
 | `_meta.redde.seq` | added to every `session/update`, so a device that catches up can skip what it already has |
 | `_meta.redde.commands` | on `initialize`: the agent's slash commands as its last session said them, for a new chat that has heard none yet |
 
+Everything else goes to the agent as it is (`session/set_title`, `_session/steering`, `session/set_config_option`…). A `session/fork` is followed as the new session it makes, already open in the agent.
+
 ## Test it
 
 ```

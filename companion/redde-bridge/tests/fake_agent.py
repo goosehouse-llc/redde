@@ -110,6 +110,10 @@ def main():
             for body in sessions.get(params["sessionId"], []):
                 write({"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": params["sessionId"], "update": body}})
             write({"jsonrpc": "2.0", "id": rid, "result": {}})
+        elif method == "session/fork":
+            sid = "s-" + uuid.uuid4().hex[:8]
+            sessions[sid] = list(sessions.get(params["sessionId"], []))
+            write({"jsonrpc": "2.0", "id": rid, "result": {"sessionId": sid}})
         elif method == "session/resume":
             write({"jsonrpc": "2.0", "id": rid, "result": {}})
         elif method == "session/list":

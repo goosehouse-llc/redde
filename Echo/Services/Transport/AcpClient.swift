@@ -106,6 +106,8 @@ final class AcpClient {
         var takesSystemPrompt: Bool
         /// A chat can be renamed on the agent (`session/set_title`).
         var canTitle: Bool = false
+        /// A chat can be copied to go on from where it is, apart (`session/fork`).
+        var canFork: Bool = false
         /// Words can join a reply under way (`_session/steering`, Claude Code's `_meta.steering`).
         var steers: Bool = false
         /// The agent's slash commands as the bridge last heard them, for a chat with none yet.
@@ -276,6 +278,7 @@ final class AcpClient {
                     takesImages: caps["promptCapabilities"]?["image"]?.bool ?? false,
                     takesSystemPrompt: has(sessions["systemPrompt"]),
                     canTitle: has(sessions["title"]),
+                    canFork: has(sessions["fork"]),
                     steers: result["_meta"]?["steering"]?["supported"]?.bool ?? false,
                     commands: AcpCommand.list(.object(["availableCommands": redde?["commands"] ?? .null])))
     }
@@ -597,6 +600,22 @@ final class AcpClient {
         let result = try await call("session/set_config_option",
                                     ["sessionId": .string(session), "configId": .string(config), "value": .string(value)])
         noteOptions(result, session: session)
+    }
+
+    /// A copy of a chat to go on from apart (`session/fork`), in the same folder, named `title`
+    /// where the agent keeps names. Its row for the chat list.
+    func fork(_ session: String, cwd: String?, title: String) async throws -> HermesSessionsAPI.SessionSummary? {
+        try await ensureConnected()
+        guard info?.canFork == true else { throw AcpError(code: -32601, message: String(localized: "This agent can't fork its chats.", comment: "ACP")) }
+        let result = try await call("session/fork", ["sessionId": .string(session), "cwd": cwd.map(JSONValue.string) ?? folder,
+                                                    "mcpServers": .array([])], timeout: 120)
+        guard let id = result["sessionId"]?.string else { throw TransportError.malformed("session/fork gave no sessionId") }
+        noteOptions(result, session: id)
+        let named = (try? await setTitle(id, title: title)) == true
+        var row: [String: JSONValue] = ["sessionId": .string(id), "updatedAt": .string(ISO8601DateFormatter().string(from: .now))]
+        if named { row["title"] = .string(title) }
+        if let cwd { row["cwd"] = .string(cwd) }
+        return AcpSessions.summary(.object(row))
     }
 
     func deleteSession(_ session: String) async throws {

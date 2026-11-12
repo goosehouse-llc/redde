@@ -241,6 +241,18 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
         init = (await b.call("initialize", {"protocolVersion": 1}))["result"]
         self.assertEqual([c["name"] for c in init["_meta"]["redde"]["commands"]], ["compact", "review"])
 
+    async def test_a_fork_is_followed_as_the_new_session(self):
+        a = await self.client()
+        sid = (await a.call("session/new", {}))["result"]["sessionId"]
+        fork = (await a.call("session/fork", {"sessionId": sid, "cwd": "/elsewhere"}))["result"]["sessionId"]
+        self.assertNotEqual(fork, sid)
+        agent = self.bridge.agents["fake"]
+        self.assertIn(fork, agent.loaded)   # open in the agent already: no resume before its prompt
+        self.assertEqual(agent.sessions[fork].cwd, "/elsewhere")
+        await a.call("session/prompt", {"sessionId": fork, "prompt": [{"type": "text", "text": "hi"}]})
+        self.assertEqual(self.agent_calls("session/resume"), [])
+        self.assertEqual(a.texts(fork), "echo: hi")
+
     async def test_history_goes_to_the_asking_device_only(self):
         a, b = await self.client(), await self.client()
         sid = (await a.call("session/new", {}))["result"]["sessionId"]

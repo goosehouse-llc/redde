@@ -1795,9 +1795,14 @@ struct ConversationsList: View {
                     Button(session.pinned == true ? String(localized: "Unpin") : String(localized: "Pin", comment: "Pins the conversation to the top of the list"),
                            systemImage: "pin") { setPinned(session, !(session.pinned ?? false)) }
                     Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) }
-                } else if settings.transport == .acp, AcpClient.current(settings)?.info?.canTitle == true {
-                    // Claude Code keeps names for its chats.
-                    Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
+                } else if settings.transport == .acp, let info = AcpClient.current(settings)?.info {
+                    // Claude Code keeps names for its chats, and copies them.
+                    if info.canTitle {
+                        Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
+                    }
+                    if info.canFork {
+                        Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) }
+                    }
                 }
                 moveMenu(for: session)
                 Button("Export as Markdown", systemImage: "square.and.arrow.up") { export(session) }
@@ -2210,7 +2215,7 @@ struct ConversationsList: View {
         let title = "\(session.displayTitle) (fork)"
         housekeeping(session) {
             if let forked = try await SessionBackend.owning(session, conversation)?.fork(session.id, title: title) {
-                try await conversation.loadLedgerSession(forked)
+                try await load(forked)
                 opened()
             }
         }

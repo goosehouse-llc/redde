@@ -151,6 +151,7 @@ the token in the Keychain under the server's id, synced with iCloud like the oth
 | `session/load` replay | the transcript: user chunks, agent chunks, tool calls, thoughts, plan; Claude Code's "[Request interrupted by user…]" notes left out |
 | `_meta.redde.name`, else `agentInfo.title` | what the app calls the assistant (header, Ask …, the reply's name) when no name is set in Settings, kept per address |
 | `session/delete` (when offered) | Delete |
+| `session/fork` (when `sessionCapabilities.fork` is offered, as Claude Code does) | Fork in the chat list: a copy in the same folder, named "… (fork)" with `session/set_title`, opened with its history. The bridge (0.4.0) follows the new session, so its first prompt needs no resume |
 | `session/set_title` (when `sessionCapabilities.title` is offered, as Claude Code does) | Rename, from the chat's header and the chat list: the name is the agent's, so its own list and every device show it. Without it, a name stays on the device |
 | config option, category `model` | the model picker; `session/set_config_option` before the prompt |
 | config options, categories `mode` and `thought_level` | menus in the model sheet, one per option with two or more values (Claude Code: Mode = Manual / Accept Edits / Plan / Auto / Bypass, and Effort). A pick goes to the open chat with `session/set_config_option` and is remembered per address for new chats, set right after `session/new` |

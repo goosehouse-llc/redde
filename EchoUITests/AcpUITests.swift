@@ -248,6 +248,43 @@ final class AcpUITests: XCTestCase {
         shot("acp-steer-done")
     }
 
+    /// Claude Code's chats from the list: one renamed "Steering test" (by testClaudeCodeCanBeSteered
+    /// and a rename) is forked, and the copy opens with its history under the new name.
+    func testClaudeCodesChatCanBeForked() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let token = env["REDDE_BRIDGE_TOKEN"], !token.isEmpty, let folder = env["REDDE_BRIDGE_FOLDER"] else {
+            throw XCTSkip("No Claude Code bridge given (TEST_RUNNER_REDDE_BRIDGE_TOKEN, TEST_RUNNER_REDDE_BRIDGE_FOLDER)")
+        }
+        func shot(_ name: String) {
+            keep(name)
+            if let dir = env["REDDE_SHOTS"] {
+                try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
+            }
+        }
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+            + ["-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let row = app.staticTexts.matching(NSPredicate(format: "label == 'Steering test'")).firstMatch
+        _ = row.waitForExistence(timeout: 30)
+        shot("acp-fork-list")
+        let onScreen = app.staticTexts.matching(NSPredicate(format: "label == 'Steering test'")).allElementsBoundByIndex.first { $0.isHittable }
+        XCTAssertNotNil(onScreen, "The chat isn't in the list")
+        onScreen?.press(forDuration: 1.2)
+        let fork = app.buttons["Fork"]
+        XCTAssertTrue(fork.waitForExistence(timeout: 5), "No Fork in the chat's menu")
+        shot("acp-fork-menu")
+        fork.tap()
+        XCTAssertTrue(app.text(containing: "Write the numbers from 1 to 400").waitForExistence(timeout: 60), "The copy didn't open with its history")
+        XCTAssertTrue(app.text(containing: "(fork)").waitForExistence(timeout: 10), "The copy isn't named as one")
+        sleep(2)
+        shot("acp-fork-open")
+    }
+
     private func send(_ text: String, in app: XCUIApplication) {
         let composer = app.textFields["composer"]
         for _ in 0 ..< 4 {
