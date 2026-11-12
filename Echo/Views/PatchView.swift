@@ -63,6 +63,12 @@ nonisolated enum Patch {
         return files.filter { !$0.lines.isEmpty || !$0.path.isEmpty }
     }
 
+    /// Whether a step's output is a diff (an agent's file change over ACP, `AcpDiff`).
+    static func isPatch(_ text: String?) -> Bool {
+        guard let text, text.hasPrefix("--- ") else { return false }
+        return text.contains("\n+++ ")
+    }
+
     /// "2 files · +12 −3".
     static func summary(_ files: [PatchFile]) -> String {
         let added = files.reduce(0) { $0 + $1.added }, removed = files.reduce(0) { $0 + $1.removed }
@@ -95,7 +101,8 @@ struct PatchView: View {
                             .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                     } header: {
                         HStack {
-                            Text(file.path).font(.footnote.monospaced()).textCase(nil).lineLimit(2)
+                            // A long path keeps its file name: cut in the middle.
+                            Text(file.path).font(.footnote.monospaced()).textCase(nil).lineLimit(2).truncationMode(.middle)
                             Spacer()
                             Text("+\(file.added)").foregroundStyle(.green)
                             Text("−\(file.removed)").foregroundStyle(.red)
@@ -119,7 +126,7 @@ struct PatchView: View {
 
 /// A file's lines, each wrapping down the screen (a long line reads on, rather than scrolling
 /// sideways), its colour across the whole row.
-private struct PatchFileLines: View {
+struct PatchFileLines: View {
     let file: PatchFile
     let cap: Int
 

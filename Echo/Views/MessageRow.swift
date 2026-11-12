@@ -112,6 +112,8 @@ struct MessageRow: View, Equatable {
     @State private var loadingDetails = false
     @State private var triedDetails: Set<UUID> = []
     @State private var fullDetail: ToolDetail?
+    /// A step's file change, open in full.
+    @State private var patchStep: ToolActivity?
     /// The transcript's toast; absent in voice mode, which has no actions to announce.
     @Environment(Toaster.self) private var toaster: Toaster?
     /// For "Remember This": absent outside a transcript (voice mode), and so is the item.
@@ -307,6 +309,7 @@ struct MessageRow: View, Equatable {
                                                      : message.isSteer ? String(localized: "Your steer") : String(localized: "You")) : replySpeaker ?? settings.headerTitle)
         .sensoryFeedback(.success, trigger: copyCount)
         .sheet(item: $fullDetail) { SelectableTextSheet(text: $0.text, title: $0.title, monospaced: true) }
+        .sheet(item: $patchStep) { PatchView(title: $0.preview ?? BotMessages.stepName($0) ?? $0.name, patch: $0.output ?? "") }
     }
 
     /// The composer takes the keyboard, for the message that quotes.
@@ -575,8 +578,11 @@ struct MessageRow: View, Equatable {
     /// whole text.
     private func stepDetail(_ tool: ToolActivity) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let args = tool.args { detailBlock(String(localized: "Input", comment: "What a tool step was called with"), args, lines: 6) }
-            if let output = tool.output {
+            // A file change shows the change itself; its input (the path, the old and new text) says it again.
+            if let args = tool.args, !Patch.isPatch(tool.output) { detailBlock(String(localized: "Input", comment: "What a tool step was called with"), args, lines: 6) }
+            if let output = tool.output, Patch.isPatch(output) {
+                changeBlock(tool, Patch.files(output))
+            } else if let output = tool.output {
                 detailBlock(String(localized: "Output", comment: "What a tool step returned"), output, lines: 12)
             } else if tool.status == .running {
                 Text("Still running.").chatFont(.caption).foregroundStyle(.secondary)
@@ -589,7 +595,7 @@ struct MessageRow: View, Equatable {
             } else {
                 Text("No output was kept for this step.").chatFont(.caption).foregroundStyle(.secondary)
             }
-            if tool.args != nil || tool.output != nil {
+            if tool.args != nil || tool.output != nil, !Patch.isPatch(tool.output) {
                 HStack(spacing: 18) {
                     Button("Copy") { copy(tool.output ?? tool.args ?? "") }
                         .accessibilityLabel(tool.output != nil ? String(localized: "Copy output") : String(localized: "Copy input"))
@@ -602,6 +608,31 @@ struct MessageRow: View, Equatable {
         }
         .padding(.leading, 32).padding(.bottom, 8)
         .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+
+    /// A step that changed files (an agent over ACP): what it changed, its first lines in colour,
+    /// and the way to the whole change.
+    private func changeBlock(_ tool: ToolActivity, _ files: [PatchFile]) -> some View {
+        let added = files.reduce(0) { $0 + $1.added }, removed = files.reduce(0) { $0 + $1.removed }
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text(String(localized: "Changes", comment: "A tool step that edited files: its changes")).chatFont(.caption2, weight: .semibold).foregroundStyle(.secondary).textCase(.uppercase)
+                Text("+\(added)").foregroundStyle(.green)
+                Text("−\(removed)").foregroundStyle(.red)
+            }
+            .chatFont(.caption2, weight: .semibold)
+            .monospacedDigit()
+            if let first = files.first {
+                PatchFileLines(file: PatchFile(id: 0, path: first.path, added: first.added, removed: first.removed,
+                                               lines: Array(first.lines.filter { $0.kind != .hunk }.prefix(8))), cap: 8)
+                    .clipShape(.rect(cornerRadius: 10))
+                    .background(theme.surfaceColor, in: .rect(cornerRadius: 10))
+            }
+            Button(files.count > 1 ? String(localized: "View changes to \(files.count) files") : String(localized: "View changes")) { patchStep = tool }
+                .chatFont(.caption, weight: .medium)
+                .foregroundStyle(theme.accent)
+                .buttonStyle(.plain)
+        }
     }
 
     private func detailBlock(_ label: String, _ text: String, lines: Int) -> some View {

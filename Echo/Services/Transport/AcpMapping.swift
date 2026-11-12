@@ -14,10 +14,14 @@ nonisolated struct AcpTurnMapper: Sendable {
     private var messageID: String?
     private var wroteText = false
     private var lastContext: (used: Int, size: Int)?
+    /// The files each call changed, kept from the update that said so: the call's last update
+    /// often comes with its content empty.
+    private var changes = AcpChanges()
 
     init() {}
 
     mutating func events(for update: JSONValue) -> [TurnEvent] {
+        changes.note(update)
         switch update["sessionUpdate"]?.string {
         case "agent_message_chunk":
             guard let text = Self.text(update["content"]), !text.isEmpty else { return [] }
@@ -54,7 +58,7 @@ nonisolated struct AcpTurnMapper: Sendable {
             guard let name = tools[id] else { return [] }
             guard let finished = Self.finished(update, name: name) else { return [] }
             tools[id] = nil
-            return [finished]
+            return [changes.output(of: finished, id: id)]
         case "plan":
             return [.todos(Self.todos(update))]
         case "usage_update":
@@ -76,7 +80,7 @@ nonisolated struct AcpTurnMapper: Sendable {
         var events: [TurnEvent] = [.toolStarted(name: name, preview: preview, args: Self.args(call))]
         if let finished = Self.finished(call, name: name) {
             tools[id] = nil
-            events.append(finished)
+            events.append(changes.output(of: finished, id: id))
         }
         return events
     }
@@ -195,6 +199,7 @@ nonisolated enum AcpHistory {
         var lastUserID: String?
         var lastAgentID: String?
         var toolIndex: [String: Int] = [:]
+        var changes = AcpChanges()
         func reply() -> Int {
             if let last = out.indices.last, out[last].role == .assistant { return last }
             out.append(Message(role: .assistant, text: ""))
@@ -202,6 +207,7 @@ nonisolated enum AcpHistory {
             return out.count - 1
         }
         for update in updates {
+            changes.note(update)
             switch update["sessionUpdate"]?.string {
             case "user_message_chunk":
                 let text = AcpTurnMapper.text(update["content"]) ?? ""
@@ -232,6 +238,7 @@ nonisolated enum AcpHistory {
                 var tool = ToolActivity(name: name, preview: preview, status: .running)
                 tool.args = AcpTurnMapper.args(update)
                 apply(update, to: &tool)
+                if let patch = changes.patch(id) { tool.output = patch }
                 // A replayed call that never said it ended is over by now.
                 if tool.status == .running { tool.status = .completed }
                 toolIndex[id] = out[at].tools.count
@@ -240,6 +247,7 @@ nonisolated enum AcpHistory {
                 guard let id = update["toolCallId"]?.string, let index = toolIndex[id],
                       let at = out.indices.last, out[at].role == .assistant, index < out[at].tools.count else { continue }
                 apply(update, to: &out[at].tools[index])
+                if let patch = changes.patch(id) { out[at].tools[index].output = patch }
             case "plan":
                 out[reply()].todos = AcpTurnMapper.todos(update)
             default:
@@ -404,6 +412,133 @@ nonisolated struct AcpCommand: Identifiable, Equatable, Sendable {
         let starts = commands.filter { $0.name.lowercased().hasPrefix(typed) }
         let within = commands.filter { !$0.name.lowercased().hasPrefix(typed) && $0.name.lowercased().contains(typed) }
         return starts + within
+    }
+}
+
+/// A file the agent changed (a tool call's `diff` content: `path`, `oldText`, null for a new file,
+/// and `newText`) as a unified diff, which the step keeps as its output and `PatchView` reads.
+/// Claude Code's own patch (`_meta.claudeCode.toolResponse.structuredPatch`) is taken where it
+/// comes, since its line numbers are the file's; an edit's `oldText` and `newText` are only the
+/// part that changed.
+/// The files each tool call changed, by call id, as its updates said.
+nonisolated struct AcpChanges: Sendable {
+    private var files: [String: [(path: String, old: String?, new: String)]] = [:]
+    private var meta: [String: JSONValue] = [:]
+
+    mutating func note(_ update: JSONValue) {
+        guard let id = update["toolCallId"]?.string else { return }
+        let found = AcpDiff.changes(update)
+        if !found.isEmpty { files[id] = found }
+        if let extra = update["_meta"], extra["claudeCode"]?["toolResponse"]?["structuredPatch"] != nil { meta[id] = extra }
+    }
+
+    func patch(_ id: String) -> String? {
+        files[id].flatMap { AcpDiff.patch($0, meta: meta[id]) }.flatMap { ToolActivity.detail($0 as String?) }
+    }
+
+    /// A finished call's event with the change as its output, when it changed a file.
+    func output(of event: TurnEvent, id: String) -> TurnEvent {
+        guard case let .toolFinished(name, failed, _) = event, let patch = patch(id) else { return event }
+        return .toolFinished(name: name, failed: failed, output: patch)
+    }
+}
+
+nonisolated enum AcpDiff {
+    /// The diff contents of a call or update, as (path, old, new).
+    static func changes(_ call: JSONValue) -> [(path: String, old: String?, new: String)] {
+        (call["content"]?.array ?? []).compactMap { item in
+            guard item["type"]?.string == "diff", let path = item["path"]?.string, let new = item["newText"]?.string else { return nil }
+            return (path, item["oldText"]?.string, new)
+        }
+    }
+
+    /// The unified diff of a call's changes; nil when it changed no file.
+    static func patch(_ changes: [(path: String, old: String?, new: String)], meta: JSONValue? = nil) -> String? {
+        guard !changes.isEmpty else { return nil }
+        var out: [String] = []
+        for (index, change) in changes.enumerated() {
+            out.append(change.old == nil ? "--- /dev/null" : "--- \(change.path)")
+            out.append("+++ \(change.path)")
+            if index == 0, let hunks = structured(meta, path: change.path) {
+                out += hunks
+            } else {
+                out += hunks(old: change.old ?? "", new: change.new)
+            }
+        }
+        return out.joined(separator: "\n")
+    }
+
+    /// Claude Code's hunks for the file, as diff lines.
+    private static func structured(_ meta: JSONValue?, path: String) -> [String]? {
+        guard let response = meta?["claudeCode"]?["toolResponse"],
+              response["filePath"]?.string == nil || response["filePath"]?.string == path,
+              let hunks = response["structuredPatch"]?.array, !hunks.isEmpty else { return nil }
+        var out: [String] = []
+        for hunk in hunks {
+            guard let lines = hunk["lines"]?.array?.compactMap(\.string) else { return nil }
+            let a = hunk["oldStart"]?.int ?? 1, b = hunk["oldLines"]?.int ?? 0
+            let c = hunk["newStart"]?.int ?? 1, d = hunk["newLines"]?.int ?? 0
+            out.append("@@ -\(a),\(b) +\(c),\(d) @@")
+            out += lines
+        }
+        return out
+    }
+
+    private static func lines(_ text: String) -> [String] {
+        guard !text.isEmpty else { return [] }
+        var lines = text.components(separatedBy: "\n")
+        if lines.last == "" { lines.removeLast() }   // a final newline ends the last line
+        return lines
+    }
+
+    /// Line-by-line hunks with three lines of context, numbered from the texts given.
+    static func hunks(old: String, new: String, context: Int = 3) -> [String] {
+        let a = lines(old), b = lines(new)
+        let difference = b.difference(from: a)
+        var removed = Set<Int>(), inserted = Set<Int>()
+        for change in difference {
+            switch change {
+            case let .remove(offset, _, _): removed.insert(offset)
+            case let .insert(offset, _, _): inserted.insert(offset)
+            }
+        }
+        // The edit script, in order: (kind, text, old line, new line), lines counted from 0.
+        var ops: [(kind: Character, text: String, i: Int, j: Int)] = []
+        var i = 0, j = 0
+        while i < a.count || j < b.count {
+            if i < a.count, removed.contains(i) {
+                ops.append(("-", a[i], i, j)); i += 1
+            } else if j < b.count, inserted.contains(j) {
+                ops.append(("+", b[j], i, j)); j += 1
+            } else if i < a.count, j < b.count {
+                ops.append((" ", a[i], i, j)); i += 1; j += 1
+            } else {
+                break
+            }
+        }
+        let changed = ops.indices.filter { ops[$0].kind != " " }
+        guard !changed.isEmpty else { return [] }
+        // Runs of changes closer than twice the context share one hunk.
+        var ranges: [ClosedRange<Int>] = []
+        for k in changed {
+            let range = max(0, k - context) ... min(ops.count - 1, k + context)
+            if let last = ranges.last, range.lowerBound <= last.upperBound + 1 {
+                ranges[ranges.count - 1] = last.lowerBound ... max(last.upperBound, range.upperBound)
+            } else {
+                ranges.append(range)
+            }
+        }
+        var out: [String] = []
+        for range in ranges {
+            let slice = ops[range]
+            let oldCount = slice.filter { $0.kind != "+" }.count, newCount = slice.filter { $0.kind != "-" }.count
+            let first = slice.first!
+            // An empty side is numbered by the line before it, as diff does.
+            let oldStart = oldCount == 0 ? first.i : first.i + 1, newStart = newCount == 0 ? first.j : first.j + 1
+            out.append("@@ -\(oldStart),\(oldCount) +\(newStart),\(newCount) @@")
+            out += slice.map { String($0.kind) + $0.text }
+        }
+        return out
     }
 }
 

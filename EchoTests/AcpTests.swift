@@ -275,4 +275,35 @@ struct AcpTests {
         #expect(AcpForm.make(id: "u", params: json(#"{"sessionId":"s1","mode":"url","message":"Sign in","url":"https://example.com","elicitationId":"e"}"#)) == nil)
         #expect(AcpForm.make(id: "e", params: json(#"{"sessionId":"s1","mode":"form","message":"x","requestedSchema":{"type":"object","properties":{}}}"#)) == nil)
     }
+
+    /// Claude Code's Edit, as `claude-agent-acp` 0.106.0 sent it (2026-11-12): its change comes in an
+    /// update before the last, whose content is empty; the step keeps it as a diff, with Claude
+    /// Code's own line numbers.
+    @Test func aFileChangeIsTheStepsDiff() throws {
+        let frames = try #require(json(#"[{"_meta": {"claudeCode": {"toolName": "Edit"}}, "toolCallId": "toolu_013qUF5CQJTJwBP5de116iDF", "sessionUpdate": "tool_call", "name": "Edit", "rawInput": {}, "status": "pending", "title": "Edit", "kind": "edit", "content": [], "locations": []}, {"_meta": {"claudeCode": {"toolName": "Edit"}}, "toolCallId": "toolu_013qUF5CQJTJwBP5de116iDF", "sessionUpdate": "tool_call_update", "rawInput": {"file_path": "/work/notes.txt"}, "title": "Edit notes.txt", "locations": [{"path": "/work/notes.txt"}]}, {"_meta": {"claudeCode": {"toolName": "Edit"}}, "toolCallId": "toolu_013qUF5CQJTJwBP5de116iDF", "sessionUpdate": "tool_call_update", "rawInput": {"file_path": "/work/notes.txt", "old_string": "two"}}, {"_meta": {"claudeCode": {"toolName": "Edit"}}, "toolCallId": "toolu_013qUF5CQJTJwBP5de116iDF", "sessionUpdate": "tool_call_update", "rawInput": {"replace_all": false, "file_path": "/work/notes.txt", "old_string": "two", "new_string": "TWO"}, "content": [{"type": "diff", "path": "/work/notes.txt", "oldText": "two", "newText": "TWO"}]}, {"_meta": {"claudeCode": {"toolResponse": {"filePath": "/work/notes.txt", "oldString": "two", "newString": "TWO", "originalFile": "one\ntwo\nthree\n", "structuredPatch": [{"oldStart": 1, "oldLines": 3, "newStart": 1, "newLines": 3, "lines": [" one", "-two", "+TWO", " three"]}], "userModified": false, "replaceAll": false}, "toolName": "Edit"}}, "toolCallId": "toolu_013qUF5CQJTJwBP5de116iDF", "sessionUpdate": "tool_call_update", "content": [{"type": "diff", "path": "/work/notes.txt", "oldText": "one\ntwo\nthree", "newText": "one\nTWO\nthree"}], "locations": [{"path": "/work/notes.txt", "line": 1}]}, {"_meta": {"claudeCode": {"toolName": "Edit"}}, "toolCallId": "toolu_013qUF5CQJTJwBP5de116iDF", "sessionUpdate": "tool_call_update", "status": "completed", "rawOutput": "The file /work/notes.txt has been updated successfully. (file state is current in your context — no need to Read it back)"}]"#).array)
+        var mapper = AcpTurnMapper()
+        let events = frames.flatMap { mapper.events(for: $0) }
+        let patch = "--- /work/notes.txt\n+++ /work/notes.txt\n@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n three"
+        #expect(events.last == .toolFinished(name: "Edit", failed: false, output: patch))
+        #expect(Patch.isPatch(patch))
+        let file = try #require(Patch.files(patch).first)
+        #expect(file.path == "/work/notes.txt" && file.added == 1 && file.removed == 1)
+        // Read back with the chat: the same.
+        let replayed = AcpHistory.messages(frames)
+        #expect(replayed.first?.tools.first?.output == patch)
+    }
+
+    /// Without the agent's own patch: a new file, and an edit numbered from the texts given.
+    @Test func aDiffIsMadeFromTheTexts() {
+        #expect(AcpDiff.patch([("/w/a.txt", nil, "one\ntwo\n")]) == "--- /dev/null\n+++ /w/a.txt\n@@ -0,0 +1,2 @@\n+one\n+two")
+        let old = (1 ... 20).map { "line \($0)" }.joined(separator: "\n")
+        var new = old.replacingOccurrences(of: "line 3\n", with: "line three\n")
+        new = new.replacingOccurrences(of: "line 18\n", with: "")
+        #expect(AcpDiff.hunks(old: old, new: new) == [
+            "@@ -1,6 +1,6 @@", " line 1", " line 2", "-line 3", "+line three", " line 4", " line 5", " line 6",
+            "@@ -15,6 +15,5 @@", " line 15", " line 16", " line 17", "-line 18", " line 19", " line 20",
+        ])
+        #expect(AcpDiff.hunks(old: "same", new: "same").isEmpty)
+        #expect(AcpDiff.patch([]) == nil)
+    }
 }

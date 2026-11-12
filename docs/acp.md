@@ -137,6 +137,7 @@ the token in the Keychain under the server's id, synced with iCloud like the oth
 | `agent_thought_chunk` | `.reasoningDelta` |
 | `tool_call` | `.toolStarted(name: title, args: rawInput)` |
 | `tool_call_update` completed / failed | `.toolFinished(output: content text)` |
+| `diff` content (`path`, `oldText`, `newText`) | the step's output as a unified diff (`AcpDiff`, kept by `AcpChanges` since the call's last update comes with its content empty; Claude Code's own `_meta.claudeCode.toolResponse.structuredPatch` where it comes, for the file's line numbers): Changes +n −n in colour on the step, View changes opens `PatchView` |
 | `plan` | `.todos` (entries numbered as ids) |
 | `usage_update` | `.usage(contextUsed: used, contextMax: size)` |
 | `session_info_update` title | the chat's title |
@@ -185,6 +186,6 @@ form) all work.
 
 - ACP v2 when it leaves draft: `session/resume` with `replayFrom` replaces `session/load`, the
   `state_update` lifecycle, `tool_call` folded into `tool_call_update`. A planned migration.
-- `diff` content as a diff view; `elicitation` in mode `url` (a sign-in page to open).
+- `elicitation` in mode `url` (a sign-in page to open).
 - Several agents in one chat (a room across Hermes, Claude Code, Codex), through the bridge.
 - OpenClaw: check what its ACP mode exposes before writing a Gateway v4 client.

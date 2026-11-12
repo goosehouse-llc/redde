@@ -110,6 +110,54 @@ final class AcpUITests: XCTestCase {
         keep("ACP chat reopened")
     }
 
+    /// A real Claude Code behind a Redde bridge on this Mac, editing a file in a scratch folder: the
+    /// step shows its change, and View changes opens the whole diff. Skipped unless it's given the
+    /// bridge (`TEST_RUNNER_REDDE_BRIDGE_TOKEN`, `TEST_RUNNER_REDDE_BRIDGE_FOLDER`, and
+    /// `TEST_RUNNER_REDDE_SHOTS` for a folder to put screenshots in). Uses Claude Code for real.
+    func testClaudeCodesChangeCanBeRead() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let token = env["REDDE_BRIDGE_TOKEN"], !token.isEmpty, let folder = env["REDDE_BRIDGE_FOLDER"] else {
+            throw XCTSkip("No Claude Code bridge given (TEST_RUNNER_REDDE_BRIDGE_TOKEN, TEST_RUNNER_REDDE_BRIDGE_FOLDER)")
+        }
+        func shot(_ name: String) {
+            keep(name)
+            if let dir = env["REDDE_SHOTS"] {
+                try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
+            }
+        }
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        let new = app.buttons["New conversation"].firstMatch
+        if new.waitForExistence(timeout: 5) { new.tap() }
+        send("Create notes.txt with three lines: one, two, three. Then edit it so the middle line says TWO. Use the Write and Edit tools, no shell. Reply in one short sentence.", in: app)
+        // In Manual mode Claude Code asks first; allow each.
+        let reply = app.text(containing: "TWO")
+        for _ in 0 ..< 60 where !reply.exists {
+            let allow = app.buttons["Allow Once"]
+            if allow.exists, allow.isHittable { allow.tap() }
+            sleep(2)
+        }
+        XCTAssertTrue(reply.exists, "Claude Code's reply didn't arrive")
+        sleep(3)
+        shot("acp-edit-reply")
+        let fold = app.buttons["Show tool steps"].firstMatch
+        if fold.exists { fold.tap() }
+        let step = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Tool Edit'")).firstMatch
+        XCTAssertTrue(step.waitForExistence(timeout: 10), "No Edit step")
+        step.tap()
+        let view = app.buttons["View changes"]
+        XCTAssertTrue(view.waitForExistence(timeout: 10), "The Edit step doesn't offer its change")
+        shot("acp-edit-step")
+        view.tap()
+        XCTAssertTrue(app.staticTexts["+TWO"].waitForExistence(timeout: 10), "The change doesn't show its added line")
+        shot("acp-edit-patch")
+    }
+
     private func send(_ text: String, in app: XCUIApplication) {
         let composer = app.textFields["composer"]
         for _ in 0 ..< 4 {
