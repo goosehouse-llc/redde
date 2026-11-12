@@ -33,6 +33,10 @@ struct ClarifyCard: View {
     @State private var picked: [String: Set<String>] = [:]
     @State private var freeText: [String: String] = [:]
     @FocusState private var typing: String?
+    /// How tall each question's plan is in full, and the one open in a sheet to read whole.
+    @State private var detailHeights: [String: CGFloat] = [:]
+    @State private var reading: ClarifyQuestion?
+    private static let detailCap: CGFloat = 240
 
     private var single: Bool { request.questions.count == 1 }
     /// One tap answers: a single question with choices, picked from once.
@@ -81,6 +85,35 @@ struct ClarifyCard: View {
         .cardFill()
         .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
         .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+        .sheet(item: $reading) { q in DetailSheet(title: q.question, text: q.detail ?? "") }
+    }
+
+    /// A plan the question is about: as much as fits, faded at the foot, and all of it a tap away.
+    @ViewBuilder
+    private func detail(_ q: ClarifyQuestion) -> some View {
+        if let text = q.detail, !text.isEmpty {
+            let tall = (detailHeights[q.id] ?? 0) > Self.detailCap
+            VStack(alignment: .leading, spacing: 8) {
+                MarkdownView(text: text, selectable: false)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { detailHeights[q.id] = $0 }
+                    .frame(maxHeight: Self.detailCap, alignment: .top)
+                    .clipped()
+                    .mask {
+                        LinearGradient(stops: [.init(color: .black, location: 0.7), .init(color: tall ? .clear : .black, location: 1)],
+                                       startPoint: .top, endPoint: .bottom)
+                    }
+                if tall {
+                    Button { reading = q } label: {
+                        Label("Read the whole plan", systemImage: "doc.text").chatFont(.subheadline, weight: .medium)
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.primary.opacity(0.04), in: .rect(cornerRadius: 14))
+        }
     }
 
     private func question(_ q: ClarifyQuestion, number: Int?) -> some View {
@@ -95,6 +128,7 @@ struct ClarifyCard: View {
                 }
                 Text(q.question).chatFont(.body, weight: .medium).fixedSize(horizontal: false, vertical: true)
             }
+            detail(q)
             if !q.choices.isEmpty {
                 PillFlow(spacing: 8) {
                     ForEach(q.choices, id: \.self) { choice in
@@ -169,6 +203,28 @@ struct ClarifyCard: View {
         var answers: [String: String] = [:]
         for q in request.questions { answers[q.id] = answer(for: q) }
         respond(answers)
+    }
+}
+
+/// A question's plan, whole, to read before answering.
+private struct DetailSheet: View {
+    let title: String
+    let text: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                MarkdownView(text: text).padding()
+                    .frame(maxWidth: 720, alignment: .leading)
+                    .frame(maxWidth: .infinity)
+            }
+            .navigationTitle(title)
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
     }
 }
 

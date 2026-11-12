@@ -158,6 +158,55 @@ final class AcpUITests: XCTestCase {
         shot("acp-edit-patch")
     }
 
+    /// The same Claude Code in Plan mode: its plan is shown on the card with its own options, words
+    /// typed instead send it back to planning with them, and the next plan is approved in auto mode.
+    /// The folder needs a notes.txt reading one, two, three.
+    func testClaudeCodesPlanIsShownAndAnswered() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let token = env["REDDE_BRIDGE_TOKEN"], !token.isEmpty, let folder = env["REDDE_BRIDGE_FOLDER"] else {
+            throw XCTSkip("No Claude Code bridge given (TEST_RUNNER_REDDE_BRIDGE_TOKEN, TEST_RUNNER_REDDE_BRIDGE_FOLDER)")
+        }
+        func shot(_ name: String) {
+            keep(name)
+            if let dir = env["REDDE_SHOTS"] {
+                try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
+            }
+        }
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder,
+               "-acpPicks.ws://127.0.0.1:8767/acp/claude", "{ mode = plan; }"]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        let new = app.buttons["New conversation"].firstMatch
+        if new.waitForExistence(timeout: 5) { new.tap() }
+        send("Plan how you'd add a fourth line 'four' to notes.txt. Keep the plan to three short bullet points.", in: app)
+
+        let auto = app.buttons["Yes, and use auto mode"]
+        XCTAssertTrue(auto.waitForExistence(timeout: 180), "No plan to approve")
+        XCTAssertTrue(app.buttons["No, keep planning"].exists, "The plan's options aren't the agent's own")
+        XCTAssertTrue(app.text(containing: "four").exists, "The plan isn't on the card")
+        shot("acp-plan-card")
+
+        let other = app.textViews["Something else…"].exists ? app.textViews["Something else…"] : app.textFields["Something else…"]
+        other.tap()
+        other.typeText("Write it as FOUR, in capitals.")
+        let arrow = app.buttons.matching(identifier: "Send").allElementsBoundByIndex.first { $0.isHittable && $0.frame.maxY < app.textFields["composer"].frame.minY }
+        XCTAssertNotNil(arrow, "No send arrow by the typed words")
+        arrow?.tap()
+        XCTAssertTrue(app.text(containing: "No, keep planning").waitForExistence(timeout: 20), "Typed words didn't stand for No")
+        XCTAssertTrue(app.text(containing: "Write it as FOUR, in capitals.").waitForExistence(timeout: 30), "The words didn't go to the agent")
+        XCTAssertTrue(auto.waitForExistence(timeout: 180), "No second plan after the words")
+        shot("acp-plan-again")
+        auto.tap()
+        let done = app.text(containing: "FOUR")
+        for _ in 0 ..< 60 where !(done.exists && !auto.exists) { sleep(2) }
+        sleep(5)
+        shot("acp-plan-done")
+    }
+
     private func send(_ text: String, in app: XCUIApplication) {
         let composer = app.textFields["composer"]
         for _ in 0 ..< 4 {

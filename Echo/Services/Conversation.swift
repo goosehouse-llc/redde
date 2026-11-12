@@ -1842,16 +1842,18 @@ final class Conversation {
     func respond(clarify answers: [String: String]) {
         guard let pendingInterrupt, case let .clarify(request) = pendingInterrupt.interrupt else { return }
         clearInterrupt()
+        // A form or choice of the agent's, answered on its link; the bridge tells the other devices.
+        let (shown, next) = connection == .acp ? (AcpClient.current(settings)?.answer(form: request.id, answers: answers) ?? (answers, nil)) : (answers, nil)
         // The question and its answer in the chat, before the reply that asked (GitHub issue 57).
-        let rows = AnsweredQuestions.rows(for: request, answers: answers)
+        let rows = AnsweredQuestions.rows(for: request, answers: shown)
         if !rows.isEmpty {
             let at = messages.lastIndex(where: { $0.role == .assistant }) ?? messages.endIndex
             messages.insert(contentsOf: rows, at: at)
             persist()
         }
         if connection == .acp {
-            // A form of the agent's, answered on its link; the bridge tells the other devices.
-            AcpClient.current(settings)?.answer(form: request.id, answers: answers)
+            // Words typed in place of the options: the agent was told no, and hears them next.
+            if let next { send(next) }
             return
         }
         run { [dashboard] in

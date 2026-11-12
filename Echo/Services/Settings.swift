@@ -894,7 +894,18 @@ final class Settings: ServeEndpoint {
     }
     var headerTitle: String {
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Redde" : trimmed
+        if !trimmed.isEmpty { return trimmed }
+        // An ACP agent is called what it calls itself (Claude Code, Hermes), not Redde.
+        if transport == .acp, let socket = AcpEndpoint.make(address: acpURL, agent: acpAgent, token: nil, folder: nil)?.socketURL,
+           let name = acpAgentNames[socket.absoluteString] {
+            return name
+        }
+        return "Redde"
+    }
+    /// What each ACP agent calls itself, by its address, as last heard when connecting. On this
+    /// device only.
+    var acpAgentNames: [String: String] = UserDefaults.standard.dictionary(forKey: "acpAgentNames") as? [String: String] ?? [:] {
+        didSet { UserDefaults.standard.set(acpAgentNames, forKey: "acpAgentNames") }
     }
 
     // hermes serve (desktop gateway). Password lives in the Keychain.

@@ -142,12 +142,14 @@ the token in the Keychain under the server's id, synced with iCloud like the oth
 | `usage_update` | `.usage(contextUsed: used, contextMax: size)` |
 | `session_info_update` title | the chat's title |
 | `session/request_permission` | `.interrupt(.approval)`; options mapped to once / session / always / deny |
+| `session/request_permission` of kind `switch_mode`, or with more ways to say yes than once / session / always can tell apart | the question card in the agent's own words (`AcpChoice`): its options as pills, Claude Code's plan (`rawInput.plan`) above them in Markdown, cut off with Read the whole plan when long. Words typed in Something else… pick the reject option (Claude Code: "No, keep planning", which ends the turn) and go to the agent as the next message |
 | `available_commands_update` | slash commands in the composer, offered as "/…" is typed; the bridge keeps the last list and gives it on `initialize` (`_meta.redde.commands`), so a new chat has them before its first message |
 | `elicitation/create`, mode `form` | the question card (`AcpForm`): a question per field, choices as pills, a free-text field named `<field>_custom` as the question's "Something else…" box; answered `accept` with the form's own values. Mode `url` isn't offered (`clientCapabilities.elicitation` = `{form: {}}`, from the app and from the bridge) |
 | `notice` | a status line |
 | prompt answer / `_redde/turn_ended` | `.done`; `refusal`, `max_tokens` as a note |
 | `session/list` | the chat list (title, `updatedAt`, `cwd` as the project) |
-| `session/load` replay | the transcript: user chunks, agent chunks, tool calls, thoughts, plan |
+| `session/load` replay | the transcript: user chunks, agent chunks, tool calls, thoughts, plan; Claude Code's "[Request interrupted by user…]" notes left out |
+| `_meta.redde.name`, else `agentInfo.title` | what the app calls the assistant (header, Ask …, the reply's name) when no name is set in Settings, kept per address |
 | `session/delete` (when offered) | Delete |
 | config option, category `model` | the model picker; `session/set_config_option` before the prompt |
 | config options, categories `mode` and `thought_level` | menus in the model sheet, one per option with two or more values (Claude Code: Mode = Manual / Accept Edits / Plan / Auto / Bypass, and Effort). A pick goes to the open chat with `session/set_config_option` and is remembered per address for new chats, set right after `session/new` |

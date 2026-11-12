@@ -697,6 +697,8 @@ nonisolated struct ClarifyQuestion: Identifiable, Equatable, Sendable, Codable {
     var question: String
     var choices: [String]
     var multiSelect: Bool
+    /// What the question is about, in Markdown, shown above its choices: a plan to approve.
+    var detail: String? = nil
 }
 
 nonisolated struct ClarifyRequest: Identifiable, Equatable, Sendable, Codable {

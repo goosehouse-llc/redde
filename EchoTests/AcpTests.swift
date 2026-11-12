@@ -107,6 +107,65 @@ struct AcpTests {
         #expect(AcpPermission.reply(choice: "never offered", options: options) == json(#"{"outcome": {"outcome": "cancelled"}}"#))
     }
 
+    /// Claude Code's note of a stop isn't read back as something the person said.
+    @Test func aStopNoteIsntAMessage() {
+        let frames = [
+            json(#"{"sessionUpdate": "user_message_chunk", "content": {"type": "text", "text": "Plan it"}, "messageId": "u1"}"#),
+            json(#"{"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "Here it is."}}"#),
+            json(#"{"sessionUpdate": "user_message_chunk", "content": {"type": "text", "text": "[Request interrupted by user for tool use]"}, "messageId": "u2"}"#),
+            json(#"{"sessionUpdate": "user_message_chunk", "content": {"type": "text", "text": "Use capitals"}, "messageId": "u3"}"#),
+        ]
+        #expect(AcpHistory.messages(frames).map(\.text) == ["Plan it", "Here it is.", "Use capitals"])
+    }
+
+    /// Claude Code's plan (as it sent it, 2026-11-12): the plan above the agent's own options, each
+    /// answering with its id; words typed instead say no and go next. An ordinary approval, or
+    /// Hermes's with a second way to say no, stays the approval card.
+    @Test func aPlanToApproveIsAskedInTheAgentsWords() throws {
+        let params = json(#"""
+            {"toolCall": {"toolCallId": "toolu_1", "name": "ExitPlanMode", "status": "pending", "title": "Approve Plan", "kind": "switch_mode",
+                          "rawInput": {"plan": "# Add a line\n\n- **Edit:** append `four`.\n", "planFilePath": "/p/plan.md"},
+                          "content": [{"type": "content", "content": {"type": "text", "text": "# Add a line\n\n- **Edit:** append `four`.\n"}}]},
+             "options": [{"optionId": "exit-plan-default", "name": "Yes, manually approve edits", "kind": "allow_once"},
+                         {"optionId": "exit-plan-clear-auto", "name": "Yes, clear context (8% used) and use auto mode", "kind": "allow_always"},
+                         {"optionId": "exit-plan-auto", "name": "Yes, and use auto mode", "kind": "allow_always"},
+                         {"optionId": "exit-plan-bypass", "name": "Yes, and bypass permissions", "kind": "allow_always"},
+                         {"optionId": "reject", "name": "No, keep planning", "kind": "reject_once"}],
+             "sessionId": "s1"}
+            """#)
+        let (card, choice) = try #require(AcpChoice.make(id: "req-2", params: params))
+        let q = try #require(card.questions.first)
+        #expect(card.id == "req-2" && card.questions.count == 1 && !card.isBatch)
+        #expect(q.question == "Approve Plan")
+        #expect(q.detail == "# Add a line\n\n- **Edit:** append `four`.")
+        #expect(q.choices == ["Yes, manually approve edits", "Yes, clear context (8% used) and use auto mode",
+                              "Yes, and use auto mode", "Yes, and bypass permissions", "No, keep planning"])
+        let auto = choice.reply(["": "Yes, and use auto mode"])
+        #expect(auto.result == json(#"{"outcome": {"outcome": "selected", "optionId": "exit-plan-auto"}}"#) && auto.next == nil)
+        let typed = choice.reply(["": "  Put it at the top instead "])
+        #expect(typed.result == json(#"{"outcome": {"outcome": "selected", "optionId": "reject"}}"#))
+        #expect(typed.next == "Put it at the top instead")
+        #expect(choice.shown(["": "Put it at the top instead"]) == ["": "No, keep planning"])
+        #expect(choice.shown(["": "Yes, and use auto mode"]) == ["": "Yes, and use auto mode"])
+
+        let bash = json(#"""
+            {"toolCall": {"toolCallId": "t", "kind": "execute", "title": "git status", "rawInput": {"command": "git status"}},
+             "options": [{"optionId": "allow", "name": "Yes", "kind": "allow_once"},
+                         {"optionId": "allow-with-updates", "name": "Yes, and don't ask again for git commands", "kind": "allow_always"},
+                         {"optionId": "reject", "name": "No", "kind": "reject_once"}], "sessionId": "s1"}
+            """#)
+        #expect(AcpChoice.make(id: "req-3", params: bash) == nil)
+        let hermes = json(#"""
+            {"toolCall": {"kind": "execute", "rawInput": {"command": "rm x"}, "title": "terminal: rm x", "toolCallId": "c"},
+             "options": [{"kind": "allow_once", "name": "Allow once", "optionId": "allow_once"},
+                         {"kind": "allow_always", "name": "Allow for session", "optionId": "allow_session"},
+                         {"kind": "allow_always", "name": "Allow always", "optionId": "allow_always"},
+                         {"kind": "reject_once", "name": "Deny", "optionId": "deny"},
+                         {"kind": "reject_always", "name": "Deny always", "optionId": "deny_always"}], "sessionId": "s1"}
+            """#)
+        #expect(AcpChoice.make(id: "req-4", params: hermes) == nil)
+    }
+
     @Test func aReplayedSessionIsItsMessages() {
         let updates = [
             #"{"content": {"text": "please do the danger thing", "type": "text"}, "sessionUpdate": "user_message_chunk"}"#,

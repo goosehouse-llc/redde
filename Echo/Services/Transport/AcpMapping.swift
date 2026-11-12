@@ -254,8 +254,12 @@ nonisolated enum AcpHistory {
                 continue
             }
         }
-        // A reply that is all tools and no words still shows; a user row with no words doesn't.
-        return out.filter { $0.role == .assistant || !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        // A reply that is all tools and no words still shows; a user row with no words doesn't, nor
+        // Claude Code's note of a stop ("[Request interrupted by user for tool use]", after a "No").
+        return out.filter {
+            let text = $0.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return $0.role == .assistant || !(text.isEmpty || text.wholeMatch(of: /\[Request interrupted by user[^\]]*\]/) != nil)
+        }
     }
 
     private static func apply(_ update: JSONValue, to tool: inout ToolActivity) {
@@ -311,7 +315,66 @@ nonisolated enum AcpPermission {
     /// The reply to the request for a choice: the option it stands for, else "cancelled".
     static func reply(choice: String, options: [String: String]) -> JSONValue {
         guard let optionID = options[choice] else { return .object(["outcome": .object(["outcome": .string("cancelled")])]) }
-        return .object(["outcome": .object(["outcome": .string("selected"), "optionId": .string(optionID)])])
+        return selected(optionID)
+    }
+
+    static func selected(_ optionID: String) -> JSONValue {
+        .object(["outcome": .object(["outcome": .string("selected"), "optionId": .string(optionID)])])
+    }
+}
+
+/// A permission request the approval card can't show whole, asked as a question in the agent's
+/// own words instead: one that changes how the agent works (`switch_mode`, Claude Code's plan
+/// with its plan above the options), or one with more options than once, session, always and
+/// deny can tell apart ("Yes, and use auto mode", "Yes, clear context…"). Words typed instead of
+/// a choice turn it down and go to the agent next, as "No, keep planning" and then what to
+/// change does in Claude Code.
+nonisolated struct AcpChoice: Sendable {
+    var options: [(name: String, id: String)]
+    /// The option that turns it down, which typed words go with.
+    var reject: String?
+
+    static func make(id: String, params: JSONValue) -> (card: ClarifyRequest, choice: AcpChoice)? {
+        let call = params["toolCall"] ?? .null
+        var options: [(name: String, id: String)] = []
+        var reject: String?
+        var allows = 0
+        for option in params["options"]?.array ?? [] {
+            guard let optionID = option["optionId"]?.string, let name = option["name"]?.string?.nilIfEmpty,
+                  !options.contains(where: { $0.name == name }) else { continue }
+            options.append((name, optionID))
+            if option["kind"]?.string?.hasPrefix("allow") == true { allows += 1 }
+            if reject == nil, option["kind"]?.string?.hasPrefix("reject") == true { reject = optionID }
+        }
+        // A second way to say no is fine to lose (the card has one); a way to say yes isn't.
+        let kept = AcpPermission.approval(id: id, params: params).options.keys.filter { $0 != "deny" }.count
+        let changesMode = call["kind"]?.string == "switch_mode"
+        guard options.count >= 2, changesMode || kept < allows else { return nil }
+        let shown = (call["content"]?.array ?? []).compactMap { $0["type"]?.string == "content" ? AcpTurnMapper.text($0["content"] ?? .null) : nil }
+            .joined(separator: "\n\n")
+        let detail = call["rawInput"]?["plan"]?.string?.nilIfEmpty ?? (changesMode ? shown.nilIfEmpty : nil)
+        let asked = call["title"]?.string?.nilIfEmpty ?? AcpTurnMapper.name(call).preview
+            ?? String(localized: "How should it go on?", comment: "A question card over ACP for an agent's request that names nothing")
+        let question = ClarifyQuestion(id: "", question: asked, choices: options.map(\.name), multiSelect: false,
+                                       detail: detail?.trimmingCharacters(in: .whitespacesAndNewlines))
+        return (ClarifyRequest(id: id, questions: [question], isBatch: false), AcpChoice(options: options, reject: reject))
+    }
+
+    /// The reply for the card's answer, and the words to send the agent next when they weren't
+    /// one of its options.
+    func reply(_ answers: [String: String]) -> (result: JSONValue, next: String?) {
+        let answer = (answers[""] ?? answers.values.first ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if let picked = options.first(where: { $0.name == answer }) { return (AcpPermission.selected(picked.id), nil) }
+        let next = answer.nilIfEmpty
+        guard let reject else { return (.object(["outcome": .object(["outcome": .string("cancelled")])]), next) }
+        return (AcpPermission.selected(reject), next)
+    }
+
+    /// The answer as the chat keeps it: typed words stand for the option that turned it down.
+    func shown(_ answers: [String: String]) -> [String: String] {
+        let answer = (answers[""] ?? answers.values.first ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !options.contains(where: { $0.name == answer }), let name = options.first(where: { $0.id == reject })?.name else { return answers }
+        return ["": name]
     }
 }
 

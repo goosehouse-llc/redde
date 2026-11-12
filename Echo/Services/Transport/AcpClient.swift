@@ -171,6 +171,7 @@ final class AcpClient {
     private enum Open {
         case permission(raw: JSONValue, options: [String: String])
         case form(raw: JSONValue, form: AcpForm)
+        case choice(raw: JSONValue, choice: AcpChoice)
     }
     private var openRequests: [String: Open] = [:]
     /// Sessions being loaded: their replayed history, gathered rather than heard as a turn.
@@ -231,6 +232,9 @@ final class AcpClient {
                 "clientInfo": .object(["name": .string("redde"), "title": .string("Redde"), "version": .string(Bundle.main.shortVersion)]),
             ], timeout: 180)
             info = Self.info(result)
+            if let name = info?.name, name != "Agent", Settings.shared.acpAgentNames[endpoint.socketURL.absoluteString] != name {
+                Settings.shared.acpAgentNames[endpoint.socketURL.absoluteString] = name
+            }
             if lastCommands.isEmpty, let known = info?.commands, !known.isEmpty { lastCommands = known }
         } catch {
             close()
@@ -260,7 +264,7 @@ final class AcpClient {
         let sessions = caps["sessionCapabilities"] ?? .null
         let redde = result["_meta"]?["redde"]
         func has(_ value: JSONValue?) -> Bool { value.map { !$0.isNull } ?? false }
-        return Info(name: result["agentInfo"]?["title"]?.string ?? redde?["name"]?.string ?? result["agentInfo"]?["name"]?.string ?? "Agent",
+        return Info(name: redde?["name"]?.string ?? result["agentInfo"]?["title"]?.string ?? result["agentInfo"]?["name"]?.string ?? "Agent",
                     version: result["agentInfo"]?["version"]?.string,
                     bridge: redde?["bridge"]?.string, folder: redde?["cwd"]?.string,
                     canLoad: caps["loadSession"]?.bool ?? false, canList: has(sessions["list"]),
@@ -426,6 +430,10 @@ final class AcpClient {
     /// Keeps a question open until it is answered, and says how to show it.
     private func open(_ method: String, raw: JSONValue, key: String, params: JSONValue) -> Interrupt? {
         if method == "session/request_permission" {
+            if let (card, choice) = AcpChoice.make(id: key, params: params) {
+                openRequests[key] = .choice(raw: raw, choice: choice)
+                return .clarify(card)
+            }
             let (approval, options) = AcpPermission.approval(id: key, params: params)
             openRequests[key] = .permission(raw: raw, options: options)
             return .approval(approval)
@@ -532,11 +540,24 @@ final class AcpClient {
         reply(to: raw, result: AcpPermission.reply(choice: choice, options: options))
     }
 
-    /// Answers a question card: one answer per question, as the card gives them.
-    func answer(form id: String, answers: [String: String]) {
-        guard case let .form(raw, form)? = openRequests[id] else { return }
-        openRequests[id] = nil
-        reply(to: raw, result: form.reply(answers))
+    /// Answers a question card: one answer per question, as the card gives them. Returns the
+    /// answers as the chat keeps them, and words to send the agent next (typed in place of one
+    /// of a permission's options, which turned it down).
+    @discardableResult
+    func answer(form id: String, answers: [String: String]) -> (shown: [String: String], next: String?) {
+        switch openRequests[id] {
+        case let .form(raw, form)?:
+            openRequests[id] = nil
+            reply(to: raw, result: form.reply(answers))
+            return (answers, nil)
+        case let .choice(raw, choice)?:
+            openRequests[id] = nil
+            let (result, next) = choice.reply(answers)
+            reply(to: raw, result: result)
+            return (choice.shown(answers), next)
+        default:
+            return (answers, nil)
+        }
     }
 
     /// Picks a model for a session, when it offers one and it isn't the current one.
