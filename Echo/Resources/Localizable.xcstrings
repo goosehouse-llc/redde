@@ -202114,6 +202114,113 @@
         }
       }
     },
+    "How the agent asks before it acts. Applies to this conversation and to new ones." : {
+      "comment" : "Model picker, ACP: under the agent's mode menu when the mode has no description of its own",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvordan agenten spørger, før den handler. Gælder denne samtale og nye."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie der Agent fragt, bevor er handelt. Gilt für dieses Gespräch und für neue."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo pregunta el agente antes de actuar. Se aplica a esta conversación y a las nuevas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment l'agent demande avant d'agir. S'applique à cette conversation et aux nouvelles."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come l'agente chiede prima di agire. Vale per questa conversazione e per quelle nuove."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントが実行前にどう確認するか。この会話と新しい会話に適用されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 작업 전에 확인하는 방식입니다. 이 대화와 새 대화에 적용됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvordan agenten spør før den handler. Gjelder denne samtalen og nye."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoe de agent vraagt voordat hij iets doet. Geldt voor dit gesprek en voor nieuwe."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jak agent pyta, zanim coś zrobi. Dotyczy tej rozmowy i nowych."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como o agente pergunta antes de agir. Vale para esta conversa e para as novas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как агент спрашивает перед действием. Действует для этого разговора и новых."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hur agenten frågar innan den agerar. Gäller det här samtalet och nya."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aracının harekete geçmeden önce nasıl sorduğu. Bu sohbete ve yenilerine uygulanır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Як агент питає, перш ніж діяти. Діє для цієї розмови та нових."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体在行动前如何征求你的同意。适用于此对话和新对话。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理在行動前如何徵求你的同意。適用於此對話和新對話。"
+          }
+        }
+      }
+    },
     "How the Ask, Talk and New Chat cards look on your car's screen. The car adds their names." : {
       "localizations" : {
         "da" : {

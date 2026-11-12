@@ -25,6 +25,8 @@ struct ModelPickerView: View {
     @State private var catalog: [OpenRouterCatalog.Model] = []
     @State private var catalogError: String?
     @State private var catalogLoading = false
+    /// An ACP chat's mode and thinking choices (Claude Code's Manual, Plan, Auto…).
+    @State private var acpOptions: [AcpOption] = []
 
     private var isFastLane: Bool { settings.transport == .chatCompletions }
 
@@ -83,6 +85,9 @@ struct ModelPickerView: View {
             #if DEBUG
             if let words = DevHooks.value("-echo.modelSearch") { query = words }
             #endif
+            if settings.transport == .acp, !fromSettings {
+                acpOptions = AcpClient.current(settings)?.options(session: conversation.serverSessionID) ?? []
+            }
             if listsModels {
                 await load()
                 if error == nil { await refreshQuietlyOnce() }
@@ -126,6 +131,9 @@ struct ModelPickerView: View {
             // (searching, the box's results come straight under it)
             // An ACP agent's effort and switches are its own; Redde only picks the model there.
             if searchWords.isEmpty, settings.transport != .acp { effortAndControls }
+            if searchWords.isEmpty, settings.transport == .acp, !fromSettings {
+                ForEach(acpOptions) { acpOptionSection($0) }
+            }
 
             if fromSettings, !isFastLane {
                 Section {
@@ -211,6 +219,41 @@ struct ModelPickerView: View {
                 ChatControlsSection(stored: stored, source: ChatControlsSection.defaultSource,
                                     offersAutoApprove: conversation.connection != .hermesSessions)
             }
+    }
+
+    /// One of an ACP agent's own choices, as a menu, with what the picked one does underneath.
+    private func acpOptionSection(_ option: AcpOption) -> some View {
+        let selection = Binding<String>(
+            get: { option.current ?? "" },
+            set: { value in pickAcpOption(option, value: value) })
+        return Section {
+            Picker(option.name, selection: selection) {
+                ForEach(option.values, id: \.id) { Text($0.name).tag($0.id) }
+            }
+            .pickerStyle(.menu)
+        } footer: {
+            if let detail = option.values.first(where: { $0.id == option.current })?.detail {
+                Text(detail)
+            } else if option.category == "mode" {
+                Text("How the agent asks before it acts. Applies to this conversation and to new ones.",
+                     comment: "Model picker, ACP: under the agent's mode menu when the mode has no description of its own")
+            }
+        }
+    }
+
+    private func pickAcpOption(_ option: AcpOption, value: String) {
+        guard let client = AcpClient.current(settings), let index = acpOptions.firstIndex(of: option) else { return }
+        acpOptions[index].current = value
+        let session = conversation.serverSessionID
+        Task {
+            do {
+                try await client.setOption(option.id, value: value, session: session)
+                acpOptions = client.options(session: session)
+            } catch {
+                self.error = error.localizedDescription
+                acpOptions = client.options(session: session)
+            }
+        }
     }
 
     // MARK: Search

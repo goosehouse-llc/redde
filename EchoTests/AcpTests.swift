@@ -34,6 +34,33 @@ struct AcpTests {
         #expect(finished == [.toolFinished(name: "terminal", failed: false, output: "terminal result\n- **exit_code:** 0")])
     }
 
+    /// Claude Code (claude-agent-acp 0.106.0, 2026-11-11) announces a call bare and fills it in.
+    @Test func aBareCallWaitsForWhatItDoes() {
+        var mapper = AcpTurnMapper()
+        #expect(mapper.events(for: json(#"""
+            {"toolCallId": "t1", "sessionUpdate": "tool_call", "name": "Write", "rawInput": {}, "status": "pending",
+             "title": "Preparing file…", "kind": "edit", "content": [], "locations": []}
+            """#)).isEmpty)
+        let started = mapper.events(for: json(#"""
+            {"toolCallId": "t1", "sessionUpdate": "tool_call_update", "rawInput": {"file_path": "/w/hello.txt"}, "title": "Write hello.txt"}
+            """#))
+        #expect(started.count == 1)
+        if case let .toolStarted(name, preview, _)? = started.first {
+            #expect(name == "Write")
+            #expect(preview == "hello.txt")
+        } else {
+            Issue.record("no step started: \(started)")
+        }
+        let finished = mapper.events(for: json(#"""
+            {"toolCallId": "t1", "sessionUpdate": "tool_call_update", "status": "completed", "rawOutput": "File created successfully at: /w/hello.txt"}
+            """#))
+        #expect(finished == [.toolFinished(name: "Write", failed: false, output: "File created successfully at: /w/hello.txt")])
+        // One that ends before it says anything still shows, once.
+        _ = mapper.events(for: json(#"{"toolCallId": "t2", "sessionUpdate": "tool_call", "name": "Read", "rawInput": {}, "title": "Read", "content": []}"#))
+        let both = mapper.events(for: json(#"{"toolCallId": "t2", "sessionUpdate": "tool_call_update", "status": "failed"}"#))
+        #expect(both.count == 2)
+    }
+
     @Test func aSentenceTitleIsTheStepsName() {
         #expect(AcpTurnMapper.name(json(#"{"title": "Read Package.swift"}"#)) == ("Read Package.swift", nil))
         #expect(AcpTurnMapper.name(json(#"{"title": "Read file", "name": "read"}"#)) == ("read", "Read file"))
@@ -112,6 +139,27 @@ struct AcpTests {
         #expect(choices.map(\.providerName) == ["Anthropic", "My Local"])
         #expect(choices.map(\.name) == ["claude-opus-5-5", "alpha"])
         #expect(choices.last?.isCurrent == true)
+    }
+
+    @Test func modeAndThinkingAreTheirOwnMenus() {
+        // Claude Code's options, as its adapter gave them; Hermes's one-value mode isn't a menu.
+        let options = json(#"""
+            [{"id": "mode", "name": "Mode", "category": "mode", "type": "select", "currentValue": "auto",
+              "options": [{"value": "default", "name": "Manual", "description": "Asks before edits and commands"},
+                          {"value": "plan", "name": "Plan"}, {"value": "auto", "name": "Auto"}]},
+             {"id": "model", "name": "Model", "category": "model", "type": "select", "currentValue": "default",
+              "options": [{"value": "default", "name": "Default"}, {"value": "opus", "name": "Opus"}]},
+             {"id": "fast", "name": "Fast", "category": "model_config", "type": "boolean", "currentValue": false},
+             {"id": "effort", "name": "Effort", "category": "thought_level", "type": "select", "currentValue": "high",
+              "options": [{"value": "low", "name": "Low"}, {"value": "high", "name": "High"}]},
+             {"currentValue": "ask", "options": [{"name": "Default", "value": "ask"}], "category": "mode", "id": "edit_approval_policy", "name": "Edits", "type": "select"}]
+            """#).array!
+        let picked = AcpOption.pickable(options)
+        #expect(picked.map(\.id) == ["mode", "effort"])
+        #expect(picked[0].current == "auto")
+        #expect(picked[0].values.map(\.name) == ["Manual", "Plan", "Auto"])
+        #expect(picked[0].values[0].detail == "Asks before edits and commands")
+        #expect(picked[1].values.map(\.id) == ["low", "high"])
     }
 
     @Test func addressesAreReadAsTheBridgesOrAServersOwn() {

@@ -751,8 +751,12 @@ class Bridge:
 def print_setup(config: Config) -> None:
     host, port = config.host_port
     scheme = "wss" if config.tls_cert else "ws"
-    shown = socket.gethostname() if host in ("0.0.0.0", "::", "") else host
-    print("In Redde: Settings → Servers → Add → Other agent (ACP)\n")
+    shown = host
+    if host in ("0.0.0.0", "::", ""):
+        # A phone finds this computer on the local network by its .local name.
+        name = socket.gethostname().split(".")[0]
+        shown = f"{name}.local"
+    print("In Redde: Settings → Connection → Set up connection… → Other agent (ACP)\n")
     print(f"  Address  {scheme}://{shown}:{port}")
     print(f"  Token    {config.token}")
     print("  Agents   " + (", ".join(f"{a.name} ({a.id})" for a in config.agents) or "none: add one to the config"))

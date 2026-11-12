@@ -431,6 +431,7 @@ final class AcpClient {
         let result = try await call("session/new", params, timeout: 120)
         guard let id = result["sessionId"]?.string else { throw TransportError.malformed("session/new gave no sessionId") }
         noteOptions(result, session: id)
+        await applyPicks(id)
         return id
     }
 
@@ -513,4 +514,46 @@ final class AcpClient {
     func modelChoices(session: String?) -> [ModelChoice] {
         AcpModels.choices(session.flatMap { configOptions[$0] } ?? lastConfigOptions)
     }
+
+    /// The mode and thinking choices of a chat, or, for one not yet on the agent, what the next
+    /// new chat starts with: the last session's options with the remembered picks on top.
+    func options(session: String?) -> [AcpOption] {
+        if let session, let options = configOptions[session] { return AcpOption.pickable(options) }
+        let picks = self.picks
+        return AcpOption.pickable(lastConfigOptions).map { option in
+            var option = option
+            if let pick = picks[option.id], option.values.contains(where: { $0.id == pick }) { option.current = pick }
+            return option
+        }
+    }
+
+    /// Picks a mode or thinking level: for the chat when it is on the agent, and remembered for
+    /// new chats either way.
+    func setOption(_ id: String, value: String, session: String?) async throws {
+        picks[id] = value
+        guard let session else { return }
+        try await ensureConnected()
+        guard configOptions[session]?.contains(where: { $0["id"]?.string == id && $0["currentValue"]?.string != value }) == true else { return }
+        let result = try await call("session/set_config_option",
+                                    ["sessionId": .string(session), "configId": .string(id), "value": .string(value)])
+        noteOptions(result, session: session)
+    }
+
+    /// Gives a new session the remembered picks it offers and doesn't have already.
+    private func applyPicks(_ session: String) async {
+        for (id, value) in picks {
+            guard let option = configOptions[session]?.first(where: { $0["id"]?.string == id }),
+                  option["currentValue"]?.string != value,
+                  AcpOption.pickable([option]).first?.values.contains(where: { $0.id == value }) == true else { continue }
+            try? await setOption(id, value: value, session: session)
+        }
+    }
+
+    /// Mode and thinking picks for new chats, kept per agent address.
+    private var picks: [String: String] {
+        get { UserDefaults.standard.dictionary(forKey: picksKey) as? [String: String] ?? [:] }
+        set { UserDefaults.standard.set(newValue, forKey: picksKey) }
+    }
+
+    private var picksKey: String { "acpPicks." + endpoint.socketURL.absoluteString }
 }

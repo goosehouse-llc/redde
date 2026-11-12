@@ -7,6 +7,9 @@ import Foundation
 nonisolated struct AcpTurnMapper: Sendable {
     /// Tool calls started this turn, by id, with the name their card has.
     private var tools: [String: String] = [:]
+    /// Calls announced with nothing to show yet (Claude Code's "Preparing file…" with no input):
+    /// held until an update says what they do, so the step isn't named for the wait.
+    private var held: [String: JSONValue] = [:]
     /// The last agent message's id: a new one is a new message, set apart from the one before.
     private var messageID: String?
     private var wroteText = false
@@ -32,13 +35,23 @@ nonisolated struct AcpTurnMapper: Sendable {
             return [.reasoningDelta(text)]
         case "tool_call":
             guard let id = update["toolCallId"]?.string else { return [] }
-            let (name, preview) = Self.name(update)
-            tools[id] = name
-            var events: [TurnEvent] = [.toolStarted(name: name, preview: preview, args: Self.args(update))]
-            if let finished = Self.finished(update, name: name) { events.append(finished) }
-            return events
+            if Self.isBare(update), Self.finished(update, name: "") == nil {
+                held[id] = update
+                return []
+            }
+            return start(id, update)
         case "tool_call_update":
-            guard let id = update["toolCallId"]?.string, let name = tools[id] else { return [] }
+            guard let id = update["toolCallId"]?.string else { return [] }
+            if let waiting = held[id] {
+                let merged = Self.merge(waiting, update)
+                if Self.isBare(merged), Self.finished(merged, name: "") == nil {
+                    held[id] = merged
+                    return []
+                }
+                held[id] = nil
+                return start(id, merged)
+            }
+            guard let name = tools[id] else { return [] }
             guard let finished = Self.finished(update, name: name) else { return [] }
             tools[id] = nil
             return [finished]
@@ -55,6 +68,32 @@ nonisolated struct AcpTurnMapper: Sendable {
             // user_message_chunk (our own words), commands, modes, config, titles: not the reply.
             return []
         }
+    }
+
+    private mutating func start(_ id: String, _ call: JSONValue) -> [TurnEvent] {
+        let (name, preview) = Self.name(call)
+        tools[id] = name
+        var events: [TurnEvent] = [.toolStarted(name: name, preview: preview, args: Self.args(call))]
+        if let finished = Self.finished(call, name: name) {
+            tools[id] = nil
+            events.append(finished)
+        }
+        return events
+    }
+
+    /// A call that says nothing yet about what it does: no input and no content.
+    static func isBare(_ call: JSONValue) -> Bool {
+        let input = call["rawInput"]
+        let noInput = input == nil || input!.isNull || input!.object?.isEmpty == true
+        let noContent = (call["content"]?.array ?? []).isEmpty
+        return noInput && noContent
+    }
+
+    /// An update's fields over the call's: the later title, input and content win.
+    static func merge(_ call: JSONValue, _ update: JSONValue) -> JSONValue {
+        guard var fields = call.object, let changes = update.object else { return update }
+        for (key, value) in changes where key != "sessionUpdate" && !value.isNull { fields[key] = value }
+        return .object(fields)
     }
 
     /// The prompt's answer: its token counts, where the agent says (Hermes does, outside the
@@ -105,7 +144,12 @@ nonisolated struct AcpTurnMapper: Sendable {
     /// Code) is the name itself. The spec's own `name` field wins where an agent sends it.
     static func name(_ call: JSONValue) -> (name: String, preview: String?) {
         let title = (call["title"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        if let named = call["name"]?.string, !named.isEmpty { return (named, title.isEmpty || title == named ? nil : title) }
+        if let named = call["name"]?.string, !named.isEmpty {
+            // "Write hello.txt" for the tool Write: the step reads Write · hello.txt.
+            var preview = title
+            for lead in [named + ": ", named + " "] where preview.hasPrefix(lead) { preview = String(preview.dropFirst(lead.count)); break }
+            return (named, preview.isEmpty || preview == named ? nil : preview)
+        }
         if let colon = title.range(of: ": "), !title[..<colon.lowerBound].contains(" "), !title[..<colon.lowerBound].isEmpty {
             return (String(title[..<colon.lowerBound]), String(title[colon.upperBound...]))
         }
@@ -207,6 +251,13 @@ nonisolated enum AcpHistory {
     }
 
     private static func apply(_ update: JSONValue, to tool: inout ToolActivity) {
+        // A call announced bare and filled in later takes the later title and input.
+        if update["sessionUpdate"]?.string == "tool_call_update" {
+            if update["title"]?.string?.isEmpty == false {
+                (tool.name, tool.preview) = AcpTurnMapper.name(update.object.map { var f = $0; f["name"] = f["name"] ?? .string(tool.name); return .object(f) } ?? update)
+            }
+            if let input = update["rawInput"], input.object?.isEmpty == false { tool.args = ToolActivity.detail(input) }
+        }
         switch update["status"]?.string {
         case "completed": tool.status = .completed
         case "failed": tool.status = .failed
@@ -285,6 +336,43 @@ nonisolated enum AcpModels {
             }
         }
         return out
+    }
+}
+
+/// A session's other choices the picker shows beside the model: how it asks before acting (ACP's
+/// `mode` category, Claude Code's Manual / Accept Edits / Plan / Auto) and how hard it thinks
+/// (`thought_level`).
+nonisolated struct AcpOption: Identifiable, Equatable, Sendable {
+    struct Value: Equatable, Sendable {
+        var id: String
+        var name: String
+        var detail: String?
+    }
+
+    var id: String
+    var name: String
+    var category: String
+    var current: String?
+    var values: [Value]
+
+    static let categories = ["mode", "thought_level"]
+
+    static func pickable(_ configOptions: [JSONValue]) -> [AcpOption] {
+        let options = configOptions.compactMap { option -> AcpOption? in
+            guard let id = option["id"]?.string, let category = option["category"]?.string,
+                  categories.contains(category), option["type"]?.string != "boolean" else { return nil }
+            var values: [Value] = []
+            for entry in option["options"]?.array ?? [] {
+                for value in entry["options"]?.array ?? [entry] {
+                    guard let v = value["value"]?.string else { continue }
+                    values.append(Value(id: v, name: value["name"]?.string ?? v, detail: value["description"]?.string?.nilIfEmpty))
+                }
+            }
+            guard values.count > 1 else { return nil }
+            return AcpOption(id: id, name: option["name"]?.string ?? id, category: category,
+                             current: option["currentValue"]?.string, values: values)
+        }
+        return options.sorted { (categories.firstIndex(of: $0.category) ?? 9) < (categories.firstIndex(of: $1.category) ?? 9) }
     }
 }
 
