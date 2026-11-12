@@ -795,3 +795,33 @@ nonisolated enum AcpSessions {
         return fractional.date(from: text) ?? ISO8601DateFormatter().date(from: text)
     }
 }
+
+/// An ACP agent's chats by the folder each works in, as the chat list's projects: a folder Claude
+/// Code worked in is a project, and a new chat can start there. Shown once there are two folders;
+/// with one, the list is that folder already.
+nonisolated enum AcpProjects {
+    static func make(_ rows: [HermesSessionsAPI.SessionSummary]) -> [HermesServeClient.Project] {
+        let byFolder = Dictionary(grouping: rows.filter { !($0.cwd ?? "").isEmpty }) { $0.cwd ?? "" }
+        guard byFolder.count > 1 else { return [] }
+        return byFolder.map { folder, chats in
+            let sorted = chats.sorted { ($0.last_active ?? 0) > ($1.last_active ?? 0) }
+            return HermesServeClient.Project(folder: folder, sessions: sorted)
+        }
+        .sorted { ($0.lastActive ?? .distantPast) > ($1.lastActive ?? .distantPast) }
+    }
+}
+
+nonisolated extension HermesServeClient.Project {
+    /// A folder's chats as one project (an ACP agent's: `AcpProjects`).
+    init(folder: String, sessions: [HermesSessionsAPI.SessionSummary]) {
+        id = "acp:" + folder
+        label = (folder as NSString).lastPathComponent.nilIfEmpty ?? folder
+        path = folder
+        isHome = false
+        isAuto = true
+        sessionCount = sessions.count
+        lastActive = sessions.first?.last_active.map { Date(timeIntervalSince1970: $0) }
+        totalCost = 0
+        lanes = [Lane(id: "main", label: "main", repoLabel: nil, sessions: sessions)]
+    }
+}

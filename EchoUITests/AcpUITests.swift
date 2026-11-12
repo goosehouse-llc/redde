@@ -285,6 +285,43 @@ final class AcpUITests: XCTestCase {
         shot("acp-fork-open")
     }
 
+    /// Claude Code's chats grouped by folder: the scratch folder is a project, and a chat started
+    /// in it works there (it reads the folder's notes.txt), though the server's folder is another.
+    func testAChatStartsInAFolderClaudeCodeWorkedIn() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let token = env["REDDE_BRIDGE_TOKEN"], !token.isEmpty, let folder = env["REDDE_BRIDGE_FOLDER"] else {
+            throw XCTSkip("No Claude Code bridge given (TEST_RUNNER_REDDE_BRIDGE_TOKEN, TEST_RUNNER_REDDE_BRIDGE_FOLDER)")
+        }
+        func shot(_ name: String) {
+            keep(name)
+            if let dir = env["REDDE_SHOTS"] {
+                try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
+            }
+        }
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+            + ["-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", ""]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let name = URL(fileURLWithPath: folder).lastPathComponent
+        let project = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+        _ = project.waitForExistence(timeout: 30)
+        shot("acp-folders-list")
+        XCTAssertTrue(project.exists, "The folder isn't a project in the list")
+        project.tap()
+        let new = app.navigationBars.buttons["New Conversation"]
+        XCTAssertTrue(new.waitForExistence(timeout: 10), "No New Conversation in the folder")
+        shot("acp-folder-chats")
+        new.tap()
+        send("Reply with only the last line of notes.txt in the current folder, nothing else.", in: app)
+        let four = app.staticTexts.matching(NSPredicate(format: "label == 'FOUR'")).firstMatch
+        XCTAssertTrue(four.waitForExistence(timeout: 120), "The chat didn't work in the folder")
+        shot("acp-folder-reply")
+    }
+
     private func send(_ text: String, in app: XCUIApplication) {
         let composer = app.textFields["composer"]
         for _ in 0 ..< 4 {

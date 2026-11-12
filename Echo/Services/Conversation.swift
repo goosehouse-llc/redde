@@ -411,6 +411,7 @@ final class Conversation {
             replyLanguage: settings.replyLanguage.nilIfEmpty,
             brief: brief
         )
+        if connection == .acp, serverSessionID == nil { request.folder = startsIn?.path }
         if connection == .hermesServe, serverSessionID == nil {
             request.folder = startsIn?.path
             request.profile = bot == nil ? elsewhere?.profile : nil

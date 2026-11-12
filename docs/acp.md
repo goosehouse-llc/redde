@@ -147,7 +147,7 @@ the token in the Keychain under the server's id, synced with iCloud like the oth
 | `elicitation/create`, mode `form` | the question card (`AcpForm`): a question per field, choices as pills, a free-text field named `<field>_custom` as the question's "Something else…" box; answered `accept` with the form's own values. Mode `url` isn't offered (`clientCapabilities.elicitation` = `{form: {}}`, from the app and from the bridge) |
 | `notice` | a status line |
 | prompt answer / `_redde/turn_ended` | `.done`; `refusal`, `max_tokens` as a note |
-| `session/list` | the chat list (title, `updatedAt`, `cwd` as the project) |
+| `session/list` | the chat list (title, `updatedAt`, `cwd`); with chats in two folders or more, the list's Projects are the folders (`AcpProjects`), each with its chats and New Conversation, which starts the chat's `session/new` in that folder |
 | `session/load` replay | the transcript: user chunks, agent chunks, tool calls, thoughts, plan; Claude Code's "[Request interrupted by user…]" notes left out |
 | `_meta.redde.name`, else `agentInfo.title` | what the app calls the assistant (header, Ask …, the reply's name) when no name is set in Settings, kept per address |
 | `session/delete` (when offered) | Delete |
@@ -191,6 +191,6 @@ form) all work.
 
 - ACP v2 when it leaves draft: `session/resume` with `replayFrom` replaces `session/load`, the
   `state_update` lifecycle, `tool_call` folded into `tool_call_update`. A planned migration.
-- `elicitation` in mode `url` (a sign-in page to open).
+- `elicitation` in mode `url` (a sign-in page to open). Not worth it for Claude Code: it sends one only to sign in to an MCP server the client handed it on `session/new` (Redde hands none), and the sign-in comes back to a `localhost` listener on the host, which a phone's browser can't reach.
 - Several agents in one chat (a room across Hermes, Claude Code, Codex), through the bridge.
 - OpenClaw: check what its ACP mode exposes before writing a Gateway v4 client.

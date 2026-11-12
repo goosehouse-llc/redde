@@ -261,6 +261,21 @@ struct AcpTests {
         #expect(rows.last?.last_active != nil)
     }
 
+    /// Chats by their folder: a project per folder, newest first, once there are two folders.
+    @Test func foldersAreTheChatListsProjects() {
+        let rows = AcpSessions.summaries([
+            json(#"{"sessionId": "a", "cwd": "/w/redde", "title": "One", "updatedAt": "2026-11-12T10:00:00Z"}"#),
+            json(#"{"sessionId": "b", "cwd": "/w/site", "title": "Two", "updatedAt": "2026-11-12T12:00:00Z"}"#),
+            json(#"{"sessionId": "c", "cwd": "/w/redde", "title": "Three", "updatedAt": "2026-11-12T11:00:00Z"}"#),
+            json(#"{"sessionId": "d", "title": "Nowhere", "updatedAt": "2026-11-12T13:00:00Z"}"#),
+        ])
+        let projects = AcpProjects.make(rows)
+        #expect(projects.map(\.label) == ["site", "redde"])
+        #expect(projects.last?.path == "/w/redde" && projects.last?.sessionCount == 2 && !(projects.last?.isHome ?? true))
+        #expect(projects.last?.lanes.first?.sessions.map(\.id) == ["c", "a"])
+        #expect(AcpProjects.make(Array(rows.filter { $0.cwd == "/w/redde" })).isEmpty)
+    }
+
     @Test func initializeSaysWhatTheAgentCanDo() {
         let info = AcpClient.info(json(#"""
             {"agentCapabilities": {"loadSession": true, "promptCapabilities": {"image": true}, "sessionCapabilities": {"fork": {}, "list": {}, "resume": {}}},

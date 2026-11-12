@@ -476,9 +476,10 @@ final class AcpClient {
     /// The folder a new chat works in: the server's setting, else the bridge's own.
     private var folder: JSONValue { .string(endpoint.folder ?? info?.folder ?? "") }
 
-    func newSession(instructions: String? = nil) async throws -> String {
+    /// A new chat, in `cwd` (a project's folder on the host) or the server's folder.
+    func newSession(instructions: String? = nil, cwd: String? = nil) async throws -> String {
         try await ensureConnected()
-        var params: [String: JSONValue] = ["cwd": folder, "mcpServers": .array([])]
+        var params: [String: JSONValue] = ["cwd": cwd?.nilIfEmpty.map(JSONValue.string) ?? folder, "mcpServers": .array([])]
         if let instructions, !instructions.isEmpty, info?.takesSystemPrompt == true {
             params["systemPrompt"] = .object(["mode": .string("append"),
                                               "content": .array([.object(["type": .string("text"), "text": .string(instructions)])])])

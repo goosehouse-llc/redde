@@ -487,7 +487,7 @@ struct ConversationsList: View {
                 if usesLedger {
                     if query.isEmpty, !selecting {
                         if botsHere { botsSection }
-                        if viaServe, settings.projectsInChatList, !hidesProjectsForDemo { projectsSection }
+                        if viaServe || settings.transport == .acp, settings.projectsInChatList, !hidesProjectsForDemo, !projects.isEmpty || viaServe { projectsSection }
                     }
                     ledgerSection
                     if searchesMessages, !selecting { messageHitsSection }
@@ -510,7 +510,7 @@ struct ConversationsList: View {
         .navigationDestination(for: ProjectRoute.self) { route in
             if let project = projects.first(where: { $0.id == route.id }) {
                 ProjectSessionsView(project: project, open: load, currentID: conversation.serverSessionID,
-                                    startNew: { startNew(in: $0) })
+                                    startNew: { startNew(in: $0) }, refreshes: viaServe)
             }
         }
         .environment(\.editMode, .constant(selecting || arrangingBots ? .active : .inactive))
@@ -1422,6 +1422,7 @@ struct ConversationsList: View {
                 .accessibilityHint("Shows this project's sessions")
                 .contextMenu { projectMenu(project) }
             }
+            if viaServe {
             Button {
                 newProjectName = ""
                 newProject = .start
@@ -1437,6 +1438,7 @@ struct ConversationsList: View {
             }
             .buttonStyle(.plain)
             .accessibilityHint("Makes a project folder on your server and starts a conversation in it")
+            }
             }
         } header: {
             foldingHeader(String(localized: "Projects"), count: projects.count, isOpen: $showProjects)
@@ -2097,6 +2099,9 @@ struct ConversationsList: View {
                     activity.listed(groups.rooms)
                 }
             }
+            if settings.transport == .acp {
+                projects = AcpProjects.make(sessions)
+            }
             if viaServe {
                 let all = (try? await HermesServeClient.shared.projectTree()) ?? []
                 let tree = HermesServeClient.Project.listed(all)
@@ -2492,6 +2497,8 @@ struct ProjectSessionsView: View {
     let currentID: String?
     /// Starts a conversation in this project (its folder); nil where that isn't offered.
     var startNew: ((HermesServeClient.Project) -> Void)? = nil
+    /// Asks the Dashboard for the project's chats again; an ACP folder's are the list's already.
+    var refreshes = true
     @Environment(\.sidePanelParked) private var panelParked
     @State private var lanes: [HermesServeClient.Project.Lane] = []
     @State private var error: String?
@@ -2581,6 +2588,7 @@ struct ProjectSessionsView: View {
             // The fixture's projects have no server behind them: what the list handed over is all.
             if DevHooks.demoProjects { loading = false; return }
             #endif
+            guard refreshes else { loading = false; return }
             do {
                 let full = try await HermesServeClient.shared.projectSessions(project.id)
                 lanes = (full?.lanes ?? []).filter { !$0.sessions.isEmpty }

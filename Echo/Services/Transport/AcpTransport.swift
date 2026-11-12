@@ -43,7 +43,7 @@ nonisolated struct AcpTransport: HermesTransport {
                     if let known = request.sessionID {
                         session = known
                     } else {
-                        session = try await client.newSession(instructions: Self.instructions(request))
+                        session = try await client.newSession(instructions: Self.instructions(request), cwd: request.folder)
                         sessionBox.withLock { $0 = session }
                     }
                     continuation.yield(.sessionID(session))
