@@ -37,7 +37,7 @@ struct SelectableTextSheet: View {
         Task {
             // Once the sheet is out of the way, so the composer can take the keyboard.
             try? await Task.sleep(for: .milliseconds(350))
-            LaunchRouter.shared.requestDraft(text: Quote.markdown(selection), attachments: [])
+            LaunchRouter.shared.requestDraft(text: "", attachments: [], quote: selection)
         }
     }
 }

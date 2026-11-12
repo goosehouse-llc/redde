@@ -305,14 +305,25 @@ struct AppearanceSettings: View {
 struct ComposerSettings: View {
     @State private var settings = Settings.shared
 
+    private var suggestionSource: FollowUps.Source {
+        FollowUps.source(fastLaneSet: Settings.normalizedBase(settings.fastLaneURL) != nil && !settings.fastLaneModel.isEmpty)
+    }
+
     var body: some View {
         Section {
-            Toggle("Suggest follow-up questions", isOn: $settings.suggestFollowUps)
-                .disabled(Settings.normalizedBase(settings.fastLaneURL) == nil)
+            Toggle("Suggest Replies", isOn: $settings.suggestFollowUps)
+                .disabled(suggestionSource == .none)
         } header: {
             Text("Replies")
         } footer: {
-            Text("Three things you might ask next under each reply, written by the model on your OpenAI-compatible connection (it needs that address set, whichever connection the conversation uses).")
+            switch suggestionSource {
+            case .onDevice:
+                Text("Three things you might send next under each reply, written on this device by Apple Intelligence. Nothing is sent anywhere to write them.")
+            case .fastLane:
+                Text("Three things you might ask next under each reply, written by the model on your OpenAI-compatible connection.")
+            case .none:
+                Text("Three things you might send next under each reply. They need Apple Intelligence on this device, or an OpenAI-compatible connection set up.")
+            }
         }
         Section {
             Picker("Return key", selection: $settings.returnSends) {

@@ -63,13 +63,15 @@ final class LaunchRouter {
         var attachments: [Attachment]
         /// In a new conversation's composer, not the open one's (GitHub issue 21).
         var newConversation = false
+        /// A selection to quote in the next message (`QuotedText`), above the field.
+        var quote: String?
         var issuedAt: Date
     }
 
     private(set) var pendingDraft: DraftRequest?
 
-    func requestDraft(text: String, attachments: [Attachment], newConversation: Bool = false) {
-        pendingDraft = DraftRequest(text: text, attachments: attachments, newConversation: newConversation, issuedAt: .now)
+    func requestDraft(text: String, attachments: [Attachment], newConversation: Bool = false, quote: String? = nil) {
+        pendingDraft = DraftRequest(text: text, attachments: attachments, newConversation: newConversation, quote: quote, issuedAt: .now)
     }
 
     func consumeDraftRequest() -> DraftRequest? {

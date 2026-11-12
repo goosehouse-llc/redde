@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The follow-up questions for the last reply, as a row of chips above the composer; tapping
-/// one sends it. They come in one after another and leave together.
+/// The suggested replies to the last reply (`FollowUps`), as a row of chips above the composer:
+/// a tap sends one, a long press puts it in the field to change first. They come in one after
+/// another and leave together.
 struct FollowUpChips: View {
     @Environment(Conversation.self) private var conversation
     @Environment(\.theme) private var theme
@@ -26,6 +27,11 @@ struct FollowUpChips: View {
                                     .overlay(Capsule().strokeBorder(.quaternary))
                             }
                             .buttonStyle(.plain)
+                            .contextMenu {
+                                Button("Edit Before Sending", systemImage: "pencil") {
+                                    LaunchRouter.shared.requestDraft(text: text, attachments: [])
+                                }
+                            }
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
@@ -35,7 +41,7 @@ struct FollowUpChips: View {
                 .padding(.bottom, 10)
             }
             .scrollClipDisabled()
-            .accessibilityLabel("Suggested follow-ups")
+            .accessibilityLabel("Suggested replies")
             .task(id: suggestions) {
                 // Stagger: one chip every 90 ms, all at once under Reduce Motion.
                 shown = 0

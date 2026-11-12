@@ -109,6 +109,10 @@ struct ComposerView: View {
                 .accessibilityElement(children: .combine)
                 .id(editing.id)
             }
+            if let quoting = conversation.quoting {
+                QuoteStrip(quote: quoting) { conversation.quoting = nil }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
             if !stripAttachments.isEmpty {
                 AttachmentStrip(attachments: stripAttachments, markUp: markUpAction) { id in
                     pendingAttachments.removeAll { $0.id == id }
@@ -174,6 +178,7 @@ struct ComposerView: View {
         .padding(.bottom, 6)
         .animation(.snappy(duration: 0.3), value: pendingAttachments.count)
         .animation(.snappy(duration: 0.3), value: editing?.id)
+        .animation(.snappy(duration: 0.3), value: conversation.quoting)
         .animation(.snappy(duration: 0.3), value: contextSuggestions)
         // A swipe down on the message box puts the keyboard away, as a drag down the chat does
         // (asked 2026-10-26, "swipe to remove the keyboard"). Alongside the field's own gestures,
@@ -683,11 +688,14 @@ struct ComposerView: View {
             openModelPicker()
             return
         }
-        let text = draft
+        // A slash command goes as typed: a quote in front of it would make it a message.
+        let quote = draft.hasPrefix("/") ? nil : conversation.quoting
+        let text = Quote.message(draft, quoting: quote)
         let attachments = pendingAttachments
         draft = ""
         pendingAttachments = []
         attachmentError = nil
+        if quote != nil { conversation.quoting = nil }
         if let editing {
             self.editing = nil
             Task { await conversation.resend(replacing: editing.id, text: text, attachments: attachments) }

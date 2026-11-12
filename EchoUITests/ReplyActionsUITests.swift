@@ -84,10 +84,59 @@ final class ReplyActionsUITests: XCTestCase {
         XCTAssertTrue(ask.waitForExistence(timeout: 3), "A second long-press didn't select")
         ask.tap()
 
-        let composer = app.textFields.firstMatch.exists ? app.textFields.firstMatch : app.textViews.matching(NSPredicate(format: "value BEGINSWITH %@", "> ")).firstMatch
-        let quoted = NSPredicate(format: "value BEGINSWITH %@", "> ")
-        expectation(for: quoted, evaluatedWith: composer)
-        waitForExpectations(timeout: 5)
+        // The selection goes over the field as a quote (2026-11-11), not into it as Markdown.
+        XCTAssertTrue(app.otherElements["quoteStrip"].waitForExistence(timeout: 5), "The selection wasn't quoted over the field")
+        XCTAssertTrue(app.staticTexts["Quoting"].exists)
+    }
+
+    /// Quote, from a reply's More menu: the reply goes over the field with whose it is, the end
+    /// of the chat stays in sight, and the quote can be taken away again.
+    func testQuotingAReply() {
+        let app = launchDemo()
+        XCTAssertTrue(app.text(containing: "I've added a reminder").waitForExistence(timeout: 15), "The demo reply didn't appear")
+        // The reply's More, beside Regenerate (the header has a More of its own).
+        XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5), "No actions under the reply")
+        let more = app.buttons.matching(identifier: "More").allElementsBoundByIndex
+            .first { abs($0.frame.midY - app.buttons["Regenerate"].frame.midY) < 4 } ?? app.buttons["More"].firstMatch
+        more.tap()
+        let quote = app.buttons["Quote"]
+        XCTAssertTrue(quote.waitForExistence(timeout: 3), "No Quote in the reply's menu")
+        quote.tap()
+
+        let strip = app.otherElements["quoteStrip"]
+        XCTAssertTrue(strip.waitForExistence(timeout: 5), "The reply wasn't quoted over the field")
+        XCTAssertTrue(app.staticTexts["Quoting Redde"].exists, "The quote doesn't say whose it is")
+        sleep(1)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "quoting-a-reply"
+        shot.lifetime = .keepAlways
+        add(shot)
+        // The reply's actions, its last line, are still above the quote.
+        let regenerate = app.buttons["Regenerate"]
+        XCTAssertTrue(regenerate.exists && regenerate.frame.maxY <= strip.frame.minY + 1,
+                      "The quote covered the end of the chat (\(regenerate.frame) vs \(strip.frame))")
+
+        // With the keyboard up: one tap takes the quote away and leaves the keyboard as it was.
+        app.buttons["Remove quote"].tap()
+        XCTAssertTrue(strip.waitForNonExistence(timeout: 3), "Remove quote didn't take it away")
+        XCTAssertEqual(app.keyboards.count, 1, "Removing the quote put the keyboard away")
+    }
+
+    /// A message that quotes a reply shows the quote over its bubble; a tap brings the reply it
+    /// came from back on screen.
+    func testTappingAQuoteShowsWhereItCameFrom() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoQuote"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        let quote = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Quoting: ")).firstMatch
+        XCTAssertTrue(quote.waitForExistence(timeout: 15), "The quoting message has no quote over it")
+        XCTAssertTrue(app.text(containing: "Can the vet call wait until Friday?").exists, "The words under the quote aren't in the bubble")
+        XCTAssertFalse(app.text(containing: "> Tomorrow").exists, "The quote shows as Markdown")
+        let source = app.text(containing: "I've added a reminder to call the vet")
+        XCTAssertFalse(source.isHittable, "The quoted reply was on screen already: nothing to show")
+        quote.tap()
+        let shown = expectation(for: NSPredicate(format: "isHittable == true"), evaluatedWith: source)
+        wait(for: [shown], timeout: 5)
     }
 
     /// The selection's handles move it, as in Notes: the end handle dragged along takes in more.

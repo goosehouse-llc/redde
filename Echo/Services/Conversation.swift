@@ -171,6 +171,11 @@ final class Conversation {
     /// fast lane answered; cleared by the next send.
     private(set) var followUps: [String] = []
     private var followUpTask: Task<Void, Never>?
+    /// What the next message quotes (`QuotedText`), shown above the composer until it goes.
+    var quoting: QuotedText?
+    /// A quoted message to bring on screen: the transcript scrolls to it and marks it a moment.
+    private(set) var revealRequest: RevealRequest?
+    nonisolated struct RevealRequest: Equatable, Sendable { var id: UUID; var count: Int }
     private var retryTask: Task<Void, Never>?
     private var retryAttempt = 0
     private var connectivityToken: UUID?
@@ -1474,6 +1479,7 @@ final class Conversation {
         endIncognito()   // the one being left, if it was one, goes
         noteSeen()   // the one being left
         answeringCall = nil
+        quoting = nil   // a quote is for the chat it was taken in
         unsentModel = nil   // the one being left's, never sent
         identity += 1
         ledgerWatch?.cancel()
@@ -2671,7 +2677,26 @@ final class Conversation {
         return (fits.last { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) == text } ?? fits.last)?.tools
     }
 
+    // MARK: Quotes
+
+    /// "Quote": the message goes above the composer for the next one to quote.
+    func quote(_ message: Message, speaker: String?, mine: Bool = false) {
+        let text = Quote.excerpt(message.text)
+        guard !text.isEmpty else { return }
+        quoting = QuotedText(text: text, speaker: speaker, messageID: message.id, mine: mine)
+    }
+
+    /// A tap on a quote in the chat: the message it came from, if this device has it.
+    func reveal(quote: String, in messageID: UUID) {
+        guard let source = Quote.source(of: quote, in: messages, before: messageID) else { return }
+        revealRequest = RevealRequest(id: source, count: (revealRequest?.count ?? 0) + 1)
+    }
+
     // MARK: Follow-ups
+
+    #if DEBUG
+    func showFollowUpsForDemo(_ suggestions: [String]) { followUps = suggestions }
+    #endif
 
     func clearFollowUps() {
         followUpTask?.cancel()
@@ -2679,14 +2704,21 @@ final class Conversation {
         followUps = []
     }
 
-    /// Ask the fast-lane model for follow-ups to a finished reply; shown only while that reply
-    /// is still the last message.
+    /// Suggested replies to a finished reply (`FollowUps`): from Apple's on-device model where
+    /// there is one, else the fast lane's; shown only while that reply is still the last message.
     private func suggestFollowUps(question: String, replyID: UUID, reply: String) {
-        guard settings.suggestFollowUps, !reply.isEmpty, let base = Settings.normalizedBase(settings.fastLaneURL),
-              !settings.fastLaneModel.isEmpty else { return }
-        let (model, key) = (settings.fastLaneModel, Keychain.read(.fastLaneAPIKey))
+        guard settings.suggestFollowUps, !reply.isEmpty, !isWorkerTranscript else { return }
+        let base = Settings.normalizedBase(settings.fastLaneURL)
+        let fastLane = base != nil && !settings.fastLaneModel.isEmpty
+        let source = FollowUps.source(fastLaneSet: fastLane)
+        guard source != .none else { return }
+        let (model, key) = (settings.fastLaneModel, fastLane ? Keychain.read(.fastLaneAPIKey) : nil)
         followUpTask = Task { [weak self] in
-            let suggestions = await FollowUps.suggest(question: question, reply: reply, baseURL: base, apiKey: key, model: model)
+            let suggestions = switch source {
+            case .onDevice: await FollowUps.suggestOnDevice(question: question, reply: reply)
+            case .fastLane: await FollowUps.suggest(question: question, reply: reply, baseURL: base!, apiKey: key, model: model)
+            case .none: [String]()
+            }
             guard let self, !Task.isCancelled, messages.last?.id == replyID, !isStreaming else { return }
             followUps = suggestions
         }

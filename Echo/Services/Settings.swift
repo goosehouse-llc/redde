@@ -709,7 +709,8 @@ final class Settings: ServeEndpoint {
     var keepRepliesInBackground: Bool {
         didSet { store(keepRepliesInBackground, forKey: Keys.keepRepliesInBackground) }
     }
-    /// Three follow-up questions under each reply, written by the OpenAI-compatible model.
+    /// Three suggested replies under each reply (`FollowUps`): written by Apple's on-device model,
+    /// else the OpenAI-compatible one. On at first (2026-11-11): nothing shows where neither can.
     var suggestFollowUps: Bool {
         didSet { store(suggestFollowUps, forKey: Keys.suggestFollowUps) }
     }
@@ -1172,7 +1173,7 @@ final class Settings: ServeEndpoint {
         notifyInBackground = defaults.bool(forKey: Keys.notifyInBackground)
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
         keepRepliesInBackground = defaults.object(forKey: Keys.keepRepliesInBackground) as? Bool ?? true
-        suggestFollowUps = defaults.bool(forKey: Keys.suggestFollowUps)
+        suggestFollowUps = defaults.object(forKey: Keys.suggestFollowUps) as? Bool ?? true
         speechLanguage = defaults.string(forKey: Keys.speechLanguage) ?? ""
         matchReplyLanguage = defaults.object(forKey: Keys.matchReplyLanguage) as? Bool ?? true
         earpieceAtEar = defaults.object(forKey: Keys.earpieceAtEar) as? Bool ?? true

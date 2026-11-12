@@ -1198,6 +1198,7 @@ struct ContentView: View {
         setDrawer(open: false)   // the composer is under the conversation list
         if request.newConversation { startFreshForDraft() }
         if !request.text.isEmpty { draft = draft.isEmpty ? request.text : draft + "\n\n" + request.text }
+        if let quote = request.quote.map(Quote.selection), !quote.isEmpty { conversation.quoting = QuotedText(text: quote) }
         pendingAttachments += request.attachments
         composerFocused = true
     }

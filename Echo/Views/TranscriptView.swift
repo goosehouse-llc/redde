@@ -78,6 +78,8 @@ struct TranscriptView: View {
     /// Messages whose text contains the query, oldest first. Recomputed when the query or the
     /// message count changes, not per row per body pass (the bar stays open while streaming).
     @State private var matches: [UUID] = []
+    /// The message a tapped quote came from, marked for a moment (`Conversation.reveal`).
+    @State private var shownQuote: UUID?
 
     private func recomputeMatches() {
         let q = searchText.trimmingCharacters(in: .whitespaces)
@@ -94,6 +96,7 @@ struct TranscriptView: View {
     }
 
     private func highlight(for id: UUID) -> MessageRow.Highlight {
+        if id == shownQuote { return .current }
         guard let i = matches.firstIndex(of: id) else { return .none }
         return i == matchIndex ? .current : .match
     }
@@ -116,6 +119,20 @@ struct TranscriptView: View {
         }
         following = false
         Task { withAnimation { proxy.scrollTo(id, anchor: .center) } }
+    }
+
+    /// A tapped quote's message: paged in if it's above the window, brought to the middle of the
+    /// screen and marked for a moment.
+    private func showQuoted(_ id: UUID, _ proxy: ScrollViewProxy) {
+        guard let position = conversation.messages.firstIndex(where: { $0.id == id }) else { return }
+        page.reveal(position, in: conversation.messages)
+        following = false
+        Task {
+            withAnimation { proxy.scrollTo(id, anchor: .center) }
+            withAnimation(.easeOut(duration: 0.2)) { shownQuote = id }
+            try? await Task.sleep(for: .seconds(1.6))
+            if shownQuote == id { withAnimation(.easeOut(duration: 0.4)) { shownQuote = nil } }
+        }
     }
 
     /// "Jump to latest": at once, and it stops a fling where it is. An animated scroll down a long
@@ -463,6 +480,11 @@ struct TranscriptView: View {
             // end from wherever you are; a reply appended while you read does not. It also lets
             // go of earlier messages loaded for reading.
             .onChange(of: conversation.userSendCount) { settlePage(reset: true); jumpToEnd(proxy) }
+            .onChange(of: conversation.revealRequest) { _, request in if let request { showQuoted(request.id, proxy) } }
+            // A quote or suggested replies over the field take room from the chat: its end stays
+            // in sight for a reader who was there.
+            .onChange(of: conversation.quoting != nil) { Task { try? await Task.sleep(for: .milliseconds(320)); scrollToBottom(proxy) } }
+            .onChange(of: conversation.followUps.isEmpty) { Task { try? await Task.sleep(for: .milliseconds(320)); scrollToBottom(proxy) } }
             // The streaming reply grows without changing the count; its matches append at the end.
             .onChange(of: conversation.messages.last?.text) { recomputeLastMatch(); scrollToBottom(proxy) }
             .onChange(of: conversation.outbox.count) { old, new in

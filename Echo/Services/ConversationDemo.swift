@@ -522,6 +522,16 @@ extension Conversation {
     /// Screenshot helper: trims the seeded demo to its first messages.
     func keepFirstMessages(_ n: Int) { mutateMessagesForDemo { $0 = Array($0.prefix(n)) } }
 
+    /// `-echo.demoQuote`: a message of the person's that quotes the first reply, the last reply
+    /// quoted in the composer, and three suggested replies.
+    func seedQuoteDemo() {
+        guard let first = messages.first(where: { $0.role == .assistant }) else { return }
+        let asked = Quote.message("Can the vet call wait until Friday?", quoting: QuotedText(text: Quote.excerpt(first.text, limit: 90)))
+        mutateMessagesForDemo { $0.append(Message(role: .user, text: asked)) }
+        if let last = messages.last(where: { $0.role == .assistant }) { quote(last, speaker: "Sol") }
+        showFollowUpsForDemo(["Yes, move it to Friday", "What time works best?", "Remind me Thursday too"])
+    }
+
     /// UI-test helper: the demo repeated until the transcript is many screens long, ending on a
     /// known line so a test can tell it reached the bottom.
     func seedLongDemo() {

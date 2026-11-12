@@ -239,7 +239,7 @@ private struct InlineTextView: UIViewRepresentable {
             guard !selection.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
             let ask = UIAction(title: String(localized: "Ask about this"), image: UIImage(systemName: "quote.bubble")) { [weak view] _ in
                 (view as? ReplyTextView)?.finish()
-                LaunchRouter.shared.requestDraft(text: Quote.markdown(selection), attachments: [])
+                LaunchRouter.shared.requestDraft(text: "", attachments: [], quote: selection)
             }
             return [ask]
         }

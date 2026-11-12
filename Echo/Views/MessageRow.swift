@@ -55,6 +55,15 @@ struct MessageRow: View, Equatable {
         message.role == .user ? ServeMedia.named(in: message.text).text : message.text
     }
 
+    /// A message of the person's that opens with a quote (`Quote.split`): the quote, drawn over
+    /// the bubble, and the words under it, which the bubble holds.
+    private var quoteSplit: (quote: String, rest: String)? {
+        message.role == .user && !message.isSteer ? Quote.split(shownText) : nil
+    }
+
+    /// What the person's bubble says.
+    private var bubbleText: String { quoteSplit?.rest ?? shownText }
+
     /// Those pictures, while they aren't in the chat yet: each to fetch on a tap.
     private var namedPictures: [ServeMedia.Candidate] {
         message.role == .user ? ServeMedia.named(in: message.text).files : []
@@ -131,6 +140,12 @@ struct MessageRow: View, Equatable {
                     .multilineTextAlignment(promptStyled ? .leading : .trailing)
                     .padding(.leading, promptStyled ? 0 : 48)
                     .accessibilityLabel(String(localized: "Answering: \(asked)", comment: "VoiceOver: the question a message of the person's answers"))
+            }
+            // The message it quotes, over the person's words; a tap shows that message.
+            if let quoted = quoteSplit?.quote {
+                QuoteBlock(quote: quoted, alignment: promptStyled ? .leading : .trailing) {
+                    conversation?.reveal(quote: quoted, in: message.id)
+                }
             }
             if message.role == .assistant, let activity = turn?.activity { turnActivityFold(activity) }
             if message.role == .assistant, turn?.isGrouped != true, !message.reasoning.isEmpty || !message.tools.isEmpty {
@@ -224,17 +239,17 @@ struct MessageRow: View, Equatable {
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             } else if hasTextBubble, promptStyled, let prompt = theme.promptPrefix {
-                Text("\(Text(prompt).bold())\(shownText)")
+                Text("\(Text(prompt).bold())\(bubbleText)")
                     .font(theme.messageFont)
                     .foregroundStyle(theme.promptColor)
                     // The ❯ is decoration; VoiceOver (and UI tests) should get the words alone.
-                    .accessibilityLabel(shownText)
+                    .accessibilityLabel(bubbleText)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .overlay(highlightRing)
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             } else if hasTextBubble {
-                Text(shownText)
+                Text(bubbleText)
                     .font(theme.userFont)
                     .padding(.horizontal, 14)
                     .padding(.vertical, theme.bubbleVerticalPadding)
@@ -292,6 +307,11 @@ struct MessageRow: View, Equatable {
                                                      : message.isSteer ? String(localized: "Your steer") : String(localized: "You")) : replySpeaker ?? settings.headerTitle)
         .sensoryFeedback(.success, trigger: copyCount)
         .sheet(item: $fullDetail) { SelectableTextSheet(text: $0.text, title: $0.title, monospaced: true) }
+    }
+
+    /// The composer takes the keyboard, for the message that quotes.
+    private func focusComposer() {
+        LaunchRouter.shared.requestDraft(text: "", attachments: [])
     }
 
     /// Copies, ticks, turns the copy button into a check for a moment and says so in a toast.
@@ -770,6 +790,9 @@ struct MessageRow: View, Equatable {
             .controlGroupStyle(.palette)
         }
         Button("Copy reply", systemImage: "doc.on.doc") { copy(message.text) }
+        if let conversation, !isLive, !conversation.isWorkerTranscript {
+            Button("Quote", systemImage: "text.quote") { conversation.quote(message, speaker: replySpeaker ?? settings.headerTitle); focusComposer() }
+        }
         if !message.reasoning.isEmpty {
             Button("Copy thinking", systemImage: "brain") { copy(message.reasoning) }
         }
@@ -798,6 +821,12 @@ struct MessageRow: View, Equatable {
     @ViewBuilder
     private var userMenu: some View {
         Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = message.text }
+        if let conversation, !conversation.isWorkerTranscript {
+            Button("Quote", systemImage: "text.quote") {
+                conversation.quote(message, speaker: nil, mine: true)
+                focusComposer()
+            }
+        }
         // Selected in a copy of its own, as a reply is: the transcript's text isn't selectable.
         Button("Select text", systemImage: "text.cursor") { selecting = true }
         if let onEdit, message.role == .user {

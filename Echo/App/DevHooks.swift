@@ -266,6 +266,8 @@ enum DevHooks {
         }
         if has("-echo.demoShort") { conversation.keepFirstMessages(2) }
         if has("-echo.demoTwo") { conversation.keepFirstMessages(4) }
+        // A message quoting the first reply, the last one quoted in the composer, and suggested replies.
+        if has("-echo.demoQuote") { conversation.seedQuoteDemo() }
         if has("-echo.demoLibrary") { conversation.seedDemoLibrary() }
         if has("-echo.demoSaved") { conversation.seedDemoLibrary(savedFrom: settings.activeServerID) }
         if has("-echo.clearDrafts") { Drafts.shared.removeAll() }
