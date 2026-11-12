@@ -820,23 +820,26 @@ class Bridge:
             await server.serve_forever()
 
 
-def setup_address(config: Config) -> str:
-    """The bridge's address as a phone reaches it: its .local name when it listens everywhere."""
+def setup_address(config: Config, host_name: str | None = None) -> str:
+    """The bridge's address as a phone reaches it: `host_name` when given (`--host`: a Tailscale
+    name, which reaches it away from home too), else its .local name when it listens everywhere."""
     host, port = config.host_port
     scheme = "wss" if config.tls_cert else "ws"
-    if host in ("0.0.0.0", "::", ""):
+    if host_name:
+        host = host_name.strip().rstrip(".")
+    elif host in ("0.0.0.0", "::", ""):
         host = socket.gethostname().split(".")[0] + ".local"
     if ":" in host:
         host = f"[{host}]"
     return f"{scheme}://{host}:{port}"
 
 
-def setup_link(config: Config, agent: "AgentConfig | None") -> str:
+def setup_link(config: Config, agent: "AgentConfig | None", host_name: str | None = None) -> str:
     """Redde's setup link for this bridge and one of its agents (the app's SetupCode): opened on
     the phone, or scanned as a QR code, it fills in the connection. It holds the token: share it
     only with your own devices. The parameters ride after the "#", which a browser never sends."""
     from urllib.parse import quote
-    fields = [("name", socket.gethostname().split(".")[0]), ("bridge", setup_address(config)),
+    fields = [("name", socket.gethostname().split(".")[0]), ("bridge", setup_address(config, host_name)),
               ("bridge-token", config.token)]
     if agent is not None:
         fields.append(("agent", agent.id))
@@ -844,23 +847,23 @@ def setup_link(config: Config, agent: "AgentConfig | None") -> str:
     return "https://redde.goosehouse.org/connect#" + "&".join(f"{k}={quote(v, safe='/:~@')}" for k, v in fields)
 
 
-def print_setup(config: Config, agent_id: str | None = None) -> None:
+def print_setup(config: Config, agent_id: str | None = None, host_name: str | None = None) -> None:
     agents = [a for a in config.agents if agent_id in (None, a.id)]
     if agent_id and not agents:
         raise SystemExit(f"No agent {agent_id!r} in the config.")
     print("In Redde: Settings → Connection → Set up connection… → Other agent (ACP)\n")
-    print(f"  Address  {setup_address(config)}")
+    print(f"  Address  {setup_address(config, host_name)}")
     print(f"  Token    {config.token}")
     print("  Agents   " + (", ".join(f"{a.name} ({a.id})" for a in config.agents) or "none: add one to the config"))
     print("\nOr open a setup link on the phone (it holds the token: keep it to your own devices):\n")
     for agent in agents or [None]:
-        print(f"  {agent.name if agent else 'Bridge'}: {setup_link(config, agent)}")
+        print(f"  {agent.name if agent else 'Bridge'}: {setup_link(config, agent, host_name)}")
     first = (agents or [None])[0]
     qrencode = shutil.which("qrencode")
     if qrencode and sys.stdout.isatty():
         print(f"\nScan with the iPhone's Camera, or Redde's Scan a setup code"
               + (f" ({first.name}; --agent <id> for another)" if first and len(agents) > 1 else "") + ":\n")
-        subprocess.run([qrencode, "-t", "ansiutf8", "-m", "2", setup_link(config, first)], check=False)
+        subprocess.run([qrencode, "-t", "ansiutf8", "-m", "2", setup_link(config, first, host_name)], check=False)
     elif sys.stdout.isatty():
         print("\n(Install qrencode to see it as a QR code here: brew install qrencode / apt install qrencode.)")
 
@@ -871,6 +874,8 @@ def main() -> None:
     parser.add_argument("--listen", help="host:port, overriding the config")
     parser.add_argument("--print-setup", action="store_true", help="print the address, token and setup link for Redde, then exit")
     parser.add_argument("--agent", help="with --print-setup: the agent the setup link and QR code are for")
+    parser.add_argument("--host", help="with --print-setup: the name the phone reaches this machine by, such as its "
+                                       "Tailscale name (machine.tailnet.ts.net), which works away from home too")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
@@ -879,7 +884,7 @@ def main() -> None:
     if args.listen:
         config.listen = args.listen
     if args.print_setup:
-        print_setup(config, args.agent)
+        print_setup(config, args.agent, args.host)
         return
     try:
         asyncio.run(Bridge(config).serve())

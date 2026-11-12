@@ -37,6 +37,11 @@ python3 redde_bridge.py -v              # serve, logging every agent's own outpu
 Redde's Scan a setup code, or open the link on the phone: Redde shows what it sets up and saves it
 when you agree. The link holds the token, so show it only to your own devices.
 
+The address is the machine's `.local` name, which works on the same Wi-Fi only. To use the agent
+away from home, put the machine and the phone on Tailscale and give its Tailscale name:
+`--print-setup --host <machine>.<tailnet>.ts.net` (`tailscale status --json` says it as
+`Self.DNSName`). That address works at home too, while Tailscale is on.
+
 The first run writes `~/.config/redde-bridge/config.toml` (`REDDE_BRIDGE_CONFIG` or `--config`
 moves it). It has a new random token and an entry for each agent it found on this computer.
 Agents it didn't find are in the file too, commented out:

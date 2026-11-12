@@ -327,3 +327,8 @@ class SetupLinkTests(unittest.TestCase):
     def test_a_named_host_and_tls_are_kept(self):
         config = rb.Config(listen="100.64.0.5:8767", token="t", agents=[], tls_cert="c.pem", tls_key="k.pem")
         self.assertEqual(rb.setup_address(config), "wss://100.64.0.5:8767")
+
+    def test_a_tailscale_name_can_stand_for_the_machine(self):
+        config = rb.Config(listen="0.0.0.0:8767", token="t", agents=[])
+        self.assertEqual(rb.setup_address(config, "mac.tail1234.ts.net."), "ws://mac.tail1234.ts.net:8767")
+        self.assertIn("bridge=ws://mac.tail1234.ts.net:8767", rb.setup_link(config, None, "mac.tail1234.ts.net"))
