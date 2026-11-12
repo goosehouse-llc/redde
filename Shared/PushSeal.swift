@@ -403,6 +403,9 @@ nonisolated extension PushNote {
     /// `userInfo` keys on a notification that came this way. `session` is also how the app tells
     /// one from a banner it posted itself. `approval` and `question` are the note's `h`.
     static let sessionKey = "session"
+    /// Which of Redde's servers the pairing was made over (`PushPairing.server`): a tap opens the
+    /// chat there, switching servers when the app is on another.
+    static let serverKey = "server"
     static let kindKey = "kind"
     static let approvalKey = "approval"
     static let questionKey = "question"
@@ -463,7 +466,10 @@ nonisolated extension PushNote {
         case .paired:
             content.title = host.map { String(localized: "Paired with \($0)", comment: "Notification: this device was paired with a Hermes server, by its name") }
                 ?? String(localized: "Paired", comment: "Notification: this device was paired with a Hermes server")
-            content.body = String(localized: "Redde will tell you here when this Hermes finishes a reply, waits for you, or couldn't reply.")
+            // The Redde bridge's (ACP agents) says `d` "bridge"; the Hermes plugin's says nothing more.
+            content.body = d == "bridge"
+                ? String(localized: "Redde will tell you here when an agent on this computer finishes a reply, waits for you, or couldn't reply.", comment: "Notification: this device was paired with the Redde bridge, which serves agents such as Claude Code")
+                : String(localized: "Redde will tell you here when this Hermes finishes a reply, waits for you, or couldn't reply.")
         case .test:
             content.title = host.map { "Redde · \($0)" } ?? "Redde"
             content.body = b ?? String(localized: "Notifications from your Hermes reach this device.", comment: "Notification: hermes redde-push test, when it says nothing of its own")

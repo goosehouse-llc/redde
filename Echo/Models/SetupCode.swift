@@ -25,8 +25,11 @@ import Foundation
 /// - `header`: a header a reverse proxy in front of the server asks for, as `Name: value`. The
 ///   one parameter that may come more than once, up to `maximumHeaders` of them.
 /// - `model-url`, `model-key`, `model`: an OpenAI-compatible endpoint.
-/// - `use`: `dashboard`, `api` or `model`, the connection the app should talk to. Left out, it is
-///   the first of those the code carries.
+/// - `bridge`, `bridge-token`, `agent`, `folder`: an agent behind the Redde bridge (ACP,
+///   `docs/acp.md`): its address (`ws://`, `wss://`, `http(s)://`), its token, which of its agents,
+///   and the folder new chats work in. What `redde_bridge.py --print-setup` prints.
+/// - `use`: `dashboard`, `api`, `model` or `acp`, the connection the app should talk to. Left out,
+///   it is the first of those the code carries.
 /// - `v`: the format's version, 1 today. A higher one is refused instead of half understood.
 ///
 /// A link is untrusted input. It is shown for confirmation and saved only once the person agrees
@@ -56,6 +59,11 @@ nonisolated struct SetupCode: Equatable, Sendable {
     var modelURL = ""
     var modelKey = ""
     var model = ""
+    /// The Redde bridge in front of an ACP agent.
+    var bridgeURL = ""
+    var bridgeToken = ""
+    var agent = ""
+    var folder = ""
 
     static let scheme = "redde"
     static let host = "connect"
@@ -71,7 +79,7 @@ nonisolated struct SetupCode: Equatable, Sendable {
     enum ParseError: Error, Equatable {
         /// Made by a newer version of the app.
         case newerVersion
-        /// No Dashboard, Hermes API or model address in it.
+        /// No Dashboard, Hermes API, bridge or model address in it.
         case noAddress
         /// An address that isn't an http or https URL (the text is what was given).
         case badAddress(String)
@@ -148,14 +156,19 @@ nonisolated struct SetupCode: Equatable, Sendable {
         code.pangolin = fields["pangolin"].flatMap(Settings.pangolinToken) ?? ""
         code.pangolinAPI = fields["pangolin-api"].flatMap(Settings.pangolinToken) ?? ""
         code.modelURL = try address(fields["model-url"])
-        // Headers go to a Hermes server; a code for a model endpoint alone has no use for them.
-        code.headers = code.hasServer ? headers : []
+        code.bridgeURL = try bridgeAddress(fields["bridge"])
+        code.bridgeToken = code.bridgeURL.isEmpty ? "" : fields["bridge-token"] ?? ""
+        code.agent = code.bridgeURL.isEmpty ? "" : String((fields["agent"] ?? "").prefix(80))
+        code.folder = code.bridgeURL.isEmpty ? "" : String((fields["folder"] ?? "").prefix(400))
+        // Headers go to a Hermes server; a code for a model endpoint or a bridge has no use for them.
+        code.headers = code.hasHermes ? headers : []
         code.modelKey = fields["model-key"] ?? ""
         code.model = fields["model"] ?? ""
         code.use = switch fields["use"]?.lowercased() {
         case "dashboard": .hermesServe
         case "api": .hermesSessions
         case "model": .chatCompletions
+        case "acp": .acp
         default: nil
         }
         guard code.transport != nil else { throw .noAddress }
@@ -177,6 +190,18 @@ nonisolated struct SetupCode: Equatable, Sendable {
         guard let url = Settings.normalizedBase(raw), let scheme = url.scheme?.lowercased(),
               scheme == "http" || scheme == "https", let host = url.host(), !host.isEmpty,
               url.user() == nil, url.password() == nil else {
+            throw .badAddress(raw)
+        }
+        return url.absoluteString
+    }
+
+    /// A bridge's address: ws, wss, http or https (the app takes the last two for the first two),
+    /// with a host and no user name, as for the others.
+    private static func bridgeAddress(_ raw: String?) throws(ParseError) -> String {
+        guard let raw, !raw.isEmpty else { return "" }
+        guard let parts = URLComponents(string: raw), let scheme = parts.scheme?.lowercased(),
+              ["ws", "wss", "http", "https"].contains(scheme), let host = parts.host, !host.isEmpty,
+              parts.user == nil, parts.password == nil, let url = parts.url else {
             throw .badAddress(raw)
         }
         return url.absoluteString
@@ -227,6 +252,10 @@ nonisolated struct SetupCode: Equatable, Sendable {
         add("model-url", modelURL)
         add("model-key", modelKey)
         add("model", model)
+        add("bridge", bridgeURL)
+        add("bridge-token", bridgeToken)
+        add("agent", agent)
+        add("folder", folder)
         if let use {
             let word = switch use {
             case .hermesServe: "dashboard"
@@ -251,17 +280,22 @@ nonisolated struct SetupCode: Equatable, Sendable {
         var carried: [Transport] = []
         if !dashboardURL.isEmpty { carried.append(.hermesServe) }
         if !apiURL.isEmpty { carried.append(.hermesSessions) }
+        if !bridgeURL.isEmpty { carried.append(.acp) }
         if !modelURL.isEmpty { carried.append(.chatCompletions) }
         if let use, carried.contains(use) { return use }
         return carried.first
     }
 
-    /// Carries a Hermes server (the model endpoint isn't one: it is the app's, not a server's).
-    var hasServer: Bool { !dashboardURL.isEmpty || !apiURL.isEmpty }
+    /// Carries a server: a Hermes one or an agent bridge (the model endpoint isn't one: it is the
+    /// app's, not a server's).
+    var hasServer: Bool { hasHermes || !bridgeURL.isEmpty }
+
+    /// Carries a Hermes server: what Access, Pangolin and custom headers go to.
+    var hasHermes: Bool { !dashboardURL.isEmpty || !apiURL.isEmpty }
 
     var hasSecrets: Bool {
         !(dashboardPassword.isEmpty && apiKey.isEmpty && profileKey.isEmpty && accessSecret.isEmpty && pangolin.isEmpty && pangolinAPI.isEmpty
-          && modelKey.isEmpty && headers.isEmpty)
+          && modelKey.isEmpty && headers.isEmpty && bridgeToken.isEmpty)
     }
 
     /// The same code with addresses and names only, for showing where a password shouldn't be.
@@ -275,6 +309,7 @@ nonisolated struct SetupCode: Equatable, Sendable {
         code.pangolinAPI = ""
         code.headers = []
         code.modelKey = ""
+        code.bridgeToken = ""
         return code
     }
 }

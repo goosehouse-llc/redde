@@ -94,6 +94,14 @@ struct SetupCodeSheet: View {
                     row("Hermes API", code.apiURL, note: [code.apiKey.isEmpty && code.profileKey.isEmpty ? String(localized: "no key") : String(localized: "key included")],
                         used: plan.transport == .hermesSessions)
                 }
+                if !code.bridgeURL.isEmpty {
+                    // The bridge's token is a key like the API's, and said the same way.
+                    row(String(localized: "Agent bridge"), code.bridgeURL,
+                        note: [code.bridgeToken.isEmpty ? String(localized: "no key") : String(localized: "key included")],
+                        used: plan.transport == .acp)
+                    if !code.agent.isEmpty { LabeledContent("Agent", value: code.agent) }
+                    if !code.folder.isEmpty { LabeledContent("Folder", value: code.folder) }
+                }
                 if !code.profile.isEmpty { LabeledContent("Profile", value: code.profile) }
                 if !code.accessID.isEmpty {
                     LabeledContent("Cloudflare Access", value: code.accessSecret.isEmpty ? String(localized: "Client ID only") : String(localized: "Service token included"))

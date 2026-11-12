@@ -69744,6 +69744,113 @@
         }
       }
     },
+    "API (shared sessions)" : {
+      "comment" : "A Hermes connection, listed under the header Hermes",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (delte sessioner)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (gemeinsame Sitzungen)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (sesiones compartidas)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (sessions partagées)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (sessioni condivise)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API（共有セッション）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API(공유 세션)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (delte økter)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (gedeelde sessies)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (wspólne sesje)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (sessões compartilhadas)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (общие сеансы)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (delade sessioner)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (paylaşılan oturumlar)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API (спільні сеанси)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API（共享会话）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API（共享工作階段）"
+          }
+        }
+      }
+    },
     "API calls" : {
       "localizations" : {
         "da" : {
@@ -108464,6 +108571,113 @@
         }
       }
     },
+    "Claude Code, Codex and others (ACP)" : {
+      "comment" : "A connection listed under the header Other Agents: agents through the Agent Client Protocol and the Redde bridge",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex og andre (ACP)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex und andere (ACP)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex y otros (ACP)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex et autres (ACP)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex e altri (ACP)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code、Codex など（ACP）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex 등(ACP)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex og andre (ACP)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex en andere (ACP)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex i inne (ACP)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex e outros (ACP)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex и другие (ACP)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex och andra (ACP)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex ve diğerleri (ACP)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex та інші (ACP)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code、Codex 等（ACP）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code、Codex 等（ACP）"
+          }
+        }
+      }
+    },
     "Claude Code, does the work of %@" : {
       "localizations" : {
         "da" : {
@@ -122177,6 +122391,113 @@
         }
       }
     },
+    "Couldn't ask the Redde bridge: %@" : {
+      "comment" : "Pairing for notifications over an ACP connection; the reason follows",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke spørge Redde-broen: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Redde-Bridge war nicht erreichbar: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo consultar el puente de Redde: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de joindre le pont Redde : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile contattare il bridge di Redde: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ブリッジに問い合わせできませんでした: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 브리지에 요청하지 못했습니다: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fikk ikke spurt Redde-broen: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan de Redde-bridge niet bereiken: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zapytać mostka Redde: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível consultar a ponte do Redde: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось связаться с мостом Redde: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunde inte fråga Redde-bryggan: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde köprüsüne ulaşılamadı: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося звернутися до мосту Redde: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法联系 Redde 桥接器：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法聯絡 Redde 橋接器：%@"
+          }
+        }
+      }
+    },
     "Couldn't ask your Hermes over the Dashboard: %@" : {
       "localizations" : {
         "da" : {
@@ -132055,6 +132376,113 @@
         }
       }
     },
+    "Dashboard (WebSocket)" : {
+      "comment" : "A Hermes connection, listed under the header Hermes",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard（WebSocket）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard(WebSocket)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard (WebSocket)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard（WebSocket）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard（WebSocket）"
+          }
+        }
+      }
+    },
     "Dashboard access token" : {
       "localizations" : {
         "da" : {
@@ -139533,6 +139961,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "膳食能量"
+          }
+        }
+      }
+    },
+    "Direct to a Model" : {
+      "comment" : "Group header for the OpenAI-compatible connection, which talks to a model with no agent",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direkte til en model"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direkt zu einem Modell"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Directo a un modelo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Directement vers un modèle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direttamente a un modello"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モデルに直接"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모델에 직접"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direkte til en modell"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechtstreeks naar een model"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpośrednio do modelu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direto para um modelo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напрямую к модели"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direkt till en modell"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doğrudan bir modele"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напряму до моделі"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "直连模型"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "直連模型"
           }
         }
       }
@@ -295208,6 +295743,113 @@
         }
       }
     },
+    "OpenAI-compatible server" : {
+      "comment" : "A connection listed under the header Direct to a Model: llama-swap, LM Studio and the like",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI-kompatibel server"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI-kompatibler Server"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidor compatible con OpenAI"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveur compatible OpenAI"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server compatibile con OpenAI"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI 互換サーバー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI 호환 서버"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI-kompatibel server"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI-compatibele server"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serwer zgodny z OpenAI"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidor compatível com OpenAI"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI-совместимый сервер"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI-kompatibel server"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI uyumlu sunucu"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI-сумісний сервер"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI 兼容服务器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenAI 相容伺服器"
+          }
+        }
+      }
+    },
     "OpenAI, or a server like it" : {
       "localizations" : {
         "da" : {
@@ -301063,6 +301705,113 @@
         }
       }
     },
+    "Other Agents" : {
+      "comment" : "Group header for agents over ACP (Claude Code, Codex…) and their servers",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andre agenter"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere Agenten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otros agentes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres agents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altri agenti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "その他のエージェント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기타 에이전트"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andre agenter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere agents"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inni agenci"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outros agentes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другие агенты"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andra agenter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diğer ajanlar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Інші агенти"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他智能体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他代理"
+          }
+        }
+      }
+    },
     "Other Change…" : {
       "comment" : "A reminder card's menu: tell the agent in words what to change",
       "localizations" : {
@@ -303324,6 +304073,113 @@
         }
       }
     },
+    "Pair the Redde Bridge" : {
+      "comment" : "Settings › Alerts When Redde Is Closed: section header on an ACP connection",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par Redde-broen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-Bridge koppeln"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincular el puente de Redde"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jumeler le pont Redde"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbina il bridge di Redde"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ブリッジとペアリング"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 브리지 페어링"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koble til Redde-broen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-bridge koppelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sparuj mostek Redde"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parear a ponte do Redde"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключить мост Redde"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parkoppla Redde-bryggan"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde köprüsünü eşleştir"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Під’єднати міст Redde"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配对 Redde 桥接器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配對 Redde 橋接器"
+          }
+        }
+      }
+    },
     "Pair this device so ideas and briefings arrive with Redde closed." : {
       "comment" : "Ahead of Your Day: offering to pair for notifications",
       "localizations" : {
@@ -303852,6 +304708,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用代碼配對…"
+          }
+        }
+      }
+    },
+    "Pair with the Bridge" : {
+      "comment" : "Settings › Alerts When Redde Is Closed, on an ACP connection with no name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par med broen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit der Bridge koppeln"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincular con el puente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jumeler avec le pont"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbina con il bridge"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブリッジとペアリング"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "브리지와 페어링"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koble til broen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppelen met de bridge"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sparuj z mostkiem"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parear com a ponte"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключить к мосту"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parkoppla med bryggan"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Köprüyle eşleştir"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Під’єднати до мосту"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与桥接器配对"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "與橋接器配對"
           }
         }
       }
@@ -332488,6 +333451,113 @@
         }
       }
     },
+    "Redde will tell you here when an agent on this computer finishes a reply, waits for you, or couldn't reply." : {
+      "comment" : "Notification: this device was paired with the Redde bridge, which serves agents such as Claude Code",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde giver dig besked her, når en agent på denne computer er færdig med et svar, venter på dig eller ikke kunne svare."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde meldet sich hier, wenn ein Agent auf diesem Computer eine Antwort fertig hat, auf dich wartet oder nicht antworten konnte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde te avisará aquí cuando un agente de este ordenador termine una respuesta, te espere o no haya podido responder."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde vous préviendra ici quand un agent sur cet ordinateur aura terminé une réponse, vous attendra ou n'aura pas pu répondre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ti avviserà qui quando un agente su questo computer finisce una risposta, ti aspetta o non è riuscito a rispondere."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このコンピュータのエージェントが返答を終えたとき、あなたを待っているとき、返答できなかったときに、Redde がここでお知らせします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 컴퓨터의 에이전트가 답변을 마치거나, 사용자를 기다리거나, 답변하지 못하면 Redde가 여기서 알려 드립니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde sier fra her når en agent på denne datamaskinen er ferdig med et svar, venter på deg eller ikke fikk svart."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde laat het je hier weten wanneer een agent op deze computer een antwoord af heeft, op je wacht of niet kon antwoorden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde powiadomi Cię tutaj, gdy agent na tym komputerze skończy odpowiedź, będzie na Ciebie czekał lub nie zdoła odpowiedzieć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde vai avisar aqui quando um agente neste computador terminar uma resposta, esperar por você ou não conseguir responder."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde сообщит здесь, когда агент на этом компьютере закончит ответ, будет ждать вас или не сможет ответить."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde säger till här när en agent på den här datorn är klar med ett svar, väntar på dig eller inte kunde svara."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu bilgisayardaki bir ajan bir yanıtı bitirdiğinde, sizi beklediğinde veya yanıt veremediğinde Redde size burada haber verecek."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde повідомить тут, коли агент на цьому комп’ютері завершить відповідь, чекатиме на вас або не зможе відповісти."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当这台电脑上的智能体完成回复、等待你或无法回复时，Redde 会在这里通知你。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當這台電腦上的代理完成回覆、等待你或無法回覆時，Redde 會在這裡通知你。"
+          }
+        }
+      }
+    },
     "Redde will tell you here when this Hermes finishes a reply, waits for you, or couldn't reply." : {
       "localizations" : {
         "da" : {
@@ -333759,6 +334829,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在註冊此裝置 並回應代碼。"
+          }
+        }
+      }
+    },
+    "Registering this device and asking the bridge." : {
+      "comment" : "Pairing sheet, while pairing over an ACP connection",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerer denne enhed og spørger broen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Gerät wird registriert und die Bridge gefragt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrando este dispositivo y consultando al puente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrement de cet appareil et demande au pont."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrazione di questo dispositivo e richiesta al bridge."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイスを登録してブリッジに問い合わせています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기를 등록하고 브리지에 요청하는 중입니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerer denne enheten og spør broen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit apparaat wordt geregistreerd en de bridge wordt gevraagd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rejestrowanie tego urządzenia i pytanie mostka."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrando este dispositivo e consultando a ponte."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регистрируем это устройство и обращаемся к мосту."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerar den här enheten och frågar bryggan."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu aygıt kaydediliyor ve köprüye soruluyor."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Реєструємо цей пристрій і звертаємося до мосту."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在注册此设备并联系桥接器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在註冊此裝置並聯絡橋接器。"
           }
         }
       }
@@ -412299,6 +413476,220 @@
         }
       }
     },
+    "the agent bridge's address" : {
+      "comment" : "Set up another device: what the setup code holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agentbroens adresse"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "die Adresse der Agent-Bridge"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "la dirección del puente del agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l’adresse de la passerelle d’agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l'indirizzo del bridge dell'agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントブリッジのアドレス"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트 브리지 주소"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agentbroens adresse"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "het adres van de agentbrug"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "adres mostka agenta"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "o endereço da ponte do agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "адрес моста агента"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agentbryggans adress"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ajan köprüsünün adresi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "адреса моста агента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体桥接地址"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理橋接位址"
+          }
+        }
+      }
+    },
+    "the agent bridge's address and token" : {
+      "comment" : "Set up another device: what the setup code holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agentbroens adresse og token"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "die Adresse und das Token der Agent-Bridge"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "la dirección y el token del puente del agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l’adresse et le jeton de la passerelle d’agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l'indirizzo e il token del bridge dell'agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントブリッジのアドレスとトークン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트 브리지 주소 및 토큰"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agentbroens adresse og token"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "het adres en het token van de agentbrug"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "adres i token mostka agenta"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "o endereço e o token da ponte do agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "адрес и токен моста агента"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "agentbryggans adress och token"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ajan köprüsünün adresi ve token’ı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "адреса й токен моста агента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体桥接地址和令牌"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理橋接位址和權杖"
+          }
+        }
+      }
+    },
     "The agent bridge's address isn't valid." : {
       "comment" : "ACP connection test",
       "localizations" : {
@@ -415271,6 +416662,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "「機器人」標籤頁會為每個機器人顯示一張卡片，臉孔呈現它的心情。語音畫面會顯示你正在交談的機器人，車上也會打開你上次離開的標籤頁。開啟「車上的 Stop 與 Skip」（「設定」→「語音」）後，回覆播放時可說「stop」或「skip」。"
+          }
+        }
+      }
+    },
+    "The bridge has this device, but its first notification hasn't arrived. That computer may not be able to reach the notification relay." : {
+      "comment" : "Pairing sheet on an ACP connection: paired, but no notification came",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Broen har denne enhed, men dens første notifikation er ikke kommet. Computeren kan måske ikke nå notifikationsrelæet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Bridge kennt dieses Gerät, aber ihre erste Mitteilung ist noch nicht angekommen. Der Computer erreicht das Mitteilungs-Relay vielleicht nicht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El puente tiene este dispositivo, pero su primera notificación no ha llegado. Puede que ese ordenador no llegue al relé de notificaciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pont connaît cet appareil, mais sa première notification n'est pas arrivée. Cet ordinateur n'arrive peut-être pas à joindre le relais de notifications."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il bridge ha questo dispositivo, ma la sua prima notifica non è arrivata. Forse quel computer non riesce a raggiungere il relay delle notifiche."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブリッジにはこのデバイスが登録されていますが、最初の通知がまだ届いていません。そのコンピュータが通知リレーに接続できない可能性があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "브리지에 이 기기가 등록되었지만 첫 알림이 도착하지 않았습니다. 그 컴퓨터가 알림 릴레이에 연결하지 못하는 것일 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Broen har denne enheten, men det første varselet har ikke kommet. Datamaskinen når kanskje ikke varselreléet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De bridge kent dit apparaat, maar de eerste melding is niet aangekomen. Die computer kan de meldingsrelay misschien niet bereiken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostek ma to urządzenie, ale jego pierwsze powiadomienie nie dotarło. Ten komputer może nie mieć połączenia z przekaźnikiem powiadomień."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A ponte tem este dispositivo, mas a primeira notificação dela não chegou. Talvez aquele computador não consiga alcançar o relay de notificações."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мост знает это устройство, но его первое уведомление не пришло. Возможно, тот компьютер не может связаться с ретранслятором уведомлений."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bryggan har den här enheten, men dess första notis har inte kommit. Datorn kanske inte når notisreläet."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Köprü bu aygıtı tanıyor ama ilk bildirimi gelmedi. O bilgisayar bildirim aktarıcısına ulaşamıyor olabilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Міст знає цей пристрій, але його перше сповіщення не надійшло. Можливо, той комп’ютер не може зв’язатися з ретранслятором сповіщень."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "桥接器已登记此设备，但第一条通知尚未到达。那台电脑可能无法连接通知中继。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橋接器已登記此裝置，但第一則通知尚未送達。那台電腦可能無法連線到通知中繼。"
           }
         }
       }
@@ -426539,6 +428037,327 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "問題是空的。"
+          }
+        }
+      }
+    },
+    "The Redde bridge on that computer is an older one that doesn't send notifications. Update it from Redde's repository and restart it, then pair again." : {
+      "comment" : "Pairing for notifications over an ACP connection, with a bridge from before notifications",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-broen på den computer er en ældre version, der ikke sender notifikationer. Opdater den fra Reddes repository, genstart den, og par igen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Redde-Bridge auf diesem Computer ist eine ältere, die keine Mitteilungen sendet. Aktualisiere sie aus dem Redde-Repository, starte sie neu und kopple dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El puente de Redde de ese ordenador es una versión antigua que no envía notificaciones. Actualízalo desde el repositorio de Redde, reinícialo y vuelve a vincular."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pont Redde sur cet ordinateur est une ancienne version qui n'envoie pas de notifications. Mettez-le à jour depuis le dépôt de Redde, redémarrez-le, puis jumelez à nouveau."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il bridge di Redde su quel computer è una versione vecchia che non invia notifiche. Aggiornalo dal repository di Redde, riavvialo e poi abbina di nuovo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "そのコンピュータの Redde ブリッジは通知を送らない古いバージョンです。Redde のリポジトリから更新して再起動し、もう一度ペアリングしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "그 컴퓨터의 Redde 브리지는 알림을 보내지 않는 이전 버전입니다. Redde 저장소에서 업데이트하고 다시 시작한 뒤 다시 페어링하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-broen på den datamaskinen er en eldre versjon som ikke sender varsler. Oppdater den fra Reddes repository, start den på nytt og koble til igjen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De Redde-bridge op die computer is een oudere versie die geen meldingen stuurt. Werk hem bij vanuit de Redde-repository, start hem opnieuw en koppel daarna opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostek Redde na tamtym komputerze to starsza wersja, która nie wysyła powiadomień. Zaktualizuj go z repozytorium Redde, uruchom ponownie i sparuj jeszcze raz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A ponte do Redde naquele computador é uma versão antiga que não envia notificações. Atualize-a pelo repositório do Redde, reinicie e pareie de novo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мост Redde на том компьютере устаревший и не отправляет уведомления. Обновите его из репозитория Redde, перезапустите и подключите снова."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-bryggan på den datorn är en äldre version som inte skickar notiser. Uppdatera den från Reddes repository, starta om den och parkoppla igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O bilgisayardaki Redde köprüsü bildirim göndermeyen eski bir sürüm. Redde deposundan güncelleyin, yeniden başlatın ve tekrar eşleştirin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Міст Redde на тому комп’ютері застарілий і не надсилає сповіщень. Оновіть його з репозиторію Redde, перезапустіть і під’єднайте знову."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "那台电脑上的 Redde 桥接器是旧版本，不会发送通知。请从 Redde 的代码库更新并重启它，然后再次配对。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "那台電腦上的 Redde 橋接器是舊版本，不會傳送通知。請從 Redde 的儲存庫更新並重新啟動，然後再次配對。"
+          }
+        }
+      }
+    },
+    "The Redde bridge on that computer tells this device when an agent finishes a reply, waits for your approval, or couldn't reply. What a notification says is encrypted by the bridge and opened on this device. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it." : {
+      "comment" : "Settings › Alerts When Redde Is Closed: footer on an ACP connection",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-broen på den computer giver denne enhed besked, når en agent er færdig med et svar, venter på din godkendelse eller ikke kunne svare. Indholdet af en notifikation krypteres af broen og åbnes på denne enhed. Undervejs går den gennem et relæ drevet af Goosehouse og gennem Apple; ingen af dem kan læse den."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Redde-Bridge auf diesem Computer sagt diesem Gerät Bescheid, wenn ein Agent eine Antwort fertig hat, auf deine Freigabe wartet oder nicht antworten konnte. Der Inhalt einer Mitteilung wird von der Bridge verschlüsselt und auf diesem Gerät geöffnet. Unterwegs läuft sie über ein Relay von Goosehouse und über Apple; keiner von beiden kann sie lesen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El puente de Redde de ese ordenador avisa a este dispositivo cuando un agente termina una respuesta, espera tu aprobación o no ha podido responder. El contenido de una notificación lo cifra el puente y se abre en este dispositivo. Por el camino pasa por un relé de Goosehouse y por Apple; ninguno de los dos puede leerlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pont Redde sur cet ordinateur prévient cet appareil quand un agent a terminé une réponse, attend votre approbation ou n'a pas pu répondre. Le contenu d'une notification est chiffré par le pont et ouvert sur cet appareil. En chemin, il passe par un relais géré par Goosehouse et par Apple ; aucun des deux ne peut le lire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il bridge di Redde su quel computer avvisa questo dispositivo quando un agente finisce una risposta, aspetta la tua approvazione o non è riuscito a rispondere. Il contenuto di una notifica è cifrato dal bridge e aperto su questo dispositivo. Lungo la strada passa da un relay gestito da Goosehouse e da Apple; nessuno dei due può leggerlo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "そのコンピュータの Redde ブリッジは、エージェントが返答を終えたとき、承認を待っているとき、返答できなかったときにこのデバイスに知らせます。通知の内容はブリッジで暗号化され、このデバイスで開かれます。途中で Goosehouse が運営するリレーと Apple を経由しますが、どちらも内容を読めません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "그 컴퓨터의 Redde 브리지는 에이전트가 답변을 마치거나, 승인을 기다리거나, 답변하지 못하면 이 기기에 알립니다. 알림 내용은 브리지에서 암호화되어 이 기기에서 열립니다. 도중에 Goosehouse가 운영하는 릴레이와 Apple을 거치지만 둘 다 내용을 읽을 수 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-broen på den datamaskinen sier fra til denne enheten når en agent er ferdig med et svar, venter på godkjenningen din eller ikke fikk svart. Innholdet i et varsel krypteres av broen og åpnes på denne enheten. På veien går det gjennom et relé drevet av Goosehouse og gjennom Apple; ingen av dem kan lese det."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De Redde-bridge op die computer laat dit apparaat weten wanneer een agent een antwoord af heeft, op je goedkeuring wacht of niet kon antwoorden. De inhoud van een melding wordt door de bridge versleuteld en op dit apparaat geopend. Onderweg gaat hij via een relay van Goosehouse en via Apple; geen van beide kan hem lezen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostek Redde na tamtym komputerze powiadamia to urządzenie, gdy agent skończy odpowiedź, czeka na Twoją zgodę lub nie zdołał odpowiedzieć. Treść powiadomienia jest szyfrowana przez mostek i otwierana na tym urządzeniu. Po drodze przechodzi przez przekaźnik prowadzony przez Goosehouse oraz przez Apple; żadne z nich nie może jej odczytać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A ponte do Redde naquele computador avisa este dispositivo quando um agente termina uma resposta, espera sua aprovação ou não consegue responder. O conteúdo de uma notificação é criptografado pela ponte e aberto neste dispositivo. No caminho, passa por um relay mantido pela Goosehouse e pela Apple; nenhum dos dois consegue lê-lo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мост Redde на том компьютере сообщает этому устройству, когда агент закончил ответ, ждёт вашего одобрения или не смог ответить. Содержимое уведомления шифруется мостом и открывается на этом устройстве. По пути оно проходит через ретранслятор Goosehouse и через Apple; ни один из них не может его прочитать."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-bryggan på den datorn säger till den här enheten när en agent är klar med ett svar, väntar på ditt godkännande eller inte kunde svara. Innehållet i en notis krypteras av bryggan och öppnas på den här enheten. På vägen passerar den ett relä som drivs av Goosehouse och Apple; ingen av dem kan läsa den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O bilgisayardaki Redde köprüsü, bir ajan yanıtı bitirdiğinde, onayınızı beklediğinde veya yanıt veremediğinde bu aygıta haber verir. Bildirimin içeriği köprü tarafından şifrelenir ve bu aygıtta açılır. Yolda Goosehouse'un işlettiği bir aktarıcıdan ve Apple'dan geçer; ikisi de okuyamaz."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Міст Redde на тому комп’ютері повідомляє цей пристрій, коли агент завершив відповідь, чекає на ваше схвалення або не зміг відповісти. Вміст сповіщення шифрується мостом і відкривається на цьому пристрої. Дорогою воно проходить через ретранслятор Goosehouse і через Apple; жоден із них не може його прочитати."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "那台电脑上的 Redde 桥接器会在智能体完成回复、等待你批准或无法回复时通知此设备。通知内容由桥接器加密，并在此设备上打开。途中会经过 Goosehouse 运营的中继和 Apple，两者都无法读取。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "那台電腦上的 Redde 橋接器會在代理完成回覆、等待你核准或無法回覆時通知此裝置。通知內容由橋接器加密，並在此裝置上開啟。途中會經過 Goosehouse 營運的中繼與 Apple，兩者都無法讀取。"
+          }
+        }
+      }
+    },
+    "The Redde bridge will tell this device when an agent's reply is ready, when it waits for your approval and when it couldn't reply, also when Redde is closed. Notifications are encrypted between the bridge and this device; the relay that carries them can't read them." : {
+      "comment" : "Pairing sheet on an ACP connection: what pairing with the Redde bridge does",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-broen giver denne enhed besked, når en agents svar er klar, når den venter på din godkendelse, og når den ikke kunne svare, også når Redde er lukket. Notifikationer er krypteret mellem broen og denne enhed; relæet, der bringer dem, kan ikke læse dem."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Redde-Bridge sagt diesem Gerät Bescheid, wenn die Antwort eines Agenten fertig ist, wenn er auf deine Freigabe wartet und wenn er nicht antworten konnte, auch wenn Redde geschlossen ist. Mitteilungen sind zwischen der Bridge und diesem Gerät verschlüsselt; das Relay, das sie überbringt, kann sie nicht lesen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El puente de Redde avisará a este dispositivo cuando la respuesta de un agente esté lista, cuando espere tu aprobación y cuando no haya podido responder, también con Redde cerrado. Las notificaciones van cifradas entre el puente y este dispositivo; el relé que las lleva no puede leerlas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pont Redde préviendra cet appareil quand la réponse d'un agent sera prête, quand il attendra votre approbation et quand il n'aura pas pu répondre, même quand Redde est fermé. Les notifications sont chiffrées entre le pont et cet appareil ; le relais qui les transporte ne peut pas les lire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il bridge di Redde avviserà questo dispositivo quando la risposta di un agente è pronta, quando aspetta la tua approvazione e quando non è riuscito a rispondere, anche con Redde chiuso. Le notifiche sono cifrate tra il bridge e questo dispositivo; il relay che le trasporta non può leggerle."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ブリッジは、エージェントの返答ができたとき、承認を待っているとき、返答できなかったときに、Redde を閉じていてもこのデバイスに知らせます。通知はブリッジとこのデバイスの間で暗号化され、運ぶリレーには読めません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 브리지는 에이전트의 답변이 준비되거나, 승인을 기다리거나, 답변하지 못하면 Redde가 닫혀 있어도 이 기기에 알립니다. 알림은 브리지와 이 기기 사이에서 암호화되며, 전달하는 릴레이는 읽을 수 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-broen sier fra til denne enheten når svaret fra en agent er klart, når den venter på godkjenningen din og når den ikke fikk svart, også når Redde er lukket. Varslene er kryptert mellom broen og denne enheten; reléet som bringer dem kan ikke lese dem."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De Redde-bridge laat dit apparaat weten wanneer het antwoord van een agent klaar is, wanneer hij op je goedkeuring wacht en wanneer hij niet kon antwoorden, ook als Redde gesloten is. Meldingen zijn versleuteld tussen de bridge en dit apparaat; de relay die ze bezorgt kan ze niet lezen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostek Redde powiadomi to urządzenie, gdy odpowiedź agenta będzie gotowa, gdy będzie czekał na Twoją zgodę i gdy nie zdoła odpowiedzieć, także gdy Redde jest zamknięte. Powiadomienia są szyfrowane między mostkiem a tym urządzeniem; przekaźnik, który je przenosi, nie może ich odczytać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A ponte do Redde vai avisar este dispositivo quando a resposta de um agente estiver pronta, quando ele esperar sua aprovação e quando não conseguir responder, mesmo com o Redde fechado. As notificações são criptografadas entre a ponte e este dispositivo; o relay que as leva não consegue lê-las."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мост Redde сообщит этому устройству, когда ответ агента будет готов, когда он ждёт вашего одобрения и когда не смог ответить, даже если Redde закрыт. Уведомления зашифрованы между мостом и этим устройством; ретранслятор, который их доставляет, не может их прочитать."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde-bryggan säger till den här enheten när en agents svar är klart, när den väntar på ditt godkännande och när den inte kunde svara, även när Redde är stängt. Notiserna är krypterade mellan bryggan och den här enheten; reläet som för fram dem kan inte läsa dem."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde köprüsü, bir ajanın yanıtı hazır olduğunda, onayınızı beklediğinde ve yanıt veremediğinde bu aygıta haber verecek, Redde kapalıyken bile. Bildirimler köprü ile bu aygıt arasında şifrelidir; onları taşıyan aktarıcı okuyamaz."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Міст Redde повідомить цей пристрій, коли відповідь агента буде готова, коли він чекатиме на ваше схвалення і коли не зможе відповісти, навіть якщо Redde закрито. Сповіщення зашифровані між мостом і цим пристроєм; ретранслятор, який їх доставляє, не може їх прочитати."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 桥接器会在智能体的回复就绪、等待你批准以及无法回复时通知此设备，即使 Redde 已关闭。通知在桥接器和此设备之间加密，传递它们的中继无法读取。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 橋接器會在代理的回覆就緒、等待你核准以及無法回覆時通知此裝置，即使 Redde 已關閉。通知在橋接器與此裝置之間加密，傳遞它們的中繼無法讀取。"
           }
         }
       }
@@ -468481,6 +470300,113 @@
         }
       }
     },
+    "Waiting for the bridge…" : {
+      "comment" : "Pairing sheet on an ACP connection, waiting for the bridge's first notification",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venter på broen …"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warte auf die Bridge …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando al puente…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attente du pont…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In attesa del bridge…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブリッジを待っています…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "브리지를 기다리는 중…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venter på broen …"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachten op de bridge…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czekanie na mostek…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando a ponte…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ждём мост…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Väntar på bryggan …"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Köprü bekleniyor…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чекаємо на міст…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在等待桥接器…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在等待橋接器…"
+          }
+        }
+      }
+    },
     "waiting for you" : {
       "comment" : "Status under a reply: the agent waits for an answer",
       "localizations" : {
@@ -491702,6 +493628,113 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "You will be notified here when an agent on that computer finishes a reply, waits for you, or couldn't reply." : {
+      "comment" : "Pairing sheet on an ACP connection, once paired",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du får besked her, når en agent på den computer er færdig med et svar, venter på dig eller ikke kunne svare."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du erhältst hier eine Mitteilung, wenn ein Agent auf diesem Computer eine Antwort fertig hat, auf dich wartet oder nicht antworten konnte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibirás un aviso aquí cuando un agente de ese ordenador termine una respuesta, te espere o no haya podido responder."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous serez prévenu ici quand un agent sur cet ordinateur aura terminé une réponse, vous attendra ou n'aura pas pu répondre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riceverai un avviso qui quando un agente su quel computer finisce una risposta, ti aspetta o non è riuscito a rispondere."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "そのコンピュータのエージェントが返答を終えたとき、あなたを待っているとき、返答できなかったときに、ここに通知が届きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "그 컴퓨터의 에이전트가 답변을 마치거나, 사용자를 기다리거나, 답변하지 못하면 여기에 알림이 옵니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du får varsel her når en agent på den datamaskinen er ferdig med et svar, venter på deg eller ikke fikk svart."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je krijgt hier een melding wanneer een agent op die computer een antwoord af heeft, op je wacht of niet kon antwoorden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostaniesz tu powiadomienie, gdy agent na tamtym komputerze skończy odpowiedź, będzie na Ciebie czekał lub nie zdoła odpowiedzieć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você será avisado aqui quando um agente naquele computador terminar uma resposta, esperar por você ou não conseguir responder."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы получите здесь уведомление, когда агент на том компьютере закончит ответ, будет ждать вас или не сможет ответить."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du får en notis här när en agent på den datorn är klar med ett svar, väntar på dig eller inte kunde svara."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O bilgisayardaki bir ajan bir yanıtı bitirdiğinde, sizi beklediğinde veya yanıt veremediğinde burada bildirim alacaksınız."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви отримаєте тут сповіщення, коли агент на тому комп’ютері завершить відповідь, чекатиме на вас або не зможе відповісти."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当那台电脑上的智能体完成回复、等待你或无法回复时，你会在这里收到通知。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當那台電腦上的代理完成回覆、等待你或無法回覆時，你會在這裡收到通知。"
           }
         }
       }

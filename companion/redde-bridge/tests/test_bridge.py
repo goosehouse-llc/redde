@@ -238,6 +238,31 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
         await a.call("session/prompt", {"sessionId": sid, "prompt": [{"type": "text", "text": "again"}]})
         self.assertEqual([p["sessionId"] for p in self.agent_calls("session/resume")], [sid])
 
+    async def test_paired_devices_hear_of_approvals_and_replies(self):
+        pusher = rb.redde_push.Pusher(Path(self.dir.name) / "push.json")
+        sent = []
+        pusher.sender = lambda device, made: sent.append(made)
+        pusher._save([{"id": "dev", "send": "s", "name": "Phone", "key": rb.redde_push.b64u(os.urandom(32)),
+                       "relay": "https://relay.invalid"}])
+        self.bridge.agents["fake"].pusher = pusher
+        c = await self.client()
+        offer = (await c.call("_redde/push", {"command": "offer"}))["result"]["output"].split()
+        self.assertEqual(offer[:2], ["redde-push", "offer"])
+        sid = (await c.call("session/new", {}))["result"]["sessionId"]
+        c.send({"jsonrpc": "2.0", "id": 70, "method": "session/prompt", "params": {"sessionId": sid, "prompt": [{"type": "text", "text": "ask first"}]}})
+        ask = await c.wait_for(lambda m: m.get("method") == "session/request_permission")
+        c.send({"jsonrpc": "2.0", "id": ask["id"], "result": {"outcome": {"outcome": "selected", "optionId": "allow_once"}}})
+        await c.wait_for(lambda m: m.get("method") == "_redde/turn_ended")
+        for _ in range(100):
+            if len(sent) >= 2:
+                break
+            await asyncio.sleep(0.02)
+        self.assertEqual([m["k"] for m in sent], ["approval", "reply"])
+        self.assertEqual(sent[0]["b"], "terminal: rm -rf x")
+        self.assertEqual(sent[0]["t"], "ask first")   # the agent named it nothing: the prompt's words
+        self.assertEqual(sent[0]["d"], "Fake")
+        self.assertEqual((sent[1]["s"], sent[1]["b"]), (sid, "picked allow_once"))
+
     async def test_agents_are_listed_over_http(self):
         reader, writer = await asyncio.open_connection("127.0.0.1", self.port)
         writer.write(f"GET /agents HTTP/1.1\r\nHost: x\r\nAuthorization: Bearer {TOKEN}\r\n\r\n".encode())
@@ -248,3 +273,22 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SetupLinkTests(unittest.TestCase):
+    """The link `--print-setup` prints, in the form the app's SetupCode reads."""
+
+    def test_link_carries_the_bridge_its_token_and_agent(self):
+        from urllib.parse import parse_qsl, urlsplit
+        agent = rb.AgentConfig(id="claude", name="Claude Code", command=["true"])
+        config = rb.Config(listen="0.0.0.0:8767", token="t0k-_x", agents=[agent])
+        link = rb.setup_link(config, agent)
+        parts = urlsplit(link)
+        self.assertEqual((parts.scheme, parts.netloc, parts.path, parts.query), ("https", "redde.goosehouse.org", "/connect", ""))
+        fields = dict(parse_qsl(parts.fragment))
+        self.assertTrue(fields["bridge"].startswith("ws://") and fields["bridge"].endswith(".local:8767"))
+        self.assertEqual((fields["bridge-token"], fields["agent"], fields["use"], fields["v"]), ("t0k-_x", "claude", "acp", "1"))
+
+    def test_a_named_host_and_tls_are_kept(self):
+        config = rb.Config(listen="100.64.0.5:8767", token="t", agents=[], tls_cert="c.pem", tls_key="k.pem")
+        self.assertEqual(rb.setup_address(config), "wss://100.64.0.5:8767")

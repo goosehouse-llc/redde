@@ -8325,6 +8325,113 @@
         }
       }
     },
+    "Redde will tell you here when an agent on this computer finishes a reply, waits for you, or couldn't reply." : {
+      "comment" : "Notification: this device was paired with the Redde bridge, which serves agents such as Claude Code",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde giver dig besked her, når en agent på denne computer er færdig med et svar, venter på dig eller ikke kunne svare."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde meldet sich hier, wenn ein Agent auf diesem Computer eine Antwort fertig hat, auf dich wartet oder nicht antworten konnte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde te avisará aquí cuando un agente de este ordenador termine una respuesta, te espere o no haya podido responder."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde vous préviendra ici quand un agent sur cet ordinateur aura terminé une réponse, vous attendra ou n'aura pas pu répondre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ti avviserà qui quando un agente su questo computer finisce una risposta, ti aspetta o non è riuscito a rispondere."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このコンピュータのエージェントが返答を終えたとき、あなたを待っているとき、返答できなかったときに、Redde がここでお知らせします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 컴퓨터의 에이전트가 답변을 마치거나, 사용자를 기다리거나, 답변하지 못하면 Redde가 여기서 알려 드립니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde sier fra her når en agent på denne datamaskinen er ferdig med et svar, venter på deg eller ikke fikk svart."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde laat het je hier weten wanneer een agent op deze computer een antwoord af heeft, op je wacht of niet kon antwoorden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde powiadomi Cię tutaj, gdy agent na tym komputerze skończy odpowiedź, będzie na Ciebie czekał lub nie zdoła odpowiedzieć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde vai avisar aqui quando um agente neste computador terminar uma resposta, esperar por você ou não conseguir responder."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde сообщит здесь, когда агент на этом компьютере закончит ответ, будет ждать вас или не сможет ответить."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde säger till här när en agent på den här datorn är klar med ett svar, väntar på dig eller inte kunde svara."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu bilgisayardaki bir ajan bir yanıtı bitirdiğinde, sizi beklediğinde veya yanıt veremediğinde Redde size burada haber verecek."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde повідомить тут, коли агент на цьому комп’ютері завершить відповідь, чекатиме на вас або не зможе відповісти."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当这台电脑上的智能体完成回复、等待你或无法回复时，Redde 会在这里通知你。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當這台電腦上的代理完成回覆、等待你或無法回覆時，Redde 會在這裡通知你。"
+          }
+        }
+      }
+    },
     "Redde will tell you here when this Hermes finishes a reply, waits for you, or couldn't reply." : {
       "localizations" : {
         "da" : {

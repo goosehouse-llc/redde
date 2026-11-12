@@ -35,11 +35,18 @@ extension SetupCode {
             func tidy(_ address: String) -> String { Settings.normalizedBase(address)?.absoluteString ?? "" }
             sameAs = settings.servers.first {
                 (dashboardURL.isEmpty || tidy($0.serveURL) == dashboardURL) && (apiURL.isEmpty || tidy($0.gatewayURL) == apiURL)
+                    && (bridgeURL.isEmpty || Self.bridge($0.acpURL) == Self.bridge(bridgeURL) && $0.acpAgent == agent)
             }?.title
         }
         let current = settings.fastLaneURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let replaced = modelURL.isEmpty || current.isEmpty || sameModelEndpoint(in: settings) ? nil : current
         return Plan(server: server, sameAs: sameAs, replacesModelURL: replaced, transport: transport ?? settings.transport)
+    }
+
+    /// A bridge address as one to compare: ws for http, wss for https, no trailing slash.
+    private static func bridge(_ address: String) -> String {
+        guard let endpoint = AcpEndpoint.make(address: address, agent: "", token: nil, folder: nil) else { return address }
+        return endpoint.socketURL.absoluteString
     }
 
     private func sameModelEndpoint(in settings: Settings) -> Bool {
@@ -94,6 +101,9 @@ extension SetupCode {
             settings.cfAccessClientID = accessID
             settings.gatewayModel = ""
             settings.gatewayProvider = ""
+            settings.acpURL = bridgeURL
+            settings.acpAgent = agent
+            settings.acpFolder = folder
             // Filed under the server by name, not under "the active one": that is read from the
             // app's own defaults, which a Settings made for a test doesn't share. Nothing is
             // stored for this server yet (it is new or unused), so a blank needs no deleting.
@@ -104,6 +114,7 @@ extension SetupCode {
             store(pangolin, account: Keychain.account(.pangolinDashboard, server: server))
             store(pangolinAPI, account: Keychain.account(.pangolinAPI, server: server))
             store(CustomHeader.encode(headers), account: Keychain.account(.customHeaders, server: server))
+            store(bridgeToken, account: Keychain.account(.acpToken, server: server))
             if let profile = settings.profileName {
                 store(profileKey, account: Keychain.profileAccount(profile, server: server))
             }
@@ -157,6 +168,14 @@ extension SetupCode {
         let namedProfile = !profileName.isEmpty && profileName.lowercased() != "default"
         profile = namedProfile ? profileName : ""
         accessID = server.cfAccessClientID.trimmingCharacters(in: .whitespacesAndNewlines)
+        // An agent bridge goes along on the bridge's own server; a Hermes server's leftover bridge
+        // fields don't.
+        if server.transport == .acp {
+            bridgeURL = server.acpURL.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !bridgeURL.isEmpty, !bridgeURL.contains("://") { bridgeURL = "ws://" + bridgeURL }
+            agent = bridgeURL.isEmpty ? "" : server.acpAgent.trimmingCharacters(in: .whitespacesAndNewlines)
+            folder = bridgeURL.isEmpty ? "" : server.acpFolder.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
         modelURL = Settings.normalizedBase(settings.fastLaneURL)?.absoluteString ?? ""
         model = modelURL.isEmpty ? "" : settings.fastLaneModel
         let active = server.id == settings.activeServerID
@@ -178,7 +197,10 @@ extension SetupCode {
             pangolin = Keychain.read(account: Keychain.account(.pangolinDashboard, server: id)) ?? ""
             pangolinAPI = Keychain.read(account: Keychain.account(.pangolinAPI, server: id)) ?? ""
         }
-        if hasServer {
+        if !bridgeURL.isEmpty {
+            bridgeToken = Keychain.read(account: Keychain.account(.acpToken, server: id)) ?? ""
+        }
+        if hasHermes {
             headers = Array(CustomHeader.decode(Keychain.read(account: Keychain.account(.customHeaders, server: id)))
                 .filter(\.isUsable).prefix(Self.maximumHeaders))
         }

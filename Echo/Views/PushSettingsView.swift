@@ -12,6 +12,7 @@ struct PushSettingsView: View {
     @State private var scanning = false
     @State private var offer: PushOffer?
     @State private var pairingDirectly = false
+    @State private var pairingViaBridge = false
     @State private var pasteProblem: String?
     @Environment(\.scenePhase) private var scenePhase
 
@@ -67,25 +68,39 @@ struct PushSettingsView: View {
                 }
             }
 
-            Section {
-                if Self.canAskDashboard {
-                    ReddePluginRow(plugin: plugin, serverName: serverName)
-                } else {
-                    CommandRow(title: "On the machine that runs Hermes, install the plugin, then restart Hermes", command: Self.installCommand)
-                }
-                if signedInToDashboard {
-                    // Signed in to that Hermes's Dashboard: the two can agree on the key over it.
-                    Button { pairingDirectly = true } label: {
-                        Label(serverName.map { String(localized: "Pair with \($0)") } ?? String(localized: "Pair with this Hermes"), systemImage: "bell.badge")
+            if settings.transport == .acp {
+                // An agent through the Redde bridge: the bridge pairs and notifies by itself.
+                Section {
+                    Button { pairingViaBridge = true } label: {
+                        Label(serverName.map { String(localized: "Pair with \($0)") } ?? String(localized: "Pair with the Bridge", comment: "Settings › Alerts When Redde Is Closed, on an ACP connection with no name"), systemImage: "bell.badge")
                     }
-                    DisclosureGroup("Pair with a code instead") { byCode }
-                } else {
-                    byCode
+                } header: {
+                    Text("Pair the Redde Bridge", comment: "Settings › Alerts When Redde Is Closed: section header on an ACP connection")
+                } footer: {
+                    Text("The Redde bridge on that computer tells this device when an agent finishes a reply, waits for your approval, or couldn't reply. What a notification says is encrypted by the bridge and opened on this device. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it.",
+                         comment: "Settings › Alerts When Redde Is Closed: footer on an ACP connection")
                 }
-            } header: {
-                Text("Pair a Hermes")
-            } footer: {
-                Text(String(localized: "What a notification says is encrypted on your Hermes and opened on this device, with a key the two agree on when you pair. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it. The relay keeps this device's notification address so it can deliver, and never has the key. Removing a pairing deletes the address there.", comment: "Footer under Pair a Hermes, in Settings › Notifications › Notify when Redde is closed"))
+            } else {
+                Section {
+                    if Self.canAskDashboard {
+                        ReddePluginRow(plugin: plugin, serverName: serverName)
+                    } else {
+                        CommandRow(title: "On the machine that runs Hermes, install the plugin, then restart Hermes", command: Self.installCommand)
+                    }
+                    if signedInToDashboard {
+                        // Signed in to that Hermes's Dashboard: the two can agree on the key over it.
+                        Button { pairingDirectly = true } label: {
+                            Label(serverName.map { String(localized: "Pair with \($0)") } ?? String(localized: "Pair with this Hermes"), systemImage: "bell.badge")
+                        }
+                        DisclosureGroup("Pair with a code instead") { byCode }
+                    } else {
+                        byCode
+                    }
+                } header: {
+                    Text("Pair a Hermes")
+                } footer: {
+                    Text(String(localized: "What a notification says is encrypted on your Hermes and opened on this device, with a key the two agree on when you pair. On the way it passes through a relay run by Goosehouse and through Apple; neither can read it. The relay keeps this device's notification address so it can deliver, and never has the key. Removing a pairing deletes the address there.", comment: "Footer under Pair a Hermes, in Settings › Notifications › Notify when Redde is closed"))
+                }
             }
         }
         .navigationTitle("Alerts When Redde Is Closed")
@@ -100,9 +115,10 @@ struct PushSettingsView: View {
                 return true
             }
         }
-        .task { if Self.canAskDashboard { await plugin.refresh() } }
+        .task { if Self.canAskDashboard, settings.transport != .acp { await plugin.refresh() } }
         .sheet(item: $offer, onDismiss: { push.reload() }) { PushPairingSheet(offer: $0) }
         .sheet(isPresented: $pairingDirectly, onDismiss: { push.reload() }) { PushPairingSheet(offer: nil, server: serverName) }
+        .sheet(isPresented: $pairingViaBridge, onDismiss: { push.reload() }) { PushPairingSheet(offer: nil, server: serverName, viaBridge: true) }
         .onAppear { push.reload() }
         .onChange(of: scenePhase) { push.reload() }
     }
@@ -217,6 +233,8 @@ struct CommandRow: View {
 struct PushPairingSheet: View {
     var offer: PushOffer?
     var server: String?
+    /// Over an ACP connection: the Redde bridge pairs, in the plugin's words (`_redde/push`).
+    var viaBridge = false
 
     /// `quiet`: the Hermes has this phone, but nothing has arrived from it yet.
     private enum Stage: Equatable { case asking, working, waiting, done(String), quiet(String), failed(String) }
@@ -255,7 +273,7 @@ struct PushPairingSheet: View {
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 20)
-            .navigationTitle("Pair with your Hermes")
+            .navigationTitle(viaBridge ? String(localized: "Pair with the Bridge", comment: "Settings › Alerts When Redde Is Closed, on an ACP connection with no name") : String(localized: "Pair with your Hermes"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -290,7 +308,7 @@ struct PushPairingSheet: View {
         switch stage {
         case .asking: server.map { String(localized: "Get notifications from \($0)?") } ?? String(localized: "Get notifications from this Hermes?")
         case .working: String(localized: "Pairing…")
-        case .waiting: String(localized: "Waiting for your Hermes…")
+        case .waiting: viaBridge ? String(localized: "Waiting for the bridge…", comment: "Pairing sheet on an ACP connection, waiting for the bridge's first notification") : String(localized: "Waiting for your Hermes…")
         case .done(let host): host.isEmpty ? String(localized: "Paired") : String(localized: "Paired with \(host)")
         case .quiet(let host): host.isEmpty ? String(localized: "Paired, but nothing has arrived") : String(localized: "Paired with \(host), but nothing has arrived")
         case .failed: String(localized: "Pairing didn't finish")
@@ -299,12 +317,18 @@ struct PushPairingSheet: View {
 
     private var detail: String {
         switch stage {
+        case .asking where viaBridge:
+            String(localized: "The Redde bridge will tell this device when an agent's reply is ready, when it waits for your approval and when it couldn't reply, also when Redde is closed. Notifications are encrypted between the bridge and this device; the relay that carries them can't read them.", comment: "Pairing sheet on an ACP connection: what pairing with the Redde bridge does")
         case .asking:
             String(localized: "It will tell this device when a reply is ready, when the agent waits for you and when it couldn't reply, also when Redde is closed. Notifications are encrypted between that Hermes and this device; the relay that carries them can't read them.", comment: "Pairing sheet: what pairing this device with a Hermes does")
+        case .working where viaBridge: String(localized: "Registering this device and asking the bridge.", comment: "Pairing sheet, while pairing over an ACP connection")
         case .working: offer == nil ? String(localized: "Registering this device and asking your Hermes.", comment: "Pairing sheet, while pairing over the Dashboard")
             : String(localized: "Registering this device and answering the code.", comment: "Pairing sheet, while pairing with a scanned or pasted code")
         case .waiting: String(localized: "It should send a notification within a few seconds.")
+        case .done where viaBridge: String(localized: "You will be notified here when an agent on that computer finishes a reply, waits for you, or couldn't reply.", comment: "Pairing sheet on an ACP connection, once paired")
         case .done: String(localized: "You will be notified here when that Hermes finishes a reply, waits for you, or couldn't reply.")
+        case .quiet where viaBridge:
+            String(localized: "The bridge has this device, but its first notification hasn't arrived. That computer may not be able to reach the notification relay.", comment: "Pairing sheet on an ACP connection: paired, but no notification came")
         case .quiet:
             String(localized: "Your Hermes has this device, but its first notification hasn't arrived. It may not be able to reach the notification relay. On that machine, hermes redde-push test sends another.", comment: "Pairing sheet: paired, but no notification came")
         case .failed(let reason): reason
@@ -315,7 +339,13 @@ struct PushPairingSheet: View {
         stage = .working
         work = Task {
             do {
-                let pairing = if let offer { try await PushService.shared.pair(offer) } else { try await PushService.shared.pairDirectly() }
+                let pairing = if let offer {
+                    try await PushService.shared.pair(offer)
+                } else if viaBridge, let client = AcpClient.current() {
+                    try await PushService.shared.pairDirectly(through: PushService.command(overACP: client))
+                } else {
+                    try await PushService.shared.pairDirectly()
+                }
                 stage = .waiting
                 if await PushService.shared.waitUntilConfirmed(pairing) {
                     stage = .done(PushService.shared.pairings.first { $0.id == pairing.id }?.host ?? "")

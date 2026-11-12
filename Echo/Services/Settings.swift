@@ -25,6 +25,46 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
         case .acp: String(localized: "Other agent (ACP)", comment: "A connection: Claude Code, Codex and other agents through the Agent Client Protocol")
         }
     }
+    /// Its name inside its group (`Kind`), where the group's header says the rest.
+    var shortLabel: String {
+        switch self {
+        case .hermesServe: String(localized: "Dashboard (WebSocket)", comment: "A Hermes connection, listed under the header Hermes")
+        case .hermesSessions: String(localized: "API (shared sessions)", comment: "A Hermes connection, listed under the header Hermes")
+        case .acp: String(localized: "Claude Code, Codex and others (ACP)", comment: "A connection listed under the header Other Agents: agents through the Agent Client Protocol and the Redde bridge")
+        case .chatCompletions: String(localized: "OpenAI-compatible server", comment: "A connection listed under the header Direct to a Model: llama-swap, LM Studio and the like")
+        }
+    }
+
+    /// The kinds of agent a connection reaches, for grouping connections and servers.
+    enum Kind: Int, CaseIterable, Identifiable, Comparable {
+        case hermes, agent, model
+        var id: Int { rawValue }
+        static func < (a: Kind, b: Kind) -> Bool { a.rawValue < b.rawValue }
+        var title: String {
+            switch self {
+            case .hermes: String(localized: "Hermes", comment: "Group header for the Hermes connections and servers")
+            case .agent: String(localized: "Other Agents", comment: "Group header for agents over ACP (Claude Code, Codex…) and their servers")
+            case .model: String(localized: "Direct to a Model", comment: "Group header for the OpenAI-compatible connection, which talks to a model with no agent")
+            }
+        }
+        var symbol: String {
+            switch self {
+            case .hermes: "server.rack"
+            case .agent: "terminal"
+            case .model: "cpu"
+            }
+        }
+        var transports: [Transport] { Transport.allCases.filter { $0.kind == self } }
+    }
+
+    var kind: Kind {
+        switch self {
+        case .hermesServe, .hermesSessions: .hermes
+        case .acp: .agent
+        case .chatCompletions: .model
+        }
+    }
+
     /// Uses the API server (8642) with the bearer key.
     var usesGateway: Bool { self == .hermesSessions }
 

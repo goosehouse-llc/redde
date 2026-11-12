@@ -128,6 +128,16 @@ final class LaunchRouter {
         pendingSession = id
     }
 
+    /// The server a requested session is on, when the notification said (`PushNote.serverKey`).
+    private(set) var pendingServer: String?
+
+    func requestServer(_ id: String?) { pendingServer = id }
+
+    func consumeServer() -> UUID? {
+        defer { pendingServer = nil }
+        return pendingServer.flatMap(UUID.init(uuidString:))
+    }
+
     func consumeSession() -> String? {
         defer { pendingSession = nil }
         return pendingSession

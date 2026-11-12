@@ -212,6 +212,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let deny = info["deny"] as? String
         let conversationID = info[Self.conversationKey] as? String
         let sessionID = info[PushNote.sessionKey] as? String
+        let server = info[PushNote.serverKey] as? String
         let digest = info[PushNote.approvalKey] as? String
         let asked = info[PushNote.questionKey] as? String
         let room = info[PushNote.roomKey] as? String
@@ -230,6 +231,9 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let leaveMode = info[LeaveBy.modeKey] as? String
         nonisolated(unsafe) let handled = completionHandler   // iOS's own; only ever called below
         Task { @MainActor in
+            // The server a pushed chat is on, for its tap to open it there (said for every tap
+            // about a session, so one from before doesn't linger).
+            if sessionID != nil { LaunchRouter.shared.requestServer(server) }
             // A Leave-By Alert's Open in Maps: the way there.
             if action == LeaveBy.mapsAction, let leaveAt {
                 LeaveByAlerts.openInMaps(title: leaveTitle, latitude: leaveAt.0, longitude: leaveAt.1, mode: leaveMode)

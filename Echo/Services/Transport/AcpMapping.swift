@@ -377,6 +377,36 @@ nonisolated struct AcpOption: Identifiable, Equatable, Sendable {
 }
 
 /// `session/list` rows as the chat list's.
+/// A slash command the agent offers (`available_commands_update`): typed as "/name" at the start
+/// of a prompt, which is how ACP runs one (Claude Code's /compact, /review, a project's own).
+nonisolated struct AcpCommand: Identifiable, Equatable, Sendable {
+    var name: String
+    var detail: String
+    /// What goes after the name, when the command takes something.
+    var hint: String?
+    var id: String { name }
+
+    static func list(_ update: JSONValue) -> [AcpCommand] {
+        (update["availableCommands"]?.array ?? []).compactMap { command in
+            guard var name = command["name"]?.string?.trimmingCharacters(in: .whitespaces), !name.isEmpty else { return nil }
+            if name.hasPrefix("/") { name.removeFirst() }
+            return AcpCommand(name: name, detail: command["description"]?.string ?? "",
+                              hint: command["input"]?["hint"]?.string?.nilIfEmpty)
+        }
+    }
+
+    /// The commands for a draft that is "/" and the start of a name: those starting so first,
+    /// then those with it further in. Nothing once the name is done (a space typed).
+    static func matching(_ draft: String, in commands: [AcpCommand]) -> [AcpCommand] {
+        guard draft.hasPrefix("/"), !draft.contains(where: \.isWhitespace) else { return [] }
+        let typed = draft.dropFirst().lowercased()
+        guard !typed.isEmpty else { return commands }
+        let starts = commands.filter { $0.name.lowercased().hasPrefix(typed) }
+        let within = commands.filter { !$0.name.lowercased().hasPrefix(typed) && $0.name.lowercased().contains(typed) }
+        return starts + within
+    }
+}
+
 nonisolated enum AcpSessions {
     static func summaries(_ rows: [JSONValue]) -> [HermesSessionsAPI.SessionSummary] {
         rows.compactMap(summary).sorted { ($0.last_active ?? 0) > ($1.last_active ?? 0) }

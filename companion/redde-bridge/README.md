@@ -16,6 +16,9 @@ WebSocket. It also adds what a phone needs and ACP leaves out:
   next message, so it carries on where it was.
 - **A working folder.** ACP needs a folder for every chat. When Redde names none, the agent's
   `cwd` from the config is used.
+- **Notifications when Redde is closed.** A reply is ready, an agent waits for your approval, a
+  turn failed. In Redde: Settings › Notifications › Alerts When Redde Is Closed › Pair with
+  <this connection>. See below.
 
 The design and the wire format are in [docs/acp.md](../../docs/acp.md).
 
@@ -28,6 +31,11 @@ python3 redde_bridge.py --print-setup   # writes a config the first time; shows 
 python3 redde_bridge.py                 # serve
 python3 redde_bridge.py -v              # serve, logging every agent's own output too
 ```
+
+`--print-setup` also prints a setup link for each agent, and a QR code of the first where
+`qrencode` is installed (`--agent <id>` picks another). Scan it with the iPhone's Camera or
+Redde's Scan a setup code, or open the link on the phone: Redde shows what it sets up and saves it
+when you agree. The link holds the token, so show it only to your own devices.
 
 The first run writes `~/.config/redde-bridge/config.toml` (`REDDE_BRIDGE_CONFIG` or `--config`
 moves it). It has a new random token and an entry for each agent it found on this computer.
@@ -69,6 +77,21 @@ The token is the only lock. Anyone who has it can do whatever the agent can do o
   certificate (`tailscale cert`) works well for this.
 - To change the token, edit `token` in the config and restart. Every device then needs the new one.
 
+## Notifications
+
+Pairing is one tap in Redde, over the bridge's own connection: the two agree on a key (X25519,
+HKDF-SHA256), and every note is sealed with AES-256-GCM before it leaves this computer. It goes
+through Redde's relay (`https://redde-push.goosehouse.org`, or `push_relay = "…"` in the config)
+and Apple, and neither can read it. The scheme is the one Redde's Hermes plugin uses
+([docs/push.md](../../docs/push.md)); `redde_push.py` has it in plain Python, checked against the
+published test vectors (`tests/test_push.py`).
+
+The paired devices are kept in `push.json` beside the config, readable only by you. Remove a
+pairing in Redde and the bridge forgets that device with its next note. Every paired device hears
+about every chat on this bridge; a device with Redde open shows nothing extra.
+
+The computer needs to reach the relay over HTTPS. Keep `redde_push.py` beside `redde_bridge.py`.
+
 ## Endpoints
 
 | | |
@@ -88,6 +111,7 @@ Beyond plain ACP, it adds these extensions:
 | `_redde/detach {sessionId}` | stop following one |
 | `_redde/turn_ended` | notification: a turn ended, with its `stopReason` |
 | `_redde/request_resolved` | notification: a question was answered on another device, or withdrawn |
+| `_redde/push {command}` | pairing for notifications: `offer`, `accept <offered> <public key> <box>`, `test`, `list`; answered `{output}` in the words of Redde's Hermes plugin |
 | `_meta.redde.seq` | added to every `session/update`, so a device that catches up can skip what it already has |
 
 ## Test it

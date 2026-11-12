@@ -20,23 +20,31 @@ struct ServersView: View {
 
     var body: some View {
         Form {
-            Section {
-                ForEach(settings.servers) { server in
-                    let active = server.id == settings.activeServerID
-                    Button { switchTo(server.id) } label: { row(server, active: active) }
-                        .accessibilityAddTraits(active ? .isSelected : [])
-                        .contextMenu {
-                            Button("Rename", systemImage: "pencil") { beginNaming(.rename(server.id), current: server.name) }
-                            Button("Show setup code", systemImage: "qrcode") { sharing = server }
-                        }
-                        .swipeActions {
-                            if !active {
-                                Button("Remove", systemImage: "trash", role: .destructive) { settings.removeServer(server.id) }
+            // One section per kind of agent: the Hermes servers, then the other agents (ACP).
+            let groups = Self.grouped(settings.servers)
+            ForEach(groups, id: \.kind) { group in
+                Section {
+                    ForEach(group.servers) { server in
+                        let active = server.id == settings.activeServerID
+                        Button { switchTo(server.id) } label: { row(server, active: active) }
+                            .accessibilityAddTraits(active ? .isSelected : [])
+                            .contextMenu {
+                                Button("Rename", systemImage: "pencil") { beginNaming(.rename(server.id), current: server.name) }
+                                Button("Show setup code", systemImage: "qrcode") { sharing = server }
                             }
-                        }
+                            .swipeActions {
+                                if !active {
+                                    Button("Remove", systemImage: "trash", role: .destructive) { settings.removeServer(server.id) }
+                                }
+                            }
+                    }
+                } header: {
+                    if groups.count > 1 { Label(group.kind.title, systemImage: group.kind.symbol) }
+                } footer: {
+                    if group.kind == groups.last?.kind {
+                        Text("Tap a server to switch to it; that starts a new conversation. Touch and hold to rename or to show its setup code for another device, swipe to remove one you're not using. Each server keeps its own addresses, keys, profile and model.")
+                    }
                 }
-            } footer: {
-                Text("Tap a server to switch to it; that starts a new conversation. Touch and hold to rename or to show its setup code for another device, swipe to remove one you're not using. Each server keeps its own addresses, keys, profile and model.")
             }
 
             Section {
@@ -57,6 +65,14 @@ struct ServersView: View {
             Button(naming.map { if case .new = $0 { String(localized: "Add") } else { String(localized: "Save") } } ?? String(localized: "Save")) { commitName() }
         } message: {
             if case .new = naming { Text("Then set up how Redde reaches it.") }
+        }
+    }
+
+    /// The servers by the kind of agent they reach, in that order, each kept in the order saved.
+    static func grouped(_ servers: [HermesServer]) -> [(kind: Transport.Kind, servers: [HermesServer])] {
+        Transport.Kind.allCases.compactMap { kind in
+            let these = servers.filter { $0.transport.kind == kind }
+            return these.isEmpty ? nil : (kind, these)
         }
     }
 

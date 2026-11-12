@@ -502,4 +502,70 @@ struct SetupCodeTests {
         #expect(found == [link])
         #expect(try SetupCode.read(URL(string: found[0])!) == code)
     }
+
+    // MARK: - An agent bridge (ACP)
+
+    /// What `redde_bridge.py --print-setup` prints: the bridge, its token, an agent and a folder.
+    @Test func readsAnAgentBridge() throws {
+        let code = try #require(try read("https://redde.goosehouse.org/connect#name=Studio&bridge=ws://studio.local:8767&bridge-token=t0k&agent=claude&folder=~/Projects/Redde&use=acp"))
+        #expect(code.bridgeURL == "ws://studio.local:8767")
+        #expect(code.bridgeToken == "t0k")
+        #expect(code.agent == "claude")
+        #expect(code.folder == "~/Projects/Redde")
+        #expect(code.transport == .acp)
+        #expect(code.hasServer)
+        #expect(!code.hasHermes)
+        #expect(code.hasSecrets)
+        #expect(code.withoutSecrets.bridgeToken == "")
+        // Written back, read again: the same code.
+        #expect(try SetupCode.read(code.webURL) == code)
+        #expect(try SetupCode.read(code.url) == code)
+    }
+
+    @Test func aBridgeAddressMustBeOne() throws {
+        for bad in ["ftp://studio.local:8767", "ws://user@evil.test:8767", "studio.local:8767", "ws://"] {
+            #expect(throws: SetupCode.ParseError.self, "\(bad)") { try read("redde://connect?bridge=\(bad)") }
+        }
+        // An agent or token without a bridge is nothing to set up.
+        #expect(throws: SetupCode.ParseError.noAddress) { try read("redde://connect?agent=claude&bridge-token=t") }
+        // Headers go to Hermes, never to a bridge.
+        let code = try #require(try read("redde://connect?bridge=wss://agents.test&header=X-Key:%20v"))
+        #expect(code.headers.isEmpty)
+    }
+
+    @Test func fillsInABlankServerWithABridge() throws {
+        let settings = settings()
+        let server = settings.activeServerID
+        defer { forget(server) }
+        let code = try #require(try read("redde://connect?name=Studio&bridge=ws://studio.local:8767&bridge-token=t0k&agent=claude&folder=~/Projects"))
+        #expect(code.plan(for: settings) == SetupCode.Plan(server: .fill, sameAs: nil, replacesModelURL: nil, transport: .acp))
+        code.install(in: settings) { _ in Issue.record("a blank server is filled in, not switched away from") }
+        #expect(settings.transport == .acp)
+        #expect(settings.acpURL == "ws://studio.local:8767")
+        #expect(settings.acpAgent == "claude")
+        #expect(settings.acpFolder == "~/Projects")
+        #expect(settings.serveURL == "" && settings.gatewayURL == "")
+        #expect(Keychain.read(account: Keychain.account(.acpToken, server: server.uuidString)) == "t0k")
+        // And handed on again, the token only when asked for.
+        let saved = try #require(settings.activeServer)
+        let shared = SetupCode(server: saved, settings: settings, secrets: false)
+        #expect(shared.bridgeURL == "ws://studio.local:8767" && shared.agent == "claude" && shared.folder == "~/Projects")
+        #expect(shared.bridgeToken == "" && shared.transport == .acp)
+        #expect(SetupCode(server: saved, settings: settings, secrets: true).bridgeToken == "t0k")
+    }
+
+    /// A stored bridge token makes a server one that is set up: a code adds another beside it.
+    @Test func aStoredBridgeTokenKeepsAServer() throws {
+        let settings = settings()
+        let server = settings.activeServerID
+        defer { forget(server) }
+        Keychain.write(account: Keychain.account(.acpToken, server: server.uuidString), value: "kept")
+        let code = try #require(try read("redde://connect?bridge=ws://elsewhere.test:8767&bridge-token=new"))
+        #expect(code.plan(for: settings).server == .add)
+        let receipt = code.install(in: settings) { settings.activateServer($0) }
+        let added = try #require(receipt.added)
+        defer { forget(added) }
+        #expect(Keychain.read(account: Keychain.account(.acpToken, server: server.uuidString)) == "kept")
+        #expect(Keychain.read(account: Keychain.account(.acpToken, server: added.uuidString)) == "new")
+    }
 }

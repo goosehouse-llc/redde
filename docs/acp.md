@@ -92,11 +92,27 @@ cwd = "~/Projects"
   sends none (or `~`-relative), the bridge uses the agent's `cwd` from config, expanded.
 - **Keepalive.** WebSocket pings every 20 s; a connection that misses two is dropped.
 
+### Notifications (built 2026-11-12)
+
+`redde_push.py`: pairing over the bridge's own socket (`_redde/push`, the plugin's `offer` /
+`accept` words, so `PushService.pairDirectly` serves both), notes sealed as docs/push.md says, sent
+through Redde's relay from a thread. A turn that ends sends `reply` (its text) or `failed`; a
+permission request sends `approval` (no `h`: answered on the card, which `_redde/attach` brings
+back when the chat opens). Every paired device hears every chat. The phone's extension writes the
+pairing's server into the notification, and a tap switches to that server before opening the chat.
+
+### Setup code (built 2026-11-12)
+
+`redde_bridge.py --print-setup` prints, besides the address and token, a setup link per agent
+(`https://redde.goosehouse.org/connect#name=…&bridge=ws://host.local:8767&bridge-token=…&agent=claude&use=acp&v=1`)
+and, where `qrencode` is installed, a QR code of the first (`--agent <id>` for another). The app's
+`SetupCode` reads `bridge`, `bridge-token`, `agent` and `folder` under the same rule as the other
+codes: it fills in a server only while nothing is stored for it, otherwise it adds one. An ACP
+server's Show setup code / Set up another device hands the bridge on, its token only with
+"Include passwords and keys".
+
 ### Not yet (phase 2)
 
-- Push for approvals and finished turns, through Redde's existing relay (pairing as the Hermes
-  plugin does, ciphertext only).
-- A setup code / QR for the bridge (as `redde-push` pair prints one).
 - TLS made easy (today: give it a cert, or use Tailscale Serve / a proxy).
 
 ## The app

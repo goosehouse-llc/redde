@@ -86,14 +86,8 @@ struct SetupView: View {
                     Text("A setup code fills in everything below. Make one on a device that is already set up: Settings › Connection › Set up another device.")
                 }
 
-                Section("How does Redde reach it?") {
-                    Picker("Backend", selection: $settings.transport) {
-                        ForEach(Transport.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
+                TransportPicker(selection: $settings.transport, question: "How does Redde reach it?")
                     .onChange(of: settings.transport) { outcome = nil }
-                }
 
                 switch settings.transport {
                 case .hermesSessions:

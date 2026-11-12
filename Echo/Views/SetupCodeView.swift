@@ -77,6 +77,11 @@ struct SetupCodeView: View {
             parts.append(String(localized: "the Dashboard address, which has no sign-in", comment: "Set up another device: what the setup code holds"))
         } else if !code.dashboardURL.isEmpty { parts.append(withSecrets ? String(localized: "the Dashboard address and login") : String(localized: "the Dashboard address and user name")) }
         if !code.apiURL.isEmpty { parts.append(withSecrets ? String(localized: "the Hermes API address and key") : String(localized: "the Hermes API address")) }
+        if !code.bridgeURL.isEmpty {
+            parts.append(withSecrets && !code.bridgeToken.isEmpty
+                         ? String(localized: "the agent bridge's address and token", comment: "Set up another device: what the setup code holds")
+                         : String(localized: "the agent bridge's address", comment: "Set up another device: what the setup code holds"))
+        }
         if !code.accessID.isEmpty { parts.append(withSecrets ? String(localized: "the Cloudflare Access token") : String(localized: "the Cloudflare Access client ID")) }
         if withSecrets, !(code.pangolin.isEmpty && code.pangolinAPI.isEmpty) { parts.append(String(localized: "the Pangolin access token")) }
         if !code.headers.isEmpty { parts.append(String(localized: "its \(code.headers.count) custom headers")) }

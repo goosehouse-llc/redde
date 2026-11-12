@@ -58,6 +58,8 @@ nonisolated enum PushError: LocalizedError, Equatable {
     /// only by code, couldn't be asked, or turned the answer down.
     case noPlugin
     case oldPlugin
+    case oldBridge
+    case noBridge(String)
     case noDashboard(String)
     case refused(String)
 
@@ -65,6 +67,8 @@ nonisolated enum PushError: LocalizedError, Equatable {
         switch self {
         case .noPlugin: String(localized: "This Hermes hasn't loaded the Redde plugin. Install it from the screen behind this one; if it was only just installed, restart Hermes there (the gateway and the Dashboard), then pair again.")
         case .oldPlugin: String(localized: "The Redde plugin on this Hermes is an older one that pairs only by code. Update it there by running the install command again with --force, restart Hermes, then pair again.")
+        case .oldBridge: String(localized: "The Redde bridge on that computer is an older one that doesn't send notifications. Update it from Redde's repository and restart it, then pair again.", comment: "Pairing for notifications over an ACP connection, with a bridge from before notifications")
+        case .noBridge(let reason): String(localized: "Couldn't ask the Redde bridge: \(reason)", comment: "Pairing for notifications over an ACP connection; the reason follows")
         case .noDashboard(let reason): String(localized: "Couldn't ask your Hermes over the Dashboard: \(reason)")
         case .refused(let reason): String(localized: "Your Hermes didn't take the pairing: \(reason). Try again.")
         case .notAllowed:
@@ -398,6 +402,20 @@ final class PushService {
                 throw PushError.noDashboard(String(localized: "The server answered \(status)."))
             }
             return (try? JSONDecoder().decode(JSONValue.self, from: data))?["output"]?.string ?? ""
+        }
+    }
+
+    /// The Redde bridge's command, for an ACP connection: the bridge pairs and sends notifications
+    /// itself, in the plugin's words. A bridge from before answers "method not found".
+    static func command(overACP client: AcpClient) -> PluginCommand {
+        { arguments in
+            do {
+                return try await client.pushCommand(arguments)
+            } catch let error as AcpError where error.code == -32601 {
+                throw PushError.oldBridge
+            } catch {
+                throw PushError.noBridge(error.localizedDescription)
+            }
         }
     }
 

@@ -10,7 +10,9 @@ remote transport RFD's WebSocket profile), with what a phone needs and ACP leave
 - a turn that goes on when the phone locks, and `_redde/attach` to catch up on it;
 - approvals any device can answer, the first answer taken;
 - a session loaded again quietly before it is used after a restart;
-- the working folder filled in when the phone names none.
+- the working folder filled in when the phone names none;
+- notifications when Redde is closed (a reply, an approval, a failed turn), through Redde's relay,
+  sealed so the relay can't read them (`redde_push.py`, `_redde/push`).
 
 Standard library only, Python 3.11 or later. See README.md and docs/acp.md.
 
@@ -32,6 +34,7 @@ import shutil
 import socket
 import ssl
 import struct
+import subprocess
 import sys
 import time
 import tomllib
@@ -40,7 +43,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
-VERSION = "0.1.0"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import redde_push  # noqa: E402  (beside this file)
+
+VERSION = "0.2.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -74,6 +80,9 @@ class Config:
     agents: list[AgentConfig]
     tls_cert: str | None = None
     tls_key: str | None = None
+    #: Where the paired devices are kept (`push.json` beside the config), and the relay notes go through.
+    push_path: Path | None = None
+    push_relay: str = redde_push.DEFAULT_RELAY
 
     @property
     def host_port(self) -> tuple[str, int]:
@@ -124,7 +133,8 @@ def load_config(path: Path) -> Config:
     if not raw.get("token"):
         raise SystemExit(f"{path}: no token")
     return Config(listen=raw.get("listen", "0.0.0.0:8765"), token=raw["token"], agents=agents,
-                  tls_cert=raw.get("tls_cert"), tls_key=raw.get("tls_key"))
+                  tls_cert=raw.get("tls_cert"), tls_key=raw.get("tls_key"),
+                  push_path=path.parent / "push.json", push_relay=raw.get("push_relay", redde_push.DEFAULT_RELAY))
 
 
 # MARK: - WebSocket (RFC 6455, server side)
@@ -243,13 +253,15 @@ class Session:
     seq: int = 0
     updates: list = field(default_factory=list)
     loading: Any = None          # the connection a load's replay goes to, while it runs
+    title: str | None = None     # what the agent calls it (`session_info_update`), for notifications
 
 
 class Agent:
     """One ACP agent, started on first use and shared by every connection to it."""
 
-    def __init__(self, config: AgentConfig):
+    def __init__(self, config: AgentConfig, pusher: redde_push.Pusher | None = None):
         self.config = config
+        self.pusher = pusher
         self.proc: asyncio.subprocess.Process | None = None
         self.init_result: dict | None = None
         self.next_id = 0
@@ -394,6 +406,9 @@ class Agent:
             # A load's replay: the asking connection's alone, and not part of any turn.
             await session.loading.send_message({"jsonrpc": "2.0", "method": "session/update", "params": params})
             return
+        update = params.get("update") or {}
+        if update.get("sessionUpdate") == "session_info_update" and isinstance(update.get("title"), str):
+            session.title = update["title"]
         session.seq += 1
         meta = dict(params.get("_meta") or {})
         meta["redde"] = {"seq": session.seq}
@@ -414,6 +429,11 @@ class Agent:
         log.info("%s asks %s (%s), %d device(s) to hear it", self.config.id, message["method"], waiting.id, len(targets))
         for connection in list(targets):
             await connection.send_message(out)
+        if message["method"] == "session/request_permission" and sid:
+            call = params.get("toolCall") or {}
+            raw = call.get("rawInput") if isinstance(call.get("rawInput"), dict) else {}
+            asked = call.get("title") or raw.get("command") or raw.get("file_path") or "a tool"
+            self.tell("approval", self.session(sid), asked)
 
     async def answered(self, connection, waiting_id: str, reply: dict) -> None:
         waiting = self.waiting.pop(waiting_id, None)
@@ -435,6 +455,16 @@ class Agent:
         message = {"jsonrpc": "2.0", "method": method, "params": params}
         for connection in list(self.connections):
             await connection.send_message(message)
+
+    def tell(self, kind: str, session: Session, body: str = "") -> None:
+        """A notification about a session to every paired device: a phone with Redde in front
+        doesn't show it, and one with Redde in the background drops it for its own banner."""
+        if self.pusher is None:
+            return
+        title = session.title or _prompt_text(session.prompt) or self.config.name
+        sent = self.pusher.notify(redde_push.note(kind, session.id, body, title, self.config.name))
+        if sent:
+            log.info("%s: %s note for %s to %d device(s)", self.config.id, kind, session.id[:16], sent)
 
     def forget(self, connection) -> None:
         self.connections.discard(connection)
@@ -621,6 +651,11 @@ class Connection:
         if method == "_redde/detach":
             agent.session(params["sessionId"]).followers.discard(self)
             return {}
+        if method == "_redde/push":
+            # Pairing for notifications, in the words of Redde's Hermes plugin (PushService.pairDirectly).
+            if agent.pusher is None:
+                raise AgentError({"code": -32601, "message": "This bridge doesn't send notifications"})
+            return {"output": await asyncio.to_thread(agent.pusher.command, str(params.get("command") or ""))}
         if method == "_redde/agents":
             return {"agents": [{"id": agent.config.id, "name": agent.config.name, "running": agent.running}]}
         # Everything else goes to the agent as it is: set_config_option, set_mode, authenticate…
@@ -641,21 +676,44 @@ class Connection:
         session.updates = []
         log.info("%s: prompt in %s", agent.config.id, sid[:16])
         stop: Any = None
+        failure = ""
         try:
             result = await agent.request("session/prompt", params)
             stop = (result or {}).get("stopReason")
             return result
         except AgentError as error:
             stop = "error"
+            failure = str(error)
             raise error
         finally:
             session.running = False
             session.last_stop = stop
             ended = {"sessionId": sid, "stopReason": stop, "seq": session.seq}
             await agent.broadcast(session, "_redde/turn_ended", ended)
+            if stop == "error":
+                agent.tell("failed", session, failure)
+            elif stop and stop != "cancelled":
+                agent.tell("reply", session, _reply_text(session.updates))
 
 
 _NO_REPLY = object()
+
+
+def _prompt_text(prompt: Any) -> str:
+    """The words of a prompt, for a chat the agent hasn't named."""
+    words = " ".join(b.get("text", "") for b in prompt or [] if isinstance(b, dict) and b.get("type") == "text")
+    return redde_push.clipped(words, 60)
+
+
+def _reply_text(updates: list) -> str:
+    """What the agent wrote in a turn, from its updates."""
+    parts = []
+    for params in updates:
+        update = params.get("update") or {}
+        content = update.get("content") or {}
+        if update.get("sessionUpdate") == "agent_message_chunk" and isinstance(content, dict) and content.get("type") == "text":
+            parts.append(content.get("text", ""))
+    return "".join(parts).strip()
 
 
 # MARK: - HTTP front door
@@ -663,7 +721,8 @@ _NO_REPLY = object()
 class Bridge:
     def __init__(self, config: Config):
         self.config = config
-        self.agents = {a.id: Agent(a) for a in config.agents}
+        pusher = redde_push.Pusher(config.push_path, config.push_relay) if config.push_path else None
+        self.agents = {a.id: Agent(a, pusher) for a in config.agents}
 
     def authorized(self, headers: dict[str, str], query: dict[str, list[str]]) -> bool:
         offered = None
@@ -748,25 +807,57 @@ class Bridge:
             await server.serve_forever()
 
 
-def print_setup(config: Config) -> None:
+def setup_address(config: Config) -> str:
+    """The bridge's address as a phone reaches it: its .local name when it listens everywhere."""
     host, port = config.host_port
     scheme = "wss" if config.tls_cert else "ws"
-    shown = host
     if host in ("0.0.0.0", "::", ""):
-        # A phone finds this computer on the local network by its .local name.
-        name = socket.gethostname().split(".")[0]
-        shown = f"{name}.local"
+        host = socket.gethostname().split(".")[0] + ".local"
+    if ":" in host:
+        host = f"[{host}]"
+    return f"{scheme}://{host}:{port}"
+
+
+def setup_link(config: Config, agent: "AgentConfig | None") -> str:
+    """Redde's setup link for this bridge and one of its agents (the app's SetupCode): opened on
+    the phone, or scanned as a QR code, it fills in the connection. It holds the token: share it
+    only with your own devices. The parameters ride after the "#", which a browser never sends."""
+    from urllib.parse import quote
+    fields = [("name", socket.gethostname().split(".")[0]), ("bridge", setup_address(config)),
+              ("bridge-token", config.token)]
+    if agent is not None:
+        fields.append(("agent", agent.id))
+    fields += [("use", "acp"), ("v", "1")]
+    return "https://redde.goosehouse.org/connect#" + "&".join(f"{k}={quote(v, safe='/:~@')}" for k, v in fields)
+
+
+def print_setup(config: Config, agent_id: str | None = None) -> None:
+    agents = [a for a in config.agents if agent_id in (None, a.id)]
+    if agent_id and not agents:
+        raise SystemExit(f"No agent {agent_id!r} in the config.")
     print("In Redde: Settings → Connection → Set up connection… → Other agent (ACP)\n")
-    print(f"  Address  {scheme}://{shown}:{port}")
+    print(f"  Address  {setup_address(config)}")
     print(f"  Token    {config.token}")
     print("  Agents   " + (", ".join(f"{a.name} ({a.id})" for a in config.agents) or "none: add one to the config"))
+    print("\nOr open a setup link on the phone (it holds the token: keep it to your own devices):\n")
+    for agent in agents or [None]:
+        print(f"  {agent.name if agent else 'Bridge'}: {setup_link(config, agent)}")
+    first = (agents or [None])[0]
+    qrencode = shutil.which("qrencode")
+    if qrencode and sys.stdout.isatty():
+        print(f"\nScan with the iPhone's Camera, or Redde's Scan a setup code"
+              + (f" ({first.name}; --agent <id> for another)" if first and len(agents) > 1 else "") + ":\n")
+        subprocess.run([qrencode, "-t", "ansiutf8", "-m", "2", setup_link(config, first)], check=False)
+    elif sys.stdout.isatty():
+        print("\n(Install qrencode to see it as a QR code here: brew install qrencode / apt install qrencode.)")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Serve ACP agents to Redde.")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--listen", help="host:port, overriding the config")
-    parser.add_argument("--print-setup", action="store_true", help="print the address and token for Redde, then exit")
+    parser.add_argument("--print-setup", action="store_true", help="print the address, token and setup link for Redde, then exit")
+    parser.add_argument("--agent", help="with --print-setup: the agent the setup link and QR code are for")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
@@ -775,7 +866,7 @@ def main() -> None:
     if args.listen:
         config.listen = args.listen
     if args.print_setup:
-        print_setup(config)
+        print_setup(config, args.agent)
         return
     try:
         asyncio.run(Bridge(config).serve())

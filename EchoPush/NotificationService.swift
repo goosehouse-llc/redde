@@ -20,6 +20,7 @@ final class NotificationService: UNNotificationServiceExtension {
            let (note, pairing) = PushSeal.note(from: payload, pairings: PushVault.load()),
            note.fill(content) {
             PushVault.confirm(pairing, host: note.n)
+            if let server = pairing.server, !server.isEmpty { content.userInfo[PushNote.serverKey] = server }
             // A request the agent stopped for goes on the "Needs you" widget, and comes off it
             // when a later note says the turn went on: this is how the widget hears of either
             // while Redde is closed.

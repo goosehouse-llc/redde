@@ -141,6 +141,21 @@ struct AcpTests {
         #expect(choices.last?.isCurrent == true)
     }
 
+    @Test func connectionsAreGroupedByWhatTheyReach() {
+        #expect(Transport.Kind.hermes.transports == [.hermesServe, .hermesSessions])
+        #expect(Transport.Kind.agent.transports == [.acp])
+        #expect(Transport.Kind.model.transports == [.chatCompletions])
+        var claude = HermesServer(id: UUID(), name: "Claude")
+        claude.transport = .acp
+        let home = HermesServer(id: UUID(), name: "Home")
+        var office = HermesServer(id: UUID(), name: "Office")
+        office.transport = .hermesSessions
+        let groups = ServersView.grouped([claude, home, office])
+        #expect(groups.map(\.kind) == [.hermes, .agent])
+        #expect(groups[0].servers.map(\.name) == ["Home", "Office"])
+        #expect(groups[1].servers.map(\.name) == ["Claude"])
+    }
+
     @Test func modeAndThinkingAreTheirOwnMenus() {
         // Claude Code's options, as its adapter gave them; Hermes's one-value mode isn't a menu.
         let options = json(#"""
@@ -198,5 +213,18 @@ struct AcpTests {
         #expect(info.folder == "/Users/x")
         #expect(info.canLoad && info.canList && info.canResume && info.takesImages)
         #expect(!info.canDelete && !info.takesSystemPrompt)
+    }
+
+    /// Claude Code's commands as it announces them, offered as "/…" is typed.
+    @Test func slashCommandsAreOfferedAsTheNameIsTyped() {
+        let update = json(#"{"sessionUpdate":"available_commands_update","availableCommands":[{"name":"compact","description":"Clear history but keep a summary","input":{"hint":"<optional instructions>"}},{"name":"review","description":"Review a pull request"},{"name":"/init","description":"Write CLAUDE.md"},{"description":"no name"}]}"#)
+        let commands = AcpCommand.list(update)
+        #expect(commands.map(\.name) == ["compact", "review", "init"])
+        #expect(commands[0].hint == "<optional instructions>" && commands[1].hint == nil)
+        #expect(AcpCommand.matching("/", in: commands).count == 3)
+        #expect(AcpCommand.matching("/re", in: commands).map(\.name) == ["review"])
+        #expect(AcpCommand.matching("/i", in: commands).map(\.name) == ["init", "review"])   // starts first, then within
+        #expect(AcpCommand.matching("/compact now", in: commands).isEmpty)
+        #expect(AcpCommand.matching("hello", in: commands).isEmpty)
     }
 }

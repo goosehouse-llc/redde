@@ -33,7 +33,8 @@ struct ComposerView: View {
     /// A video being made small enough to send.
     @State private var preparingVideo = false
 
-    /// Slash-command menu (hermes serve): what the gateway offers for the current "/…" draft.
+    /// Slash-command menu: what the Dashboard offers for the current "/…" draft, or the commands an
+    /// ACP agent announced (`AcpCommand`).
     @State private var slashItems: [HermesServeClient.SlashCompletion] = []
     @State private var slashReplaceFrom = 1
     /// The field's height on one line, measured; the round buttons beside it match it so they
@@ -71,7 +72,7 @@ struct ComposerView: View {
 
     /// The "/" menu is a hermes serve feature; other backends get the text as typed.
     private var slashMenuActive: Bool {
-        conversation.connection == .hermesServe && draft.hasPrefix("/") && !draft.contains("\n") && !conversation.isStreaming
+        (conversation.connection == .hermesServe || conversation.connection == .acp) && draft.hasPrefix("/") && !draft.contains("\n") && !conversation.isStreaming
     }
 
     /// The bots a tag being typed ("@sc") could be: in a bot's chat, the others, for it to pass the
@@ -200,6 +201,15 @@ struct ComposerView: View {
         }
         .task(id: slashMenuActive ? draft : "") {
             guard slashMenuActive else { slashItems = []; return }
+            if conversation.connection == .acp {
+                // The agent said its commands up front: matched here, no round trip.
+                let commands = AcpClient.current()?.commands(for: conversation.serverSessionID) ?? []
+                slashItems = AcpCommand.matching(draft, in: commands).prefix(8).map {
+                    .init(text: "/\($0.name)" + ($0.hint == nil ? "" : " "), display: "/\($0.name)", meta: $0.detail, kind: "command")
+                }
+                slashReplaceFrom = 0
+                return
+            }
             try? await Task.sleep(for: .milliseconds(120))   // let typing settle
             guard !Task.isCancelled, let (items, from) = try? await HermesServeClient.shared.completeSlash(draft) else { return }
             slashItems = Array(items.prefix(8))

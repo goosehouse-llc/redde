@@ -24,7 +24,7 @@
       if (value && !(name in fields)) fields[name] = value;   // the first of a repeat counts, as in the app
     } catch (e) { /* a badly escaped value is no value */ }
   });
-  if (!fields.dashboard && !fields.api && !fields["model-url"]) return;   // not a setup link: the page on its own
+  if (!fields.dashboard && !fields.api && !fields["model-url"] && !fields.bridge) return;   // not a setup link: the page on its own
 
   // Text only, never markup: the link is somebody else's input.
   var summary = document.getElementById("summary");
@@ -50,6 +50,8 @@
   row("Profile", fields.profile);
   if (fields.dashboard || fields.api) row(headers.length === 1 ? "Custom header" : "Custom headers", headers.join(", "), headers.length ? "value included" : "");
   if ((fields.dashboard || fields.api) && (fields.pangolin || fields["pangolin-api"])) row("Pangolin", "access token included");
+  row("Agent bridge", fields.bridge, notes([fields.agent && "agent " + fields.agent, fields["bridge-token"] ? "token included" : "no token"]));
+  if (fields.bridge) row("Folder", fields.folder);
   row("Model endpoint", fields["model-url"], notes([fields.model, fields["model-key"] && "key included"]));
 
   document.getElementById("open").href = "redde://connect?" + raw;

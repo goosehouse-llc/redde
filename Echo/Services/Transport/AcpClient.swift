@@ -145,6 +145,15 @@ final class AcpClient {
     private(set) var configOptions: [String: [JSONValue]] = [:]
     /// The options of the last session heard from, for a chat that has none yet.
     private(set) var lastConfigOptions: [JSONValue] = []
+    /// Each session's slash commands, as last said (`available_commands_update`).
+    private(set) var commands: [String: [AcpCommand]] = [:]
+    /// The last session's, for a chat that has none yet: the agent's own commands are the same.
+    private(set) var lastCommands: [AcpCommand] = []
+
+    /// The slash commands for a chat; a new one gets the last chat's.
+    func commands(for session: String?) -> [AcpCommand] {
+        session.flatMap { commands[$0] } ?? lastCommands
+    }
 
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "acp")
     private var socket: URLSessionWebSocketTask?
@@ -402,8 +411,13 @@ final class AcpClient {
         }
     }
 
-    /// Keeps what a session says about itself between turns: its config options.
+    /// Keeps what a session says about itself between turns: its config options and commands.
     private func note(_ update: JSONValue, session: String) {
+        if update["sessionUpdate"]?.string == "available_commands_update" {
+            let list = AcpCommand.list(update)
+            commands[session] = list
+            lastCommands = list
+        }
         if update["sessionUpdate"]?.string == "config_option_update", let options = update["configOptions"]?.array {
             configOptions[session] = options
             lastConfigOptions = options
@@ -509,6 +523,13 @@ final class AcpClient {
         guard info?.canDelete == true else { throw AcpError(code: -32601, message: String(localized: "This agent can't delete its chats.", comment: "ACP")) }
         try await call("session/delete", ["sessionId": .string(session)])
         configOptions[session] = nil
+    }
+
+    /// A command for the bridge's notifications (`_redde/push`), answered in the words of Redde's
+    /// Hermes plugin, so `PushService.pairDirectly` pairs with either.
+    func pushCommand(_ text: String) async throws -> String {
+        try await ensureConnected()
+        return try await call("_redde/push", ["command": .string(text)], timeout: 30)["output"]?.string ?? ""
     }
 
     func modelChoices(session: String?) -> [ModelChoice] {

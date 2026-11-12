@@ -1220,6 +1220,12 @@ struct ContentView: View {
         if canLeave, let session = router.consumeSession() {
             let place = router.consumeSessionPlace()
             if sizeClass != .regular, showConversations { setDrawer(open: false) }
+            // A note from another of the person's servers (a Claude Code reply while the app is on
+            // Hermes): over to that server first, where the chat can be fetched.
+            if let server = router.consumeServer(), server != settings.activeServerID,
+               settings.servers.contains(where: { $0.id == server }), !conversation.isStreaming {
+                ServerSwitcher.switchTo(server, conversation: conversation)
+            }
             // Also when it is the conversation already on screen: what is here may be from before
             // the app was closed, without the reply or the question the notification is about.
             // A conversation on another server than the one the app is on can't be fetched: the

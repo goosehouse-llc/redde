@@ -382,6 +382,38 @@ struct ProfileSettings: View {
     }
 }
 
+/// Which connection Redde uses, grouped by what it reaches: Hermes, other agents, a model
+/// directly. A section per group, each row a choice with a checkmark (an inline picker draws its
+/// sections' headers as rows).
+struct TransportPicker: View {
+    @Binding var selection: Transport
+    /// Over the first group, on the setup screen.
+    var question: LocalizedStringKey?
+
+    var body: some View {
+        ForEach(Transport.Kind.allCases) { kind in
+            Section {
+                ForEach(kind.transports) { transport in
+                    Button { selection = transport } label: {
+                        HStack {
+                            Text(transport.shortLabel).foregroundStyle(Color.primary)
+                            Spacer()
+                            if transport == selection { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                        }
+                        .contentShape(.rect)
+                    }
+                    .accessibilityAddTraits(transport == selection ? .isSelected : [])
+                }
+            } header: {
+                VStack(alignment: .leading, spacing: 10) {
+                    if let question, kind == Transport.Kind.allCases.first { Text(question) }
+                    Label(kind.title, systemImage: kind.symbol)
+                }
+            }
+        }
+    }
+}
+
 struct TransportSettings: View {
     @Binding var showSetup: Bool
     @State private var settings = Settings.shared
@@ -390,18 +422,11 @@ struct TransportSettings: View {
     @State private var sharing: HermesServer?
 
     var body: some View {
+        TransportPicker(selection: $settings.transport)
         Section {
-            Picker("Backend", selection: $settings.transport) {
-                ForEach(Transport.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.inline)
-            .labelsHidden()
             Button("Set up connection…", systemImage: "network") { showSetup = true }
-            // A setup code doesn't carry an agent bridge yet (docs/acp.md, phase 2).
-            if settings.transport != .acp {
-                Button("Set up another device…", systemImage: "qrcode") { sharing = settings.activeServer }
-                    .sheet(item: $sharing) { SetupCodeView(server: $0) }
-            }
+            Button("Set up another device…", systemImage: "qrcode") { sharing = settings.activeServer }
+                .sheet(item: $sharing) { SetupCodeView(server: $0) }
         } header: {
             Text("Connection")
         } footer: {

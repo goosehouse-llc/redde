@@ -319,12 +319,18 @@ struct ConversationsList: View {
                 Label("All Servers", systemImage: allServers ? "checkmark" : "square.stack.3d.up")
             }
             Divider()
-            ForEach(settings.servers) { server in
-                Button {
-                    allServers = false
-                    ServerSwitcher.switchTo(server.id, conversation: conversation)
-                } label: {
-                    if !allServers, server.id == settings.activeServerID { Label(server.title, systemImage: "checkmark") } else { Text(server.title) }
+            // Grouped by the kind of agent, once there is more than one kind.
+            let groups = ServersView.grouped(settings.servers)
+            ForEach(groups, id: \.kind) { group in
+                Section(groups.count > 1 ? group.kind.title : "") {
+                    ForEach(group.servers) { server in
+                        Button {
+                            allServers = false
+                            ServerSwitcher.switchTo(server.id, conversation: conversation)
+                        } label: {
+                            if !allServers, server.id == settings.activeServerID { Label(server.title, systemImage: "checkmark") } else { Text(server.title) }
+                        }
+                    }
                 }
             }
         } label: {
