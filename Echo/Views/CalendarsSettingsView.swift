@@ -12,6 +12,9 @@ struct CalendarsSettingsView: View {
     @State private var access = ComposerContext.calendarAccess
     @State private var accounts: [Account] = []
     @State private var seen: [String] = []
+    /// This device's calendars that can be added to, for New Events.
+    @State private var writable: [(title: String, color: Color)] = []
+    @State private var newEvents = Settings.shared.newEventsCalendar
     @Environment(\.openURL) private var openURL
 
     /// One account's calendars ("iCloud", "Gmail"), each by its title and its own colour.
@@ -32,6 +35,22 @@ struct CalendarsSettingsView: View {
                 limiting
                     ? Text("Only the calendars switched on here. With none on, all of them. Phone tools read and add to only these on this device.")
                     : Text("Your agent looks at every calendar when you ask what's on, calendar cards show every event, and phone tools can read and add to every calendar on this device.")
+            }
+            if access == .granted, !writable.isEmpty {
+                Section {
+                    Picker("New Events", selection: $newEvents) {
+                        Text("Calendar's Default").tag("")
+                        ForEach(writable, id: \.title) { calendar in
+                            Label { Text(calendar.title) } icon: { Image(systemName: "circle.fill").imageScale(.small).foregroundStyle(calendar.color) }
+                                .tag(calendar.title)
+                        }
+                        // Chosen on another device, by iCloud, and not one of this one's.
+                        if !newEvents.isEmpty, !writable.contains(where: { $0.title == newEvents }) { Text(newEvents).tag(newEvents) }
+                    }
+                    .onChange(of: newEvents) { settings.newEventsCalendar = newEvents }
+                } footer: {
+                    Text("Where an event your agent adds goes, unless you ask for another calendar. Calendar's Default is the one set in Settings → Apps → Calendar.")
+                }
             }
             if limiting {
                 ForEach(accounts) { account in
@@ -117,6 +136,11 @@ struct CalendarsSettingsView: View {
     private func load() {
         access = ComposerContext.calendarAccess
         accounts = access == .granted ? Self.deviceAccounts() : []
+        writable = access == .granted
+            ? EKEventStore().calendars(for: .event).filter(\.allowsContentModifications)
+                .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+                .map { (title: $0.title, color: Color(cgColor: $0.cgColor)) }
+            : []
         seen = CalendarChoice.seen
     }
 

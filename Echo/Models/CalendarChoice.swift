@@ -16,6 +16,10 @@ nonisolated enum CalendarChoice {
 
     static var chosen: [String] { UserDefaults.standard.stringArray(forKey: key) ?? [] }
 
+    /// Where an event the agent adds goes when it names no calendar (`Settings.newEventsCalendar`).
+    static let newEventsKey = "newEventsCalendar"
+    static var newEvents: String? { UserDefaults.standard.string(forKey: newEventsKey)?.trimmingCharacters(in: .whitespaces).nilIfEmpty }
+
     /// An event of this calendar is shown: all are with none chosen, and so is one without a name.
     static func shows(_ calendar: String?, among chosen: [String]) -> Bool {
         guard !chosen.isEmpty, let calendar = calendar?.trimmingCharacters(in: .whitespaces), !calendar.isEmpty else { return true }

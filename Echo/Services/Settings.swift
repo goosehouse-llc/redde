@@ -690,6 +690,11 @@ final class Settings: ServeEndpoint {
     var agendaCalendars: [String] {
         didSet { store(agendaCalendars, forKey: Keys.agendaCalendars) }
     }
+    /// Settings → Agent → Calendars → New Events (asked 2026-11-12): the calendar, by title, that
+    /// an event the agent adds goes to when it names none; empty for the Calendar app's default.
+    var newEventsCalendar: String {
+        didSet { store(newEventsCalendar, forKey: Keys.newEventsCalendar) }
+    }
     /// Settings → Agent → Current Location (`CurrentLocation`, asked 2026-10-30): the agent hears
     /// roughly where this device is with a question about places, directions or the weather. Off
     /// until turned on; this device's alone, as its permission is: not synced.
@@ -1141,6 +1146,7 @@ final class Settings: ServeEndpoint {
         static let cardAppearance = "cardAppearance"
         static let chatFont = "chatFont"
         static let agendaCalendars = CalendarChoice.key
+        static let newEventsCalendar = CalendarChoice.newEventsKey
         static let currentLocation = CurrentLocation.key
         static let leaveByAlerts = LeaveBy.key
         static let linkPreviews = "linkPreviews"
@@ -1268,6 +1274,7 @@ final class Settings: ServeEndpoint {
         cardAppearance = Appearance(rawValue: defaults.string(forKey: Keys.cardAppearance) ?? "") ?? .system
         chatFont = ChatFont(rawValue: defaults.string(forKey: Keys.chatFont) ?? "") ?? .theme
         agendaCalendars = defaults.stringArray(forKey: Keys.agendaCalendars) ?? []
+        newEventsCalendar = defaults.string(forKey: Keys.newEventsCalendar) ?? ""
         currentLocation = defaults.bool(forKey: Keys.currentLocation)
         leaveByAlerts = defaults.bool(forKey: Keys.leaveByAlerts)
         linkPreviews = defaults.bool(forKey: Keys.linkPreviews)
@@ -1347,7 +1354,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.cardAppearance, Keys.agendaCalendars, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.cardAppearance, Keys.agendaCalendars, Keys.newEventsCalendar, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.pinnedModels, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
@@ -1382,6 +1389,7 @@ final class Settings: ServeEndpoint {
         case Keys.cardAppearance: cardAppearance = pick(Appearance.system)
         case Keys.chatFont: chatFont = pick(ChatFont.theme)
         case Keys.agendaCalendars: agendaCalendars = value as? [String] ?? []
+        case Keys.newEventsCalendar: newEventsCalendar = value as? String ?? ""
         case Keys.pinnedModels: pinnedModels = decoded([:])
         case Keys.linkPreviews: linkPreviews = flag()
         case Keys.addressMaps: addressMaps = flag(true)
@@ -1707,6 +1715,7 @@ final class Settings: ServeEndpoint {
         todayTileColors = [:]
         cardAppearance = .system
         agendaCalendars = []
+        newEventsCalendar = ""
         currentLocation = false
         leaveByAlerts = false
         linkPreviews = false

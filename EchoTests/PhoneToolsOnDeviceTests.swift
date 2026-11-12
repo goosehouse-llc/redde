@@ -70,6 +70,31 @@ struct PhoneToolsOnDeviceTests {
         }
     }
 
+    /// The calendar chosen for new events takes an event the agent names no calendar for, ahead
+    /// of the Calendar app's default; one it names still goes where it says.
+    @Test(.enabled(if: EKEventStore.authorizationStatus(for: .event) == .fullAccess))
+    func newEventsGoToTheChosenCalendar() async throws {
+        let store = EKEventStore()
+        let source = try #require(store.defaultCalendarForNewEvents?.source ?? store.sources.first { $0.sourceType == .local })
+        let chosen = EKCalendar(for: .event, eventStore: store)
+        chosen.title = "Redde new events \(UUID().uuidString.prefix(6))"
+        chosen.source = source
+        try store.saveCalendar(chosen, commit: true)
+        let before = UserDefaults.standard.string(forKey: CalendarChoice.newEventsKey)
+        UserDefaults.standard.set(chosen.title, forKey: CalendarChoice.newEventsKey)
+        defer {
+            UserDefaults.standard.set(before, forKey: CalendarChoice.newEventsKey)
+            try? store.removeCalendar(chosen, commit: true)
+        }
+        let day = String(Self.local(morning).prefix(10))
+        let added = try await DeviceCalendar.addEvent(.object(["title": .string("Redde test chosen"), "start": .string(day)]))
+        #expect(added["added"]?["calendar"]?.string == chosen.title)
+        let other = try #require(store.calendars(for: .event).first { $0.allowsContentModifications && $0.calendarIdentifier != chosen.calendarIdentifier })
+        let named = try await DeviceCalendar.addEvent(.object(["title": .string("Redde test named"), "start": .string(day), "calendar": .string(other.title)]))
+        defer { if let id = named["added"]?["id"]?.string, let event = store.event(withIdentifier: id) { try? store.remove(event, span: .thisEvent) } }
+        #expect(named["added"]?["calendar"]?.string == other.title)
+    }
+
     @Test(.enabled(if: EKEventStore.authorizationStatus(for: .reminder) == .fullAccess))
     func aReminderIsAddedListedAndMarkedDone() async throws {
         guard EKEventStore().defaultCalendarForNewReminders() != nil else { return }   // a simulator that has never had a list

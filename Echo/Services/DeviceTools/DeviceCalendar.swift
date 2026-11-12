@@ -97,6 +97,11 @@ nonisolated enum DeviceCalendar {
                 throw DeviceToolError("There is no calendar called \"\(named)\" that can be added to. The ones that can: \(names.isEmpty ? "none" : names).")
             }
             event.calendar = calendar
+        } else if let chosen = CalendarChoice.newEvents,
+                  let calendar = store.calendars(for: .event).first(where: { $0.allowsContentModifications && $0.title.caseInsensitiveCompare(chosen) == .orderedSame }) {
+            // The calendar chosen for new events in Settings → Agent → Calendars, ahead of the
+            // Calendar app's default; chosen there, it may be added to even when it isn't shown.
+            event.calendar = calendar
         } else if let calendar = store.defaultCalendarForNewEvents, writable.contains(where: { $0.calendarIdentifier == calendar.calendarIdentifier }) {
             event.calendar = calendar
         } else if let calendar = writable.first {

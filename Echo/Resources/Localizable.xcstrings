@@ -95045,6 +95045,112 @@
         }
       }
     },
+    "Calendar's Default" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalenders standard"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard von Kalender"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Predeterminado de Calendario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par défaut de Calendrier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Predefinito di Calendario"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カレンダーのデフォルト"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캘린더 기본값"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalenders standard"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standaard van Agenda"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Domyślny z Kalendarza"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Padrão do Calendário"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как в Календаре"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalenders förval"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Takvim’in varsayılanı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Як у Календарі"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“日历”默认"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「行事曆」預設"
+          }
+        }
+      }
+    },
     "Calendars" : {
       "localizations" : {
         "da" : {
@@ -262814,6 +262920,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新端點"
+          }
+        }
+      }
+    },
+    "New Events" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye begivenheder"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Termine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eventos nuevos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveaux événements"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovi eventi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新規イベント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 이벤트"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye hendelser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe activiteiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe wydarzenia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novos eventos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые события"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nya händelser"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni etkinlikler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нові події"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新日程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新行程"
           }
         }
       }
@@ -484028,6 +484240,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "位置"
+          }
+        }
+      }
+    },
+    "Where an event your agent adds goes, unless you ask for another calendar. Calendar's Default is the one set in Settings → Apps → Calendar." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvor en begivenhed, som din agent tilføjer, havner, medmindre du beder om en anden kalender. “Kalenders standard” er den, der er valgt i Indstillinger → Apps → Kalender."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wohin ein Termin geht, den dein Agent hinzufügt, außer du bittest um einen anderen Kalender. „Standard von Kalender“ ist der unter Einstellungen → Apps → Kalender festgelegte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dónde va un evento que añade tu agente, salvo que pidas otro calendario. «Predeterminado de Calendario» es el elegido en Ajustes → Apps → Calendario."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Où va un événement ajouté par ton agent, sauf si tu demandes un autre calendrier. « Par défaut de Calendrier » est celui choisi dans Réglages → Apps → Calendrier."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dove va un evento aggiunto dal tuo agente, a meno che tu non chieda un altro calendario. «Predefinito di Calendario» è quello scelto in Impostazioni → App → Calendario."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントが追加するイベントの行き先です（別のカレンダーを頼んだ場合を除く）。「カレンダーのデフォルト」は 設定 → アプリ → カレンダー で選んだものです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 추가하는 이벤트가 들어갈 곳입니다. 다른 캘린더를 요청하면 그곳에 들어갑니다. '캘린더 기본값'은 설정 → 앱 → 캘린더에서 정한 캘린더입니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvor en hendelse agenten din legger til havner, med mindre du ber om en annen kalender. «Kalenders standard» er den som er valgt i Innstillinger → Apper → Kalender."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waar een activiteit die je agent toevoegt terechtkomt, tenzij je om een andere agenda vraagt. ‘Standaard van Agenda’ is die in Instellingen → Apps → Agenda."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdzie trafia wydarzenie dodane przez agenta, chyba że poprosisz o inny kalendarz. „Domyślny z Kalendarza” to ten ustawiony w Ustawienia → Aplikacje → Kalendarz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para onde vai um evento que seu agente adiciona, a menos que você peça outro calendário. “Padrão do Calendário” é o definido em Ajustes → Apps → Calendário."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Куда попадает событие, добавленное агентом, если ты не попросишь другой календарь. «Как в Календаре» — тот, что выбран в Настройки → Приложения → Календарь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit en händelse som din agent lägger till hamnar, om du inte ber om en annan kalender. ”Kalenders förval” är den som är vald i Inställningar → Appar → Kalender."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanının eklediği bir etkinliğin gideceği yer; başka bir takvim istemedikçe. “Takvim’in varsayılanı”, Ayarlar → Uygulamalar → Takvim’de seçilen takvimdir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Куди потрапляє подія, яку додає агент, якщо ти не попросиш інший календар. «Як у Календарі» — той, що вибрано в Параметри → Програми → Календар."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体添加的日程会放在这里，除非你指定其他日历。“日历”默认是在“设置”→“App”→“日历”中设定的那个。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理加入的行程會放在這裡，除非你指定其他行事曆。「行事曆」預設是在「設定」→「App」→「行事曆」中設定的那個。"
           }
         }
       }
