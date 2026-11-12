@@ -135,10 +135,18 @@ nonisolated enum ServeMedia {
 
     /// Whether a reply could name a file at all, before anything costlier looks.
     static func mayName(in text: String) -> Bool {
-        text.contains("MEDIA:") || text.contains("::preview") || text.contains("[IMAGE:") || text.contains("](/")
-            || text.contains("](file://") || text.contains("/redde-push/device/files/")
-            || text.contains("@image:") || text.contains("[Image attached at:")
+        // Byte searches: every message row asks this as it draws, and a streaming reply's row
+        // draws on every word. Eight `String.contains` over a long reply were ~210 ms of a tour's
+        // main thread (2026-11-12); the markers are ASCII, so bytes say the same.
+        text.utf8.withContiguousStorageIfAvailable { bytes in
+            mayNameMarkers.contains { marker in
+                marker.withUnsafeBytes { m in memmem(bytes.baseAddress, bytes.count, m.baseAddress, m.count) != nil }
+            }
+        } ?? mayNameMarkers.contains { text.contains(String(decoding: $0, as: UTF8.self)) }
     }
+
+    private static let mayNameMarkers: [[UInt8]] = ["MEDIA:", "::preview", "[IMAGE:", "](/", "](file://",
+                                                    "/redde-push/device/files/", "@image:", "[Image attached at:"].map { Array($0.utf8) }
 
     /// A picture in a person's message as Hermes keeps it in the session: `@image:<path>` on a line
     /// of its own, the path on the server (what its Dashboard writes for a picture attached to a

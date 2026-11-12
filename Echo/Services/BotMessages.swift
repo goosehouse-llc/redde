@@ -164,10 +164,27 @@ nonisolated enum BotMessages {
     /// the office", 2026-10-20): what it said before that, and the made-up rest, or nil for an
     /// ordinary reply. Starts at Hermes's frames for a message sent in, in any case. A lone letter
     /// left before it is part of the same slip.
+    /// Where "[out-of-band" starts, in any case.
+    private static func outOfBand(in text: String) -> Range<String.Index>? {
+        let marker = Array("[out-of-band".utf8)
+        let utf8 = text.utf8
+        var i = utf8.startIndex
+        while let open = utf8[i...].firstIndex(of: UInt8(ascii: "[")) {
+            var j = open, k = 0
+            while k < marker.count, j < utf8.endIndex, utf8[j] | (utf8[j] >= 65 && utf8[j] <= 90 ? 0x20 : 0) == marker[k] {
+                j = utf8.index(after: j); k += 1
+            }
+            if k == marker.count { return open..<j }
+            i = utf8.index(after: open)
+        }
+        return nil
+    }
+
     static func inventedTurn(in text: String) -> (said: String, invented: String)? {
         // A byte scan first: the streaming reply is asked on every update, and most have no "[".
-        guard text.utf8.contains(UInt8(ascii: "[")),
-              let start = text.range(of: "[out-of-band", options: .caseInsensitive) else { return nil }
+        // Bytes all the way: a reply with links has "[" in it, and a case-insensitive search of
+        // the whole of it was ~75 ms of a tour's main thread (2026-11-12).
+        guard let start = outOfBand(in: text) else { return nil }
         var said = String(text[..<start.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
         if VoiceSession.isLoneLetter(said.components(separatedBy: .newlines).last ?? "") {
             said = said.components(separatedBy: .newlines).dropLast().joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)

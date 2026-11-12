@@ -102,6 +102,10 @@ struct SidePanel<Content: View, Panel: View>: View {
     @State private var opening = false
     /// A conversation opening out of its row.
     @State private var cover: OpeningCover.Opening?
+    /// The panel has been built. Not in the launch's first frame: the conversation list cost
+    /// ~425 ms of it on the simulator (2026-11-11 baseline) while nothing of it shows. Built a
+    /// moment later, still before anyone reaches for it; at once if they do.
+    @State private var built = false
 
     var body: some View {
         GeometryReader { geo in
@@ -131,30 +135,32 @@ struct SidePanel<Content: View, Panel: View>: View {
                     .accessibilityHidden(!isOpen)
                 }
                 // Built once and kept, so it slides in without first building a list.
-                panel
-                    // Parked, no width: nothing is laid out, so nothing is left for VoiceOver to
-                    // find. UIKit's lists and bars inside ignore accessibilityHidden and opacity.
-                    .frame(width: parked ? 0 : width)
-                    // Clipped at its sides only, to the screen's top and bottom: clipped to the
-                    // safe area, the list's search field cut off where iOS puts it, at the bottom
-                    // over the home indicator (2026-11-05, on Marta), and the list's last rows
-                    // stopped short of it.
-                    .mask { Rectangle().ignoresSafeArea(edges: .vertical) }
-                    // To the screen's edges, under the status bar and the home indicator too, in the
-                    // list's own colour (a plain list's, whatever the theme): the theme's page is a
-                    // wallpaper's colour when one is picked, and showed above and below the list as
-                    // a band of it (2026-10-28). A theme with a page of its own (Paper, Paper White)
-                    // has its list on that page, so the band is that page too (2.4).
-                    .background((Settings.shared.theme.listPage ?? Self.panelColor).ignoresSafeArea())
-                    .overlay(alignment: .trailing) { Rectangle().fill(.separator).frame(width: 0.5).ignoresSafeArea() }
-                    .offset(x: shown - width)
-                    .opacity(parked ? 0 : 1)
-                    .environment(\.sidePanelParked, parked)
-                    .allowsHitTesting(isOpen)
-                    .disabled(!isOpen && drag == nil)   // its keyboard shortcuts too
-                    .accessibilityHidden(!isOpen)
-                    .accessibilityAddTraits(.isModal)
-                    .accessibilityAction(.escape) { settle(open: false, from: shown, width: width, velocity: 0) }
+                if built || isOpen || drag != nil {
+                    panel
+                        // Parked, no width: nothing is laid out, so nothing is left for VoiceOver to
+                        // find. UIKit's lists and bars inside ignore accessibilityHidden and opacity.
+                        .frame(width: parked ? 0 : width)
+                        // Clipped at its sides only, to the screen's top and bottom: clipped to the
+                        // safe area, the list's search field cut off where iOS puts it, at the bottom
+                        // over the home indicator (2026-11-05, on Marta), and the list's last rows
+                        // stopped short of it.
+                        .mask { Rectangle().ignoresSafeArea(edges: .vertical) }
+                        // To the screen's edges, under the status bar and the home indicator too, in the
+                        // list's own colour (a plain list's, whatever the theme): the theme's page is a
+                        // wallpaper's colour when one is picked, and showed above and below the list as
+                        // a band of it (2026-10-28). A theme with a page of its own (Paper, Paper White)
+                        // has its list on that page, so the band is that page too (2.4).
+                        .background((Settings.shared.theme.listPage ?? Self.panelColor).ignoresSafeArea())
+                        .overlay(alignment: .trailing) { Rectangle().fill(.separator).frame(width: 0.5).ignoresSafeArea() }
+                        .offset(x: shown - width)
+                        .opacity(parked ? 0 : 1)
+                        .environment(\.sidePanelParked, parked)
+                        .allowsHitTesting(isOpen)
+                        .disabled(!isOpen && drag == nil)   // its keyboard shortcuts too
+                        .accessibilityHidden(!isOpen)
+                        .accessibilityAddTraits(.isModal)
+                        .accessibilityAction(.escape) { settle(open: false, from: shown, width: width, velocity: 0) }
+                }
                 if let cover {
                     OpeningCover(opening: cover, from: theme.surfaceColor, to: theme.pageColor, text: theme.textColor)
                 }
@@ -170,6 +176,11 @@ struct SidePanel<Content: View, Panel: View>: View {
                     // Covered: the panel goes at once, with nothing to see of it.
                     withTransaction(Transaction(animation: nil)) { isOpen = false }
                 }
+            }
+            .task {
+                // After the first frame is up (the launch's work is done by then on a phone).
+                try? await Task.sleep(for: .milliseconds(400))
+                built = true
             }
             .onChange(of: isOpen, initial: true) { _, open in
                 if open { parkGeneration += 1; parked = false; return }

@@ -42,6 +42,7 @@ final class FrameMonitor: NSObject {
             MainActor.assumeIsolated { self?.write() }
         }
         log.notice("frames: watching")
+        watchFirstFrame()
         if DevHooks.has("-echo.autoOpen") {
             let times = DevHooks.value("-echo.autoOpen").flatMap(Int.init) ?? 4
             Task { @MainActor in
@@ -56,6 +57,27 @@ final class FrameMonitor: NSObject {
                 self.autoScroll(for: seconds)
             }
         }
+    }
+
+    /// "launch: first frame N ms after the process started" (`scripts/perf-baseline.sh`): the first
+    /// time the main run loop goes to sleep with a window up, after Core Animation has committed
+    /// what it drew (its own observer runs earlier in the same pass).
+    private func watchFirstFrame() {
+        let observer = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeWaiting.rawValue, true, CFIndex.max) { [weak self] observer, _ in
+            MainActor.assumeIsolated {
+                guard let self, UIApplication.shared.connectedScenes.contains(where: { ($0 as? UIWindowScene)?.keyWindow != nil }) else { return }
+                CFRunLoopRemoveObserver(CFRunLoopGetMain(), observer, .commonModes)
+                var info = kinfo_proc(), size = MemoryLayout<kinfo_proc>.stride
+                var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+                sysctl(&mib, 4, &info, &size, nil, 0)
+                let started = info.kp_proc.p_starttime
+                let ms = (Date.now.timeIntervalSince1970 - (Double(started.tv_sec) + Double(started.tv_usec) / 1e6)) * 1000
+                self.log.notice("launch: first frame \(ms, format: .fixed(precision: 0)) ms after the process started")
+                self.lines.append(String(format: "# launch: first frame %.0f ms after the process started", ms))
+                self.write()
+            }
+        }
+        CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
     }
 
     // MARK: Opening conversations by itself
