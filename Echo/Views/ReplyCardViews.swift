@@ -783,9 +783,12 @@ struct BriefingForecast: View {
     var body: some View {
         Group {
             if let card, card.hasReading {
-                if line { brief(card) } else if compact { glance(card) } else { WeatherCard(card: card) }
+                // The whole card gets its accent made to read on its ground from out here (see
+                // `cardInk`): in a briefing's sheet "Now" and "All 7 days" were a pale sky on an
+                // off-white card (2026-11-12).
+                if line { brief(card) } else if compact { glance(card) } else { WeatherCard(card: card).cardInk() }
             } else if !compact && !line {
-                WeatherCard(card: blank, pending: !tried)
+                WeatherCard(card: blank, pending: !tried).cardInk()
             } else {
                 // Something to hang the lookup on: an empty group runs no task.
                 Color.clear.frame(width: 0, height: 0)
@@ -800,7 +803,7 @@ struct BriefingForecast: View {
     private func brief(_ card: ReplyCard.Weather) -> some View {
         HStack(spacing: 4) {
             if let now = card.now {
-                Image(systemName: WeatherCard.symbol(now.condition, night: now.night == true)).symbolRenderingMode(.multicolor)
+                WeatherCard.Symbol(name: WeatherCard.symbol(now.condition, night: now.night == true))
                 Text(verbatim: (now.temperature.nearestInt.map(String.init) ?? "–") + "°").monospacedDigit()
                 if let high = now.high?.nearestInt, let low = now.low?.nearestInt {
                     Text(verbatim: "\(high)° / \(low)°").monospacedDigit().foregroundStyle(.secondary)
@@ -815,8 +818,8 @@ struct BriefingForecast: View {
         let shown = WeatherCard.Shown(card)
         return HStack(spacing: 10) {
             if let now = card.now {
-                Image(systemName: WeatherCard.symbol(now.condition, night: now.night == true))
-                    .symbolRenderingMode(.multicolor).chatFont(size: 30).frame(width: 40)
+                WeatherCard.Symbol(name: WeatherCard.symbol(now.condition, night: now.night == true))
+                    .chatFont(size: 30).frame(width: 40)
                 Text(verbatim: (now.temperature.nearestInt.map(String.init) ?? "–") + "°")
                     .chatFont(size: 34, weight: .light, design: .rounded).monospacedDigit()
             }
@@ -909,8 +912,7 @@ private struct WeatherCard: View {
             }
             Spacer(minLength: 0)
             if let now = card.now {
-                Image(systemName: Self.symbol(now.condition, night: now.night == true))
-                    .symbolRenderingMode(.multicolor)
+                Symbol(name: Self.symbol(now.condition, night: now.night == true))
                     .chatFont(size: 50)
                     .frame(width: 72, height: 72)
             }
@@ -931,7 +933,7 @@ private struct WeatherCard: View {
                     Text(hour.label).chatFont(.caption, weight: .semibold)
                         .foregroundStyle(hour.now ? theme.accent : Color.secondary)
                         .lineLimit(1).minimumScaleFactor(0.7)
-                    Image(systemName: hour.symbol).symbolRenderingMode(.multicolor).chatFont(.title3).frame(height: 24)
+                    Symbol(name: hour.symbol).chatFont(.title3).frame(height: 24)
                     Text(hour.temperature).chatFont(.subheadline, weight: .semibold).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
                     if shown.bars {
                         RainBar(chance: hour.chance)
@@ -1130,6 +1132,39 @@ private struct WeatherCard: View {
         /// An hour of today, to be written in the phone's way ("2 PM", "14:00").
         static func date(_ clock: (hour: Int, minute: Int)) -> Date? {
             Calendar.current.date(bySettingHour: clock.hour, minute: clock.minute, second: 0, of: .now)
+        }
+    }
+
+    /// A weather symbol in its colours. Apple's colours draw clouds, the moon and the thermometer
+    /// white, which vanished on a light card (2026-11-12, an off-white card in dark mode): on a
+    /// light ground those are drawn grey, with their sun, rain or stars still in colour.
+    struct Symbol: View {
+        let name: String
+        @Environment(\.colorScheme) private var scheme
+
+        var body: some View {
+            if scheme == .light, let colours = Self.onLight(name) {
+                Image(systemName: name).symbolRenderingMode(.palette)
+                    .foregroundStyle(colours.0, colours.1, colours.2)
+            } else {
+                Image(systemName: name).symbolRenderingMode(.multicolor)
+            }
+        }
+
+        private static let grey = Color(white: 0.56), rain = Color(red: 0.1, green: 0.55, blue: 0.9)
+        private static let sun = Color(red: 1, green: 0.75, blue: 0)
+
+        /// The cloud (or moon, or thermometer) first, then what goes with it; nil for a symbol
+        /// that already reads on light (the sun, the wind).
+        private static func onLight(_ name: String) -> (Color, Color, Color)? {
+            switch name {
+            case "cloud.sun.fill", "moon.stars.fill": (grey, sun, sun)
+            case "cloud.moon.fill", "cloud.fog.fill": (grey, Color(white: 0.42), Color(white: 0.42))
+            case "cloud.bolt.rain.fill": (grey, sun, rain)
+            case "thermometer.medium": (grey, .red, .red)
+            case _ where name.hasPrefix("cloud."): (grey, rain, rain)
+            default: nil
+            }
         }
     }
 
