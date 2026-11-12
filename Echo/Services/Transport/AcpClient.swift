@@ -104,6 +104,8 @@ final class AcpClient {
         var canResume: Bool
         var takesImages: Bool
         var takesSystemPrompt: Bool
+        /// Words can join a reply under way (`_session/steering`, Claude Code's `_meta.steering`).
+        var steers: Bool = false
         /// The agent's slash commands as the bridge last heard them, for a chat with none yet.
         var commands: [AcpCommand] = []
     }
@@ -271,6 +273,7 @@ final class AcpClient {
                     canDelete: has(sessions["delete"]), canResume: has(sessions["resume"]),
                     takesImages: caps["promptCapabilities"]?["image"]?.bool ?? false,
                     takesSystemPrompt: has(sessions["systemPrompt"]),
+                    steers: result["_meta"]?["steering"]?["supported"]?.bool ?? false,
                     commands: AcpCommand.list(.object(["availableCommands": redde?["commands"] ?? .null])))
     }
 
@@ -531,6 +534,20 @@ final class AcpClient {
         }
         return Attached(running: result["running"]?.bool ?? false, prompt: prompt, stopReason: result["stopReason"]?.string,
                         updates: updates, requests: requests)
+    }
+
+    /// Adds words to the reply under way in a session (`_session/steering`), when the agent
+    /// offers it. True when they joined it; false when there was no reply to join, and then
+    /// nothing was sent (`promptRequired`): they go as a message of their own.
+    func steer(_ session: String, text: String) async throws -> Bool {
+        try await ensureConnected()
+        guard info?.steers == true else { return false }
+        let result = try await call("_session/steering", [
+            "sessionId": .string(session),
+            "prompt": .array([.object(["type": .string("text"), "text": .string(text)])]),
+            "_meta": .object(["steering": .object(["idleBehavior": .string("promptRequired")])]),
+        ])
+        return result["outcome"]?.string == "injected"
     }
 
     /// Answers an approval card with one of its choices (once, session, always, deny).

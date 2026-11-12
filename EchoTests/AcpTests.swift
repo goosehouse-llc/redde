@@ -271,7 +271,10 @@ struct AcpTests {
         #expect(info.bridge == "0.1.0")
         #expect(info.folder == "/Users/x")
         #expect(info.canLoad && info.canList && info.canResume && info.takesImages)
-        #expect(!info.canDelete && !info.takesSystemPrompt)
+        #expect(!info.canDelete && !info.takesSystemPrompt && !info.steers)
+        // Claude Code says words can join a reply under way.
+        let claude = AcpClient.info(json(#"{"agentInfo": {"name": "@agentclientprotocol/claude-agent-acp", "title": "Claude Agent"}, "_meta": {"steering": {"supported": true}}}"#))
+        #expect(claude.steers && claude.name == "Claude Agent")
     }
 
     /// Claude Code's commands as it announces them, offered as "/…" is typed.

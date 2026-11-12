@@ -207,6 +207,47 @@ final class AcpUITests: XCTestCase {
         shot("acp-plan-done")
     }
 
+    /// The same Claude Code, steered: words typed while it works join the reply (Steer this
+    /// reply) instead of waiting for it, and it acts on them before it ends.
+    func testClaudeCodeCanBeSteered() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let token = env["REDDE_BRIDGE_TOKEN"], !token.isEmpty, let folder = env["REDDE_BRIDGE_FOLDER"] else {
+            throw XCTSkip("No Claude Code bridge given (TEST_RUNNER_REDDE_BRIDGE_TOKEN, TEST_RUNNER_REDDE_BRIDGE_FOLDER)")
+        }
+        func shot(_ name: String) {
+            keep(name)
+            if let dir = env["REDDE_SHOTS"] {
+                try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
+            }
+        }
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder,
+               "-acpPicks.ws://127.0.0.1:8767/acp/claude", "{ mode = bypassPermissions; }"]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        let new = app.buttons["New conversation"].firstMatch
+        if new.waitForExistence(timeout: 5) { new.tap() }
+        send("Write the numbers from 1 to 400 as words, one per line, with nothing else. No tools.", in: app)
+
+        let steer = app.buttons["Steer this reply"]
+        let composer = app.textFields["composer"]
+        XCTAssertTrue(app.buttons["Stop"].waitForExistence(timeout: 60), "The reply didn't start")
+        XCTAssertTrue(app.text(containing: "three").waitForExistence(timeout: 60), "The reply didn't start writing")
+        composer.tap()
+        composer.typeText("Also end your reply with the word BANANA.")
+        _ = steer.waitForExistence(timeout: 10)
+        shot("acp-steer-typed")
+        XCTAssertTrue(steer.exists, "No way to steer the reply")
+        steer.tap()
+        XCTAssertTrue(app.text(containing: "steer queued").waitForExistence(timeout: 20), "Claude Code didn't take the words into the reply")
+        let banana = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'BANANA' AND NOT (label CONTAINS 'Also end')")).firstMatch
+        XCTAssertTrue(banana.waitForExistence(timeout: 180), "The reply didn't act on the steer")
+        shot("acp-steer-done")
+    }
+
     private func send(_ text: String, in app: XCUIApplication) {
         let composer = app.textFields["composer"]
         for _ in 0 ..< 4 {

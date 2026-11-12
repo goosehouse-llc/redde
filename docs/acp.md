@@ -154,6 +154,7 @@ the token in the Keychain under the server's id, synced with iCloud like the oth
 | config option, category `model` | the model picker; `session/set_config_option` before the prompt |
 | config options, categories `mode` and `thought_level` | menus in the model sheet, one per option with two or more values (Claude Code: Mode = Manual / Accept Edits / Plan / Auto / Bypass, and Effort). A pick goes to the open chat with `session/set_config_option` and is remembered per address for new chats, set right after `session/new` |
 | `session/cancel` | Stop |
+| `_session/steering` (when `initialize` says `_meta.steering.supported`, as Claude Code does) | Steer this reply, and Send Now on a queued message: the words join the reply under way. Sent with `idleBehavior: promptRequired`, so a reply that just ended answers `promptRequired` and the words go as a message of their own; `injected` is taken. The bridge passes it through as it is |
 | `_redde/attach` | `rejoin`: a turn under way, joined part-way |
 
 The client advertises no `fs` or `terminal` capability: the agent uses its own tools on the host.

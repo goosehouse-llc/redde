@@ -95,8 +95,10 @@ final class Conversation {
         bot.map { $0.viaAPI == true ? $0.profile : nil } ?? (elsewhere?.viaAPI == true ? elsewhere?.profile : nil)
     }
 
-    /// Steering is possible while a Hermes turn is streaming.
-    var canSteer: Bool { isStreaming && connection.isHermes }
+    /// Steering is possible while a Hermes turn is streaming, or an ACP agent's that takes it.
+    var canSteer: Bool {
+        isStreaming && (connection.isHermes || (connection == .acp && AcpClient.current(settings)?.info?.steers == true))
+    }
 
     /// Nudge the running turn without cancelling it. Shows in the transcript as a steer note.
     /// `queued`: a message from the outbox sent this way (`sendQueuedNow`), which goes back to the
@@ -114,6 +116,7 @@ final class Conversation {
         let stored = serverSessionID
         let runID = currentRunID
         let dashboard = dashboard
+        let acp = transport == .acp ? AcpClient.current(settings) : nil
         let noteID = note.id
         run { [weak self] in
             var accepted = false
@@ -125,7 +128,10 @@ final class Conversation {
                 case .hermesSessions:
                     guard let runID, let api = self?.ledgerAPI() else { throw TransportError.malformed("no run to steer") }
                     accepted = try await api.steer(runID: runID, text: trimmed)
-                case .chatCompletions, .acp:
+                case .acp:
+                    guard let stored, let acp else { throw TransportError.malformed("no session to steer") }
+                    accepted = try await acp.steer(stored, text: trimmed)
+                case .chatCompletions:
                     accepted = false
                 }
             } catch {
