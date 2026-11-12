@@ -1,11 +1,11 @@
-# App Store listing — Redde: AI Agent Voice & Chat
+# App Store listing — Redde Agent
 
 Character limits are Apple's. Everything here describes shipped, verified behaviour.
 
 ## Name (30)
-Redde: AI Agent Voice & Chat
+Redde Agent
 
-Until 2.5 it was "Hermes Redde". Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
+Until 2.5 it was "Hermes Redde" (2.5 went in as "Redde: AI Agent Voice & Chat" for an hour, then "Redde Agent", his pick 2026-11-11). Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
 
 ## Subtitle (30)
 Talk, chat and run your agent
@@ -14,7 +14,7 @@ Talk, chat and run your agent
 New in 2.5: bots that work in the background, models and provider keys set from your phone, free local calls, phone tools for bots, and better battery life.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
-assistant,carplay,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,talk
+assistant,carplay,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,ai,voice
 
 ## Description (4000)
 
@@ -87,7 +87,7 @@ Bots that work in the background, models from your phone, free local calls, and 
 Most of this takes the Redde plugin 1.27 on your Hermes: Settings → Redde Plugin offers the update.
 
 ## Before submitting 2.5
-- The new name, "Redde: AI Agent Voice & Chat", goes in by hand: App Store Connect → the app → App Information → Name (the record's, shared by iPhone, iPad and Mac; the store script doesn't send it). It shows once a version is approved. Keywords lose the words now in the name and other companies' names (openai, ollama). Then tell the claimant and Apple (APP286553-D in the subject).
+- The new name, "Redde Agent", goes in by hand: App Store Connect → the app → App Information → Name (the record's, shared by iPhone, iPad and Mac; the store script doesn't send it). It shows once a version is approved. Keywords lose the words now in the name and other companies' names (openai, ollama). Then tell the claimant and Apple (APP286553-D in the subject).
 - The build is 2.5 (294), iPhone, iPad and Mac, archived from main once everything since 2.4 (293) is committed and pushed.
 - Try the car once on 294 (the #67 change skips an audio mode switch in the car), and a Local call on a device.
 - Background processing: a new `BGProcessingTask` (`com.goosehouse.echo.photos`, needs external power) looks through the photo library on the charger, only with Photos on in Phone Tools. The `processing` background mode was already declared; nothing new to declare. Review notes can say so under PHONE TOOLS if asked.

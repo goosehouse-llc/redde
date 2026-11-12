@@ -1,4 +1,4 @@
-**App Store name:** Redde: AI Agent Voice & Chat (Hermes Redde until 2.5) · **Display name:** Redde · **Bundle ID:** com.goosehouse.echo · **SKU:** redde-ios (fixed when the record was created; internal only)
+**App Store name:** Redde Agent (Hermes Redde until 2.5) · **Display name:** Redde · **Bundle ID:** com.goosehouse.echo · **SKU:** redde-ios (fixed when the record was created; internal only)
 
 # App Review notes
 

@@ -1,4 +1,4 @@
-# App Store listing — Redde: AI Agent Voice & Chat, for Mac
+# App Store listing — Redde Agent, for Mac
 
 The Mac app's own version page in App Store Connect: the same App Store record as the iPhone and
 iPad app (bundle id com.goosehouse.echo, one purchase for all three), platform macOS. Name,
@@ -14,7 +14,7 @@ push yet), CarPlay, the Watch, Siri, wake phrases, calls, alarms, the terminal.
 New in 2.5: bots that work in the background, your agent's models and provider keys set from the Mac, bot photos, and chats that keep up with your other devices.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
-assistant,self-hosted,llm,bots,private,client,mac,macos,local,chatbot,homelab,desktop
+assistant,self-hosted,llm,bots,private,client,mac,macos,local,chatbot,homelab,desktop,ai
 
 ## Description (4000)
 
@@ -66,7 +66,7 @@ Most of this takes the Redde plugin 1.27 on your Hermes.
 ## Before submitting the Mac's 2.5
 - Mac 2.5 (294), archived from the same commit as the iPhone's. Mac 2.4 (292) was still with App Review on 2026-11-11; App Store Connect may not take a new Mac version until it clears.
 - Only claimed after a look on the Mac: workstreams' strip and Work sheet, Models & Providers, Choose Photo in Change Face, the briefing weather card, the window-hidden pause. Drop a line from the What's New above if it isn't seen working.
-- The record's name changes to "Redde: AI Agent Voice & Chat" for the Mac too (APP286553-D).
+- The record's name changes to "Redde Agent" for the Mac too (APP286553-D).
 
 ## What's New in 2.4 (4000)
 
