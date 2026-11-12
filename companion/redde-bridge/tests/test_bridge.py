@@ -233,6 +233,14 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
         await a.wait_for(lambda m: m.get("method") == "_redde/turn_ended")
         self.assertEqual(a.texts(sid), 'accept {"question_0": "Blue"}')
 
+    async def test_a_new_device_is_told_the_agents_commands(self):
+        a = await self.client()
+        sid = (await a.call("session/new", {}))["result"]["sessionId"]
+        await a.call("session/prompt", {"sessionId": sid, "prompt": [{"type": "text", "text": "commands"}]})
+        b = await self.client()
+        init = (await b.call("initialize", {"protocolVersion": 1}))["result"]
+        self.assertEqual([c["name"] for c in init["_meta"]["redde"]["commands"]], ["compact", "review"])
+
     async def test_history_goes_to_the_asking_device_only(self):
         a, b = await self.client(), await self.client()
         sid = (await a.call("session/new", {}))["result"]["sessionId"]

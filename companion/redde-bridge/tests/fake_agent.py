@@ -3,6 +3,7 @@
 Prompts:
   "slow ..."  three chunks, 0.6 s apart
   "ask ..."   asks permission first, then says which option it was given
+  "commands ..." announces two slash commands
   "question ..." asks a form (elicitation/create), then says what came back
   anything else: one chunk, "echo: <text>"
 
@@ -64,6 +65,10 @@ def prompt(rid, params):
         event.wait(30)
         outcome = waiting.pop(ask).get("result", {}).get("outcome", {})
         chunk(sid, f"picked {outcome.get('optionId', outcome.get('outcome'))}")
+    elif text.startswith("commands"):
+        update(sid, {"sessionUpdate": "available_commands_update", "availableCommands": [
+            {"name": "compact", "description": "Summarise the chat"}, {"name": "review", "description": "Review a change"}]})
+        chunk(sid, "listed")
     elif text.startswith("question"):
         next_id[0] += 1
         ask = next_id[0]

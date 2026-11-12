@@ -113,6 +113,7 @@ Beyond plain ACP, it adds these extensions:
 | `_redde/request_resolved` | notification: a question was answered on another device, or withdrawn |
 | `_redde/push {command}` | pairing for notifications: `offer`, `accept <offered> <public key> <box>`, `test`, `list`; answered `{output}` in the words of Redde's Hermes plugin |
 | `_meta.redde.seq` | added to every `session/update`, so a device that catches up can skip what it already has |
+| `_meta.redde.commands` | on `initialize`: the agent's slash commands as its last session said them, for a new chat that has heard none yet |
 
 ## Test it
 

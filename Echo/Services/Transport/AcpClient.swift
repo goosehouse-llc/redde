@@ -104,6 +104,8 @@ final class AcpClient {
         var canResume: Bool
         var takesImages: Bool
         var takesSystemPrompt: Bool
+        /// The agent's slash commands as the bridge last heard them, for a chat with none yet.
+        var commands: [AcpCommand] = []
     }
 
     enum Event {
@@ -229,6 +231,7 @@ final class AcpClient {
                 "clientInfo": .object(["name": .string("redde"), "title": .string("Redde"), "version": .string(Bundle.main.shortVersion)]),
             ], timeout: 180)
             info = Self.info(result)
+            if lastCommands.isEmpty, let known = info?.commands, !known.isEmpty { lastCommands = known }
         } catch {
             close()
             if let error = error as? AcpError { throw error }
@@ -263,7 +266,8 @@ final class AcpClient {
                     canLoad: caps["loadSession"]?.bool ?? false, canList: has(sessions["list"]),
                     canDelete: has(sessions["delete"]), canResume: has(sessions["resume"]),
                     takesImages: caps["promptCapabilities"]?["image"]?.bool ?? false,
-                    takesSystemPrompt: has(sessions["systemPrompt"]))
+                    takesSystemPrompt: has(sessions["systemPrompt"]),
+                    commands: AcpCommand.list(.object(["availableCommands": redde?["commands"] ?? .null])))
     }
 
     func close() {

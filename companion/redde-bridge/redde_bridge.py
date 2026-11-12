@@ -46,7 +46,7 @@ from urllib.parse import parse_qs, urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import redde_push  # noqa: E402  (beside this file)
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -272,6 +272,9 @@ class Agent:
         self.next_waiting = 0
         self.connections: set = set()
         self.start_lock = asyncio.Lock()
+        # The agent's slash commands as its last session said them: a device gets them on
+        # initialize, for a new chat, which hears none until it has a session.
+        self.commands: list | None = None
 
     @property
     def running(self) -> bool:
@@ -404,6 +407,9 @@ class Agent:
         if not sid:
             return
         session = self.session(sid)
+        said = params.get("update") or {}
+        if said.get("sessionUpdate") == "available_commands_update" and isinstance(said.get("availableCommands"), list):
+            self.commands = said["availableCommands"]
         if session.loading is not None:
             # A load's replay: the asking connection's alone, and not part of any turn.
             await session.loading.send_message({"jsonrpc": "2.0", "method": "session/update", "params": params})
@@ -604,6 +610,8 @@ class Connection:
             meta = dict(result.get("_meta") or {})
             meta["redde"] = {"bridge": VERSION, "agent": agent.config.id, "name": agent.config.name,
                              "cwd": agent.config.folder, "attach": True}
+            if agent.commands is not None:
+                meta["redde"]["commands"] = agent.commands
             result["_meta"] = meta
             return result
         if method in ("session/new", "session/load", "session/resume"):

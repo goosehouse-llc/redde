@@ -142,7 +142,7 @@ the token in the Keychain under the server's id, synced with iCloud like the oth
 | `usage_update` | `.usage(contextUsed: used, contextMax: size)` |
 | `session_info_update` title | the chat's title |
 | `session/request_permission` | `.interrupt(.approval)`; options mapped to once / session / always / deny |
-| `available_commands_update` | slash commands in the composer, offered as "/…" is typed |
+| `available_commands_update` | slash commands in the composer, offered as "/…" is typed; the bridge keeps the last list and gives it on `initialize` (`_meta.redde.commands`), so a new chat has them before its first message |
 | `elicitation/create`, mode `form` | the question card (`AcpForm`): a question per field, choices as pills, a free-text field named `<field>_custom` as the question's "Something else…" box; answered `accept` with the form's own values. Mode `url` isn't offered (`clientCapabilities.elicitation` = `{form: {}}`, from the app and from the bridge) |
 | `notice` | a status line |
 | prompt answer / `_redde/turn_ended` | `.done`; `refusal`, `max_tokens` as a note |

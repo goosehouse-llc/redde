@@ -226,6 +226,10 @@ struct AcpTests {
         #expect(AcpCommand.matching("/i", in: commands).map(\.name) == ["init", "review"])   // starts first, then within
         #expect(AcpCommand.matching("/compact now", in: commands).isEmpty)
         #expect(AcpCommand.matching("hello", in: commands).isEmpty)
+        // The bridge says the commands it last heard on initialize, for a chat with none yet.
+        let info = AcpClient.info(json(#"{"agentInfo":{"name":"claude-agent-acp"},"_meta":{"redde":{"bridge":"0.2.0","commands":[{"name":"compact","description":"Summarise"}]}}}"#))
+        #expect(info.commands.map(\.name) == ["compact"])
+        #expect(AcpClient.info(json(#"{"agentInfo":{"name":"x"}}"#)).commands.isEmpty)
     }
 
     /// Claude Code's AskUserQuestion with one question, as `claude-agent-acp` 0.106.0 sends it:
