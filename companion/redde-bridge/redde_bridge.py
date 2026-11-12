@@ -301,7 +301,9 @@ class Agent:
             self.init_result = None
             result = await self._request("initialize", {
                 "protocolVersion": PROTOCOL_VERSION,
-                "clientCapabilities": {"fs": {"readTextFile": False, "writeTextFile": False}, "terminal": False},
+                # Forms are shown in Redde as question cards (Claude Code asks its questions this way).
+                "clientCapabilities": {"fs": {"readTextFile": False, "writeTextFile": False}, "terminal": False,
+                                       "elicitation": {"form": {}}},
                 "clientInfo": {"name": "redde-bridge", "title": "Redde bridge", "version": VERSION},
             }, timeout=120)
             self.init_result = result
@@ -434,6 +436,8 @@ class Agent:
             raw = call.get("rawInput") if isinstance(call.get("rawInput"), dict) else {}
             asked = call.get("title") or raw.get("command") or raw.get("file_path") or "a tool"
             self.tell("approval", self.session(sid), asked)
+        elif message["method"] == "elicitation/create" and sid:
+            self.tell("question", self.session(sid), params.get("message") or "")
 
     async def answered(self, connection, waiting_id: str, reply: dict) -> None:
         waiting = self.waiting.pop(waiting_id, None)

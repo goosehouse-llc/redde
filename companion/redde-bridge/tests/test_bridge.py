@@ -218,6 +218,21 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
         await b.wait_for(lambda m: m.get("method") == "_redde/turn_ended")
         self.assertEqual(b.texts(sid), "picked allow_once")
 
+    async def test_a_form_is_asked_of_every_device_and_answered_once(self):
+        a, b = await self.client(), await self.client()
+        sid = (await a.call("session/new", {}))["result"]["sessionId"]
+        init = self.agent_calls("initialize")
+        self.assertEqual(init[0]["clientCapabilities"]["elicitation"], {"form": {}})
+        await b.call("_redde/attach", {"sessionId": sid})
+        a.send({"jsonrpc": "2.0", "id": 52, "method": "session/prompt", "params": {"sessionId": sid, "prompt": [{"type": "text", "text": "question"}]}})
+        ask_a = await a.wait_for(lambda m: m.get("method") == "elicitation/create")
+        ask_b = await b.wait_for(lambda m: m.get("method") == "elicitation/create")
+        self.assertEqual(ask_a["id"], ask_b["id"])
+        a.send({"jsonrpc": "2.0", "id": ask_a["id"], "result": {"action": "accept", "content": {"question_0": "Blue"}}})
+        await b.wait_for(lambda m: m.get("method") == "_redde/request_resolved")
+        await a.wait_for(lambda m: m.get("method") == "_redde/turn_ended")
+        self.assertEqual(a.texts(sid), 'accept {"question_0": "Blue"}')
+
     async def test_history_goes_to_the_asking_device_only(self):
         a, b = await self.client(), await self.client()
         sid = (await a.call("session/new", {}))["result"]["sessionId"]

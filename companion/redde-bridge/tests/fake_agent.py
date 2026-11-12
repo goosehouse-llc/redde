@@ -3,6 +3,7 @@
 Prompts:
   "slow ..."  three chunks, 0.6 s apart
   "ask ..."   asks permission first, then says which option it was given
+  "question ..." asks a form (elicitation/create), then says what came back
   anything else: one chunk, "echo: <text>"
 
 It keeps sessions in memory and logs every method it is called with to $FAKE_AGENT_LOG.
@@ -63,6 +64,19 @@ def prompt(rid, params):
         event.wait(30)
         outcome = waiting.pop(ask).get("result", {}).get("outcome", {})
         chunk(sid, f"picked {outcome.get('optionId', outcome.get('outcome'))}")
+    elif text.startswith("question"):
+        next_id[0] += 1
+        ask = next_id[0]
+        event = threading.Event()
+        waiting[ask] = {"event": event}
+        write({"jsonrpc": "2.0", "id": ask, "method": "elicitation/create", "params": {
+            "sessionId": sid, "mode": "form", "message": "Which colour?",
+            "requestedSchema": {"type": "object", "properties": {
+                "question_0": {"type": "string", "oneOf": [{"const": "Red", "title": "Red"}, {"const": "Blue", "title": "Blue"}]},
+                "question_0_custom": {"type": "string", "title": "Other"}}}}})
+        event.wait(30)
+        result = waiting.pop(ask).get("result", {})
+        chunk(sid, f"{result.get('action')} {json.dumps(result.get('content', {}), sort_keys=True)}")
     else:
         chunk(sid, f"echo: {text}")
     write({"jsonrpc": "2.0", "id": rid, "result": {"stopReason": "end_turn"}})

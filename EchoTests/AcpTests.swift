@@ -227,4 +227,52 @@ struct AcpTests {
         #expect(AcpCommand.matching("/compact now", in: commands).isEmpty)
         #expect(AcpCommand.matching("hello", in: commands).isEmpty)
     }
+
+    /// Claude Code's AskUserQuestion with one question, as `claude-agent-acp` 0.106.0 sends it:
+    /// a pill per option, its "Other" field as the card's own box.
+    @Test func aFormWithOneQuestionIsAQuestionCard() throws {
+        let params = json(#"{"sessionId":"s1","mode":"form","toolCallId":"t1","message":"Which database?","requestedSchema":{"type":"object","properties":{"question_0":{"type":"string","title":"Database","oneOf":[{"const":"Postgres","title":"Postgres","description":"The usual"},{"const":"SQLite","title":"SQLite"}]},"question_0_custom":{"type":"string","title":"Other","description":"Type your own answer, or add a note to the option you chose above (optional)."}}}}"#)
+        let (card, form) = try #require(AcpForm.make(id: "req-1", params: params))
+        #expect(card.id == "req-1" && card.isBatch)
+        #expect(card.questions == [ClarifyQuestion(id: "question_0", question: "Which database?", choices: ["Postgres", "SQLite"], multiSelect: false)])
+        #expect(form.reply(["question_0": "SQLite"]) == json(#"{"action":"accept","content":{"question_0":"SQLite"}}"#))
+        // Typed instead of picked: into the "Other" field.
+        #expect(form.reply(["question_0": "MySQL, sadly"]) == json(#"{"action":"accept","content":{"question_0_custom":"MySQL, sadly"}}"#))
+    }
+
+    /// Several questions, one of them multi-select, in field order (question_10 after question_2).
+    @Test func aFormWithSeveralQuestionsKeepsTheirOrder() throws {
+        var properties: [String] = []
+        for index in 0 ... 10 {
+            let multi = index == 1
+            let options = #"[{"const":"A, with comma","title":"A, with comma"},{"const":"B","title":"B"}]"#
+            properties.append(multi
+                ? #""question_\#(index)":{"type":"array","description":"Q\#(index)?","items":{"anyOf":\#(options)}}"#
+                : #""question_\#(index)":{"type":"string","description":"Q\#(index)?","oneOf":\#(options)}"#)
+            properties.append(#""question_\#(index)_custom":{"type":"string","title":"Other"}"#)
+        }
+        let params = json(#"{"sessionId":"s1","mode":"form","message":"Please answer the following questions.","requestedSchema":{"type":"object","properties":{\#(properties.joined(separator: ","))}}}"#)
+        let (card, form) = try #require(AcpForm.make(id: "req-2", params: params))
+        #expect(card.questions.map(\.id) == (0 ... 10).map { "question_\($0)" })
+        #expect(card.questions[0].question == "Please answer the following questions.\n\nQ0?")
+        #expect(card.questions[2].question == "Q2?")
+        #expect(card.questions[1].multiSelect && !card.questions[0].multiSelect)
+        // The card joins picks with ", ": an option holding a comma still reads as one pick.
+        let reply = form.reply(["question_0": "B", "question_1": "A, with comma, B, and C"])
+        #expect(reply["content"]?["question_1"] == json(#"["A, with comma","B"]"#))
+        #expect(reply["content"]?["question_1_custom"]?.string == "and C")
+        #expect(reply["content"]?["question_0"]?.string == "B")
+        #expect(reply["content"]?["question_2"] == nil)
+    }
+
+    /// An MCP server's form: plain text, a number, a yes/no; and what Redde can't show.
+    @Test func otherFieldsAndFormsReddeCantShow() throws {
+        let params = json(#"{"sessionId":"s1","mode":"form","message":"Sign-up","requestedSchema":{"type":"object","properties":{"age":{"type":"integer","title":"Age"},"name":{"type":"string","title":"Your name"},"news":{"type":"boolean","description":"Send news?"}}}}"#)
+        let (card, form) = try #require(AcpForm.make(id: "r", params: params))
+        #expect(card.questions.map(\.question) == ["Sign-up\n\nAge", "Your name", "Send news?"])
+        #expect(card.questions[2].choices == [AcpForm.yes, AcpForm.no])
+        #expect(form.reply(["age": "42", "name": "Ada", "news": AcpForm.yes]) == json(#"{"action":"accept","content":{"age":42,"name":"Ada","news":true}}"#))
+        #expect(AcpForm.make(id: "u", params: json(#"{"sessionId":"s1","mode":"url","message":"Sign in","url":"https://example.com","elicitationId":"e"}"#)) == nil)
+        #expect(AcpForm.make(id: "e", params: json(#"{"sessionId":"s1","mode":"form","message":"x","requestedSchema":{"type":"object","properties":{}}}"#)) == nil)
+    }
 }

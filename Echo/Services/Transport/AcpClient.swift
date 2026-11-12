@@ -108,8 +108,9 @@ final class AcpClient {
 
     enum Event {
         case update(session: String, update: JSONValue, seq: Int?)
-        /// The agent waits on the person: a permission (`session/request_permission`).
-        case request(id: String, session: String?, approval: ApprovalRequest)
+        /// The agent waits on the person: a permission (`session/request_permission`) as an
+        /// approval card, or a form (`elicitation/create`) as a question card.
+        case request(id: String, session: String?, interrupt: Interrupt)
         /// Another device answered it, or the agent stopped waiting.
         case resolved(id: String)
         case turnEnded(session: String, stopReason: String?)
@@ -122,7 +123,7 @@ final class AcpClient {
         var prompt: String
         var stopReason: String?
         var updates: [(update: JSONValue, seq: Int?)]
-        var requests: [(id: String, approval: ApprovalRequest)]
+        var requests: [(id: String, interrupt: Interrupt)]
     }
 
     private static var clients: [AcpEndpoint: AcpClient] = [:]
@@ -163,8 +164,13 @@ final class AcpClient {
     private var nextID = 1
     private var pending: [String: CheckedContinuation<JSONValue, Error>] = [:]
     private var listeners: [UUID: (Event) -> Void] = [:]
-    /// Questions of the agent's waiting on an answer: their JSON-RPC id and the options' ids.
-    private var openRequests: [String: (raw: JSONValue, options: [String: String])] = [:]
+    /// Questions of the agent's waiting on an answer: their JSON-RPC id, and the options' ids of a
+    /// permission or the fields of a form.
+    private enum Open {
+        case permission(raw: JSONValue, options: [String: String])
+        case form(raw: JSONValue, form: AcpForm)
+    }
+    private var openRequests: [String: Open] = [:]
     /// Sessions being loaded: their replayed history, gathered rather than heard as a turn.
     private var loading: [String: [JSONValue]] = [:]
 
@@ -217,6 +223,8 @@ final class AcpClient {
                 "clientCapabilities": .object([
                     "fs": .object(["readTextFile": .bool(false), "writeTextFile": .bool(false)]),
                     "terminal": .bool(false),
+                    // Forms as question cards; a link to open (mode `url`) isn't offered.
+                    "elicitation": .object(["form": .object([:])]),
                 ]),
                 "clientInfo": .object(["name": .string("redde"), "title": .string("Redde"), "version": .string(Bundle.main.shortVersion)]),
             ], timeout: 180)
@@ -393,22 +401,34 @@ final class AcpClient {
         }
     }
 
-    /// A request of the agent's. Permissions become approval cards; a form (`elicitation`) isn't
-    /// offered yet and is turned down; files and terminals were never offered.
+    /// A request of the agent's. Permissions become approval cards and forms question cards; a
+    /// form Redde can't show is turned down; files and terminals were never offered.
     private func asked(_ method: String, raw: JSONValue, params: JSONValue) {
         guard let key = Self.key(raw) else { return }
         switch method {
-        case "session/request_permission":
-            let (approval, options) = AcpPermission.approval(id: key, params: params)
-            openRequests[key] = (raw, options)
-            for listener in listeners.values { listener(.request(id: key, session: params["sessionId"]?.string, approval: approval)) }
-        case "elicitation/create":
-            reply(to: raw, result: .object(["action": .string("decline")]))
+        case "session/request_permission", "elicitation/create":
+            guard let interrupt = open(method, raw: raw, key: key, params: params) else {
+                reply(to: raw, result: .object(["action": .string("decline")]))
+                return
+            }
+            for listener in listeners.values { listener(.request(id: key, session: params["sessionId"]?.string, interrupt: interrupt)) }
         default:
             guard let socket else { return }
             send(.object(["jsonrpc": .string("2.0"), "id": raw,
                           "error": .object(["code": .number(-32601), "message": .string("Redde doesn't offer \(method)")])]), socket: socket, call: nil)
         }
+    }
+
+    /// Keeps a question open until it is answered, and says how to show it.
+    private func open(_ method: String, raw: JSONValue, key: String, params: JSONValue) -> Interrupt? {
+        if method == "session/request_permission" {
+            let (approval, options) = AcpPermission.approval(id: key, params: params)
+            openRequests[key] = .permission(raw: raw, options: options)
+            return .approval(approval)
+        }
+        guard method == "elicitation/create", let (card, form) = AcpForm.make(id: key, params: params) else { return nil }
+        openRequests[key] = .form(raw: raw, form: form)
+        return .clarify(card)
     }
 
     /// Keeps what a session says about itself between turns: its config options and commands.
@@ -492,11 +512,10 @@ final class AcpClient {
         let updates = (result["updates"]?.array ?? []).compactMap { params -> (JSONValue, Int?)? in
             params["update"].map { ($0, params["_meta"]?["redde"]?["seq"]?.int) }
         }
-        let requests = (result["requests"]?.array ?? []).compactMap { message -> (String, ApprovalRequest)? in
-            guard message["method"]?.string == "session/request_permission", let raw = message["id"], let key = Self.key(raw) else { return nil }
-            let (approval, options) = AcpPermission.approval(id: key, params: message["params"] ?? .null)
-            openRequests[key] = (raw, options)
-            return (key, approval)
+        let requests = (result["requests"]?.array ?? []).compactMap { message -> (String, Interrupt)? in
+            guard let method = message["method"]?.string, let raw = message["id"], let key = Self.key(raw),
+                  let interrupt = open(method, raw: raw, key: key, params: message["params"] ?? .null) else { return nil }
+            return (key, interrupt)
         }
         return Attached(running: result["running"]?.bool ?? false, prompt: prompt, stopReason: result["stopReason"]?.string,
                         updates: updates, requests: requests)
@@ -504,8 +523,16 @@ final class AcpClient {
 
     /// Answers an approval card with one of its choices (once, session, always, deny).
     func answer(request id: String, choice: String) {
-        guard let open = openRequests.removeValue(forKey: id) else { return }
-        reply(to: open.raw, result: AcpPermission.reply(choice: choice, options: open.options))
+        guard case let .permission(raw, options)? = openRequests[id] else { return }
+        openRequests[id] = nil
+        reply(to: raw, result: AcpPermission.reply(choice: choice, options: options))
+    }
+
+    /// Answers a question card: one answer per question, as the card gives them.
+    func answer(form id: String, answers: [String: String]) {
+        guard case let .form(raw, form)? = openRequests[id] else { return }
+        openRequests[id] = nil
+        reply(to: raw, result: form.reply(answers))
     }
 
     /// Picks a model for a session, when it offers one and it isn't the current one.

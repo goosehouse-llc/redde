@@ -141,7 +141,8 @@ the token in the Keychain under the server's id, synced with iCloud like the oth
 | `usage_update` | `.usage(contextUsed: used, contextMax: size)` |
 | `session_info_update` title | the chat's title |
 | `session/request_permission` | `.interrupt(.approval)`; options mapped to once / session / always / deny |
-| `available_commands_update` | slash commands in the composer (phase 2) |
+| `available_commands_update` | slash commands in the composer, offered as "/…" is typed |
+| `elicitation/create`, mode `form` | the question card (`AcpForm`): a question per field, choices as pills, a free-text field named `<field>_custom` as the question's "Something else…" box; answered `accept` with the form's own values. Mode `url` isn't offered (`clientCapabilities.elicitation` = `{form: {}}`, from the app and from the bridge) |
 | `notice` | a status line |
 | prompt answer / `_redde/turn_ended` | `.done`; `refusal`, `max_tokens` as a note |
 | `session/list` | the chat list (title, `updatedAt`, `cwd` as the project) |
@@ -164,8 +165,9 @@ agent's history and are shown again whenever the chat is opened.
 Hermes-only features are hidden on an ACP connection rather than shown broken: bots and group
 chats, briefings and the Today drawer, the Redde plugin (cards, phone tools, push), workstreams,
 Dashboard admin, profiles, rename/pin/archive/unread (ACP v1 has none; a draft RFD adds titles and
-archive), clarifying questions (ACP's `elicitation` comes in phase 2). Voice, CarPlay, the Watch
-(through the phone), the transcript, search inside a chat, quoting and suggested replies all work.
+archive). Voice, CarPlay, the Watch (through the phone), the transcript, search inside a chat,
+quoting, suggested replies and the agent's questions (Claude Code's AskUserQuestion arrives as a
+form) all work.
 
 ## Testing
 
@@ -183,6 +185,6 @@ archive), clarifying questions (ACP's `elicitation` comes in phase 2). Voice, Ca
 
 - ACP v2 when it leaves draft: `session/resume` with `replayFrom` replaces `session/load`, the
   `state_update` lifecycle, `tool_call` folded into `tool_call_update`. A planned migration.
-- `elicitation` forms as answer cards; `diff` content as a diff view; slash commands.
+- `diff` content as a diff view; `elicitation` in mode `url` (a sign-in page to open).
 - Several agents in one chat (a room across Hermes, Claude Code, Codex), through the bridge.
 - OpenClaw: check what its ACP mode exposes before writing a Gateway v4 client.

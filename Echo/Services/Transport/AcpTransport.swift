@@ -94,8 +94,8 @@ nonisolated struct AcpTransport: HermesTransport {
         switch event {
         case let .update(session, update, seq) where session == turn.session:
             for event in turn.take(update, seq: seq) { continuation.yield(event) }
-        case let .request(_, session, approval) where session == turn.session || session == nil:
-            continuation.yield(.interrupt(.approval(approval), runtimeSession: turn.session))
+        case let .request(_, session, interrupt) where session == turn.session || session == nil:
+            continuation.yield(.interrupt(interrupt, runtimeSession: turn.session))
         case let .resolved(id):
             continuation.yield(.interruptExpired(id: id))
         case let .turnEnded(session, stopReason) where session == turn.session:
@@ -121,8 +121,8 @@ nonisolated struct AcpTransport: HermesTransport {
                 for (update, seq) in state.updates {
                     for event in turn.take(update, seq: seq) { continuation.yield(event) }
                 }
-                for (_, approval) in state.requests {
-                    continuation.yield(.interrupt(.approval(approval), runtimeSession: turn.session))
+                for (_, interrupt) in state.requests {
+                    continuation.yield(.interrupt(interrupt, runtimeSession: turn.session))
                 }
                 if !state.running {
                     turn.ended = true
@@ -192,8 +192,8 @@ nonisolated struct AcpTransport: HermesTransport {
                 for (update, seq) in state.updates {
                     for event in turn.take(update, seq: seq) { continuation.yield(event) }
                 }
-                for (_, approval) in state.requests {
-                    continuation.yield(.interrupt(.approval(approval), runtimeSession: stored))
+                for (_, interrupt) in state.requests {
+                    continuation.yield(.interrupt(interrupt, runtimeSession: stored))
                 }
                 // It may have ended between the attach and the listener.
                 if let again = try? await client.attach(stored) {

@@ -1849,6 +1849,11 @@ final class Conversation {
             messages.insert(contentsOf: rows, at: at)
             persist()
         }
+        if connection == .acp {
+            // A form of the agent's, answered on its link; the bridge tells the other devices.
+            AcpClient.current(settings)?.answer(form: request.id, answers: answers)
+            return
+        }
         run { [dashboard] in
             if request.isBatch {
                 for (qid, answer) in answers {

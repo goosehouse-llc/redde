@@ -407,6 +407,171 @@ nonisolated struct AcpCommand: Identifiable, Equatable, Sendable {
     }
 }
 
+/// A form the agent asks the person to fill in (`elicitation/create`, mode `form`), shown as
+/// Redde's question card: one question per field, its choices as pills, and the card's own
+/// "Something else…" box. Claude Code asks its AskUserQuestion this way, each question followed
+/// by an optional free-text field (`question_0_custom`); that field becomes the question's box
+/// rather than a question of its own.
+nonisolated struct AcpForm: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        /// One of these (title → the value sent back).
+        case choice([(title: String, value: String)])
+        case multi([(title: String, value: String)])
+        case text
+        case number
+        case integer
+        case boolean
+
+        static func == (a: Kind, b: Kind) -> Bool {
+            switch (a, b) {
+            case let (.choice(x), .choice(y)), let (.multi(x), .multi(y)): x.map(\.title) == y.map(\.title) && x.map(\.value) == y.map(\.value)
+            case (.text, .text), (.number, .number), (.integer, .integer), (.boolean, .boolean): true
+            default: false
+            }
+        }
+    }
+
+    struct Field: Equatable, Sendable {
+        var key: String
+        var kind: Kind
+        /// The free-text field beside it, where a typed answer goes.
+        var other: String?
+    }
+
+    var fields: [Field]
+
+    static var yes: String { String(localized: "Yes", comment: "An agent's yes/no question: the answer yes") }
+    static var no: String { String(localized: "No", comment: "An agent's yes/no question: the answer no") }
+
+    /// The card and the form behind it; nil for a form Redde can't show (a URL to open, an
+    /// unknown mode, or no fields).
+    static func make(id: String, params: JSONValue) -> (card: ClarifyRequest, form: AcpForm)? {
+        guard (params["mode"]?.string ?? "form") == "form",
+              case let .object(properties)? = params["requestedSchema"]?["properties"], !properties.isEmpty else { return nil }
+        let message = params["message"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // JSON objects carry no order here; field names sort the way they were written
+        // (question_2 before question_10).
+        let keys = properties.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        var fields: [Field] = []
+        var texts: [String: String] = [:]
+        for key in keys {
+            let schema = properties[key] ?? .null
+            let kind = Self.kind(schema)
+            if kind == .text, let last = fields.last, last.other == nil, key == last.key + "_custom", last.kind != .text {
+                fields[fields.count - 1].other = key
+                continue
+            }
+            fields.append(Field(key: key, kind: kind))
+            let words = [schema["description"]?.string, schema["title"]?.string].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.first { !$0.isEmpty }
+            texts[key] = words
+        }
+        guard !fields.isEmpty else { return nil }
+        let single = fields.count == 1
+        let questions = fields.map { field -> ClarifyQuestion in
+            // One field is the message's question; several have their own words.
+            let asked = single && !message.isEmpty ? message : texts[field.key] ?? (message.isEmpty ? field.key : message)
+            let choices: [String] = switch field.kind {
+            case let .choice(options), let .multi(options): options.map(\.title)
+            case .boolean: [yes, no]
+            case .text, .number, .integer: []
+            }
+            if case .multi = field.kind { return ClarifyQuestion(id: field.key, question: asked, choices: choices, multiSelect: true) }
+            return ClarifyQuestion(id: field.key, question: asked, choices: choices, multiSelect: false)
+        }
+        // With several fields, the message heads them as its own line when it says more than a field does.
+        var card = ClarifyRequest(id: id, questions: questions, isBatch: true)
+        if !single, !message.isEmpty, !texts.values.contains(message), var first = card.questions.first {
+            first.question = message + "\n\n" + first.question
+            card.questions[0] = first
+        }
+        return (card, AcpForm(fields: fields))
+    }
+
+    private static func kind(_ schema: JSONValue) -> Kind {
+        func titled(_ list: [JSONValue]?) -> [(title: String, value: String)]? {
+            let options = (list ?? []).compactMap { option -> (title: String, value: String)? in
+                if let value = option.string { return (value, value) }
+                guard let value = option["const"]?.string else { return nil }
+                return (option["title"]?.string ?? value, value)
+            }
+            return options.isEmpty ? nil : options
+        }
+        switch schema["type"]?.string {
+        case "string":
+            if let options = titled(schema["oneOf"]?.array) ?? titled(schema["enum"]?.array) { return .choice(options) }
+            return .text
+        case "array":
+            let items = schema["items"] ?? .null
+            if let options = titled(items["anyOf"]?.array) ?? titled(items["enum"]?.array) { return .multi(options) }
+            return .text
+        case "number": return .number
+        case "integer": return .integer
+        case "boolean": return .boolean
+        default: return .text
+        }
+    }
+
+    /// What the agent is sent for the card's answers (one string per question, as the card gives
+    /// them: a typed answer, or the picks joined with ", ").
+    func reply(_ answers: [String: String]) -> JSONValue {
+        var content: [String: JSONValue] = [:]
+        for field in fields {
+            let answer = (answers[field.key] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !answer.isEmpty else { continue }
+            switch field.kind {
+            case let .choice(options):
+                if let option = options.first(where: { $0.title == answer }) {
+                    content[field.key] = .string(option.value)
+                } else if let other = field.other {
+                    content[other] = .string(answer)
+                } else {
+                    content[field.key] = .string(answer)
+                }
+            case let .multi(options):
+                let (picks, rest) = Self.picks(in: answer, options: options)
+                if !picks.isEmpty { content[field.key] = .array(picks.map(JSONValue.string)) }
+                if !rest.isEmpty {
+                    if let other = field.other { content[other] = .string(rest) } else if picks.isEmpty { content[field.key] = .array([.string(rest)]) }
+                }
+            case .text:
+                content[field.key] = .string(answer)
+            case .number:
+                content[field.key] = Double(answer.replacingOccurrences(of: ",", with: ".")).map(JSONValue.number) ?? .string(answer)
+            case .integer:
+                content[field.key] = Int(answer).map { .number(Double($0)) } ?? .string(answer)
+            case .boolean:
+                let said = answer.lowercased()
+                content[field.key] = said == Self.yes.lowercased() || said == "yes" || said == "true" ? .bool(true)
+                    : said == Self.no.lowercased() || said == "no" || said == "false" ? .bool(false) : .string(answer)
+            }
+        }
+        return .object(["action": .string("accept"), "content": .object(content)])
+    }
+
+    /// The options named in a multi-select's answer ("A, B"), whose own titles may hold a comma;
+    /// what isn't an option is typed text.
+    static func picks(in answer: String, options: [(title: String, value: String)]) -> (values: [String], rest: String) {
+        if let whole = options.first(where: { $0.title == answer }) { return ([whole.value], "") }
+        let parts = answer.components(separatedBy: ", ")
+        var values: [String] = [], rest: [String] = []
+        var index = 0
+        outer: while index < parts.count {
+            // The longest run of parts that is an option's title.
+            for end in stride(from: parts.count, to: index, by: -1) {
+                let joined = parts[index ..< end].joined(separator: ", ")
+                if let option = options.first(where: { $0.title == joined }) {
+                    values.append(option.value)
+                    index = end
+                    continue outer
+                }
+            }
+            rest.append(parts[index])
+            index += 1
+        }
+        return (values, rest.joined(separator: ", "))
+    }
+}
+
 nonisolated enum AcpSessions {
     static func summaries(_ rows: [JSONValue]) -> [HermesSessionsAPI.SessionSummary] {
         rows.compactMap(summary).sorted { ($0.last_active ?? 0) > ($1.last_active ?? 0) }
