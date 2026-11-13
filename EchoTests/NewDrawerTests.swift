@@ -46,19 +46,6 @@ struct NewDrawerTests {
         #expect(try hello(2) == String(localized: "Hello, night owl", comment: "The drawer's hello, late at night"))
     }
 
-    /// Dragging a tile onto another's place on the Today page (asked 2026-11-13).
-    @Test func aDraggedTileTakesThePlaceItIsDroppedOn() {
-        let keys = ["inbox", "list:a", "brief:b", "goal:c"]
-        #expect(TodayStrip.placing("inbox", at: "brief:b", in: keys, order: []) == ["list:a", "brief:b", "inbox", "goal:c"])
-        #expect(TodayStrip.placing("goal:c", at: "inbox", in: keys, order: []) == ["goal:c", "inbox", "list:a", "brief:b"])
-        // A tile not shown today keeps its kept place after the shown ones.
-        #expect(TodayStrip.placing("list:a", at: "inbox", in: keys, order: ["brief:old", "inbox"])
-                == ["list:a", "inbox", "brief:b", "goal:c", "brief:old"])
-        // Onto itself, or a tile that isn't there: nothing changes.
-        #expect(TodayStrip.placing("inbox", at: "inbox", in: keys, order: ["x"]) == ["x"])
-        #expect(TodayStrip.placing("inbox", at: "gone", in: keys, order: ["x"]) == ["x"])
-    }
-
     /// The calendar tile sits beside the inbox (asked 2026-11-13) until it's placed by hand.
     @Test func theCalendarTileSitsBesideTheInbox() {
         let keys = ["list:a", "inbox", "brief:b", "upnext"]

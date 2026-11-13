@@ -25,10 +25,6 @@ struct TodayStrip: View {
     @State private var arranging = false
     @Environment(\.openURL) private var openURL
     @AppStorage("chatList.open.today") private var isOpen = true
-    /// The Today page's tiles wiggling to be dragged into order (asked 2026-11-13), and the one
-    /// being dragged.
-    @State private var arrangingInPlace = false
-    @State private var dragging: String?
     /// The Today page keeps a calendar tile beside the inbox (asked 2026-11-13) whether or not
     /// Up Next is on for the strip, until its hold menu hides it.
     @AppStorage("today.page.calendarHidden") private var calendarHiddenOnPage = false
@@ -132,7 +128,6 @@ struct TodayStrip: View {
     @ViewBuilder
     private func page(_ shown: [Entry], todo: Int, unread: Int, briefs: Int) -> some View {
         let tone = DrawerTone(theme)
-        let rest = shown
         Section {
             TodayPageHero(tone: tone, todo: todo, unread: unread, briefs: briefs)
                 .todayPageRow(top: 4, bottom: 12)
@@ -141,27 +136,6 @@ struct TodayStrip: View {
                 .sheet(isPresented: $arranging) {
                     ArrangeTilesSheet(tiles: shown.map { ($0.key, $0.name, $0.symbol) })
                 }
-                .toolbar {
-                    if rest.count > 1 {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                withAnimation(.snappy) { arrangingInPlace.toggle() }
-                                dragging = nil
-                            } label: {
-                                if arrangingInPlace {
-                                    Text("Done")
-                                } else {
-                                    Label { Text("Arrange Tiles", comment: "Title of the sheet that puts the Today tiles in order") } icon: { Image(systemName: "rectangle.2.swap") }
-                                }
-                            }
-                        }
-                    }
-                }
-                .onDisappear { arrangingInPlace = false }
-            #if DEBUG
-                // `-echo.arrangeToday`: the page opens with its tiles being arranged (screenshots).
-                .task { if DevHooks.has("-echo.arrangeToday") { arrangingInPlace = true } }
-            #endif
                 // The calendar tile's next event, to the minute while the page is up (the chat
                 // list keeps it only while Up Next is on for the strip).
                 .task(id: calendarHiddenOnPage) {
@@ -175,66 +149,16 @@ struct TodayStrip: View {
                         try? await Task.sleep(for: .seconds(60))
                     }
                 }
-            if !rest.isEmpty {
+            if !shown.isEmpty {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                    ForEach(Array(rest.enumerated()), id: \.element.key) { index, entry in
-                        if arrangingInPlace {
-                            arrangeable(entry, index: index, keys: shown.map(\.key), tone: tone)
-                        } else {
-                            entry.view
-                        }
-                    }
+                    ForEach(shown, id: \.key) { $0.view }
                 }
                 .sensoryFeedback(.selection, trigger: settings.todayTileOrder)
                 .todayPageRow(top: 0, bottom: 14)
-            }
-            if shown.isEmpty {
+            } else {
                 TodayPageEmpty(tone: tone).todayPageRow(top: 0, bottom: 14)
             }
         }
-    }
-
-    /// A tile while the page is being arranged: it wiggles, its taps and menu are off, and it
-    /// can be picked up and dropped on another tile's place; the others make way as it passes.
-    private func arrangeable(_ entry: Entry, index: Int, keys: [String], tone: DrawerTone) -> some View {
-        entry.view
-            .allowsHitTesting(false)
-            .overlay {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .strokeBorder(tone.places[0], style: StrokeStyle(lineWidth: 2, dash: [6, 5]))
-            }
-            .overlay(alignment: .topTrailing) {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(tone.page)
-                    .frame(width: 26, height: 26)
-                    .background(tone.places[0], in: .circle)
-                    .offset(x: 6, y: -6)
-            }
-            .opacity(dragging == entry.key ? 0.35 : 1)
-            .modifier(Wiggle(phase: index))
-            .contentShape(.rect(cornerRadius: 22))
-            .onDrag {
-                dragging = entry.key
-                return NSItemProvider(object: entry.key as NSString)
-            }
-            .onDrop(of: [.text], delegate: TileDrop(target: entry.key, dragging: $dragging) { moved, target in
-                withAnimation(.snappy) {
-                    settings.todayTileOrder = Self.placing(moved, at: target, in: keys, order: settings.todayTileOrder)
-                }
-            })
-            .accessibilityAction(named: Text("Move Left", comment: "A Today tile's hold menu: swap it with the tile before it")) { move(entry.key, by: -1, in: keys) }
-            .accessibilityAction(named: Text("Move Right", comment: "A Today tile's hold menu: swap it with the tile after it")) { move(entry.key, by: 1, in: keys) }
-    }
-
-    /// The order after `key` is dragged onto `target`'s place: it takes that place and the tiles
-    /// between shift one along; what's kept for tiles not shown stays after them.
-    static func placing(_ key: String, at target: String, in keys: [String], order: [String]) -> [String] {
-        guard key != target, let from = keys.firstIndex(of: key), let to = keys.firstIndex(of: target) else { return order }
-        var keys = keys
-        keys.remove(at: from)
-        keys.insert(key, at: to)
-        return keys + order.filter { !keys.contains($0) }
     }
 
     private var big: Bool { layout == .page }
@@ -936,34 +860,4 @@ private extension View {
 }
 
 /// A tile being dragged over another: it takes that tile's place as it passes.
-private struct TileDrop: DropDelegate {
-    let target: String
-    @Binding var dragging: String?
-    let place: (String, String) -> Void
 
-    func dropEntered(info: DropInfo) {
-        guard let dragging, dragging != target else { return }
-        place(dragging, target)
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
-
-    func performDrop(info: DropInfo) -> Bool {
-        dragging = nil
-        return true
-    }
-}
-
-/// A small rock back and forth while the tiles are being arranged, each a little out of step.
-private struct Wiggle: ViewModifier {
-    let phase: Int
-    @State private var on = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    func body(content: Content) -> some View {
-        content
-            .rotationEffect(.degrees(reduceMotion ? 0 : on ? 1.2 : -1.2))
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.13).repeatForever(autoreverses: true).delay(Double(phase % 3) * 0.05), value: on)
-            .onAppear { on = true }
-    }
-}
