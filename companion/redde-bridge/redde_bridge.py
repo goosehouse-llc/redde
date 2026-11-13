@@ -841,7 +841,10 @@ def setup_link(config: Config, agent: "AgentConfig | None", host_name: str | Non
     the phone, or scanned as a QR code, it fills in the connection. It holds the token: share it
     only with your own devices. The parameters ride after the "#", which a browser never sends."""
     from urllib.parse import quote
-    fields = [("name", socket.gethostname().split(".")[0]), ("bridge", setup_address(config, host_name)),
+    # Named for its agent ("Codex"), so two agents on one bridge aren't two servers called the same;
+    # the bridge's own link is named for the machine.
+    name = agent.name if agent is not None and agent.name else socket.gethostname().split(".")[0]
+    fields = [("name", name), ("bridge", setup_address(config, host_name)),
               ("bridge-token", config.token)]
     if agent is not None:
         fields.append(("agent", agent.id))

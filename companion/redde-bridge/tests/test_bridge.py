@@ -323,6 +323,9 @@ class SetupLinkTests(unittest.TestCase):
         fields = dict(parse_qsl(parts.fragment))
         self.assertTrue(fields["bridge"].startswith("ws://") and fields["bridge"].endswith(".local:8767"))
         self.assertEqual((fields["bridge-token"], fields["agent"], fields["use"], fields["v"]), ("t0k-_x", "claude", "acp", "1"))
+        # Named for the agent: Claude Code and Codex on one bridge are two servers with their own names.
+        self.assertEqual(fields["name"], "Claude Code")
+        self.assertNotIn("Claude", dict(parse_qsl(urlsplit(rb.setup_link(config, None)).fragment))["name"])
 
     def test_a_named_host_and_tls_are_kept(self):
         config = rb.Config(listen="100.64.0.5:8767", token="t", agents=[], tls_cert="c.pem", tls_key="k.pem")
