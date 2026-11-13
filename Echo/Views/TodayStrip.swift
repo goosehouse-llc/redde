@@ -27,7 +27,8 @@ struct TodayStrip: View {
     @AppStorage("chatList.open.today") private var isOpen = true
     /// The Today page keeps a calendar tile beside the inbox (asked 2026-11-13) whether or not
     /// Up Next is on for the strip, until its hold menu hides it.
-    @AppStorage("today.page.calendarHidden") private var calendarHiddenOnPage = false
+    @AppStorage(TodayStrip.calendarHiddenKey) private var calendarHiddenOnPage = false
+    static let calendarHiddenKey = "today.page.calendarHidden"
     /// Calendar access given from the tile, so it changes at once even with nothing coming up.
     @State private var calendarGranted = false
     /// Once, when the calendar tile first comes to the page: forget where Up Next was placed in
@@ -136,18 +137,15 @@ struct TodayStrip: View {
                 .sheet(isPresented: $arranging) {
                     ArrangeTilesSheet(tiles: shown.map { ($0.key, $0.name, $0.symbol) })
                 }
-                // The calendar tile's next event, to the minute while the page is up (the chat
-                // list keeps it only while Up Next is on for the strip).
+                // The calendar tile's next event as the page opens; the chat list keeps it to
+                // the minute from there.
                 .task(id: calendarHiddenOnPage) {
                     guard !calendarHiddenOnPage else { return }
                     if !calendarMovedBesideInbox {
                         calendarMovedBesideInbox = true
                         settings.todayTileOrder.removeAll { $0 == "upnext" }
                     }
-                    while !Task.isCancelled {
-                        upNext.refresh()
-                        try? await Task.sleep(for: .seconds(60))
-                    }
+                    upNext.refresh()
                 }
             if !shown.isEmpty {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
