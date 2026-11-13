@@ -70,6 +70,29 @@ struct NewDrawerTests {
         #expect(TodayStrip.placing("inbox", at: "gone", in: keys, order: ["x"]) == ["x"])
     }
 
+    /// The calendar tile sits beside the inbox (asked 2026-11-13) until it's placed by hand.
+    @Test func theCalendarTileSitsBesideTheInbox() {
+        let keys = ["list:a", "inbox", "brief:b", "upnext"]
+        #expect(TodayStrip.besideInbox(keys, order: ["list:a", "inbox"]) == ["list:a", "inbox", "upnext", "brief:b"])
+        // Placed by hand, it stays where it was put; with no inbox, where it fell.
+        #expect(TodayStrip.besideInbox(keys, order: ["upnext"]) == keys)
+        #expect(TodayStrip.besideInbox(["list:a", "upnext"], order: []) == ["list:a", "upnext"])
+    }
+
+    @Test func theCalendarPillSaysHowLongUntil() throws {
+        let cal = Calendar.current
+        let now = try #require(cal.date(bySettingHour: 9, minute: 0, second: 0, of: .now))
+        func event(_ minutes: Double, for length: Double = 30) -> CalendarUpNext.Event {
+            let start = now.addingTimeInterval(minutes * 60)
+            return CalendarUpNext.Event(id: "e", title: "Lunch", start: start, end: start.addingTimeInterval(length * 60), location: nil, color: nil)
+        }
+        #expect(TodayCalendarFeature.pill(event(25), now: now) == CalendarUpNext.when(event(25), now: now))
+        #expect(TodayCalendarFeature.pill(event(-10), now: now) == CalendarUpNext.when(event(-10), now: now))
+        let threeHours = TodayCalendarFeature.pill(event(200), now: now)
+        #expect(threeHours.contains("3"))
+        #expect(TodayCalendarFeature.pill(event(24 * 60), now: now) == String(localized: "Tomorrow", comment: "An agenda card's day"))
+    }
+
     // MARK: Colours
 
     private func rgb(_ color: Color, _ scheme: ColorScheme) -> (Double, Double, Double) {

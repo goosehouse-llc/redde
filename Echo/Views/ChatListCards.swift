@@ -141,6 +141,8 @@ struct ChatListCardsSettingsView: View {
                 Toggle(isOn: Binding(get: { settings.todayUpNext }, set: { on in
                     settings.todayUpNext = on
                     guard on else { return }
+                    // Back on the Today page too, if its hold menu hid it there.
+                    UserDefaults.standard.set(false, forKey: "today.page.calendarHidden")
                     Task {
                         calendarRefused = !(await CalendarUpNext.shared.ask())
                         CalendarUpNext.shared.refresh()

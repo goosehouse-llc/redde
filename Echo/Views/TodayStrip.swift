@@ -29,6 +29,14 @@ struct TodayStrip: View {
     /// being dragged.
     @State private var arrangingInPlace = false
     @State private var dragging: String?
+    /// The Today page keeps a calendar tile beside the inbox (asked 2026-11-13) whether or not
+    /// Up Next is on for the strip, until its hold menu hides it.
+    @AppStorage("today.page.calendarHidden") private var calendarHiddenOnPage = false
+    /// Calendar access given from the tile, so it changes at once even with nothing coming up.
+    @State private var calendarGranted = false
+    /// Once, when the calendar tile first comes to the page: forget where Up Next was placed in
+    /// the strip, so the tile starts beside the inbox (`besideInbox`).
+    @AppStorage("today.page.calendarBesideInbox") private var calendarMovedBesideInbox = false
     /// A briefing whose job's time is being changed (asked 2026-11-11).
     @State private var retiming: AgentBriefing?
     @Environment(\.theme) private var theme
@@ -50,17 +58,25 @@ struct TodayStrip: View {
         let deck = ChatListCard.briefings.isShown ? briefings.deck : []
         let goalList = ChatListCard.goals.isShown ? goals.onList : []
         let todayLists = ChatListCard.lists.isShown ? lists.lists : []
-        let event = settings.todayUpNext ? upNext.next : nil
+        let onPage = layout == .page
+        let showsCalendar = settings.todayUpNext || (onPage && !calendarHiddenOnPage)
+        let event = showsCalendar ? upNext.next : nil
+        // The page's tile shows with nothing coming up too (and asks for the calendars); the
+        // strip's only with an event.
+        let calendarTile = onPage ? showsCalendar : event != nil
         // The keys first, in the person's order, so each tile's menu knows where it stands.
         var natural: [String] = []
-        if event != nil { natural.append("upnext") }
         if account != nil { natural.append("inbox") }
+        if calendarTile { natural.append("upnext") }
         natural += todayLists.map { "list:" + $0.id } + deck.map { "brief:" + $0.jobKey } + goalList.map { "goal:" + $0.id }
-        let keys = Self.arranged(natural, order: settings.todayTileOrder)
+        let keys = Self.besideInbox(Self.arranged(natural, order: settings.todayTileOrder), order: settings.todayTileOrder)
         var entries: [Entry] = []
-        if let event {
-            entries.append(Entry(key: "upnext", name: String(localized: "Up Next", comment: "Today strip: the tile with the next event on the calendar"),
-                                 symbol: "calendar", view: AnyView(upNextTile(event, keys: keys))))
+        if calendarTile {
+            let view = onPage ? AnyView(calendarPageTile(event, keys: keys)) : event.map { AnyView(upNextTile($0, keys: keys)) }
+            if let view {
+                entries.append(Entry(key: "upnext", name: String(localized: "Up Next", comment: "Today strip: the tile with the next event on the calendar"),
+                                     symbol: "calendar", view: view))
+            }
         }
         if let account {
             entries.append(Entry(key: "inbox", name: String(localized: "Inbox", comment: "The chat list's row for email"),
@@ -111,13 +127,12 @@ struct TodayStrip: View {
         })
     }
 
-    /// The Today page: the day in its colour with three counts, the next event across the page,
-    /// then the rest two to a row. Nothing scrolls sideways.
+    /// The Today page: the day in its colour with three counts, then the tiles two to a row, the
+    /// calendar's beside the inbox. Nothing scrolls sideways.
     @ViewBuilder
     private func page(_ shown: [Entry], todo: Int, unread: Int, briefs: Int) -> some View {
         let tone = DrawerTone(theme)
-        let wide = shown.first { $0.key == "upnext" }
-        let rest = shown.filter { $0.key != "upnext" }
+        let rest = shown
         Section {
             TodayPageHero(tone: tone, todo: todo, unread: unread, briefs: briefs)
                 .todayPageRow(top: 4, bottom: 12)
@@ -147,9 +162,19 @@ struct TodayStrip: View {
                 // `-echo.arrangeToday`: the page opens with its tiles being arranged (screenshots).
                 .task { if DevHooks.has("-echo.arrangeToday") { arrangingInPlace = true } }
             #endif
-            if let wide {
-                wide.view.todayPageRow(top: 0, bottom: 12)
-            }
+                // The calendar tile's next event, to the minute while the page is up (the chat
+                // list keeps it only while Up Next is on for the strip).
+                .task(id: calendarHiddenOnPage) {
+                    guard !calendarHiddenOnPage else { return }
+                    if !calendarMovedBesideInbox {
+                        calendarMovedBesideInbox = true
+                        settings.todayTileOrder.removeAll { $0 == "upnext" }
+                    }
+                    while !Task.isCancelled {
+                        upNext.refresh()
+                        try? await Task.sleep(for: .seconds(60))
+                    }
+                }
             if !rest.isEmpty {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                     ForEach(Array(rest.enumerated()), id: \.element.key) { index, entry in
@@ -220,6 +245,16 @@ struct TodayStrip: View {
         let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
         let placed = keys.filter { rank[$0] != nil }.sorted { rank[$0]! < rank[$1]! }
         return placed + keys.filter { rank[$0] == nil }
+    }
+
+    /// The calendar tile right after the inbox until the person places it themselves (with the
+    /// inbox placed, it would otherwise fall in after every placed tile).
+    static func besideInbox(_ keys: [String], order: [String]) -> [String] {
+        guard !order.contains("upnext"), let at = keys.firstIndex(of: "upnext"), keys.contains("inbox") else { return keys }
+        var keys = keys
+        keys.remove(at: at)
+        keys.insert("upnext", at: keys.firstIndex(of: "inbox")! + 1)
+        return keys
     }
 
     /// The order after a tile moves one place: what's shown, then what was kept for tiles that
@@ -379,18 +414,67 @@ struct TodayStrip: View {
     private func upNextModel(_ event: CalendarUpNext.Event, now: Date) -> TodayTile {
         let on = event.isOn(at: now)
         let place = event.location?.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
-        var tile = TodayTile(key: "upnext", kind: on ? Text("Now") : Text("Up Next", comment: "Today strip: the tile with the next event on the calendar"),
-                             symbol: "calendar", tint: event.color ?? .red, wash: event.color ?? .red, title: event.title,
-                             detail: [CalendarUpNext.when(event, now: now), place].filter { !$0.isEmpty }.joined(separator: " · "))
-        if big {
-            tile.big = true
-            tile.height = 128
-            tile.title = ""
-            tile.detail = ""
-            tile.watermark = "calendar"
-            tile.feature = AnyView(TodayUpNextFeature(event: event, place: place, now: now, tone: DrawerTone(theme)))
+        return TodayTile(key: "upnext", kind: on ? Text("Now") : Text("Up Next", comment: "Today strip: the tile with the next event on the calendar"),
+                         symbol: "calendar", tint: event.color ?? .red, wash: event.color ?? .red, title: event.title,
+                         detail: [CalendarUpNext.when(event, now: now), place].filter { !$0.isEmpty }.joined(separator: " · "))
+    }
+
+    /// The Today page's calendar tile (asked 2026-11-13): the next event, its time large and how
+    /// long until it; a tap opens Calendar there. Before Redde may read the calendars, a tap asks
+    /// (or, once refused, opens Redde's settings).
+    private func calendarPageTile(_ event: CalendarUpNext.Event?, keys: [String]) -> some View {
+        TimelineView(.everyMinute) { context in
+            let tile = calendarPageModel(event, now: context.date)
+            tileButton(tile, keys: keys, open: { openCalendar(at: event) }) {
+                Button {
+                    settings.todayUpNext = false
+                    calendarHiddenOnPage = true
+                } label: {
+                    Label { Text("Hide Up Next", comment: "The Up Next tile's hold menu: turn the tile off (Settings › Appearance › Top of the Chat List turns it back on)") } icon: { Image(systemName: "eye.slash") }
+                }
+                TileColorMenu(key: tile.key)
+            }
+            .accessibilityHint(Text("Opens Calendar", comment: "VoiceOver hint: the Up Next tile on the chat list"))
+        }
+    }
+
+    private func calendarPageModel(_ event: CalendarUpNext.Event?, now: Date) -> TodayTile {
+        let tone = DrawerTone(theme)
+        let color = event?.color ?? .red
+        let on = event?.isOn(at: now) == true
+        var tile = TodayTile(key: "upnext",
+                             kind: event == nil ? Text("Calendar", comment: "An agenda card's title")
+                                 : on ? Text("Now", comment: "A weather card's reading, and its first hour: now")
+                                 : Text("Up Next", comment: "Today strip: the tile with the next event on the calendar"),
+                             symbol: "calendar", tint: color, wash: color, title: "", detail: "")
+        tile.big = true
+        tile.watermark = "calendar"
+        if let event {
+            let place = event.location?.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
+            tile.feature = AnyView(TodayCalendarFeature(event: event, place: place, now: now, tone: tone))
+        } else {
+            tile.feature = AnyView(TodayCalendarNothing(reads: calendarGranted || upNext.canRead, tone: tone))
         }
         return tile
+    }
+
+    private func openCalendar(at event: CalendarUpNext.Event?) {
+        if let event {
+            AgendaCard.calendarURL(at: event.start).map { openURL($0) }
+        } else if upNext.canRead {
+            AgendaCard.calendarURL(at: .now).map { openURL($0) }
+        } else {
+            Task {
+                if await upNext.ask() {
+                    calendarGranted = true
+                    upNext.refresh()
+                } else {
+                    #if os(iOS)
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    #endif
+                }
+            }
+        }
     }
 
     private func goalTile(_ goal: GoalReport, keys: [String]) -> some View {
@@ -724,45 +808,75 @@ private struct TodayListItems: View {
     }
 }
 
-/// The next event across the page: its day in a block of the calendar's colour, the time large,
-/// what and where, and how long until it in a pill.
-private struct TodayUpNextFeature: View {
+/// The calendar tile's next event: its time large in the calendar's colour, what and where, and
+/// how long until it (or until when it runs) in a pill at the foot.
+struct TodayCalendarFeature: View {
     let event: CalendarUpNext.Event
     let place: String
     let now: Date
     let tone: DrawerTone
 
     var body: some View {
-        let color = event.color ?? tone.places[0]
-        let on = event.isOn(at: now)
-        HStack(alignment: .center, spacing: 14) {
-            VStack(spacing: 0) {
-                Text(event.start.formatted(.dateTime.weekday(.abbreviated)).localizedUppercase)
-                    .font(.system(size: 11, weight: .heavy, design: tone.design))
-                Text(event.start.formatted(.dateTime.day()))
-                    .font(.system(size: 26, weight: .heavy, design: tone.design))
-                    .monospacedDigit()
-            }
-            .foregroundStyle(tone.page)
-            .frame(width: 58, height: 62)
-            .background(color, in: .rect(cornerRadius: 16, style: .continuous))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(event.start.formatted(date: .omitted, time: .shortened))
-                    .font(.system(.title2, design: tone.design, weight: .heavy))
-                    .monospacedDigit()
-                    .foregroundStyle(color)
-                Text(event.title).font(.system(.headline, design: tone.design, weight: .bold)).lineLimit(1)
-                if !place.isEmpty {
-                    Text(place).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
+        let color = event.color ?? .red
+        VStack(alignment: .leading, spacing: 3) {
+            Text(event.start.formatted(date: .omitted, time: .shortened))
+                .font(.system(.title2, design: tone.design, weight: .heavy))
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(event.title)
+                .font(.system(.headline, design: tone.design, weight: .bold))
+                .lineLimit(2)
+            if !place.isEmpty {
+                HStack(spacing: 3) {
+                    Image(systemName: "mappin")
+                    Text(place).lineLimit(1)
                 }
+                .chatFont(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
-            Text(on ? String(localized: "Now", comment: "A weather card's reading, and its first hour: now") : CalendarUpNext.when(event, now: now))
+            Text(Self.pill(event, now: now))
                 .font(.system(.caption, design: tone.design, weight: .bold))
                 .foregroundStyle(color)
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .background(color.opacity(0.16), in: .capsule)
                 .lineLimit(1)
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    /// How long until it: "until 3:00 PM" while it's on, "in 25 min" or "in 3 hr" today, else
+    /// "Tomorrow" or the weekday (the time is already above it).
+    static func pill(_ event: CalendarUpNext.Event, now: Date) -> String {
+        let calendar = Calendar.current
+        if event.isOn(at: now) || event.start.timeIntervalSince(now) < 3600 { return CalendarUpNext.when(event, now: now) }
+        if calendar.isDate(event.start, inSameDayAs: now) {
+            let span = Duration.seconds(event.start.timeIntervalSince(now))
+                .formatted(.units(allowed: [.hours], width: .abbreviated, fractionalPart: .hide(rounded: .down)))
+            return String(localized: "in \(span)", comment: "An event card: it starts in this long")
+        }
+        if calendar.isDateInTomorrow(event.start) { return String(localized: "Tomorrow", comment: "An agenda card's day") }
+        return event.start.formatted(.dateTime.weekday(.wide))
+    }
+}
+
+/// The calendar tile with no event to show: nothing in the coming week, or a tap to let Redde
+/// read the calendars.
+private struct TodayCalendarNothing: View {
+    let reads: Bool
+    let tone: DrawerTone
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: reads ? "calendar.badge.checkmark" : "calendar.badge.plus")
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(.red)
+            Text(reads ? String(localized: "Nothing in the next 7 days", comment: "The Today page's calendar tile: no event coming up this week")
+                       : String(localized: "Tap to show your next event", comment: "The Today page's calendar tile before Redde may read the calendars"))
+                .font(.system(.subheadline, design: tone.design, weight: .semibold))
+                .foregroundStyle(reads ? Color.secondary : tone.ink)
+                .lineLimit(3)
         }
     }
 }
