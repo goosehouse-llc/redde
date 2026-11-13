@@ -168,6 +168,27 @@ final class ReplyActionsUITests: XCTestCase {
         XCTAssertGreaterThan(after.length, before.length, "Dragging the end handle didn't take in more text (\(before.length) → \(after.length))")
     }
 
+    /// With Chat text size set larger, the selected text stays the reply's size (2026-11-13: it
+    /// shrank to the system's size, and on the iPad the press then missed the text altogether).
+    func testSelectingKeepsTheChatsTextSize() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoShort", "-chatTextSize", "2"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        let reply = app.text(containing: "I've added a reminder")
+        XCTAssertTrue(reply.waitForExistence(timeout: 15), "The demo reply didn't appear")
+        let drawn = reply.frame
+        reply.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.8)).press(forDuration: 0.8)
+        let selection = app.textViews.matching(NSPredicate(format: "identifier BEGINSWITH %@", "inline-selection|")).firstMatch
+        XCTAssertTrue(selection.waitForExistence(timeout: 3), "A press low on the reply didn't select in place")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "selected-at-largest"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertGreaterThan(selection.frame.height, drawn.height * 0.9,
+                             "The selected text shrank: \(Int(drawn.height)) → \(Int(selection.frame.height)) points tall")
+    }
+
     /// The reply's menu is on its ··· button now, "Select text" (the whole reply in a sheet) with it.
     func testTheMoreButtonStillHasTheRepliesMenu() {
         let app = launchDemo()

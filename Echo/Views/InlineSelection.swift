@@ -87,6 +87,8 @@ private struct SelectableBlocks: View {
     let secondary: Bool
     let onEnd: () -> Void
     @Environment(\.theme) private var theme
+    /// The chat's text size (Settings › Chat text size moves it off the system's).
+    @Environment(\.dynamicTypeSize) private var size
 
     /// Runs of text blocks together; everything else on its own.
     private enum Segment {
@@ -115,7 +117,7 @@ private struct SelectableBlocks: View {
             ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                 switch segment {
                 case let .text(run):
-                    InlineTextView(text: ReplyText.attributed(run, theme: theme, secondary: secondary), onEnd: onEnd)
+                    InlineTextView(text: ReplyText.attributed(run, theme: theme, size: size, secondary: secondary), onEnd: onEnd)
                 case let .quote(inner):
                     HStack(alignment: .top, spacing: 10) {
                         RoundedRectangle(cornerRadius: 2).fill(theme.quoteBarColor).frame(width: 3)
@@ -423,8 +425,11 @@ private final class TouchCount: UIGestureRecognizer {
 /// theme's faces and colours, the same spacing, lists with their markers in a column.
 @MainActor
 enum ReplyText {
-    static func attributed(_ blocks: [MarkdownBlock], theme: ResolvedTheme, secondary: Bool) -> NSAttributedString {
-        let fonts = Fonts(theme: theme)
+    /// At `size`, the transcript's text size: the system's alone left the selection smaller than
+    /// the reply it stood in for with Chat text size set larger (2026-11-13), and on the iPad
+    /// the press then fell below the shrunken text and nothing was selected.
+    static func attributed(_ blocks: [MarkdownBlock], theme: ResolvedTheme, size: DynamicTypeSize, secondary: Bool) -> NSAttributedString {
+        let fonts = Fonts(theme: theme, size: size)
         let colour = secondary ? UIColor.secondaryLabel : UIColor(theme.textColor)
         let out = NSMutableAttributedString()
         for (i, block) in blocks.enumerated() {
@@ -511,20 +516,23 @@ enum ReplyText {
     }
 
     /// The theme's faces as UIKit fonts, as `ResolvedTheme.messageFont`, `headingFont` and
-    /// `codeFont` give them for SwiftUI on iPhone and iPad.
+    /// `codeFont` give them for SwiftUI on iPhone and iPad, at the transcript's text size.
     struct Fonts {
         let body: UIFont
         let code: UIFont
         let marker: UIFont
         private let theme: ResolvedTheme
+        private let traits: UITraitCollection
 
-        init(theme: ResolvedTheme) {
+        init(theme: ResolvedTheme, size: DynamicTypeSize) {
             self.theme = theme
-            body = Self.font(.body, custom: 17, name: theme.proseFontName, design: theme.palette.replyDesign)
+            let traits = UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(size))
+            self.traits = traits
+            body = Self.font(.body, custom: 17, name: theme.proseFontName, design: theme.palette.replyDesign, traits: traits)
             if let name = theme.palette.monoFontName, let mono = UIFont(name: name, size: 13) {
-                code = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: mono)
+                code = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: mono, compatibleWith: traits)
             } else {
-                code = .monospacedSystemFont(ofSize: UIFont.preferredFont(forTextStyle: .footnote).pointSize, weight: .regular)
+                code = .monospacedSystemFont(ofSize: UIFont.preferredFont(forTextStyle: .footnote, compatibleWith: traits).pointSize, weight: .regular)
             }
             marker = body.monospacedDigits()
         }
@@ -533,24 +541,24 @@ enum ReplyText {
             if theme.promptPrefix != nil { return body.weighted(level <= 2 ? .bold : .semibold) }
             if let name = theme.proseFontName {
                 switch level {
-                case 1: return Self.font(.title3, custom: 20, name: name, design: .default).weighted(.bold)
-                case 2: return Self.font(.headline, custom: 17, name: name, design: .default).weighted(.bold)
-                default: return Self.font(.subheadline, custom: 15, name: name, design: .default).weighted(.semibold)
+                case 1: return Self.font(.title3, custom: 20, name: name, design: .default, traits: traits).weighted(.bold)
+                case 2: return Self.font(.headline, custom: 17, name: name, design: .default, traits: traits).weighted(.bold)
+                default: return Self.font(.subheadline, custom: 15, name: name, design: .default, traits: traits).weighted(.semibold)
                 }
             }
             let design = theme.palette.headingDesign
             switch level {
-            case 1: return Self.font(.title3, custom: 20, name: nil, design: design).weighted(.semibold)
-            case 2: return Self.font(.headline, custom: 17, name: nil, design: design)
-            default: return Self.font(.subheadline, custom: 15, name: nil, design: design).weighted(.semibold)
+            case 1: return Self.font(.title3, custom: 20, name: nil, design: design, traits: traits).weighted(.semibold)
+            case 2: return Self.font(.headline, custom: 17, name: nil, design: design, traits: traits)
+            default: return Self.font(.subheadline, custom: 15, name: nil, design: design, traits: traits).weighted(.semibold)
             }
         }
 
-        private static func font(_ style: UIFont.TextStyle, custom size: CGFloat, name: String?, design: Font.Design) -> UIFont {
+        private static func font(_ style: UIFont.TextStyle, custom size: CGFloat, name: String?, design: Font.Design, traits: UITraitCollection) -> UIFont {
             if let name, let face = UIFont(name: name, size: size) {
-                return UIFontMetrics(forTextStyle: style).scaledFont(for: face)
+                return UIFontMetrics(forTextStyle: style).scaledFont(for: face, compatibleWith: traits)
             }
-            let system = UIFont.preferredFont(forTextStyle: style)
+            let system = UIFont.preferredFont(forTextStyle: style, compatibleWith: traits)
             let systemDesign: UIFontDescriptor.SystemDesign = switch design {
             case .rounded: .rounded
             case .serif: .serif
