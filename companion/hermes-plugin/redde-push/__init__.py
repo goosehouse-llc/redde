@@ -38,7 +38,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, watches, work, work_runs
+from . import calls, cards, core, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, waiting, watches, work, work_runs
 from . import models as model_settings   # (the Models & Providers route, 1.26.0)
 from . import tasks as task_reports   # (reports of handed-off tasks, 1.27.0)
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
@@ -669,6 +669,10 @@ def _slash(raw_args: str = "") -> str:
     if words[:2] == ["goals", "end"]:
         # End a goal: its check-in job deleted, the goal marked ended (goals.py).
         return _end_goal_slash(words[2:])
+    if words[:1] == ["waiting"]:
+        # What the bots wait on the person for (waiting.py, 1.28.0), from every profile's home, so
+        # each device's drawer shows the same and loses one once it's answered anywhere.
+        return waiting.slash(calls.caller(_home())[1], words[1:])
     if words[:1] == ["lists"]:
         # The person's lists (lists.py): every one as JSON, and a change from the phone. The main home's.
         return lists.slash(calls.caller(_home())[1], words[1:])

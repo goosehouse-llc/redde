@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.28.0 (2026-11-13)
+
+- What the bots wait on you for, the same on every device. A bot (or a plugin answering for one,
+  such as Coder's) lists what waits on your approval in its profile's home, `redde-waiting.json`,
+  and Redde asks for them all with `/redde-push waiting`, over the Dashboard or the Hermes API.
+  Redde's drawer shows them from there rather than from the notifications each device happened to
+  get: an iPad paired later sees them too, and one answered on any device is gone from all of them.
+
 ## 1.27.0 (2026-11-11)
 
 - A task's report stays in its chat (GitHub issue 63). When a task the agent handed off finishes

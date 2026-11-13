@@ -3,16 +3,9 @@ import Testing
 import UIKit
 @testable import Echo
 
-/// The drawer laid out from scratch (2026-11-13): Coder's waits, the hello, and its colours.
+/// The drawer laid out from scratch (2026-11-13): the bots' waits, the hello, and its colours.
 @MainActor
 struct NewDrawerTests {
-    private func note(_ id: String, profile: String = "coder", title: String = "Waiting on your approval",
-                      detail: String = "Server steps: a\nSay \"go\" to see the card.", ago: TimeInterval = 60,
-                      kind: AgentActivityNote.Kind = .routine, now: Date) -> AgentActivityNote {
-        AgentActivityNote(id: id, kind: kind, profile: profile, agent: "Coder", title: title, detail: detail,
-                          at: now.addingTimeInterval(-ago), failed: false)
-    }
-
     @Test func coderStepsAreReadFromEitherNote() {
         #expect(ConversationsList.drawerSteps("Server steps: systemctl restart x; rm -f /tmp/y")
                 == ["systemctl restart x", "rm -f /tmp/y"])
@@ -22,27 +15,23 @@ struct NewDrawerTests {
         #expect(ConversationsList.drawerSteps("Server steps: ") == nil)
     }
 
-    @Test func theWordBringsTheRightCard() {
-        let now = Date.now
-        #expect(NewDrawer.word(for: note("a", now: now)) == "go")
-        #expect(NewDrawer.word(for: note("b", detail: "Claude's change is ready to put in.\nSay \"put it in\" to see the card.", now: now))
-                == "put it in")
-    }
-
-    /// Only Coder-style waits from the last 12 hours, the newest per bot, none dismissed.
-    @Test func botWaitsKeepTheNewestPerBot() {
-        let now = Date.now
-        let notes = [
-            note("old", ago: 13 * 3600, now: now),
-            note("first", ago: 600, now: now),
-            note("latest", title: "Coder needs your OK", ago: 60, now: now),
-            note("other", profile: "writer", ago: 120, now: now),
-            note("gone", profile: "ops", ago: 30, now: now),
-            note("brief", profile: "sol", title: "Morning brief", kind: .routine, now: now),
-            note("idea", profile: "scout", kind: .ideas, now: now),
-        ]
-        let waits = NewDrawer.botWaits(notes, now: now, dismissed: ["gone"])
-        #expect(waits.map(\.id) == ["latest", "other"])
+    /// The bots' waits come from the server (plugin 1.28), so every device shows the same.
+    @Test func botWaitsAreTheServersList() throws {
+        let output = #"redde-push waiting {"waiting": [{"id": "change/c1/0123", "title": "Waiting on your approval", "#
+            + #""detail": "Claude's change is ready to put in.\nSay \"put it in\" to see the card.", "word": "put it in", "#
+            + #""at": 1794600000, "profile": "claude"}, {"id": "card/t_1/ab", "title": "Coder needs your OK", "#
+            + #""at": 1794590000, "profile": "claude"}]}"#
+        let waits = try #require(NewDrawer.BotWait.parse(output))
+        #expect(waits.map(\.id) == ["change/c1/0123", "card/t_1/ab"])
+        #expect(waits[0].word == "put it in")
+        #expect(waits[0].detail.hasPrefix("Claude's change is ready"))
+        #expect(waits[0].at == Date(timeIntervalSince1970: 1_794_600_000))
+        // Left out by the plugin: no detail, and "go".
+        #expect(waits[1].word == "go" && waits[1].detail.isEmpty)
+        #expect(NewDrawer.BotWait.parse(#"redde-push waiting {"waiting": []}"#) == [])
+        // An older plugin's answer to a command it doesn't know.
+        #expect(NewDrawer.BotWait.parse("redde-push: unknown command waiting") == nil)
+        #expect(NewDrawer.BotWait.parse("redde-push waiting {not json") == nil)
     }
 
     @Test func theHelloFollowsTheClock() throws {

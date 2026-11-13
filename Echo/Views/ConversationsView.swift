@@ -124,7 +124,7 @@ struct ConversationsList: View {
     @AppStorage(NewDrawer.key) var newDrawer = true
     @State var drawerPage: NewDrawer.Page?
     @State var drawerWaits: [WaitingRequest] = []
-    @State var drawerBotWaits: [AgentActivityNote] = []
+    @State var drawerBotWaits: [NewDrawer.BotWait] = []
     @State var drawerLater: [String] = []
     @State var drawerNeedsOpen = false
     @Environment(\.showSettingsSheet) private var showSettingsSheet
@@ -2952,24 +2952,41 @@ enum NewDrawer {
         }
     }
 
-    /// Coder's "waiting on your approval" notes (plugin claude-code 0.3.1+), for a turn that came
-    /// from another bot or a card: nobody was there to see a card, and saying "go" in Coder's chat
-    /// brings it. Read from the agent activity the notification extension keeps.
-    static func botWaits(_ notes: [AgentActivityNote], now: Date = .now, dismissed: Set<String>) -> [AgentActivityNote] {
-        var latest: [String: AgentActivityNote] = [:]
-        for note in notes where note.kind == .routine && now.timeIntervalSince(note.at) < 12 * 3600 && !dismissed.contains(note.id) {
-            let title = note.title.lowercased()
-            guard title.contains("needs your ok") || title.contains("waiting on your approval") else { continue }
-            if (latest[note.profile]?.at ?? .distantPast) < note.at { latest[note.profile] = note }
+    /// What a bot waits on the person for (Coder's server steps, a finished change, a card's
+    /// commands), as the server lists it: `/redde-push waiting`, plugin 1.28. The same on every
+    /// device, and gone from all of them once it's answered (asked 2026-11-13: the phone showed
+    /// Coder's wait from its notification, and the iPad, never sent one, didn't).
+    struct BotWait: Hashable, Identifiable {
+        var id: String
+        var profile: String
+        var title: String
+        var detail: String
+        /// What saying it in the bot's chat brings back: "go", or "put it in".
+        var word: String
+        var at: Date
+
+        private struct Reply: Decodable {
+            struct Item: Decodable {
+                var id, profile, title: String
+                var detail, word: String?
+                var at: Double
+            }
+            var waiting: [Item]
         }
-        return latest.values.sorted { $0.at > $1.at }
+
+        /// The plugin's answer, or nil when it isn't one (a plugin older than 1.28).
+        static func parse(_ output: String) -> [BotWait]? {
+            let prefix = "redde-push waiting "
+            guard output.hasPrefix(prefix),
+                  let reply = try? JSONDecoder().decode(Reply.self, from: Data(output.dropFirst(prefix.count).utf8)) else { return nil }
+            return reply.waiting.map {
+                BotWait(id: $0.id, profile: $0.profile, title: $0.title, detail: $0.detail ?? "", word: $0.word ?? "go",
+                        at: Date(timeIntervalSince1970: $0.at))
+            }
+        }
     }
 
-    /// What saying it in the bot's chat brings back: Claude's finished change, or server steps.
-    static func word(for note: AgentActivityNote) -> String {
-        note.detail.lowercased().contains("put it in") ? "put it in" : "go"
-    }
-
+    /// Put away with ✕ on this device (its id names what waits, so the next steps show again).
     static var dismissed: Set<String> {
         get { Set(UserDefaults.standard.stringArray(forKey: key + ".dismissed") ?? []) }
         set { UserDefaults.standard.set(Array(newValue.suffix(50)), forKey: key + ".dismissed") }
@@ -2977,7 +2994,8 @@ enum NewDrawer {
 }
 
 extension ConversationsList {
-    /// The waits, read again each 20 s while the list is up (they live in the app group).
+    /// The waits, read again each 20 s while the list is up: the person's from the app group,
+    /// the bots' from the server.
     func watchDrawerWaits() async {
         guard newDrawer, isShowing, scenePhase == .active else { return }
         #if DEBUG
@@ -2989,17 +3007,29 @@ extension ConversationsList {
         #endif
         while !Task.isCancelled {
             let waits = NeedsYou.waiting()
-            var bots = NewDrawer.botWaits(AgentActivityNote.all(), dismissed: NewDrawer.dismissed)
+            if waits != drawerWaits { drawerWaits = waits }
+            // Unreachable for a moment: what was shown stays; an older plugin: none.
+            var bots = drawerBotWaits
+            if usesLedger, settings.transport != .acp, botsHere {
+                do {
+                    bots = NewDrawer.BotWait.parse(try await PushService.command(over: settings)("waiting")) ?? []
+                } catch PushError.noPlugin {
+                    bots = []
+                } catch {}
+            } else {
+                bots = []
+            }
             #if DEBUG
             // `-echo.demoBotWait`: Quill waiting on server steps from a card (screenshots).
-            if DevHooks.has("-echo.demoBotWait"), !NewDrawer.dismissed.contains("demo-wait") {
-                bots = [AgentActivityNote(id: "demo-wait", kind: .routine, profile: "writer", agent: "Quill", title: "Waiting on your approval",
+            if DevHooks.has("-echo.demoBotWait") {
+                bots = [NewDrawer.BotWait(id: "demo-wait", profile: "writer", title: "Waiting on your approval",
                                           detail: "Server steps: systemctl restart hermes-gateway\nSay \"go\" to see the card.",
-                                          at: .now.addingTimeInterval(-240), failed: false)]
+                                          word: "go", at: .now.addingTimeInterval(-240))]
             }
             #endif
-            if waits != drawerWaits { drawerWaits = waits }
-            if bots != drawerBotWaits { drawerBotWaits = bots }
+            guard !Task.isCancelled else { return }
+            let shown = bots.filter { !NewDrawer.dismissed.contains($0.id) }
+            if shown != drawerBotWaits { drawerBotWaits = shown }
             try? await Task.sleep(for: .seconds(20))
         }
     }
@@ -3105,7 +3135,7 @@ extension ConversationsList {
 
     struct DrawerNeeds {
         var waits: [WaitingRequest] = []
-        var botWaits: [(AgentActivityNote, HermesBot)] = []
+        var botWaits: [(NewDrawer.BotWait, HermesBot)] = []
         var bots: [HermesBot] = []
         var rooms: [GroupRoom] = []
         var chats: [HermesSessionsAPI.SessionSummary] = []
@@ -3119,9 +3149,9 @@ extension ConversationsList {
             && activity.kind(of: $0.id, open: conversation) == .needsYou }
         let roster = serverBots ?? []
         needs.bots = roster.filter { activity.kind(of: $0, open: conversation) == .needsYou }
-        needs.botWaits = drawerBotWaits.compactMap { note in
-            guard !needs.bots.contains(where: { $0.name == note.profile }), let bot = roster.first(where: { $0.name == note.profile }) else { return nil }
-            return (note, bot)
+        needs.botWaits = drawerBotWaits.compactMap { wait in
+            guard !needs.bots.contains(where: { $0.name == wait.profile }), let bot = roster.first(where: { $0.name == wait.profile }) else { return nil }
+            return (wait, bot)
         }
         needs.rooms = groups.key == settings.connectionKey ? groups.rooms.filter { activity.kind(of: $0) == .needsYou } : []
         return needs
@@ -3165,20 +3195,20 @@ extension ConversationsList {
                 if let bot = botChatRows[session.id] { openBot(bot) } else { open(session) }
             })
         }
-        for (note, bot) in needs.botWaits {
+        for (wait, bot) in needs.botWaits {
             let name = bot.label(mainName: settings.headerTitle)
-            let line = note.detail.components(separatedBy: "\n").first ?? ""
+            let line = wait.detail.components(separatedBy: "\n").first ?? ""
             let steps = Self.drawerSteps(line)
-            let title = steps == nil ? "\(name): \(note.title)"
+            let title = steps == nil ? "\(name): \(wait.title)"
                 : String(localized: "\(name) wants to run steps on the server", comment: "The drawer: a bot (Coder) waiting for your OK on server steps; its name")
-            items.append(DrawerNeed(id: "note:" + note.id, icon: .face(faces[bot.name] ?? BotFace(seed: bot.name)), title: title,
+            items.append(DrawerNeed(id: "bot-wait:" + wait.id, icon: .face(faces[bot.name] ?? BotFace(seed: bot.name)), title: title,
                                      detail: (steps == nil ? line : String(localized: "From a card or another bot", comment: "The drawer: where a bot's waiting turn came from, so nobody saw its card"))
-                                        + " · " + DateGroup.rowTime(note.at),
+                                        + " · " + DateGroup.rowTime(wait.at),
                                      command: steps?.joined(separator: "\n"), pill: Self.lookWord, busy: openingBot == bot.name,
-                                     act: { reviewBotWait(note, bot: bot) },
+                                     act: { reviewBotWait(wait, bot: bot) },
                                      dismiss: {
-                                         NewDrawer.dismissed.insert(note.id)
-                                         drawerBotWaits.removeAll { $0.id == note.id }
+                                         NewDrawer.dismissed.insert(wait.id)
+                                         drawerBotWaits.removeAll { $0.id == wait.id }
                                      }))
         }
         for bot in needs.bots {
@@ -3228,17 +3258,16 @@ extension ConversationsList {
         }
     }
 
-    /// A bot waiting on a turn from another bot or a card: Review opens its chat and says the
-    /// word that brings the card ("go", or "put it in").
-    private func reviewBotWait(_ note: AgentActivityNote, bot: HermesBot) {
-        let word = NewDrawer.word(for: note)
-        NewDrawer.dismissed.insert(note.id)
-        drawerBotWaits.removeAll { $0.id == note.id }
+    /// A bot waiting on a turn from another bot or a card: Take a Look opens its chat and says the
+    /// word that brings the card ("go", or "put it in"). The server takes the wait off every
+    /// device once it's answered; until then the next look brings it back.
+    private func reviewBotWait(_ wait: NewDrawer.BotWait, bot: HermesBot) {
+        drawerBotWaits.removeAll { $0.id == wait.id }
         openingBot = bot.name
         Task {
             do {
                 try await conversation.openBot(bot, mainName: settings.headerTitle)
-                conversation.send(word)
+                conversation.send(wait.word)
                 opened()
             } catch {
                 ledgerError = error.localizedDescription
