@@ -540,6 +540,7 @@ private struct TodayTile: View {
         let radius: CGFloat = big ? 22 : 16
         Group { if big { bigContent } else { content } }
             .environment(\.colorScheme, solid?.scheme ?? scheme)
+            .environment(\.todayTileSolid, solid != nil)
             .background {
                 let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
                 if let solid {
@@ -561,7 +562,7 @@ private struct TodayTile: View {
                 if let ring, feature == nil {
                     GoalRing(done: ring.done, total: ring.total, color: ring.color, size: 16, showsCount: false)
                 } else if let symbol {
-                    Image(systemName: symbol).foregroundStyle(tint)
+                    Image(systemName: symbol).tileAccent(tint)
                 }
                 kind.lineLimit(1)
             }
@@ -597,7 +598,7 @@ private struct TodayTile: View {
                 if let ring {
                     GoalRing(done: ring.done, total: ring.total, color: ring.color, size: 16, showsCount: false)
                 } else if let symbol {
-                    Image(systemName: symbol).foregroundStyle(tint)
+                    Image(systemName: symbol).tileAccent(tint)
                 }
                 kind.lineLimit(1)
             }
@@ -689,6 +690,27 @@ private struct ArrangeTilesSheet: View {
     }
 }
 
+extension EnvironmentValues {
+    /// A Today tile filled with a solid colour of its own (Tile Color), where a kind's colour can
+    /// be the fill's: on 11-13 the Inbox's count was drawn in the very blue it sat on.
+    @Entry var todayTileSolid = false
+}
+
+/// A tile's accent (its symbol, a count, a time): the kind's colour, or the words' own colour on
+/// a solid fill.
+private struct TileAccent: ViewModifier {
+    let tint: Color
+    @Environment(\.todayTileSolid) private var solid
+
+    func body(content: Content) -> some View {
+        content.foregroundStyle(solid ? AnyShapeStyle(.primary) : AnyShapeStyle(tint))
+    }
+}
+
+private extension View {
+    func tileAccent(_ tint: Color) -> some View { modifier(TileAccent(tint: tint)) }
+}
+
 // MARK: - The Today page (2026-11-13)
 
 /// The Today page's head: the day, large, beside its sun in the drawer's Today colour, and three
@@ -774,11 +796,11 @@ private struct TodayBigNumber: View {
                 Text(verbatim: "\(count)")
                     .font(.system(size: 44, weight: .heavy, design: design))
                     .monospacedDigit()
-                    .foregroundStyle(tint)
+                    .tileAccent(tint)
             } else {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 34, weight: .bold))
-                    .foregroundStyle(tint)
+                    .tileAccent(tint)
             }
             Text(label).font(.system(.subheadline, design: design, weight: .semibold)).foregroundStyle(.secondary).lineLimit(1)
         }
@@ -788,16 +810,17 @@ private struct TodayBigNumber: View {
 /// A list's open items, three of them, under a bar of how much of it is done.
 private struct TodayListItems: View {
     let list: TodayList
+    @Environment(\.todayTileSolid) private var solid
 
     var body: some View {
         let open = list.open
         VStack(alignment: .leading, spacing: 5) {
             ProgressView(value: Double(list.finished.count), total: Double(max(1, list.items.count)))
-                .tint(.green)
+                .tint(solid ? .primary : Color.green)
                 .accessibilityHidden(true)
             ForEach(open.prefix(3)) { item in
                 HStack(spacing: 6) {
-                    Image(systemName: "circle").font(.system(size: 9, weight: .bold)).foregroundStyle(.green)
+                    Image(systemName: "circle").font(.system(size: 9, weight: .bold)).tileAccent(.green)
                     Text(item.text).chatFont(.caption).lineLimit(1)
                 }
             }
@@ -822,7 +845,7 @@ struct TodayCalendarFeature: View {
             Text(event.start.formatted(date: .omitted, time: .shortened))
                 .font(.system(.title2, design: tone.design, weight: .heavy))
                 .monospacedDigit()
-                .foregroundStyle(color)
+                .tileAccent(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(event.title)
@@ -838,7 +861,7 @@ struct TodayCalendarFeature: View {
             Spacer(minLength: 0)
             Text(Self.pill(event, now: now))
                 .font(.system(.caption, design: tone.design, weight: .bold))
-                .foregroundStyle(color)
+                .tileAccent(color)
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .background(color.opacity(0.16), in: .capsule)
                 .lineLimit(1)
@@ -871,7 +894,7 @@ private struct TodayCalendarNothing: View {
         VStack(alignment: .leading, spacing: 6) {
             Image(systemName: reads ? "calendar.badge.checkmark" : "calendar.badge.plus")
                 .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(.red)
+                .tileAccent(.red)
             Text(reads ? String(localized: "Nothing in the next 7 days", comment: "The Today page's calendar tile: no event coming up this week")
                        : String(localized: "Tap to show your next event", comment: "The Today page's calendar tile before Redde may read the calendars"))
                 .font(.system(.subheadline, design: tone.design, weight: .semibold))
