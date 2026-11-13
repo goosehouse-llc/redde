@@ -238,6 +238,7 @@ struct MessageRow: View, Equatable {
                     .background(theme.accent.opacity(0.12), in: .rect(cornerRadius: min(theme.bubbleRadius, 16)))
                     .overlay(RoundedRectangle(cornerRadius: min(theme.bubbleRadius, 16)).strokeBorder(theme.accent.opacity(0.3), lineWidth: 1))
                     .padding(.leading, 48)
+                    .selectsOnTheMac()
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             } else if hasTextBubble, promptStyled, let prompt = theme.promptPrefix {
@@ -248,6 +249,7 @@ struct MessageRow: View, Equatable {
                     .accessibilityLabel(bubbleText)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .overlay(highlightRing)
+                    .selectsOnTheMac()
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             } else if hasTextBubble {
@@ -264,6 +266,7 @@ struct MessageRow: View, Equatable {
                     }
                     .foregroundStyle(message.role == .user ? theme.userBubbleText : theme.textColor)
                     .overlay(highlightRing)
+                    .selectsOnTheMac()
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             }
@@ -753,8 +756,13 @@ struct MessageRow: View, Equatable {
 
     /// Reactions on a double-tap, as Messages has them.
     private var reacts: Bool {
+        // On the Mac a double-click selects a word; the reactions are in the reply's menu.
+        #if os(macOS)
+        return false
+        #else
         guard let conversation else { return false }
         return !isLive && !conversation.isWorkerTranscript
+        #endif
     }
 
     @ViewBuilder
@@ -766,7 +774,9 @@ struct MessageRow: View, Equatable {
             MarkdownView(text: said, isLive: isLive, selectable: false, linkPaths: !isLive)
         }
         #else
-        MarkdownView(text: said, isLive: isLive, selectable: false, linkPaths: !isLive)
+        // The Mac selects a reply's text with a drag, as text on a Mac does (2026-11-12: it had
+        // no way to but Select text). A long-press there is a menu, not a selection.
+        MarkdownView(text: said, isLive: isLive, selectable: true, linkPaths: !isLive)
         #endif
     }
 
@@ -1220,5 +1230,18 @@ private struct ReplyPress<Menu: View, Palette: View>: ViewModifier {
             #endif
             .simultaneousGesture(TapGesture(count: 2).onEnded { if reacts { showReactions = true } })
             .popover(isPresented: $showReactions) { reactions().presentationCompactAdaptation(.popover) }
+    }
+}
+
+extension View {
+    /// The Mac's text selects with a drag. On the iPhone a selectable text costs a UIKit
+    /// interaction per paragraph (see `MarkdownView.selectable`), so there it stays a menu's.
+    @ViewBuilder
+    func selectsOnTheMac() -> some View {
+        #if os(macOS)
+        textSelection(.enabled)
+        #else
+        self
+        #endif
     }
 }
