@@ -3487,8 +3487,8 @@ extension ConversationsList {
             botMenu(bot, unread: unread, isOpen: isOpen)
         } label: {
             VStack(spacing: 3) {
-                BotAvatar(face: face, size: 48)
-                    .padding(4)
+                BotAvatar(face: face, size: 58)
+                    .padding(5)
                     .overlay {
                         if kind == .needsYou {
                             Circle().strokeBorder(tone.warm, lineWidth: 2.5)
@@ -3510,7 +3510,7 @@ extension ConversationsList {
                     .foregroundStyle(color)
                     .lineLimit(1)
             }
-            .frame(width: 70)
+            .frame(width: 80)
             .contentShape(.rect)
         } primaryAction: {
             openBot(bot)
