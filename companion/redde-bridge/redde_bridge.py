@@ -46,6 +46,7 @@ from urllib.parse import parse_qs, urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import redde_push  # noqa: E402  (beside this file)
 import redde_qr  # noqa: E402
+import redde_codex  # noqa: E402
 
 VERSION = "0.6.0"
 PROTOCOL_VERSION = 1
@@ -420,6 +421,9 @@ class Agent:
         # The agent's slash commands as its last session said them: a device gets them on
         # initialize, for a new chat, which hears none until it has a session.
         self.commands: list | None = None
+        # Codex's plan limits: codex-acp doesn't pass them on, so they're read from Codex itself
+        # after turns and sent to every device (`_redde/limits`). None for other agents.
+        self.limits = redde_codex.Limits.for_agent(config.command, config.env, self.broadcast_all)
 
     @property
     def running(self) -> bool:
@@ -759,6 +763,10 @@ class Connection:
                              "cwd": agent.config.folder, "attach": True}
             if agent.commands is not None:
                 meta["redde"]["commands"] = agent.commands
+            if agent.limits is not None:
+                if agent.limits.last is not None:
+                    meta["redde"]["limits"] = agent.limits.last
+                agent.limits.poke()
             result["_meta"] = meta
             return result
         if method in ("session/new", "session/load", "session/resume", "session/fork"):
@@ -850,6 +858,8 @@ class Connection:
             session.last_stop = stop
             ended = {"sessionId": sid, "stopReason": stop, "seq": session.seq}
             await agent.broadcast(session, "_redde/turn_ended", ended)
+            if agent.limits is not None:
+                agent.limits.poke()
             if stop == "error":
                 agent.tell("failed", session, failure)
             elif stop and stop != "cancelled":
@@ -1022,7 +1032,7 @@ def print_setup(config: Config, agent_id: str | None = None, host_name: str | No
 SERVICE = os.environ.get("REDDE_BRIDGE_SERVICE", "com.goosehouse.redde-bridge")
 #: Where `--install` puts the bridge's files, so the service doesn't depend on a download or a checkout.
 INSTALL_DIR = Path(os.environ.get("REDDE_BRIDGE_HOME", "~/.local/share/redde-bridge")).expanduser()
-FILES = ("redde_bridge.py", "redde_push.py", "redde_qr.py")
+FILES = ("redde_bridge.py", "redde_push.py", "redde_qr.py", "redde_codex.py")
 
 
 def tailscale_name() -> str | None:

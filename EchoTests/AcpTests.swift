@@ -464,4 +464,42 @@ struct AcpTests {
         // Other agents' usage updates carry none.
         #expect(AcpLimits.make(json(#"{"sessionUpdate":"usage_update","used":10,"size":100}"#)) == nil)
     }
+
+    /// Codex's limits as the bridge sends them (`_redde/limits`, from `account/rateLimits/read` on
+    /// Codex 0.167.2 behind codex-acp 2.6.0, 2026-11-12): a free plan, one 30-day window.
+    @Test func theCodexPlanLimitsAreReadFromTheBridge() throws {
+        let free = json(#"""
+            {"ordinaryUsageAllowed": true, "at": 1794552000,
+             "rateLimits": {"limitId": "codex", "limitName": null, "normalModelSlug": null, "primary": {"usedPercent": 1, "windowDurationMins": 43200, "resetsAt": 1797127191}, "secondary": null, "credits": {"hasCredits": false, "unlimited": false, "balance": null}, "individualLimit": null, "spendControlReached": false, "planType": "free", "rateLimitReachedType": null},
+             "rateLimitsByLimitId": {"codex": {"limitId": "codex", "limitName": null, "normalModelSlug": null, "primary": {"usedPercent": 1, "windowDurationMins": 43200, "resetsAt": 1797127191}, "secondary": null, "credits": {"hasCredits": false, "unlimited": false, "balance": null}, "individualLimit": null, "spendControlReached": false, "planType": "free", "rateLimitReachedType": null}}}
+            """#)
+        let limits = try #require(AcpLimits.codex(free))
+        #expect(limits.windows.map(\.id) == ["43200_min"])
+        #expect(limits.windows[0].used == 0.01 && !limits.windows[0].reached)
+        #expect(limits.windows[0].resetsAt == Date(timeIntervalSince1970: 1797127191))
+        #expect(limits.windows[0].name.contains("30"))
+        #expect(limits.at == Date(timeIntervalSince1970: 1794552000) && !limits.fromReply)
+        let line = AcpLimits.line(limits.windows[0], now: Date(timeIntervalSince1970: 1794552000))
+        #expect(line.contains("1%"))
+        // A month away: the date, not a weekday.
+        #expect(line.contains(Date(timeIntervalSince1970: 1797127191).formatted(.dateTime.month(.abbreviated))))
+
+        // A Plus plan: the 5-hour and weekly windows, named as Claude Code's are; a limit of its
+        // own after the plan's, by its name; a used-up window reached.
+        let plus = json(#"""
+            {"at": 1794552000, "rateLimitsByLimitId": {
+             "codex_other": {"limitId": "codex_other", "limitName": "Spark", "primary": {"usedPercent": 100, "windowDurationMins": 300, "resetsAt": 1794560000}, "secondary": null},
+             "codex": {"limitId": "codex", "primary": {"usedPercent": 42, "windowDurationMins": 300, "resetsAt": 1794560000}, "secondary": {"usedPercent": 9, "windowDurationMins": 10080, "resetsAt": 1795000000}, "planType": "plus"}}}
+            """#)
+        let two = try #require(AcpLimits.codex(plus))
+        #expect(two.windows.map(\.id) == ["five_hour", "seven_day", "codex_other/five_hour"])
+        #expect(two.windows[0].name == AcpLimits.Window(id: "five_hour", status: "allowed").name)
+        #expect(two.windows[1].used == 0.09)
+        #expect(two.windows[2].reached && two.windows[2].name.hasPrefix("Spark · "))
+        // Only the one snapshot, as older Codex sends it.
+        #expect(AcpLimits.codex(json(#"{"rateLimits": {"primary": {"usedPercent": 5, "windowDurationMins": 300}}}"#))?.windows.map(\.id) == ["five_hour"])
+        // Nothing to show: a signed-out or API-key Codex.
+        #expect(AcpLimits.codex(json(#"{"rateLimits": {"primary": null, "secondary": null}}"#)) == nil)
+        #expect(AcpLimits.codex(.null) == nil)
+    }
 }

@@ -106,7 +106,8 @@ nonisolated struct AcpError: LocalizedError, Sendable {
 /// The phone's link to one ACP agent: a WebSocket carrying JSON-RPC 2.0, one message a frame.
 /// Shared by every conversation with that agent (`client(for:)`). It speaks ACP version 1 as a
 /// client that offers no files or terminal of its own, and knows the bridge's extras
-/// (`_redde/attach`, `_redde/turn_ended`, `_redde/request_resolved`) where the bridge is there.
+/// (`_redde/attach`, `_redde/turn_ended`, `_redde/request_resolved`, `_redde/limits`) where the
+/// bridge is there.
 @MainActor
 final class AcpClient {
     /// What the agent said about itself on `initialize`.
@@ -179,8 +180,8 @@ final class AcpClient {
     private(set) var commands: [String: [AcpCommand]] = [:]
     /// The last session's, for a chat that has none yet: the agent's own commands are the same.
     private(set) var lastCommands: [AcpCommand] = []
-    /// The plan's usage limits as the agent last reported them (Claude Code's, on its usage updates).
-    /// The account's, not a chat's.
+    /// The plan's usage limits as the agent last reported them (Claude Code's, on its usage updates;
+    /// Codex's, read by the bridge). The account's, not a chat's.
     private(set) var limits: AcpLimits?
 
     /// The slash commands for a chat; a new one gets the last chat's.
@@ -272,6 +273,8 @@ final class AcpClient {
                 Settings.shared.acpAgentNames[endpoint.socketURL.absoluteString] = name
             }
             if lastCommands.isEmpty, let known = info?.commands, !known.isEmpty { lastCommands = known }
+            // The bridge's last read of Codex's limits, so the sheet has them before a reply.
+            if let known = AcpLimits.codex(result["_meta"]?["redde"]?["limits"] ?? .null) { keep(known) }
         } catch {
             close()
             if let error = error as? AcpError { throw error }
@@ -444,6 +447,8 @@ final class AcpClient {
             guard let id = params["id"]?.string else { return }
             openRequests[id] = nil
             for listener in listeners.values { listener(.resolved(id: id)) }
+        case "_redde/limits":
+            if let limits = AcpLimits.codex(params) { keep(limits) }
         default:
             break
         }
@@ -483,6 +488,13 @@ final class AcpClient {
         return .clarify(card)
     }
 
+    /// Keeps the newer of two readings: the bridge's last one, given on connect, can be older
+    /// than what was heard since.
+    private func keep(_ new: AcpLimits) {
+        if let limits, limits.at > new.at { return }
+        limits = new
+    }
+
     /// Keeps what a session says about itself between turns: its config options and commands.
     private func note(_ update: JSONValue, session: String) {
         if update["sessionUpdate"]?.string == "available_commands_update" {
@@ -491,7 +503,7 @@ final class AcpClient {
             lastCommands = list
         }
         if update["sessionUpdate"]?.string == "usage_update", let limits = AcpLimits.make(update) {
-            self.limits = limits
+            keep(limits)
         }
         if update["sessionUpdate"]?.string == "config_option_update", let options = update["configOptions"]?.array {
             configOptions[session] = options

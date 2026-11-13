@@ -116,7 +116,7 @@ server's Show setup code / Set up another device hands the bridge on, its token 
 ### Install (built 2026-11-12, bridge 0.6.0)
 
 `install.sh` (`curl -fsSL …/companion/redde-bridge/install.sh | sh`) finds a Python 3.9+, downloads
-the three files and runs `redde_bridge.py --install`, which copies them to
+the four files and runs `redde_bridge.py --install`, which copies them to
 `~/.local/share/redde-bridge` (`REDDE_BRIDGE_HOME`), writes the config the first time, puts the
 Tailscale name in it as `host` when Tailscale is running (setup links use it), and runs the
 bridge as a LaunchAgent (`com.goosehouse.redde-bridge`, log `~/Library/Logs/redde-bridge.log`)
@@ -185,6 +185,7 @@ renamed and deleted; they are kept in the app's caches.
 | `session/cancel` | Stop |
 | `_session/steering` (when `initialize` says `_meta.steering.supported`, as Claude Code does) | Steer this reply, and Send Now on a queued message: the words join the reply under way. Sent with `idleBehavior: promptRequired`, so a reply that just ended answers `promptRequired` and the words go as a message of their own; `injected` is taken. The bridge passes it through as it is |
 | `_redde/attach` | `rejoin`: a turn under way, joined part-way |
+| `_redde/limits` (bridge, Codex agents) | Plan Usage in the model sheet (`AcpLimits.codex`): read from `codex app-server` `account/rateLimits/read` after each turn (at most once a minute) and on connect; also in `initialize` `_meta.redde.limits` |
 
 The client advertises no `fs` or `terminal` capability: the agent uses its own tools on the host.
 Prompts are text, plus images where the agent offers `promptCapabilities.image`; text files go

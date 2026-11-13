@@ -8,7 +8,7 @@
 #
 #   curl -fsSL …/install.sh | sh -s -- --host studio.example.ts.net
 #
-# It downloads three Python files into a temporary folder and runs `redde_bridge.py --install`,
+# It downloads four Python files into a temporary folder and runs `redde_bridge.py --install`,
 # which copies them to ~/.local/share/redde-bridge. Standard library only: Python 3.9 or later.
 set -eu
 
@@ -35,7 +35,7 @@ fi
 
 DIR="$(mktemp -d)"
 trap 'rm -rf "$DIR"' EXIT
-for file in redde_bridge.py redde_push.py redde_qr.py; do
+for file in redde_bridge.py redde_push.py redde_qr.py redde_codex.py; do
   curl -fsSL "$BASE/$file" -o "$DIR/$file"
 done
 "$PYTHON" "$DIR/redde_bridge.py" --install "$@"

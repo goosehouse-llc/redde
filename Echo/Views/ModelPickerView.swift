@@ -27,7 +27,7 @@ struct ModelPickerView: View {
     @State private var catalogLoading = false
     /// An ACP chat's mode and thinking choices (Claude Code's Manual, Plan, Auto…).
     @State private var acpOptions: [AcpOption] = []
-    /// The Claude plan's usage limits, when the agent reports them (Claude Code does).
+    /// The plan's usage limits, when the agent reports them (Claude Code does; Codex through the bridge).
     @State private var acpLimits: AcpLimits?
 
     private var isFastLane: Bool { settings.transport == .chatCompletions }
@@ -225,7 +225,8 @@ struct ModelPickerView: View {
             }
     }
 
-    /// How much of the Claude plan's limits are used, as Claude Code last said (on its last reply).
+    /// How much of the plan's limits are used, as the agent last said (Claude Code on its last reply,
+    /// Codex as the bridge last read them).
     private func limitsSection(_ limits: AcpLimits) -> some View {
         Section {
             ForEach(limits.windows) { window in
@@ -251,8 +252,13 @@ struct ModelPickerView: View {
         } header: {
             Text("Plan Usage", comment: "Model picker, Claude Code: the section with the Claude plan's usage limits")
         } footer: {
-            Text("As of \(limits.at.formatted(date: .omitted, time: .shortened)), from the last reply.",
-                 comment: "Model picker, Claude Code: under the plan usage limits; the time they were reported")
+            if limits.fromReply {
+                Text("As of \(limits.at.formatted(date: .omitted, time: .shortened)), from the last reply.",
+                     comment: "Model picker, Claude Code: under the plan usage limits; the time they were reported")
+            } else {
+                Text("As of \(limits.at.formatted(date: .omitted, time: .shortened)).",
+                     comment: "Model picker, Codex: under the plan usage limits; the time the bridge read them from Codex")
+            }
         }
     }
 

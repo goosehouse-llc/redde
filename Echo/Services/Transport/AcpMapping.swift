@@ -828,27 +828,46 @@ nonisolated extension HermesServeClient.Project {
     }
 }
 
-/// How much of a Claude plan's usage limits the agent has used, as Claude Code reports it on its
-/// usage updates (`_meta["_claude/rateLimit"]`): a 5-hour window and a weekly one, each with its
-/// share used and when it starts again. Other agents say nothing of the kind.
+/// How much of a plan's usage limits the agent has used, each window with its share used and when
+/// it starts again. Claude Code reports a 5-hour window and weekly ones on its usage updates
+/// (`_meta["_claude/rateLimit"]`). Codex (codex-acp) keeps the ChatGPT plan's to itself; the
+/// bridge reads them from Codex and sends them as `_redde/limits` (`codex(_:)`). Other agents say
+/// nothing of the kind.
 nonisolated struct AcpLimits: Equatable, Sendable {
     nonisolated struct Window: Equatable, Sendable, Identifiable {
-        /// `five_hour`, `seven_day`, `seven_day_opus`, …
+        /// `five_hour`, `seven_day`, `seven_day_opus`, …; Codex's other windows are `<minutes>_min`,
+        /// and a Codex limit besides the plan's own is `<limitId>/<kind>`.
         var id: String
         /// 0…1.
         var used: Double?
         var resetsAt: Date?
         /// `allowed`, `allowed_warning` or `rejected`.
         var status: String
+        /// How long the window is, where the agent says (Codex).
+        var minutes: Int? = nil
+        /// The name of the limit this window is part of, when it isn't the plan's own (Codex).
+        var scope: String? = nil
 
         var name: String {
-            switch id {
+            let base: String = switch id.split(separator: "/").last.map(String.init) ?? id {
             case "five_hour": String(localized: "5-hour limit", comment: "Claude Code: the plan's usage limit that resets every five hours")
             case "seven_day": String(localized: "Weekly limit", comment: "Claude Code: the plan's usage limit that resets every week")
             case "seven_day_opus": String(localized: "Weekly Opus limit", comment: "Claude Code: the plan's weekly limit for Opus models")
             case "seven_day_sonnet": String(localized: "Weekly Sonnet limit", comment: "Claude Code: the plan's weekly limit for Sonnet models")
-            default: String(localized: "Usage limit", comment: "Claude Code: a plan usage limit of a kind Redde doesn't know by name")
+            default: Self.durationName(minutes) ?? String(localized: "Usage limit", comment: "Claude Code: a plan usage limit of a kind Redde doesn't know by name")
             }
+            return scope.map { "\($0) · \(base)" } ?? base
+        }
+
+        /// "3-hour limit", "30-day limit": a window known only by its length.
+        static func durationName(_ minutes: Int?) -> String? {
+            guard let minutes, minutes > 0 else { return nil }
+            if minutes < 24 * 60 {
+                let hours = max(1, Int((Double(minutes) / 60).rounded()))
+                return String(localized: "\(hours)-hour limit", comment: "Codex: a plan usage limit by the length of its window, as 3-hour limit")
+            }
+            let days = Int((Double(minutes) / (24 * 60)).rounded())
+            return String(localized: "\(days)-day limit", comment: "Codex: a plan usage limit by the length of its window, as 30-day limit")
         }
 
         var reached: Bool { status == "rejected" }
@@ -856,8 +875,49 @@ nonisolated struct AcpLimits: Equatable, Sendable {
     }
 
     var windows: [Window]
-    /// When Claude Code said it.
+    /// When the agent said it.
     var at: Date
+    /// Said after a reply (Claude Code's come on its usage updates); Codex's are read by the
+    /// bridge, also when a device connects.
+    var fromReply = true
+
+    /// Codex's limits as the bridge reads them from Codex's app-server
+    /// (`account/rateLimits/read`): each limit's `primary` and `secondary` window, with
+    /// `usedPercent`, `windowDurationMins` and `resetsAt`. A ChatGPT Plus or Pro plan has a 5-hour
+    /// and a weekly window; the free plan one of 30 days.
+    static func codex(_ payload: JSONValue) -> AcpLimits? {
+        guard case .object = payload else { return nil }
+        var snapshots: [JSONValue] = []
+        if case .object(let byId)? = payload["rateLimitsByLimitId"] {
+            // The plan's own limit first, then the others by id.
+            func rank(_ id: String) -> Int { id == "codex" ? 0 : 1 }
+            snapshots = byId.sorted { (rank($0.key), $0.key) < (rank($1.key), $1.key) }.map(\.value)
+        }
+        if snapshots.isEmpty, let one = payload["rateLimits"], case .object = one { snapshots = [one] }
+        var windows: [Window] = []
+        for snapshot in snapshots {
+            let limit = snapshot["limitId"]?.string ?? "codex"
+            let scope = limit == "codex" ? nil : snapshot["limitName"]?.string ?? limit
+            var own: [Window] = []
+            for slot in ["primary", "secondary"] {
+                guard let window = snapshot[slot], let percent = window["usedPercent"]?.number else { continue }
+                let minutes = window["windowDurationMins"]?.int
+                let kind = switch minutes {
+                case 300: "five_hour"
+                case 7 * 24 * 60: "seven_day"
+                case let minutes?: "\(minutes)_min"
+                case nil: slot
+                }
+                own.append(Window(id: scope == nil ? kind : "\(limit)/\(kind)", used: percent / 100,
+                                  resetsAt: window["resetsAt"]?.number.map { Date(timeIntervalSince1970: $0) },
+                                  status: percent >= 100 ? "rejected" : "allowed", minutes: minutes, scope: scope))
+            }
+            windows += own.sorted { ($0.minutes ?? .max) < ($1.minutes ?? .max) }
+        }
+        guard !windows.isEmpty else { return nil }
+        let at = payload["at"]?.number.map { Date(timeIntervalSince1970: $0) } ?? .now
+        return AcpLimits(windows: windows, at: at, fromReply: false)
+    }
 
     static func make(_ update: JSONValue, at: Date = .now) -> AcpLimits? {
         guard let info = update["_meta"]?["_claude/rateLimit"], case .object = info else { return nil }
@@ -879,7 +939,7 @@ nonisolated struct AcpLimits: Equatable, Sendable {
         return AcpLimits(windows: windows, at: at)
     }
 
-    /// "4% used · resets 4:30 PM", "12% used · resets Mon 9:00 AM".
+    /// "4% used · resets 4:30 PM", "12% used · resets Mon 9:00 AM", "1% used · resets Dec 12, 8:59 PM".
     static func line(_ window: Window, now: Date = .now) -> String {
         var parts: [String] = []
         if let used = window.used {
@@ -887,9 +947,13 @@ nonisolated struct AcpLimits: Equatable, Sendable {
                                 comment: "Claude Code: how much of a plan limit is used, as 4% used"))
         }
         if let resets = window.resetsAt, resets > now {
-            let when = resets.timeIntervalSince(now) < 20 * 3600
+            let ahead = resets.timeIntervalSince(now)
+            // A weekday alone is wrong past a week (Codex's free plan has a 30-day window).
+            let when = ahead < 20 * 3600
                 ? resets.formatted(date: .omitted, time: .shortened)
-                : resets.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+                : ahead < 6 * 24 * 3600
+                    ? resets.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+                    : resets.formatted(.dateTime.month(.abbreviated).day().hour().minute())
             parts.append(String(localized: "resets \(when)", comment: "Claude Code: when a plan limit starts again, as resets 4:30 PM or resets Mon 9:00 AM"))
         }
         return parts.joined(separator: " · ")
