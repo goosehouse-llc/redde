@@ -139,6 +139,28 @@ The app (`AcpBridgeSection` in Settings › the server) shows the bridge's versi
 `AcpBridge.latest` (the version this app was built beside) for Update Available, an Update
 Bridge button when `updatable`, and otherwise the install line to copy.
 
+### Gemini CLI (bridge 0.8.0, 2026-11-13)
+
+Read from Gemini CLI 0.68.0's source (`packages/cli/src/acp/`), not yet run here: `gemini --acp`
+(`--experimental-acp` is the old name). It offers `loadSession`, images/audio/embeddedContext and
+no `sessionCapabilities` at all, so:
+- **Chat list:** the bridge keeps one (`ChatIndex`, `chats-<agent>.json` beside the config) for any
+  agent without `sessionCapabilities.list`, adds `list` and `title` to `initialize`, answers
+  `session/list` and `session/set_title` itself, titles a chat with its first message, and moves
+  it to the top on each prompt. Only chats started through the bridge; ones from the `gemini` TUI
+  aren't seen.
+- **Modes and models** come as `modes {availableModes, currentModeId}` (default, autoEdit, yolo,
+  plan) and `models {availableModels[modelId,name,description], currentModelId}`, not
+  `configOptions`. The app turns them into config options (`AcpLegacyOptions`, ids `_redde_mode`
+  / `_redde_model`) and sets them with `session/set_mode` / `session/set_model`, keeping the pick
+  itself (the answers are empty). A mode Gemini moves to on its own arrives as an
+  `agent_message_chunk` "[MODE_UPDATE] <id>", read as `current_mode_update`.
+- **Sign-in:** Log in with Google opens a browser on the host and waits on a localhost callback,
+  so it can't be done from the phone: sign in once with `gemini` in a terminal; ACP reuses
+  `~/.gemini/oauth_creds.json`. Not signed in, `session/new` fails with -32000 and Gemini's words.
+- No steering (a second prompt cancels the first), no fork/delete/resume, no `plan` updates.
+  Permissions are allow_once / allow_always / reject_once. Thoughts come whole, not streamed.
+
 ### Not yet (phase 2)
 
 - TLS made easy (today: give it a cert, or use Tailscale Serve / a proxy).

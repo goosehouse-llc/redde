@@ -449,7 +449,8 @@ final class AcpClient {
         }
         switch method {
         case "session/update":
-            guard let session = params["sessionId"]?.string, let update = params["update"] else { return }
+            guard let session = params["sessionId"]?.string, let raw = params["update"] else { return }
+            let update = AcpLegacyOptions.normalize(raw)
             note(update, session: session)
             if loading[session] != nil {
                 loading[session]?.append(update)
@@ -526,12 +527,36 @@ final class AcpClient {
             configOptions[session] = options
             lastConfigOptions = options
         }
+        if update["sessionUpdate"]?.string == "current_mode_update", let mode = update["currentModeId"]?.string,
+           let options = configOptions[session], options.contains(where: { $0["id"]?.string == AcpLegacyOptions.modeID }) {
+            configOptions[session] = AcpLegacyOptions.setting(options, id: AcpLegacyOptions.modeID, to: mode)
+        }
     }
 
     private func noteOptions(_ result: JSONValue, session: String) {
-        guard let options = result["configOptions"]?.array else { return }
+        guard let options = result["configOptions"]?.array ?? AcpLegacyOptions.options(result) else { return }
         configOptions[session] = options
         lastConfigOptions = options
+    }
+
+    /// Sets one of a session's options on the agent: `session/set_config_option`, or for the older
+    /// `modes` and `models` (`AcpLegacyOptions`), `session/set_mode` and `session/set_model`.
+    private func set(_ id: String, value: String, session: String) async throws {
+        switch id {
+        case AcpLegacyOptions.modeID:
+            _ = try await call("session/set_mode", ["sessionId": .string(session), "modeId": .string(value)])
+        case AcpLegacyOptions.modelID:
+            _ = try await call("session/set_model", ["sessionId": .string(session), "modelId": .string(value)])
+        default:
+            let result = try await call("session/set_config_option",
+                                        ["sessionId": .string(session), "configId": .string(id), "value": .string(value)])
+            noteOptions(result, session: session)
+            return
+        }
+        if let options = configOptions[session] {
+            configOptions[session] = AcpLegacyOptions.setting(options, id: id, to: value)
+            lastConfigOptions = configOptions[session] ?? lastConfigOptions
+        }
     }
 
     // MARK: ACP
@@ -595,7 +620,7 @@ final class AcpClient {
         let result = try await call("_redde/attach", ["sessionId": .string(session)])
         let prompt = (result["prompt"]?.array ?? []).compactMap { AcpTurnMapper.text($0) }.joined(separator: "\n")
         let updates = (result["updates"]?.array ?? []).compactMap { params -> (JSONValue, Int?)? in
-            params["update"].map { ($0, params["_meta"]?["redde"]?["seq"]?.int) }
+            params["update"].map { (AcpLegacyOptions.normalize($0), params["_meta"]?["redde"]?["seq"]?.int) }
         }
         let requests = (result["requests"]?.array ?? []).compactMap { message -> (String, Interrupt)? in
             guard let method = message["method"]?.string, let raw = message["id"], let key = Self.key(raw),
@@ -661,9 +686,7 @@ final class AcpClient {
         let options = configOptions[session] ?? []
         guard let option = AcpModels.option(options), let config = option["id"]?.string,
               option["currentValue"]?.string != value else { return }
-        let result = try await call("session/set_config_option",
-                                    ["sessionId": .string(session), "configId": .string(config), "value": .string(value)])
-        noteOptions(result, session: session)
+        try await set(config, value: value, session: session)
     }
 
     /// A copy of a chat to go on from apart (`session/fork`), in the same folder, named `title`
@@ -719,9 +742,7 @@ final class AcpClient {
         guard let session else { return }
         try await ensureConnected()
         guard configOptions[session]?.contains(where: { $0["id"]?.string == id && $0["currentValue"]?.string != value }) == true else { return }
-        let result = try await call("session/set_config_option",
-                                    ["sessionId": .string(session), "configId": .string(id), "value": .string(value)])
-        noteOptions(result, session: session)
+        try await set(id, value: value, session: session)
     }
 
     /// Gives a new session the remembered picks it offers and doesn't have already.

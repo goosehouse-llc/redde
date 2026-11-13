@@ -341,6 +341,53 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
             rb.UPDATE_BASE, rb.INSTALL_DIR = saved
 
 
+class ChatListTests(unittest.IsolatedAsyncioTestCase):
+    """An agent that keeps no list of its chats (Gemini CLI): the bridge keeps it."""
+
+    async def asyncSetUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.port = free_port()
+        self.state = Path(self.dir.name) / "state"
+        agent = rb.AgentConfig(id="gem", name="Gem", command=[sys.executable, str(HERE / "fake_agent.py")],
+                               cwd=self.dir.name, env={"FAKE_AGENT_LISTS": "0"})
+        self.bridge = rb.Bridge(rb.Config(listen=f"127.0.0.1:{self.port}", token=TOKEN, agents=[agent], state_dir=self.state))
+        self.server = asyncio.create_task(self.bridge.serve())
+        for _ in range(50):
+            try:
+                _, w = await asyncio.open_connection("127.0.0.1", self.port)
+                w.close()
+                break
+            except OSError:
+                await asyncio.sleep(0.05)
+        self.c = await Client.open(self.port, agent="gem")
+
+    async def asyncTearDown(self):
+        self.c.close()
+        agent = self.bridge.agents["gem"]
+        if agent.running:
+            agent.proc.kill()
+            await agent.proc.wait()
+        self.server.cancel()
+        self.dir.cleanup()
+
+    async def test_chats_are_listed_named_and_remembered(self):
+        caps = (await self.c.call("initialize", {"protocolVersion": 1}))["result"]["agentCapabilities"]
+        self.assertIn("list", caps["sessionCapabilities"])
+        self.assertIn("title", caps["sessionCapabilities"])
+        first = (await self.c.call("session/new", {}))["result"]["sessionId"]
+        second = (await self.c.call("session/new", {}))["result"]["sessionId"]
+        await asyncio.sleep(0.01)
+        await self.c.call("session/prompt", {"sessionId": first, "prompt": [{"type": "text", "text": "fix the login page"}]})
+        rows = (await self.c.call("session/list"))["result"]["sessions"]
+        self.assertEqual([r["sessionId"] for r in rows], [first, second])   # the one used last first
+        self.assertEqual(rows[0]["title"], "fix the login page")
+        self.assertEqual(rows[0]["cwd"], self.dir.name)
+        # Named here, and kept for the next start of the bridge.
+        self.assertEqual((await self.c.call("session/set_title", {"sessionId": second, "title": "Notes"}))["result"], {})
+        again = rb.ChatIndex(self.state / "chats-gem.json").page()["sessions"]
+        self.assertEqual({r["sessionId"]: r.get("title") for r in again}, {first: "fix the login page", second: "Notes"})
+
+
 def make_bridge_files(folder: Path, version: str, change=None):
     """The bridge's files, as `version`, in `folder`; `change` edits redde_bridge.py's text."""
     folder.mkdir(parents=True, exist_ok=True)

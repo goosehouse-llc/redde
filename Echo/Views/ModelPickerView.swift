@@ -70,7 +70,9 @@ struct ModelPickerView: View {
         }
         for key in grouped.keys.filter({ !isLocal($0) }).sorted() {
             guard let models = grouped[key], let first = models.first else { continue }
-            out.append((key, first.providerName, models.sorted { $0.name < $1.name }))
+            // An ACP agent's models come with no provider: one list, named for what it is.
+            let name = first.providerName.isEmpty ? String(localized: "Models", comment: "Model picker: the section of an agent's models, when they have no provider") : first.providerName
+            out.append((key, name, models.sorted { $0.name < $1.name }))
         }
         return out
     }
@@ -733,7 +735,8 @@ struct ModelPickerView: View {
             await fillVenicePrices()
             if !collapsedSeeded {
                 collapsedSeeded = true
-                collapsed = Set(byProvider.filter { group in
+                // One group (an ACP agent's) stays open: folded, the sheet shows nothing to pick.
+                collapsed = byProvider.count < 2 ? [] : Set(byProvider.filter { group in
                     !group.provider.hasPrefix("custom") && !group.models.contains(where: isSelected)
                 }.map(\.provider))
             }

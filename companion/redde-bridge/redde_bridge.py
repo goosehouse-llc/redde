@@ -48,7 +48,7 @@ import redde_push  # noqa: E402  (beside this file)
 import redde_qr  # noqa: E402
 import redde_codex  # noqa: E402
 
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -229,6 +229,9 @@ class Config:
     #: Where the paired devices are kept (`push.json` beside the config), and the relay notes go through.
     push_path: Path | None = None
     push_relay: str = redde_push.DEFAULT_RELAY
+    #: Where the bridge keeps what it remembers (the config's folder): chat lists for agents
+    #: that keep none (`ChatIndex`). None keeps them in memory only.
+    state_dir: Path | None = None
 
     @property
     def host_port(self) -> tuple[str, int]:
@@ -280,7 +283,8 @@ def load_config(path: Path) -> Config:
         raise SystemExit(f"{path}: no token")
     return Config(listen=raw.get("listen", "0.0.0.0:8765"), token=raw["token"], agents=agents,
                   tls_cert=raw.get("tls_cert"), tls_key=raw.get("tls_key"), host=raw.get("host"),
-                  push_path=path.parent / "push.json", push_relay=raw.get("push_relay", redde_push.DEFAULT_RELAY))
+                  push_path=path.parent / "push.json", push_relay=raw.get("push_relay", redde_push.DEFAULT_RELAY),
+                  state_dir=path.parent)
 
 
 # MARK: - WebSocket (RFC 6455, server side)
@@ -402,12 +406,86 @@ class Session:
     title: str | None = None     # what the agent calls it (`session_info_update`), for notifications
 
 
+class ChatIndex:
+    """The chats of an agent that can't list its own (Gemini CLI has no `session/list`), kept by
+    the bridge as they're started and used, so Redde's chat list has them on every device. Only
+    chats started through the bridge; saved beside the config."""
+
+    LIMIT = 1000
+
+    def __init__(self, path: Path | None):
+        self.path = path
+        self.rows: dict[str, dict] = {}
+        if path is not None and path.exists():
+            try:
+                rows = json.loads(path.read_text())
+                self.rows = {r["sessionId"]: r for r in rows if isinstance(r, dict) and isinstance(r.get("sessionId"), str)}
+            except (OSError, ValueError) as error:
+                log.warning("couldn't read %s: %s", path, error)
+
+    def note(self, sid: str, cwd: str | None = None, title: str | None = None, used: bool = False) -> None:
+        """A chat seen: `title` names it unless it has a name, `used` makes it the newest."""
+        row = self.rows.get(sid)
+        changed = row is None
+        if row is None:
+            row = self.rows[sid] = {"sessionId": sid, "updatedAt": _now()}
+        if cwd and row.get("cwd") != cwd:
+            row["cwd"] = cwd
+            changed = True
+        if title and not row.get("title"):
+            row["title"] = title
+            changed = True
+        if used:
+            row["updatedAt"] = _now()
+            changed = True
+        if changed:
+            self.save()
+
+    def rename(self, sid: str, title: str) -> None:
+        self.rows.setdefault(sid, {"sessionId": sid, "updatedAt": _now()})["title"] = title
+        self.save()
+
+    def remove(self, sid: str) -> None:
+        if self.rows.pop(sid, None) is not None:
+            self.save()
+
+    def page(self, cwd: Any = None) -> dict:
+        """`session/list`'s answer: newest first, in one page."""
+        rows = sorted(self.rows.values(), key=lambda r: r.get("updatedAt") or "", reverse=True)
+        if isinstance(cwd, str) and cwd:
+            rows = [r for r in rows if r.get("cwd") == cwd]
+        return {"sessions": [dict(r) for r in rows]}
+
+    def save(self) -> None:
+        if len(self.rows) > self.LIMIT:
+            keep = sorted(self.rows.values(), key=lambda r: r.get("updatedAt") or "", reverse=True)[: self.LIMIT]
+            self.rows = {r["sessionId"]: r for r in keep}
+        if self.path is None:
+            return
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            spare = self.path.with_suffix(".tmp")
+            spare.write_text(json.dumps(list(self.rows.values()), indent=1))
+            os.chmod(spare, 0o600)
+            os.replace(spare, self.path)
+        except OSError as error:
+            log.warning("couldn't save %s: %s", self.path, error)
+
+
+def _now() -> str:
+    """Now as `updatedAt` gives it, to the millisecond: two chats used in one second keep their order."""
+    now = time.time()
+    return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(now)) + ".%03dZ" % (int(now * 1000) % 1000)
+
+
 class Agent:
     """One ACP agent, started on first use and shared by every connection to it."""
 
-    def __init__(self, config: AgentConfig, pusher: redde_push.Pusher | None = None):
+    def __init__(self, config: AgentConfig, pusher: redde_push.Pusher | None = None, state_dir: Path | None = None):
         self.config = config
         self.pusher = pusher
+        # Used only when the agent keeps no list of its own (`keeps_list`).
+        self.index = ChatIndex(state_dir / f"chats-{config.id}.json" if state_dir else None)
         self.proc: asyncio.subprocess.Process | None = None
         self.init_result: dict | None = None
         self.next_id = 0
@@ -566,6 +644,8 @@ class Agent:
         update = params.get("update") or {}
         if update.get("sessionUpdate") == "session_info_update" and isinstance(update.get("title"), str):
             session.title = update["title"]
+            if self.keeps_list:
+                self.index.rename(sid, update["title"])
         session.seq += 1
         meta = dict(params.get("_meta") or {})
         meta["redde"] = {"seq": session.seq}
@@ -635,6 +715,11 @@ class Agent:
     def waiting_in(self, sid: str) -> list[dict]:
         return [{"jsonrpc": "2.0", "id": w.id, "method": w.message["method"], "params": w.message.get("params") or {}}
                 for w in self.waiting.values() if w.session == sid]
+
+    @property
+    def keeps_list(self) -> bool:
+        """The bridge keeps this agent's chat list: it says it has none (`sessionCapabilities.list`)."""
+        return self.init_result is not None and self.capability("sessionCapabilities", "list") is None
 
     def capability(self, *path: str) -> Any:
         value: Any = (self.init_result or {}).get("agentCapabilities") or {}
@@ -758,6 +843,14 @@ class Connection:
         agent = self.agent
         if method == "initialize":
             result = dict(await agent.ensure_started())
+            if agent.keeps_list:
+                # The bridge lists the agent's chats and keeps their names (`ChatIndex`).
+                caps = dict(result.get("agentCapabilities") or {})
+                sessions = dict(caps.get("sessionCapabilities") or {})
+                sessions["list"] = {}
+                sessions.setdefault("title", {})
+                caps["sessionCapabilities"] = sessions
+                result["agentCapabilities"] = caps
             meta = dict(result.get("_meta") or {})
             meta["redde"] = {"bridge": VERSION, "agent": agent.config.id, "name": agent.config.name,
                              "cwd": agent.config.folder, "attach": True,
@@ -793,12 +886,20 @@ class Connection:
                 session.cwd = params["cwd"]
                 session.followers.add(self)
                 agent.loaded.add(sid)
+                if agent.keeps_list:
+                    agent.index.note(sid, params["cwd"], used=method != "session/load")
             return result
         if method == "session/prompt":
             return await self._prompt(params, rid)
         if method == "session/cancel":
             await agent.notify(method, params)
             return _NO_REPLY
+        if method == "session/list" and (await agent.ensure_started()) is not None and agent.keeps_list:
+            return agent.index.page(params.get("cwd"))
+        if method == "session/set_title" and agent.keeps_list and agent.capability("sessionCapabilities", "title") is None:
+            agent.index.rename(params["sessionId"], str(params.get("title") or ""))
+            agent.session(params["sessionId"]).title = params.get("title") or None
+            return {}
         if method == "session/list":
             result = await agent.request(method, params)
             for info in (result or {}).get("sessions") or []:
@@ -810,6 +911,7 @@ class Connection:
             if method == "session/delete":
                 agent.sessions.pop(params.get("sessionId"), None)
                 agent.loaded.discard(params.get("sessionId"))
+                agent.index.remove(params.get("sessionId"))
             return result
         if method == "_redde/attach":
             sid = params["sessionId"]
@@ -871,6 +973,8 @@ class Connection:
         await agent.make_ready(sid)
         session.running = True
         session.prompt = params.get("prompt")
+        if agent.keeps_list:
+            agent.index.note(sid, agent.folder(None, sid), title=_prompt_text(session.prompt), used=True)
         session.last_stop = None
         session.updates = []
         log.info("%s: prompt in %s", agent.config.id, sid[:16])
@@ -887,6 +991,8 @@ class Connection:
         finally:
             session.running = False
             session.last_stop = stop
+            if agent.keeps_list:
+                agent.index.note(sid, used=True)
             ended = {"sessionId": sid, "stopReason": stop, "seq": session.seq}
             await agent.broadcast(session, "_redde/turn_ended", ended)
             if agent.limits is not None:
@@ -923,7 +1029,7 @@ class Bridge:
     def __init__(self, config: Config):
         self.config = config
         pusher = redde_push.Pusher(config.push_path, config.push_relay) if config.push_path else None
-        self.agents = {a.id: Agent(a, pusher) for a in config.agents}
+        self.agents = {a.id: Agent(a, pusher, config.state_dir) for a in config.agents}
         #: "launchd" or "systemd" when this is the installed bridge, run by its service.
         self.service = service_kind()
         self.updating = False

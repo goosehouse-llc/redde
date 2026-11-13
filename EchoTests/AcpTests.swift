@@ -333,6 +333,36 @@ struct AcpTests {
         #expect(installed.service == "launchd" && installed.updatable)
     }
 
+    /// Gemini CLI offers its modes and models the older way, as `modes` and `models`.
+    @Test func geminisModesAndModelsAreThePickersChoices() throws {
+        let result = json(#"""
+            {"sessionId": "s1",
+             "modes": {"currentModeId": "default", "availableModes": [
+               {"id": "default", "name": "Default", "description": "Prompts for approval"},
+               {"id": "autoEdit", "name": "Auto Edit"}, {"id": "yolo", "name": "YOLO"}, {"id": "plan", "name": "Plan"}]},
+             "models": {"currentModelId": "auto", "availableModels": [
+               {"modelId": "auto", "name": "Auto"}, {"modelId": "gemini-3-pro", "name": "Gemini 3 Pro", "description": "Hard tasks"}]}}
+            """#)
+        let options = try #require(AcpLegacyOptions.options(result))
+        let mode = try #require(AcpOption.pickable(options).first)
+        #expect(mode.category == "mode" && mode.current == "default")
+        #expect(mode.values.map(\.id) == ["default", "autoEdit", "yolo", "plan"])
+        #expect(mode.values.first?.detail == "Prompts for approval")
+        let models = AcpModels.choices(options)
+        #expect(models.map(\.model) == ["auto", "gemini-3-pro"])
+        #expect(models.first?.isCurrent == true)
+        // A pick is answered with nothing: the choice is kept on this side.
+        let picked = AcpLegacyOptions.setting(options, id: AcpLegacyOptions.modeID, to: "plan")
+        #expect(AcpOption.pickable(picked).first?.current == "plan")
+        // A session with configOptions, or with neither, has nothing to add.
+        #expect(AcpLegacyOptions.options(json(#"{"sessionId": "s2"}"#)) == nil)
+        // The mode Gemini moves to itself comes as words, and isn't a reply.
+        let said = AcpLegacyOptions.normalize(json(#"{"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "[MODE_UPDATE] autoEdit"}}"#))
+        #expect(said["sessionUpdate"]?.string == "current_mode_update" && said["currentModeId"]?.string == "autoEdit")
+        let words = json(#"{"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "Hello"}}"#)
+        #expect(AcpLegacyOptions.normalize(words) == words)
+    }
+
     /// The Bridge section's Update Available, against the bridge this app was built beside.
     @Test func olderBridgesAreToldOfTheUpdate() throws {
         #expect(AcpBridge.isOlder("0.5.0"))

@@ -449,6 +449,55 @@ nonisolated struct AcpOption: Identifiable, Equatable, Sendable {
     }
 }
 
+/// A session's `modes` and `models`, the older ACP way of offering them (Gemini CLI's), as config
+/// options, so the picker shows them like Claude Code's and Codex's. Picked with `session/set_mode`
+/// and `session/set_model` (`AcpClient.setOption`, `setModel`).
+nonisolated enum AcpLegacyOptions {
+    static let modeID = "_redde_mode"
+    static let modelID = "_redde_model"
+
+    /// Nil when the session offers neither.
+    static func options(_ result: JSONValue) -> [JSONValue]? {
+        var out: [JSONValue] = []
+        if let modes = result["modes"], let list = modes["availableModes"]?.array, !list.isEmpty {
+            out.append(option(id: modeID, name: String(localized: "Mode", comment: "ACP picker: how the agent asks before acting"),
+                              category: "mode", current: modes["currentModeId"], values: list, key: "id"))
+        }
+        if let models = result["models"], let list = models["availableModels"]?.array, !list.isEmpty {
+            out.append(option(id: modelID, name: String(localized: "Model"), category: "model",
+                              current: models["currentModelId"], values: list, key: "modelId"))
+        }
+        return out.isEmpty ? nil : out
+    }
+
+    private static func option(id: String, name: String, category: String, current: JSONValue?, values: [JSONValue], key: String) -> JSONValue {
+        .object(["id": .string(id), "name": .string(name), "category": .string(category), "type": .string("select"),
+                 "currentValue": current ?? .null,
+                 "options": .array(values.compactMap { value in
+                     value[key]?.string.map { .object(["value": .string($0), "name": value["name"] ?? .string($0),
+                                                       "description": value["description"] ?? .null]) }
+                 })])
+    }
+
+    /// `options` with one of them set to `value`: the agent answers a pick with nothing.
+    static func setting(_ options: [JSONValue], id: String, to value: String) -> [JSONValue] {
+        options.map { option in
+            guard option["id"]?.string == id, case .object(var fields) = option else { return option }
+            fields["currentValue"] = .string(value)
+            return .object(fields)
+        }
+    }
+
+    /// Gemini CLI tells of a mode it moved to itself in words ("[MODE_UPDATE] plan"): that's
+    /// `current_mode_update`, not a reply.
+    static func normalize(_ update: JSONValue) -> JSONValue {
+        guard update["sessionUpdate"]?.string == "agent_message_chunk", let text = update["content"]?["text"]?.string,
+              text.hasPrefix("[MODE_UPDATE] ") else { return update }
+        let mode = text.dropFirst("[MODE_UPDATE] ".count).trimmingCharacters(in: .whitespacesAndNewlines)
+        return .object(["sessionUpdate": .string("current_mode_update"), "currentModeId": .string(mode)])
+    }
+}
+
 /// `session/list` rows as the chat list's.
 /// A slash command the agent offers (`available_commands_update`): typed as "/name" at the start
 /// of a prompt, which is how ACP runs one (Claude Code's /compact, /review, a project's own).

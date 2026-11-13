@@ -101,11 +101,21 @@ def main():
         note(method, params)
         if method == "initialize":
             write({"jsonrpc": "2.0", "id": rid, "result": {"protocolVersion": 1, "agentInfo": {"name": "fake", "version": "1"},
-                   "agentCapabilities": {"loadSession": True, "sessionCapabilities": {"list": {}, "resume": {}}}}})
+                   # FAKE_AGENT_LISTS=0: like Gemini CLI, which keeps no list of its chats.
+                   "agentCapabilities": {"loadSession": True, "sessionCapabilities":
+                                         {"list": {}, "resume": {}} if os.environ.get("FAKE_AGENT_LISTS") != "0" else {}}}})
         elif method == "session/new":
             sid = "s-" + uuid.uuid4().hex[:8]
             sessions[sid] = []
-            write({"jsonrpc": "2.0", "id": rid, "result": {"sessionId": sid}})
+            result = {"sessionId": sid}
+            if os.environ.get("FAKE_AGENT_LISTS") == "0":
+                # Gemini CLI's way of offering modes and models.
+                result["modes"] = {"currentModeId": "default", "availableModes": [
+                    {"id": "default", "name": "Default"}, {"id": "autoEdit", "name": "Auto Edit"},
+                    {"id": "yolo", "name": "YOLO"}, {"id": "plan", "name": "Plan"}]}
+                result["models"] = {"currentModelId": "auto", "availableModels": [
+                    {"modelId": "auto", "name": "Auto"}, {"modelId": "gemini-pro", "name": "Gemini Pro"}]}
+            write({"jsonrpc": "2.0", "id": rid, "result": result})
         elif method == "session/load":
             for body in sessions.get(params["sessionId"], []):
                 write({"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": params["sessionId"], "update": body}})
@@ -122,6 +132,8 @@ def main():
             threading.Thread(target=prompt, args=(rid, params), daemon=True).start()
         elif method == "session/cancel":
             pass
+        elif method in ("session/set_mode", "session/set_model"):
+            write({"jsonrpc": "2.0", "id": rid, "result": {}})
         elif rid is not None:
             write({"jsonrpc": "2.0", "id": rid, "error": {"code": -32601, "message": "nope"}})
 

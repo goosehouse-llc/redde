@@ -147,6 +147,7 @@ Beyond plain ACP, it adds these extensions:
 | `_redde/push {command}` | pairing for notifications: `offer`, `accept <offered> <public key> <box>`, `test`, `list`; answered `{output}` in the words of Redde's Hermes plugin |
 | `_meta.redde.seq` | added to every `session/update`, so a device that catches up can skip what it already has |
 | `_redde/update` | the installed bridge updates itself from where the installer gets it (`REDDE_BRIDGE_BASE`), then restarts: `{updated, from, version}`, or `{updated: false}` when it's the newest. Refused while a reply is under way, and by a bridge run by hand (its error's `data.command` is the install line) |
+| `session/list`, `session/set_title` | for an agent that keeps no list of its chats (Gemini CLI), the bridge keeps one: the chats started through it, named by their first message or by Rename, newest first, saved as `chats-<agent>.json` beside the config. `initialize` then says the agent can list and name them |
 | `_meta.redde.service`, `.updatable` | on `initialize`: `launchd` or `systemd` when the bridge was installed with `--install`, so it can update itself |
 | `_meta.redde.commands` | on `initialize`: the agent's slash commands as its last session said them, for a new chat that has heard none yet |
 
