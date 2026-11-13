@@ -62,6 +62,11 @@ name = "Claude Code"
 command = ["npx", "-y", "@agentclientprotocol/claude-agent-acp"]
 cwd = "~/Projects"
 env = { SOME_SETTING = "value" }   # optional, added to the agent's environment
+
+[agents.codex]
+name = "Codex"
+command = ["npx", "-y", "@agentclientprotocol/codex-acp"]   # sign in first with `codex login`
+cwd = "~/Projects"
 ```
 
 Any program that speaks ACP over stdio can be an agent. The agent signs in the way it normally

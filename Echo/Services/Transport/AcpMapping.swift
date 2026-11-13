@@ -412,7 +412,8 @@ nonisolated enum AcpModels {
 }
 
 /// A session's other choices the picker shows beside the model: how it asks before acting (ACP's
-/// `mode` category, Claude Code's Manual / Accept Edits / Plan / Auto) and how hard it thinks
+/// `mode` category, Claude Code's Manual / Accept Edits / Plan / Auto; Codex keeps Plan apart as
+/// `collaboration_mode`) and how hard it thinks
 /// (`thought_level`).
 nonisolated struct AcpOption: Identifiable, Equatable, Sendable {
     struct Value: Equatable, Sendable {
@@ -427,7 +428,7 @@ nonisolated struct AcpOption: Identifiable, Equatable, Sendable {
     var current: String?
     var values: [Value]
 
-    static let categories = ["mode", "thought_level"]
+    static let categories = ["mode", "collaboration_mode", "thought_level"]
 
     static func pickable(_ configOptions: [JSONValue]) -> [AcpOption] {
         let options = configOptions.compactMap { option -> AcpOption? in

@@ -258,6 +258,17 @@ struct AcpTests {
         #expect(picked[0].values.map(\.name) == ["Manual", "Plan", "Auto"])
         #expect(picked[0].values[0].detail == "Asks before edits and commands")
         #expect(picked[1].values.map(\.id) == ["low", "high"])
+
+        // Codex keeps Plan as a menu of its own, between the mode and the effort.
+        let codex = json(#"""
+            [{"id": "reasoning_effort", "name": "Reasoning effort", "category": "thought_level", "type": "select", "currentValue": "medium",
+              "options": [{"value": "low", "name": "Low"}, {"value": "medium", "name": "Medium"}]},
+             {"id": "collaboration_mode", "name": "Collaboration mode", "category": "collaboration_mode", "type": "select", "currentValue": "default",
+              "options": [{"value": "default", "name": "Default"}, {"value": "plan", "name": "Plan"}]},
+             {"id": "mode", "name": "Approval preset", "category": "mode", "type": "select", "currentValue": "agent",
+              "options": [{"value": "read-only", "name": "Read-only"}, {"value": "agent", "name": "Auto review"}]}]
+            """#).array!
+        #expect(AcpOption.pickable(codex).map(\.id) == ["mode", "collaboration_mode", "reasoning_effort"])
     }
 
     @Test func addressesAreReadAsTheBridgesOrAServersOwn() {
