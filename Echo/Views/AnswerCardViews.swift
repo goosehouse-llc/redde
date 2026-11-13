@@ -460,24 +460,12 @@ struct ChoiceCard: View {
 
 // MARK: - Checklist
 
-extension Color {
-    /// This colour where it reads on `background` (a contrast of 3:1, what a mark needs), else
-    /// `fallback`: a pale theme colour (Paper's tan, a yellow, a pale sky) on a light card isn't seen.
-    func readable(on background: Color, or fallback: Color, in environment: EnvironmentValues) -> Color {
-        func luminance(_ c: Color.Resolved) -> Double {
-            0.2126 * Double(c.linearRed) + 0.7152 * Double(c.linearGreen) + 0.0722 * Double(c.linearBlue)
-        }
-        let a = luminance(resolve(in: environment)), b = luminance(background.resolve(in: environment))
-        return (max(a, b) + 0.05) / (min(a, b) + 0.05) >= 3 ? self : fallback
-    }
-}
-
 /// A list to tick off in place (a packing or a shopping list), as a card (asked 2026-10-28: "a
 /// more fun way like a card"; drawn to the approved design 2026-10-30): a ring of how much is
-/// done, green when it all is, its title and how it stands ("Nov 7 – 8 · 3 of 8 packed"), then its
+/// done, its title and how it stands ("Nov 7 – 8 · 3 of 8 packed"), then its
 /// groups, each a panel of rows to tick with a word beside an item ("×2"); a group folds away
-/// with a tap on its name, and by itself when it is done or the list is long. Its marks are the
-/// theme's colour where that reads (made readable in every theme 2026-10-28). Ticks are kept on
+/// with a tap on its name, and by itself when it is done or the list is long. Its marks are a
+/// "done" green in every theme (2026-11-12; the theme's colour before). Ticks are kept on
 /// the phone; Send tells the agent how it stands; its menu pins it to the chat list, puts it in
 /// Reminders, or shares it.
 struct ChecklistCard: View {
@@ -729,11 +717,10 @@ struct ChecklistRing: View {
     var mark: Color
 
     var body: some View {
-        let allDone = total > 0 && count == total
         ZStack {
             Circle().stroke(Color.primary.opacity(0.12), lineWidth: 5)
             Circle().trim(from: 0, to: total == 0 ? 0 : Double(count) / Double(total))
-                .stroke(allDone ? Color.green : mark, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .stroke(mark, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text(count, format: .number).chatFont(size: 13, weight: .bold).monospacedDigit()
                 .contentTransition(.numericText(value: Double(count)))
@@ -768,11 +755,14 @@ struct ChecklistTick: View {
 }
 
 extension ColorScheme {
-    /// The marks on a checklist: the theme's colour where it reads on the list's panel, else its text.
+    /// The marks on a checklist: a "done" green in every theme (asked 2026-11-12: the theme's
+    /// colour, ink blue on his light card, wasn't liked; then "a lighter green, but not washed
+    /// out"): bright and full, lighter than the purchase cards' green.
     func checklistMark(_ accent: Color) -> Color {
-        accent.readable(on: cardPanel, or: self == .dark ? .white : .black,
-                        in: { var e = EnvironmentValues(); e.colorScheme = self; return e }())
+        Self.checklistGreen
     }
+
+    static let checklistGreen = shade(light: (0.141, 0.820, 0.392), dark: (0.329, 0.925, 0.522))
 }
 
 /// One of the person's lists (`TodayLists`), drawn as a checklist card is (asked 2026-11-09: "I

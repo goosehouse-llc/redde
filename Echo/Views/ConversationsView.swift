@@ -607,6 +607,14 @@ struct ConversationsList: View {
             arrangingBots = false
         }
         .refreshable { if usesLedger { await refresh() } }
+        // The Today strip's Up Next tile, kept to the minute while the list is up and it's on.
+        .task(id: "\(settings.todayUpNext)|\(scenePhase == .active)") {
+            guard settings.todayUpNext, scenePhase == .active else { return }
+            while !Task.isCancelled {
+                CalendarUpNext.shared.refresh()
+                try? await Task.sleep(for: .seconds(60))
+            }
+        }
         .onChange(of: isShowing) { _, showing in
             if showing, usesLedger { Task { await refresh() } }
         }

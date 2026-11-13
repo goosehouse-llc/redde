@@ -673,6 +673,16 @@ final class Settings: ServeEndpoint {
     var todayTileColors: [String: String] {
         didSet { store(todayTileColors, forKey: Keys.todayTileColors) }
     }
+    /// The Today tiles' order as the person arranged it (asked 2026-11-12), by tile key. A tile
+    /// not in it comes after those that are, in the strip's own order. Empty: the strip's order.
+    var todayTileOrder: [String] {
+        didSet { store(todayTileOrder, forKey: Keys.todayTileOrder) }
+    }
+    /// The Up Next tile: the next event on this device's calendars (asked 2026-11-12, "if
+    /// wanted"). Off until it's turned on.
+    var todayUpNext: Bool {
+        didSet { store(todayUpNext, forKey: Keys.todayUpNext) }
+    }
     /// The colour a Today tile is drawn in.
     func todayColor(forTile key: String) -> TodayColor {
         todayTileColors[key].flatMap(TodayColor.init(rawValue:)) ?? todayColor
@@ -1143,6 +1153,8 @@ final class Settings: ServeEndpoint {
         static let cardColor = "cardColor"
         static let todayColor = "todayColor"
         static let todayTileColors = "todayTileColors"
+        static let todayTileOrder = "todayTileOrder"
+        static let todayUpNext = "todayUpNext"
         static let cardAppearance = "cardAppearance"
         static let chatFont = "chatFont"
         static let agendaCalendars = CalendarChoice.key
@@ -1271,6 +1283,8 @@ final class Settings: ServeEndpoint {
         cardColor = CardColor(rawValue: defaults.string(forKey: Keys.cardColor) ?? "") ?? .plain
         todayColor = TodayColor(rawValue: defaults.string(forKey: Keys.todayColor) ?? "") ?? .plain
         todayTileColors = defaults.dictionary(forKey: Keys.todayTileColors) as? [String: String] ?? [:]
+        todayTileOrder = defaults.stringArray(forKey: Keys.todayTileOrder) ?? []
+        todayUpNext = defaults.bool(forKey: Keys.todayUpNext)
         cardAppearance = Appearance(rawValue: defaults.string(forKey: Keys.cardAppearance) ?? "") ?? .system
         chatFont = ChatFont(rawValue: defaults.string(forKey: Keys.chatFont) ?? "") ?? .theme
         agendaCalendars = defaults.stringArray(forKey: Keys.agendaCalendars) ?? []
@@ -1354,7 +1368,7 @@ final class Settings: ServeEndpoint {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.cardAppearance, Keys.agendaCalendars, Keys.newEventsCalendar, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.todayTileOrder, Keys.todayUpNext, Keys.cardAppearance, Keys.agendaCalendars, Keys.newEventsCalendar, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.pinnedModels, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
@@ -1386,6 +1400,8 @@ final class Settings: ServeEndpoint {
         case Keys.cardColor: cardColor = pick(CardColor.plain)
         case Keys.todayColor: todayColor = pick(TodayColor.plain)
         case Keys.todayTileColors: todayTileColors = value as? [String: String] ?? [:]
+        case Keys.todayTileOrder: todayTileOrder = value as? [String] ?? []
+        case Keys.todayUpNext: todayUpNext = flag()
         case Keys.cardAppearance: cardAppearance = pick(Appearance.system)
         case Keys.chatFont: chatFont = pick(ChatFont.theme)
         case Keys.agendaCalendars: agendaCalendars = value as? [String] ?? []
@@ -1713,6 +1729,8 @@ final class Settings: ServeEndpoint {
         cardColor = .plain
         todayColor = .plain
         todayTileColors = [:]
+        todayTileOrder = []
+        todayUpNext = false
         cardAppearance = .system
         agendaCalendars = []
         newEventsCalendar = ""

@@ -281,6 +281,26 @@ enum DevHooks {
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }
         if has("-echo.demoPage") { conversation.seedPageDemo() }
         if has("-echo.demoCards") { conversation.seedCardsDemo(only: value("-echo.demoCards")) }
+        // `-echo.demoUpNext`: the Up Next tile on, with "Lunch with Ana" 25 minutes from now put on
+        // the simulator's calendar (grant access first: simctl privacy <sim> grant calendar <bundle>).
+        if has("-echo.demoUpNext") {
+            settings.todayUpNext = true
+            let store = EKEventStore()
+            if EKEventStore.authorizationStatus(for: .event) == .fullAccess, let calendar = store.defaultCalendarForNewEvents {
+                let start = Date.now.addingTimeInterval(25 * 60)
+                let found = store.events(matching: store.predicateForEvents(withStart: start.addingTimeInterval(-3600), end: start.addingTimeInterval(3600), calendars: nil))
+                if !found.contains(where: { $0.title == "Lunch with Ana" }) {
+                    let event = EKEvent(eventStore: store)
+                    event.title = "Lunch with Ana"
+                    event.location = "Rossio Roasters"
+                    event.startDate = start
+                    event.endDate = start.addingTimeInterval(3600)
+                    event.calendar = calendar
+                    try? store.save(event, span: .thisEvent)
+                }
+            }
+            CalendarUpNext.shared.refresh()
+        }
         if has("-echo.demoAgenda") { conversation.seedAgendaDemo(tomorrowOnly: value("-echo.demoAgenda") == "tomorrow") }
         if has("-echo.demoAsks") { conversation.seedAsksDemo(more: has("-echo.demoAsksMore")) }
         if let kind = value("-echo.demoApprovalCard") { conversation.seedApprovalDemo(kind) }

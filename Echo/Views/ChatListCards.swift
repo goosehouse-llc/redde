@@ -102,6 +102,8 @@ struct ChatListCardsSettingsView: View {
     @State private var settings = Settings.shared
     @State private var addsReminders = true
     @State private var listName = ""
+    /// Turning on Up Next found calendar access refused.
+    @State private var calendarRefused = false
 
     var body: some View {
         Form {
@@ -120,6 +122,30 @@ struct ChatListCardsSettingsView: View {
                 Text("Each shows only when it has something in it. Tap a section's title in the chat list to fold it away to a count.",
                      comment: "Settings › Top of the Chat List: footer")
             }
+            // The next event on the calendar as a Today tile (2026-11-12), off until it's wanted.
+            Section {
+                Toggle(isOn: Binding(get: { settings.todayUpNext }, set: { on in
+                    settings.todayUpNext = on
+                    guard on else { return }
+                    Task {
+                        calendarRefused = !(await CalendarUpNext.shared.ask())
+                        CalendarUpNext.shared.refresh()
+                    }
+                })) {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Up Next", comment: "Today strip: the tile with the next event on the calendar")
+                            Text("The next event on your calendars, as a Today tile.", comment: "Settings › Top of the Chat List: under Up Next")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    } icon: { Image(systemName: "calendar") }
+                }
+            } footer: {
+                if settings.todayUpNext, calendarRefused {
+                    Text("Up Next needs full access to your calendars. Allow it in Settings, under Privacy & Security › Calendars.",
+                         comment: "Settings › Top of the Chat List: Up Next is on but calendar access was refused")
+                }
+            }
             // Apple Reminders onto a list on their day (2026-11-09).
             Section {
                 Toggle(isOn: Binding(get: { addsReminders }, set: { addsReminders = $0; TodayLists.shared.addsReminders = $0 })) {
@@ -137,6 +163,7 @@ struct ChatListCardsSettingsView: View {
             }
         }
         .onAppear {
+            calendarRefused = settings.todayUpNext && !CalendarUpNext.shared.canRead
             addsReminders = TodayLists.shared.addsReminders
             listName = TodayLists.shared.remindersList
         }

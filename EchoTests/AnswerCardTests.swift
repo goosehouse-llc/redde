@@ -59,12 +59,8 @@ struct AnswerCardTests {
         pins.unpin(card.key)
         #expect(pins.pins.isEmpty)
 
-        // A pale theme colour on a light card gives way to the text; a strong one stays.
-        var environment = EnvironmentValues()
-        environment.colorScheme = .light
-        let pale = Color(red: 0.75, green: 0.9, blue: 1), strong = Color(red: 0.1, green: 0.35, blue: 0.9)
-        #expect(pale.readable(on: .white, or: .black, in: environment) == .black)
-        #expect(strong.readable(on: .white, or: .black, in: environment) == strong)
+        // The marks are the checklist green in every theme, not the theme's colour (2026-11-12).
+        #expect(ColorScheme.light.checklistMark(.yellow) == ColorScheme.checklistGreen)
     }
 
     @Test func aCardsKeyIsTheSameEachTimeItIsRead() {

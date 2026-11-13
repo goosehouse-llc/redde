@@ -89,4 +89,53 @@ final class TodayStripUITests: XCTestCase {
         shot.lifetime = .keepAlways
         add(shot)
     }
+
+    /// 2026-11-12: Move Right on Up Next puts it after the next tile, Move Left brings it back, and
+    /// Arrange Tiles… lists them all. Up Next is "Lunch with Ana", put on the simulator's calendar.
+    func testATileMovesFromItsMenu() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoGoals", "-echo.demoBriefings", "day", "-echo.demoUpNext", "-todayTileOrder", "()"]
+            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launch()
+        let chat = app.scrollViews.firstMatch
+        XCTAssertTrue(chat.waitForExistence(timeout: 15))
+        chat.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: chat.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        let lunch = tile(app, "Lunch with Ana")
+        guard lunch.waitForExistence(timeout: 10) else {
+            throw XCTSkip("No calendar access in this simulator (simctl privacy <sim> grant calendar com.goosehouse.echo)")
+        }
+        let second = app.buttons.matching(NSPredicate(format: "label MATCHES %@", #"^\d{1,2}:\d{2}\s?[AP]M.*"#)).firstMatch
+        XCTAssertTrue(second.exists, "No briefing tile after Up Next")
+        XCTAssertLessThan(lunch.frame.minX, second.frame.minX, "Up Next isn't first")
+        lunch.press(forDuration: 1.2)
+        XCTAssertFalse(app.buttons["Move Left"].exists, "The first tile can move left")
+        app.buttons["Move Right"].tap()
+        XCTAssertTrue(waitUntil { lunch.frame.minX > second.frame.minX }, "Up Next didn't move right")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "moved-right"
+        shot.lifetime = .keepAlways
+        add(shot)
+        lunch.press(forDuration: 1.2)
+        app.buttons["Move Left"].tap()
+        XCTAssertTrue(waitUntil { lunch.frame.minX < second.frame.minX }, "Up Next didn't move back")
+        lunch.press(forDuration: 1.2)
+        app.buttons["Arrange Tiles…"].tap()
+        XCTAssertTrue(app.navigationBars["Arrange Tiles"].waitForExistence(timeout: 5), "Arrange Tiles didn't open")
+        XCTAssertTrue(app.staticTexts["Up Next"].exists, "Up Next isn't listed")
+        let sheet = XCTAttachment(screenshot: app.screenshot())
+        sheet.name = "arrange-tiles"
+        sheet.lifetime = .keepAlways
+        add(sheet)
+        app.navigationBars["Arrange Tiles"].buttons["Done"].tap()
+    }
+
+    private func waitUntil(_ condition: () -> Bool) -> Bool {
+        for _ in 0 ..< 20 {
+            if condition() { return true }
+            RunLoop.current.run(until: .now + 0.25)
+        }
+        return condition()
+    }
 }

@@ -6,13 +6,19 @@ import SwiftUI
 /// were off the screen. A tap opens what a tile is; a briefing's hold menu has Done and Later, as
 /// its deck card had. Each kind still follows Settings → Appearance → Top of the Chat List, and
 /// the row folds away to a count. The person's lists (2026-11-09, `TodayLists`) come right after
-/// the Inbox, one tile each, and stay until a list is deleted.
+/// the Inbox, one tile each, and stay until a list is deleted. Up Next (2026-11-12, when turned
+/// on) is the next event on the calendar. The tiles go in the order the person arranged them
+/// (2026-11-12: Move Left / Right on a tile's hold menu, or Arrange Tiles…).
 struct TodayStrip: View {
     let openGoal: (GoalReport) -> Void
     @State private var mail = MailCenter.shared
     @State private var goals = GoalsInbox.shared
     @State private var briefings = BriefingsInbox.shared
     @State private var lists = TodayLists.shared
+    @State private var upNext = CalendarUpNext.shared
+    @State private var settings = Settings.shared
+    @State private var arranging = false
+    @Environment(\.openURL) private var openURL
     @AppStorage("chatList.open.today") private var isOpen = true
     /// A briefing whose job's time is being changed (asked 2026-11-11).
     @State private var retiming: AgentBriefing?
@@ -21,42 +27,97 @@ struct TodayStrip: View {
     static let tileWidth: CGFloat = 150
     static let tileHeight: CGFloat = 124
 
+    /// A tile, by its key (`TodayTile.key`), with what Arrange Tiles… calls it.
+    private struct Entry: Identifiable {
+        let key: String
+        let name: String
+        let symbol: String
+        let view: AnyView
+        var id: String { key }
+    }
+
     var body: some View {
         let account = ChatListCard.inbox.isShown && mail.isSetUp ? mail.inbox : nil
         let deck = ChatListCard.briefings.isShown ? briefings.deck : []
         let goalList = ChatListCard.goals.isShown ? goals.onList : []
         let todayLists = ChatListCard.lists.isShown ? lists.lists : []
-        let count = (account == nil ? 0 : 1) + todayLists.count + deck.count + goalList.count
-        if count > 0 {
-            Section {
-                if isOpen {
-                    ScrollView(.horizontal) {
-                        HStack(spacing: 10) {
-                            if let account { inboxTile(account) }
-                            ForEach(todayLists) { listTile($0) }
-                            ForEach(deck) { briefingTile($0) }
-                            ForEach(goalList) { goalTile($0) }
+        let event = settings.todayUpNext ? upNext.next : nil
+        // The keys first, in the person's order, so each tile's menu knows where it stands.
+        var natural: [String] = []
+        if event != nil { natural.append("upnext") }
+        if account != nil { natural.append("inbox") }
+        natural += todayLists.map { "list:" + $0.id } + deck.map { "brief:" + $0.jobKey } + goalList.map { "goal:" + $0.id }
+        let keys = Self.arranged(natural, order: settings.todayTileOrder)
+        var entries: [Entry] = []
+        if let event {
+            entries.append(Entry(key: "upnext", name: String(localized: "Up Next", comment: "Today strip: the tile with the next event on the calendar"),
+                                 symbol: "calendar", view: AnyView(upNextTile(event, keys: keys))))
+        }
+        if let account {
+            entries.append(Entry(key: "inbox", name: String(localized: "Inbox", comment: "The chat list's row for email"),
+                                 symbol: "envelope", view: AnyView(inboxTile(account, keys: keys))))
+        }
+        for list in todayLists {
+            entries.append(Entry(key: "list:" + list.id, name: list.title, symbol: "checklist", view: AnyView(listTile(list, keys: keys))))
+        }
+        for briefing in deck {
+            entries.append(Entry(key: "brief:" + briefing.jobKey, name: briefing.heading, symbol: briefing.symbol, view: AnyView(briefingTile(briefing, keys: keys))))
+        }
+        for goal in goalList {
+            entries.append(Entry(key: "goal:" + goal.id, name: goal.title, symbol: "flag.checkered", view: AnyView(goalTile(goal, keys: keys))))
+        }
+        let byKey = Dictionary(entries.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        let shown = keys.compactMap { byKey[$0] }
+        let count = shown.count
+        return Group {
+            if count > 0 {
+                Section {
+                    if isOpen {
+                        ScrollView(.horizontal) {
+                            HStack(spacing: 10) {
+                                ForEach(shown) { $0.view }
+                            }
+                            .padding(.horizontal, 16)
                         }
-                        .padding(.horizontal, 16)
+                        .scrollIndicators(.hidden)
+                        .scrollClipDisabled()
+                        .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 10, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .selectionDisabled()
+                        .sheet(item: $retiming) { BriefingTimeSheet(briefing: $0) }
+                        .sheet(isPresented: $arranging) {
+                            ArrangeTilesSheet(tiles: shown.map { ($0.key, $0.name, $0.symbol) })
+                        }
                     }
-                    .scrollIndicators(.hidden)
-                    .scrollClipDisabled()
-                    .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 10, trailing: 0))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .selectionDisabled()
-                    .sheet(item: $retiming) { BriefingTimeSheet(briefing: $0) }
+                } header: {
+                    FoldingHeader(title: String(localized: "Today", comment: "The chat list's row of tiles: the inbox, briefings and goals"),
+                                  count: count, isOpen: $isOpen)
                 }
-            } header: {
-                FoldingHeader(title: String(localized: "Today", comment: "The chat list's row of tiles: the inbox, briefings and goals"),
-                              count: count, isOpen: $isOpen)
             }
         }
     }
 
+    /// `keys` in the person's order: those they placed as they placed them, then the rest as the
+    /// strip has them.
+    static func arranged(_ keys: [String], order: [String]) -> [String] {
+        let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        let placed = keys.filter { rank[$0] != nil }.sorted { rank[$0]! < rank[$1]! }
+        return placed + keys.filter { rank[$0] == nil }
+    }
+
+    /// The order after a tile moves one place: what's shown, then what was kept for tiles that
+    /// aren't (a briefing read today comes back where it was).
+    static func moving(_ key: String, by step: Int, in keys: [String], order: [String]) -> [String] {
+        var keys = keys
+        guard let at = keys.firstIndex(of: key), keys.indices.contains(at + step) else { return order }
+        keys.swapAt(at, at + step)
+        return keys + order.filter { !keys.contains($0) }
+    }
+
     // MARK: Tiles
 
-    private func inboxTile(_ account: MailAccount) -> some View {
+    private func inboxTile(_ account: MailAccount, keys: [String]) -> some View {
         let important = account.count(.important), reply = account.count(.needsReply)
         let line = important == 0 && reply == 0
             ? String(localized: "Nothing needs you", comment: "The chat list's Inbox row: nothing important")
@@ -66,11 +127,11 @@ struct TodayStrip: View {
         let tile = TodayTile(key: "inbox", kind: Text("Inbox", comment: "The chat list's row for email"), symbol: "envelope.fill", tint: theme.accent, wash: theme.accent,
                              title: account.unread > 0 ? String(localized: "\(account.unread) new", comment: "Today strip: unread emails") : String(localized: "All read", comment: "Today strip: no unread email"),
                              detail: line)
-        return tileButton(tile, open: { mail.showingInbox = true }) { TileColorMenu(key: tile.key) }
+        return tileButton(tile, keys: keys, open: { mail.showingInbox = true }) { TileColorMenu(key: tile.key) }
         .accessibilityHint(Text("Opens your email", comment: "VoiceOver hint: the chat list's Inbox row"))
     }
 
-    private func listTile(_ list: TodayList) -> some View {
+    private func listTile(_ list: TodayList, keys: [String]) -> some View {
         let open = list.open
         let kind = list.items.isEmpty ? Text("List", comment: "Today strip: a to-do list's tile, with nothing on it yet")
             : open.isEmpty ? Text("All done", comment: "Today strip: a to-do list with every item checked off")
@@ -80,7 +141,7 @@ struct TodayStrip: View {
             : open.prefix(4).map(\.text).formatted(.list(type: .and, width: .narrow))
         let tile = TodayTile(key: "list:" + list.id, kind: kind, symbol: open.isEmpty && !list.items.isEmpty ? "checkmark.circle.fill" : "checklist",
                              tint: .green, wash: .green, title: list.title, detail: detail)
-        return tileButton(tile, open: { lists.shownID = list.id }) {
+        return tileButton(tile, keys: keys, open: { lists.shownID = list.id }) {
             if !list.finished.isEmpty {
                 Button { lists.clearDone(in: list) } label: {
                     Label { Text("Clear Done", comment: "A to-do list: remove the items checked off") } icon: { Image(systemName: "checkmark.circle.badge.xmark") }
@@ -94,7 +155,7 @@ struct TodayStrip: View {
         .accessibilityHint(Text("Opens the list", comment: "VoiceOver hint: a to-do list's tile on the chat list"))
     }
 
-    private func briefingTile(_ briefing: AgentBriefing) -> some View {
+    private func briefingTile(_ briefing: AgentBriefing, keys: [String]) -> some View {
         let when = briefing.at.formatted(date: .omitted, time: .shortened)
         let detail: String = {
             if let day = briefing.dayBrief {
@@ -105,7 +166,7 @@ struct TodayStrip: View {
         let tile = TodayTile(key: "brief:" + briefing.jobKey, kind: Text(verbatim: when), symbol: briefing.failed ? "exclamationmark.triangle.fill" : briefing.symbol,
                              tint: briefing.failed ? .red : .yellow, wash: briefing.failed ? .red : .yellow, title: briefing.heading, detail: detail,
                              forecast: briefing.forecastPlace)
-        return tileButton(tile, open: { briefings.show(briefing) }) {
+        return tileButton(tile, keys: keys, open: { briefings.show(briefing) }) {
             Button { briefings.markJobRead(briefing) } label: {
                 Label { Text("Done") } icon: { Image(systemName: "checkmark") }
             }
@@ -130,14 +191,59 @@ struct TodayStrip: View {
     /// context menu: the strip is one row of the list, and a row keeps one context menu, so a
     /// press on any tile lifted the whole row (2026-11-11) and then, with a menu on each tile,
     /// brought up the first tile's menu whichever was pressed.
-    private func tileButton<Items: View>(_ tile: TodayTile, open: @escaping () -> Void,
+    private func tileButton<Items: View>(_ tile: TodayTile, keys: [String], open: @escaping () -> Void,
                                          @ViewBuilder menu: () -> Items) -> some View {
-        Menu { menu() } label: { tile } primaryAction: { open() }
+        Menu {
+            menu()
+            Section { arrangeItems(tile.key, keys: keys) }
+        } label: { tile } primaryAction: { open() }
             .menuStyle(.button)
             .buttonStyle(.plain)
     }
 
-    private func goalTile(_ goal: GoalReport) -> some View {
+    /// Moving a tile: a place left or right, or the whole row in a sheet.
+    @ViewBuilder
+    private func arrangeItems(_ key: String, keys: [String]) -> some View {
+        if keys.count > 1 {
+            if keys.first != key {
+                Button { move(key, by: -1, in: keys) } label: {
+                    Label { Text("Move Left", comment: "A Today tile's hold menu: swap it with the tile before it") } icon: { Image(systemName: "arrow.left") }
+                }
+            }
+            if keys.last != key {
+                Button { move(key, by: 1, in: keys) } label: {
+                    Label { Text("Move Right", comment: "A Today tile's hold menu: swap it with the tile after it") } icon: { Image(systemName: "arrow.right") }
+                }
+            }
+            Button { arranging = true } label: {
+                Label { Text("Arrange Tiles…", comment: "A Today tile's hold menu: put the tiles in order in a list") } icon: { Image(systemName: "arrow.left.arrow.right") }
+            }
+        }
+    }
+
+    private func move(_ key: String, by step: Int, in keys: [String]) {
+        withAnimation(.snappy) { settings.todayTileOrder = Self.moving(key, by: step, in: keys, order: settings.todayTileOrder) }
+    }
+
+    /// The next event on the calendar, ticking to the minute.
+    private func upNextTile(_ event: CalendarUpNext.Event, keys: [String]) -> some View {
+        TimelineView(.everyMinute) { context in
+            let on = event.isOn(at: context.date)
+            let place = event.location?.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
+            let tile = TodayTile(key: "upnext", kind: on ? Text("Now") : Text("Up Next", comment: "Today strip: the tile with the next event on the calendar"),
+                                 symbol: "calendar", tint: event.color ?? .red, wash: event.color ?? .red, title: event.title,
+                                 detail: [CalendarUpNext.when(event, now: context.date), place].filter { !$0.isEmpty }.joined(separator: " · "))
+            tileButton(tile, keys: keys, open: { AgendaCard.calendarURL(at: event.start).map { openURL($0) } }) {
+                Button { settings.todayUpNext = false } label: {
+                    Label { Text("Hide Up Next", comment: "The Up Next tile's hold menu: turn the tile off (Settings › Appearance › Top of the Chat List turns it back on)") } icon: { Image(systemName: "eye.slash") }
+                }
+                TileColorMenu(key: tile.key)
+            }
+            .accessibilityHint(Text("Opens Calendar", comment: "VoiceOver hint: the Up Next tile on the chat list"))
+        }
+    }
+
+    private func goalTile(_ goal: GoalReport, keys: [String]) -> some View {
         let face = DeckCard.face(profile: goal.profile)
         let color = BotAvatar.colors(of: face, theme: theme).deep
         let tile = TodayTile(key: "goal:" + goal.id, kind: goal.total > 0 ? Text("\(goal.done) of \(goal.total) steps", comment: "Today strip: a goal's progress")
@@ -146,7 +252,7 @@ struct TodayStrip: View {
                       title: goal.title,
                       detail: goal.next.map { String(localized: "Next: \($0)", comment: "Today strip: a goal's next step") }
                           ?? GoalReport.plain(goal.headline))
-        return tileButton(tile, open: { openGoal(goal) }) { TileColorMenu(key: tile.key) }
+        return tileButton(tile, keys: keys, open: { openGoal(goal) }) { TileColorMenu(key: tile.key) }
     }
 }
 
@@ -240,5 +346,54 @@ private struct TileColorMenu: View {
             Label { Text("Tile Color", comment: "A Today tile's hold menu: the colour of this one tile") } icon: { Image(systemName: "paintpalette") }
         }
         .pickerStyle(.menu)
+    }
+}
+
+/// Arrange Tiles… (asked 2026-11-12): the Today tiles as a list to drag into order. The order is
+/// kept by tile key (`Settings.todayTileOrder`), synced like the tiles' colours.
+private struct ArrangeTilesSheet: View {
+    @State var tiles: [(key: String, name: String, symbol: String)]
+    @State private var settings = Settings.shared
+    @Environment(\.dismiss) private var dismiss
+
+    init(tiles: [(String, String, String)]) {
+        _tiles = State(initialValue: tiles.map { (key: $0.0, name: $0.1, symbol: $0.2) })
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(tiles, id: \.key) { tile in
+                        Label { Text(tile.name).lineLimit(1) } icon: { Image(systemName: tile.symbol) }
+                    }
+                    .onMove { from, to in
+                        tiles.move(fromOffsets: from, toOffset: to)
+                        let keys = tiles.map(\.key)
+                        settings.todayTileOrder = keys + settings.todayTileOrder.filter { !keys.contains($0) }
+                    }
+                } footer: {
+                    Text("Drag the tiles into the order you want them in the Today row.", comment: "Arrange Tiles: under the list of Today tiles")
+                }
+            }
+            #if os(iOS)
+            .environment(\.editMode, .constant(.active))
+            #endif
+            .navigationTitle(Text("Arrange Tiles", comment: "Title of the sheet that puts the Today tiles in order"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(String(localized: "Original Order", comment: "Arrange Tiles: forget the order and go back to the strip's own")) {
+                        settings.todayTileOrder = []
+                        dismiss()
+                    }
+                    .disabled(settings.todayTileOrder.isEmpty)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
