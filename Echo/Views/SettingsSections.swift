@@ -420,9 +420,12 @@ struct TransportSettings: View {
     /// The server whose setup code is showing (the active one; its code carries the
     /// OpenAI-compatible endpoint too, so this is here for every connection).
     @State private var sharing: HermesServer?
+    @Environment(Conversation.self) private var conversation: Conversation?
 
     var body: some View {
-        TransportPicker(selection: $settings.transport)
+        // Another kind of connection on a server in use becomes a new server (`ServerSwitcher.choose`).
+        TransportPicker(selection: Binding(get: { settings.transport },
+                                           set: { ServerSwitcher.choose($0, conversation: conversation, settings: settings) }))
         Section {
             Button("Set up connection…", systemImage: "network") { showSetup = true }
             Button("Set up another device…", systemImage: "qrcode") { sharing = settings.activeServer }

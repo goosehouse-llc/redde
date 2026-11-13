@@ -140,6 +140,40 @@ struct ServerTests {
         #expect(conversation.id != id, "a fresh conversation for the new server")
     }
 
+    /// Setting up an agent on a Hermes server that's in use adds a server for it: the Hermes one
+    /// keeps its addresses, sign-in and connection (2026-11-12). Within Hermes, an unused server,
+    /// and the OpenAI-compatible connection, the change stays in place.
+    @Test func anotherKindOfConnectionIsANewServer() async {
+        let dir = URL.temporaryDirectory.appending(path: "echo-test-\(UUID().uuidString)").appending(path: "conversations")
+        defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }
+        let settings = Settings(defaults: defaults())
+        let conversation = Conversation(settings: settings, store: ConversationStore(directory: dir))
+        settings.transport = .hermesServe
+        let hermes = settings.activeServerID
+
+        // Unused: nothing stored for it yet, so it simply becomes the agent's.
+        #expect(!ServerSwitcher.choose(.acp, conversation: conversation, settings: settings))
+        #expect(settings.activeServerID == hermes && settings.transport == .acp)
+        ServerSwitcher.choose(.hermesServe, conversation: conversation, settings: settings)
+
+        settings.serveURL = "http://d.test:9119"
+        settings.serveUsername = "sam"
+        let password = Keychain.account(.serveDashboardPassword, server: hermes.uuidString)
+        Keychain.write(account: password, value: "pw")
+        defer { Keychain.delete(account: password) }
+
+        #expect(!ServerSwitcher.choose(.hermesSessions, conversation: conversation, settings: settings), "Hermes to Hermes stays")
+        #expect(!ServerSwitcher.choose(.chatCompletions, conversation: conversation, settings: settings), "a model is no server's")
+        #expect(settings.activeServerID == hermes)
+
+        #expect(ServerSwitcher.choose(.acp, conversation: conversation, settings: settings))
+        let agent = settings.activeServerID
+        #expect(agent != hermes && settings.transport == .acp && settings.serveURL.isEmpty)
+        let kept = settings.servers.first { $0.id == hermes }
+        #expect(kept?.transport == .hermesSessions && kept?.serveURL == "http://d.test:9119" && kept?.serveUsername == "sam")
+        #expect(Keychain.read(account: password) == "pw")
+    }
+
     /// Chats saved before multi-server have no server; they're the first server's, not every one's.
     @Test func untaggedChatsBelongToTheFirstServer() async {
         let dir = URL.temporaryDirectory.appending(path: "echo-test-\(UUID().uuidString)").appending(path: "conversations")

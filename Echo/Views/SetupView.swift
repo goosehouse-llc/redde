@@ -27,6 +27,10 @@ struct SetupView: View {
     @State private var scanned: SetupCodeOffer?
     @State private var offer: SetupCodeOffer?
     @State private var pasteProblem: String?
+    /// Picking another kind of connection added a server for it (`ServerSwitcher.choose`): said
+    /// under the picker, so the empty form below isn't taken for the old server's, wiped.
+    @State private var addedFor: String?
+    @Environment(Conversation.self) private var conversation: Conversation?
     var onDone: () -> Void = {}
 
     var body: some View {
@@ -86,8 +90,17 @@ struct SetupView: View {
                     Text("A setup code fills in everything below. Make one on a device that is already set up: Settings › Connection › Set up another device.")
                 }
 
-                TransportPicker(selection: $settings.transport, question: "How does Redde reach it?")
+                TransportPicker(selection: transport, question: "How does Redde reach it?")
                     .onChange(of: settings.transport) { outcome = nil }
+                if let addedFor {
+                    Section {
+                        Label(String(localized: "This is a new server. \(addedFor) keeps its connection, and you can switch back from the chat list or Settings › Servers.",
+                                     comment: "Setup, after picking another kind of connection for a server in use. The value is that server's name"),
+                              systemImage: "plus.circle")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 switch settings.transport {
                 case .hermesSessions:
@@ -239,6 +252,18 @@ struct SetupView: View {
     private var dashboardMode: DashboardFormMode {
         .decide(asksForLogin: dashboardAsks, hasLogin: signedIn || (!settings.serveUsername.isEmpty && hasServePassword),
                 savedOpen: settings.serveOpenAccess)
+    }
+
+    /// The picker's choice, through `ServerSwitcher.choose`: another kind of connection on a server
+    /// in use is set up as a new server.
+    private var transport: Binding<Transport> {
+        Binding(get: { settings.transport }, set: { picked in
+            let was = settings.activeServer?.title ?? ""
+            if ServerSwitcher.choose(picked, conversation: conversation, settings: settings) {
+                addedFor = was
+                readStoredSecrets()
+            }
+        })
     }
 
     private func persistSecrets() {

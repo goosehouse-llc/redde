@@ -294,6 +294,11 @@ struct SetupCodeTests {
         #expect(again.server == .add)
         #expect(again.sameAs == "Home")
         #expect(try read("redde://connect?dashboard=http://elsewhere.test:9119&password=pw")?.plan(for: settings).sameAs == nil)
+
+        // An agent's server that still holds these Hermes addresses isn't a Hermes server at them.
+        settings.transport = .acp
+        settings.renameServer(home, to: "Claude Code")
+        #expect(code.plan(for: settings).sameAs == nil)
     }
 
     @Test func aSetUpServerIsNeverOverwritten() throws {

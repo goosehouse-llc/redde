@@ -35,6 +35,25 @@ final class AcpUITests: XCTestCase {
         XCTAssertTrue(element.exists && element.isHittable, "\(what) isn't on screen")
     }
 
+    /// Picking an agent in Setup on a Hermes server that is in use adds a server for it: Setup says
+    /// so, and the Hermes server keeps its address and sign-in (2026-11-12). Needs no lab.
+    func testAnAgentOnAServerInUseIsANewServer() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.screen", "setup", "-transport", "hermesServe", "-serveURL", "http://hermes.test:9119",
+                               "-serveUsername", "sam"]
+        app.launchEnvironment["ECHO_TEST_SERVE_PASSWORD"] = "pw"
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Set up Redde"].waitForExistence(timeout: 20), "Setup didn't open")
+        let agent = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Claude Code, Codex'")).firstMatch
+        reach(agent, in: app, "The agent connection")
+        agent.tap()
+        let said = app.text(containing: "This is a new server.")
+        XCTAssertTrue(said.waitForExistence(timeout: 5), "Setup didn't say a server was added")
+        keep("A new server for the agent")
+        XCTAssertTrue(app.textFields["ws://your-computer:8765"].exists, "No bridge address field")
+    }
+
     func testSettingUpABridge() throws {
         continueAfterFailure = false
         try XCTSkipUnless(labIsUp(), "No ACP lab on \(bridge) (scripts/acp-lab.sh up)")

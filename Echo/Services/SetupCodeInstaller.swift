@@ -33,8 +33,11 @@ extension SetupCode {
         var sameAs: String?
         if server == .add {
             func tidy(_ address: String) -> String { Settings.normalizedBase(address)?.absoluteString ?? "" }
+            // The same kind of server only: an agent's server can still hold the Hermes addresses
+            // it had before it was set up for the agent, and isn't a Hermes server for that.
             sameAs = settings.servers.first {
-                (dashboardURL.isEmpty || tidy($0.serveURL) == dashboardURL) && (apiURL.isEmpty || tidy($0.gatewayURL) == apiURL)
+                ($0.transport == .acp) == !bridgeURL.isEmpty
+                    && (dashboardURL.isEmpty || tidy($0.serveURL) == dashboardURL) && (apiURL.isEmpty || tidy($0.gatewayURL) == apiURL)
                     && (bridgeURL.isEmpty || Self.bridge($0.acpURL) == Self.bridge(bridgeURL) && $0.acpAgent == agent)
             }?.title
         }

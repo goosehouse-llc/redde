@@ -441812,6 +441812,113 @@
         }
       }
     },
+    "This is a new server. %@ keeps its connection, and you can switch back from the chat list or Settings › Servers." : {
+      "comment" : "Setup, after picking another kind of connection for a server in use. The value is that server's name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette er en ny server. %@ beholder sin forbindelse, og du kan skifte tilbage fra chatlisten eller Indstillinger › Servere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das ist ein neuer Server. %@ behält seine Verbindung, und du kannst über die Chatliste oder Einstellungen › Server zurückwechseln."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este es un servidor nuevo. %@ conserva su conexión, y puedes volver a él desde la lista de chats o Ajustes › Servidores."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est un nouveau serveur. %@ garde sa connexion, et vous pouvez y revenir depuis la liste des discussions ou Réglages › Serveurs."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo è un nuovo server. %@ mantiene la sua connessione, e puoi tornarci dall'elenco delle chat o da Impostazioni › Server."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これは新しいサーバです。%@の接続はそのまま残り、チャットリストまたは「設定」›「サーバ」から戻せます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 서버입니다. %@의 연결은 그대로 유지되며, 채팅 목록이나 설정 › 서버에서 다시 전환할 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette er en ny server. %@ beholder tilkoblingen sin, og du kan bytte tilbake fra chatlisten eller Innstillinger › Servere."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit is een nieuwe server. %@ houdt zijn verbinding, en je kunt teruggaan via de chatlijst of Instellingen › Servers."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To nowy serwer. %@ zachowuje swoje połączenie, a wrócić możesz z listy czatów lub z Ustawienia › Serwery."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este é um servidor novo. %@ mantém a conexão, e você pode voltar pela lista de conversas ou em Ajustes › Servidores."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это новый сервер. %@ сохраняет своё подключение, и вернуться можно из списка чатов или в «Настройки» › «Серверы»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det här är en ny server. %@ behåller sin anslutning, och du kan byta tillbaka från chattlistan eller Inställningar › Servrar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu yeni bir sunucu. %@ bağlantısını korur; sohbet listesinden ya da Ayarlar › Sunucular'dan geri geçebilirsin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це новий сервер. %@ зберігає своє підключення, а повернутися можна зі списку чатів або в «Параметри» › «Сервери»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这是一个新服务器。%@ 保留它的连接，你可以从聊天列表或“设置”›“服务器”切换回去。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這是一部新伺服器。%@ 會保留它的連線，你可以從聊天列表或「設定」›「伺服器」切換回去。"
+          }
+        }
+      }
+    },
     "This is about your errands: messages, bookings, orders. Commands on your server still ask as Hermes is set to. Needs the Hermes Dashboard login and Redde's plugin 1.9 on your Hermes." : {
       "localizations" : {
         "da" : {
