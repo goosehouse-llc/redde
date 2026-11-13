@@ -104,6 +104,7 @@ struct ChatListCardsSettingsView: View {
     @State private var listName = ""
     /// Turning on Up Next found calendar access refused.
     @State private var calendarRefused = false
+    @AppStorage(NewDrawer.key) private var newDrawer = true
 
     var body: some View {
         Form {
@@ -121,6 +122,19 @@ struct ChatListCardsSettingsView: View {
             } footer: {
                 Text("Each shows only when it has something in it. Tap a section's title in the chat list to fold it away to a count.",
                      comment: "Settings › Top of the Chat List: footer")
+            }
+            // The drawer laid out from scratch (2026-11-13); off, the list is as it was.
+            Section {
+                Toggle(isOn: $newDrawer) {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("New Drawer", comment: "Settings › Top of the Chat List: the drawer laid out from scratch")
+                            Text("What waits on you first, then Today, Planned, Board and Made, your bots in a row, then your chats. Off, the list has its tabs as before.",
+                                 comment: "Settings › Top of the Chat List: under New Drawer")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    } icon: { Image(systemName: "sidebar.left") }
+                }
             }
             // The next event on the calendar as a Today tile (2026-11-12), off until it's wanted.
             Section {

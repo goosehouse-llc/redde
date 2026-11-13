@@ -4,7 +4,8 @@ import XCTest
 /// of text on screen, and the conversation list's rows.
 extension XCUIApplication {
     /// A launch that lands on the chat: setup done, no voice mode at launch, no app lock.
-    static let straightToChat = ["-setupDone", "YES", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO", "-requireBiometrics", "NO"]
+    // The classic drawer (tabs): these tests were written against it; the new one has its own.
+    static let straightToChat = ["-setupDone", "YES", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO", "-requireBiometrics", "NO", "-drawer.new", "NO"]
     /// The conversation list on Chats; without it, it reopens on whichever section was used last.
     static let chatsSection = ["-conversations.section", "sessions"]
 
