@@ -27,20 +27,20 @@ final class ReplyActionsUITests: XCTestCase {
         XCTAssertLessThan(toast.frame.maxY, composer.frame.minY, "The toast sits under the composer")
     }
 
-    /// While a reply is being worked on its thinking is open, and a tap folds it all the same:
-    /// it used to stay open, with a header that took no taps, until the reply was done.
-    func testThinkingFoldsWhileTheReplyIsStillComing() {
+    /// While a reply is being worked on its thinking stays folded (2026-11-13: opening itself
+    /// while live, it opened and shut over and over), and a tap opens it all the same; it stays
+    /// as the person left it once the reply is done.
+    func testThinkingStaysFoldedUntilTapped() {
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demoStream"] + XCUIApplication.straightToChat
         app.launch()
-        let hide = app.buttons["Hide thinking"]
-        XCTAssertTrue(hide.waitForExistence(timeout: 20), "The thinking isn't open while the reply is live")
-        hide.tap()
-        XCTAssertTrue(app.buttons["Show thinking"].waitForExistence(timeout: 3), "The tap didn't fold the thinking")
-        XCTAssertFalse(hide.exists)
-        // And it stays as the person left it once the reply is done.
+        let show = app.buttons["Show thinking"]
+        XCTAssertTrue(show.waitForExistence(timeout: 20), "The thinking isn't folded while the reply is live")
+        XCTAssertFalse(app.buttons["Hide thinking"].exists, "The thinking opened by itself")
+        show.tap()
+        XCTAssertTrue(app.buttons["Hide thinking"].waitForExistence(timeout: 3), "The tap didn't open the thinking")
         XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 30), "The demo reply never finished")
-        XCTAssertTrue(app.buttons["Show thinking"].exists)
+        XCTAssertTrue(app.buttons["Hide thinking"].exists, "It folded again by itself")
     }
 
     func testAToolStepOpensOntoWhatItReturned() {

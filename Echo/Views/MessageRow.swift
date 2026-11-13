@@ -380,10 +380,11 @@ struct MessageRow: View, Equatable {
         .accessibilityLabel(hint)
     }
 
-    /// One fold for all reasoning and tool calls in a run of assistant messages. It opens while
-    /// the turn is live, then leaves the final answer in sight behind one compact summary.
+    /// One fold for all reasoning and tool calls in a run of assistant messages, behind one
+    /// compact summary. Closed until tapped open (2026-11-13: opening while live made it open and
+    /// shut over and over as the turn moved from message to message).
     private func turnActivityFold(_ activity: AssistantTurnActivity) -> some View {
-        let open = showTurnActivity ?? isLive
+        let open = showTurnActivity ?? false
         return VStack(alignment: .leading, spacing: 2) {
             foldHeader(open: open,
                        hint: open ? String(localized: "Hide turn activity", comment: "VoiceOver: folds away everything the agent thought and did in one turn")
@@ -424,10 +425,9 @@ struct MessageRow: View, Equatable {
     }
 
     /// The reply's thinking: "Thinking" while it happens, with the newest of it underneath, then
-    /// "Thought for 6 s", which opens onto all of it. Open while the reply is being worked on,
-    /// unless the person folds it, which they can at any moment, as with the steps.
+    /// "Thought for 6 s", which opens onto all of it. Closed until tapped open, live or not.
     private var thinkingFold: some View {
-        let open = showThinking ?? isLive
+        let open = showThinking ?? false
         return VStack(alignment: .leading, spacing: 2) {
             foldHeader(open: open, hint: open ? String(localized: "Hide thinking") : String(localized: "Show thinking")) {
                 withAnimation(.snappy(duration: 0.3)) { showThinking = !open }
@@ -466,12 +466,12 @@ struct MessageRow: View, Equatable {
     }
 
     /// The tools the reply used, folded the same way: "Working · 2 tools" while they run, with a
-    /// step for each underneath, then "Used 2 tools · 2.1 s". Open while the agent works and
-    /// hasn't started writing; folded after, and on tap.
+    /// step for each underneath, then "Used 2 tools · 2.1 s". Closed until tapped open: opening
+    /// itself while the reply had no words yet made it open and shut as words came and went.
     private var stepsFold: some View {
         let tools = message.tools
         let working = isLive && tools.contains { $0.status == .running }
-        let open = showSteps ?? (isLive && message.text.isEmpty)
+        let open = showSteps ?? false
         return VStack(alignment: .leading, spacing: 2) {
             foldHeader(open: open, hint: open ? String(localized: "Hide tool steps") : String(localized: "Show tool steps")) {
                 withAnimation(.snappy(duration: 0.3)) { showSteps = !open }
