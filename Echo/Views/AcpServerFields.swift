@@ -9,6 +9,9 @@ struct AcpServerFields: View {
     var hasToken: Bool
     @State private var agents: [AcpEndpoint.Agent] = []
 
+    /// The bridge's one-line install, in its README.
+    static let installGuide = URL(string: "https://github.com/goosehouse-llc/redde/tree/main/companion/redde-bridge#install")!
+
     private var isDemo: Bool { settings.acpEndpoint?.isDemo == true }
 
     var body: some View {
@@ -52,8 +55,12 @@ struct AcpServerFields: View {
                 Text("The demo agent runs inside Redde, with no computer and no AI. It shows what Redde does with a coding agent: its steps, a file's changes, approvals, plans and questions, by chat or by voice.",
                      comment: "Setup and Settings: the ACP connection's footer for the demo agent")
             } else {
-                Text("Run Redde's bridge on the computer with your agents (Claude Code, Codex, Gemini CLI, Goose, Hermes and others that speak ACP). `python3 redde_bridge.py --print-setup` shows the address and token. A server that speaks ACP itself, such as `goose serve`, works too.",
-                     comment: "Setup and Settings: the ACP connection's footer")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Install Redde's bridge on the computer with your agents (Claude Code, Codex, Gemini CLI, Goose, Hermes and others that speak ACP), then scan the code it shows. A server that speaks ACP itself, such as `goose serve`, works too.",
+                         comment: "Setup and Settings: the ACP connection's footer")
+                    Link(String(localized: "How to Install the Bridge", comment: "ACP setup: opens the bridge's install instructions"),
+                         destination: Self.installGuide)
+                }
             }
         }
         .task(id: "\(settings.acpURL)|\(token)|\(hasToken)") { await listAgents() }

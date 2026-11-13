@@ -335,3 +335,112 @@ class SetupLinkTests(unittest.TestCase):
         config = rb.Config(listen="0.0.0.0:8767", token="t", agents=[])
         self.assertEqual(rb.setup_address(config, "mac.tail1234.ts.net."), "ws://mac.tail1234.ts.net:8767")
         self.assertIn("bridge=ws://mac.tail1234.ts.net:8767", rb.setup_link(config, None, "mac.tail1234.ts.net"))
+
+    def test_a_host_in_the_config_is_the_links_address(self):
+        config = rb.Config(listen="0.0.0.0:8767", token="t", agents=[], host="mac.tail1234.ts.net")
+        self.assertEqual(rb.setup_address(config), "ws://mac.tail1234.ts.net:8767")
+        # --host still wins over it.
+        self.assertEqual(rb.setup_address(config, "other.example"), "ws://other.example:8767")
+
+
+class ConfigTests(unittest.TestCase):
+    """The config is read the same with or without `tomllib` (Python 3.9 on a Mac has none)."""
+
+    SAMPLE = '''# Redde bridge
+listen = "0.0.0.0:8765"
+token = "a\\"b"   # a comment
+port_like = 8_765
+ratio = 0.5
+on = true
+
+[agents.claude]
+name = 'Claude Code'
+command = [
+  "npx", "-y",   # split over lines
+  "@agentclientprotocol/claude-agent-acp",
+]
+cwd = "~/Projects"
+env = { SOME_SETTING = "value", "quoted key" = "x" }
+
+[agents."my.agent"]
+name = "Mine"
+command = ["mine"]
+'''
+
+    def test_the_fallback_reads_what_tomllib_reads(self):
+        read = rb._TomlReader(self.SAMPLE).read()
+        self.assertEqual(read["token"], 'a"b')
+        self.assertEqual((read["port_like"], read["ratio"], read["on"]), (8765, 0.5, True))
+        self.assertEqual(read["agents"]["claude"]["command"], ["npx", "-y", "@agentclientprotocol/claude-agent-acp"])
+        self.assertEqual(read["agents"]["claude"]["env"], {"SOME_SETTING": "value", "quoted key": "x"})
+        self.assertEqual(read["agents"]["my.agent"]["name"], "Mine")
+        try:
+            import tomllib
+        except ImportError:
+            return
+        self.assertEqual(read, tomllib.loads(self.SAMPLE))
+        first = rb.first_config()
+        self.assertEqual(rb._TomlReader(first).read(), tomllib.loads(first))
+
+    def test_a_mistake_names_its_line(self):
+        with self.assertRaises(SystemExit) as caught:
+            rb._TomlReader('listen = "x"\ntoken "y"\n').read()
+        self.assertIn("line 2", str(caught.exception))
+
+    def test_the_host_goes_before_the_tables(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "config.toml"
+            path.write_text('listen = "0.0.0.0:8765"\ntoken = "t"\n\n[agents.a]\ncommand = ["a"]\n')
+            rb.remember_host(path, "mac.tail1234.ts.net")
+            config = rb.load_config(path)
+            self.assertEqual(config.host, "mac.tail1234.ts.net")
+            self.assertEqual(config.agents[0].command, ["a"])
+
+
+class ServiceTests(unittest.TestCase):
+    """What `--install` writes for the service."""
+
+    def test_the_launch_agent_runs_the_bridge_with_this_shells_path(self):
+        plist = rb.launch_agent(["/usr/bin/python3", "/x/redde_bridge.py", "--config", "/c & d/config.toml"], Path("/l.log"))
+        import plistlib
+        data = plistlib.loads(plist.encode())
+        self.assertEqual(data["ProgramArguments"][-1], "/c & d/config.toml")
+        self.assertTrue(data["KeepAlive"] and data["RunAtLoad"])
+        self.assertIn("/opt/homebrew/bin", data["EnvironmentVariables"]["PATH"].split(":"))
+
+    def test_the_systemd_unit_quotes_its_command(self):
+        unit = rb.systemd_unit(["/usr/bin/python3", "/x y/redde_bridge.py"])
+        self.assertIn('ExecStart="/usr/bin/python3" "/x y/redde_bridge.py"', unit)
+        self.assertIn("Restart=always", unit)
+
+
+class QRTests(unittest.TestCase):
+    """The setup link's QR code (`redde_qr`). Decoding is checked by hand with a phone and Apple's
+    Vision; these keep its structure right."""
+
+    def test_the_smallest_version_that_holds_the_text(self):
+        import redde_qr
+        self.assertEqual(len(redde_qr.matrix("x" * 14)), 21)   # version 1-M holds 14 bytes
+        self.assertEqual(len(redde_qr.matrix("x" * 15)), 25)
+        link = rb.setup_link(rb.Config(listen="0.0.0.0:8765", token="t" * 43, agents=[], host="studio.tail1234.ts.net"), None)
+        self.assertLessEqual(len(redde_qr.matrix(link)), 57)   # version 10 at most: small enough to scan off a screen
+
+    def test_finders_timing_and_format_are_in_place(self):
+        import redde_qr
+        grid = redde_qr.matrix("https://redde.goosehouse.org/connect")
+        n = len(grid)
+        for x0, y0 in ((0, 0), (n - 7, 0), (0, n - 7)):
+            ring = [grid[y0][x0 + i] for i in range(7)]
+            self.assertEqual(ring, [True] * 7)
+            self.assertFalse(grid[y0 + 1][x0 + 1])
+            self.assertTrue(grid[y0 + 3][x0 + 3])
+        self.assertEqual([grid[6][x] for x in range(8, n - 8)], [x % 2 == 0 for x in range(8, n - 8)])
+        self.assertTrue(grid[n - 8][8])   # the dark module
+        # Format bits: level M, a mask, and a valid BCH code, read both copies.
+        first = [grid[8][x] for x in (0, 1, 2, 3, 4, 5, 7)] + [grid[8][8], grid[7][8]] + [grid[y][8] for y in (5, 4, 3, 2, 1, 0)]
+        bits = sum(1 << (14 - i) for i, dark in enumerate(first) if dark) ^ 0x5412
+        self.assertEqual(bits >> 13, 0)   # M
+        rem = bits >> 10
+        for _ in range(10):
+            rem = (rem << 1) ^ ((rem >> 9) * 0x537)
+        self.assertEqual(bits & 0x3FF, rem & 0x3FF)

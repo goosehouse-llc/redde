@@ -22,25 +22,41 @@ WebSocket. It also adds what a phone needs and ACP leaves out:
 
 The design and the wire format are in [docs/acp.md](../../docs/acp.md).
 
-## Run it
+## Install
 
-It uses only Python's standard library, and needs Python 3.11 or later.
+On the computer with your agents (a Mac, or Linux with systemd), in a terminal:
+
+```
+curl -fsSL https://raw.githubusercontent.com/goosehouse-llc/redde/main/companion/redde-bridge/install.sh | sh
+```
+
+It puts the bridge in `~/.local/share/redde-bridge`, writes a config with a new token and the
+agents it finds, and runs the bridge as a service that starts with the computer and comes back if
+it stops (a LaunchAgent on a Mac, a systemd user service on Linux). Then it shows a QR code: scan
+it with the iPhone's Camera or Redde's Scan a setup code, and Redde shows what it sets up and saves
+it when you agree. The code holds the token, so show it only to your own devices.
+
+When Tailscale is running on the computer, the setup uses its Tailscale name, which reaches it
+at home and away; otherwise its `.local` name, which works on the same Wi-Fi only. To give another
+name: `… | sh -s -- --host <name>`. Run the installer again to update; the config and token stay.
+
+It needs Python 3.9 or later and nothing else (a Mac has it once the Command Line Tools are
+installed: `xcode-select --install`). Logs are in `~/Library/Logs/redde-bridge.log` on a Mac and
+`journalctl --user -u redde-bridge` on Linux. To remove it:
+`python3 ~/.local/share/redde-bridge/redde_bridge.py --uninstall`.
+
+## Run it by hand
 
 ```
 python3 redde_bridge.py --print-setup   # writes a config the first time; shows what to type into Redde
 python3 redde_bridge.py                 # serve
 python3 redde_bridge.py -v              # serve, logging every agent's own output too
+python3 redde_bridge.py --install       # what the installer runs: this copy, as a service
 ```
 
-`--print-setup` also prints a setup link for each agent, and a QR code of the first where
-`qrencode` is installed (`--agent <id>` picks another). Scan it with the iPhone's Camera or
-Redde's Scan a setup code, or open the link on the phone: Redde shows what it sets up and saves it
-when you agree. The link holds the token, so show it only to your own devices.
-
-The address is the machine's `.local` name, which works on the same Wi-Fi only. To use the agent
-away from home, put the machine and the phone on Tailscale and give its Tailscale name:
-`--print-setup --host <machine>.<tailnet>.ts.net` (`tailscale status --json` says it as
-`Self.DNSName`). That address works at home too, while Tailscale is on.
+`--print-setup` prints a setup link for each agent and a QR code of the first (`--agent <id>`
+picks another), and `--host <name>` names the computer the way the phone reaches it, for example
+its Tailscale name (`tailscale status --json` says it as `Self.DNSName`).
 
 The first run writes `~/.config/redde-bridge/config.toml` (`REDDE_BRIDGE_CONFIG` or `--config`
 moves it). It has a new random token and an entry for each agent it found on this computer.
@@ -48,6 +64,7 @@ Agents it didn't find are in the file too, commented out:
 
 ```toml
 listen = "0.0.0.0:8765"
+host = "studio.example.ts.net"   # optional: the name in setup links (the installer sets it)
 token = "…"
 # tls_cert = "/path/to/cert.pem"
 # tls_key = "/path/to/key.pem"
@@ -73,7 +90,7 @@ Any program that speaks ACP over stdio can be an agent. The agent signs in the w
 does on this computer, for example Claude Code with its own login. The bridge never sees or
 passes on a model key.
 
-In Redde: **Settings → Connection → Set up connection… → Other agent (ACP)**. Enter the address,
+In Redde, by hand: **Settings › Connection › Set up connection… › Claude Code, Codex and others (ACP)**. Enter the address,
 the token and (when the bridge has more than one agent) pick an agent. A folder is optional.
 
 ## Keep it private

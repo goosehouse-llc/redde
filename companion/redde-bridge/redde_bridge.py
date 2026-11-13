@@ -14,10 +14,11 @@ remote transport RFD's WebSocket profile), with what a phone needs and ACP leave
 - notifications when Redde is closed (a reply, an approval, a failed turn), through Redde's relay,
   sealed so the relay can't read them (`redde_push.py`, `_redde/push`).
 
-Standard library only, Python 3.11 or later. See README.md and docs/acp.md.
+Standard library only, Python 3.9 or later. See README.md and docs/acp.md.
 
     python3 redde_bridge.py                 # serve (writes a config and a token the first time)
     python3 redde_bridge.py --print-setup   # what to type into Redde
+    python3 redde_bridge.py --install       # run it as a service that starts with the computer
 """
 from __future__ import annotations
 
@@ -37,7 +38,6 @@ import struct
 import subprocess
 import sys
 import time
-import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -45,8 +45,9 @@ from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import redde_push  # noqa: E402  (beside this file)
+import redde_qr  # noqa: E402
 
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -59,6 +60,147 @@ log = logging.getLogger("redde-bridge")
 
 
 # MARK: - Config
+
+def read_toml(text: str) -> dict:
+    """The config's TOML. Python 3.11 has `tomllib`; before it (macOS still ships 3.9), a reader
+    for what a config holds: tables, keys, strings, numbers, booleans, arrays and inline tables."""
+    try:
+        import tomllib
+        return tomllib.loads(text)
+    except ImportError:
+        return _TomlReader(text).read()
+
+
+class _TomlReader:
+    def __init__(self, text: str):
+        self.s, self.i = text, 0
+
+    def fail(self, why: str) -> SystemExit:
+        line = self.s.count("\n", 0, self.i) + 1
+        return SystemExit(f"config line {line}: {why}")
+
+    def space(self, newlines: bool = False) -> None:
+        while self.i < len(self.s):
+            c = self.s[self.i]
+            if c in " \t\r" or (newlines and c == "\n"):
+                self.i += 1
+            elif c == "#":
+                while self.i < len(self.s) and self.s[self.i] != "\n":
+                    self.i += 1
+            else:
+                return
+
+    def read(self) -> dict:
+        root: dict = {}
+        table = root
+        while True:
+            self.space(newlines=True)
+            if self.i >= len(self.s):
+                return root
+            if self.s[self.i] == "[":
+                self.i += 1
+                table = root
+                for part in self.key():
+                    table = table.setdefault(part, {})
+                self.space()
+                if self.s[self.i:self.i + 1] != "]":
+                    raise self.fail("expected ]")
+                self.i += 1
+            else:
+                self.pair(table)
+            self.space()
+            if self.i < len(self.s) and self.s[self.i] != "\n":
+                raise self.fail("expected the end of the line")
+
+    def key(self) -> list:
+        parts = []
+        while True:
+            self.space()
+            c = self.s[self.i:self.i + 1]
+            if c in ('"', "'"):
+                parts.append(self.string())
+            else:
+                start = self.i
+                while self.i < len(self.s) and (self.s[self.i].isalnum() or self.s[self.i] in "_-"):
+                    self.i += 1
+                if start == self.i:
+                    raise self.fail("expected a key")
+                parts.append(self.s[start:self.i])
+            self.space()
+            if self.s[self.i:self.i + 1] != ".":
+                return parts
+            self.i += 1
+
+    def pair(self, table: dict) -> None:
+        *path, last = self.key()
+        for part in path:
+            table = table.setdefault(part, {})
+        self.space()
+        if self.s[self.i:self.i + 1] != "=":
+            raise self.fail("expected =")
+        self.i += 1
+        self.space()
+        table[last] = self.value()
+
+    def string(self) -> str:
+        quote = self.s[self.i]
+        end = self.i + 1
+        if quote == "'":
+            close = self.s.index("'", end)
+            self.i = close + 1
+            return self.s[end:close]
+        while self.s[end] != '"':
+            end += 2 if self.s[end] == "\\" else 1
+        text = json.loads(self.s[self.i:end + 1])
+        self.i = end + 1
+        return text
+
+    def value(self):
+        c = self.s[self.i:self.i + 1]
+        if c in ('"', "'"):
+            return self.string()
+        if c == "[":
+            self.i += 1
+            items = []
+            while True:
+                self.space(newlines=True)
+                if self.i >= len(self.s):
+                    raise self.fail("an array isn't closed")
+                if self.s[self.i:self.i + 1] == "]":
+                    self.i += 1
+                    return items
+                items.append(self.value())
+                self.space(newlines=True)
+                if self.s[self.i:self.i + 1] == ",":
+                    self.i += 1
+        if c == "{":
+            self.i += 1
+            table: dict = {}
+            while True:
+                self.space()
+                if self.i >= len(self.s) or self.s[self.i] == "\n":
+                    raise self.fail("an inline table isn't closed")
+                if self.s[self.i:self.i + 1] == "}":
+                    self.i += 1
+                    return table
+                self.pair(table)
+                self.space()
+                if self.s[self.i:self.i + 1] == ",":
+                    self.i += 1
+        start = self.i
+        while self.i < len(self.s) and self.s[self.i] not in " \t\r\n,]}#":
+            self.i += 1
+        word = self.s[start:self.i]
+        if word in ("true", "false"):
+            return word == "true"
+        try:
+            return int(word.replace("_", ""))
+        except ValueError:
+            try:
+                return float(word.replace("_", ""))
+            except ValueError:
+                raise self.fail(f"can't read {word!r}") from None
+
 
 @dataclass
 class AgentConfig:
@@ -80,6 +222,9 @@ class Config:
     agents: list[AgentConfig]
     tls_cert: str | None = None
     tls_key: str | None = None
+    #: The name a phone reaches this computer by, for setup links (`--install` puts the
+    #: Tailscale name here). None: the .local name.
+    host: str | None = None
     #: Where the paired devices are kept (`push.json` beside the config), and the relay notes go through.
     push_path: Path | None = None
     push_relay: str = redde_push.DEFAULT_RELAY
@@ -126,14 +271,14 @@ def load_config(path: Path) -> Config:
         path.write_text(first_config())
         path.chmod(0o600)
         log.info("wrote %s with a new token", path)
-    raw = tomllib.loads(path.read_text())
+    raw = read_toml(path.read_text())
     agents = [AgentConfig(id=ident, name=a.get("name", ident), command=list(a["command"]),
                           cwd=a.get("cwd", "~"), env=dict(a.get("env", {})))
               for ident, a in (raw.get("agents") or {}).items()]
     if not raw.get("token"):
         raise SystemExit(f"{path}: no token")
     return Config(listen=raw.get("listen", "0.0.0.0:8765"), token=raw["token"], agents=agents,
-                  tls_cert=raw.get("tls_cert"), tls_key=raw.get("tls_key"),
+                  tls_cert=raw.get("tls_cert"), tls_key=raw.get("tls_key"), host=raw.get("host"),
                   push_path=path.parent / "push.json", push_relay=raw.get("push_relay", redde_push.DEFAULT_RELAY))
 
 
@@ -827,6 +972,7 @@ def setup_address(config: Config, host_name: str | None = None) -> str:
     name, which reaches it away from home too), else its .local name when it listens everywhere."""
     host, port = config.host_port
     scheme = "wss" if config.tls_cert else "ws"
+    host_name = host_name or config.host
     if host_name:
         host = host_name.strip().rstrip(".")
     elif host in ("0.0.0.0", "::", ""):
@@ -856,7 +1002,7 @@ def print_setup(config: Config, agent_id: str | None = None, host_name: str | No
     agents = [a for a in config.agents if agent_id in (None, a.id)]
     if agent_id and not agents:
         raise SystemExit(f"No agent {agent_id!r} in the config.")
-    print("In Redde: Settings → Connection → Set up connection… → Other agent (ACP)\n")
+    print("In Redde: Settings › Connection › Set up connection… › Claude Code, Codex and others (ACP)\n")
     print(f"  Address  {setup_address(config, host_name)}")
     print(f"  Token    {config.token}")
     print("  Agents   " + (", ".join(f"{a.name} ({a.id})" for a in config.agents) or "none: add one to the config"))
@@ -864,13 +1010,217 @@ def print_setup(config: Config, agent_id: str | None = None, host_name: str | No
     for agent in agents or [None]:
         print(f"  {agent.name if agent else 'Bridge'}: {setup_link(config, agent, host_name)}")
     first = (agents or [None])[0]
-    qrencode = shutil.which("qrencode")
-    if qrencode and sys.stdout.isatty():
+    if sys.stdout.isatty():
         print(f"\nScan with the iPhone's Camera, or Redde's Scan a setup code"
               + (f" ({first.name}; --agent <id> for another)" if first and len(agents) > 1 else "") + ":\n")
-        subprocess.run([qrencode, "-t", "ansiutf8", "-m", "2", setup_link(config, first, host_name)], check=False)
-    elif sys.stdout.isatty():
-        print("\n(Install qrencode to see it as a QR code here: brew install qrencode / apt install qrencode.)")
+        print(redde_qr.terminal(setup_link(config, first, host_name)))
+
+
+# MARK: - Install
+
+#: The service's name: launchd's label on a Mac; the systemd unit is its last part.
+SERVICE = os.environ.get("REDDE_BRIDGE_SERVICE", "com.goosehouse.redde-bridge")
+#: Where `--install` puts the bridge's files, so the service doesn't depend on a download or a checkout.
+INSTALL_DIR = Path(os.environ.get("REDDE_BRIDGE_HOME", "~/.local/share/redde-bridge")).expanduser()
+FILES = ("redde_bridge.py", "redde_push.py", "redde_qr.py")
+
+
+def tailscale_name() -> str | None:
+    """This computer's Tailscale name (machine.tailnet.ts.net), which a phone on the tailnet
+    reaches at home and away, when Tailscale is running here."""
+    for cli in (shutil.which("tailscale"), "/Applications/Tailscale.app/Contents/MacOS/Tailscale"):
+        if not cli or not Path(cli).exists():
+            continue
+        try:
+            out = subprocess.run([cli, "status", "--json"], capture_output=True, text=True, timeout=10)
+            status = json.loads(out.stdout)
+        except (OSError, ValueError, subprocess.SubprocessError):
+            continue
+        name = (status.get("Self") or {}).get("DNSName", "").rstrip(".")
+        if status.get("BackendState") == "Running" and name:
+            return name
+    return None
+
+
+def remember_host(path: Path, host: str) -> None:
+    """Puts `host = "…"` in the config, after `listen` (a top-level key must come before the tables)."""
+    lines = path.read_text().split("\n")
+    line = f"host = {json.dumps(host)}   # the name Redde reaches this computer by, in setup links"
+    at = next((i + 1 for i, l in enumerate(lines) if l.strip().startswith("listen")), 0)
+    lines.insert(at, line)
+    path.write_text("\n".join(lines))
+
+
+def service_path() -> Path:
+    if sys.platform == "darwin":
+        return Path(f"~/Library/LaunchAgents/{SERVICE}.plist").expanduser()
+    return Path(f"~/.config/systemd/user/{SERVICE.rsplit('.', 1)[-1]}.service").expanduser()
+
+
+def service_path_variable() -> str:
+    """PATH for the service: this shell's, so it finds the agents (npx, claude, codex…) where you
+    do, and the usual places, since a service starts with almost none."""
+    extra = ["/opt/homebrew/bin", "/usr/local/bin", str(Path("~/.local/bin").expanduser()),
+             "/usr/bin", "/bin", "/usr/sbin", "/sbin"]
+    seen: list[str] = []
+    for part in os.environ.get("PATH", "").split(os.pathsep) + extra:
+        if part and part not in seen:
+            seen.append(part)
+    return os.pathsep.join(seen)
+
+
+def launch_agent(program: list[str], log_file: Path) -> str:
+    from xml.sax.saxutils import escape
+    args = "".join(f"\n    <string>{escape(a)}</string>" for a in program)
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>{escape(SERVICE)}</string>
+  <key>ProgramArguments</key><array>{args}
+  </array>
+  <key>WorkingDirectory</key><string>{escape(str(INSTALL_DIR))}</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>{escape(service_path_variable())}</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>StandardOutPath</key><string>{escape(str(log_file))}</string>
+  <key>StandardErrorPath</key><string>{escape(str(log_file))}</string>
+</dict></plist>
+"""
+
+
+def systemd_unit(program: list[str]) -> str:
+    def quote(arg: str) -> str:
+        return '"' + arg.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    return f"""[Unit]
+Description=Redde bridge (ACP agents for Redde)
+After=network-online.target
+
+[Service]
+WorkingDirectory={INSTALL_DIR}
+ExecStart={" ".join(quote(a) for a in program)}
+Environment={quote("PATH=" + service_path_variable())}
+# It may listen on an address that isn't there yet at boot (Tailscale's): try again until it is.
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+"""
+
+
+def run(*command: str) -> subprocess.CompletedProcess:
+    return subprocess.run(list(command), capture_output=True, text=True)
+
+
+def stop_service() -> bool:
+    """Stops and forgets the service, when there is one. True when there was."""
+    path = service_path()
+    if not path.exists():
+        return False
+    if sys.platform == "darwin":
+        run("launchctl", "bootout", f"gui/{os.getuid()}/{SERVICE}")
+    else:
+        run("systemctl", "--user", "disable", "--now", path.name)
+    path.unlink()
+    if sys.platform != "darwin":
+        run("systemctl", "--user", "daemon-reload")
+    return True
+
+
+def health(config: Config, wait: float) -> bool:
+    import urllib.request
+    host, port = config.host_port
+    if host in ("0.0.0.0", "::", ""):
+        host = "127.0.0.1"
+    url = f"{'https' if config.tls_cert else 'http'}://{f'[{host}]' if ':' in host else host}:{port}/health"
+    context = ssl._create_unverified_context() if config.tls_cert else None   # only asks whether it's up
+    deadline = time.monotonic() + wait
+    while True:
+        try:
+            with urllib.request.urlopen(url, timeout=2, context=context) as reply:
+                return reply.status == 200
+        except OSError:
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(0.5)
+
+
+def install(config_path: Path, host: str | None, agent: str | None) -> None:
+    """Copies the bridge to INSTALL_DIR, writes a config the first time, and runs the bridge as a
+    service that starts with the computer and comes back if it stops: a LaunchAgent on a Mac, a
+    systemd user service on Linux. Then shows how to set Redde up. Run again to update."""
+    if sys.platform != "darwin" and not shutil.which("systemctl"):
+        raise SystemExit("--install needs a Mac or Linux with systemd. Run the bridge yourself instead: "
+                         "python3 redde_bridge.py")
+    replaced = stop_service()
+    config = load_config(config_path)
+    for _ in range(20):   # the old one, on its way out
+        if not replaced or not health(config, wait=0):
+            break
+        time.sleep(0.5)
+    if health(config, wait=0):
+        raise SystemExit(f"Something already answers on {config.listen}: a bridge you started by hand? "
+                         "Stop it, then run --install again.")
+    here = Path(__file__).resolve().parent
+    INSTALL_DIR.mkdir(parents=True, exist_ok=True)
+    if here != INSTALL_DIR.resolve():
+        for name in FILES:
+            shutil.copy2(here / name, INSTALL_DIR / name)
+    print(f"{'Updated' if replaced else 'Installed'} the Redde bridge {VERSION} in {INSTALL_DIR}")
+    print(f"Config and token: {config_path}")
+
+    if not host and not config.host:
+        host = tailscale_name()
+        if host:
+            print(f"Tailscale is on: setup links use {host}, which reaches this computer at home and away.")
+    if host and host != config.host:
+        remember_host(config_path, host)
+        config = load_config(config_path)
+
+    python = sys.executable
+    # Apple's own Python lives inside Xcode or the Command Line Tools, which move on an update;
+    # /usr/bin/python3 finds it wherever it is.
+    if sys.platform == "darwin" and ("/Xcode" in python or "/CommandLineTools/" in python):
+        python = "/usr/bin/python3"
+    program = [python, str(INSTALL_DIR / "redde_bridge.py"), "--config", str(config_path.expanduser().resolve())]
+    path = service_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if sys.platform == "darwin":
+        log_file = Path(f"~/Library/Logs/{SERVICE.rsplit('.', 1)[-1]}.log").expanduser()
+        path.write_text(launch_agent(program, log_file))
+        started = run("launchctl", "bootstrap", f"gui/{os.getuid()}", str(path))
+        logs = f"Logs: {log_file}"
+    else:
+        path.write_text(systemd_unit(program))
+        run("systemctl", "--user", "daemon-reload")
+        started = run("systemctl", "--user", "enable", "--now", path.name)
+        # Without lingering, a user's services stop when they log out and wait for a login at boot.
+        if run("loginctl", "enable-linger", os.environ.get("USER", "")).returncode != 0:
+            print("To keep it running while you're logged out: sudo loginctl enable-linger $USER")
+        logs = f"Logs: journalctl --user -u {path.stem} -f"
+    if started.returncode != 0:
+        raise SystemExit(f"The service didn't start: {(started.stderr or started.stdout).strip()}")
+    # launchd holds back a service that was just stopped for up to its ThrottleInterval.
+    if not health(config, wait=30):
+        raise SystemExit(f"The service started but the bridge doesn't answer on {config.listen}. {logs}")
+    print(f"Running, and starts with the computer. {logs}")
+    print(f"Update: run the installer again. Remove: {python} {INSTALL_DIR / 'redde_bridge.py'} --uninstall\n")
+    if not config.agents:
+        print(f"No agents found on this computer yet. Install Claude Code, Codex or another, then add it to "
+              f"{config_path} and run the installer again.\n")
+    print_setup(config, agent, None)
+
+
+def uninstall(config_path: Path) -> None:
+    """Stops the service and removes the bridge's files. The config and token stay."""
+    stopped = stop_service()
+    for name in FILES:
+        (INSTALL_DIR / name).unlink(missing_ok=True)
+    print("Stopped the Redde bridge and removed it." if stopped else "The Redde bridge wasn't installed as a service.")
+    print(f"The config and token are still in {config_path.expanduser().parent}; delete that folder to forget them.")
 
 
 def main() -> None:
@@ -878,13 +1228,22 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--listen", help="host:port, overriding the config")
     parser.add_argument("--print-setup", action="store_true", help="print the address, token and setup link for Redde, then exit")
+    parser.add_argument("--install", action="store_true", help="run the bridge as a service that starts with the computer "
+                                                               "(a LaunchAgent on a Mac, a systemd user service on Linux), then print the setup")
+    parser.add_argument("--uninstall", action="store_true", help="stop the service and remove it; the config and token stay")
     parser.add_argument("--agent", help="with --print-setup: the agent the setup link and QR code are for")
-    parser.add_argument("--host", help="with --print-setup: the name the phone reaches this machine by, such as its "
+    parser.add_argument("--host", help="with --print-setup or --install: the name the phone reaches this machine by, such as its "
                                        "Tailscale name (machine.tailnet.ts.net), which works away from home too")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S")
+    if args.uninstall:
+        uninstall(args.config)
+        return
+    if args.install:
+        install(args.config, args.host, args.agent)
+        return
     config = load_config(args.config)
     if args.listen:
         config.listen = args.listen

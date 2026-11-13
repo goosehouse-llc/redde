@@ -34,7 +34,8 @@ no bridge, minus the extras below.
 
 ## The bridge (`companion/redde-bridge`)
 
-One Python file, standard library only (Python 3.11 or later), so it runs wherever the agents run:
+Python, standard library only (3.9 or later: the config's TOML has a small reader of its own where
+`tomllib` is missing, as on a Mac's own Python), so it runs wherever the agents run:
 
 ```
 python3 redde_bridge.py            # first run writes ~/.config/redde-bridge/config.toml and a token
@@ -105,11 +106,24 @@ pairing's server into the notification, and a tap switches to that server before
 
 `redde_bridge.py --print-setup` prints, besides the address and token, a setup link per agent
 (`https://redde.goosehouse.org/connect#name=…&bridge=ws://host.local:8767&bridge-token=…&agent=claude&use=acp&v=1`)
-and, where `qrencode` is installed, a QR code of the first (`--agent <id>` for another). The app's
+and a QR code of the first (`--agent <id>` for another), drawn by `redde_qr.py` (plain Python,
+level M; `qrencode` was needed before 0.6). The app's
 `SetupCode` reads `bridge`, `bridge-token`, `agent` and `folder` under the same rule as the other
 codes: it fills in a server only while nothing is stored for it, otherwise it adds one. An ACP
 server's Show setup code / Set up another device hands the bridge on, its token only with
 "Include passwords and keys".
+
+### Install (built 2026-11-12, bridge 0.6.0)
+
+`install.sh` (`curl -fsSL …/companion/redde-bridge/install.sh | sh`) finds a Python 3.9+, downloads
+the three files and runs `redde_bridge.py --install`, which copies them to
+`~/.local/share/redde-bridge` (`REDDE_BRIDGE_HOME`), writes the config the first time, puts the
+Tailscale name in it as `host` when Tailscale is running (setup links use it), and runs the
+bridge as a LaunchAgent (`com.goosehouse.redde-bridge`, log `~/Library/Logs/redde-bridge.log`)
+or a systemd user service (`redde-bridge`, `Restart=always`, linger asked for), with this shell's
+PATH so it finds the agents. It waits for `/health`, then prints the setup and QR code.
+Running it again updates; `--uninstall` removes the service and files, keeping the config.
+Apple's Python inside Xcode is run as `/usr/bin/python3`, which survives Xcode updates.
 
 ### Not yet (phase 2)
 

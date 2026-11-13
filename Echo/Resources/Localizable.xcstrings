@@ -138997,7 +138997,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "演示代理"
+            "value" : "演示智能体"
           }
         },
         "zh-Hant" : {
@@ -203937,6 +203937,113 @@
         }
       }
     },
+    "How to Install the Bridge" : {
+      "comment" : "ACP setup: opens the bridge's install instructions",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sådan installerer du broen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "So installierst du die Bridge"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo instalar el puente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment installer la passerelle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come installare il bridge"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブリッジのインストール方法"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "브리지 설치 방법"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slik installerer du broen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zo installeer je de brug"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jak zainstalować mostek"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como instalar a ponte"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как установить мост"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Så installerar du bryggan"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Köprü Nasıl Kurulur"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Як установити міст"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如何安装桥接程序"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如何安裝橋接程式"
+          }
+        }
+      }
+    },
     "http://your-redde:9119" : {
       "localizations" : {
         "da" : {
@@ -211915,6 +212022,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "為 %@ 安裝"
+          }
+        }
+      }
+    },
+    "Install Redde's bridge on the computer with your agents (Claude Code, Codex, Gemini CLI, Goose, Hermes and others that speak ACP), then scan the code it shows. A server that speaks ACP itself, such as `goose serve`, works too." : {
+      "comment" : "Setup and Settings: the ACP connection's footer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installer Reddes bro på computeren med dine agenter (Claude Code, Codex, Gemini CLI, Goose, Hermes og andre, der taler ACP), og scan så koden, den viser. En server, der selv taler ACP, som `goose serve`, virker også."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installiere die Redde-Bridge auf dem Computer mit deinen Agenten (Claude Code, Codex, Gemini CLI, Goose, Hermes und andere, die ACP sprechen), und scanne dann den Code, den sie anzeigt. Ein Server, der selbst ACP spricht, etwa `goose serve`, funktioniert auch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instala el puente de Redde en el ordenador con tus agentes (Claude Code, Codex, Gemini CLI, Goose, Hermes y otros que hablan ACP) y escanea el código que muestra. Un servidor que habla ACP por sí mismo, como `goose serve`, también funciona."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installez la passerelle Redde sur l’ordinateur où se trouvent vos agents (Claude Code, Codex, Gemini CLI, Goose, Hermes et d’autres qui parlent ACP), puis scannez le code qu’elle affiche. Un serveur qui parle ACP lui-même, comme `goose serve`, fonctionne aussi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installa il bridge di Redde sul computer con i tuoi agenti (Claude Code, Codex, Gemini CLI, Goose, Hermes e altri che parlano ACP), poi scansiona il codice che mostra. Funziona anche un server che parla ACP da sé, come `goose serve`."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントのあるコンピュータ（Claude Code、Codex、Gemini CLI、Goose、HermesなどACP対応のもの）にReddeのブリッジをインストールし、表示されるコードをスキャンしてください。`goose serve` のように自分でACPを話すサーバーも使えます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 있는 컴퓨터(Claude Code, Codex, Gemini CLI, Goose, Hermes 등 ACP를 쓰는 에이전트)에 Redde 브리지를 설치한 다음 표시되는 코드를 스캔하세요. `goose serve`처럼 직접 ACP를 쓰는 서버도 됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installer Reddes bro på datamaskinen med agentene dine (Claude Code, Codex, Gemini CLI, Goose, Hermes og andre som snakker ACP), og skann koden den viser. En server som selv snakker ACP, som `goose serve`, fungerer også."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installeer de Redde-brug op de computer met je agents (Claude Code, Codex, Gemini CLI, Goose, Hermes en andere die ACP spreken) en scan de code die hij toont. Een server die zelf ACP spreekt, zoals `goose serve`, werkt ook."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zainstaluj mostek Redde na komputerze z agentami (Claude Code, Codex, Gemini CLI, Goose, Hermes i inne obsługujące ACP), a potem zeskanuj pokazany kod. Serwer, który sam obsługuje ACP, jak `goose serve`, też działa."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instale a ponte do Redde no computador com seus agentes (Claude Code, Codex, Gemini CLI, Goose, Hermes e outros que falam ACP) e escaneie o código que ela mostra. Um servidor que fala ACP por conta própria, como o `goose serve`, também funciona."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установите мост Redde на компьютер с вашими агентами (Claude Code, Codex, Gemini CLI, Goose, Hermes и другие, работающие по ACP), затем отсканируйте показанный код. Сервер, который сам работает по ACP, например `goose serve`, тоже подойдёт."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installera Reddes brygga på datorn med dina agenter (Claude Code, Codex, Gemini CLI, Goose, Hermes och andra som talar ACP) och skanna sedan koden den visar. En server som själv talar ACP, som `goose serve`, fungerar också."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde köprüsünü ajanlarınızın olduğu bilgisayara kurun (Claude Code, Codex, Gemini CLI, Goose, Hermes ve ACP konuşan diğerleri), sonra gösterdiği kodu tarayın. `goose serve` gibi kendisi ACP konuşan bir sunucu da olur."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установіть міст Redde на комп'ютер із вашими агентами (Claude Code, Codex, Gemini CLI, Goose, Hermes та інші, що працюють за ACP), а потім відскануйте показаний код. Сервер, який сам працює за ACP, як-от `goose serve`, теж підійде."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在装有你的智能体（Claude Code、Codex、Gemini CLI、Goose、Hermes 等支持 ACP 的智能体）的电脑上安装 Redde 桥接程序，然后扫描它显示的二维码。本身支持 ACP 的服务器，如 `goose serve`，也可以。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在裝有你的代理（Claude Code、Codex、Gemini CLI、Goose、Hermes 等支援 ACP 的代理）的電腦上安裝 Redde 橋接程式，然後掃描它顯示的 QR 碼。本身支援 ACP 的伺服器，如 `goose serve`，也可以。"
           }
         }
       }
@@ -422310,7 +422524,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "演示代理在 Redde 内运行，不需要电脑，也不用 AI。它展示 Redde 配合编程代理能做什么：步骤、文件改动、批准、计划和提问，可以用聊天或语音。"
+            "value" : "演示智能体在 Redde 内运行，不需要电脑，也不用 AI。它展示 Redde 配合编程智能体能做什么：步骤、文件改动、批准、计划和提问，可以用聊天或语音。"
           }
         },
         "zh-Hant" : {
@@ -455174,7 +455388,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "试用演示代理"
+            "value" : "试用演示智能体"
           }
         },
         "zh-Hant" : {
@@ -466794,7 +467008,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "改用真实代理"
+            "value" : "改用真实智能体"
           }
         },
         "zh-Hant" : {
