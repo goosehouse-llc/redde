@@ -221389,6 +221389,113 @@
         }
       }
     },
+    "Its address, keys and passwords are deleted from Redde. The agent and its conversations on the server aren't touched." : {
+      "comment" : "Servers: under the question asked before a saved server is removed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dens adresse, nøgler og adgangskoder slettes fra Redde. Agenten og dens samtaler på serveren røres ikke."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresse, Schlüssel und Passwörter werden aus Redde gelöscht. Der Agent und seine Unterhaltungen auf dem Server bleiben unberührt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su dirección, claves y contraseñas se eliminan de Redde. El agente y sus conversaciones en el servidor no se tocan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son adresse, ses clés et ses mots de passe sont supprimés de Redde. L’agent et ses conversations sur le serveur ne sont pas touchés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indirizzo, chiavi e password vengono eliminati da Redde. L’agente e le sue conversazioni sul server restano intatti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アドレス、キー、パスワードがReddeから削除されます。サーバー上のエージェントと会話はそのままです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주소, 키, 암호가 Redde에서 삭제됩니다. 서버의 에이전트와 대화는 그대로 유지됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adressen, nøklene og passordene slettes fra Redde. Agenten og samtalene på serveren berøres ikke."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het adres, de sleutels en de wachtwoorden worden uit Redde verwijderd. De agent en zijn gesprekken op de server blijven ongemoeid."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jego adres, klucze i hasła zostaną usunięte z Redde. Agent i jego rozmowy na serwerze pozostaną nietknięte."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O endereço, as chaves e as senhas são apagados do Redde. O agente e as conversas dele no servidor não são afetados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Его адрес, ключи и пароли будут удалены из Redde. Агент и его разговоры на сервере не пострадают."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dess adress, nycklar och lösenord raderas från Redde. Agenten och dess konversationer på servern påverkas inte."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresi, anahtarları ve parolaları Redde’den silinir. Sunucudaki ajan ve sohbetleri etkilenmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Його адресу, ключі й паролі буде видалено з Redde. Агента та його розмов на сервері це не торкнеться."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "它的地址、密钥和密码将从 Redde 中删除。服务器上的智能体及其对话不受影响。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "它的位址、金鑰和密碼將從 Redde 中刪除。伺服器上的代理及其對話不受影響。"
+          }
+        }
+      }
+    },
     "Its API key" : {
       "localizations" : {
         "da" : {
@@ -341040,6 +341147,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "要從專案移除「%@」嗎？"
+          }
+        }
+      }
+    },
+    "Remove “%@”?" : {
+      "comment" : "Servers: asked before a saved server is removed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fjern “%@”?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%@“ entfernen?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar «%@»?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer « %@ » ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovere “%@”?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@”を削除しますか？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@”을(를) 제거할까요?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fjerne «%@»?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘%@’ verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć „%@”?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover “%@”?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить «%@»?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta bort ”%@”?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” kaldırılsın mı?"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видалити «%@»?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除“%@”？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除「%@」？"
           }
         }
       }

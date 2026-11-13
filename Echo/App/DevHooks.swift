@@ -36,6 +36,8 @@ import WidgetKit
 ///   `-echo.demoDraft`, the sample reply read as it is written; with `-echo.demoRound`, a question
 ///   and the three bots answering it in turn).
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
+/// - `-echo.spareServer NAME`: a saved server of that name, not switched to, if there isn't one (UI tests
+///   remove it from Servers).
 /// - `-echo.demoLinkPreview`: link previews from made-up pages, with no network (`LinkPreviews.demo`).
 /// - `-echo.flipLayout [seconds]`: the layout swapped under the chat, as opening or closing an iPhone
 ///   Duo swaps it, on the Darwin notification `LayoutFlip.notification` and every so many seconds.
@@ -423,6 +425,9 @@ enum DevHooks {
             }
         }
         if has("-echo.demoStream") { conversation.streamDemo(askingAfter: value("-echo.demoStream").flatMap(Double.init)) }
+        if let name = value("-echo.spareServer"), !settings.servers.contains(where: { $0.name == name }) {
+            _ = settings.addServer(name: name)
+        }
         if has("-echo.demoHosts") {
             settings.gatewayURL = "https://redde.home.example:8642"
             settings.serveURL = "http://redde.home.example:9119"

@@ -10,6 +10,9 @@ struct ServersView: View {
     @State private var nameText = ""
     /// The server whose setup code is showing.
     @State private var sharing: HermesServer?
+    /// The server swiped away, asked about before it goes (asked 2026-11-13): removing one deletes
+    /// its keys and passwords too.
+    @State private var removing: HermesServer?
 
     /// The name prompt is for a new server or for renaming one.
     private enum Naming: Identifiable {
@@ -34,7 +37,7 @@ struct ServersView: View {
                             }
                             .swipeActions {
                                 if !active {
-                                    Button("Remove", systemImage: "trash", role: .destructive) { settings.removeServer(server.id) }
+                                    Button("Remove", systemImage: "trash", role: .destructive) { removing = server }
                                 }
                             }
                     }
@@ -58,6 +61,15 @@ struct ServersView: View {
         .navigationTitle("Servers")
         .sheet(isPresented: $showSetup) { SetupView() }
         .sheet(item: $sharing) { SetupCodeView(server: $0) }
+        .confirmationDialog(String(localized: "Remove “\(removing?.title ?? "")”?", comment: "Servers: asked before a saved server is removed"),
+                            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
+                            titleVisibility: .visible, presenting: removing) { server in
+            Button("Remove", role: .destructive) { settings.removeServer(server.id) }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Its address, keys and passwords are deleted from Redde. The agent and its conversations on the server aren't touched.",
+                 comment: "Servers: under the question asked before a saved server is removed")
+        }
         .alert(naming.map { if case .new = $0 { String(localized: "New server") } else { String(localized: "Rename server") } } ?? "",
                isPresented: Binding(get: { naming != nil }, set: { if !$0 { naming = nil } })) {
             TextField("Name, e.g. Home or Office", text: $nameText)
