@@ -297,6 +297,8 @@ struct ContentView: View {
             #if DEBUG
             if DevHooks.has("-echo.voiceView") { openVoice(fromOutside: true) }
             if DevHooks.has("-echo.autoVoice") { await launchVoice(handsFree: DevHooks.has("-echo.handsFree"), fromOutside: true) }
+            // `-echo.voiceAsk "…"`: voice mode asked that as if it were heard (a simulator has no speech to hear).
+            if let asking = DevHooks.value("-echo.voiceAsk") { await launchVoice(handsFree: false, fromOutside: true, asking: asking) }
             // Once a demo conversation is in: one opened under the bar hangs up, as another chat does.
             if DevHooks.has("-echo.demoCallBar") { Task { try? await Task.sleep(for: .seconds(1.5)); voiceSession.poseBar() } }
             #endif

@@ -32,6 +32,24 @@ struct SpeechOutputTests {
         #expect(chunker.flush() == nil)
     }
 
+    /// A coding agent's reply: the code block comes out whole once it closes, and is named rather
+    /// than read; a table's rows are read as their cells.
+    @Test func aCodeBlockIsNamedNotReadLineByLine() {
+        var chunker = SentenceChunker()
+        #expect(chunker.append("Run this.\n```sh\nxcodebuild test.\n") == ["Run this."])
+        #expect(chunker.append("echo done\n``` Then check") == ["```sh\nxcodebuild test.\necho done\n```"])
+        #expect(chunker.append(" the log.\n") == ["Then check the log."])
+        #expect(PlainText.spoken("```sh\nxcodebuild test.\necho done\n```") == "code block omitted")
+
+        var open = SentenceChunker()
+        #expect(open.append("Here:\n```swift\nlet x = 1.\n").isEmpty == false)
+        #expect(PlainText.spoken(open.flush() ?? "") == "code block omitted")
+
+        #expect(PlainText.spoken("| File | Change |") == "File, Change")
+        #expect(PlainText.spoken("|---|:---:|") == "")
+        #expect(PlainText.spoken("| `AcpTransport.swift` | **+12** |") == "AcpTransport.swift, +12")
+    }
+
     @Test func breaksLongClausesAtCommas() {
         var chunker = SentenceChunker()
         chunker.longClauseThreshold = 20

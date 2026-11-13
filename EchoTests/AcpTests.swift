@@ -164,6 +164,30 @@ struct AcpTests {
                          {"kind": "reject_always", "name": "Deny always", "optionId": "deny_always"}], "sessionId": "s1"}
             """#)
         #expect(AcpChoice.make(id: "req-4", params: hermes) == nil)
+
+        // In voice mode the plan is read before its choices, and a choice is said by its number.
+        let spoken = try #require(SpokenRequest(.clarify(card)))
+        #expect(spoken.prompt.hasPrefix("Approve Plan. Add a line. Edit: append four. One: Yes, manually approve edits."))
+        var numbered = card
+        numbered.questions[0].detail = "## Steps\n1. Create notes.txt\n2) Read it back."
+        #expect(try #require(SpokenRequest(.clarify(numbered))).prompt.hasPrefix("Approve Plan. Steps. Create notes.txt. Read it back. One:"))
+        #expect(spoken.answer("number three") == .clarify(questionID: "", answer: "Yes, and use auto mode"))
+        #expect(choice.reply(["": "Yes, and use auto mode"]).result == auto.result)
+    }
+
+    /// Asked by voice while driving: Claude Code hears the car's note on the message (it takes no
+    /// instructions per turn), and the chat read back doesn't show it.
+    @Test func aDrivingTurnAsksForAShortAnswer() throws {
+        var request = TurnRequest(userText: "Did the tests pass?", history: [], sessionID: "s1", model: nil, instructions: nil)
+        request.brief = true
+        let sent = try #require(try AcpTransport.prompt(request, images: true).first?["text"]?.string)
+        #expect(sent == "Did the tests pass?" + CarBrevity.note)
+        request.brief = false
+        #expect(try AcpTransport.prompt(request, images: true).first?["text"]?.string == "Did the tests pass?")
+        let said: JSONValue = .object(["sessionUpdate": .string("user_message_chunk"),
+                                       "content": .object(["type": .string("text"), "text": .string(sent)])])
+        let replay = [said, json(#"{"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "Yes, all 40."}}"#)]
+        #expect(AcpHistory.messages(replay).map(\.text) == ["Did the tests pass?", "Yes, all 40."])
     }
 
     @Test func aReplayedSessionIsItsMessages() {

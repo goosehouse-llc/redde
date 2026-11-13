@@ -404,6 +404,9 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         }
         let spoken = PlainText.spoken(text)
         guard !spoken.isEmpty else { return }
+        #if DEBUG
+        log.debug("says: \(spoken, privacy: .public)")
+        #endif
         let language = replyLanguage(adding: spoken)
         // ElevenLabs' voices speak every language: the speaker's, whatever the reply's.
         if let key = elevenLabsKey, let voice = elevenLabsVoice(of: speaker) {
@@ -516,27 +519,48 @@ nonisolated struct SentenceChunker: Sendable {
     /// `Regex` isn't marked Sendable but is immutable once built, so sharing it is safe.
     nonisolated(unsafe) private static let sentenceEnd = /([.!?]["')\]]?\s+|\n+)/
 
-    /// Feed a delta; returns any sentences that are now complete.
+    /// Feed a delta; returns any sentences that are now complete. A code block comes out whole,
+    /// once it closes, so it is said as "code block omitted" rather than line by line (a coding
+    /// agent's replies are full of them).
     mutating func append(_ delta: String) -> [String] {
         pending += delta
         var out: [String] = []
-        while let match = pending.firstMatch(of: Self.sentenceEnd) {
-            let sentence = String(pending[..<match.range.upperBound]).trimmingCharacters(in: .whitespacesAndNewlines)
-            pending.removeSubrange(..<match.range.upperBound)
+        while let open = pending.range(of: "```") {
+            var before = String(pending[..<open.lowerBound])
+            out += Self.sentences(&before, longClause: longClauseThreshold)
+            if let tail = before.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty { out.append(tail) }
+            guard let close = pending.range(of: "```", range: open.upperBound..<pending.endIndex) else {
+                pending = String(pending[open.lowerBound...])   // still open: it waits for its end
+                return out
+            }
+            out.append(String(pending[open.lowerBound..<close.upperBound]))
+            pending = String(pending[close.upperBound...])
+        }
+        out += Self.sentences(&pending, longClause: longClauseThreshold)
+        return out
+    }
+
+    private static func sentences(_ text: inout String, longClause: Int) -> [String] {
+        var out: [String] = []
+        while let match = text.firstMatch(of: sentenceEnd) {
+            let sentence = String(text[..<match.range.upperBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            text.removeSubrange(..<match.range.upperBound)
             if !sentence.isEmpty { out.append(sentence) }
         }
-        if pending.utf8.count > longClauseThreshold, let comma = pending.lastIndex(of: ",") {
-            let phrase = String(pending[...comma]).trimmingCharacters(in: .whitespacesAndNewlines)
-            pending.removeSubrange(...comma)
+        if text.utf8.count > longClause, let comma = text.lastIndex(of: ",") {
+            let phrase = String(text[...comma]).trimmingCharacters(in: .whitespacesAndNewlines)
+            text.removeSubrange(...comma)
             if !phrase.isEmpty { out.append(phrase) }
         }
         return out
     }
 
-    /// Whatever is left at end of stream.
+    /// Whatever is left at end of stream. A code block the reply never closed is closed here, to
+    /// be named and not read.
     mutating func flush() -> String? {
-        let tail = pending.trimmingCharacters(in: .whitespacesAndNewlines)
+        var tail = pending.trimmingCharacters(in: .whitespacesAndNewlines)
         pending = ""
+        if tail.hasPrefix("```"), !tail.dropFirst(3).contains("```") { tail += "\n```" }
         return tail.isEmpty ? nil : tail
     }
 }

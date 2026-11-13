@@ -42,6 +42,11 @@ nonisolated enum PlainText {
         rule(#"(?m)^#{1,6}\s*"#, ""),
         rule(#"(?m)^\s*[-*+]\s+"#, ""),
         rule(#"\[([^\]]+)\]\([^)]*\)"#, "$1"),
+        // A table's rows read as their cells, "File, Change", without the bars; its rule line not at all.
+        rule(#"(?m)^\s*\|?(\s*:?-{3,}:?\s*\|)+\s*:?-{0,}:?\s*$"#, ""),
+        rule(#"(?m)^[ \t]*\|[ \t]*"#, ""),
+        rule(#"(?m)[ \t]*\|[ \t]*$"#, ""),
+        rule(#"[ \t]*\|[ \t]*"#, ", "),
         rule(#"\n{3,}"#, "\n\n"),
     ]
 

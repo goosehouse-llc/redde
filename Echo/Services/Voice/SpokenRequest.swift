@@ -57,7 +57,12 @@ nonisolated struct SpokenRequest: Equatable, Sendable {
             let choices = question.choices.enumerated().map {
                 "\(words.spokenNumbers[$0.offset].capitalized(with: words.locale)): \(Self.speakable($0.element, words: words))"
             }
-            prompt = Self.sentences([Self.speakable(question.question, limit: 400, words: words)] + choices
+            // What it is about goes first, cut short: a plan to approve isn't approved unheard.
+            // Its lines as sentences, without a list's numbers ("Steps. Create notes.txt…").
+            let lines = question.detail.map { PlainText.spoken($0).split(whereSeparator: \.isNewline)
+                .map { $0.replacing(/^\s*\d+[.)]\s+/, with: "").trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } } ?? []
+            let about = lines.isEmpty ? nil : Self.speakable(Self.sentences(lines), limit: 600, words: words).nilIfEmpty
+            prompt = Self.sentences([Self.speakable(question.question, limit: 400, words: words)] + (about.map { [$0] } ?? []) + choices
                 + (choices.isEmpty ? [] : [String(localized: "Say the number, or the answer.", bundle: said, comment: "On the voice screen, and said aloud after the choices are read out")]))
         case .sudo, .secret:
             return nil
@@ -209,7 +214,7 @@ nonisolated struct SpokenRequest: Equatable, Sendable {
 
     /// Parts read one after the other, each ended as a sentence unless it ends itself.
     private static func sentences(_ parts: [String]) -> String {
-        parts.map { part in [".", "?", "!", "。", "？", "！"].contains { part.hasSuffix($0) } ? part : part + "." }
+        parts.map { part in [".", "?", "!", ":", "。", "？", "！", "："].contains { part.hasSuffix($0) } ? part : part + "." }
             .joined(separator: " ")
     }
 }

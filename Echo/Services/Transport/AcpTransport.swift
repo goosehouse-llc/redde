@@ -175,6 +175,9 @@ nonisolated struct AcpTransport: HermesTransport {
                 throw AttachmentError.unsupported(kind, transport: String(localized: "this agent", comment: "As in \"… aren't supported on this agent\""))
             }
         }
+        // Asked by voice while driving: the agent takes no instructions with a turn, so the note
+        // rides on the message, last, as on the Dashboard; the chat's history hides it again.
+        if request.brief { text += CarBrevity.note }
         return [.object(["type": .string("text"), "text": .string(text)])] + pictures
     }
 

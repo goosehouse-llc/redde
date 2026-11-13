@@ -256,6 +256,7 @@ nonisolated enum AcpHistory {
         }
         // A reply that is all tools and no words still shows; a user row with no words doesn't, nor
         // Claude Code's note of a stop ("[Request interrupted by user for tool use]", after a "No").
+        for i in out.indices where out[i].role == .user { out[i].text = CarBrevity.strip(out[i].text) }
         return out.filter {
             let text = $0.text.trimmingCharacters(in: .whitespacesAndNewlines)
             return $0.role == .assistant || !(text.isEmpty || text.wholeMatch(of: /\[Request interrupted by user[^\]]*\]/) != nil)
