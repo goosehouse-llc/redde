@@ -38,7 +38,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, waiting, watches, work, work_runs
+from . import calls, cards, core, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, waiting, watches, wire, work, work_runs
 from . import models as model_settings   # (the Models & Providers route, 1.26.0)
 from . import tasks as task_reports   # (reports of handed-off tasks, 1.27.0)
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
@@ -664,8 +664,7 @@ def _slash(raw_args: str = "") -> str:
         return _skip_slash(words[1:])
     if words[:2] == ["goals", "list"]:
         # Every agent's goals, with their steps and latest progress (goals.py), as JSON.
-        import json
-        return "redde-push goals " + json.dumps(goals.listing(routines.Stores(calls.caller(_home())[1])), ensure_ascii=False)
+        return wire.reply("goals", goals.listing(routines.Stores(calls.caller(_home())[1])))
     if words[:2] == ["goals", "end"]:
         # End a goal: its check-in job deleted, the goal marked ended (goals.py).
         return _end_goal_slash(words[2:])

@@ -16,6 +16,8 @@ import re
 from datetime import date
 from typing import Callable, Iterable
 
+from . import wire
+
 #: How a provider is named on the button, by its `memory.provider` value.
 PROVIDER_NAMES = {
     "honcho": "Honcho", "mem0": "Mem0", "supermemory": "Supermemory", "hindsight": "Hindsight",
@@ -198,4 +200,4 @@ def slash(words: list[str], raw: str, config: dict | None, tool_names: list[str]
             answer = {"error": "unknown", "message": "memory stores | memory save <json>"}
     except (ValueError, TypeError) as error:
         answer = {"error": "bad_request", "message": str(error)[:200]}
-    return "redde-push memory " + json.dumps(answer, ensure_ascii=False)
+    return wire.reply("memory", answer)

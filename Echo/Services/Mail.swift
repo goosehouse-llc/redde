@@ -602,11 +602,11 @@ nonisolated enum MailWire {
     static let prefix = "redde-push mail "
 
     static func parse(_ reply: String) throws -> JSONValue {
-        guard let start = reply.range(of: prefix) else {
+        guard reply.contains(prefix) else {
             // "Unknown subcommand" and the like: a plugin from before mail.
             throw reply.isEmpty || reply.contains("usage") || reply.lowercased().contains("unknown") ? MailError.noPlugin : MailError.malformed
         }
-        guard let json = try? JSONValue.parse(Data(reply[start.upperBound...].utf8)) else { throw MailError.malformed }
+        guard let json = PluginReply.json(reply, "mail") else { throw MailError.malformed }
         if let code = json["error"]?.string {
             throw MailError.server(code: code, message: json["message"]?.string ?? "")
         }
@@ -1286,9 +1286,7 @@ final class MailCenter {
                 ? String(localized: "Your Hermes has taken ten settings in the last hour. Try again in a while.")
                 : String(localized: "Your Hermes's Redde plugin turned the setting down (\(why)). Update the plugin and try again."))
         }
-        guard let start = reply.range(of: "redde-push keys "),
-              let json = try? JSONValue.parse(Data(reply[start.upperBound...].utf8)),
-              let request = KeyRequest(listed: json) else {
+        guard let json = PluginReply.json(reply, "keys"), let request = KeyRequest(listed: json) else {
             throw MailError.server(code: "no_key_ask", message: String(localized: "This Hermes's Redde plugin can't take email settings from the app yet. Update the plugin, or ask your agent to set it up, which puts each setting in a key card."))
         }
         return request

@@ -90,3 +90,19 @@ nonisolated enum JSONValue: Codable, Equatable, Sendable {
         return ""
     }
 }
+
+/// The Redde plugin's answers to the app's commands: `redde-push <command> <JSON>`, as the
+/// plugin's `wire.reply` writes them. Anything else (an older plugin's usage line, a refusal) is
+/// not an answer: nil.
+nonisolated enum PluginReply {
+    /// The JSON after `redde-push <command> `, as it was sent.
+    static func data(_ reply: String, _ command: String) -> Data? {
+        guard let start = reply.range(of: "redde-push \(command) ") else { return nil }
+        return Data(reply[start.upperBound...].utf8)
+    }
+
+    /// The JSON after `redde-push <command> `, read.
+    static func json(_ reply: String, _ command: String) -> JSONValue? {
+        data(reply, command).flatMap { try? JSONValue.parse($0) }
+    }
+}

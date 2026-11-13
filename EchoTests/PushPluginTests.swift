@@ -182,4 +182,15 @@ struct PushPluginTests {
         await model.refresh()
         #expect(model.state == PushPlugin.State())
     }
+
+    /// The plugin's answers, read in one place (`PluginReply`, the plugin's `wire.reply`).
+    @Test func aPluginAnswerIsItsCommandThenJSON() {
+        #expect(PluginReply.json(#"redde-push lists {"lists":[{"id":"a"}]}"#, "lists")?["lists"]?.array?.first?["id"]?.string == "a")
+        #expect(PluginReply.json(#"redde-push device cache {"x":1}"#, "device cache")?["x"]?.int == 1)
+        // Another command's answer, an older plugin's usage, a refusal: none of them.
+        #expect(PluginReply.json(#"redde-push work {"work":[]}"#, "lists") == nil)
+        #expect(PluginReply.json("usage: hermes redde-push pair", "lists") == nil)
+        #expect(PluginReply.json("redde-push keys refused busy", "keys") == nil)
+        #expect(PluginReply.data(#"redde-push waiting {"waiting":[]}"#, "waiting") == Data(#"{"waiting":[]}"#.utf8))
+    }
 }

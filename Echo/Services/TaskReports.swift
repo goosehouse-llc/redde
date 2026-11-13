@@ -17,9 +17,7 @@ nonisolated struct TaskReport: Equatable, Identifiable, Sendable {
     /// The plugin's `tasks <session>` answer: "redde-push tasks {"tasks": […]}". Nil for anything
     /// else (an older plugin answers with its usage).
     static func parse(_ output: String) -> [TaskReport]? {
-        guard output.hasPrefix("redde-push tasks "), let start = output.firstIndex(of: "{"),
-              let json = try? JSONDecoder().decode(JSONValue.self, from: Data(output[start...].utf8)),
-              let found = json["tasks"]?.array else { return nil }
+        guard let found = PluginReply.json(output, "tasks")?["tasks"]?.array else { return nil }
         return found.compactMap { r in
             guard let id = r["id"]?.string, !id.isEmpty, let at = r["at"]?.number else { return nil }
             return TaskReport(id: id, at: Date(timeIntervalSince1970: at), summary: r["summary"]?.string ?? "",

@@ -48,9 +48,7 @@ enum NewDrawer {
 
         /// The plugin's answer, or nil when it isn't one (a plugin older than 1.28).
         static func parse(_ output: String) -> [BotWait]? {
-            let prefix = "redde-push waiting "
-            guard output.hasPrefix(prefix),
-                  let reply = try? JSONDecoder().decode(Reply.self, from: Data(output.dropFirst(prefix.count).utf8)) else { return nil }
+            guard let data = PluginReply.data(output, "waiting"), let reply = try? JSONDecoder().decode(Reply.self, from: data) else { return nil }
             return reply.waiting.map {
                 BotWait(id: $0.id, profile: $0.profile, title: $0.title, detail: $0.detail ?? "", word: $0.word ?? "go",
                         at: Date(timeIntervalSince1970: $0.at))

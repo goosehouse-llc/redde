@@ -18,6 +18,8 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
+from . import wire
+
 TOOLSET = "redde_ideas"
 TOOL = "redde_list"
 FILE = "lists.json"
@@ -254,7 +256,7 @@ def slash(home: Path, words: list[str]) -> str:
     """`/redde-push lists list`: "redde-push lists <JSON>", every list. `lists do <base64url JSON>`:
     one change, `redde_list`'s arguments (items by id), then the lists as they are now."""
     if words == ["list"]:
-        return "redde-push lists " + json.dumps({"lists": listing(home)}, ensure_ascii=False)
+        return wire.reply("lists", {"lists": listing(home)})
     if len(words) == 2 and words[0] == "do":
         try:
             raw = words[1] + "=" * (-len(words[1]) % 4)
@@ -262,7 +264,7 @@ def slash(home: Path, words: list[str]) -> str:
         except (ValueError, UnicodeDecodeError):
             return "redde-push lists: this command is for the Redde app."
         said = change(home, args, by="phone")
-        return "redde-push lists " + json.dumps({"said": said, "lists": listing(home)}, ensure_ascii=False)
+        return wire.reply("lists", {"said": said, "lists": listing(home)})
     return "redde-push lists: this command is for the Redde app."
 
 

@@ -36,9 +36,7 @@ nonisolated struct Workstream: Equatable, Identifiable, Sendable {
     /// The plugin's `work list` answer ("redde-push work {…}"); nil for anything else (a plugin
     /// older than 1.22 answers with its usage).
     static func parse(_ output: String) -> (profile: String, work: [Workstream])? {
-        guard output.hasPrefix(prefix), let start = output.firstIndex(of: "{"),
-              let json = try? JSONDecoder().decode(JSONValue.self, from: Data(output[start...].utf8)),
-              let rows = json["work"]?.array else { return nil }
+        guard let json = PluginReply.json(output, "work"), let rows = json["work"]?.array else { return nil }
         let work = rows.compactMap { row -> Workstream? in
             guard let id = row["id"]?.string, !id.isEmpty, let session = row["session"]?.string, !session.isEmpty else { return nil }
             func date(_ key: String) -> Date? { row[key]?.number.map(Date.init(timeIntervalSince1970:)) }
@@ -49,8 +47,6 @@ nonisolated struct Workstream: Equatable, Identifiable, Sendable {
         }
         return (json["profile"]?.string ?? "", work)
     }
-
-    static let prefix = "redde-push work "
 
     /// The plugin's report of one that ended, as the chat that started it got it (a hidden turn,
     /// `work.report_text`): `[Workstream W1 "title" finished. …]`, then its last words. As a
@@ -139,9 +135,7 @@ final class Workstreams {
     }
 
     private func ask(_ command: String, done: String, of profile: String) async -> String? {
-        guard let output = try? await plugin(command), output.hasPrefix(Workstream.prefix),
-              let start = output.firstIndex(of: "{"),
-              let json = try? JSONDecoder().decode(JSONValue.self, from: Data(output[start...].utf8)) else {
+        guard let output = try? await plugin(command), let json = PluginReply.json(output, "work") else {
             return String(localized: "Hermes didn't answer. Try again in a moment.", comment: "A workstream couldn't be stopped or answered: no answer from the server")
         }
         await refresh(profile)

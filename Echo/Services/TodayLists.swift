@@ -23,9 +23,7 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
     /// The plugin's `lists list` and `lists do` answers: "redde-push lists {…}". Nil for anything
     /// else (a plugin older than 1.20 answers with its usage).
     static func parse(_ output: String) -> (lists: [TodayList], error: String?)? {
-        guard output.hasPrefix("redde-push lists "), let start = output.firstIndex(of: "{"),
-              let json = try? JSONDecoder().decode(JSONValue.self, from: Data(output[start...].utf8)),
-              let found = json["lists"]?.array else { return nil }
+        guard let json = PluginReply.json(output, "lists"), let found = json["lists"]?.array else { return nil }
         let lists = found.compactMap { l -> TodayList? in
             guard let id = l["id"]?.string, !id.isEmpty else { return nil }
             let items = (l["items"]?.array ?? []).compactMap { i -> Item? in
@@ -40,9 +38,7 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
     /// What the plugin said it did, from a `lists do` answer: `made` or `already_there` hold the id
     /// of the list a `make` went to.
     static func said(_ output: String) -> JSONValue? {
-        guard output.hasPrefix("redde-push lists "), let start = output.firstIndex(of: "{"),
-              let json = try? JSONDecoder().decode(JSONValue.self, from: Data(output[start...].utf8)) else { return nil }
-        return json["said"]
+        PluginReply.json(output, "lists")?["said"]
     }
 }
 

@@ -34,6 +34,7 @@ import time
 from pathlib import Path
 
 from . import work_runs
+from . import wire
 
 log = logging.getLogger("redde-push")
 
@@ -619,17 +620,17 @@ def slash(root: Path, words: list[str]) -> str:
         if words[0] == "list" and len(words) <= 3:
             rows = Store(home).rows(chat=words[2] if len(words) == 3 else None, limit=50)
             here = "api" if work_runs.available() else "serve" if server() else "none"
-            return "redde-push work " + json.dumps({"profile": profile, "engine": here, "work": [
+            return wire.reply("work", {"profile": profile, "engine": here, "work": [
                 {"id": r["ref"], "title": r["title"], "status": r["status"], "session": r.get("session") or "",
                  "engine": r.get("engine") or "serve",
                  "chat": r.get("chat") or "", "last": _clip(r.get("last") or "", 600), "asked": r.get("asked") or "",
                  "created": int(r["created"]), "updated": int(r["updated"]), "ended": int(r["ended"]) if r.get("ended") else None}
-                for r in rows]}, ensure_ascii=False)
+                for r in rows]})
         if words[0] == "stop" and len(words) == 3 and _REF.fullmatch(words[2]):
             said = act(home, profile, "", {"action": "stop", "id": words[2]})
-            return "redde-push work " + json.dumps(said, ensure_ascii=False)
+            return wire.reply("work", said)
         if words[0] == "answer" and len(words) == 4 and _REF.fullmatch(words[2]):
-            return "redde-push work " + json.dumps(answer(home, profile, words[2], words[3]), ensure_ascii=False)
+            return wire.reply("work", answer(home, profile, words[2], words[3]))
     return "redde-push work: this command is for the Redde app."
 
 

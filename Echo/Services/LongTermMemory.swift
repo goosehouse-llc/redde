@@ -201,8 +201,6 @@ final class LongTermMemoryModel {
     }
 
     static func parse(_ said: String) -> JSONValue? {
-        let prefix = "redde-push memory "
-        guard said.hasPrefix(prefix) else { return nil }
-        return try? JSONValue.parse(Data(said.dropFirst(prefix.count).utf8))
+        PluginReply.json(said, "memory")
     }
 }

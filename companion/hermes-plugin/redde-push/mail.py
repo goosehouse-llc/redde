@@ -48,6 +48,8 @@ from email.message import EmailMessage
 from email.utils import getaddresses, parseaddr, parsedate_to_datetime
 from pathlib import Path
 
+from . import wire
+
 try:
     import fcntl
 except ImportError:   # Windows: the threads' lock alone
@@ -2555,7 +2557,7 @@ def sync_due(root: Path, inbox: Inbox | None = None, now: float | None = None) -
 # ---- the app's command: /redde-push mail … -----------------------------------------------------------
 
 def _answer(value: dict) -> str:
-    return "redde-push mail " + json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    return wire.reply("mail", value, compact=True)
 
 
 def slash(inbox: Inbox, words: list[str], raw: str = "") -> str:

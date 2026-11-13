@@ -38,6 +38,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 from . import core
 from .calls import PROFILE, caller
+from . import wire
 
 log = logging.getLogger("redde_push")
 
@@ -331,13 +332,13 @@ def app_ask(main: Path, words: list[str], now: float | None = None) -> str:
     if made.get("error"):
         return "redde-push keys refused " + ("busy" if "last hour" in made["error"] else "why")
     found = next((r for r in pending(main, now) if r["i"] == made["id"]), None)
-    return "redde-push keys " + json.dumps(found, separators=(",", ":")) if found else "redde-push keys gone"
+    return wire.reply("keys", found, compact=True) if found else "redde-push keys gone"
 
 
 def slash(main: Path, words: list[str]) -> str:
     """`/redde-push keys`, the app's: `list`, `set …`, `decline …`, and (1.16.0) `ask …` for email."""
     if words[:1] == ["list"] or not words:
-        return "redde-push keys " + json.dumps(pending(main), separators=(",", ":"))
+        return wire.reply("keys", pending(main), compact=True)
     if words[:1] == ["ask"]:
         return app_ask(main, words[1:])
     return answer(main, words)

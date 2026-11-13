@@ -20,6 +20,8 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
+from . import wire
+
 FILE = "task-reports.json"
 KEPT_FOR = 3 * 86400    # a chat opened days later still shows what the notification said
 AT_MOST = 60            # reports kept, every session together
@@ -119,4 +121,4 @@ def slash(home: Path, words: list[str]) -> str:
     if len(words) != 1 or not _SESSION.fullmatch(words[0]):
         return "redde-push tasks: this command is for the Redde app."
     shown = [{key: r.get(key) for key in ("id", "at", "summary", "about", "tasks", "failed")} for r in of(home, words[0])]
-    return "redde-push tasks " + json.dumps({"tasks": shown}, ensure_ascii=False)
+    return wire.reply("tasks", {"tasks": shown})

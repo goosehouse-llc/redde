@@ -139,9 +139,8 @@ final class KeyRequests {
         canAnswer = true
         do {
             let reply = try await plugin("keys list")
-            guard reply.hasPrefix("redde-push keys ") else { return }
-            let json = Data(reply.dropFirst("redde-push keys ".count).utf8)
-            pending = ((try? JSONValue.parse(json))?.array ?? []).compactMap(KeyRequest.init(listed:))
+            guard reply.contains("redde-push keys ") else { return }
+            pending = (PluginReply.json(reply, "keys")?.array ?? []).compactMap(KeyRequest.init(listed:))
         } catch PushError.noPlugin {
             pending = []
         } catch {

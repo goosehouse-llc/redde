@@ -16,6 +16,8 @@ import os
 import time
 from pathlib import Path
 
+from . import wire
+
 FILE = "redde-waiting.json"
 #: Older than this, the person has moved on (Coder keeps a card's wait a week too).
 KEPT_FOR = 7 * 86_400
@@ -69,4 +71,4 @@ def write(home: Path, items: list[dict]) -> None:
 
 def slash(root: Path, words: list[str]) -> str:
     """`/redde-push waiting`: every profile's waits, as JSON."""
-    return "redde-push waiting " + json.dumps({"waiting": listing(root)}, ensure_ascii=False)
+    return wire.reply("waiting", {"waiting": listing(root)})
