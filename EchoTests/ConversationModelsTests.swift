@@ -97,6 +97,28 @@ struct ConversationModelsTests {
         return try #require(transport.requests.last)
     }
 
+    /// A server's connection type changed under an open chat: a Hermes session id goes on over
+    /// either Hermes connection, but never to an ACP agent (Claude Code refused one, 11-12). The
+    /// message starts a new chat there, and the old chat keeps the connection its session is on.
+    @Test func aSessionGoesOnlyToItsKindOfConnection() async throws {
+        let transport = RecordingTransport()
+        let settings = settings()
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "kinds-\(UUID().uuidString)"))
+        let conversation = Conversation(settings: settings, store: store, transportOverride: transport, models: ConversationModels(defaults: defaults()))
+        settings.transport = .hermesServe
+        _ = try await ask(conversation, transport, "Hello.")
+        let hermesChat = conversation.id
+        settings.transport = .hermesSessions
+        #expect(try await ask(conversation, transport, "Again.").sessionID == "stored-1", "the Dashboard's session goes on over the Hermes API")
+        settings.transport = .acp
+        let moved = try await ask(conversation, transport, "Now Claude Code.")
+        #expect(moved.sessionID == nil, "a Hermes session id never goes to an ACP agent")
+        #expect(conversation.id != hermesChat, "the message starts a new chat")
+        #expect(conversation.messages.first?.text == "Now Claude Code.")
+        let kept = try #require(store.cachedRecord(id: hermesChat))
+        #expect(kept.transport.isHermes && kept.serverSessionID == "stored-1", "the old chat stays a Hermes one")
+    }
+
     @Test func aNewConversationSendsNoModelThoughAnOlderReddeHadOne() async throws {
         let transport = RecordingTransport()
         let (conversation, _) = conversation(transport, models: ConversationModels(defaults: defaults()))

@@ -32,6 +32,7 @@ final class Conversation {
     private(set) var serverSessionID: String? {
         didSet {
             guard serverSessionID != oldValue else { return }
+            sessionTransport = serverSessionID == nil ? nil : connection
             watchHostTurns()
             watchOtherDevices()
             // A model picked before the first message is kept with the session it made.
@@ -41,6 +42,18 @@ final class Conversation {
             }
         }
     }
+    /// The kind of connection `serverSessionID` belongs to. A server's connection type can change
+    /// under an open chat (Settings → Connection): a Hermes session id then means nothing to an
+    /// ACP agent, and the reverse (Claude Code refused one as "not a UUID", 11-12).
+    private var sessionTransport: Transport?
+
+    /// The chat's session can go on over the connection in use: the same kind, or Hermes either
+    /// way (the Dashboard and the Hermes API share one store of sessions).
+    private var sessionFitsConnection: Bool {
+        guard let sessionTransport else { return true }
+        return sessionTransport == connection || (sessionTransport.isHermes && connection.isHermes)
+    }
+
     /// With New Chats Use the Server's Model on, a model picked in this conversation before it
     /// has a session on the server; kept with the session once it has one (`ConversationModels`).
     private(set) var unsentModel: ConversationModels.Pick?
@@ -340,6 +353,9 @@ final class Conversation {
                 return Self.finishedStream()
             }
         }
+        // A chat from before the connection type changed: it stays as it was, and this message
+        // starts a new chat on the connection in use.
+        if serverSessionID != nil, !sessionFitsConnection, !isStreaming, outbox.isEmpty { reset() }
         userSendCount += 1
         var userMessage = Message(role: .user, text: trimmed)
         userMessage.attachments = attachments
@@ -398,6 +414,8 @@ final class Conversation {
         messages.append(reply)
         let replyID = reply.id
 
+        // Held messages of a chat whose session is another kind of connection's: a new session here.
+        if serverSessionID != nil, !sessionFitsConnection { serverSessionID = nil }
         let hermesModel = settings.transport == .chatCompletions ? nil : turnModel
         var request = TurnRequest(
             userText: trimmed,
@@ -1461,6 +1479,7 @@ final class Conversation {
         become(id: record.id, createdAt: record.createdAt, messages: record.restoredMessages,
                outbox: record.outbox ?? [], serverSessionID: record.serverSessionID, name: record.name, bot: record.bot,
                elsewhere: record.elsewhere)
+        sessionTransport = record.serverSessionID == nil ? nil : record.transport
         // A held message from an earlier launch goes out if it can.
         retryAttempt = 0
         if outbox.first?.state == .waitingForConnection { scheduleRetry() }
@@ -1528,7 +1547,7 @@ final class Conversation {
         let turnStarts = Set(kept.filter(\.beginsAssistantTurn).map(\.id))
         let record = ConversationRecord(
             id: id, title: title, createdAt: createdAt, updatedAt: .now,
-            transport: settings.transport, serverSessionID: serverSessionID, messages: kept,
+            transport: sessionTransport ?? settings.transport, serverSessionID: serverSessionID, messages: kept,
             assistantTurnStarts: turnStarts.isEmpty ? nil : turnStarts,
             outbox: outbox.isEmpty ? nil : outbox,
             serverID: settings.transport == .chatCompletions ? nil : settings.activeServerID,

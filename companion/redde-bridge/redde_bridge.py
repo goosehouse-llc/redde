@@ -592,6 +592,8 @@ class Connection:
         try:
             result = await self._dispatch(method, params, rid)
         except AgentError as error:
+            # Said here too, so a failure the phone shows can be found in the log.
+            log.warning("%s: %s failed for %s: %s", self.agent.config.id, method, self.peer, json.dumps(error.error)[:500])
             if rid is not None:
                 await self.send_message({"jsonrpc": "2.0", "id": rid, "error": error.error})
             return
