@@ -41,7 +41,7 @@ struct PaperThemesTests {
     /// keep at least ΔE 3 from all four.
     @Test func theFourPagesCanBeToldApart() throws {
         let four: [Theme] = [.paper, .paperWhite, .slate, .claudeCode]
-        let others: [Theme] = [.githubDark, .terminal, .amber]
+        let others: [Theme] = [.githubDark, .terminal, .amber, .arcade]
         for style in [UIUserInterfaceStyle.light, .dark] {
             let look = style == .dark ? "dark" : "light"
             for (i, a) in four.enumerated() {
@@ -67,7 +67,7 @@ struct PaperThemesTests {
         #expect(code.replyDesign == .default && code.headingDesign == .monospaced && code.monoTables)
     }
 
-    @Test(arguments: [Theme.paper, .paperWhite, .slate, .claudeCode, .githubDark])
+    @Test(arguments: [Theme.paper, .paperWhite, .slate, .claudeCode, .githubDark, .arcade])
     func everyPairReads(_ theme: Theme) throws {
         let p = theme.palette
         let page = try #require(p.background), surface = try #require(p.surface), text = try #require(p.text)

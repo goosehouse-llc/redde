@@ -10,7 +10,7 @@ import AppKit
 /// Appearance chooses light, dark or system for whichever theme is active.
 nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
     // Declaration order is the Settings list order.
-    case githubDark, standard, paper, paperWhite, slate, terminal, amber, claudeCode
+    case githubDark, standard, paper, paperWhite, slate, terminal, amber, claudeCode, arcade
 
     var id: String { rawValue }
 
@@ -106,6 +106,7 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
         case .amber: Self.amberPalette
         case .githubDark: Self.githubDarkPalette
         case .claudeCode: Self.claudeCodePalette
+        case .arcade: Self.arcadePalette
         }
     }
 
@@ -243,6 +244,36 @@ nonisolated enum Theme: String, CaseIterable, Identifiable, Codable {
         tableHeaderTint: dyn((0.035, 0.412, 0.855), (0.345, 0.651, 1.000)).opacity(0.12),
         headingDesign: .monospaced, monoTables: true,
         userBubbleTextColor: dyn((0.122, 0.137, 0.157), (0.051, 0.067, 0.090)))
+
+    /// Arcade (2026-11-13, from the drawer mockups): neon lime and hot pink on midnight navy, links
+    /// in cyan, your messages in pink; by day a lavender page, magenta accent and your messages in
+    /// a navy cabinet with lime letters. Headings in the rounded face.
+    private static let arcadePalette = Palette(
+        label: String(localized: "Arcade", comment: "Name of a color theme in Settings → Appearance: neon colours on dark navy, like an arcade"),
+        blurb: String(localized: "Neon lime and hot pink on midnight navy; lavender and magenta by day."),
+        accent: dyn((0.702, 0.071, 0.435), (0.776, 1.000, 0.239)),          // magenta / lime #C6FF3D
+        background: dyn((0.933, 0.918, 0.984), (0.055, 0.063, 0.141)),     // lavender / #0E1024
+        surface: dyn((1.000, 1.000, 1.000), (0.102, 0.114, 0.227)),        // white / #1A1D3A
+        userBubble: dyn((0.102, 0.114, 0.227), (1.000, 0.310, 0.639)),     // navy / pink #FF4FA3
+        userText: dyn((1.000, 1.000, 1.000), (0.055, 0.063, 0.141)),       // the glyph on the accent
+        flatReplies: true,
+        text: dyn((0.078, 0.086, 0.180), (0.925, 0.922, 1.000)),
+        linkColor: dyn((0.357, 0.180, 0.878), (0.361, 0.882, 1.000)),      // violet / cyan #5CE1FF
+        checkboxColor: dyn((0.180, 0.502, 0.000), (0.776, 1.000, 0.239)),
+        quoteBarColor: dyn((0.702, 0.071, 0.435), (1.000, 0.310, 0.639)).opacity(0.7),
+        tableHeaderTint: dyn((0.357, 0.180, 0.878), (0.361, 0.882, 1.000)).opacity(0.12),
+        headingDesign: .rounded,
+        bubbleRadius: 14,
+        userBubbleTextColor: dyn((0.776, 1.000, 0.239), (0.055, 0.063, 0.141)))   // lime on navy / navy on pink
+
+    /// Arcade's four neon hues at full strength (lime, pink, cyan, violet), deeper by day: the
+    /// drawer's place buttons and what needs you, in that theme.
+    static let arcadeHues: [Color] = [
+        dyn((0.180, 0.502, 0.000), (0.776, 1.000, 0.239)),
+        dyn((0.702, 0.071, 0.435), (1.000, 0.310, 0.639)),
+        dyn((0.000, 0.478, 0.620), (0.361, 0.882, 1.000)),
+        dyn((0.357, 0.180, 0.878), (0.659, 0.549, 1.000)),
+    ]
 
     /// This theme with the reader's color picks applied. The picks replace palette values
     /// before anything derives from them, so links, checkboxes and the rest follow a custom
