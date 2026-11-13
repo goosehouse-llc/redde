@@ -106,7 +106,7 @@ struct DeliveryCard: View {
                     .frame(height: 22)
                     Text(Self.name(stage))
                         .chatFont(.caption2, weight: n == reached ? .bold : .regular)
-                        .foregroundStyle(n == reached ? Color.primary : Color.secondary)
+                        .foregroundStyle(n == reached ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }

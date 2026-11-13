@@ -119,7 +119,7 @@ struct CompareCard: View {
             .contentShape(.rect(cornerRadius: 12))
         }
         .buttonStyle(.plain)
-        .disabled(!more)
+        .inert(!more)
         .accessibilityLabel(picked ? Text("\(option.name), the pick", comment: "VoiceOver: the agent's pick of a comparison card") : Text(option.name))
         .accessibilityHint(more ? Text("Shows its pros and cons", comment: "VoiceOver hint: an option of a comparison card") : Text(verbatim: ""))
     }
@@ -129,7 +129,7 @@ struct CompareCard: View {
             if best { Image(systemName: "checkmark.circle.fill").foregroundStyle(PurchaseCard.good).imageScale(.small) }
             Text(value.isEmpty ? "–" : value)
                 .chatFont(.footnote, weight: best ? .semibold : .regular)
-                .foregroundStyle(value.isEmpty ? Color.secondary : Color.primary)
+                .foregroundStyle(value.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

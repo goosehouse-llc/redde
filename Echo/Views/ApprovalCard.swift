@@ -48,6 +48,7 @@ struct ApprovalCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 10) {
                 BotAvatar(face: agent.face, name: agent.name, size: 28)
+                    .cardEdge()
                 VStack(alignment: .leading, spacing: 2) {
                     Text(summary.headline).chatFont(.subheadline, weight: .semibold)
                     Text(summary.place ?? String(localized: "Waiting for your OK", comment: "Under an approval card's headline"))
@@ -157,7 +158,7 @@ struct ApprovalCard: View {
                     Image(systemName: "ellipsis")
                         .chatFont(.subheadline, weight: .semibold)
                         .frame(width: 34, height: 34)
-                        .background(.background, in: .circle)
+                        .background(Color.primary.opacity(0.08), in: .circle)
                         .contentShape(.circle)
                 }
                 .accessibilityLabel(String(localized: "More ways to allow", comment: "Approval card: the menu with This Session and Always"))

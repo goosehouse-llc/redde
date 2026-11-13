@@ -271,7 +271,7 @@ private struct LegView: View {
             if let city = airport.city ?? airport.name {
                 HStack(spacing: 3) {
                     if link != nil { Image(systemName: "mappin.and.ellipse").foregroundStyle(theme.accent).imageScale(.small) }
-                    Text(city).foregroundStyle(link != nil ? theme.accent : Color.secondary).lineLimit(1)
+                    Text(city).foregroundStyle(link != nil ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.secondary)).lineLimit(1)
                 }
                 .chatFont(.caption, weight: link != nil ? .medium : .regular)
             }

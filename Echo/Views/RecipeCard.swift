@@ -163,7 +163,7 @@ struct RecipeCard: View {
         Button { tab = which } label: {
             Text(title)
                 .chatFont(.subheadline, weight: .semibold)
-                .foregroundStyle(tab == which ? Color.primary : Color.secondary)
+                .foregroundStyle(tab == which ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                 .frame(maxWidth: .infinity, minHeight: 38)
                 .background { if tab == which { Capsule().fill(scheme.cardPanel).shadow(color: .black.opacity(0.08), radius: 2, y: 1) } }
                 .contentShape(.capsule)
@@ -211,7 +211,7 @@ struct RecipeCard: View {
             }
             .chatFont(.subheadline)
             .strikethrough(on, color: .secondary)
-            .foregroundStyle(on ? Color.secondary : Color.primary)
+            .foregroundStyle(on ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12).padding(.vertical, 10)
             .frame(minHeight: 44)

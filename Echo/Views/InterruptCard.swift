@@ -54,6 +54,7 @@ struct ClarifyCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 BotAvatar(face: agent.face, name: agent.name, size: 28)
+                    .cardEdge()
                 Text(single ? String(localized: "\(agent.name) has a question") : String(localized: "\(agent.name) has a few questions"))
                     .chatFont(.subheadline, weight: .semibold)
                 Spacer(minLength: 0)

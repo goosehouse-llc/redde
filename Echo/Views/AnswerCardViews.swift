@@ -377,7 +377,7 @@ struct ChoiceCard: View {
             ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
                 Button { tap(index) } label: { row(option, index: index, chosen: chosen) }
                     .buttonStyle(.plain)
-                    .disabled(answered != nil || answerer == nil || answerer?.busy == true)
+                    .inert(answered != nil || answerer == nil || answerer?.busy == true)
                     .accessibilityAddTraits(isPicked(index, chosen) ? .isSelected : [])
                     .accessibilityHint(card.multiple ? Text("Picks it, or leaves it out", comment: "VoiceOver hint: an option of a card where several may be picked")
                                                      : Text("Sends it as your pick", comment: "VoiceOver hint: an option of a card where one is picked"))
@@ -662,7 +662,7 @@ struct ChecklistCard: View {
                 ChecklistTick(on: on, mark: mark)
                 Text(item.text).chatFont(.subheadline)
                     .strikethrough(on, color: .secondary)
-                    .foregroundStyle(on ? Color.secondary : Color.primary)
+                    .foregroundStyle(on ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if let note = item.note { Text(note).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(1) }
             }
@@ -823,7 +823,7 @@ struct TodayListCard: View {
                 ChecklistTick(on: item.done, mark: mark)
                 Text(item.text).chatFont(.subheadline)
                     .strikethrough(item.done, color: .secondary)
-                    .foregroundStyle(item.done ? Color.secondary : Color.primary)
+                    .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
@@ -905,7 +905,7 @@ struct FormCard: View {
                 }
             }
         }
-        .disabled(answered != nil || answerer == nil)
+        .inert(answered != nil || answerer == nil)
         .onAppear { if values.isEmpty { values = card.fields.map(\.value) } }
     }
 

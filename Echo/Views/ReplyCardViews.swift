@@ -90,7 +90,7 @@ private struct CardSurface: ViewModifier {
         // A solid colour's appearance, else Card Appearance's, else the app's: the card, its
         // ground and its edge all in it.
         let drawnIn = Settings.shared.cardScheme ?? scheme
-        let inked = content.cardInk()
+        let inked = content.cardInk().modifier(CardTextLevels(solid: Settings.shared.cardColor.solid != nil))
         return Group {
             if raised {
                 inked
@@ -113,6 +113,19 @@ extension View {
     /// reads its theme in its own body, before its ground (`cardGround`) is around it. 2026-11-09:
     /// Sol's pale sky on an off-white card in dark mode could hardly be seen.
     func cardInk() -> some View { modifier(CardInk()) }
+}
+
+extension View {
+    /// A soft edge for something pale drawn on a card (a bot's face in its pale bubble): on an
+    /// off-white card it was nearly lost (11-12).
+    func cardEdge() -> some View { shadow(color: .black.opacity(0.22), radius: 1.2, y: 0.5) }
+
+    /// Taps off, without the dimming `.disabled` brings: for a card's content that stays to be
+    /// read (an answered card's options, a comparison's names), where `.disabled` drew it faded
+    /// for good (11-12). Brief waits (`busy`) keep `.disabled`.
+    func inert(_ off: Bool) -> some View {
+        allowsHitTesting(!off).accessibilityRemoveTraits(off ? .isButton : [])
+    }
 }
 
 private struct CardInk: ViewModifier {
@@ -182,6 +195,22 @@ private struct CardInk: ViewModifier {
         hue /= 6
         if hue < 0 { hue += 1 }
         return (hue, span / high, high)
+    }
+}
+
+/// The greys of the text on a solid card. The system's secondary and tertiary are made for its own
+/// grounds: on off-white, with the app dark, its secondary grey came to about 3:1 and was hard to
+/// read (11-12). On a solid card they are the card's text colour at 60% and 48%, about 5:1 and
+/// 3.5:1 on each solid colour, light or dark; `.secondary` and `.tertiary` in a card take them.
+private struct CardTextLevels: ViewModifier {
+    var solid: Bool
+
+    func body(content: Content) -> some View {
+        if solid {
+            content.foregroundStyle(Color.primary, Color.primary.opacity(0.6), Color.primary.opacity(0.48))
+        } else {
+            content
+        }
     }
 }
 
@@ -931,7 +960,7 @@ private struct WeatherCard: View {
             ForEach(shown.hours) { hour in
                 VStack(spacing: 6) {
                     Text(hour.label).chatFont(.caption, weight: .semibold)
-                        .foregroundStyle(hour.now ? theme.accent : Color.secondary)
+                        .foregroundStyle(hour.now ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.secondary))
                         .lineLimit(1).minimumScaleFactor(0.7)
                     Symbol(name: hour.symbol).chatFont(.title3).frame(height: 24)
                     Text(hour.temperature).chatFont(.subheadline, weight: .semibold).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
