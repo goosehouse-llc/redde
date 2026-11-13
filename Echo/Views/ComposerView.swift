@@ -93,6 +93,12 @@ struct ComposerView: View {
     }
 
     var body: some View {
+        // In stages, the column behind AnyView: in one chain an unoptimized build kept 249 KB of
+        // the phone's 1 MB main-thread stack here, and Debug builds crashed at launch (2026-11-13).
+        composerPickers(composerWork(AnyView(composerColumn)))
+    }
+
+    private var composerColumn: some View {
         VStack(spacing: 8) {
             if slashMenuActive, !slashItems.isEmpty { slashMenu }
             let mentions = mentionSuggestions
@@ -139,6 +145,11 @@ struct ComposerView: View {
             }
             composerRow
         }
+    }
+
+    /// Keeping the field's context, layout and animations up to date as it changes.
+    private func composerWork(_ content: some View) -> some View {
+        content
         .onChange(of: draft) { _, new in refreshContext(new) }
         // A picture on the clipboard pastes into the field as an attachment (`ComposerPaste`).
         .onChange(of: focused, initial: true) { _, isFocused in
@@ -215,6 +226,11 @@ struct ComposerView: View {
             slashItems = Array(items.prefix(8))
             slashReplaceFrom = from
         }
+    }
+
+    /// The camera, scanner, drawing, markup and file pickers the attach menu opens.
+    private func composerPickers(_ content: some View) -> some View {
+        content
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { image in
                 if let image, let att = Attachment.image(image) { pendingAttachments.append(att) }

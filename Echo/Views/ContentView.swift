@@ -116,7 +116,7 @@ struct ContentView: View {
         ZStack {
             if sizeClass == .regular {
                 // iPad: sessions in the sidebar, transcript in the detail column.
-                NavigationSplitView {
+                AnyView(NavigationSplitView {
                     // The stack is what lets a project folder push its session list *inside*
                     // the sidebar. Without it the NavigationLink has nowhere to go: the row
                     // does nothing and there is no back button to escape with.
@@ -130,10 +130,10 @@ struct ContentView: View {
                 } detail: {
                     padDetail
                 }
-                .readingFold($splitFold, vertical: true)
+                .readingFold($splitFold, vertical: true))
             } else {
                 #if os(iOS)
-                phoneLayout
+                AnyView(phoneLayout)
                 #endif
             }
         }
@@ -145,7 +145,17 @@ struct ContentView: View {
         // opening or closing an iPhone Duo swaps one layout for the other while Redde runs, as
         // drawing an iPad window narrower does. On a Group each was the layout's own, and went
         // with it: the voice screen closed, the opening's work ran again.
-        groupVoicePresentation(chatPresentations(VStack(spacing: 0) {
+        //
+        // Each stretch of what hangs off it is a function of its own, and the screen goes in
+        // behind AnyView: in one chain, an unoptimized (Debug) build kept every step's copy on the
+        // stack until body returned, 842 KB of the iPhone's 1 MB main-thread stack, and Debug
+        // builds crashed at launch (measured 2026-11-13). A function's copies go when it returns.
+        routing(launching(debugSheets(sheets(AnyView(screen)))))
+    }
+
+    /// The chat or the split layout, under a call put away to a bar.
+    private var screen: some View {
+        groupVoicePresentation(chatPresentations(AnyView(VStack(spacing: 0) {
             // A live call put away from the voice screen (`CallBar`): over the chat and the list
             // alike, everything else moved down under it. A row above them and not a safe-area
             // inset: a navigation bar takes no notice of one, and the call's bar lay on the chat's.
@@ -163,7 +173,12 @@ struct ContentView: View {
         // The call is that chat's: another one opened ends it (its answers would land in the wrong one).
         .onChange(of: conversation.id) { if voiceSession.inBar { voiceSession.cancel() } }
         .environment(\.wideLayout, sizeClass == .regular)
-        .environment(\.showSettingsSheet, SettingsOpener { showSettings = true })))
+        .environment(\.showSettingsSheet, SettingsOpener { showSettings = true }))))
+    }
+
+    /// Settings, setup and the sheets any screen can bring up.
+    private func sheets(_ content: some View) -> some View {
+        content
         #if os(iOS)
         .sheet(isPresented: $showSettings, onDismiss: { WatchLink.shared.push() }) { SettingsView() }
         #else
@@ -208,7 +223,13 @@ struct ContentView: View {
         }
         // From a reply's ⋯ menu: the same sheet, for that reply.
         .onChange(of: routineAsk.reply) { _, reply in if reply != nil { makingRoutine = true } }
+    }
+
+    /// The screens the dev hooks open (screenshots, UI tests); none in a Release build.
+    @ViewBuilder
+    private func debugSheets(_ content: some View) -> some View {
         #if DEBUG
+        content
         .sheet(isPresented: $showProfilePicker) { NavigationStack { ProfilePickerView() } }
         .sheet(isPresented: $showTips) { NavigationStack { TipJarView() } }
         .sheet(isPresented: $showServers) { NavigationStack { ServersView() } }
@@ -255,7 +276,14 @@ struct ContentView: View {
         .sheet(isPresented: $showAheadOfYourDay) { AheadOfYourDayView() }
         #endif
         .sheet(isPresented: $showFiles) { NavigationStack { FilesView() } }
+        #else
+        content
         #endif
+    }
+
+    /// Voice mode, the work done as Redde opens, and the links it opens with.
+    private func launching(_ content: some View) -> some View {
+        content
         .fullScreenCover(isPresented: $showVoice) {
             VoiceView(session: voiceSession, onSwitchToTyping: {
                 // Once the cover is gone, raise the keyboard in the composer.
@@ -321,6 +349,11 @@ struct ContentView: View {
             if let offer = PushOffer(url: url) { router.requestPushPairing(offer) }
             else if let offer = SetupCodeOffer(url: url) { router.requestSetup(offer) }
         }
+    }
+
+    /// Requests from Siri, controls, notifications and the lock, and what follows a chat changing.
+    private func routing(_ content: some View) -> some View {
+        content
         .onAppear { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); handleDraftRequest(); handleSetupCode(); handlePushRequests(); handleCallScreen() }
         .onChange(of: router.pendingVoice) { handleLaunchRequest() }
         .onChange(of: router.pendingWake) { handleWake() }
@@ -523,19 +556,25 @@ struct ContentView: View {
     }
 
     /// The chat's place: the conversation, or a group chat opened from the list.
-    @ViewBuilder
-    private func chatScreen(showListButton: Bool) -> some View {
+    /// Each behind AnyView, so neither keeps a copy of the other on the stack (see `body`).
+    private func chatScreen(showListButton: Bool) -> AnyView {
         if let room = groups.open {
-            GroupChatView(room: room, focused: $composerFocused,
-                          openList: showListButton ? { setDrawer(open: true) } : nil,
-                          openVoice: { groupVoice = $0; showGroupVoice = true }) { groups.forget(room.id) }
-                .id(room.id)
+            AnyView(GroupChatView(room: room, focused: $composerFocused,
+                                  openList: showListButton ? { setDrawer(open: true) } : nil,
+                                  openVoice: { groupVoice = $0; showGroupVoice = true }) { groups.forget(room.id) }
+                .id(room.id))
         } else {
-            transcriptScreen(showListButton: showListButton)
+            AnyView(transcriptScreen(showListButton: showListButton))
         }
     }
 
+    /// The transcript and its composer behind AnyView, then the title and toolbar: in one chain an
+    /// unoptimized build kept 80 KB of the phone's stack here (see `body`).
     private func transcriptScreen(showListButton: Bool) -> some View {
+        transcriptChrome(AnyView(transcriptPage), showListButton: showListButton)
+    }
+
+    private var transcriptPage: some View {
         TranscriptView(showSetup: $showSetup, showSearch: $showSearch, onEdit: beginEditing, onEditQueued: editQueued)
             .modifier(TapHidesKeyboard(focused: $composerFocused))
             .environment(\.replySpeaker, conversation.bot?.name)
@@ -571,6 +610,10 @@ struct ContentView: View {
             }
             // Pictures, files, links and text dropped anywhere on the chat go to the composer.
             .chatDropTarget(draft: $draft, attachments: $pendingAttachments) { composerFocused = true }
+    }
+
+    private func transcriptChrome(_ content: some View, showListButton: Bool) -> some View {
+        content
             .navigationTitle(headerTitle)
             .navigationBarTitleDisplayMode(.inline)
             #if os(macOS)

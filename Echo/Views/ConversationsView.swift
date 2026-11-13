@@ -236,17 +236,9 @@ struct ConversationsList: View {
     }
 
     var body: some View {
-        Group {
-            switch wideDetail || newDrawer ? .sessions : section {
-            case .sessions: sessionsList
-            // Rebuilt on a server or profile switch, so nothing (or no live socket) carries over.
-            case .planned: ComingUpList(planned: true, topRow: AnyView(topRow), isShowing: isShowing).id(settings.connectionKey)
-            case .kanban:
-                // Gone once the panel has slid out (not as it starts to), taking its live socket along.
-                if !panelParked { KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey) } else { Color.clear }
-            case .made: MadeView(topRow: AnyView(topRow), openChat: openMadeIn)
-            }
-        }
+        // In stages, as ContentView.body is: in one chain an unoptimized build kept 290 KB of the
+        // phone's 1 MB main-thread stack here (2026-11-13).
+        listSheets(AnyView(tabPage
         // From inside the navigation stack: hiding the whole panel doesn't reach UIKit's list,
         // and VoiceOver could swipe into rows parked off screen.
         .accessibilityHidden(panelParked)
@@ -261,6 +253,25 @@ struct ConversationsList: View {
             if let name = DevHooks.value("-echo.section"), let tab = name == "planned" ? .planned : Tab(rawValue: name) { section = tab }
         }
         #endif
+        ))
+    }
+
+    /// The tab shown, each behind AnyView so the switch keeps no copy of the others (Debug: 114 KB).
+    private var tabPage: AnyView {
+        switch wideDetail || newDrawer ? .sessions : section {
+        case .sessions: AnyView(sessionsList)
+        // Rebuilt on a server or profile switch, so nothing (or no live socket) carries over.
+        case .planned: AnyView(ComingUpList(planned: true, topRow: AnyView(topRow), isShowing: isShowing).id(settings.connectionKey))
+        case .kanban:
+            // Gone once the panel has slid out (not as it starts to), taking its live socket along.
+            if !panelParked { AnyView(KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey)) } else { AnyView(Color.clear) }
+        case .made: AnyView(MadeView(topRow: AnyView(topRow), openChat: openMadeIn))
+        }
+    }
+
+    /// What the list's menus and rows bring up, and its keyboard tabs.
+    private func listSheets(_ content: some View) -> some View {
+        content
         .sheet(isPresented: $showSettings) { SettingsView() }
         // Group chats, from the Bots section: here, not on the section, which a list builds lazily.
         .sheet(isPresented: $makingGroup) {
@@ -475,6 +486,13 @@ struct ConversationsList: View {
     }
 
     private var sessionsList: some View {
+        // In stages, the list behind AnyView, as `body` is (see ContentView.body): in one chain an
+        // unoptimized build kept 300 KB on the stack here, and Debug builds overflowed the phone's
+        // 1 MB main-thread stack at launch (2026-11-13).
+        listWork(listChrome(AnyView(listPage)))
+    }
+
+    private var listPage: some View {
         // The selection binding belongs to "Select" mode only. A sidebar List that always has
         // one treats a row tap as selection and swallows the NavigationLink, so project folders
         // never push on iPad.
@@ -529,6 +547,11 @@ struct ConversationsList: View {
             }
         }
         .environment(\.editMode, .constant(selecting || arrangingBots ? .active : .inactive))
+    }
+
+    /// The list's toolbar, its search, and the sheets its rows open.
+    private func listChrome(_ content: some View) -> some View {
+        content
         .toolbar {
             #if os(iOS)
             if pickerInTitle, !selecting, !arrangingBots {
@@ -607,6 +630,11 @@ struct ConversationsList: View {
         }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
         .modifier(ListSearchCarry(query: $query, wide: wide))
+    }
+
+    /// Loading, filtering and watching the list, and its prompts.
+    private func listWork(_ content: some View) -> some View {
+        content
         // Keyed on the server and profile: a switch reloads the list (and the iPad sidebar,
         // which stays up).
         // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
