@@ -3459,7 +3459,7 @@ extension ConversationsList {
         }
         .drawerRow(top: 6, bottom: 0)
         ScrollView(.horizontal) {
-            LazyHStack(alignment: .top, spacing: 4) {
+            LazyHStack(alignment: .top, spacing: 0) {
                 ForEach(bots, id: \.name) { bot in
                     drawerMember(bot, face: faces[bot.name] ?? BotFace(seed: bot.name), tone: tone)
                 }
@@ -3488,7 +3488,7 @@ extension ConversationsList {
         } label: {
             VStack(spacing: 3) {
                 BotAvatar(face: face, size: 58)
-                    .padding(5)
+                    .padding(3)
                     .overlay {
                         if kind == .needsYou {
                             Circle().strokeBorder(tone.warm, lineWidth: 2.5)
@@ -3510,7 +3510,7 @@ extension ConversationsList {
                     .foregroundStyle(color)
                     .lineLimit(1)
             }
-            .frame(width: 80)
+            .frame(width: 72)
             .contentShape(.rect)
         } primaryAction: {
             openBot(bot)
