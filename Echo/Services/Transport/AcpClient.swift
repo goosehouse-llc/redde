@@ -12,11 +12,19 @@ nonisolated struct AcpEndpoint: Hashable, Sendable {
     /// The folder new chats work in, on the host; nil leaves it to the bridge.
     var folder: String?
 
+    /// The address of Redde's own demo agent (`AcpDemoAgent`), which runs in the app: no bridge,
+    /// no token, no computer. For App Review, and for a look before setting anything up.
+    static let demoAddress = "demo"
+    var isDemo: Bool { socketURL.scheme == "redde-demo" }
+
     /// From what the person typed: `host:8765`, `ws://…`, `https://…` (taken as `wss://`). An
     /// address with a path of its own is used as it is (`ws://127.0.0.1:3284/acp`).
     static func make(address: String, agent: String, token: String?, folder: String?) -> AcpEndpoint? {
         var text = address.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
+        if text.lowercased() == demoAddress {
+            return AcpEndpoint(socketURL: URL(string: "redde-demo://agent")!, agentsURL: nil, token: nil, folder: nil)
+        }
         if !text.contains("://") { text = "ws://" + text }
         guard var parts = URLComponents(string: text), let host = parts.host, !host.isEmpty else { return nil }
         switch parts.scheme?.lowercased() {
@@ -74,6 +82,17 @@ nonisolated struct AcpEndpoint: Hashable, Sendable {
         request.setValue(token, forHTTPHeaderField: "X-Secret-Key")
     }
 }
+
+/// What the client needs of its link to the agent: a WebSocket's frames, or the demo agent's.
+/// `URLSessionWebSocketTask` has these already.
+nonisolated protocol AcpSocket: AnyObject, Sendable {
+    func send(_ message: URLSessionWebSocketTask.Message, completionHandler: @escaping @Sendable (Error?) -> Void)
+    func receive() async throws -> URLSessionWebSocketTask.Message
+    func sendPing(pongReceiveHandler: @escaping @Sendable (Error?) -> Void)
+    func cancel(with closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?)
+}
+
+extension URLSessionWebSocketTask: AcpSocket {}
 
 /// An error an ACP agent answered with.
 nonisolated struct AcpError: LocalizedError, Sendable {
@@ -170,7 +189,7 @@ final class AcpClient {
     }
 
     private let log = Logger(subsystem: "com.goosehouse.echo", category: "acp")
-    private var socket: URLSessionWebSocketTask?
+    private var socket: (any AcpSocket)?
     private var receiveTask: Task<Void, Never>?
     private var pingTask: Task<Void, Never>?
     private var connecting: Task<Void, Error>?
@@ -211,12 +230,18 @@ final class AcpClient {
     }
 
     private func connect() async throws {
-        var request = URLRequest(url: endpoint.socketURL)
-        request.timeoutInterval = 20
-        endpoint.authorize(&request)
-        let task = Self.session.webSocketTask(with: request)
-        task.maximumMessageSize = 64 * 1024 * 1024
-        task.resume()
+        let task: any AcpSocket
+        if endpoint.isDemo {
+            task = AcpDemoSocket()
+        } else {
+            var request = URLRequest(url: endpoint.socketURL)
+            request.timeoutInterval = 20
+            endpoint.authorize(&request)
+            let web = Self.session.webSocketTask(with: request)
+            web.maximumMessageSize = 64 * 1024 * 1024
+            web.resume()
+            task = web
+        }
         socket = task
         receiveTask = Task.detached { [weak self] in
             while !Task.isCancelled {
@@ -297,7 +322,7 @@ final class AcpClient {
         failPending(TransportError.unreachable(String(localized: "the connection to the agent closed", comment: "ACP")))
     }
 
-    private func closed(_ task: URLSessionWebSocketTask, error: Error) {
+    private func closed(_ task: any AcpSocket, error: Error) {
         guard socket === task else { return }
         log.error("socket closed: \(error.localizedDescription)")
         receiveTask?.cancel(); pingTask?.cancel()
@@ -359,7 +384,7 @@ final class AcpClient {
         send(.object(["jsonrpc": .string("2.0"), "id": raw, "result": result]), socket: socket, call: nil)
     }
 
-    private func send(_ frame: JSONValue, socket: URLSessionWebSocketTask, call id: String?) {
+    private func send(_ frame: JSONValue, socket: any AcpSocket, call id: String?) {
         guard let data = try? JSONEncoder().encode(frame) else { return }
         socket.send(.string(String(decoding: data, as: UTF8.self))) { [weak self] error in
             guard let error else { return }

@@ -244,7 +244,7 @@ struct SetupView: View {
             settings.serveBaseURL != nil
                 && (dashboardMode == .open || signedIn || (!settings.serveUsername.isEmpty && (!servePassword.isEmpty || hasServePassword)))
         case .chatCompletions: settings.activeBaseURL != nil
-        case .acp: settings.acpEndpoint != nil && (!acpToken.isEmpty || hasAcpToken)
+        case .acp: settings.acpEndpoint.map { $0.isDemo || !acpToken.isEmpty || hasAcpToken } ?? false
         }
     }
 

@@ -9,28 +9,52 @@ struct AcpServerFields: View {
     var hasToken: Bool
     @State private var agents: [AcpEndpoint.Agent] = []
 
+    private var isDemo: Bool { settings.acpEndpoint?.isDemo == true }
+
     var body: some View {
         Section {
-            TextField("ws://your-computer:8765", text: $settings.acpURL).urlFieldStyle()
-            SecureField(hasToken ? String(localized: "Replace stored token", comment: "ACP connection field")
-                                 : String(localized: "Token", comment: "ACP connection field: the Redde bridge's token"), text: $token)
-            if agents.count > 1 || (agents.count == 1 && settings.acpAgent.isEmpty == false && agents[0].id != settings.acpAgent) {
-                Picker(String(localized: "Agent", comment: "ACP connection field: which of the bridge's agents"), selection: $settings.acpAgent) {
-                    ForEach(agents) { Text($0.name).tag($0.id) }
+            if isDemo {
+                LabeledContent(String(localized: "Agent", comment: "ACP connection field: which of the bridge's agents"),
+                               value: String(localized: "Demo Agent", comment: "ACP: Redde's built-in demo agent"))
+                Button(String(localized: "Use a Real Agent Instead", comment: "ACP setup: leave the demo agent for the bridge's fields")) {
+                    settings.acpURL = ""
                 }
-            } else if agents.isEmpty {
-                TextField(String(localized: "Agent (claude, codex, hermes…)", comment: "ACP connection field"), text: $settings.acpAgent)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
             } else {
-                LabeledContent(String(localized: "Agent", comment: "ACP connection field: which of the bridge's agents"), value: agents[0].name)
+                TextField("ws://your-computer:8765", text: $settings.acpURL).urlFieldStyle()
+                SecureField(hasToken ? String(localized: "Replace stored token", comment: "ACP connection field")
+                                     : String(localized: "Token", comment: "ACP connection field: the Redde bridge's token"), text: $token)
+                if agents.count > 1 || (agents.count == 1 && settings.acpAgent.isEmpty == false && agents[0].id != settings.acpAgent) {
+                    Picker(String(localized: "Agent", comment: "ACP connection field: which of the bridge's agents"), selection: $settings.acpAgent) {
+                        ForEach(agents) { Text($0.name).tag($0.id) }
+                    }
+                } else if agents.isEmpty {
+                    TextField(String(localized: "Agent (claude, codex, hermes…)", comment: "ACP connection field"), text: $settings.acpAgent)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                } else {
+                    LabeledContent(String(localized: "Agent", comment: "ACP connection field: which of the bridge's agents"), value: agents[0].name)
+                }
+                TextField(String(localized: "Folder on the computer (optional)", comment: "ACP connection field: where new chats work"), text: $settings.acpFolder)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                // No computer to hand (App Review among them): Redde's own agent, in the app.
+                if settings.acpURL.isEmpty {
+                    Button(String(localized: "Try the Demo Agent", comment: "ACP setup: use Redde's built-in demo agent, which needs no computer")) {
+                        settings.acpURL = AcpEndpoint.demoAddress
+                        settings.acpAgent = ""
+                        settings.acpFolder = ""
+                    }
+                    .accessibilityIdentifier("acp-try-demo")
+                }
             }
-            TextField(String(localized: "Folder on the computer (optional)", comment: "ACP connection field: where new chats work"), text: $settings.acpFolder)
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
         } header: {
             Text("Agent bridge", comment: "Setup and Settings: the ACP connection's section")
         } footer: {
-            Text("Run Redde's bridge on the computer with your agents (Claude Code, Codex, Gemini CLI, Goose, Hermes and others that speak ACP). `python3 redde_bridge.py --print-setup` shows the address and token. A server that speaks ACP itself, such as `goose serve`, works too.",
-                 comment: "Setup and Settings: the ACP connection's footer")
+            if isDemo {
+                Text("The demo agent runs inside Redde, with no computer and no AI. It shows what Redde does with a coding agent: its steps, a file's changes, approvals, plans and questions, by chat or by voice.",
+                     comment: "Setup and Settings: the ACP connection's footer for the demo agent")
+            } else {
+                Text("Run Redde's bridge on the computer with your agents (Claude Code, Codex, Gemini CLI, Goose, Hermes and others that speak ACP). `python3 redde_bridge.py --print-setup` shows the address and token. A server that speaks ACP itself, such as `goose serve`, works too.",
+                     comment: "Setup and Settings: the ACP connection's footer")
+            }
         }
         .task(id: "\(settings.acpURL)|\(token)|\(hasToken)") { await listAgents() }
     }

@@ -93,10 +93,17 @@ struct ApprovalCard: View {
 
             if summary.reason != nil || summary.command != nil {
                 VStack(alignment: .leading, spacing: 8) {
-                    // Hermes's rule for asking ("recursive delete").
+                    // Hermes's rule for asking ("recursive delete"). An agent over ACP says what
+                    // the command is for instead (2026-11-12: Claude Code's read "Hermes asks first").
                     if let reason = summary.reason {
-                        Text("Hermes asks first for: \(reason)", comment: "Under an approval: the rule Hermes asked by")
-                            .chatFont(.caption).foregroundStyle(.secondary)
+                        Group {
+                            if conversation.connection.isHermes {
+                                Text("Hermes asks first for: \(reason)", comment: "Under an approval: the rule Hermes asked by")
+                            } else {
+                                Text(reason)
+                            }
+                        }
+                        .chatFont(.caption).foregroundStyle(.secondary)
                     }
                     if let command = summary.command {
                         Button {

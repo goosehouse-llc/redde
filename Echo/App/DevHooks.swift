@@ -407,6 +407,12 @@ enum DevHooks {
             settings.fastLaneModel = "qwen36-35b-a3b"
         }
 
+        // `-transport` from a test is the active server's own connection too: the record keeps
+        // the kind the last test left on it (an agent), and Setup reads the record's.
+        if let raw = value("-transport"), let kind = Transport(rawValue: raw), settings.activeServer?.transport != kind {
+            settings.transport = kind
+        }
+
         let env = ProcessInfo.processInfo.environment
         if let v = env["ECHO_TEST_SERVE_PASSWORD"] { Keychain.write(.serveDashboardPassword, value: v) }
         if env["ECHO_TEST_SERVE_SIGNIN"] == "" { Keychain.delete(.serveSignIn) }

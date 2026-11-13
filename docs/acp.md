@@ -129,6 +129,18 @@ server's setup): **Other agent (ACP)**, in `AcpServerFields`. Fields:
 Saved on the server record (`HermesServer.transport = .acp`, `acpURL`, `acpAgent`, `acpFolder`),
 the token in the Keychain under the server's id, synced with iCloud like the other secrets.
 
+### The demo agent (built 2026-11-12, for 2.6)
+
+**Try the Demo Agent** under the bridge's fields sets the address to `demo`: an agent that runs
+inside the app (`AcpDemoAgent.swift`), for App Review, which has no bridge to reach, and for
+anyone who wants a look first. It needs no token. `AcpClient` talks to it through `AcpSocket`, the
+same JSON-RPC a WebSocket carries, so everything it shows goes through the real ACP path. No
+model: a script in English. Its first message, `/tour` or "fix" runs the tour (thinking, a task
+list, a file read and edited with its diff, `make check` asking first unless the mode is Auto,
+the answer); "plan" or `/plan` asks to approve a plan (`switch_mode`); "question" or `/question`
+asks with a form (`elicitation/create`). Chats are listed, reopened (`session/load` replays them),
+renamed and deleted; they are kept in the app's caches.
+
 ### Mapping into Redde
 
 | ACP | Redde |
@@ -190,6 +202,8 @@ form) all work.
   then a chat with a reply, a command that asks first answered from the card, the chat in the
   list, and the chat after a relaunch.
 - `EchoTests/AcpTests`: decoding and mapping, from frames recorded off `hermes acp` 0.22.7.
+- `EchoTests/AcpDemoTests`: the demo agent frame by frame; `AcpUITests.testTheDemoAgent` (no lab):
+  Setup's Try the Demo Agent, then the tour's approval, a plan and a question in the app.
 
 ## Later
 

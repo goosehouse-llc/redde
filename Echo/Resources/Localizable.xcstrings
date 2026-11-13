@@ -138687,6 +138687,113 @@
         }
       }
     },
+    "Demo Agent" : {
+      "comment" : "ACP: Redde's built-in demo agent",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demoagent"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo-Agent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agente de demostración"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent de démo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agente demo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デモエージェント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "데모 에이전트"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demoagent"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo-agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent demo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agente de demonstração"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демо-агент"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demoagent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo Ajanı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демо-агент"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "演示代理"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示範代理"
+          }
+        }
+      }
+    },
     "Denied" : {
       "comment" : "Approval history: the request was refused",
       "localizations" : {
@@ -421144,6 +421251,113 @@
         }
       }
     },
+    "The demo agent runs inside Redde, with no computer and no AI. It shows what Redde does with a coding agent: its steps, a file's changes, approvals, plans and questions, by chat or by voice." : {
+      "comment" : "Setup and Settings: the ACP connection's footer for the demo agent",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demoagenten kører inde i Redde, uden computer og uden AI. Den viser, hvad Redde gør med en kodeagent: dens trin, ændringer i en fil, godkendelser, planer og spørgsmål, i chat eller med stemmen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Demo-Agent läuft in Redde, ohne Computer und ohne KI. Er zeigt, was Redde mit einem Coding-Agenten macht: seine Schritte, Änderungen an einer Datei, Freigaben, Pläne und Fragen, im Chat oder per Sprache."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El agente de demostración funciona dentro de Redde, sin ordenador y sin IA. Muestra lo que Redde hace con un agente de programación: sus pasos, los cambios de un archivo, aprobaciones, planes y preguntas, por chat o por voz."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'agent de démo tourne dans Redde, sans ordinateur et sans IA. Il montre ce que Redde fait avec un agent de code : ses étapes, les modifications d'un fichier, les approbations, les plans et les questions, par chat ou à la voix."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'agente demo funziona dentro Redde, senza computer e senza IA. Mostra cosa fa Redde con un agente di programmazione: i suoi passaggi, le modifiche a un file, approvazioni, piani e domande, in chat o a voce."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デモエージェントはReddeの中で動き、コンピュータもAIも使いません。コーディングエージェントでReddeができること（手順、ファイルの変更、承認、プラン、質問）を、チャットや音声で見せます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "데모 에이전트는 컴퓨터나 AI 없이 Redde 안에서 실행됩니다. 코딩 에이전트와 함께 Redde가 하는 일(단계, 파일 변경, 승인, 계획, 질문)을 채팅이나 음성으로 보여 줍니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demoagenten kjører inne i Redde, uten datamaskin og uten KI. Den viser hva Redde gjør med en kodeagent: stegene, endringer i en fil, godkjenninger, planer og spørsmål, i chat eller med stemmen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De demo-agent draait in Redde, zonder computer en zonder AI. Hij laat zien wat Redde doet met een codeeragent: de stappen, wijzigingen in een bestand, goedkeuringen, plannen en vragen, via chat of met je stem."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent demo działa w Redde, bez komputera i bez AI. Pokazuje, co Redde robi z agentem do kodowania: jego kroki, zmiany w pliku, zatwierdzenia, plany i pytania, na czacie lub głosem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O agente de demonstração roda dentro do Redde, sem computador e sem IA. Ele mostra o que o Redde faz com um agente de programação: seus passos, as mudanças de um arquivo, aprovações, planos e perguntas, por chat ou por voz."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демо-агент работает внутри Redde, без компьютера и без ИИ. Он показывает, что Redde делает с агентом для программирования: его шаги, изменения в файле, подтверждения, планы и вопросы — в чате или голосом."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demoagenten körs inuti Redde, utan dator och utan AI. Den visar vad Redde gör med en kodagent: stegen, ändringar i en fil, godkännanden, planer och frågor, i chatt eller med rösten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo ajanı Redde'nin içinde, bilgisayar ve yapay zekâ olmadan çalışır. Redde'nin bir kodlama ajanıyla neler yaptığını gösterir: adımları, bir dosyadaki değişiklikleri, onayları, planları ve soruları, sohbetle ya da sesle."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демо-агент працює всередині Redde, без комп'ютера і без ШІ. Він показує, що Redde робить з агентом для програмування: його кроки, зміни у файлі, схвалення, плани й запитання — у чаті чи голосом."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "演示代理在 Redde 内运行，不需要电脑，也不用 AI。它展示 Redde 配合编程代理能做什么：步骤、文件改动、批准、计划和提问，可以用聊天或语音。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示範代理在 Redde 內執行，不需要電腦，也不用 AI。它展示 Redde 搭配程式代理能做什麼：步驟、檔案變更、核准、計畫和提問，可以用聊天或語音。"
+          }
+        }
+      }
+    },
     "The email" : {
       "comment" : "VoiceOver: an email's body, as its sender laid it out",
       "localizations" : {
@@ -453580,6 +453794,113 @@
         }
       }
     },
+    "Try the Demo Agent" : {
+      "comment" : "ACP setup: use Redde's built-in demo agent, which needs no computer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prøv demoagenten"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo-Agent ausprobieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probar el agente de demostración"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer l'agent de démo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova l'agente demo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デモエージェントを試す"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "데모 에이전트 사용해 보기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prøv demoagenten"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer de demo-agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj agenta demo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimentar o agente de demonstração"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробовать демо-агента"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova demoagenten"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo Ajanını Dene"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спробувати демо-агента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "试用演示代理"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "試用示範代理"
+          }
+        }
+      }
+    },
     "TTFT %@" : {
       "comment" : "A reply's timings: the time to its first token, as TTFT 0.52s",
       "localizations" : {
@@ -464768,6 +465089,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用 %@ 自己的顏色"
+          }
+        }
+      }
+    },
+    "Use a Real Agent Instead" : {
+      "comment" : "ACP setup: leave the demo agent for the bridge's fields",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brug en rigtig agent i stedet"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stattdessen einen echten Agenten verwenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar un agente real"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser plutôt un vrai agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa invece un agente reale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "実際のエージェントを使う"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실제 에이전트 사용하기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bruk en ekte agent i stedet"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik in plaats daarvan een echte agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Użyj prawdziwego agenta"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar um agente real"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Использовать настоящего агента"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd en riktig agent i stället"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunun Yerine Gerçek Bir Ajan Kullan"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Використати справжнього агента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "改用真实代理"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "改用真實代理"
           }
         }
       }

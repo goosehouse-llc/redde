@@ -54,6 +54,53 @@ final class AcpUITests: XCTestCase {
         XCTAssertTrue(app.textFields["ws://your-computer:8765"].exists, "No bridge address field")
     }
 
+    /// The demo agent, as App Review meets it: picked in Setup with no address or token, then its
+    /// tour with an approval, a plan to approve and a question. Needs no lab.
+    func testTheDemoAgent() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.screen", "setup", "-transport", "acp", "-acpURL", "", "-acpAgent", "", "-acpFolder", "", "-echo.clearDrafts"]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = ""   // empty deletes
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Set up Redde"].waitForExistence(timeout: 20), "Setup didn't open")
+        let demo = app.buttons["acp-try-demo"]
+        reach(demo, in: app, "Try the Demo Agent")
+        demo.tap()
+        let test = app.buttons["Test connection"]
+        reach(test, in: app, "Test connection")
+        test.tap()
+        XCTAssertTrue(app.text(containing: "Connected to Demo Agent").waitForExistence(timeout: 20), "The demo agent didn't connect")
+        keep("Demo agent in Setup")
+        app.navigationBars["Set up Redde"].buttons["Done"].tap()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "Setup didn't finish into a chat")
+        let new = app.buttons["New conversation"].firstMatch
+        if new.waitForExistence(timeout: 5) { new.tap() }
+
+        send("Fix the notes", in: app)
+        let allow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Allow'")).firstMatch
+        XCTAssertTrue(allow.waitForExistence(timeout: 30), "No approval card for the command")
+        keep("Demo approval")
+        allow.tap()
+        XCTAssertTrue(app.text(containing: "all three checks pass").waitForExistence(timeout: 30), "The tour didn't finish")
+        keep("Demo tour")
+
+        send("Show me a plan", in: app)
+        XCTAssertTrue(app.text(containing: "Tidy the notes").waitForExistence(timeout: 30), "The plan wasn't shown")
+        keep("Demo plan")
+        let go = app.buttons.matching(NSPredicate(format: "label CONTAINS 'go ahead'")).firstMatch
+        XCTAssertTrue(go.waitForExistence(timeout: 5), "No way to approve the plan")
+        go.tap()
+        XCTAssertTrue(app.text(containing: "Plan done").waitForExistence(timeout: 30), "The plan wasn't carried out")
+
+        send("Ask me a question", in: app)
+        let hello = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Just a hello'")).firstMatch
+        XCTAssertTrue(hello.waitForExistence(timeout: 30), "The question card didn't come")
+        keep("Demo question")
+        hello.tap()
+        XCTAssertTrue(app.text(containing: "Hello from Redde's demo agent").waitForExistence(timeout: 30), "The answer didn't reach the agent")
+        keep("Demo answered")
+    }
+
     func testSettingUpABridge() throws {
         continueAfterFailure = false
         try XCTSkipUnless(labIsUp(), "No ACP lab on \(bridge) (scripts/acp-lab.sh up)")
