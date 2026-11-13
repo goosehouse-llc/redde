@@ -48,7 +48,7 @@ import redde_push  # noqa: E402  (beside this file)
 import redde_qr  # noqa: E402
 import redde_codex  # noqa: E402
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -682,8 +682,8 @@ class _Nowhere:
 # MARK: - One phone's connection
 
 class Connection:
-    def __init__(self, ws: WebSocket, agent: Agent, peer: str):
-        self.ws, self.agent, self.peer = ws, agent, peer
+    def __init__(self, ws: WebSocket, agent: Agent, peer: str, bridge: "Bridge | None" = None):
+        self.ws, self.agent, self.peer, self.bridge = ws, agent, peer, bridge
         self.tasks: set[asyncio.Task] = set()
 
     async def send_message(self, message: dict) -> None:
@@ -760,7 +760,10 @@ class Connection:
             result = dict(await agent.ensure_started())
             meta = dict(result.get("_meta") or {})
             meta["redde"] = {"bridge": VERSION, "agent": agent.config.id, "name": agent.config.name,
-                             "cwd": agent.config.folder, "attach": True}
+                             "cwd": agent.config.folder, "attach": True,
+                             # How it runs, for the app's Bridge section and its Update button.
+                             "service": self.bridge.service if self.bridge else None,
+                             "updatable": bool(self.bridge and self.bridge.service)}
             if agent.commands is not None:
                 meta["redde"]["commands"] = agent.commands
             if agent.limits is not None:
@@ -826,11 +829,39 @@ class Connection:
             return {"output": await asyncio.to_thread(agent.pusher.command, str(params.get("command") or ""), agent.config.id)}
         if method == "_redde/agents":
             return {"agents": [{"id": agent.config.id, "name": agent.config.name, "running": agent.running}]}
+        if method == "_redde/update":
+            return await self._update()
         # Everything else goes to the agent as it is: set_config_option, set_mode, authenticate…
         if rid is None:
             await agent.notify(method, params)
             return _NO_REPLY
         return await agent.request(method, params)
+
+    async def _update(self) -> dict:
+        """`_redde/update`: the bridge fetches its newest files from where the installer gets them,
+        checks they run, puts them in place and restarts, by its service bringing it back. Only an
+        installed bridge (`--install`), and only between turns: a restart ends every agent."""
+        bridge = self.bridge
+        if bridge is None or not bridge.service:
+            raise AgentError({"code": -32601, "message": "This bridge isn't installed as a service, so it can't update "
+                              "itself. Run the installer again on the computer.", "data": {"command": INSTALL_COMMAND}})
+        if any(s.running for a in bridge.agents.values() for s in a.sessions.values()):
+            raise AgentError({"code": BUSY, "message": "A reply is under way. Update once it's done."})
+        if bridge.updating:
+            raise AgentError({"code": BUSY, "message": "The bridge is already updating."})
+        bridge.updating = True
+        try:
+            latest = await asyncio.to_thread(update_files, UPDATE_BASE, INSTALL_DIR)
+        except UpdateError as error:
+            raise AgentError({"code": -32603, "message": str(error), "data": {"command": INSTALL_COMMAND}})
+        finally:
+            bridge.updating = False
+        if latest is None:
+            return {"updated": False, "version": VERSION}
+        log.info("updated %s → %s; restarting", VERSION, latest)
+        # After the reply is on its way.
+        asyncio.get_running_loop().call_later(1.0, bridge.restart)
+        return {"updated": True, "from": VERSION, "version": latest}
 
     async def _prompt(self, params: dict, rid: Any) -> Any:
         agent = self.agent
@@ -893,6 +924,17 @@ class Bridge:
         self.config = config
         pusher = redde_push.Pusher(config.push_path, config.push_relay) if config.push_path else None
         self.agents = {a.id: Agent(a, pusher) for a in config.agents}
+        #: "launchd" or "systemd" when this is the installed bridge, run by its service.
+        self.service = service_kind()
+        self.updating = False
+
+    def restart(self) -> None:
+        """Ends the agents and the bridge; the service starts the bridge again, with its new files."""
+        for agent in self.agents.values():
+            if agent.running:
+                agent.proc.terminate()
+        logging.shutdown()
+        os._exit(0)
 
     def authorized(self, headers: dict[str, str], query: dict[str, list[str]]) -> bool:
         offered = None
@@ -931,7 +973,7 @@ class Bridge:
             log.info("%s: refused (no or wrong token) for %s", peer, path)
             return await self._reply(writer, 401, {"error": "unauthorized"})
         if verb == "GET" and path == "/agents":
-            return await self._reply(writer, 200, {"version": VERSION, "agents": [
+            return await self._reply(writer, 200, {"version": VERSION, "service": self.service, "updatable": bool(self.service), "agents": [
                 {"id": a.config.id, "name": a.config.name, "running": a.running, "cwd": a.config.folder}
                 for a in self.agents.values()]})
         if verb == "GET" and (path == "/acp" or path.startswith("/acp/")):
@@ -950,7 +992,7 @@ class Bridge:
             writer.write((response + "\r\n").encode())
             await writer.drain()
             log.info("%s joined %s", peer, agent.config.id)
-            await Connection(WebSocket(reader, writer), agent, peer).run()
+            await Connection(WebSocket(reader, writer), agent, peer, self).run()
             return
         await self._reply(writer, 404, {"error": "not found"})
 
@@ -1033,6 +1075,94 @@ SERVICE = os.environ.get("REDDE_BRIDGE_SERVICE", "com.goosehouse.redde-bridge")
 #: Where `--install` puts the bridge's files, so the service doesn't depend on a download or a checkout.
 INSTALL_DIR = Path(os.environ.get("REDDE_BRIDGE_HOME", "~/.local/share/redde-bridge")).expanduser()
 FILES = ("redde_bridge.py", "redde_push.py", "redde_qr.py", "redde_codex.py")
+#: Where the installer and `_redde/update` get the files (install.sh's BASE).
+UPDATE_BASE = os.environ.get("REDDE_BRIDGE_BASE",
+                             "https://raw.githubusercontent.com/goosehouse-llc/redde/main/companion/redde-bridge").rstrip("/")
+INSTALL_COMMAND = ("curl -fsSL https://raw.githubusercontent.com/goosehouse-llc/redde/main/companion/redde-bridge/install.sh | sh")
+
+
+def service_kind() -> str | None:
+    """"launchd" or "systemd" when this is the installed bridge (its files in INSTALL_DIR, its
+    service set up), which can update itself and be brought back; None when run by hand."""
+    try:
+        if Path(__file__).resolve().parent != INSTALL_DIR.resolve() or not service_path().exists():
+            return None
+    except OSError:
+        return None
+    return "launchd" if sys.platform == "darwin" else "systemd"
+
+
+class UpdateError(Exception):
+    pass
+
+
+def _version_tuple(text: str) -> tuple:
+    return tuple(int(p) if p.isdigit() else 0 for p in text.split("."))
+
+
+def update_files(base: str, target: Path, current: str = VERSION, timeout: float = 30) -> str | None:
+    """Fetches the newest bridge from `base` and, when it's newer than `current`, puts its files in
+    `target`, keeping the old ones in `target/previous`. Returns the new version, or None when
+    there's nothing newer. Nothing changes unless every file came and the new bridge runs here."""
+    import ast
+    import re
+    import urllib.request
+
+    def fetch(name: str) -> bytes:
+        try:
+            with urllib.request.urlopen(f"{base}/{name}", timeout=timeout) as reply:
+                data = reply.read(4 * 1024 * 1024 + 1)
+        except (OSError, ValueError) as error:
+            raise UpdateError(f"Couldn't download {name}: {error}") from None
+        if len(data) > 4 * 1024 * 1024:
+            raise UpdateError(f"{name} is too big to be the bridge")
+        return data
+
+    main = fetch("redde_bridge.py")
+    text = main.decode("utf-8", errors="replace")
+    found = re.search(r'^VERSION = "([0-9][0-9A-Za-z.\-]*)"', text, re.M)
+    if not found:
+        raise UpdateError("The download isn't the Redde bridge")
+    latest = found.group(1)
+    if _version_tuple(latest) <= _version_tuple(current):
+        return None
+    # The new bridge's own list, in case it has a file more.
+    names = FILES
+    listed = re.search(r"^FILES = (\(.*?\))$", text, re.M)
+    if listed:
+        try:
+            names = tuple(ast.literal_eval(listed.group(1)))
+        except (ValueError, SyntaxError):
+            raise UpdateError("The download's file list can't be read") from None
+    if "redde_bridge.py" not in names or not all(re.fullmatch(r"[a-z_]+\.py", n) for n in names):
+        raise UpdateError("The download's file list isn't one this bridge takes")
+
+    staging = target / ".update"
+    shutil.rmtree(staging, ignore_errors=True)
+    staging.mkdir(parents=True)
+    try:
+        for name in names:
+            (staging / name).write_bytes(main if name == "redde_bridge.py" else fetch(name))
+        # It has to start on this Python: one that needs a newer one stays out.
+        try:
+            ran = subprocess.run([sys.executable, str(staging / "redde_bridge.py"), "--version"],
+                                 capture_output=True, text=True, timeout=60, cwd=str(staging))
+        except (OSError, subprocess.SubprocessError) as error:
+            raise UpdateError(f"The new bridge didn't run: {error}") from None
+        if ran.returncode != 0 or ran.stdout.strip() != latest:
+            said = (ran.stderr or ran.stdout).strip().splitlines()
+            raise UpdateError(f"The new bridge {latest} didn't run on Python {sys.version.split()[0]}"
+                              + (f": {said[-1]}" if said else ""))
+        previous = target / "previous"
+        previous.mkdir(exist_ok=True)
+        for name in names:
+            if (target / name).exists():
+                shutil.copy2(target / name, previous / name)
+        for name in names:
+            os.replace(staging / name, target / name)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+    return latest
 
 
 def tailscale_name() -> str | None:
@@ -1229,6 +1359,7 @@ def uninstall(config_path: Path) -> None:
     stopped = stop_service()
     for name in FILES:
         (INSTALL_DIR / name).unlink(missing_ok=True)
+    shutil.rmtree(INSTALL_DIR / "previous", ignore_errors=True)   # what the last update replaced
     print("Stopped the Redde bridge and removed it." if stopped else "The Redde bridge wasn't installed as a service.")
     print(f"The config and token are still in {config_path.expanduser().parent}; delete that folder to forget them.")
 
@@ -1244,6 +1375,7 @@ def main() -> None:
     parser.add_argument("--agent", help="with --print-setup: the agent the setup link and QR code are for")
     parser.add_argument("--host", help="with --print-setup or --install: the name the phone reaches this machine by, such as its "
                                        "Tailscale name (machine.tailnet.ts.net), which works away from home too")
+    parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,

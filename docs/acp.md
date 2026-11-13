@@ -125,6 +125,20 @@ PATH so it finds the agents. It waits for `/health`, then prints the setup and Q
 Running it again updates; `--uninstall` removes the service and files, keeping the config.
 Apple's Python inside Xcode is run as `/usr/bin/python3`, which survives Xcode updates.
 
+### Updating from the app (bridge 0.7.0, 2026-11-13)
+
+`initialize` says `_meta.redde.service` (`launchd`/`systemd`) and `updatable`: true only when the
+running file is in `INSTALL_DIR` and the service file exists. `_redde/update` (no params; the
+phone can't choose where from) refuses during any running turn on the bridge, downloads
+`redde_bridge.py` from `UPDATE_BASE`, reads its `VERSION` and `FILES` (names must be `[a-z_]+.py`),
+stops if it isn't newer, fetches the rest into `INSTALL_DIR/.update`, runs
+`<this python> .update/redde_bridge.py --version` (must print the new version), copies the old
+files to `previous/`, `os.replace`s the new ones in, replies, and a second later ends the agents
+and `os._exit(0)`: launchd's KeepAlive or systemd's `Restart=always` starts it again.
+The app (`AcpBridgeSection` in Settings › the server) shows the bridge's version and service,
+`AcpBridge.latest` (the version this app was built beside) for Update Available, an Update
+Bridge button when `updatable`, and otherwise the install line to copy.
+
 ### Not yet (phase 2)
 
 - TLS made easy (today: give it a cert, or use Tailscale Serve / a proxy).

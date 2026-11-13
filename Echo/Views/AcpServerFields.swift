@@ -8,6 +8,7 @@ struct AcpServerFields: View {
     @Binding var token: String
     var hasToken: Bool
     @State private var agents: [AcpEndpoint.Agent] = []
+    @State private var bridge: AcpClient.Info?
 
     /// The bridge's one-line install, in its README.
     static let installGuide = URL(string: "https://github.com/goosehouse-llc/redde/tree/main/companion/redde-bridge#install")!
@@ -64,6 +65,13 @@ struct AcpServerFields: View {
             }
         }
         .task(id: "\(settings.acpURL)|\(token)|\(hasToken)") { await listAgents() }
+        .task(id: settings.acpEndpoint) {
+            let found = await AcpBridgeSection.look(settings.acpEndpoint)
+            if !Task.isCancelled { bridge = found }
+        }
+        if let endpoint = settings.acpEndpoint, bridge != nil {
+            AcpBridgeSection(endpoint: endpoint, info: $bridge)
+        }
     }
 
     /// The bridge's agents, once the address and token reach it.

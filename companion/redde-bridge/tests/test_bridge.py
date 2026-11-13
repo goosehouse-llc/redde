@@ -305,6 +305,107 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
         writer.close()
         self.assertEqual(json.loads(body)["agents"][0]["id"], "fake")
 
+    async def test_a_bridge_run_by_hand_says_so_and_wont_update_itself(self):
+        c = await Client.open(self.port)
+        self.clients.append(c)
+        redde = (await c.call("initialize", {"protocolVersion": 1}))["result"]["_meta"]["redde"]
+        self.assertEqual(redde["bridge"], rb.VERSION)
+        self.assertFalse(redde["updatable"])
+        self.assertIsNone(redde["service"])
+        refused = (await c.call("_redde/update"))["error"]
+        self.assertIn("installer", refused["message"])
+        self.assertIn("install.sh", refused["data"]["command"])
+
+    async def test_an_installed_bridge_updates_between_turns_and_restarts(self):
+        source, home = Path(self.dir.name) / "source", Path(self.dir.name) / "home"
+        make_bridge_files(source, "99.0.0")
+        make_bridge_files(home, rb.VERSION)
+        restarts = []
+        self.bridge.service, self.bridge.restart = "launchd", lambda: restarts.append(1)
+        saved = rb.UPDATE_BASE, rb.INSTALL_DIR
+        rb.UPDATE_BASE, rb.INSTALL_DIR = source.as_uri(), home
+        try:
+            c = await self.client()
+            sid = (await c.call("session/new", {}))["result"]["sessionId"]
+            c.send({"jsonrpc": "2.0", "id": 98, "method": "session/prompt", "params": {"sessionId": sid, "prompt": [{"type": "text", "text": "slow"}]}})
+            await c.wait_for(lambda m: m.get("method") == "session/update")
+            busy = await c.call("_redde/update")
+            self.assertEqual(busy["error"]["code"], rb.BUSY)
+            await c.wait_for(lambda m: m.get("method") == "_redde/turn_ended")
+            done = (await c.call("_redde/update", timeout=60))["result"]
+            self.assertEqual((done["updated"], done["from"], done["version"]), (True, rb.VERSION, "99.0.0"))
+            self.assertIn('VERSION = "99.0.0"', (home / "redde_bridge.py").read_text())
+            await asyncio.sleep(1.3)
+            self.assertEqual(restarts, [1])
+        finally:
+            rb.UPDATE_BASE, rb.INSTALL_DIR = saved
+
+
+def make_bridge_files(folder: Path, version: str, change=None):
+    """The bridge's files, as `version`, in `folder`; `change` edits redde_bridge.py's text."""
+    folder.mkdir(parents=True, exist_ok=True)
+    for name in rb.FILES:
+        text = (HERE.parent / name).read_text()
+        if name == "redde_bridge.py":
+            text = text.replace(f'VERSION = "{rb.VERSION}"', f'VERSION = "{version}"', 1)
+            text = change(text) if change else text
+        (folder / name).write_text(text)
+
+
+class UpdateTests(unittest.TestCase):
+    """`update_files`: what `_redde/update` puts in place, from a folder standing in for GitHub."""
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.source, self.home = Path(self.dir.name) / "source", Path(self.dir.name) / "home"
+        make_bridge_files(self.home, rb.VERSION)
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def installed(self):
+        return (self.home / "redde_bridge.py").read_text()
+
+    def test_a_newer_bridge_goes_in_and_the_old_one_is_kept(self):
+        make_bridge_files(self.source, "99.1.0")
+        self.assertEqual(rb.update_files(self.source.as_uri(), self.home), "99.1.0")
+        self.assertIn('VERSION = "99.1.0"', self.installed())
+        self.assertIn(f'VERSION = "{rb.VERSION}"', (self.home / "previous" / "redde_bridge.py").read_text())
+        self.assertFalse((self.home / ".update").exists())
+
+    def test_the_same_or_an_older_bridge_changes_nothing(self):
+        make_bridge_files(self.source, rb.VERSION)
+        self.assertIsNone(rb.update_files(self.source.as_uri(), self.home))
+        make_bridge_files(self.source, "0.1.0")
+        self.assertIsNone(rb.update_files(self.source.as_uri(), self.home))
+        self.assertFalse((self.home / "previous").exists())
+
+    def test_a_bridge_that_doesnt_run_here_stays_out(self):
+        make_bridge_files(self.source, "99.2.0", change=lambda t: t + "\nthis isn't python\n")
+        with self.assertRaises(rb.UpdateError):
+            rb.update_files(self.source.as_uri(), self.home)
+        self.assertIn(f'VERSION = "{rb.VERSION}"', self.installed())
+
+    def test_a_missing_file_stops_the_update(self):
+        make_bridge_files(self.source, "99.3.0")
+        (self.source / "redde_qr.py").unlink()
+        with self.assertRaises(rb.UpdateError):
+            rb.update_files(self.source.as_uri(), self.home)
+        self.assertIn(f'VERSION = "{rb.VERSION}"', self.installed())
+
+    def test_a_file_list_reaching_outside_the_folder_is_refused(self):
+        make_bridge_files(self.source, "99.4.0", change=lambda t: t.replace(
+            'FILES = ("redde_bridge.py",', 'FILES = ("../evil.py", "redde_bridge.py",', 1))
+        with self.assertRaises(rb.UpdateError):
+            rb.update_files(self.source.as_uri(), self.home)
+        self.assertFalse((Path(self.dir.name) / "evil.py").exists())
+
+    def test_something_that_isnt_the_bridge_is_refused(self):
+        self.source.mkdir()
+        (self.source / "redde_bridge.py").write_text("<html>Not found</html>")
+        with self.assertRaises(rb.UpdateError):
+            rb.update_files(self.source.as_uri(), self.home)
+
 
 if __name__ == "__main__":
     unittest.main()

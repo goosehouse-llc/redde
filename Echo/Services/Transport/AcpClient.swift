@@ -134,6 +134,11 @@ final class AcpClient {
         var steers: Bool = false
         /// The agent's slash commands as the bridge last heard them, for a chat with none yet.
         var commands: [AcpCommand] = []
+        /// How the bridge runs: "launchd" or "systemd" when installed as a service; nil when run by
+        /// hand, or a bridge before 0.7 that doesn't say.
+        var service: String? = nil
+        /// The bridge can update itself (`_redde/update`): an installed bridge, 0.7 or later.
+        var updatable: Bool = false
     }
 
     enum Event {
@@ -314,7 +319,19 @@ final class AcpClient {
                     canTitle: has(sessions["title"]),
                     canFork: has(sessions["fork"]),
                     steers: result["_meta"]?["steering"]?["supported"]?.bool ?? false,
-                    commands: AcpCommand.list(.object(["availableCommands": redde?["commands"] ?? .null])))
+                    commands: AcpCommand.list(.object(["availableCommands": redde?["commands"] ?? .null])),
+                    service: redde?["service"]?.string,
+                    updatable: redde?["updatable"]?.bool ?? false)
+    }
+
+    /// Asks the installed bridge to update itself (`_redde/update`). It answers, then restarts,
+    /// which drops this link; the next call reconnects. The new version, or nil when it was the
+    /// newest already.
+    func updateBridge() async throws -> String? {
+        try await ensureConnected()
+        // Downloading the files and checking they start can take a while on a slow line.
+        let result = try await call("_redde/update", [:], timeout: 180)
+        return result["updated"]?.bool == true ? result["version"]?.string : nil
     }
 
     func close() {

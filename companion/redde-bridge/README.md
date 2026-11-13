@@ -39,6 +39,10 @@ it when you agree. The code holds the token, so show it only to your own devices
 When Tailscale is running on the computer, the setup uses its Tailscale name, which reaches it
 at home and away; otherwise its `.local` name, which works on the same Wi-Fi only. To give another
 name: `… | sh -s -- --host <name>`. Run the installer again to update; the config and token stay.
+From 0.7 an installed bridge can also update itself: Redde shows Update Bridge in the server's
+settings when a newer one is out. It downloads the files from the same place as the installer,
+checks they start on this Python, keeps the old ones in `~/.local/share/redde-bridge/previous`
+and restarts. It waits while a reply is under way.
 
 It needs Python 3.9 or later and nothing else (a Mac has it once the Command Line Tools are
 installed: `xcode-select --install`). Logs are in `~/Library/Logs/redde-bridge.log` on a Mac and
@@ -126,7 +130,7 @@ The computer needs to reach the relay over HTTPS. Keep `redde_push.py` beside `r
 | | |
 |---|---|
 | `GET /acp/<agent>` (WebSocket) | ACP for one agent: one JSON-RPC message per text frame |
-| `GET /agents` | the agents, as JSON: id, name, whether it is running, its folder |
+| `GET /agents` | the agents, as JSON: id, name, whether it is running, its folder; and the bridge's `version`, `service` and `updatable` |
 | `GET /health` | `ok`, with no token needed |
 
 The token can come in any of three ways: `Authorization: Bearer <token>`,
@@ -142,6 +146,8 @@ Beyond plain ACP, it adds these extensions:
 | `_redde/request_resolved` | notification: a question was answered on another device, or withdrawn |
 | `_redde/push {command}` | pairing for notifications: `offer`, `accept <offered> <public key> <box>`, `test`, `list`; answered `{output}` in the words of Redde's Hermes plugin |
 | `_meta.redde.seq` | added to every `session/update`, so a device that catches up can skip what it already has |
+| `_redde/update` | the installed bridge updates itself from where the installer gets it (`REDDE_BRIDGE_BASE`), then restarts: `{updated, from, version}`, or `{updated: false}` when it's the newest. Refused while a reply is under way, and by a bridge run by hand (its error's `data.command` is the install line) |
+| `_meta.redde.service`, `.updatable` | on `initialize`: `launchd` or `systemd` when the bridge was installed with `--install`, so it can update itself |
 | `_meta.redde.commands` | on `initialize`: the agent's slash commands as its last session said them, for a new chat that has heard none yet |
 
 Everything else goes to the agent as it is (`session/set_title`, `_session/steering`, `session/set_config_option`…). A `session/fork` is followed as the new session it makes, already open in the agent.

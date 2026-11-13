@@ -327,6 +327,25 @@ struct AcpTests {
         #expect(claude.steers && claude.name == "Claude Agent")
         #expect(!info.canTitle)
         #expect(AcpClient.info(json(#"{"agentCapabilities": {"sessionCapabilities": {"title": {}}}}"#)).canTitle)
+        // A bridge before 0.7 says nothing of how it runs, and can't update itself.
+        #expect(info.service == nil && !info.updatable)
+        let installed = AcpClient.info(json(#"{"_meta": {"redde": {"bridge": "0.7.0", "service": "launchd", "updatable": true}}}"#))
+        #expect(installed.service == "launchd" && installed.updatable)
+    }
+
+    /// The Bridge section's Update Available, against the bridge this app was built beside.
+    @Test func olderBridgesAreToldOfTheUpdate() throws {
+        #expect(AcpBridge.isOlder("0.5.0"))
+        #expect(AcpBridge.isOlder("0.6.0", than: "0.7.0"))
+        #expect(AcpBridge.isOlder("0.9.1", than: "0.10.0"))
+        #expect(!AcpBridge.isOlder("0.7.0", than: "0.7"))
+        #expect(!AcpBridge.isOlder("1.0.0", than: "0.7.0"))
+        // The app's `latest` is the bridge's own VERSION, so an update is never offered backwards.
+        let bridge = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "companion/redde-bridge/redde_bridge.py")
+        let source = try String(contentsOf: bridge, encoding: .utf8)
+        #expect(source.contains("\nVERSION = \"\(AcpBridge.latest)\"\n"))
+        #expect(source.contains(AcpBridge.installCommand))
     }
 
     /// Claude Code's commands as it announces them, offered as "/…" is typed.
