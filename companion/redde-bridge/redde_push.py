@@ -301,11 +301,14 @@ class Pusher:
 
     # The store
 
-    def devices(self) -> list[dict]:
+    def devices(self, agent: str | None = None) -> list[dict]:
+        """Every pairing, or those for `agent`'s notes: its own, and any made before pairings
+        named their agent (bridge 0.4 and earlier), which hear from every agent as they did."""
         try:
-            return list(json.loads(self.path.read_text()).get("devices") or [])
+            devices = list(json.loads(self.path.read_text()).get("devices") or [])
         except (OSError, ValueError):
             return []
+        return devices if agent is None else [d for d in devices if d.get("agent") in (None, agent)]
 
     def _save(self, devices: list[dict]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -320,7 +323,9 @@ class Pusher:
 
     # The app's commands, in the plugin's words (PushService.pairDirectly reads them)
 
-    def command(self, text: str) -> str:
+    def command(self, text: str, agent: str | None = None) -> str:
+        """`agent`: the agent the phone asked through. A pairing is that agent's alone: its notes
+        go only to the phones paired through it, and Redde opens them with that connection."""
         words = str(text or "").split()
         if words[:1] == ["offer"]:
             private = os.urandom(32)
@@ -331,14 +336,14 @@ class Pusher:
                 self._offers[b64u(public)] = (private, now)
             return f"redde-push offer {b64u(public)} {self.relay}"
         if words[:1] == ["accept"] and len(words) == 4:
-            return self._accept(*words[1:])
+            return self._accept(*words[1:], agent=agent)
         if words[:1] == ["test"]:
-            return f"redde-push sent to {self.notify(note('test', body='Notifications from this bridge reach this device.'))} device(s)"
+            return f"redde-push sent to {self.notify(note('test', body='Notifications from this bridge reach this device.'), agent)} device(s)"
         if words[:1] == ["list"]:
-            return "\n".join(f"{d.get('name', '?')} ({d.get('kind', 'iphone')})" for d in self.devices()) or "no devices"
+            return "\n".join(f"{d.get('name', '?')} ({d.get('kind', 'iphone')})" for d in self.devices(agent)) or "no devices"
         return "redde-push: the bridge knows offer, accept, test and list"
 
-    def _accept(self, offered: str, theirs: str, box: str) -> str:
+    def _accept(self, offered: str, theirs: str, box: str, agent: str | None = None) -> str:
         with self._lock:
             found = self._offers.pop(offered, None)
         if not found or time.time() - found[1] > OFFER_LIFETIME:
@@ -351,18 +356,21 @@ class Pusher:
             device = {"id": str(inside["id"]), "send": str(inside["send"]),
                       "name": clipped(inside.get("name") or "iPhone", 60), "kind": str(inside.get("kind") or "iphone"),
                       "key": b64u(note_key), "relay": self.relay, "paired_at": int(time.time())}
+            if agent:
+                device["agent"] = agent
         except Exception:   # a wrong key fails the same way as a mangled answer
             return "redde-push refused: that answer isn't to this offer"
         with self._lock:
             self._save([d for d in self.devices() if d.get("id") != device["id"]] + [device])
-        log.info("paired %s (%s) for notifications", device["name"], device["kind"])
+        log.info("paired %s (%s) for %s notifications", device["name"], device["kind"], agent or "every agent's")
         # `d` "bridge": the phone words it for agents rather than a Hermes.
         threading.Thread(target=self._send_all, args=([device], note("paired", detail="bridge")), daemon=True).start()
         return f"redde-push paired {host_name()}"
 
-    def notify(self, made: dict) -> int:
-        """Sends a note to every paired device, from a thread: how many it goes to."""
-        devices = self.devices()
+    def notify(self, made: dict, agent: str | None = None) -> int:
+        """Sends a note to the devices paired for `agent` (every one without it), from a thread:
+        how many it goes to."""
+        devices = self.devices(agent)
         if devices:
             threading.Thread(target=self._send_all, args=(devices, made), daemon=True).start()
         return len(devices)

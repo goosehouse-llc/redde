@@ -97,8 +97,10 @@ and Apple, and neither can read it. The scheme is the one Redde's Hermes plugin 
 published test vectors (`tests/test_push.py`).
 
 The paired devices are kept in `push.json` beside the config, readable only by you. Remove a
-pairing in Redde and the bridge forgets that device with its next note. Every paired device hears
-about every chat on this bridge; a device with Redde open shows nothing extra.
+pairing in Redde and the bridge forgets that device with its next note. A pairing belongs to the
+agent it was made through: with Claude Code and Codex on one bridge, pair each of Redde's
+connections, and each hears about its own agent's chats (pairings from bridge 0.4 and earlier hear
+about every agent). A device with Redde open shows nothing extra.
 
 The computer needs to reach the relay over HTTPS. Keep `redde_push.py` beside `redde_bridge.py`.
 

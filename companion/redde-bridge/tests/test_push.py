@@ -98,6 +98,28 @@ class Pairing(unittest.TestCase):
         with self.assertRaises(ValueError):
             push.unseal(note_key, blob[4:], b"dev2")
 
+    def test_each_agent_notifies_the_phones_paired_through_it(self):
+        """Claude Code and Codex on one bridge: a phone paired through each connection hears each
+        agent once, and a tap opens it with the connection it came through. A pairing from before
+        pairings named their agent still hears every agent."""
+        def pair(device_id, agent):
+            offered = self.pusher.command("offer", agent).split()[2]
+            pub, box, _ = self.answer(offered, {"id": device_id, "send": "s", "name": device_id})
+            self.assertTrue(self.pusher.command(f"accept {offered} {pub} {box}", agent).startswith("redde-push paired"))
+        pair("claude-pairing", "claude")
+        pair("codex-pairing", "codex")
+        self.pusher.command("offer")   # an old app's offer, through no agent
+        self.pusher._save(self.pusher.devices() + [{"id": "old", "send": "s", "name": "old", "key": push.b64u(os.urandom(32))}])
+        self.wait_for_sent(2)
+        self.sent.clear()
+
+        self.assertEqual(self.pusher.notify(push.note("reply", "s1", "Done."), "codex"), 2)
+        self.wait_for_sent(2)
+        self.assertEqual(sorted(d["id"] for d, _ in self.sent), ["codex-pairing", "old"])
+        self.assertEqual([d["name"] for d in self.pusher.devices("claude")], ["claude-pairing", "old"])
+        self.assertEqual(len(self.pusher.devices()), 3)
+        self.assertIn("2 device(s)", self.pusher.command("test", "claude"))
+
     def test_an_offer_is_answered_once(self):
         offered = self.pusher.command("offer").split()[2]
         pub, box, _ = self.answer(offered, {"id": "d", "send": "s", "name": "x"})

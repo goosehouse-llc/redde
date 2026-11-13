@@ -46,7 +46,7 @@ from urllib.parse import parse_qs, urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import redde_push  # noqa: E402  (beside this file)
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -467,12 +467,12 @@ class Agent:
             await connection.send_message(message)
 
     def tell(self, kind: str, session: Session, body: str = "") -> None:
-        """A notification about a session to every paired device: a phone with Redde in front
+        """A notification about a session to the devices paired through this agent: a phone with Redde in front
         doesn't show it, and one with Redde in the background drops it for its own banner."""
         if self.pusher is None:
             return
         title = session.title or _prompt_text(session.prompt) or self.config.name
-        sent = self.pusher.notify(redde_push.note(kind, session.id, body, title, self.config.name))
+        sent = self.pusher.notify(redde_push.note(kind, session.id, body, title, self.config.name), self.config.id)
         if sent:
             log.info("%s: %s note for %s to %d device(s)", self.config.id, kind, session.id[:16], sent)
 
@@ -670,7 +670,7 @@ class Connection:
             # Pairing for notifications, in the words of Redde's Hermes plugin (PushService.pairDirectly).
             if agent.pusher is None:
                 raise AgentError({"code": -32601, "message": "This bridge doesn't send notifications"})
-            return {"output": await asyncio.to_thread(agent.pusher.command, str(params.get("command") or ""))}
+            return {"output": await asyncio.to_thread(agent.pusher.command, str(params.get("command") or ""), agent.config.id)}
         if method == "_redde/agents":
             return {"agents": [{"id": agent.config.id, "name": agent.config.name, "running": agent.running}]}
         # Everything else goes to the agent as it is: set_config_option, set_mode, authenticate…
