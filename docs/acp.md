@@ -140,6 +140,7 @@ the token in the Keychain under the server's id, synced with iCloud like the oth
 | `diff` content (`path`, `oldText`, `newText`) | the step's output as a unified diff (`AcpDiff`, kept by `AcpChanges` since the call's last update comes with its content empty; Claude Code's own `_meta.claudeCode.toolResponse.structuredPatch` where it comes, for the file's line numbers): Changes +n −n in colour on the step, View changes opens `PatchView` |
 | `plan` | `.todos` (entries numbered as ids) |
 | `usage_update` | `.usage(contextUsed: used, contextMax: size)` |
+| `usage_update` `_meta["_claude/rateLimit"]` (Claude Code) | Plan Usage in the model sheet (`AcpLimits`): each of `unifiedWindows` (5-hour, weekly, weekly per model) as a bar with the share used and when it resets; orange at `allowed_warning` or 80 %, red and Reached at `rejected`. The account's, kept on the client from the last update |
 | `session_info_update` title | the chat's title |
 | `session/request_permission` | `.interrupt(.approval)`; options mapped to once / session / always / deny |
 | `session/request_permission` of kind `switch_mode`, or with more ways to say yes than once / session / always can tell apart | the question card in the agent's own words (`AcpChoice`): its options as pills, Claude Code's plan (`rawInput.plan`) above them in Markdown, cut off with Read the whole plan when long. Words typed in Something else… pick the reject option (Claude Code: "No, keep planning", which ends the turn) and go to the agent as the next message |
@@ -161,7 +162,10 @@ the token in the Keychain under the server's id, synced with iCloud like the oth
 
 The client advertises no `fs` or `terminal` capability: the agent uses its own tools on the host.
 Prompts are text, plus images where the agent offers `promptCapabilities.image`; text files go
-inline, and other attachments are refused before sending. The person's instructions, reply
+inline; PDFs go as embedded resources (`{"type": "resource", "resource": {uri, mimeType, blob}}`,
+the uri under a made-up `file:///redde-attachments/` folder) where it offers
+`promptCapabilities.embeddedContext` (Claude Code reads them as documents); other attachments are
+refused before sending. The person's instructions, reply
 language and units go to the agent once, as the session's system prompt, where the agent offers
 `sessionCapabilities.systemPrompt`. Nothing is added to the messages themselves: they are the
 agent's history and are shown again whenever the chat is opened.

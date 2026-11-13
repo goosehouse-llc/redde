@@ -27,6 +27,8 @@ struct ModelPickerView: View {
     @State private var catalogLoading = false
     /// An ACP chat's mode and thinking choices (Claude Code's Manual, Plan, Auto…).
     @State private var acpOptions: [AcpOption] = []
+    /// The Claude plan's usage limits, when the agent reports them (Claude Code does).
+    @State private var acpLimits: AcpLimits?
 
     private var isFastLane: Bool { settings.transport == .chatCompletions }
 
@@ -87,6 +89,7 @@ struct ModelPickerView: View {
             #endif
             if settings.transport == .acp, !fromSettings {
                 acpOptions = AcpClient.current(settings)?.options(session: conversation.serverSessionID) ?? []
+                acpLimits = AcpClient.current(settings)?.limits
             }
             if listsModels {
                 await load()
@@ -133,6 +136,7 @@ struct ModelPickerView: View {
             if searchWords.isEmpty, settings.transport != .acp { effortAndControls }
             if searchWords.isEmpty, settings.transport == .acp, !fromSettings {
                 ForEach(acpOptions) { acpOptionSection($0) }
+                if let acpLimits { limitsSection(acpLimits) }
             }
 
             if fromSettings, !isFastLane {
@@ -219,6 +223,37 @@ struct ModelPickerView: View {
                 ChatControlsSection(stored: stored, source: ChatControlsSection.defaultSource,
                                     offersAutoApprove: conversation.connection != .hermesSessions)
             }
+    }
+
+    /// How much of the Claude plan's limits are used, as Claude Code last said (on its last reply).
+    private func limitsSection(_ limits: AcpLimits) -> some View {
+        Section {
+            ForEach(limits.windows) { window in
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(window.name)
+                        Spacer()
+                        if window.reached {
+                            Text("Reached", comment: "Claude Code: a plan usage limit that is used up").foregroundStyle(.red)
+                        }
+                    }
+                    if let used = window.used {
+                        ProgressView(value: min(max(used, 0), 1))
+                            .tint(window.reached ? .red : window.nearing || used >= 0.8 ? .orange : settings.resolvedTheme.accent)
+                    }
+                    let line = AcpLimits.line(window)
+                    if !line.isEmpty {
+                        Text(line).font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+            }
+        } header: {
+            Text("Plan Usage", comment: "Model picker, Claude Code: the section with the Claude plan's usage limits")
+        } footer: {
+            Text("As of \(limits.at.formatted(date: .omitted, time: .shortened)), from the last reply.",
+                 comment: "Model picker, Claude Code: under the plan usage limits; the time they were reported")
+        }
     }
 
     /// One of an ACP agent's own choices, as a menu, with what the picked one does underneath.

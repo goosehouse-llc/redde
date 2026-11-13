@@ -322,6 +322,41 @@ final class AcpUITests: XCTestCase {
         shot("acp-folder-reply")
     }
 
+    /// The same Claude Code: after a reply, the model sheet shows how much of the Claude plan's
+    /// limits are used, as Claude Code reported them on that reply.
+    func testClaudeCodesPlanUsageIsShown() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let token = env["REDDE_BRIDGE_TOKEN"], !token.isEmpty, let folder = env["REDDE_BRIDGE_FOLDER"] else {
+            throw XCTSkip("No Claude Code bridge given (TEST_RUNNER_REDDE_BRIDGE_TOKEN, TEST_RUNNER_REDDE_BRIDGE_FOLDER)")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        let new = app.buttons["New conversation"].firstMatch
+        if new.waitForExistence(timeout: 5) { new.tap() }
+        send("Reply with just the word PELICAN, nothing else, and use no tools.", in: app)
+        XCTAssertTrue(app.text(containing: "PELICAN").waitForExistence(timeout: 30), "The message isn't shown")
+        let reply = app.staticTexts.matching(NSPredicate(format: "label == %@", "PELICAN"))
+        for _ in 0 ..< 60 where reply.count < 1 { sleep(2) }
+        sleep(3)
+        let header = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Model:")).firstMatch
+        XCTAssertTrue(header.waitForExistence(timeout: 10), "No header to open the model sheet")
+        header.tap()
+        let usage = app.staticTexts["Plan Usage"].firstMatch.exists ? app.staticTexts["Plan Usage"].firstMatch : app.staticTexts["PLAN USAGE"].firstMatch
+        for _ in 0 ..< 6 where !usage.exists { app.swipeUp() }
+        XCTAssertTrue(usage.exists, "No plan usage in the model sheet")
+        XCTAssertTrue(app.text(containing: "5-hour limit").exists, "No 5-hour limit")
+        XCTAssertTrue(app.text(containing: "used").exists, "No share used")
+        keep("acp-plan-usage")
+        if let dir = env["REDDE_SHOTS"] {
+            try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent("acp-plan-usage.png"))
+        }
+    }
+
     private func send(_ text: String, in app: XCUIApplication) {
         let composer = app.textFields["composer"]
         for _ in 0 ..< 4 {

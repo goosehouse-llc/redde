@@ -104,6 +104,8 @@ final class AcpClient {
         var canResume: Bool
         var takesImages: Bool
         var takesSystemPrompt: Bool
+        /// Files can go in a prompt as embedded resources (`promptCapabilities.embeddedContext`).
+        var takesFiles: Bool = false
         /// A chat can be renamed on the agent (`session/set_title`).
         var canTitle: Bool = false
         /// A chat can be copied to go on from where it is, apart (`session/fork`).
@@ -158,6 +160,9 @@ final class AcpClient {
     private(set) var commands: [String: [AcpCommand]] = [:]
     /// The last session's, for a chat that has none yet: the agent's own commands are the same.
     private(set) var lastCommands: [AcpCommand] = []
+    /// The plan's usage limits as the agent last reported them (Claude Code's, on its usage updates).
+    /// The account's, not a chat's.
+    private(set) var limits: AcpLimits?
 
     /// The slash commands for a chat; a new one gets the last chat's.
     func commands(for session: String?) -> [AcpCommand] {
@@ -277,6 +282,7 @@ final class AcpClient {
                     canDelete: has(sessions["delete"]), canResume: has(sessions["resume"]),
                     takesImages: caps["promptCapabilities"]?["image"]?.bool ?? false,
                     takesSystemPrompt: has(sessions["systemPrompt"]),
+                    takesFiles: caps["promptCapabilities"]?["embeddedContext"]?.bool ?? false,
                     canTitle: has(sessions["title"]),
                     canFork: has(sessions["fork"]),
                     steers: result["_meta"]?["steering"]?["supported"]?.bool ?? false,
@@ -458,6 +464,9 @@ final class AcpClient {
             let list = AcpCommand.list(update)
             commands[session] = list
             lastCommands = list
+        }
+        if update["sessionUpdate"]?.string == "usage_update", let limits = AcpLimits.make(update) {
+            self.limits = limits
         }
         if update["sessionUpdate"]?.string == "config_option_update", let options = update["configOptions"]?.array {
             configOptions[session] = options

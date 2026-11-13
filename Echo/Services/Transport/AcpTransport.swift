@@ -54,7 +54,7 @@ nonisolated struct AcpTransport: HermesTransport {
                     listener = client.addListener { event in
                         Self.hear(event, turn: turn, continuation: continuation, ended: ended.continuation)
                     }
-                    let blocks = try Self.prompt(request, images: client.info?.takesImages ?? false)
+                    let blocks = try Self.prompt(request, images: client.info?.takesImages ?? false, files: client.info?.takesFiles ?? false)
                     do {
                         let result = try await client.prompt(session, blocks: blocks)
                         if let usage = turn.mapper.usage(fromPromptResult: result) { continuation.yield(usage) }
@@ -150,8 +150,10 @@ nonisolated struct AcpTransport: HermesTransport {
         return parts.isEmpty ? nil : parts.joined(separator: "\n\n")
     }
 
-    /// The message as ACP content: its text, text files inline, pictures where the agent takes them.
-    nonisolated static func prompt(_ request: TurnRequest, images: Bool) throws -> [JSONValue] {
+    /// The message as ACP content: its text, text files inline, pictures where the agent takes
+    /// them, and PDFs as embedded files where it takes those (`embeddedContext`; Claude Code reads
+    /// them as documents).
+    nonisolated static func prompt(_ request: TurnRequest, images: Bool, files: Bool = false) throws -> [JSONValue] {
         var text = PageTurn.text(of: request)
         var pictures: [JSONValue] = []
         for attachment in request.attachments {
@@ -159,6 +161,10 @@ nonisolated struct AcpTransport: HermesTransport {
             case .image where images:
                 pictures.append(.object(["type": .string("image"), "mimeType": .string(attachment.mimeType),
                                          "data": .string(attachment.data.base64EncodedString())]))
+            case .pdf where files:
+                pictures.append(.object(["type": .string("resource"), "resource": .object([
+                    "uri": .string(Self.fileURI(attachment.filename)), "mimeType": .string("application/pdf"),
+                    "blob": .string(attachment.data.base64EncodedString())])]))
             case .text:
                 if let addendum = attachment.promptAddendum { text += "\n\n" + addendum }
             default:
@@ -170,6 +176,13 @@ nonisolated struct AcpTransport: HermesTransport {
             }
         }
         return [.object(["type": .string("text"), "text": .string(text)])] + pictures
+    }
+
+    /// A name for an attached file, as ACP wants a resource's: a URI. The file is on the phone,
+    /// not the host, so it's under a made-up folder rather than a path the agent could look for.
+    nonisolated static func fileURI(_ filename: String) -> String {
+        let name = filename.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? "file"
+        return "file:///redde-attachments/" + (name.isEmpty ? "file" : name)
     }
 
     // MARK: Joining a turn

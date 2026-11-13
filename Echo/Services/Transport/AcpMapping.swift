@@ -825,3 +825,71 @@ nonisolated extension HermesServeClient.Project {
         lanes = [Lane(id: "main", label: "main", repoLabel: nil, sessions: sessions)]
     }
 }
+
+/// How much of a Claude plan's usage limits the agent has used, as Claude Code reports it on its
+/// usage updates (`_meta["_claude/rateLimit"]`): a 5-hour window and a weekly one, each with its
+/// share used and when it starts again. Other agents say nothing of the kind.
+nonisolated struct AcpLimits: Equatable, Sendable {
+    nonisolated struct Window: Equatable, Sendable, Identifiable {
+        /// `five_hour`, `seven_day`, `seven_day_opus`, …
+        var id: String
+        /// 0…1.
+        var used: Double?
+        var resetsAt: Date?
+        /// `allowed`, `allowed_warning` or `rejected`.
+        var status: String
+
+        var name: String {
+            switch id {
+            case "five_hour": String(localized: "5-hour limit", comment: "Claude Code: the plan's usage limit that resets every five hours")
+            case "seven_day": String(localized: "Weekly limit", comment: "Claude Code: the plan's usage limit that resets every week")
+            case "seven_day_opus": String(localized: "Weekly Opus limit", comment: "Claude Code: the plan's weekly limit for Opus models")
+            case "seven_day_sonnet": String(localized: "Weekly Sonnet limit", comment: "Claude Code: the plan's weekly limit for Sonnet models")
+            default: String(localized: "Usage limit", comment: "Claude Code: a plan usage limit of a kind Redde doesn't know by name")
+            }
+        }
+
+        var reached: Bool { status == "rejected" }
+        var nearing: Bool { status == "allowed_warning" }
+    }
+
+    var windows: [Window]
+    /// When Claude Code said it.
+    var at: Date
+
+    static func make(_ update: JSONValue, at: Date = .now) -> AcpLimits? {
+        guard let info = update["_meta"]?["_claude/rateLimit"], case .object = info else { return nil }
+        let order = ["five_hour", "seven_day", "seven_day_opus", "seven_day_sonnet"]
+        func date(_ value: JSONValue?) -> Date? { value?.number.map { Date(timeIntervalSince1970: $0) } }
+        var windows: [Window] = []
+        if case .object(let unified)? = info["unifiedWindows"] {
+            for (id, window) in unified {
+                windows.append(Window(id: id, used: window["utilization"]?.number, resetsAt: date(window["resetsAt"]),
+                                      status: window["status"]?.string ?? "allowed"))
+            }
+        }
+        if windows.isEmpty, let id = info["rateLimitType"]?.string {
+            windows.append(Window(id: id, used: info["utilization"]?.number, resetsAt: date(info["resetsAt"]),
+                                  status: info["status"]?.string ?? "allowed"))
+        }
+        guard !windows.isEmpty else { return nil }
+        windows.sort { (order.firstIndex(of: $0.id) ?? order.count, $0.id) < (order.firstIndex(of: $1.id) ?? order.count, $1.id) }
+        return AcpLimits(windows: windows, at: at)
+    }
+
+    /// "4% used · resets 4:30 PM", "12% used · resets Mon 9:00 AM".
+    static func line(_ window: Window, now: Date = .now) -> String {
+        var parts: [String] = []
+        if let used = window.used {
+            parts.append(String(localized: "\(used.formatted(.percent.precision(.fractionLength(0)))) used",
+                                comment: "Claude Code: how much of a plan limit is used, as 4% used"))
+        }
+        if let resets = window.resetsAt, resets > now {
+            let when = resets.timeIntervalSince(now) < 20 * 3600
+                ? resets.formatted(date: .omitted, time: .shortened)
+                : resets.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+            parts.append(String(localized: "resets \(when)", comment: "Claude Code: when a plan limit starts again, as resets 4:30 PM or resets Mon 9:00 AM"))
+        }
+        return parts.joined(separator: " · ")
+    }
+}

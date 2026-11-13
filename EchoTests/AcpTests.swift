@@ -389,4 +389,44 @@ struct AcpTests {
         #expect(AcpDiff.hunks(old: "same", new: "same").isEmpty)
         #expect(AcpDiff.patch([]) == nil)
     }
+
+    /// A PDF goes to an agent that takes embedded files as one (Claude Code reads it as a
+    /// document); to one that doesn't, it's refused before anything is sent.
+    @Test func aPDFGoesAsAnEmbeddedFile() throws {
+        var request = TurnRequest(userText: "What's the secret word?", history: [], sessionID: "s1", model: nil, instructions: nil)
+        request.attachments = [Attachment(kind: .pdf, filename: "secret word.pdf", mimeType: "application/pdf", data: Data("%PDF-1.4".utf8))]
+        let blocks = try AcpTransport.prompt(request, images: true, files: true)
+        #expect(blocks.count == 2)
+        let file = blocks[1]
+        #expect(file["type"]?.string == "resource")
+        #expect(file["resource"]?["mimeType"]?.string == "application/pdf")
+        #expect(file["resource"]?["blob"]?.string == Data("%PDF-1.4".utf8).base64EncodedString())
+        #expect(file["resource"]?["uri"]?.string == "file:///redde-attachments/secret%20word.pdf")
+        #expect(throws: AttachmentError.self) { try AcpTransport.prompt(request, images: true, files: false) }
+        let claude = AcpClient.info(json(#"{"agentCapabilities": {"promptCapabilities": {"image": true, "embeddedContext": true}}}"#))
+        #expect(claude.takesFiles && claude.takesImages)
+        #expect(!AcpClient.info(json(#"{"agentCapabilities": {"promptCapabilities": {"image": true}}}"#)).takesFiles)
+    }
+
+    /// Claude Code's plan limits, as its usage update carries them (captured 11-12).
+    @Test func thePlanLimitsAreReadFromAUsageUpdate() throws {
+        let update = json(#"""
+            {"sessionUpdate": "usage_update", "used": 25021, "size": 400000, "_meta": {"_claude/rateLimit": {"status": "allowed", "resetsAt": 1794541800, "rateLimitType": "five_hour", "overageStatus": "rejected", "isUsingOverage": false,
+             "unifiedWindows": {"seven_day": {"utilization": 0.12, "resetsAt": 1795032000, "status": "allowed"}, "five_hour": {"utilization": 0.04, "resetsAt": 1794541800, "status": "allowed_warning"}}}, "_claude/model": "claude-opus-5-5"}}
+            """#)
+        let limits = try #require(AcpLimits.make(update))
+        #expect(limits.windows.map(\.id) == ["five_hour", "seven_day"])
+        #expect(limits.windows[0].used == 0.04 && limits.windows[0].nearing && !limits.windows[0].reached)
+        #expect(limits.windows[1].resetsAt == Date(timeIntervalSince1970: 1795032000))
+        let now = Date(timeIntervalSince1970: 1794541800 - 3600)
+        #expect(AcpLimits.line(limits.windows[0], now: now).contains("4%"))
+        #expect(AcpLimits.line(limits.windows[0], now: now).contains("resets"))
+        // Once the reset time has passed, it only says what was used.
+        #expect(!AcpLimits.line(limits.windows[0], now: Date(timeIntervalSince1970: 1794541800 + 60)).contains("resets"))
+        // Without the unified windows, the one limit it names.
+        let one = try #require(AcpLimits.make(json(#"{"sessionUpdate":"usage_update","_meta":{"_claude/rateLimit":{"status":"rejected","rateLimitType":"seven_day_opus","utilization":1.0}}}"#)))
+        #expect(one.windows.map(\.id) == ["seven_day_opus"] && one.windows[0].reached)
+        // Other agents' usage updates carry none.
+        #expect(AcpLimits.make(json(#"{"sessionUpdate":"usage_update","used":10,"size":100}"#)) == nil)
+    }
 }
