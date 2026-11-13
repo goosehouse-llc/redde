@@ -412757,6 +412757,113 @@
         }
       }
     },
+    "That address answered with a web page, not a model list. OpenAI-compatible addresses usually end in /v1." : {
+      "comment" : "Connection test: the OpenAI-compatible address sent back HTML",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adressen svarede med en webside, ikke en liste over modeller. OpenAI-kompatible adresser ender som regel på /v1."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Adresse hat mit einer Webseite geantwortet, nicht mit einer Modellliste. OpenAI-kompatible Adressen enden meist auf /v1."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esa dirección respondió con una página web, no con una lista de modelos. Las direcciones compatibles con OpenAI suelen terminar en /v1."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette adresse a répondu par une page web, pas par une liste de modèles. Les adresses compatibles OpenAI se terminent généralement par /v1."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quell'indirizzo ha risposto con una pagina web, non con un elenco di modelli. Gli indirizzi compatibili con OpenAI di solito finiscono con /v1."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このアドレスはモデル一覧ではなくWebページを返しました。OpenAI互換のアドレスは通常 /v1 で終わります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 주소는 모델 목록이 아니라 웹 페이지로 응답했습니다. OpenAI 호환 주소는 보통 /v1로 끝납니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adressen svarte med en nettside, ikke en liste over modeller. OpenAI-kompatible adresser slutter som regel på /v1."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dat adres antwoordde met een webpagina, niet met een lijst met modellen. OpenAI-compatibele adressen eindigen meestal op /v1."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten adres odpowiedział stroną internetową, a nie listą modeli. Adresy zgodne z OpenAI zwykle kończą się na /v1."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esse endereço respondeu com uma página da web, não com uma lista de modelos. Endereços compatíveis com a OpenAI costumam terminar em /v1."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По этому адресу пришла веб-страница, а не список моделей. Адреса, совместимые с OpenAI, обычно заканчиваются на /v1."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adressen svarade med en webbsida, inte en lista över modeller. OpenAI-kompatibla adresser slutar oftast på /v1."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu adres model listesi yerine bir web sayfasıyla yanıt verdi. OpenAI uyumlu adresler genellikle /v1 ile biter."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За цією адресою прийшла вебсторінка, а не список моделей. Адреси, сумісні з OpenAI, зазвичай закінчуються на /v1."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该地址返回的是网页，而不是模型列表。兼容 OpenAI 的地址通常以 /v1 结尾。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該位址回傳的是網頁，而不是模型列表。相容 OpenAI 的位址通常以 /v1 結尾。"
+          }
+        }
+      }
+    },
     "That address wasn't found." : {
       "localizations" : {
         "da" : {
@@ -422423,6 +422530,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "端點位址不是有效的 URL。"
+          }
+        }
+      }
+    },
+    "The endpoint answered, but its reply wasn't a model list." : {
+      "comment" : "Connection test: the OpenAI-compatible address sent back something other than a model list",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endpointet svarede, men svaret var ikke en liste over modeller."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Endpunkt hat geantwortet, aber die Antwort war keine Modellliste."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El endpoint respondió, pero su respuesta no era una lista de modelos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le point de terminaison a répondu, mais sa réponse n'était pas une liste de modèles."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'endpoint ha risposto, ma la risposta non era un elenco di modelli."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エンドポイントは応答しましたが、モデル一覧ではありませんでした。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "엔드포인트가 응답했지만 모델 목록이 아니었습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endepunktet svarte, men svaret var ikke en liste over modeller."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het endpoint antwoordde, maar het antwoord was geen lijst met modellen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punkt końcowy odpowiedział, ale odpowiedź nie była listą modeli."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O endpoint respondeu, mas a resposta não era uma lista de modelos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эндпоинт ответил, но это был не список моделей."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slutpunkten svarade, men svaret var inte en lista över modeller."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uç nokta yanıt verdi ama yanıt bir model listesi değildi."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ендпоінт відповів, але це був не список моделей."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端点有响应，但返回的不是模型列表。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端點有回應，但回傳的不是模型列表。"
           }
         }
       }

@@ -77,15 +77,23 @@ nonisolated enum ConnectionTester {
         return json["auth_required"]?.bool == true
     }
 
-    /// OpenAI-compatible endpoint: /v1/models, with the optional key.
-    static func fastLane(url: URL, apiKey: String?, model: String) async -> Outcome {
-        guard let (data, status) = try? await get(url.appending(path: "v1/models"), key: apiKey) else {
+    /// OpenAI-compatible endpoint: /v1/models, with the optional key. `session` is for tests.
+    static func fastLane(url: URL, apiKey: String?, model: String, session: URLSession = NoRedirectSession.shared) async -> Outcome {
+        guard let (data, status) = try? await get(url.appending(path: "v1/models"), key: apiKey, session: session) else {
             return .failed(String(localized: "Nothing answered at \(url.host() ?? url.absoluteString)."))
         }
         guard status == 200 else {
             return .failed(status == 401 || status == 403 ? String(localized: "Endpoint reachable, but the key was rejected.") : String(localized: "Endpoint answered HTTP \(status)."))
         }
-        let ids = ((try? JSONDecoder().decode(JSONValue.self, from: data))?["data"]?.array ?? []).compactMap { $0["id"]?.string }
+        // A 200 isn't proof (2026-11-12, issue #77): a wrong address can land on a website or a
+        // login page that answers 200 with HTML, and that used to pass as an empty model list.
+        // Only a `data` array counts; an empty one still passes, since some servers list nothing.
+        guard let list = (try? JSONValue.parse(data))?["data"]?.array else {
+            return .failed(looksLikeWebPage(data)
+                ? String(localized: "That address answered with a web page, not a model list. OpenAI-compatible addresses usually end in /v1.", comment: "Connection test: the OpenAI-compatible address sent back HTML")
+                : String(localized: "The endpoint answered, but its reply wasn't a model list.", comment: "Connection test: the OpenAI-compatible address sent back something other than a model list"))
+        }
+        let ids = list.compactMap { $0["id"]?.string }
         if !model.isEmpty, !ids.isEmpty, !ids.contains(model) {
             return .failed(String(localized: "Connected, but the endpoint doesn't list a model named \(model)."))
         }
@@ -99,13 +107,20 @@ nonisolated enum ConnectionTester {
             : String(localized: "The access gate in front of \(url.host() ?? String(localized: "the host")) turned the request away (HTTP \(status)). Check the Cloudflare Access client ID and secret, the Pangolin access token, or the custom headers.")
     }
 
-    private static func get(_ url: URL, key: String?, headers: [String: String] = [:]) async throws -> (Data, Int) {
+    /// A body that opens with a tag (`<!doctype html>`, `<html>`), the way a website or a login page does.
+    private static func looksLikeWebPage(_ data: Data) -> Bool {
+        let head = String(decoding: data.prefix(512), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        return head.hasPrefix("<")
+    }
+
+    private static func get(_ url: URL, key: String?, headers: [String: String] = [:],
+                            session: URLSession = NoRedirectSession.shared) async throws -> (Data, Int) {
         var request = URLRequest(url: url)
         request.timeoutInterval = 8
         for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
         if let key, !key.isEmpty { request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
         // Don't follow the Access login redirect; the status is the diagnosis.
-        let (data, response) = try await NoRedirectSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
     }
 }
