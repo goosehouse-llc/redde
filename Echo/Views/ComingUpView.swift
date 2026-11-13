@@ -202,6 +202,8 @@ struct ComingUpList: View {
     @State private var editing: CronJob?
     /// A job whose time is being changed (Change Time, 2026-11-11).
     @State private var retiming: CronJob?
+    /// Every scheduled job, from the header's Jobs counter or the link at the end (Planned).
+    @State private var showingJobs = false
 
     private var upcoming: [ComingUp.Item] { model.items.filter { !$0.paused } }
     private var paused: [ComingUp.Item] { model.items.filter(\.paused) }
@@ -209,54 +211,65 @@ struct ComingUpList: View {
     private var days: [(day: Date, items: [ComingUp.Item])] { ComingUp.byDay(upcoming, now: .now) }
 
     var body: some View {
-        List {
+        let tone = DrawerTone(settings.resolvedTheme)
+        let next = ComingUp.nextUp(upcoming, now: .now)
+        ScrollViewReader { proxy in List {
             if let topRow { topRow }
             if model.loading, model.items.isEmpty {
                 HStack(spacing: 10) { ProgressView(); Text("Reading…").foregroundStyle(.secondary) }
+                    .plannedRow(top: 12, bottom: 12)
             } else if upcoming.isEmpty {
-                if planned {
-                    Text("Nothing planned for the next 7 days. What your agents will do comes here: heads-ups, leave times, routines, watches, follow-ups, goal check-ins, and the alarms, reminders and events they set on this device.",
-                         comment: "Planned, when nothing is planned")
-                        .font(.footnote).foregroundStyle(.secondary)
-                } else {
-                    Text("Nothing planned for the next 24 hours. What your agents will do on their own comes here: heads-ups, leave times, routines, watches, follow-ups and daily jobs.",
-                         comment: "Coming Up, when nothing is planned")
-                        .font(.footnote).foregroundStyle(.secondary)
-                }
+                AnyView(PlannedEmpty(planned: planned, tone: tone)).plannedRow(top: 8, bottom: 10)
+            } else {
+                AnyView(PlannedHero(counts: ComingUp.counts(model.items, now: .now), next: next, nextTitle: next.map(title),
+                                    planned: planned, tone: tone, openJobs: { showingJobs = true }))
+                    .plannedRow(top: 8, bottom: 6)
             }
             if let notice = model.notice {
-                Label(notice, systemImage: "info.circle").font(.footnote).foregroundStyle(.orange)
+                Label(notice, systemImage: "info.circle").font(.footnote).foregroundStyle(tone.warm).plannedRow(top: 4, bottom: 4)
             }
             if let problem = model.problem {
-                Label(problem, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.orange)
+                Label(problem, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(tone.warm).plannedRow(top: 4, bottom: 4)
             }
             ForEach(days, id: \.day) { day in
-                Section {
-                    ForEach(day.items) { row($0) }
-                } header: {
-                    Text(heading(day.day)).textCase(nil)
+                AnyView(PlannedDayHeader(heading: heading(day.day), date: dateLine(day.day), count: day.items.count, tone: tone))
+                    .plannedRow(top: 16, bottom: 4)
+                ForEach(Array(day.items.enumerated()), id: \.element.id) { i, item in
+                    row(item, tone: tone, isNext: item.id == next?.id, first: i == 0, last: i == day.items.count - 1)
                 }
             }
             if !paused.isEmpty {
-                Section {
-                    ForEach(paused) { row($0) }
-                } header: {
-                    Text("Paused", comment: "Coming Up: the section of paused jobs").textCase(nil)
+                AnyView(PlannedDayHeader(heading: String(localized: "Paused", comment: "Coming Up: the section of paused jobs"),
+                                         date: nil, count: paused.count, tone: tone))
+                    .plannedRow(top: 16, bottom: 4)
+                ForEach(Array(paused.enumerated()), id: \.element.id) { i, item in
+                    row(item, tone: tone, isNext: false, first: i == 0, last: i == paused.count - 1)
                 }
             }
             if planned {
-                Section {
-                    // Every job on the server, as the Cron tab had them.
-                    NavigationLink { CronView().navigationTitle(String(localized: "Scheduled Jobs", comment: "Planned: the page of every scheduled job (cron jobs)")) } label: {
-                        Label(String(localized: "All Scheduled Jobs", comment: "Planned: opens the full list of scheduled jobs"), systemImage: "clock")
-                    }
+                // Every job on the server, as the Cron tab had them.
+                Button { showingJobs = true } label: {
+                    PlannedJobsLink(tone: tone)
                 }
+                .buttonStyle(DrawerSquish())
+                .plannedRow(top: 16, bottom: 4)
             }
-            Section {
-            } footer: {
-                Text("Skip passes over one run; Pause stops a job until you resume it. Skipping a run of a repeating job needs the Redde plugin 1.16 on your Hermes. Leave-By Alerts are skipped on this device.",
-                     comment: "Coming Up: the footer")
-            }
+            Text("Skip passes over one run; Pause stops a job until you resume it. Skipping a run of a repeating job needs the Redde plugin 1.16 on your Hermes. Leave-By Alerts are skipped on this device.",
+                 comment: "Coming Up: the footer")
+                .font(.system(.footnote, design: tone.design)).foregroundStyle(.secondary)
+                .plannedRow(top: 10, bottom: 24)
+                .id(Self.endID)
+        }
+        .listStyle(.plain)
+        .themedPage(settings.theme.listPage)
+        .task(id: model.items.count) {
+            guard Self.startsAtEnd, !model.items.isEmpty else { return }
+            try? await Task.sleep(for: .milliseconds(400))
+            proxy.scrollTo(Self.endID, anchor: .bottom)
+        }
+        }
+        .navigationDestination(isPresented: $showingJobs) {
+            CronView().navigationTitle(String(localized: "Scheduled Jobs", comment: "Planned: the page of every scheduled job (cron jobs)"))
         }
         .refreshable { await model.load() }
         .task {
@@ -298,6 +311,17 @@ struct ComingUpList: View {
         }
     }
 
+    /// `-echo.plannedEnd`: the page opened at its end, for pictures of what is paused and the link
+    /// to every job.
+    private static let endID = "planned.end"
+    private static var startsAtEnd: Bool {
+        #if DEBUG
+        DevHooks.has("-echo.plannedEnd")
+        #else
+        false
+        #endif
+    }
+
     private var dialogTitle: String {
         guard let asking else { return "" }
         return ComingUp.skipWay(asking, now: .now) == .cancel
@@ -305,27 +329,12 @@ struct ComingUpList: View {
             : String(localized: "\(asking.title) runs in a moment", comment: "Coming Up: a run too near to skip, by its title")
     }
 
-    private func row(_ item: ComingUp.Item) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: item.kind == .leaveBy ? leaveSymbol : item.kind.symbol)
-                .foregroundStyle(item.paused || item.skipped || item.skipping ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(title(item)).lineLimit(2)
-                        .strikethrough(item.skipped || item.skipping, color: .secondary)
-                    Spacer(minLength: 6)
-                    if model.working == item.id {
-                        ProgressView().controlSize(.small)
-                    } else if !item.paused, !item.untimed {
-                        Text(item.at, format: .dateTime.hour().minute()).font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                    }
-                }
-                if let line = subtitle(item) { Text(line).font(.caption).foregroundStyle(.secondary) }
-                if let detail = item.detail { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
-                if let state = state(item) { Text(state).font(.caption.weight(.medium)).foregroundStyle(.orange) }
-            }
-        }
+    private func row(_ item: ComingUp.Item, tone: DrawerTone, isNext: Bool, first: Bool, last: Bool) -> some View {
+        PlannedTimelineRow(item: item, symbol: item.kind == .leaveBy ? leaveSymbol : item.kind.symbol,
+                           title: title(item), subtitle: subtitle(item), state: state(item),
+                           face: item.profile.flatMap(face), faceName: item.profile.map(name),
+                           working: model.working == item.id, isNext: isNext, first: first, last: last, tone: tone)
+        .plannedRow(top: 0, bottom: 0, leading: 8)
         .contentShape(.rect)
         .onTapGesture { if item.kind == .event { open(item) } }
         .swipeActions(edge: .trailing) { actions(item, swipe: true) }
@@ -437,6 +446,21 @@ struct ComingUpList: View {
         return day.formatted(.dateTime.weekday(.wide).month().day())
     }
 
+    /// The agent's face, when the server's bots are known.
+    private func face(_ profile: String) -> BotFace? {
+        let faces = BotDirectory.shared.roster?.faces ?? [:]
+        if let face = faces[profile] { return face }
+        return profile == settings.profileName ? faces["default"] : nil
+    }
+
+    /// Under a day's name: its date ("Fri, Nov 13"), or for a day of the week just "Nov 15".
+    private func dateLine(_ day: Date) -> String {
+        let calendar = Calendar.current
+        return calendar.isDateInToday(day) || calendar.isDateInTomorrow(day)
+            ? day.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+            : day.formatted(.dateTime.month(.abbreviated).day())
+    }
+
     private func name(_ profile: String) -> String {
         if profile == "default" || profile == settings.profileName { return settings.headerTitle }
         return BotDirectory.shared.roster?.named(profile)?.label(mainName: settings.headerTitle) ?? profile
@@ -509,6 +533,368 @@ private struct PlannedPreview: View {
             Text(label).foregroundStyle(.secondary)
             Text(value).fixedSize(horizontal: false, vertical: true)
         }
+    }
+}
+
+// MARK: - The page's look (2026-11-13)
+
+/// Planned's own hue (the drawer's second place) and the colours drawn from it.
+extension DrawerTone {
+    var planned: Color { places[1] }
+    /// The hue a step toward the ink, for words and digits on the cards (the fill itself is for
+    /// the icons), so they read on the surface in every theme.
+    var plannedInk: Color { places[1].mix(with: ink, by: 0.22) }
+}
+
+private extension View {
+    /// A row that draws its own look: no separator, no row background.
+    func plannedRow(top: CGFloat, bottom: CGFloat, leading: CGFloat = 16) -> some View {
+        listRowInsets(EdgeInsets(top: top, leading: leading, bottom: bottom, trailing: 16))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+    }
+}
+
+/// The top of the page: the alarm in Planned's hue, what's next and when, and three counters.
+private struct PlannedHero: View {
+    let counts: ComingUp.Counts
+    let next: ComingUp.Item?
+    let nextTitle: String?
+    let planned: Bool
+    let tone: DrawerTone
+    let openJobs: () -> Void
+    @State private var rang = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 14) {
+                Image(systemName: "alarm.fill")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(tone.page)
+                    .symbolEffect(.bounce, value: rang)
+                    .frame(width: 60, height: 60)
+                    .background(tone.planned, in: .rect(cornerRadius: 19, style: .continuous))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    if let next, let nextTitle {
+                        Text(String(localized: "Up Next", comment: "Today strip: the tile with the next event on the calendar").localizedUppercase)
+                            .font(.system(size: 11, weight: .heavy, design: tone.design))
+                            .tracking(1)
+                            .foregroundStyle(tone.plannedInk)
+                        Text(verbatim: nextTitle)
+                            .font(.system(.title3, design: tone.design, weight: .heavy))
+                            .foregroundStyle(tone.ink)
+                            .lineLimit(2)
+                        // Once a minute, so "in 25 min" counts down while the page is up.
+                        TimelineView(.everyMinute) { _ in
+                            Text(verbatim: (Calendar.current.isDateInToday(next.at) ? next.at.formatted(.dateTime.hour().minute())
+                                            : next.at.formatted(.dateTime.weekday().hour().minute())) + " · " + next.at.relativeLabel)
+                                .font(.system(.subheadline, design: tone.design, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    } else {
+                        Text(verbatim: Date.now.formatted(.dateTime.weekday(.wide).month().day()))
+                            .font(.system(.title3, design: tone.design, weight: .heavy))
+                            .foregroundStyle(tone.ink)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .accessibilityElement(children: .combine)
+            HStack(spacing: 8) {
+                stat(counts.today, String(localized: "Today", comment: "An agenda card's day"), tone.plannedInk)
+                if planned {
+                    stat(counts.ahead, String(localized: "This week"), tone.ink)
+                    Button(action: openJobs) {
+                        stat(counts.jobs, String(localized: "Jobs", comment: "Planned: a counter's label, how many scheduled jobs there are (shown in capitals); opens them"),
+                             tone.accent, opens: true)
+                    }
+                    .buttonStyle(DrawerSquish())
+                } else {
+                    stat(counts.tomorrow, String(localized: "Tomorrow", comment: "An agenda card's day"), tone.ink)
+                    stat(counts.jobs, String(localized: "Jobs", comment: "Planned: a counter's label, how many scheduled jobs there are (shown in capitals); opens them"),
+                         tone.accent)
+                }
+            }
+        }
+        .task { rang.toggle() }
+    }
+
+    private func stat(_ count: Int, _ label: String, _ color: Color, opens: Bool = false) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        return HStack(alignment: .bottom, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: "\(count)")
+                    .font(.system(size: 26, weight: .heavy, design: tone.design))
+                    .monospacedDigit()
+                    .foregroundStyle(count > 0 ? color : Color.secondary)
+                    .contentTransition(.numericText())
+                Text(verbatim: label.localizedUppercase)
+                    .font(.system(size: 10, weight: .bold, design: tone.design))
+                    .tracking(0.8)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            Spacer(minLength: 0)
+            if opens {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.tertiary)
+                    .padding(.bottom, 3)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .background(tone.surface, in: shape)
+        .overlay { shape.strokeBorder(color.opacity(count > 0 ? 0.35 : 0.1), lineWidth: 1) }
+        .contentShape(shape)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A day's name over its part of the timeline, its date beside it and how many there are.
+private struct PlannedDayHeader: View {
+    let heading: String
+    let date: String?
+    let count: Int
+    let tone: DrawerTone
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(verbatim: heading)
+                .font(.system(.title3, design: tone.design, weight: .heavy))
+                .foregroundStyle(tone.ink)
+            if let date {
+                Text(verbatim: date)
+                    .font(.system(.footnote, design: tone.design, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            Text(verbatim: "\(count)")
+                .font(.system(.caption, design: tone.design, weight: .heavy))
+                .monospacedDigit()
+                .foregroundStyle(tone.plannedInk)
+                .padding(.horizontal, 9).padding(.vertical, 3)
+                .background(tone.planned.opacity(0.15), in: .capsule)
+                .accessibilityHidden(true)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// One thing on the timeline: its time big in the hue, a dot on the line with what kind it is,
+/// and a card with what, who and how often. The next one is lit, with its countdown.
+private struct PlannedTimelineRow: View {
+    let item: ComingUp.Item
+    let symbol: String
+    let title: String
+    let subtitle: String?
+    let state: String?
+    let face: BotFace?
+    let faceName: String?
+    let working: Bool
+    let isNext: Bool
+    let first: Bool
+    let last: Bool
+    let tone: DrawerTone
+
+    private var dim: Bool { item.paused || item.skipped || item.skipping }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            time
+                .frame(width: 60, alignment: .trailing)
+                .padding(.top, 15)
+            rail
+            card
+                .padding(.vertical, 5)
+        }
+    }
+
+    @ViewBuilder private var time: some View {
+        VStack(alignment: .trailing, spacing: 1) {
+            if item.paused {
+                Image(systemName: "pause.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.secondary)
+            } else if item.untimed {
+                Text(verbatim: "–")
+                    .font(.system(size: 19, weight: .heavy, design: tone.design))
+                    .foregroundStyle(.secondary)
+            } else {
+                let clock = ComingUp.clock(item.at)
+                Text(verbatim: clock.time)
+                    .font(.system(size: 19, weight: .heavy, design: tone.design))
+                    .monospacedDigit()
+                    .foregroundStyle(dim ? AnyShapeStyle(.secondary) : AnyShapeStyle(tone.plannedInk))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                if let period = clock.period {
+                    Text(verbatim: period)
+                        .font(.system(size: 10, weight: .bold, design: tone.design))
+                        .foregroundStyle(.secondary)
+                }
+                if isNext {
+                    TimelineView(.everyMinute) { _ in
+                        Text(verbatim: item.at.relativeLabel)
+                            .font(.system(size: 11, weight: .heavy, design: tone.design))
+                            .foregroundStyle(tone.plannedInk)
+                            .multilineTextAlignment(.trailing)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
+                            .padding(.top, 2)
+                    }
+                }
+            }
+        }
+    }
+
+    /// The line through the day, broken at its ends, with this one's dot on it.
+    private var rail: some View {
+        let line = dim ? Color.secondary.opacity(0.2) : tone.planned.opacity(0.28)
+        return ZStack(alignment: .top) {
+            VStack(spacing: 0) {
+                Rectangle().fill(first ? Color.clear : line).frame(width: 2, height: 25)
+                Rectangle().fill(last ? Color.clear : line).frame(width: 2).frame(maxHeight: .infinity)
+            }
+            Image(systemName: symbol)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(isNext ? tone.page : dim ? Color.secondary : tone.planned)
+                .frame(width: 28, height: 28)
+                .background(isNext ? tone.planned : dim ? Color.secondary.opacity(0.14) : tone.planned.opacity(0.16), in: .circle)
+                .padding(.top, 11)
+        }
+        .frame(width: 28)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .accessibilityHidden(true)
+    }
+
+    private var card: some View {
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        return VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(verbatim: title)
+                    .font(.system(isNext ? .headline : .body, design: tone.design, weight: isNext ? .bold : .semibold))
+                    .foregroundStyle(dim ? AnyShapeStyle(.secondary) : AnyShapeStyle(tone.ink))
+                    .strikethrough(item.skipped || item.skipping, color: .secondary)
+                    .lineLimit(2)
+                Spacer(minLength: 4)
+                if working { ProgressView().controlSize(.small) }
+            }
+            if let subtitle {
+                HStack(spacing: 6) {
+                    if let face {
+                        BotAvatar(face: face, name: faceName, size: 18)
+                    } else if item.profile == nil {
+                        Image(systemName: "iphone")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(verbatim: subtitle)
+                        .font(.system(.caption, design: tone.design, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            if let detail = item.detail {
+                Text(verbatim: detail).font(.footnote).foregroundStyle(.secondary)
+            }
+            if let state {
+                Text(verbatim: state)
+                    .font(.system(.caption, design: tone.design, weight: .bold))
+                    .foregroundStyle(tone.warm)
+            }
+        }
+        .padding(.horizontal, 13).padding(.vertical, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            shape.fill(tone.surface)
+            if isNext { shape.fill(tone.planned.opacity(0.1)) }
+        }
+        .overlay {
+            if isNext { shape.strokeBorder(tone.planned.opacity(0.45), lineWidth: 1) }
+        }
+    }
+}
+
+/// Nothing coming: the alarm resting, what would come here in words, and its kinds as a row of
+/// small icons.
+private struct PlannedEmpty: View {
+    let planned: Bool
+    let tone: DrawerTone
+    @State private var rang = false
+
+    private static let kinds: [String] = [ComingUp.Kind.headsUp, .leaveBy, .routine, .watch, .followUp, .goal, .alarm, .reminder, .event]
+        .map(\.symbol)
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "alarm.fill")
+                .font(.system(size: 36, weight: .semibold))
+                .foregroundStyle(tone.page)
+                .symbolEffect(.bounce, value: rang)
+                .frame(width: 84, height: 84)
+                .background(tone.planned, in: .rect(cornerRadius: 26, style: .continuous))
+                .accessibilityHidden(true)
+            Text("Nothing planned yet", comment: "Planned and Coming Up: the title when nothing is planned")
+                .font(.system(.title3, design: tone.design, weight: .heavy))
+                .foregroundStyle(tone.ink)
+            Group {
+                if planned {
+                    Text("Nothing planned for the next 7 days. What your agents will do comes here: heads-ups, leave times, routines, watches, follow-ups, goal check-ins, and the alarms, reminders and events they set on this device.",
+                         comment: "Planned, when nothing is planned")
+                } else {
+                    Text("Nothing planned for the next 24 hours. What your agents will do on their own comes here: heads-ups, leave times, routines, watches, follow-ups and daily jobs.",
+                         comment: "Coming Up, when nothing is planned")
+                }
+            }
+            .font(.system(.footnote, design: tone.design))
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 4) {
+                ForEach(Self.kinds, id: \.self) { symbol in
+                    Image(systemName: symbol)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(tone.planned)
+                        .frame(width: 25, height: 25)
+                        .background(tone.planned.opacity(0.14), in: .circle)
+                }
+            }
+            .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 26)
+        .frame(maxWidth: .infinity)
+        .background(tone.surface, in: .rect(cornerRadius: 22, style: .continuous))
+        .task { rang.toggle() }
+    }
+}
+
+/// The way to every scheduled job, at the end of Planned.
+private struct PlannedJobsLink: View {
+    let tone: DrawerTone
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "clock")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(tone.planned)
+                .frame(width: 34, height: 34)
+                .background(tone.planned.opacity(0.16), in: .rect(cornerRadius: 11, style: .continuous))
+            Text(String(localized: "All Scheduled Jobs", comment: "Planned: opens the full list of scheduled jobs"))
+                .font(.system(.body, design: tone.design, weight: .semibold))
+                .foregroundStyle(tone.ink)
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(12)
+        .background(tone.surface, in: .rect(cornerRadius: 16, style: .continuous))
+        .contentShape(.rect)
     }
 }
 

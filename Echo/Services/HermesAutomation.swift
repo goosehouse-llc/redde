@@ -820,19 +820,24 @@ extension KanbanClient {
 
     /// Two boards (`-echo.demoKanban`), so the switcher shows: the household's, and a second one.
     static func demoBoards() -> [BoardInfo] {
-        [BoardInfo(.object(["slug": .string("default"), "name": .string("Household"), "total": .number(11), "is_current": .bool(true)])),
+        [BoardInfo(.object(["slug": .string("default"), "name": .string("Household"), "total": .number(14), "is_current": .bool(true)])),
          BoardInfo(.object(["slug": .string("garden"), "name": .string("Garden"), "total": .number(2)]))].compactMap(\.self)
     }
 
     static func demoBoard(_ slug: String? = nil) -> Board {
         let now = Date.now.timeIntervalSince1970
+        // Assigned to the sample bots (`-echo.demoBots`, Claude with `-echo.demoClaudeBot`), so
+        // the cards show their faces.
         func card(_ id: String, _ title: String, _ summary: String, _ status: String, priority: Int = 0,
-                  assignee: String? = "redde", ago: TimeInterval, comments: Int = 0) -> JSONValue {
+                  assignee: String? = "default", ago: TimeInterval, started: TimeInterval? = nil, finished: TimeInterval? = nil,
+                  comments: Int = 0) -> JSONValue {
             var j: [String: JSONValue] = [
                 "id": .string(id), "title": .string(title), "body": .string(summary), "status": .string(status),
                 "priority": .number(Double(priority)), "created_at": .number(now - ago), "comment_count": .number(Double(comments)),
             ]
             if let assignee { j["assignee"] = .string(assignee) }
+            if let started { j["started_at"] = .number(now - started) }
+            if let finished { j["completed_at"] = .number(now - finished) }
             return .object(j)
         }
         if slug == "garden" {
@@ -843,22 +848,26 @@ extension KanbanClient {
             }, latestEventID: 0, assignees: ["redde", "home"])
         }
         let cards = [
-            card("t1", "Compare heat pump quotes", "Three installers so far. Pull the SEER ratings and rebates into one table.", "todo", priority: 2, ago: 5_400, comments: 2),
-            card("t2", "Renew the car registration", "Due on the 14th. Needs the emissions certificate from last month.", "todo", priority: 1, assignee: "home", ago: 20_000),
-            card("t3", "Book the Lisbon flights", "Direct on the 12th, back on the 16th, aisle seats. Hold off until the price dips.", "todo", ago: 90_000, comments: 1),
-            card("t4", "Summarise the school newsletter", "Every Friday: dates, forms to sign, anything the kids need to bring.", "todo", ago: 170_000),
+            card("t1", "Compare heat pump quotes", "Three installers so far. Pull the SEER ratings and rebates into one table.", "todo", priority: 2, assignee: "scout", ago: 5_400, comments: 2),
+            card("t2", "Renew the car registration", "Due on the 14th. Needs the emissions certificate from last month.", "todo", priority: 1, ago: 20_000),
+            card("t3", "Book the Lisbon flights", "Direct on the 12th, back on the 16th, aisle seats. Hold off until the price dips.", "todo", assignee: "scout", ago: 90_000, comments: 1),
+            card("t4", "Summarise the school newsletter", "Every Friday: dates, forms to sign, anything the kids need to bring.", "todo", assignee: "writer", ago: 170_000),
             card("t5", "Sort the photo backup", "Duplicates from the old phone, then album by trip.", "todo", assignee: nil, ago: 400_000),
             card("t6", "Tidy the recipe notes", "Merge the two soup lists.", "triage", assignee: nil, ago: 3_000),
-            card("t7", "Price the deck boards", "Composite, mid-grey, 40 m².", "ready", ago: 8_000),
-            card("t8", "Draft the landlord email", "Heating, lease clause 7.", "running", ago: 1_200),
-            card("t9", "Weekend hike plan", "Route and packing list saved.", "review", ago: 30_000),
-            card("t10", "Insurance renewal", "Switched, saved 18%.", "done", ago: 300_000),
-            card("t11", "Return the drill", "Receipt emailed.", "done", ago: 500_000),
+            card("t7", "Price the deck boards", "Composite, mid-grey, 40 m².", "ready", assignee: "scout", ago: 8_000),
+            card("t8", "Draft the landlord email", "Heating, lease clause 7.", "running", assignee: "writer", ago: 1_200, started: 900),
+            card("t12", "Fix the photo jump in the transcript", "Claude Code is on it: the reply jumps when a picture finishes loading.", "running",
+                 priority: 1, assignee: "claude", ago: 2_400, started: 420, comments: 1),
+            card("t9", "Weekend hike plan", "Route and packing list saved.", "review", assignee: "scout", ago: 30_000),
+            card("t13", "Restart the media server", "Needs your OK to restart it while nobody's watching.", "blocked", assignee: "fixit", ago: 12_000),
+            card("t10", "Insurance renewal", "Switched, saved 18%.", "done", ago: 300_000, finished: 200_000),
+            card("t11", "Return the drill", "Receipt emailed.", "done", assignee: "fixit", ago: 500_000, finished: 400_000),
+            card("t14", "Clear out the old backups", "Freed 212 GB on the server.", "done", assignee: "fixit", ago: 1_300_000, finished: 1_200_000),
         ]
         let columns = KanbanStatus.columns.map { name in
             KanbanColumn(name: name, tasks: cards.compactMap(KanbanTask.init).filter { $0.status == name })
         }
-        return Board(columns: columns, latestEventID: 0, assignees: ["redde", "home"])
+        return Board(columns: columns, latestEventID: 0, assignees: ["default", "scout", "writer", "fixit", "claude"])
     }
 }
 #endif

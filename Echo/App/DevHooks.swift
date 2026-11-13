@@ -40,6 +40,9 @@ import WidgetKit
 /// - `-echo.flipLayout [seconds]`: the layout swapped under the chat, as opening or closing an iPhone
 ///   Duo swaps it, on the Darwin notification `LayoutFlip.notification` and every so many seconds.
 /// - `-echo.demoKanban`: a sample Kanban board instead of the server's.
+/// - `-echo.demoMade`: the Made page on sample pictures, pages, documents and files on the server
+///   (`MadeItem.demo`), made by the sample bots (with `-echo.demoBots`), instead of the replies kept here;
+///   `-echo.madeKind picture|page|document|serverFile` shows that kind alone.
 /// - `-echo.demoGateway`: Settings → Gateway on sample data, with no server (and the row unlocked).
 /// - `-echo.demoFiles`: Settings → Files on sample folders, with no server (and the row unlocked).
 /// - `-echo.demoPlugin missing|old|off|there [restart]`: the notifications screen's plugin line on a
@@ -109,6 +112,7 @@ import WidgetKit
 ///   the Heads-Ups page, where they are too.
 /// - `-echo.section planned|kanban|made` (`cron` still means Planned): open the conversation list on that tab.
 /// - `-echo.demoPlanned`: Planned (and Coming Up) with a made-up week, phone alarms and reminders included.
+///   With `-echo.plannedEnd`, the page opens at its end (what is paused, All Scheduled Jobs).
 /// - `-echo.settingsAnchor [icloud|plugin|day]`: scroll Settings to the context and memory files, to iCloud,
 ///   to the Redde Plugin row, or open Your Day. `-echo.screen dailyJobs|location|chatListCards` open the
 ///   2.4 tidy's pages on their own.

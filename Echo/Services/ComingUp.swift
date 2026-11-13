@@ -242,4 +242,52 @@ nonisolated enum ComingUp {
 
     /// Planned's span.
     static let week: TimeInterval = 7 * 24 * 3600
+
+    // MARK: The page's header (2026-11-13)
+
+    /// The counters over Planned's timeline: what runs today (what is overdue on this device counts
+    /// as today, as `byDay` has it), tomorrow, in the whole span, and the server's jobs (paused too).
+    struct Counts: Equatable, Sendable {
+        var today = 0, tomorrow = 0, ahead = 0, jobs = 0, paused = 0
+    }
+
+    static func counts(_ items: [Item], now: Date, calendar: Calendar = .current) -> Counts {
+        let today = calendar.startOfDay(for: now)
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today.addingTimeInterval(86400)
+        var counts = Counts()
+        var jobs: Set<String> = []
+        for item in items {
+            if let job = item.job { jobs.insert((job.profile ?? "") + "/" + job.id) }
+            if item.paused { counts.paused += 1; continue }
+            counts.ahead += 1
+            let day = max(today, calendar.startOfDay(for: item.at))
+            if day == today { counts.today += 1 } else if day == tomorrow { counts.tomorrow += 1 }
+        }
+        counts.jobs = jobs.count
+        return counts
+    }
+
+    /// The one to show as next: the soonest still to come at a time of its own, not skipped or
+    /// being skipped, not paused (an overdue reminder, or one with no time, isn't "next").
+    static func nextUp(_ items: [Item], now: Date) -> Item? {
+        items.filter { !$0.paused && !$0.untimed && !$0.skipped && !$0.skipping && $0.at >= now }
+            .min { ($0.at, $0.title) < ($1.at, $1.title) }
+    }
+
+    /// A time split for the timeline's big digits: "2:15" and "PM" where the clock is 12-hour,
+    /// "14:15" and nil where it is 24-hour.
+    static func clock(_ date: Date, locale: Locale = .current, calendar: Calendar = .current,
+                      timeZone: TimeZone = .current) -> (time: String, period: String?) {
+        let twelve = (DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: locale) ?? "").contains("a")
+        let format = Date.FormatStyle(locale: locale, calendar: calendar, timeZone: timeZone)
+        let full = date.formatted(format.hour().minute())
+        guard twelve else { return (full, nil) }
+        // The locale's own "2:15 PM" less its marker ("omitted" pads the hour: "02:15").
+        var cal = calendar
+        cal.locale = locale
+        cal.timeZone = timeZone
+        let period = cal.component(.hour, from: date) < 12 ? cal.amSymbol : cal.pmSymbol
+        let time = full.replacingOccurrences(of: period, with: "").trimmingCharacters(in: .whitespaces.union(.init(charactersIn: "\u{202F}\u{00A0}")))
+        return (time, period)
+    }
 }

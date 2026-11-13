@@ -3039,7 +3039,13 @@ extension ConversationsList {
     private func drawerStats(_ tone: DrawerTone, needs: Int) -> some View {
         let roster = serverBots ?? []
         let working = roster.filter { activity.kind(of: $0, open: conversation) == .working }.count
-        let unread = visibleLedger.lazy.filter { activity.isUnread($0, open: self.conversation) }.count
+        // The chats, the bots' own chats and the group chats, as the rows below mark them; a bot's
+        // chat listed among the chats counts once, as its bot (it said 0 with two bots Unread).
+        let chats = visibleLedger.lazy.filter { botChatRows[$0.id] == nil && activity.isUnread($0, open: self.conversation) }.count
+        let bots = roster.filter { !Mutes.isMuted("bot:" + $0.name, settings: settings) && activity.isUnread($0, open: conversation) }.count
+        let rooms = groups.key == settings.connectionKey
+            ? groups.rooms.filter { !Mutes.isMuted("room:" + $0.id, settings: settings) && activity.isUnread($0, isOpen: groups.open?.id == $0.id) }.count : 0
+        let unread = chats + bots + rooms
         return HStack(spacing: 8) {
             drawerStat(needs, String(localized: "Waiting", comment: "The drawer: a counter's label, how many things wait on you (shown in capitals)"), tone.warm, tone)
             drawerStat(working, String(localized: "Working", comment: "A workstream's status"), tone.accent, tone)
@@ -3494,7 +3500,7 @@ extension ConversationsList {
         switch page {
         case .today:
             List {
-                TodayStrip(openGoal: { shownGoal = $0 })
+                TodayStrip(openGoal: { shownGoal = $0 }, layout: .page)
                 PinnedCardsSection()
                 IdeasSection(take: takeIdea)
             }

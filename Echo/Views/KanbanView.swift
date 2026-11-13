@@ -1,9 +1,11 @@
 import SwiftUI
 
 /// The Hermes kanban board (dashboard plugin on hermes serve): one column at a time on the
-/// phone, cards as rows, moves via a status picker.
+/// phone, cards as rows, moves via a status picker. Drawn as the drawer's Board page (2026-11-13):
+/// a hero with what's moving, the columns as coloured pills, each card with its bot's face.
 struct KanbanView: View {
     @Environment(\.theme) private var theme
+    private var directory = BotDirectory.shared
     /// Last kanban live-event id seen; the live socket resumes from here.
     @State private var latestEventID = 0
     @State private var columns: [KanbanColumn] = []
@@ -35,9 +37,20 @@ struct KanbanView: View {
     /// The conversation list's server and section switch, scrolling away above the column bar.
     var topRow: AnyView?
 
+    init(topRow: AnyView? = nil) { self.topRow = topRow }
+
     var body: some View {
-        List {
+        let tone = BoardTone(theme)
+        let people = assigneeLooks
+        return List {
             if let topRow { topRow }
+            if available, error == nil, !columns.isEmpty {
+                AnyView(hero(tone))
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .selectionDisabled()
+            }
             // A pinned header, not a row above the list: the sheet's toolbar gave its top inset to
             // the first scroll view it found, the columns' own, which pushed them out of sight.
             Section {
@@ -53,8 +66,11 @@ struct KanbanView: View {
                         .listRowSeparator(.hidden)
                 }
                 ForEach(column?.tasks ?? []) { task in
-                    Button { detailID = task.id } label: { row(task) }
-                        .buttonStyle(.plain)
+                    Button { detailID = task.id } label: { BoardCard(task: task, tone: tone, assignee: people(task.assignee)) }
+                        .buttonStyle(DrawerSquish())
+                        .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             if let next = nextStatus(for: task.status) {
                                 Button { move(task, to: next) } label: { Label(KanbanStatus.label(next), systemImage: KanbanStatus.icon(next)) }
@@ -78,14 +94,19 @@ struct KanbanView: View {
             } header: {
                 if !columns.isEmpty || boards.count > 1 {
                     VStack(alignment: .leading, spacing: 0) {
-                        if boards.count > 1 { boardPicker }
-                        if !columns.isEmpty { columnPicker }
+                        // With the board on screen its name is the hero's; without (an error), here.
+                        if boards.count > 1, columns.isEmpty || error != nil { boardPicker }
+                        if !columns.isEmpty { BoardColumnBar(columns: columns, selected: $selected, tone: tone) }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(tone.tone.page)
                     .listRowInsets(EdgeInsets())
                 }
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background { tone.tone.page.ignoresSafeArea() }
         .toast($toast, duration: .seconds(4))
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -95,7 +116,7 @@ struct KanbanView: View {
                 if available {
                     Image(systemName: live.isLive ? "dot.radiowaves.left.and.right" : "arrow.clockwise")
                         .chatFont(.caption)
-                        .foregroundStyle(live.isLive ? .green : .secondary)
+                        .foregroundStyle(live.isLive ? tone.board : .secondary)
                         .accessibilityLabel(live.isLive ? String(localized: "Live updates on") : String(localized: "Polling for updates"))
                 }
             }
@@ -107,7 +128,13 @@ struct KanbanView: View {
             guard !Task.isCancelled else { return }
             startLive()
         }
-        .onAppear { visible = true }
+        .onAppear {
+            visible = true
+            #if DEBUG
+            // `-echo.boardColumn running`: that column shown (screenshots).
+            if let name = DevHooks.value("-echo.boardColumn") { selected = name }
+            #endif
+        }
         .onDisappear { visible = false; live.stop() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await refresh(boards: true); if visible { startLive() } } } else { live.stop() }
@@ -163,14 +190,57 @@ struct KanbanView: View {
         boards.first { $0.slug == board } ?? (board == nil ? boards.first(where: \.isCurrent) : nil)
     }
 
+    /// The hero over the columns: the board's name (its switcher, with more than one), what's on
+    /// it, and counters that open the running, waiting and done columns.
+    private func hero(_ tone: BoardTone) -> some View {
+        BoardHero(tone: tone, summary: BoardSummary(columns: columns), columns: columns,
+                  name: shownBoard?.name, picker: boards.count > 1 ? AnyView(heroBoardPicker(tone)) : nil) { counter in
+            if let name = BoardSummary.column(for: counter, in: columns) { withAnimation(.snappy) { selected = name } }
+        }
+    }
+
+    private func heroBoardPicker(_ tone: BoardTone) -> some View {
+        Menu {
+            boardChoices
+        } label: {
+            HStack(spacing: 6) {
+                Text(verbatim: shownBoard?.name ?? String(localized: "Board")).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(tone.board)
+            }
+            .font(.system(.title2, design: tone.tone.design, weight: .heavy))
+            .foregroundStyle(tone.tone.ink)
+            .contentShape(.rect)
+        }
+        .accessibilityLabel("Board: \(shownBoard?.name ?? "")")
+        .accessibilityHint("Choose another board")
+    }
+
+    private var boardChoices: some View {
+        Picker("Board", selection: Binding(get: { shownBoard?.slug ?? "" }, set: { pick($0) })) {
+            ForEach(boards) { info in
+                Text(verbatim: "\(info.name) (\(info.total))").tag(info.slug)
+            }
+        }
+    }
+
+    /// The assignee's name as the app shows it and its face: the bot's, from the server's roster.
+    private var assigneeLooks: (String?) -> (name: String, face: BotFace)? {
+        let roster = directory.key == Settings.shared.connectionKey ? directory.roster : nil
+        let main = Settings.shared.headerTitle
+        return { profile in
+            guard let profile, !profile.isEmpty else { return nil }
+            let bot = roster?.named(profile)
+            let name = bot?.label(mainName: main) ?? (profile == "default" ? main : profile)
+            return (name, bot.flatMap { roster?.faces[$0.name] } ?? BotFace(seed: profile))
+        }
+    }
+
     /// Which board: its name over the columns, a menu of them all under it.
     private var boardPicker: some View {
         Menu {
-            Picker("Board", selection: Binding(get: { shownBoard?.slug ?? "" }, set: { pick($0) })) {
-                ForEach(boards) { info in
-                    Text(verbatim: "\(info.name) (\(info.total))").tag(info.slug)
-                }
-            }
+            boardChoices
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: "rectangle.3.group")
@@ -205,63 +275,6 @@ struct KanbanView: View {
             await refresh()
             if visible { startLive() }
         }
-    }
-
-    private var columnPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(columns) { col in
-                    let on = col.name == selected
-                    Button {
-                        selected = col.name
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: KanbanStatus.icon(col.name))
-                            Text(KanbanStatus.label(col.name))
-                            if !col.tasks.isEmpty {
-                                Text("\(col.tasks.count)").chatFont(.caption2, weight: .semibold).monospacedDigit()
-                                    .padding(.horizontal, 5).padding(.vertical, 1)
-                                    .background((on ? Color.white.opacity(0.25) : theme.accent.opacity(0.15)), in: .capsule)
-                            }
-                        }
-                        .chatFont(.footnote, weight: .medium)
-                        .padding(.horizontal, 10).padding(.vertical, 6)
-                        .background(on ? theme.accent : Color.primary.opacity(0.06), in: .capsule)
-                        .foregroundStyle(on ? theme.userText : Color.primary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(on ? .isSelected : [])
-                }
-            }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-        }
-    }
-
-    private func row(_ task: KanbanTask) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(task.title).chatFont(.body, weight: .medium).lineLimit(2)
-                Spacer(minLength: 0)
-                if task.priority != 0 {
-                    Text("P\(task.priority)").chatFont(.caption2, weight: .semibold)
-                        .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background((task.priority > 0 ? Color.orange : Color.secondary).opacity(0.15), in: .capsule)
-                        .foregroundStyle(task.priority > 0 ? Color.orange : Color.secondary)
-                }
-            }
-            if let s = task.latestSummary ?? task.body, !s.isEmpty {
-                Text(s).chatFont(.footnote).foregroundStyle(.secondary).lineLimit(2)
-            }
-            HStack(spacing: 6) {
-                if let a = task.assignee, !a.isEmpty { Label(a, systemImage: "person").labelStyle(.titleAndIcon) }
-                if let c = task.createdAt { Text(c.relativeLabel) }
-                if task.commentCount > 0 { Label("\(task.commentCount)", systemImage: "text.bubble") }
-                if task.lastFailure != nil { Image(systemName: "exclamationmark.triangle").foregroundStyle(.red) }
-            }
-            .chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
-        }
-        .padding(.vertical, 2)
-        .contentShape(.rect)
     }
 
     private func nextStatus(for s: String) -> String? {
