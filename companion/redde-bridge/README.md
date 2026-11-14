@@ -118,6 +118,13 @@ installed and set up first: Pi's adapter runs `pi`
 (`npm install -g @earendil-works/pi-coding-agent`, then pick a model provider in `pi`). Redde says
 so when you add one. Most agents also want a sign-in on the computer once, in Terminal.
 
+**OpenClaw** isn't in the registry, so the bridge offers it beside the registry's agents. It runs
+`openclaw acp`, OpenClaw's own ACP bridge, which talks to the Gateway in OpenClaw's config: the
+one on this computer, or another set with `openclaw config set gateway.remote.url wss://…:18789`
+and `gateway.remote.token`. Each chat from Redde is a Gateway session of its own; your OpenClaw
+chats are listed too. OpenClaw's bridge shows thinking, tool steps, approvals and slash commands,
+but no file changes or terminals ([what it supports](https://docs.openclaw.ai/cli/acp)).
+
 In Redde, by hand: **Settings › Connection › Set up connection… › Claude Code, Codex and others (ACP)**. Enter the address,
 the token and (when the bridge has more than one agent) pick an agent. A folder is optional.
 

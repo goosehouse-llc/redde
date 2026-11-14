@@ -49,7 +49,7 @@ import redde_qr  # noqa: E402
 import redde_codex  # noqa: E402
 import redde_registry  # noqa: E402
 
-VERSION = "0.10.0"
+VERSION = "0.10.1"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -1093,9 +1093,11 @@ class Bridge:
             command = entry.command
             if entry.kind == "binary":
                 command = await asyncio.to_thread(redde_registry.download, entry, self.downloads)
+            elif entry.kind == "local" and shutil.which(command[0]):
+                # Where it is now: the service's PATH is shorter than a shell's.
+                command = [shutil.which(command[0])] + command[1:]
             cwd = next(iter(self.agents.values())).config.cwd if self.agents else "~"
-            text = redde_registry.table(entry.bridge_id, entry.name, command, cwd, entry.env,
-                                        f"Added from the ACP registry ({entry.id} {entry.version}).")
+            text = redde_registry.table(entry.bridge_id, entry.name, command, cwd, entry.env, redde_registry.note(entry))
             await asyncio.to_thread(redde_registry.add_to_config, self.config.path, entry.bridge_id, text)
             config = AgentConfig(id=entry.bridge_id, name=entry.name, command=list(command), cwd=cwd, env=dict(entry.env))
             self.config.agents.append(config)

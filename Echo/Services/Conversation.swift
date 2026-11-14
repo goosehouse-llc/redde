@@ -785,6 +785,11 @@ final class Conversation {
                 questionSavedFor = replyID
                 persist()
             }
+        case let .title(title):
+            // The agent's name for the chat, unless it was named on this device (`AcpTitles`) or
+            // it's a bot's.
+            guard bot == nil, let id = serverSessionID, AcpTitles.title(for: id) == nil else { break }
+            setName(Self.name(fromServerTitle: title, firstQuestion: messages.first { $0.role == .user && !$0.isSteer }?.text))
         case let .runID(id):
             currentRunID = id
             // A run goes on on the host whatever becomes of the app: noted, so it can be taken up

@@ -70,6 +70,19 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(entries["boxed-acp"].kind, "binary")
         self.assertEqual(entries["faraway"].kind, "", "nothing for this computer")
 
+    def test_openclaw_is_offered_beside_the_registry(self):
+        entries = {e.id: e for e in rr.parse(registry("darwin-aarch64"), here="darwin-aarch64")}
+        claw = entries["openclaw"]
+        self.assertEqual((claw.kind, claw.command, claw.bridge_id), ("local", ["openclaw", "acp"], "openclaw"))
+        self.assertEqual(claw.needs[0], "openclaw")
+        # Once the registry has it, the registry's is the one.
+        listed = registry("darwin-aarch64")
+        listed["agents"].append({"id": "openclaw", "name": "OpenClaw", "version": "9.9",
+                                 "distribution": {"npx": {"package": "openclaw@9.9", "args": ["acp"]}}})
+        with mock.patch.object(rr.shutil, "which", lambda name: "/usr/bin/" + name):
+            ours = [e for e in rr.parse(listed, here="darwin-aarch64") if e.id == "openclaw"]
+        self.assertEqual([e.kind for e in ours], ["npx"])
+
     def test_without_npx_an_npm_agent_cant_run(self):
         with mock.patch.object(rr.shutil, "which", lambda name: None):
             entries = {e.id: e for e in rr.parse(registry("darwin-aarch64"), here="darwin-aarch64")}
@@ -209,6 +222,19 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("boxed", self.bridge.agents)
         self.assertNotIn("[agents.boxed]", self.path.read_text())
         self.assertEqual([a.id for a in rb.load_config(self.path).agents], ["fake"])
+
+    async def test_openclaw_is_added_where_it_is_installed(self):
+        c = await self.client()
+        await c.call("initialize", {"protocolVersion": 1})
+        real = shutil.which
+        with mock.patch.object(rb.shutil, "which", lambda name: "/opt/claw/bin/openclaw" if name == "openclaw" else real(name)):
+            added = (await c.call("_redde/add_agent", {"id": "openclaw"}))["result"]
+        self.assertEqual(added["agent"]["id"], "openclaw")
+        text = self.path.read_text()
+        self.assertIn('command = ["/opt/claw/bin/openclaw", "acp"]', text)
+        self.assertIn("not in the ACP registry", text)
+        await c.call("_redde/remove_agent", {"id": "openclaw"})
+        self.assertNotIn("openclaw", self.path.read_text())
 
     async def test_an_agent_the_registry_doesnt_have_isnt_added(self):
         c = await self.client()

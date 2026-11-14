@@ -68,6 +68,9 @@ nonisolated struct AcpTurnMapper: Sendable {
         case "notice":
             guard let title = update["title"]?.string, !title.isEmpty else { return [] }
             return [.status(title)]
+        case "session_info_update":
+            guard let title = update["title"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return [] }
+            return [.title(title)]
         default:
             // user_message_chunk (our own words), commands, modes, config, titles: not the reply.
             return []

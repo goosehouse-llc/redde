@@ -37,6 +37,8 @@ nonisolated enum TurnEvent: Sendable, Equatable {
     case sessionID(String)
     /// API-server run id for this turn; needed to steer or stop it.
     case runID(String)
+    /// The agent named the chat while it works (ACP `session_info_update`: OpenClaw, Claude Code).
+    case title(String)
     /// The agent is waiting on you (hermes serve): approval, clarifying question, sudo, secret.
     case interrupt(Interrupt, runtimeSession: String)
     /// A pending interrupt timed out on the gateway.

@@ -83,6 +83,15 @@ struct AcpTitlesTests {
         #expect(AcpSessions.summary(row)?.title == "Fix the build")
     }
 
+    @Test func anAgentNamesItsChatAsItWorks() {
+        // OpenClaw and Claude Code send `session_info_update` with a title during the turn.
+        var mapper = AcpTurnMapper()
+        let named = mapper.events(for: .object(["sessionUpdate": .string("session_info_update"), "title": .string("Login page fix")]))
+        guard case let .title(title)? = named.first else { Issue.record("no title event"); return }
+        #expect(title == "Login page fix")
+        #expect(mapper.events(for: .object(["sessionUpdate": .string("session_info_update"), "title": .string("  ")])).isEmpty)
+    }
+
     @Test func hermessOwnChatsAreCalledHermes() {
         #expect(HermesSessionsAPI.SessionSummary(id: "a", source: "desktop").sourceLabel == "Hermes")
     }

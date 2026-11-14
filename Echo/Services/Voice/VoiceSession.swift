@@ -1187,7 +1187,7 @@ final class VoiceSession {
                     if !ask(interrupt) { activeTool = "waiting for you" }
                 case .interruptExpired:
                     activeTool = nil
-                case .status, .sessionID, .runID, .subagent, .prefill, .todos:
+                case .status, .sessionID, .runID, .subagent, .prefill, .todos, .title:
                     break
                 }
             }

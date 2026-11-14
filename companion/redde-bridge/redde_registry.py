@@ -30,8 +30,18 @@ MAX_DOWNLOAD = 600 * 1024 * 1024
 #: first: the registry doesn't say so. id → (program, how to install it).
 NEEDS = {
     "pi-acp": ("pi", "npm install -g @earendil-works/pi-coding-agent"),
+    "openclaw": ("openclaw", "npm install -g openclaw@latest"),
     "claude-acp": ("claude", "npm install -g @anthropic-ai/claude-code"),
 }
+#: Agents that speak ACP but aren't in the registry, offered beside it. "local" runs a program
+#: that's installed on the computer.
+EXTRAS = [
+    # OpenClaw's own ACP bridge, to the Gateway in its config (`gateway.remote.url` for one
+    # elsewhere): docs.openclaw.ai/cli/acp.
+    {"id": "openclaw", "name": "OpenClaw", "version": "", "license": "MIT", "website": "https://docs.openclaw.ai/cli/acp",
+     "description": "Your OpenClaw agent, through its Gateway",
+     "distribution": {"local": {"cmd": "openclaw", "args": ["acp"]}}},
+]
 #: Nicer names than the registry's, where it names the adapter rather than the agent.
 NAMES = {"pi-acp": "Pi", "claude-acp": "Claude Code", "goose": "Goose"}
 
@@ -106,7 +116,9 @@ def parse(raw: dict, here: str | None = None) -> list[Entry]:
     """The registry's agents, each with how this computer runs it (npx first, then uvx, then a download)."""
     here = here or platform_key()
     entries = []
-    for agent in raw.get("agents") or []:
+    listed = [a for a in raw.get("agents") or [] if isinstance(a, dict)]
+    known = {a.get("id") for a in listed}
+    for agent in listed + [e for e in EXTRAS if e["id"] not in known]:
         if not isinstance(agent, dict) or not agent.get("id"):
             continue
         entry = Entry(id=str(agent["id"]), name=NAMES.get(agent["id"], str(agent.get("name") or agent["id"])),
@@ -114,7 +126,10 @@ def parse(raw: dict, here: str | None = None) -> list[Entry]:
                       license=str(agent.get("license") or ""),
                       website=str(agent.get("website") or agent.get("repository") or ""))
         dist = agent.get("distribution") or {}
-        if isinstance(dist.get("npx"), dict) and dist["npx"].get("package") and shutil.which("npx"):
+        if isinstance(dist.get("local"), dict) and dist["local"].get("cmd"):
+            entry.kind = "local"
+            entry.command = [str(dist["local"]["cmd"])] + [str(a) for a in dist["local"].get("args") or []]
+        elif isinstance(dist.get("npx"), dict) and dist["npx"].get("package") and shutil.which("npx"):
             entry.kind = "npx"
             entry.command = ["npx", "-y", str(dist["npx"]["package"])] + [str(a) for a in dist["npx"].get("args") or []]
             entry.env = {str(k): str(v) for k, v in (dist["npx"].get("env") or {}).items()}
@@ -162,7 +177,7 @@ def installed_ids(agents: list) -> set[str]:
             found.add("antigravity-acp")
         if program == "gemini" or "@google/gemini-cli" in words:
             found.add("gemini")
-        if program in ("goose", "opencode", "cursor-agent", "copilot", "kiro-cli"):
+        if program in ("goose", "opencode", "cursor-agent", "copilot", "kiro-cli", "openclaw"):
             found.add({"cursor-agent": "cursor", "copilot": "github-copilot-cli", "kiro-cli": "kiro"}.get(program, program))
     return found
 
@@ -252,6 +267,13 @@ def unpack(archive: Path, into: Path) -> None:
 
 # MARK: - The config
 
+def note(entry: Entry) -> str:
+    """The comment over an added agent's table, which removing it takes too."""
+    if entry.kind == "local":
+        return f"Added by the Redde bridge ({entry.id}, not in the ACP registry)."
+    return f"Added from the ACP registry ({entry.id} {entry.version})."
+
+
 def table(ident: str, name: str, command: list[str], cwd: str, env: dict[str, str], note: str) -> str:
     lines = ["", f"# {note}", f"[agents.{ident}]", f"name = {json.dumps(name)}", f"command = {json.dumps(command)}",
              f"cwd = {json.dumps(cwd)}"]
@@ -277,7 +299,7 @@ def remove_from_config(path: Path, ident: str) -> bool:
     # The trailing comments and blank lines belong to the next table.
     while end > start + 1 and (not lines[end - 1].strip() or lines[end - 1].lstrip().startswith("#")):
         end -= 1
-    if start > 0 and lines[start - 1].startswith("# Added from the ACP registry"):
+    if start > 0 and lines[start - 1].startswith(("# Added from the ACP registry", "# Added by the Redde bridge")):
         start -= 1
     if start > 0 and not lines[start - 1].strip():
         start -= 1
