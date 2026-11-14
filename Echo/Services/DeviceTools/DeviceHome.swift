@@ -441,7 +441,7 @@ nonisolated final class DemoHome: HomeLayer, @unchecked Sendable {
 #if os(iOS)
 /// The real thing: HomeKit's own home manager, made once, on the main actor where HomeKit wants
 /// it. iOS asks the person the first time it is made.
-nonisolated final class HomeKitLayer: HomeLayer, @unchecked Sendable {
+nonisolated final class HomeKitLayer: HomeLayer, Sendable {
     static let shared = HomeKitLayer()
 
     @MainActor private var manager: HMHomeManager?

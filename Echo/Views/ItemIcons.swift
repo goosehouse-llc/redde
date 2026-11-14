@@ -133,7 +133,7 @@ nonisolated enum ItemIcon {
 }
 
 /// A picture fetched once per address, kept small, on disk and in memory.
-nonisolated final class FetchedPicture: @unchecked Sendable {
+nonisolated final class FetchedPicture: Sendable {
     let image: CGImage
     init(_ image: CGImage) { self.image = image }
     /// Width over height: about 1 is an icon; a catalog's 1200×600 picture is a banner.

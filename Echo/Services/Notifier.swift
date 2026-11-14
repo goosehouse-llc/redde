@@ -276,6 +276,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let sealed = info[PushNote.sealedKey] as? String
         let leaving = notification.request.identifier.hasPrefix(LeaveTime.reminderPrefix)
         let urgent = notification.request.content.interruptionLevel == .timeSensitive
+        // iOS's own; called once on every branch below, on the main actor.
         nonisolated(unsafe) let show = completionHandler
         Task { @MainActor in
             // Time to leave: said over Redde too (the app's own, set for then, `LeaveTime`).

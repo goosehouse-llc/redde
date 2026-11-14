@@ -16,6 +16,7 @@ struct CameraPreview: UIViewRepresentable {
 
     final class PreviewView: UIView {
         override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
+        // `layerClass` makes the backing layer one; the cast can't fail.
         private var preview: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
         /// Says how the picture has to be turned as the device is, and when that changes.
         private var upright: AVCaptureDevice.RotationCoordinator?

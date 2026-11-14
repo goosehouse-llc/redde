@@ -3,16 +3,15 @@ import Foundation
 #if canImport(UIKit)
 import UIKit
 
-/// The time iOS gives a woken app, handed back once.
+/// The time iOS gives a woken app, handed back once. Ended there and then, from the expiry
+/// handler too (iOS calls it on the main thread and wants the time back before it returns).
 @MainActor
-final class BackgroundTime: @unchecked Sendable {
+final class BackgroundTime {
     var id = UIBackgroundTaskIdentifier.invalid
-    nonisolated func end() {
-        Task { @MainActor in
-            guard id != .invalid else { return }
-            UIApplication.shared.endBackgroundTask(id)
-            id = .invalid
-        }
+    func end() {
+        guard id != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        id = .invalid
     }
 }
 #endif

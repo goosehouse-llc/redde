@@ -9,6 +9,7 @@ import MediaPlayer
 ///
 /// Handlers are formed in this nonisolated type and hop to the main actor themselves: the system
 /// may call them off the main thread, and a main-actor closure called there traps.
+/// Sendable by hand: `targets` and `muteObserver` behind `lock`; called from the main actor.
 nonisolated final class HeadsetControls: @unchecked Sendable {
     static let shared = HeadsetControls()
 

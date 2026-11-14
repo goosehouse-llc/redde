@@ -888,6 +888,7 @@ nonisolated struct HermesRuns: Sendable {
 
     /// Where following a run has got to, shared by its events and its status: the last event
     /// handed on, and the approvals already put to the person.
+    /// Sendable by hand: `_cursor` and `asked` behind `lock` (the events stream and the status poller both call `hand`).
     nonisolated final class RunProgress: @unchecked Sendable {
         private let lock = NSLock()
         private let yield: @Sendable (TurnEvent) -> Void

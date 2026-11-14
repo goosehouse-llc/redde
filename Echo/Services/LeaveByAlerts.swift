@@ -393,6 +393,7 @@ final class LeaveByAlerts {
     /// executor by the scheduler, so it is formed here, nonisolated; it runs on the main queue.
     nonisolated static func registerRefresh() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: refreshID, using: .main) { task in
+            // BGTask isn't Sendable; touched only on the main queue (registered `using: .main`).
             nonisolated(unsafe) let task = task
             let work = Task { @MainActor in
                 await LeaveByAlerts.shared.run(force: true)

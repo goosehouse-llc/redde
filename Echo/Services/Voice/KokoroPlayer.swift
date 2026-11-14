@@ -544,7 +544,7 @@ final class KokoroPlayer {
 /// release to about half in 60 ms, the same scale as the mic meter (-50…0 dB → 0…1).
 /// Installed from here, not from main-actor code: a closure formed there inherits main-actor
 /// isolation, and the render thread would trip the runtime check.
-nonisolated final class OutputMeter: @unchecked Sendable {
+nonisolated final class OutputMeter: Sendable {
     private let lock = OSAllocatedUnfairLock(initialState: Float(0))
     var level: Float { lock.withLock { $0 } }
 

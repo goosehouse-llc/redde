@@ -232,6 +232,7 @@ nonisolated enum ServerFiles {
 }
 
 /// How far a transfer has got, heard from the URL session as it goes.
+/// Sendable by hand: `progress` only under `lock`.
 nonisolated final class TransferWatch: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     private let lock = NSLock()
     private var progress: Progress?

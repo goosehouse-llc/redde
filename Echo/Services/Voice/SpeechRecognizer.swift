@@ -638,6 +638,7 @@ final class SpeechRecognizer {
 
 /// Runs on the audio render thread: converts mic buffers to the analyzer's format, measures level,
 /// and hands buffers to the analyzer stream. Kept off the main actor on purpose.
+/// Sendable by hand: `holding`/`fed`/`staged`/`kept` under `stageLock`; `scratch` and `converter` only on the tap's thread.
 nonisolated private final class TapProcessor: @unchecked Sendable {
     private let converter: AVAudioConverter
     private let targetFormat: AVAudioFormat

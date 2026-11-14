@@ -396,6 +396,7 @@ final class PhotoLooking {
     /// charger while the phone isn't in use, as iOS chooses (overnight, as a rule).
     nonisolated static func registerOvernight() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: overnightID, using: .main) { task in
+            // BGTask isn't Sendable; registered on .main, so this, the Task and the expiration handler all touch it on the main thread.
             nonisolated(unsafe) let task = task
             let work = Task { @MainActor in
                 let looking = PhotoLooking.shared

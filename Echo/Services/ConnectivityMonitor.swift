@@ -5,6 +5,7 @@ import Network
 /// messages can be retried at once instead of waiting for the next backoff tick. Reachability of the
 /// device says nothing about the server (Tailscale can still be off), so this only triggers a retry;
 /// the retry itself decides.
+/// Sendable by hand: `started`, `wasSatisfied` and `handlers` behind `lock`; `start()` runs once, gated under it.
 nonisolated final class ConnectivityMonitor: @unchecked Sendable {
     static let shared = ConnectivityMonitor()
 

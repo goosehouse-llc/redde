@@ -9,7 +9,7 @@ import Foundation
 /// list, steps with a file's diff, an approval for a command, a plan to approve, a question card,
 /// a mode menu and slash commands. No model: a script, in English, as an agent's own words are.
 /// Its chats are kept in the app's caches, so they reopen like any agent's.
-nonisolated final class AcpDemoSocket: AcpSocket, @unchecked Sendable {
+nonisolated final class AcpDemoSocket: AcpSocket {
     private let wire = AcpDemoWire()
     private let agent: AcpDemoAgent
     /// The app's frames, read in the order they were sent.

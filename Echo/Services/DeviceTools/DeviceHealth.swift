@@ -738,7 +738,7 @@ nonisolated enum DeviceHealth {
             }
             return HealthAnswer.statistics(ask, values: values, overall: overall, us: us, calendar: calendar)
         case .stood, .mindful:
-            let type = objectTypes(ask.kind)[0] as! HKSampleType
+            let type: HKSampleType = HKCategoryType(ask.kind == .standHours ? .appleStandHour : .mindfulSession)
             let found = await samples(type, ask)
             let amounts: [(Date, Double)] = found.compactMap { sample in
                 guard let sample = sample as? HKCategorySample else { return nil }

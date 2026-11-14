@@ -287,6 +287,7 @@ final class LiveCall: LiveCalling {
 /// The call's audio, away from the main actor: the microphone to the connection, the voice to the
 /// speaker, on one engine with Apple's voice processing (echo cancellation works only for sound
 /// played through the same I/O unit that records).
+/// Sendable by hand: shared state in `state`; the other vars only on `sending` (graph nodes and converter set in `start()` before the engine runs, then only by `restart()` there); `onSpeaking` is set once before `start()`.
 nonisolated final class LiveCallAudio: @unchecked Sendable {
     struct Snapshot {
         var sent = 0, received = 0, underruns = 0, restarts = 0
@@ -979,7 +980,7 @@ nonisolated final class LiveCallAudio: @unchecked Sendable {
 /// The voice between the connection and the speaker: a ring of samples, written as it arrives and
 /// read as the engine renders. It holds `lead` samples before it starts to play, and again after it
 /// runs out, against the network's jitter; past `capacity` (a minute) the oldest go.
-nonisolated final class VoiceQueue: @unchecked Sendable {
+nonisolated final class VoiceQueue: Sendable {
     private struct Ring {
         var samples: [Float]
         var read = 0, count = 0

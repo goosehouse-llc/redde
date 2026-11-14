@@ -6,13 +6,28 @@ import WidgetKit
 /// what the note says, using a key that only this iPhone and that Hermes hold (`PushSeal`).
 /// Anything that can't be opened is shown as it came.
 final class NotificationService: UNNotificationServiceExtension {
+    /// The system's handler, used once: by the work in `didReceive` or, should time run out
+    /// first, by `serviceExtensionTimeWillExpire` (on another thread), whichever comes first.
+    private let lock = NSLock()
     private var deliver: ((UNNotificationContent) -> Void)?
+    /// The note as `didReceive` left it, never changed after: what time running out sends.
     private var content: UNMutableNotificationContent?
+
+    /// Hands a note to iOS once; nil sends the note as `didReceive` left it (time ran out).
+    private func finish(_ shown: UNNotificationContent?) {
+        let (handler, original) = lock.withLock {
+            defer { deliver = nil }
+            return (deliver, content)
+        }
+        if let handler, let note = shown ?? original { handler(note) }
+    }
 
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         let content = (request.content.mutableCopy() as? UNMutableNotificationContent) ?? UNMutableNotificationContent()
-        self.content = content
-        deliver = contentHandler
+        lock.withLock {
+            self.content = content
+            deliver = contentHandler
+        }
         var choices: UNNotificationCategory?
         var headsUp: AgentBriefing?
         var leaveCheck: String?
@@ -68,21 +83,20 @@ final class NotificationService: UNNotificationServiceExtension {
         if !NotificationSound.isOn { content.sound = nil }
         // A Leave-By Alert's traffic re-check: Apple Maps asked again, the alert moved, and what
         // came of it shown in place of the note (which, should time run out, says it looked).
+        // The work below runs on a copy and hands it over through `finish`, so the note time
+        // running out would send is never written while it's read. (`finish` holds the lock.)
+        nonisolated(unsafe) let service = self
         if let leaveCheck {
-            nonisolated(unsafe) let contentHandler = contentHandler
-            Task {
-                contentHandler(await LeaveCheck.run(wake: leaveCheck))
-            }
+            Task { service.finish(await LeaveCheck.run(wake: leaveCheck)) }
             return
         }
         // A heads-up with an address: when to leave, worked out here from where the phone is, first.
         if let headsUp {
-            nonisolated(unsafe) let content = content
-            nonisolated(unsafe) let contentHandler = contentHandler
+            nonisolated(unsafe) let shown = (content.mutableCopy() as? UNMutableNotificationContent) ?? content
             Task {
-                if let line = await LeaveTime.work(out: headsUp) { content.body = line + "\n" + content.body }
+                if let line = await LeaveTime.work(out: headsUp) { shown.body = line + "\n" + shown.body }
                 WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind)
-                contentHandler(content)
+                service.finish(shown)
             }
             return
         }
@@ -90,15 +104,14 @@ final class NotificationService: UNNotificationServiceExtension {
         if let category = choices {
             // (The system hands these over to be used once, from wherever the work finishes.)
             nonisolated(unsafe) let category = category
-            nonisolated(unsafe) let content = content
-            nonisolated(unsafe) let contentHandler = contentHandler
+            nonisolated(unsafe) let shown = (content.mutableCopy() as? UNMutableNotificationContent) ?? content
             Task {
-                if await Self.registered(category) { content.categoryIdentifier = category.identifier }
-                contentHandler(content)
+                if await Self.registered(category) { shown.categoryIdentifier = category.identifier }
+                service.finish(shown)
             }
             return
         }
-        contentHandler(content)
+        finish(content)
     }
 
     /// Adds a question's own category to the ones the app registered, so its choices show as
@@ -115,6 +128,6 @@ final class NotificationService: UNNotificationServiceExtension {
     }
 
     override func serviceExtensionTimeWillExpire() {
-        if let deliver, let content { deliver(content) }
+        finish(nil)
     }
 }

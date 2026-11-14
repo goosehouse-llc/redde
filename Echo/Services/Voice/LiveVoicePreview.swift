@@ -170,7 +170,7 @@ final class LiveVoicePreview {
 }
 
 /// The preview's speaker: the voice's queue pulled by the engine, nothing recorded.
-nonisolated final class PreviewSpeaker: @unchecked Sendable {
+nonisolated final class PreviewSpeaker {
     let queue: VoiceQueue
     private let engine = AVAudioEngine()
 

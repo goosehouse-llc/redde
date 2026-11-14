@@ -75,7 +75,7 @@ nonisolated struct CronJob: Identifiable, Equatable, Sendable {
     }
 
     /// ISO8601DateFormatter is expensive to create; three fixed instances cover the shapes seen.
-    /// The formatter is documented thread-safe, hence the unchecked declaration.
+    /// The formatter is documented thread-safe, hence `nonisolated(unsafe)` (it isn't marked Sendable).
     nonisolated(unsafe) private static let isoFormatters: [ISO8601DateFormatter] = {
         let optionSets: [ISO8601DateFormatter.Options] = [
             [.withInternetDateTime, .withFractionalSeconds],

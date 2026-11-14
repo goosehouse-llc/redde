@@ -472,7 +472,7 @@ final class BotScreenStream {
 /// Whether the phone's link is costly (cellular, Low Data Mode): the stream asks for a smaller
 /// picture there. Its handler is made here, in nonisolated code (the MainActor-default build would
 /// otherwise trap it on the monitor's queue).
-nonisolated final class LinkCost: @unchecked Sendable {
+nonisolated final class LinkCost: Sendable {
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "com.goosehouse.echo.linkcost", qos: .utility)
 

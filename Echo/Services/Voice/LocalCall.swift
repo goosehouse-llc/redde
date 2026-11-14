@@ -493,6 +493,7 @@ final class LocalHearing {
 
 /// The call's microphone (PCM16 at `LocalDialect.inputRate`, from `LiveCallAudio`'s queue) to
 /// the transcriber's format.
+/// Sendable by hand: `feed` runs only on `LiveCallAudio`'s serial `sending` queue, so the converter is used one call at a time.
 nonisolated final class LocalFeeder: @unchecked Sendable {
     private let wire = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: LocalDialect.inputRate, channels: 1, interleaved: true)!
     private let target: AVAudioFormat

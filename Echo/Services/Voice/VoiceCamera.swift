@@ -62,7 +62,7 @@ final class VoiceCamera {
     func still() async -> Attachment? {
         guard let (frame, angle) = feed.newest(within: CameraStill.freshness) else { return nil }
         // Turned and made a JPEG off the main actor: a 1080p frame took tens of milliseconds
-        // there, between the question's end and its going. The feed is done with the buffer.
+        // there, between the question's end and its going. The pixels are only read from here on (the feed may still hold this frame, but never writes it).
         nonisolated(unsafe) let pixels = frame
         return await Task.detached(priority: .userInitiated) { CameraStill.attachment(from: pixels, angle: angle) }.value
     }
@@ -70,6 +70,7 @@ final class VoiceCamera {
 
 /// The capture session and its newest frame. Off the main actor: frames arrive on a queue of
 /// their own, thirty a second, and starting a session blocks until the camera is up.
+/// Sendable by hand: `frame` and `upright` under `lock`; `configured`, `wanted`, `observers` only on `queue`.
 nonisolated final class CameraFeed: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
     let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "com.goosehouse.echo.voice-camera")

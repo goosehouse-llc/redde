@@ -485,11 +485,10 @@ nonisolated struct LineBuffer: Sendable {
 /// Delivers a response body as `Data` chunks through a delegate, instead of `AsyncBytes`'
 /// one-suspension-per-byte iteration. A token stream or a 48 kB/s PCM stream is hundreds of
 /// chunks per second at most, not tens of thousands of awaits.
-nonisolated final class ChunkedResponse: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+nonisolated final class ChunkedResponse: NSObject, URLSessionDataDelegate, Sendable {
     private struct State {
         var response: CheckedContinuation<HTTPURLResponse, Error>?
         var stream: AsyncThrowingStream<Data, Error>.Continuation?
-        var finished = false
     }
     private let state = OSAllocatedUnfairLock(initialState: State())
     let chunks: AsyncThrowingStream<Data, Error>
@@ -532,7 +531,7 @@ nonisolated final class ChunkedResponse: NSObject, URLSessionDataDelegate, @unch
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         let (respond, stream) = state.withLock { s -> (CheckedContinuation<HTTPURLResponse, Error>?, AsyncThrowingStream<Data, Error>.Continuation?) in
-            defer { s.response = nil; s.finished = true }
+            defer { s.response = nil }
             return (s.response, s.stream)
         }
         if let error {
