@@ -9,7 +9,7 @@ final class PromoVideoUITests: XCTestCase {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["PROMO_VIDEO"] == "1", "Promo video shots run on request")
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-echo.demoHosts", "-transport", "chatCompletions"] + extra
         app.launch()
         return app
@@ -87,7 +87,7 @@ final class PromoVideoUITests: XCTestCase {
         if let url = ProcessInfo.processInfo.environment["KOKORO_URL"], !url.isEmpty {
             voice = ["-replyVoice", "kokoro", "-kokoroURL", url, "-voiceSpeed", "1"]
         }
-        let app = try bots(["-echo.screen", "sessions", "-conversations.section", "sessions", "-mutes", "<>",
+        let app = try bots(["-echo.screen", "sessions", "-mutes", "<>",
                             "-echo.openGroup", "-echo.demoRound", "-echo.groupVoice"] + voice)
         var label: XCUIElement?
         for name in ["Redde", "Scout", "Quill"] {
@@ -112,11 +112,11 @@ final class PromoVideoUITests: XCTestCase {
         }
         // The iPad's sidebar shows the library under the bots: the sample one, as its other shots.
         let screen = kind == "ph" ? ["-echo.screen", "sessions"] : ["-echo.demoLibrary"]
-        let list = try bots(screen + ["-conversations.section", "sessions", "-echo.demoMarks", "-mutes", "<>"])
+        let list = try bots(screen + ["-echo.demoMarks", "-mutes", "<>"])
         XCTAssertTrue(list.staticTexts["Weekend hike"].firstMatch.waitForExistence(timeout: 20))
         hold(3)
         try XCUIScreen.main.screenshot().pngRepresentation.write(to: dir.appending(path: "\(kind)-bots.png"))
-        let room = try bots(screen + ["-conversations.section", "sessions", "-mutes", "<>",
+        let room = try bots(screen + ["-mutes", "<>",
                                       "-echo.openGroup", "-echo.demoRound", "-echo.groupVoice"] + voice)
         let quill = room.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Quill is speaking")).firstMatch
         XCTAssertTrue(quill.waitForExistence(timeout: 60), "the round never came to Quill")
@@ -1019,8 +1019,7 @@ final class PromoVideoUITests: XCTestCase {
         slide(tile, by: -320, hold: 0.4)
         mark("slid")
         hold(1.6)
-        // (the segmented tab: a hidden ⌘2 button is also called Planned)
-        app.segmentedControls.buttons["Planned"].firstMatch.tap()
+        app.buttons["drawer.place.planned"].firstMatch.tap()
         mark("planned")
         hold(3.5)
         mark("end")

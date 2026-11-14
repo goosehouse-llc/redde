@@ -8,7 +8,7 @@ import XCTest
 final class ScanAndDrawUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-transport", "chatCompletions", "-fastLaneURL", "http://127.0.0.1:9", "-fastLaneModel", "test", "-echo.clearDrafts"]
         app.launch()
         return app

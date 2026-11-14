@@ -188,8 +188,6 @@ final class ComingUpModel {
 /// device (alarms, timers, reminders, events) and the full list of scheduled jobs at the end.
 struct ComingUpList: View {
     var planned = false
-    /// The drawer's server and section switch, scrolling with the list (Planned).
-    var topRow: AnyView?
     /// The iPhone's panel is out: it stays built while closed, so this is when to read again.
     var isShowing = true
     @State private var model = ComingUpModel()
@@ -214,7 +212,6 @@ struct ComingUpList: View {
         let tone = DrawerTone(settings.resolvedTheme)
         let next = ComingUp.nextUp(upcoming, now: .now)
         ScrollViewReader { proxy in List {
-            if let topRow { topRow }
             if model.loading, model.items.isEmpty {
                 HStack(spacing: 10) { ProgressView(); Text("Reading…").foregroundStyle(.secondary) }
                     .plannedRow(top: 12, bottom: 12)

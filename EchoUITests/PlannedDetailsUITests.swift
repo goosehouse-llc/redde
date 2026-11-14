@@ -7,7 +7,7 @@ final class PlannedDetailsUITests: XCTestCase {
     func testALongPressShowsTheDetails() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoPlanned", "-echo.screen", "sessions", "-conversations.section", "cron"]
+        app.launchArguments = ["-echo.demoPlanned", "-echo.screen", "sessions", "-echo.drawerPage", "planned"]
             + XCUIApplication.straightToChat
         app.launch()
         let row = app.text(containing: "The price of the blue kettle")

@@ -7,8 +7,8 @@ final class BotsUITests: XCTestCase {
     func testTheListShowsTheBotsAndABotsChatOffersTheOthersToTag() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde"]
-            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde", "-echo.drawerPage", "bots"]
+            + XCUIApplication.straightToChat
         app.launch()
         // The open conversation is Quill's chat, and goes by its name.
         XCTAssertTrue(app.text(containing: "tighten the opening").waitForExistence(timeout: 20), "the demo bot's chat isn't open")
@@ -54,8 +54,8 @@ final class BotsUITests: XCTestCase {
     func testABotAndAGroupChatCanBeMutedFromTheirRows() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
-                               "-echo.screen", "sessions", "-mutes", "<>"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde", "-echo.drawerPage", "bots",
+                               "-echo.screen", "sessions", "-mutes", "<>"] + XCUIApplication.straightToChat
         app.launch()
         let list = app.collectionViews.firstMatch
         // A bot's face in the row is named for the bot; a group chat's row starts with its name.
@@ -91,7 +91,7 @@ final class BotsUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
-                               "-echo.screen", "sessions", "-echo.botEditor", "new"] + XCUIApplication.chatsSection
+                               "-echo.screen", "sessions", "-echo.botEditor", "new"]
         app.launch()
         let writer = app.buttons["Writer"].firstMatch
         XCTAssertTrue(writer.waitForExistence(timeout: 20), "no templates in New Bot")
@@ -116,7 +116,7 @@ final class BotsUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
-                               "-echo.screen", "sessions", "-echo.botSchedules", "scout"] + XCUIApplication.chatsSection
+                               "-echo.screen", "sessions", "-echo.botSchedules", "scout"]
         app.launch()
         let wear = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "What to wear")).firstMatch
         XCTAssertTrue(wear.waitForExistence(timeout: 20), "Scout's schedules aren't listed")
@@ -139,9 +139,9 @@ final class BotsUITests: XCTestCase {
     func testMoreThanSixBotsFoldAndStayAsLeft() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.demoBotCount", "9", "-echo.clearDrafts", "-displayName", "Redde",
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.demoBotCount", "9", "-echo.clearDrafts", "-displayName", "Redde", "-echo.drawerPage", "bots",
                                "-echo.screen", "sessions", "-botOrder", "<>"]
-            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+            + XCUIApplication.straightToChat
         app.launch()
         let list = app.collectionViews.firstMatch
         // (Folded or not as an earlier run left it: an argument would hold it for the launch.)
@@ -176,7 +176,7 @@ final class BotsUITests: XCTestCase {
         for which in ["new", "scout", "default"] {
             let app = XCUIApplication()
             app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
-                                   "-echo.screen", "sessions", "-echo.botEditor", which] + XCUIApplication.chatsSection
+                                   "-echo.screen", "sessions", "-echo.botEditor", which]
             app.launch()
             let change = app.buttons["Change Face"].firstMatch
             XCTAssertTrue(change.waitForExistence(timeout: 20), "\(which): no Change Face")
@@ -195,8 +195,8 @@ final class BotsUITests: XCTestCase {
     func testBotsAndGroupChatsCanBeDraggedIntoAnOrder() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde",
-                               "-echo.screen", "sessions"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde", "-echo.drawerPage", "bots",
+                               "-echo.screen", "sessions"] + XCUIApplication.straightToChat
         // No order left from an earlier run: an empty one, for this launch only.
         app.launchArguments += ["-botOrder", "<>"]
         app.launch()
@@ -261,7 +261,7 @@ final class BotsUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.openGroup", "-echo.clearDrafts", "-displayName", "Redde",
-                               "-echo.screen", "sessions"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+                               "-echo.screen", "sessions"] + XCUIApplication.straightToChat
         app.launch()
         try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")
         XCTAssertTrue(app.textFields["Message the group"].waitForExistence(timeout: 20), "the group chat didn't open")
@@ -284,8 +284,8 @@ final class BotsUITests: XCTestCase {
     func testNewBotAndTopologyFoldIntoOneTileAndStaySo() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde"]
-            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.clearDrafts", "-displayName", "Redde", "-echo.drawerPage", "bots"]
+            + XCUIApplication.straightToChat
         func openList() {
             XCTAssertTrue(app.text(containing: "tighten the opening").waitForExistence(timeout: 20), "the demo bot's chat isn't open")
             if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
@@ -310,8 +310,8 @@ final class BotsUITests: XCTestCase {
     func testTopologyShowsTheBotsTheirGroupChatsAndModels() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.demoMarks", "-echo.demoClaudeBot", "-echo.clearDrafts", "-displayName", "Redde"]
-            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoProjects", "-echo.demoBots", "-echo.demoMarks", "-echo.demoClaudeBot", "-echo.clearDrafts", "-displayName", "Redde", "-echo.drawerPage", "bots"]
+            + XCUIApplication.straightToChat
         app.launch()
         XCTAssertTrue(app.text(containing: "tighten the opening").waitForExistence(timeout: 20), "the demo bot's chat isn't open")
         if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }

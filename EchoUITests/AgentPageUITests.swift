@@ -8,7 +8,7 @@ final class AgentPageUITests: XCTestCase {
     func testAPageIsLiveAndItsButtonsReachTheAgent() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoPage"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoPage"] + XCUIApplication.straightToChat
         app.launch()
         XCTAssertTrue(app.text(containing: "the week's rain").waitForExistence(timeout: 20), "The demo reply didn't appear")
         XCTAssertFalse(app.text(containing: "::preview").exists, "The directive shows as text")

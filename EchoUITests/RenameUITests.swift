@@ -6,7 +6,7 @@ final class RenameUITests: XCTestCase {
     func testRenamingFromTheHeaderMenuChangesTheHeader() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demo", "-echo.demoShort"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demo", "-echo.demoShort"] + XCUIApplication.straightToChat
         app.launch()
         func header(_ title: String) -> XCUIElement {
             app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch

@@ -115,13 +115,10 @@ struct ConversationsList: View {
     /// A goal's page (2.4), from its card.
     @State var shownGoal: GoalReport?
     /// The Bots section being put in order: only its bots and group chats show, with handles.
-    @State private var arrangingBots = false
+    @State var arrangingBots = false
     @State private var selected: Set<String> = []
     @State private var confirmBulkDelete = false
     @State private var showSettings = false
-    /// The drawer laid out from scratch (2026-11-13), on unless Settings › Top of the Chat List
-    /// turns it off for the list as it was.
-    @AppStorage(NewDrawer.key) var newDrawer = true
     @State var drawerPage: NewDrawer.Page?
     @State var drawerWaits: [WaitingRequest] = []
     @State var drawerBotWaits: [NewDrawer.BotWait] = []
@@ -155,27 +152,7 @@ struct ConversationsList: View {
         case move(HermesSessionsAPI.SessionSummary)
     }
 
-    /// Sessions, what is planned, the kanban board (the two live on the gateway), or what the
-    /// agents made (from the replies on this device). Planned took Cron's place on 2026-11-03 (his
-    /// pick): its raw value stays "cron" so a list left on Cron opens on Planned.
-    enum Tab: String, CaseIterable, Identifiable {
-        case sessions, planned = "cron", kanban, made
-        var id: String { rawValue }
-        var title: String {
-            switch self {
-            case .sessions: String(localized: "Chats")
-            case .planned: String(localized: "Planned", comment: "The list's section of what the agents will do: scheduled jobs, reminders, alarms and the rest")
-            case .kanban: String(localized: "Kanban", comment: "The list's section with the kanban board")
-            case .made: String(localized: "Made", comment: "The list's section with the pages, pictures and files the agents made")
-            }
-        }
-    }
-    /// Chats, Cron or Kanban: kept across launches, and shared with the iPad's detail pane.
-    @AppStorage(Self.sectionKey) private var section: Tab = .sessions
-    static let sectionKey = "conversations.section"
-
-    /// On iPad the list stays in the sidebar and the switcher picks what the wide pane beside it
-    /// shows: the chat, the cron jobs or the Kanban board (ContentView). Here it's always the chats.
+    /// On iPad and the Mac the list stays in the sidebar, the chat in the wide pane beside it.
     var wideDetail = false
 
     /// The bar's title. "Conversations" over the chats; Cron and Kanban name themselves.
@@ -185,7 +162,7 @@ struct ConversationsList: View {
     /// selecting, when Cancel and Deselect all need the room.
     private var listTitle: String {
         if #available(iOS 27.0, macOS 27.0, *), wideDetail { return selecting || arrangingBots ? "" : String(localized: "Chats") }
-        return section == .sessions || wideDetail ? String(localized: "Conversations") : section.title
+        return String(localized: "Conversations")
     }
 
     /// A conversation opened (or a new one started), or with `room` a group chat: it takes the
@@ -231,14 +208,13 @@ struct ConversationsList: View {
     func opened(room: GroupRoom? = nil) {
         groups.open = room
         drawerPage = nil
-        if wideDetail { section = .sessions }
         onOpened()
     }
 
     var body: some View {
         // In stages, as ContentView.body is: in one chain an unoptimized build kept 290 KB of the
         // phone's 1 MB main-thread stack here (2026-11-13).
-        listSheets(AnyView(tabPage
+        listSheets(AnyView(sessionsList
         // From inside the navigation stack: hiding the whole panel doesn't reach UIKit's list,
         // and VoiceOver could swipe into rows parked off screen.
         .accessibilityHidden(panelParked)
@@ -247,26 +223,7 @@ struct ConversationsList: View {
         // Inline on the iPhone, its title the agent picker (`pickerInTitle`): a large title over the
         // search, the picker and the tabs left the chats off the first screen (2026-11-06).
         .navigationBarTitleDisplayMode(wideDetail ? .large : .inline)
-        #if DEBUG
-        // Dev hook: `-echo.section cron|kanban` opens on that tab (screenshots).
-        .onAppear {
-            if let name = DevHooks.value("-echo.section"), let tab = name == "planned" ? .planned : Tab(rawValue: name) { section = tab }
-        }
-        #endif
         ))
-    }
-
-    /// The tab shown, each behind AnyView so the switch keeps no copy of the others (Debug: 114 KB).
-    private var tabPage: AnyView {
-        switch wideDetail || newDrawer ? .sessions : section {
-        case .sessions: AnyView(sessionsList)
-        // Rebuilt on a server or profile switch, so nothing (or no live socket) carries over.
-        case .planned: AnyView(ComingUpList(planned: true, topRow: AnyView(topRow), isShowing: isShowing).id(settings.connectionKey))
-        case .kanban:
-            // Gone once the panel has slid out (not as it starts to), taking its live socket along.
-            if !panelParked { AnyView(KanbanView(topRow: AnyView(topRow)).id(settings.connectionKey)) } else { AnyView(Color.clear) }
-        case .made: AnyView(MadeView(topRow: AnyView(topRow), openChat: openMadeIn))
-        }
     }
 
     /// What the list's menus and rows bring up, and its keyboard tabs.
@@ -320,10 +277,11 @@ struct ConversationsList: View {
         }
         .background {
             Group {
-                Button("Sessions") { section = .sessions }.keyboardShortcut("1", modifiers: .command)
-                Button("Planned") { section = .planned }.keyboardShortcut("2", modifiers: .command)
-                Button("Kanban") { section = .kanban }.keyboardShortcut("3", modifiers: .command)
-                Button("Made") { section = .made }.keyboardShortcut("4", modifiers: .command)
+                // The drawer's places, from a keyboard (they were the classic list's tabs).
+                Button("Chats") { drawerPage = nil }.keyboardShortcut("1", modifiers: .command)
+                Button("Planned") { drawerPage = .planned }.keyboardShortcut("2", modifiers: .command)
+                Button("Board") { drawerPage = .board }.keyboardShortcut("3", modifiers: .command)
+                Button("Made") { drawerPage = .made }.keyboardShortcut("4", modifiers: .command)
             }
             .frame(width: 0, height: 0).opacity(0).accessibilityHidden(true)
         }
@@ -387,7 +345,7 @@ struct ConversationsList: View {
     /// The agent picker as the chat list's title, on the iPhone's Chats (2026-11-06).
     var pickerInTitle: Bool {
         #if os(iOS)
-        !wideDetail && section == .sessions && showsProfileMenu
+        !wideDetail && showsProfileMenu
         #else
         false
         #endif
@@ -447,37 +405,8 @@ struct ConversationsList: View {
         return knownProfiles.first { $0.name == name }?.title ?? name
     }
 
-    /// The server switch (once there's more than one) and Chats, Cron and Kanban, as the first
-    /// row of whichever list is showing: they move with it when you pull to refresh or scroll.
-    /// Full width: in the bar, next to Settings, Select and New, they were squeezed to "Kanb…".
-    private var topRow: some View {
-        VStack(spacing: 8) {
-            // Not on the OpenAI-compatible connection, which belongs to no server (as in Settings).
-            if settings.servers.count > 1, settings.transport != .chatCompletions { serverMenu }
-            if showsProfileMenu, !pickerInTitle { profileMenu }
-            sectionPicker
-        }
-        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
-        .selectionDisabled()
-        .accessibilityHidden(panelParked)   // UIKit's segmented control ignores it from further out
-    }
-
-    private var sectionPicker: some View {
-        // Through its own binding, not `$section`: with the stored one, the first tap after the
-        // panel opened blinked and didn't switch (seen on device, never in the simulator).
-        Picker("Section", selection: Binding(get: { section }, set: { section = $0 })) {
-            ForEach(Tab.allCases) { s in Text(s.title).tag(s) }
-        }
-        .pickerStyle(.segmented)
-        #if os(macOS)
-        .labelsHidden()   // (a Mac shows a picker's label beside it; the three tabs say enough)
-        #endif
-    }
-
     /// `-echo.demoDay`: no Projects in the day's video (`DemoDay`).
-    private var hidesProjectsForDemo: Bool {
+    var hidesProjectsForDemo: Bool {
         #if DEBUG
         DemoDay.on
         #else
@@ -500,31 +429,14 @@ struct ConversationsList: View {
             Group {
             if arrangingBots {
                 botsSection
-            } else if newDrawer, !selecting {
+            } else if !selecting {
                 // Type-erased: its view type inside this list's overflowed the main thread's
                 // stack at launch on the phone (Release, 11-13), demangling the list's type.
                 AnyView(drawerRows)
+            } else if usesLedger {
+                ledgerSection
             } else {
-                topRow
-                if query.isEmpty, !selecting {
-                    waitingNotesSection
-                    // The cards at the top, each as the person chose (`ChatListCard`; read for redraws).
-                    let _ = settings.hiddenChatListCards
-                    // The inbox, briefings and goals as one row of tiles (`TodayStrip`, 2026-11-06).
-                    TodayStrip(openGoal: { shownGoal = $0 })
-                    if ChatListCard.pinned.isShown { PinnedCardsSection() }
-                    if ChatListCard.ideas.isShown { IdeasSection(take: takeIdea) }
-                }
-                if usesLedger {
-                    if query.isEmpty, !selecting {
-                        if botsHere { botsSection }
-                        if viaServe || settings.transport == .acp, settings.projectsInChatList, !hidesProjectsForDemo, !projects.isEmpty || viaServe { projectsSection }
-                    }
-                    ledgerSection
-                    if searchesMessages, !selecting { messageHitsSection }
-                } else {
-                    localSection
-                }
+                localSection
             }
             }
             // Every row on the theme's page (nil: the system's rows, as before).
@@ -539,7 +451,7 @@ struct ConversationsList: View {
         // system's white); a theme that leaves the page to the system keeps the list as it was.
         .themedPage(settings.theme.listPage)
         .navigationDestination(item: $drawerPage) { drawerDestination($0) }
-        .task(id: "\(newDrawer)|\(isShowing)|\(scenePhase == .active && pace.onScreen)") { await watchDrawerWaits() }
+        .task(id: "\(isShowing)|\(scenePhase == .active && pace.onScreen)") { await watchDrawerWaits() }
         .navigationDestination(for: ProjectRoute.self) { route in
             if let project = projects.first(where: { $0.id == route.id }) {
                 ProjectSessionsView(project: project, open: load, currentID: conversation.serverSessionID,
@@ -653,8 +565,8 @@ struct ConversationsList: View {
         // The calendar's next event, kept to the minute while the list is on screen and shows it:
         // the strip's Up Next tile, or the Today page's calendar tile. The only such loop (the
         // Today page had its own too, and this one ran with a chat open over the list).
-        .task(id: "\(settings.todayUpNext)|\(newDrawer)|\(isShowing)|\(scenePhase == .active && pace.onScreen)") {
-            let onPage = newDrawer && !UserDefaults.standard.bool(forKey: TodayStrip.calendarHiddenKey)
+        .task(id: "\(settings.todayUpNext)|\(isShowing)|\(scenePhase == .active && pace.onScreen)") {
+            let onPage = !UserDefaults.standard.bool(forKey: TodayStrip.calendarHiddenKey)
             guard settings.todayUpNext || onPage, isShowing, scenePhase == .active, pace.onScreen else { return }
             while !Task.isCancelled {
                 CalendarUpNext.shared.refresh()

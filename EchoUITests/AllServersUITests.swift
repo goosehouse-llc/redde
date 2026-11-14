@@ -8,14 +8,16 @@ final class AllServersUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demoProjects", "-echo.demoAllServers", "-echo.clearDrafts", "-displayName", "Redde"]
-            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+            + XCUIApplication.straightToChat
         app.launch()
         XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 20))
         if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
 
         let list = app.collectionViews.firstMatch
         let row = list.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Garage door sensor")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "the other server's chat isn't listed")
+        // Below the drawer's hello, counters and places: scrolled to.
+        for _ in 0 ..< 4 where !(row.waitForExistence(timeout: 3) && row.isHittable) { list.swipeUp() }
+        XCTAssertTrue(row.exists, "the other server's chat isn't listed")
         XCTAssertTrue((row.label as NSString).contains("Workshop"), "its row doesn't name its server: \(row.label)")
         XCTAssertTrue(app.text(containing: "Cabin didn't answer").exists, "the server that didn't answer isn't named")
         XCTAssertTrue(list.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Transcript scrolling")).firstMatch.exists,

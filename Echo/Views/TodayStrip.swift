@@ -1,21 +1,15 @@
 import SwiftUI
 
-/// "Today", at the top of the chat list (asked 2026-11-06, his pick of the mockups, "A today
-/// strip"): the Inbox, the briefings not read yet and the goals as small tiles in one row that
-/// scrolls sideways, in place of a row, a deck and a card each, which stacked until the chats
-/// were off the screen. A tap opens what a tile is; a briefing's hold menu has Done and Later, as
-/// its deck card had. Each kind still follows Settings → Appearance → Top of the Chat List, and
-/// the row folds away to a count. The person's lists (2026-11-09, `TodayLists`) come right after
+/// The drawer's Today page (2026-11-13; a row of small tiles at the top of the classic list from
+/// 2026-11-06 until that list was retired): the Inbox, the briefings not read yet and the goals
+/// as tiles two to a row, each showing what it is (the unread count, a list's items, a goal's
+/// ring, the next event). A tap opens what a tile is; a briefing's hold menu has Done and Later.
+/// Each kind still follows Settings → Appearance → Top of the Chat List. The person's lists (2026-11-09, `TodayLists`) come right after
 /// the Inbox, one tile each, and stay until a list is deleted. Up Next (2026-11-12, when turned
 /// on) is the next event on the calendar. The tiles go in the order the person arranged them
 /// (2026-11-12: Move Left / Right on a tile's hold menu, or Arrange Tiles…).
 struct TodayStrip: View {
     let openGoal: (GoalReport) -> Void
-    /// `.strip`: one row that scrolls sideways at the top of the classic list. `.page`: the new
-    /// drawer's Today page (2026-11-13), with room for a header and the tiles in a grid, each
-    /// showing what it is (the unread count, a list's items, a goal's ring, the next event).
-    var layout: Layout = .strip
-    enum Layout { case strip, page }
     @State private var mail = MailCenter.shared
     @State private var goals = GoalsInbox.shared
     @State private var briefings = BriefingsInbox.shared
@@ -24,9 +18,8 @@ struct TodayStrip: View {
     @State private var settings = Settings.shared
     @State private var arranging = false
     @Environment(\.openURL) private var openURL
-    @AppStorage("chatList.open.today") private var isOpen = true
-    /// The Today page keeps a calendar tile beside the inbox (asked 2026-11-13) whether or not
-    /// Up Next is on for the strip, until its hold menu hides it.
+    /// The page keeps a calendar tile beside the inbox (asked 2026-11-13) whether or not Up Next
+    /// is on, until its hold menu hides it.
     @AppStorage(TodayStrip.calendarHiddenKey) private var calendarHiddenOnPage = false
     static let calendarHiddenKey = "today.page.calendarHidden"
     /// Calendar access given from the tile, so it changes at once even with nothing coming up.
@@ -37,9 +30,6 @@ struct TodayStrip: View {
     /// A briefing whose job's time is being changed (asked 2026-11-11).
     @State private var retiming: AgentBriefing?
     @Environment(\.theme) private var theme
-
-    static let tileWidth: CGFloat = 150
-    static let tileHeight: CGFloat = 124
 
     /// A tile, by its key (`TodayTile.key`), with what Arrange Tiles… calls it.
     private struct Entry: Identifiable {
@@ -55,12 +45,9 @@ struct TodayStrip: View {
         let deck = ChatListCard.briefings.isShown ? briefings.deck : []
         let goalList = ChatListCard.goals.isShown ? goals.onList : []
         let todayLists = ChatListCard.lists.isShown ? lists.lists : []
-        let onPage = layout == .page
-        let showsCalendar = settings.todayUpNext || (onPage && !calendarHiddenOnPage)
-        let event = showsCalendar ? upNext.next : nil
-        // The page's tile shows with nothing coming up too (and asks for the calendars); the
-        // strip's only with an event.
-        let calendarTile = onPage ? showsCalendar : event != nil
+        let calendarTile = settings.todayUpNext || !calendarHiddenOnPage
+        // The tile shows with nothing coming up too (and asks for the calendars).
+        let event = calendarTile ? upNext.next : nil
         // The keys first, in the person's order, so each tile's menu knows where it stands.
         var natural: [String] = []
         if account != nil { natural.append("inbox") }
@@ -69,11 +56,8 @@ struct TodayStrip: View {
         let keys = Self.besideInbox(Self.arranged(natural, order: settings.todayTileOrder), order: settings.todayTileOrder)
         var entries: [Entry] = []
         if calendarTile {
-            let view = onPage ? AnyView(calendarPageTile(event, keys: keys)) : event.map { AnyView(upNextTile($0, keys: keys)) }
-            if let view {
-                entries.append(Entry(key: "upnext", name: String(localized: "Up Next", comment: "Today strip: the tile with the next event on the calendar"),
-                                     symbol: "calendar", view: view))
-            }
+            entries.append(Entry(key: "upnext", name: String(localized: "Up Next", comment: "Today strip: the tile with the next event on the calendar"),
+                                 symbol: "calendar", view: AnyView(calendarPageTile(event, keys: keys))))
         }
         if let account {
             entries.append(Entry(key: "inbox", name: String(localized: "Inbox", comment: "The chat list's row for email"),
@@ -90,38 +74,8 @@ struct TodayStrip: View {
         }
         let byKey = Dictionary(entries.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         let shown = keys.compactMap { byKey[$0] }
-        let count = shown.count
-        if layout == .page {
-            let todo = todayLists.reduce(0) { $0 + $1.open.count }
-            return AnyView(page(shown, todo: todo, unread: account?.unread ?? 0, briefs: deck.count))
-        }
-        return AnyView(Group {
-            if count > 0 {
-                Section {
-                    if isOpen {
-                        ScrollView(.horizontal) {
-                            HStack(spacing: 10) {
-                                ForEach(shown) { $0.view }
-                            }
-                            .padding(.horizontal, 16)
-                        }
-                        .scrollIndicators(.hidden)
-                        .scrollClipDisabled()
-                        .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 10, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .selectionDisabled()
-                        .sheet(item: $retiming) { BriefingTimeSheet(briefing: $0) }
-                        .sheet(isPresented: $arranging) {
-                            ArrangeTilesSheet(tiles: shown.map { ($0.key, $0.name, $0.symbol) })
-                        }
-                    }
-                } header: {
-                    FoldingHeader(title: String(localized: "Today", comment: "The chat list's row of tiles: the inbox, briefings and goals"),
-                                  count: count, isOpen: $isOpen)
-                }
-            }
-        })
+        let todo = todayLists.reduce(0) { $0 + $1.open.count }
+        return page(shown, todo: todo, unread: account?.unread ?? 0, briefs: deck.count)
     }
 
     /// The Today page: the day in its colour with three counts, then the tiles two to a row, the
@@ -158,8 +112,6 @@ struct TodayStrip: View {
             }
         }
     }
-
-    private var big: Bool { layout == .page }
 
     /// `keys` in the person's order: those they placed as they placed them, then the rest as the
     /// strip has them.
@@ -199,13 +151,10 @@ struct TodayStrip: View {
                 .compactMap(\.self).joined(separator: " · ")
         let title = account.unread > 0 ? String(localized: "\(account.unread) new", comment: "Today strip: unread emails") : String(localized: "All read", comment: "Today strip: no unread email")
         var tile = TodayTile(key: "inbox", kind: Text("Inbox", comment: "The chat list's row for email"), symbol: "envelope.fill", tint: theme.accent, wash: theme.accent,
-                             title: big ? "" : title, detail: line)
-        if big {
-            tile.big = true
-            tile.watermark = "envelope.fill"
-            tile.feature = AnyView(TodayBigNumber(count: account.unread, label: account.unread > 0 ? String(localized: "Unread", comment: "A conversation not yet read; also the swipe action that marks it so") : title,
-                                                  tint: theme.accent, design: DrawerTone(theme).design))
-        }
+                             title: "", detail: line)
+        tile.watermark = "envelope.fill"
+        tile.feature = AnyView(TodayBigNumber(count: account.unread, label: account.unread > 0 ? String(localized: "Unread", comment: "A conversation not yet read; also the swipe action that marks it so") : title,
+                                              tint: theme.accent, design: DrawerTone(theme).design))
         return tileButton(tile, keys: keys, open: { mail.showingInbox = true }) { TileColorMenu(key: tile.key) }
         .accessibilityHint(Text("Opens your email", comment: "VoiceOver hint: the chat list's Inbox row"))
     }
@@ -219,12 +168,9 @@ struct TodayStrip: View {
             ? (list.items.isEmpty ? String(localized: "Nothing on it yet", comment: "Today strip: an empty to-do list") : "")
             : open.prefix(4).map(\.text).formatted(.list(type: .and, width: .narrow))
         var tile = TodayTile(key: "list:" + list.id, kind: kind, symbol: open.isEmpty && !list.items.isEmpty ? "checkmark.circle.fill" : "checklist",
-                             tint: .green, wash: .green, title: list.title, detail: big && !open.isEmpty ? "" : detail)
-        if big {
-            tile.big = true
-            tile.watermark = "checklist"
-            if !list.items.isEmpty { tile.feature = AnyView(TodayListItems(list: list)) }
-        }
+                             tint: .green, wash: .green, title: list.title, detail: open.isEmpty ? detail : "")
+        tile.watermark = "checklist"
+        if !list.items.isEmpty { tile.feature = AnyView(TodayListItems(list: list)) }
         return tileButton(tile, keys: keys, open: { lists.shownID = list.id }) {
             if !list.finished.isEmpty {
                 Button { lists.clearDone(in: list) } label: {
@@ -250,15 +196,12 @@ struct TodayStrip: View {
         var tile = TodayTile(key: "brief:" + briefing.jobKey, kind: Text(verbatim: when), symbol: briefing.failed ? "exclamationmark.triangle.fill" : briefing.symbol,
                              tint: briefing.failed ? .red : .yellow, wash: briefing.failed ? .red : .yellow, title: briefing.heading, detail: detail,
                              forecast: briefing.forecastPlace)
-        if big {
-            tile.big = true
-            tile.watermark = briefing.symbol
-            if briefing.forecastPlace == nil, briefing.dayBrief == nil {
-                // The briefing's opening lines, where the strip had room for one.
-                tile.detail = ""
-                tile.feature = AnyView(Text(briefing.plainText.split(whereSeparator: \.isNewline).prefix(3).joined(separator: " "))
-                    .chatFont(.caption).foregroundStyle(.secondary).lineLimit(4))
-            }
+        tile.watermark = briefing.symbol
+        if briefing.forecastPlace == nil, briefing.dayBrief == nil {
+            // The briefing's opening lines.
+            tile.detail = ""
+            tile.feature = AnyView(Text(briefing.plainText.split(whereSeparator: \.isNewline).prefix(3).joined(separator: " "))
+                .chatFont(.caption).foregroundStyle(.secondary).lineLimit(4))
         }
         return tileButton(tile, keys: keys, open: { briefings.show(briefing) }) {
             Button { briefings.markJobRead(briefing) } label: {
@@ -282,7 +225,7 @@ struct TodayStrip: View {
     }
 
     /// A tile that opens on a tap and holds up its own menu on a press. A menu button, not a
-    /// context menu: the strip is one row of the list, and a row keeps one context menu, so a
+    /// context menu: the tiles are one row of the list, and a row keeps one context menu, so a
     /// press on any tile lifted the whole row (2026-11-11) and then, with a menu on each tile,
     /// brought up the first tile's menu whichever was pressed.
     private func tileButton<Items: View>(_ tile: TodayTile, keys: [String], open: @escaping () -> Void,
@@ -319,28 +262,6 @@ struct TodayStrip: View {
         withAnimation(.snappy) { settings.todayTileOrder = Self.moving(key, by: step, in: keys, order: settings.todayTileOrder) }
     }
 
-    /// The next event on the calendar, ticking to the minute.
-    private func upNextTile(_ event: CalendarUpNext.Event, keys: [String]) -> some View {
-        TimelineView(.everyMinute) { context in
-            let tile = upNextModel(event, now: context.date)
-            tileButton(tile, keys: keys, open: { AgendaCard.calendarURL(at: event.start).map { openURL($0) } }) {
-                Button { settings.todayUpNext = false } label: {
-                    Label { Text("Hide Up Next", comment: "The Up Next tile's hold menu: turn the tile off (Settings › Appearance › Top of the Chat List turns it back on)") } icon: { Image(systemName: "eye.slash") }
-                }
-                TileColorMenu(key: tile.key)
-            }
-            .accessibilityHint(Text("Opens Calendar", comment: "VoiceOver hint: the Up Next tile on the chat list"))
-        }
-    }
-
-    private func upNextModel(_ event: CalendarUpNext.Event, now: Date) -> TodayTile {
-        let on = event.isOn(at: now)
-        let place = event.location?.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
-        return TodayTile(key: "upnext", kind: on ? Text("Now") : Text("Up Next", comment: "Today strip: the tile with the next event on the calendar"),
-                         symbol: "calendar", tint: event.color ?? .red, wash: event.color ?? .red, title: event.title,
-                         detail: [CalendarUpNext.when(event, now: now), place].filter { !$0.isEmpty }.joined(separator: " · "))
-    }
-
     /// The Today page's calendar tile (asked 2026-11-13): the next event, its time large and how
     /// long until it; a tap opens Calendar there. Before Redde may read the calendars, a tap asks
     /// (or, once refused, opens Redde's settings).
@@ -369,7 +290,6 @@ struct TodayStrip: View {
                                  : on ? Text("Now", comment: "A weather card's reading, and its first hour: now")
                                  : Text("Up Next", comment: "Today strip: the tile with the next event on the calendar"),
                              symbol: "calendar", tint: color, wash: color, title: "", detail: "")
-        tile.big = true
         tile.watermark = "calendar"
         if let event {
             let place = event.location?.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
@@ -408,17 +328,14 @@ struct TodayStrip: View {
                       title: goal.title,
                       detail: goal.next.map { String(localized: "Next: \($0)", comment: "Today strip: a goal's next step") }
                           ?? GoalReport.plain(goal.headline))
-        if big {
-            tile.big = true
-            tile.watermark = "flag.checkered"
-            if goal.total > 0 {
-                // The ring beside the next step, so the title keeps its two lines.
-                tile.feature = AnyView(HStack(alignment: .center, spacing: 10) {
-                    GoalRing(done: goal.done, total: goal.total, color: color, size: 40)
-                    Text(tile.detail).chatFont(.caption).foregroundStyle(.secondary).lineLimit(3)
-                })
-                tile.detail = ""
-            }
+        tile.watermark = "flag.checkered"
+        if goal.total > 0 {
+            // The ring beside the next step, so the title keeps its two lines.
+            tile.feature = AnyView(HStack(alignment: .center, spacing: 10) {
+                GoalRing(done: goal.done, total: goal.total, color: color, size: 40)
+                Text(tile.detail).chatFont(.caption).foregroundStyle(.secondary).lineLimit(3)
+            })
+            tile.detail = ""
         }
         return tileButton(tile, keys: keys, open: { openGoal(goal) }) { TileColorMenu(key: tile.key) }
     }
@@ -439,10 +356,7 @@ private struct TodayTile: View {
     var detail: String
     /// A weather briefing's place: its reading now, in a line over the words.
     var forecast: String?
-    /// The Today page's tile (`TodayStrip.Layout.page`): as wide as its column, taller, with
-    /// `feature` (what the tile is about, drawn big) under the title and its symbol large and
-    /// faint in the corner.
-    var big = false
+    /// What the tile is about, drawn big under the title; its symbol large and faint in the corner.
     var feature: AnyView?
     var watermark: String?
     var height: CGFloat = 188
@@ -459,8 +373,8 @@ private struct TodayTile: View {
         case .byKind: wash
         case let .color(card): solid == nil ? card.color(in: theme) : nil
         }
-        let radius: CGFloat = big ? 22 : 16
-        Group { if big { bigContent } else { content } }
+        let radius: CGFloat = 22
+        content
             .environment(\.colorScheme, solid?.scheme ?? scheme)
             .environment(\.todayTileSolid, solid != nil)
             .background {
@@ -477,7 +391,7 @@ private struct TodayTile: View {
             .accessibilityElement(children: .combine)
     }
 
-    private var bigContent: some View {
+    private var content: some View {
         let design = DrawerTone(theme).design
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
@@ -512,29 +426,6 @@ private struct TodayTile: View {
             }
         }
         .clipShape(.rect(cornerRadius: 22, style: .continuous))
-    }
-
-    private var content: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                if let ring {
-                    GoalRing(done: ring.done, total: ring.total, color: ring.color, size: 16, showsCount: false)
-                } else if let symbol {
-                    Image(systemName: symbol).tileAccent(tint)
-                }
-                kind.lineLimit(1)
-            }
-            .chatFont(.caption, weight: .semibold)
-            .foregroundStyle(.secondary)
-            Spacer(minLength: 0)
-            Text(title).chatFont(.subheadline, weight: .semibold).lineLimit(forecast == nil ? 2 : 1)
-            if let forecast { BriefingForecast(place: forecast, line: true).chatFont(.subheadline, weight: .semibold) }
-            if !detail.isEmpty {
-                Text(detail).chatFont(.caption).foregroundStyle(.secondary).lineLimit(forecast == nil ? 2 : 1)
-            }
-        }
-        .padding(12)
-        .frame(width: TodayStrip.tileWidth, height: TodayStrip.tileHeight, alignment: .topLeading)
     }
 }
 

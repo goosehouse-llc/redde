@@ -6,7 +6,7 @@ final class StartScreenUITests: XCTestCase {
     func testTheContinueCardReopensTheLastConversation() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demo", "-echo.demoShort"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demo", "-echo.demoShort"] + XCUIApplication.straightToChat
         app.launch()
         let reply = app.text(containing: "I've added a reminder")
         XCTAssertTrue(reply.waitForExistence(timeout: 15), "The demo reply didn't appear")

@@ -7,7 +7,8 @@ final class ReplyActionsUITests: XCTestCase {
     private func launchDemo() -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demo", "-echo.demoShort"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        // No draft left from an earlier run: one made the iPad's field tall.
+        app.launchArguments = ["-echo.demo", "-echo.demoShort", "-echo.clearDrafts"] + XCUIApplication.straightToChat
         app.launch()
         return app
     }
@@ -126,7 +127,8 @@ final class ReplyActionsUITests: XCTestCase {
     /// came from back on screen.
     func testTappingAQuoteShowsWhereItCameFrom() {
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demo", "-echo.demoQuote"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        // Far: the reply quoted is off screen even on an iPad, which held the whole demo.
+        app.launchArguments = ["-echo.demo", "-echo.demoQuote", "-echo.demoQuoteFar"] + XCUIApplication.straightToChat
         app.launch()
         let quote = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Quoting: ")).firstMatch
         XCTAssertTrue(quote.waitForExistence(timeout: 15), "The quoting message has no quote over it")
@@ -173,7 +175,7 @@ final class ReplyActionsUITests: XCTestCase {
     func testSelectingKeepsTheChatsTextSize() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demo", "-echo.demoShort", "-chatTextSize", "2"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demo", "-echo.demoShort", "-chatTextSize", "2"] + XCUIApplication.straightToChat
         app.launch()
         let reply = app.text(containing: "I've added a reminder")
         XCTAssertTrue(reply.waitForExistence(timeout: 15), "The demo reply didn't appear")

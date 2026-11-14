@@ -8,7 +8,7 @@ final class LinkPreviewUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demo", "-echo.demoLinkPreview", "-linkPreviews", previews ? "YES" : "NO"]
-            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+            + XCUIApplication.straightToChat
         app.launch()
         return app
     }

@@ -8,7 +8,7 @@ import XCTest
 final class KeyboardDismissUITests: XCTestCase {
     private func launch(_ extra: [String]) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-transport", "chatCompletions", "-fastLaneURL", "http://127.0.0.1:9", "-fastLaneModel", "test"] + extra
         app.launch()
         return app

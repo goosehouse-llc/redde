@@ -232,7 +232,6 @@ final class MadeIndex {
 /// rest by day: pictures as a grid of thumbnails, pages and files as cards with a tile for their
 /// type and the face of the bot that made them.
 struct MadeView: View {
-    var topRow: AnyView?
     /// Opens the chat a thing was made in.
     let openChat: (UUID) -> Void
 
@@ -249,7 +248,6 @@ struct MadeView: View {
         let layout = MadeLayout.rows(shown, columns: sizeClass == .regular ? 5 : 3)
         let actions = MadeActions(open: open, look: { previewing = $0 }, openChat: openChat)
         List {
-            if let topRow { topRow }
             AnyView(MadeHero(counts: counts, tone: tone).madeRow(top: 6, bottom: 10))
             if counts.total > 0 {
                 AnyView(MadeChips(kind: $kind, counts: counts, tone: tone).madeRow(top: 0, bottom: 8, side: 0))

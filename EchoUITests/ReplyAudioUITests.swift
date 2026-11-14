@@ -14,7 +14,7 @@ final class ReplyAudioUITests: XCTestCase {
     func testASoundInAReplyPlaysWhereItStands() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoAudio"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoAudio"] + XCUIApplication.straightToChat
         app.launch()
         XCTAssertTrue(app.text(containing: "read aloud").waitForExistence(timeout: 20), "The demo reply didn't appear")
         let play = app.buttons["Play"]

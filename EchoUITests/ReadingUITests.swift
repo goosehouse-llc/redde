@@ -76,11 +76,14 @@ final class ReadingUITests: XCTestCase {
         let app = XCUIApplication()
         // The Hermes API at an address nothing answers on, and a few conversations this iPhone
         // kept copies of from that server.
-        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-transport", "hermesSessions", "-gatewayURL", "http://127.0.0.1:9", "-echo.fresh", "-echo.demoSaved", "-echo.screen", "sessions"]
         app.launch()
-        XCTAssertTrue(app.staticTexts["On this iPhone"].waitForExistence(timeout: 30)
-                      || app.staticTexts["ON THIS IPHONE"].waitForExistence(timeout: 2), "The saved copies aren't offered when the list can't load")
+        // Under the drawer's hello, counters and places, and the problem card: scrolled to.
+        let header = app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "On this iPhone")).firstMatch
+        _ = app.collectionViews.firstMatch.waitForExistence(timeout: 30)
+        for _ in 0 ..< 5 where !header.waitForExistence(timeout: 3) { app.swipeUp() }
+        XCTAssertTrue(header.exists, "The saved copies aren't offered when the list can't load")
         // Under the Today tiles and the problem card, so further down than the screen goes.
         let copy = app.staticTexts["Lisbon trip ideas"]
         for _ in 0 ..< 4 where !(copy.waitForExistence(timeout: 1) && copy.isHittable) { app.swipeUp() }

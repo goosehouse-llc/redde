@@ -8,7 +8,7 @@ final class ProjectFolderUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoProjects"] + XCUIApplication.straightToChat
         app.launch()
         return app
     }

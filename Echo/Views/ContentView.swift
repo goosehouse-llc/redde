@@ -128,7 +128,7 @@ struct ContentView: View {
                     // go), so that the chat and its message field are clear of it.
                     .navigationSplitViewColumnWidth(min: sidebarWidth(280), ideal: sidebarWidth(340), max: sidebarWidth(420))
                 } detail: {
-                    padDetail
+                    chatScreen(showListButton: false)
                 }
                 .readingFold($splitFold, vertical: true))
             } else {
@@ -386,7 +386,7 @@ struct ContentView: View {
             }
             // A reply started (Ask Redde about a card, Siri, a share): show the chat it lands in.
             if now, !was {
-                if sizeClass == .regular { section = .sessions } else if showConversations { setDrawer(open: false) }
+                if sizeClass != .regular, showConversations { setDrawer(open: false) }
             }
         }
         // Another conversation opened (Siri, a notification, the list): it takes the group chat's place.
@@ -816,35 +816,6 @@ struct ContentView: View {
             #endif
     }
 
-    // MARK: - iPad detail pane
-
-    /// What the sidebar's Chats / Cron / Kanban switcher picked: the chat, or the cron jobs or
-    /// Kanban board at full width (a board wants the room). Kept across launches.
-    @AppStorage(ConversationsList.sectionKey) private var section: ConversationsList.Tab = .sessions
-
-    @ViewBuilder private var padDetail: some View {
-        switch section {
-        case .sessions:
-            chatScreen(showListButton: false)
-        case .planned:
-            NavigationStack { ComingUpList(planned: true).navigationTitle("Planned").navigationBarTitleDisplayMode(.inline) }
-                .id(settings.connectionKey)
-        case .kanban:
-            NavigationStack { KanbanView().navigationTitle("Kanban").navigationBarTitleDisplayMode(.inline) }
-                .id(settings.connectionKey)
-        case .made:
-            NavigationStack {
-                MadeView { id in
-                    Task {
-                        if let full = await ConversationStore.shared.loadRecord(id: id) { conversation.load(full) }
-                        section = .sessions
-                    }
-                }
-                .navigationTitle("Made").navigationBarTitleDisplayMode(.inline)
-            }
-        }
-    }
-
     // MARK: - iPhone conversation list
 
     #if os(iOS)
@@ -870,17 +841,12 @@ struct ContentView: View {
     }
 
     /// The layout changed under the chat (an iPhone Duo opened or closed, an iPad window drawn
-    /// across the line). The list's tab was the panel's on the iPhone and is the wide layout's
-    /// main column: Cron or Kanban open in the panel stay open full width, and the other way round;
-    /// one only picked in a closed panel doesn't take the chat's place. The keyboard, if it was up,
-    /// comes back in the composer the other layout has.
+    /// across the line): the wide layout has the list beside the chat, so the panel closes. The
+    /// keyboard, if it was up, comes back in the composer the other layout has.
     private func layoutChanged(wide: Bool) {
         if wide {
-            if !showConversations { section = .sessions }
             showConversations = false
             openingFromRow = nil
-        } else if section != .sessions {
-            showConversations = true
         }
         let typing = composerFocused || focusLostAt.map { Date.now.timeIntervalSince($0) < 0.5 } == true
         if typing, !showConversations {

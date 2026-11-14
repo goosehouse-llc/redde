@@ -10,7 +10,7 @@ final class AnswerCardsUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demoAsks"] + extra + ["-cardAnswers", "<dict/>", "-cardTicks", "<dict/>"]
-            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+            + XCUIApplication.straightToChat
         app.launch()
         return app
     }

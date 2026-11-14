@@ -10,7 +10,7 @@ final class ComposerUITests: XCTestCase {
     /// and the conversation list is the phone's own.
     private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-transport", "chatCompletions", "-fastLaneURL", "http://127.0.0.1:9", "-fastLaneModel", "test"] + extra
         if extra.contains("-echo.fresh") { app.launchArguments.append("-echo.clearDrafts") }   // nothing left by an earlier test
         app.launch()

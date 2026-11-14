@@ -67,7 +67,7 @@ final class ChatControlsUITests: XCTestCase {
     func testMoveToProjectIsInTheRowsMenu() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-echo.screen", "sessions"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoProjects", "-echo.screen", "sessions"] + XCUIApplication.straightToChat
         app.launch()
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Transcript scrolling'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 20), "The demo's conversations never appeared")
@@ -83,7 +83,7 @@ final class ChatControlsUITests: XCTestCase {
     func testANewConversationInAnEmptyProjectIsNamedInTheHeader() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-echo.screen", "sessions"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoProjects", "-echo.screen", "sessions"] + XCUIApplication.straightToChat
         app.launch()
         // Row labels are combined from the whole cell, so match on the leading title.
         let garden = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Garden'")).firstMatch
@@ -106,7 +106,7 @@ final class ChatControlsUITests: XCTestCase {
     func testScheduledRunsAreFoldedAwayUntilAsked() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoProjects", "-echo.screen", "sessions"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoProjects", "-echo.screen", "sessions"] + XCUIApplication.straightToChat
         app.launch()
         let chat = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Transcript scrolling'")).firstMatch
         XCTAssertTrue(chat.waitForExistence(timeout: 20), "The demo's conversations never appeared")

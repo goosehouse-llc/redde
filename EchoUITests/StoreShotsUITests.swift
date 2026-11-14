@@ -10,7 +10,7 @@ final class StoreShotsUITests: XCTestCase {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["PROMO_VIDEO"] == "1")
         let dir = URL(fileURLWithPath: try XCTUnwrap(ProcessInfo.processInfo.environment["SHOT_DIR"]))
         let app = XCUIApplication()
-        app.launchArguments = XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-echo.demoHosts", "-transport", "chatCompletions", "-echo.demoCards", "purchase", "-theme", "standard", "-appearance", "dark"]
         app.launch()
         let header = app.staticTexts["Noise-cancelling headphones under $300"].firstMatch

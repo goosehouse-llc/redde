@@ -4,10 +4,10 @@ import XCTest
 /// still scrolls up and down.
 @MainActor
 final class SwipeToConversationsUITests: XCTestCase {
-    private func launch(pinSection: Bool = true) -> XCUIApplication {
+    private func launch() -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = (pinSection ? XCUIApplication.chatsSection : []) + XCUIApplication.straightToChat
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-echo.demo", "-transport", "chatCompletions"]
         app.launch()
         return app
@@ -38,38 +38,6 @@ final class SwipeToConversationsUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Conversations"].waitForExistence(timeout: 15), "The chat never appeared")
         drag(app, from: CGVector(dx: 0.1, dy: 0.45), to: CGVector(dx: 0.9, dy: 0.47))
         XCTAssertTrue(app.navigationBars["Conversations"].waitForExistence(timeout: 5), "Swiping right didn't open the list")
-    }
-
-    /// One tap on Planned or Kanban switches the list; it took two.
-    func testOneTapSwitchesSection() throws {
-        // Not pinned: a launch-argument value can't be overwritten, so no tap could change it.
-        let app = launch(pinSection: false)
-        try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")
-        XCTAssertTrue(app.buttons["Conversations"].waitForExistence(timeout: 15), "The chat never appeared")
-        app.buttons["Conversations"].tap()
-        let segments = app.segmentedControls.firstMatch
-        XCTAssertTrue(segments.waitForExistence(timeout: 5), "The button didn't open the list")
-        sleep(1)
-        for (segment, title) in [("Planned", "Planned"), ("Kanban", "Kanban"), ("Chats", "Conversations"), ("Kanban", "Kanban"), ("Planned", "Planned")] {
-            segments.buttons[segment].tap()
-            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 3), "One tap on \(segment) didn't switch")
-        }
-    }
-
-    /// The same, straight after a swipe opens the panel.
-    func testOneTapSwitchesSectionAfterASwipe() throws {
-        let app = launch(pinSection: false)
-        try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")
-        XCTAssertTrue(app.buttons["Conversations"].waitForExistence(timeout: 15), "The chat never appeared")
-        for (segment, title) in [("Chats", "Conversations"), ("Planned", "Planned"), ("Kanban", "Kanban"), ("Chats", "Conversations")] {
-            drag(app, from: CGVector(dx: 0.1, dy: 0.45), to: CGVector(dx: 0.9, dy: 0.47))
-            let segments = app.segmentedControls.firstMatch
-            XCTAssertTrue(segments.waitForExistence(timeout: 5), "Swiping right didn't open the list")
-            segments.buttons[segment].tap()
-            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 3), "One tap on \(segment) didn't switch")
-            app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()   // close
-            sleep(1)
-        }
     }
 
     /// The panel closes from the dimmed chat beside it, and when a conversation is picked.

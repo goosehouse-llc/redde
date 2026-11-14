@@ -41,6 +41,9 @@ struct QuoteStrip: View {
         // As the field is drawn: the chat scrolls on under it.
         .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.surfaceColor), in: .rect(cornerRadius: 18))
         .glassEffect(theme.usesGlass ? .regular : .identity, in: .rect(cornerRadius: 18))
+        // The whole strip takes its taps: on glass its page is clear, and a tap there went
+        // through to the chat behind, which put the keyboard away (iPad, 11-13).
+        .contentShape(.rect(cornerRadius: 18))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("quoteStrip")
     }

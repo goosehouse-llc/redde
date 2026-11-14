@@ -53,7 +53,7 @@ final class NewConversationEntryUITests: XCTestCase {
     }
 
     func testACardAskedInANewConversationLeavesTheOpenOne() {
-        let app = launch(["-echo.demoKanban", "-echo.screen", "sessions", "-echo.section", "kanban"])
+        let app = launch(["-echo.demoKanban", "-echo.screen", "sessions", "-echo.drawerPage", "board"])
         let card = app.text(containing: "Compare heat pump quotes")
         XCTAssertTrue(card.waitForExistence(timeout: 20), "The demo board isn't on screen")
         card.tap()
@@ -68,7 +68,7 @@ final class NewConversationEntryUITests: XCTestCase {
     /// Hermes's other boards (GitHub issue 65): the switcher over the columns names the board
     /// shown, and picking another shows that board's cards.
     func testAnotherKanbanBoardCanBePicked() {
-        let app = launch(["-echo.demoKanban", "-echo.screen", "sessions", "-echo.section", "kanban"])
+        let app = launch(["-echo.demoKanban", "-echo.screen", "sessions", "-echo.drawerPage", "board"])
         XCTAssertTrue(app.text(containing: "Compare heat pump quotes").waitForExistence(timeout: 20), "The demo board isn't on screen")
         let switcher = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Board: Household'")).firstMatch
         XCTAssertTrue(switcher.waitForExistence(timeout: 5), "No board switcher over the columns")
@@ -82,7 +82,7 @@ final class NewConversationEntryUITests: XCTestCase {
     }
 
     func testACardAskedInTheOpenConversationStaysThere() {
-        let app = launch(["-echo.demoKanban", "-echo.screen", "sessions", "-echo.section", "kanban"])
+        let app = launch(["-echo.demoKanban", "-echo.screen", "sessions", "-echo.drawerPage", "board"])
         let card = app.text(containing: "Compare heat pump quotes")
         XCTAssertTrue(card.waitForExistence(timeout: 20), "The demo board isn't on screen")
         card.tap()

@@ -9,7 +9,7 @@ final class TranscriptJumpUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         // Launch arguments land in UserDefaults' argument domain: skip setup, stay on the transcript.
-        app.launchArguments = ["-echo.demoLong"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoLong"] + XCUIApplication.straightToChat
         app.launch()
         XCTAssertTrue(app.staticTexts["End of the long demo."].waitForExistence(timeout: 15), "The long demo didn't open at its end")
         return app
@@ -20,7 +20,7 @@ final class TranscriptJumpUITests: XCTestCase {
     func testOpenedFromAReplyStartsAtItsTop() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoHeavy", "3", "-echo.fromReply"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoHeavy", "3", "-echo.fromReply"] + XCUIApplication.straightToChat
         app.launch()
         let jump = app.buttons["Jump to the newest message"]
         XCTAssertTrue(jump.waitForExistence(timeout: 15), "It opened at the end of the reply")

@@ -34,16 +34,11 @@ struct KanbanView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     private var column: KanbanColumn? { columns.first { $0.name == selected } }
-    /// The conversation list's server and section switch, scrolling away above the column bar.
-    var topRow: AnyView?
-
-    init(topRow: AnyView? = nil) { self.topRow = topRow }
 
     var body: some View {
         let tone = BoardTone(theme)
         let people = assigneeLooks
         return List {
-            if let topRow { topRow }
             if available, error == nil, !columns.isEmpty {
                 AnyView(hero(tone))
                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))

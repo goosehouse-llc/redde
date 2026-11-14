@@ -135,7 +135,7 @@ final class AcpUITests: XCTestCase {
         continueAfterFailure = false
         try XCTSkipUnless(labIsUp(), "No ACP lab on \(bridge) (scripts/acp-lab.sh up)")
         let app = XCUIApplication()
-        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", bridge, "-acpAgent", "hermes", "-acpFolder", ""]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = "labtoken"
         app.launch()
@@ -165,7 +165,7 @@ final class AcpUITests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 30), "The chat isn't in the list")
         keep("ACP chat list")
         app.terminate()
-        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-transport", "acp", "-acpURL", bridge, "-acpAgent", "hermes"]
         app.launch()
         let listed = app.text(containing: "[A:alpha]")
@@ -329,7 +329,7 @@ final class AcpUITests: XCTestCase {
             }
         }
         let app = XCUIApplication()
-        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
@@ -366,7 +366,7 @@ final class AcpUITests: XCTestCase {
             }
         }
         let app = XCUIApplication()
-        app.launchArguments = XCUIApplication.straightToChat + XCUIApplication.chatsSection
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", ""]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()

@@ -11,7 +11,7 @@ final class LayoutChangeUITests: XCTestCase {
     private func launch(_ extra: [String]) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.flipLayout", "-echo.clearDrafts"] + extra + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.flipLayout", "-echo.clearDrafts"] + extra + XCUIApplication.straightToChat
         app.launch()
         return app
     }

@@ -82,9 +82,4 @@ struct PlannedTests {
                        now: now.addingTimeInterval(PhoneMade.keep + 1))
         #expect(PhoneMade.load(from: file).map(\.id) == ["new"])
     }
-
-    @Test func plannedTakesCronsPlaceAndKeepsItsSavedValue() {
-        #expect(ConversationsList.Tab(rawValue: "cron") == .planned, "a list left on Cron opens on Planned")
-        #expect(ConversationsList.Tab.allCases == [.sessions, .planned, .kanban, .made])
-    }
 }

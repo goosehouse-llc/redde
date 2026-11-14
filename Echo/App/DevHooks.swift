@@ -112,7 +112,6 @@ import WidgetKit
 ///   logs what is pending once the calendar's change has been followed, and turns the switch off.
 ///   `-echo.screen location` opens Settings → Your Day → Location, with Leave-By Alerts; `-echo.screen headsUps`
 ///   the Heads-Ups page, where they are too.
-/// - `-echo.section planned|kanban|made` (`cron` still means Planned): open the conversation list on that tab.
 /// - `-echo.demoPlanned`: Planned (and Coming Up) with a made-up week, phone alarms and reminders included.
 ///   With `-echo.plannedEnd`, the page opens at its end (what is paused, All Scheduled Jobs).
 /// - `-echo.settingsAnchor [icloud|plugin|day]`: scroll Settings to the context and memory files, to iCloud,
@@ -232,7 +231,7 @@ enum DevHooks {
         if has("-echo.demoShort") { conversation.keepFirstMessages(2) }
         if has("-echo.demoTwo") { conversation.keepFirstMessages(4) }
         // A message quoting the first reply, the last one quoted in the composer, and suggested replies.
-        if has("-echo.demoQuote") { conversation.seedQuoteDemo() }
+        if has("-echo.demoQuote") { conversation.seedQuoteDemo(far: has("-echo.demoQuoteFar")) }
         if has("-echo.demoLibrary") { conversation.seedDemoLibrary() }
         if has("-echo.demoSaved") { conversation.seedDemoLibrary(savedFrom: settings.activeServerID) }
         if has("-echo.clearDrafts") { Drafts.shared.removeAll() }

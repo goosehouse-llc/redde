@@ -8,7 +8,7 @@ final class NewDrawerUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         // `straightToChat` ends with the classic drawer for the older tests; this one wants the new.
-        app.launchArguments = Array(XCUIApplication.straightToChat.dropLast(2)) + ["-drawer.new", "YES"]
+        app.launchArguments = XCUIApplication.straightToChat
             + ["-echo.demo", "-transport", "chatCompletions"]
         app.launch()
         try XCTSkipIf(app.windows.firstMatch.frame.width > 600, "iPad keeps the list in the sidebar")

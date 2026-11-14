@@ -8,7 +8,7 @@ final class ReplyDocumentUITests: XCTestCase {
     func testAFileInAReplyOpensAndDoneClosesIt() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoDocument"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoDocument"] + XCUIApplication.straightToChat
         app.launch()
         XCTAssertTrue(app.text(containing: "briefing as a file").waitForExistence(timeout: 20), "The demo reply didn't appear")
         let tile = app.text(containing: "briefing.md")
@@ -32,7 +32,7 @@ final class ReplyDocumentUITests: XCTestCase {
     func testAFileNamedButNotFetchedSaysWhy() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoDocument"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoDocument"] + XCUIApplication.straightToChat
         app.launch()
         XCTAssertTrue(app.text(containing: "briefing as a file").waitForExistence(timeout: 20), "The demo reply didn't appear")
         XCTAssertFalse(app.text(containing: "MEDIA:").exists, "The path shows as text")
@@ -47,7 +47,7 @@ final class ReplyDocumentUITests: XCTestCase {
     func testAPathInAReplyOpensItsFile() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoDocument"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoDocument"] + XCUIApplication.straightToChat
         app.launch()
         XCTAssertTrue(app.text(containing: "two voice samples").waitForExistence(timeout: 20), "The demo reply didn't appear")
         let path = app.links["/home/hermes/voices/bm_lewis.wav"]

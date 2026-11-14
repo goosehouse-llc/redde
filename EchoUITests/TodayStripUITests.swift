@@ -6,8 +6,8 @@ final class TodayStripUITests: XCTestCase {
     private func openDrawer() -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demo", "-echo.demoGoals", "-echo.demoBriefings", "day"]
-            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demo", "-echo.demoGoals", "-echo.demoBriefings", "day", "-echo.drawerPage", "today"]
+            + XCUIApplication.straightToChat
         app.launch()
         let chat = app.scrollViews.firstMatch
         XCTAssertTrue(chat.waitForExistence(timeout: 15))
@@ -96,7 +96,7 @@ final class TodayStripUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demo", "-echo.demoGoals", "-echo.demoBriefings", "day", "-echo.demoUpNext", "-todayTileOrder", "()"]
-            + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+            + XCUIApplication.straightToChat
         app.launch()
         let chat = app.scrollViews.firstMatch
         XCTAssertTrue(chat.waitForExistence(timeout: 15))

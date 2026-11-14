@@ -7,6 +7,7 @@ import SwiftUI
 /// row, then projects and the chats, in one list that never swaps away. Built from the list's own
 /// rows and pages, so it is as quick as the list is. Its colours come from the theme (`DrawerTone`).
 enum NewDrawer {
+    /// Where the drawer keeps what's put away (`dismissed`).
     static let key = "drawer.new"
 
     enum Page: Hashable, Identifiable {
@@ -68,7 +69,7 @@ extension ConversationsList {
     /// group, so this costs no network). The bots' come from the server in `watchActivity`'s
     /// loop: `lookForBotWaits`.
     func watchDrawerWaits() async {
-        guard newDrawer, isShowing, scenePhase == .active, pace.onScreen else { return }
+        guard isShowing, scenePhase == .active, pace.onScreen else { return }
         #if DEBUG
         // `-echo.drawerPage today|planned|board|made|bots`: that page open (screenshots).
         if let name = DevHooks.value("-echo.drawerPage"), drawerPage == nil {
@@ -93,7 +94,6 @@ extension ConversationsList {
     /// `watchActivity`, so it rides the radio wake the list's own look already makes.
     /// Unreachable for a moment: what was shown stays; an older plugin: none.
     func lookForBotWaits() async {
-        guard newDrawer else { return }
         #if DEBUG
         if DevHooks.has("-echo.demoBotWait") { return }
         #endif
@@ -122,7 +122,7 @@ extension ConversationsList {
             if !needs.isEmpty { AnyView(drawerStack(needs, tone: tone)) }
             AnyView(drawerPlaces(tone))
             if usesLedger, botsHere, let bots = serverBots, !bots.isEmpty { AnyView(drawerTeam(tone)) }
-            if usesLedger, viaServe || settings.transport == .acp, settings.projectsInChatList, !projects.isEmpty || viaServe { projectsSection }
+            if usesLedger, viaServe || settings.transport == .acp, settings.projectsInChatList, !hidesProjectsForDemo, !projects.isEmpty || viaServe { projectsSection }
             waitingNotesSection
         }
         if usesLedger {
@@ -635,27 +635,40 @@ extension ConversationsList {
         switch page {
         case .today:
             List {
-                TodayStrip(openGoal: { shownGoal = $0 }, layout: .page)
-                PinnedCardsSection()
-                IdeasSection(take: takeIdea)
+                TodayStrip(openGoal: { shownGoal = $0 })
+                // As Settings › Top of the Chat List has them (read for redraws).
+                let _ = settings.hiddenChatListCards
+                if ChatListCard.pinned.isShown { PinnedCardsSection() }
+                if ChatListCard.ideas.isShown { IdeasSection(take: takeIdea) }
             }
             .listStyle(.plain)
             .themedPage(settings.theme.listPage)
             .navigationTitle(NewDrawer.Page.today.title)
         case .planned:
-            ComingUpList(planned: true, topRow: AnyView(EmptyView()), isShowing: isShowing).id(settings.connectionKey)
+            ComingUpList(planned: true, isShowing: isShowing).id(settings.connectionKey)
                 .navigationTitle(NewDrawer.Page.planned.title)
         case .board:
-            KanbanView(topRow: AnyView(EmptyView())).id(settings.connectionKey)
+            KanbanView().id(settings.connectionKey)
                 .navigationTitle(NewDrawer.Page.board.title)
         case .made:
-            MadeView(topRow: AnyView(EmptyView()), openChat: openMadeIn)
+            MadeView(openChat: openMadeIn)
                 .navigationTitle(NewDrawer.Page.made.title)
         case .bots:
+            // Reorder Bots, from a bot's menu here, puts this page's rows in order (the list
+            // behind it has its own Done).
             List { botsSection }
                 .listStyle(.plain)
                 .themedPage(settings.theme.listPage)
                 .navigationTitle(NewDrawer.Page.bots.title)
+                .environment(\.editMode, .constant(arrangingBots ? .active : .inactive))
+                .toolbar {
+                    if arrangingBots {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { withAnimation { arrangingBots = false } }
+                                .fontWeight(.semibold)
+                        }
+                    }
+                }
         }
     }
 }

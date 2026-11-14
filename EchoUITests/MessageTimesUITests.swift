@@ -20,7 +20,7 @@ final class MessageTimesUITests: XCTestCase {
     func testASwipeLeftDoesntStopTheScroll() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoLong"] + XCUIApplication.chatsSection + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demoLong"] + XCUIApplication.straightToChat
         app.launch()
         let end = app.staticTexts["End of the long demo."]
         XCTAssertTrue(end.waitForExistence(timeout: 15))
