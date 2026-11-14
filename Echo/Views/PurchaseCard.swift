@@ -1,12 +1,14 @@
 import SwiftUI
 
 /// Things to buy (`ReplyCard.purchase`, asked 2026-10-30: "a 'purchase' card for when asking for
-/// purchase recommendations"), in the family of the day's answer cards: the agent's pick first and
-/// larger (its picture, its price with the old one struck through, its stars, why, and View at the
-/// store), then the others as rows that open in place to their pros, cons and specs. Held, a
-/// product's link is copied, shared or opened. Chips under it ask the agent for more (Cheaper
-/// options, Compare the top two, Why this one?), as an answer card's buttons do. Nothing on it
-/// buys anything: a store's page opens in the browser.
+/// purchase recommendations"), in the family of the day's answer cards. Laid out as the design he
+/// picked on 2026-11-13 ("F"): the pick's picture and name, its price large and where, a deal
+/// meter against what it usually sells for (or its store's old price), why, and View at the store
+/// as a filled button; then every store or product folded into one row ("5 stores checked") that
+/// opens to rows that open in place to their pros, cons and specs; then when the prices were
+/// checked, and Watch price. Held, a product's link is copied, shared or opened. Chips under it ask
+/// the agent for more (Cheaper options, Compare the top two, Why this one?), as an answer card's
+/// buttons do. Nothing on it buys anything: a store's page opens in the browser.
 ///
 /// A product's picture comes from the store's servers, which see the visit: only with Settings →
 /// Appearance → Link previews on (`ProductImages`); else a drawing of what it is. What it shows is
@@ -16,6 +18,8 @@ struct PurchaseCard: View {
     let whole: ReplyCard
     private let shown: Shown
     @State private var open: Set<Int> = []
+    /// The other stores (or products), folded under the pick until tapped.
+    @State private var showsAll = false
     @State private var answers = CardAnswers.shared
     @Environment(\.answerCard) private var answerer
     @Environment(\.pinnedCard) private var pinned
@@ -33,54 +37,145 @@ struct PurchaseCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            CardBox(spacing: 14) {
+            CardBox(spacing: 16) {
                 let pick = shown.items[shown.lead]
-                ProductPicture(image: pick.image, page: pick.url, symbol: pick.symbol, width: nil, height: 200)
                 heading(pick)
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(shown.ordered.enumerated()), id: \.element) { n, index in
-                        if n > 0 { Divider().padding(.leading, 14) }
-                        row(shown.items[index], isPick: index == shown.lead)
-                    }
-                }
-                .background(scheme.cardPanel, in: .rect(cornerRadius: 16))
-                .clipShape(.rect(cornerRadius: 16))
-                .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
+                verdict(pick)
+                if let meter = shown.meter { DealMeter(meter: meter) }
                 if let why = pick.product.why {
-                    Text(why).chatFont(.subheadline).fixedSize(horizontal: false, vertical: true)
+                    Text(why).chatFont(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 if let url = pick.url { ListingLink(url: url, named: pick.view, prominent: true) }
-                if let note = shown.note {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Image(systemName: "info.circle").accessibilityHidden(true)
-                        Text(note)
-                    }
-                    .chatFont(.caption)
-                    .foregroundStyle(.secondary)
-                }
+                if shown.items.count > 1 { everyOne }
+                footer(pick)
             }
             followUps
         }
         .animation(.snappy(duration: 0.25), value: open)
+        .animation(.snappy(duration: 0.25), value: showsAll)
     }
 
-    // MARK: Under the picture
+    // MARK: The pick
 
-    /// One product at several stores: its name, brand and the prices' range. Several products: the
-    /// card's title over the pick's name, brand and stars.
+    /// Its picture beside its name; one product at several stores, the card's title for it. Under
+    /// the name, its brand and whether its store has it; several products, their title over it.
     private func heading(_ pick: Shown.Item) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            if !shown.byStore {
-                Text(card.title ?? String(localized: "Recommendations", comment: "A purchase card's title when the agent gave none"))
-                    .chatFont(.footnote, weight: .semibold).foregroundStyle(.secondary).lineLimit(2)
+        HStack(spacing: 12) {
+            ProductPicture(image: pick.image, page: pick.url, symbol: pick.symbol, side: 64)
+            VStack(alignment: .leading, spacing: 3) {
+                if !shown.byStore, let title = card.title {
+                    Text(title).chatFont(.footnote, weight: .semibold).foregroundStyle(.secondary).lineLimit(2)
+                }
+                Text(shown.byStore ? (card.title ?? pick.product.name) : pick.product.name)
+                    .chatFont(.headline).fixedSize(horizontal: false, vertical: true)
+                if let line = [pick.product.brand, pick.stock].compactMap(\.self).joined(separator: " · ").nilIfEmpty {
+                    Text(verbatim: line).chatFont(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                }
+                if !shown.byStore, pick.rating != nil { Stars(item: pick).padding(.top, 1) }
             }
-            Text(shown.byStore ? (card.title ?? pick.product.name) : pick.product.name)
-                .chatFont(.title3, weight: .bold).fixedSize(horizontal: false, vertical: true)
-            if let brand = pick.product.brand { Text(brand).chatFont(.subheadline).foregroundStyle(.secondary).lineLimit(1) }
-            if let range = shown.range { Text(verbatim: range).chatFont(.subheadline).foregroundStyle(.secondary).monospacedDigit() }
-            if !shown.byStore, pick.rating != nil { Stars(item: pick).padding(.top, 2) }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// The agent's word for it ("BEST PICK"), then its price, large, and where.
+    @ViewBuilder
+    private func verdict(_ pick: Shown.Item) -> some View {
+        if let price = pick.price {
+            VStack(alignment: .leading, spacing: 2) {
+                if card.hasPick, let badge = pick.badge {
+                    Text(badge).textCase(.uppercase).chatFont(.caption, weight: .bold).tracking(1).foregroundStyle(theme.accent).lineLimit(1)
+                }
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(verbatim: price).chatFont(.largeTitle, weight: .bold).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+                    if let store = pick.product.retailer {
+                        Text(String(localized: "at \(store)", comment: "Where a product is sold, read by VoiceOver: at Best Buy"))
+                            .chatFont(.body).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+                // A store's old price, when there's no meter to show it on.
+                if shown.meter == nil, let was = pick.was {
+                    HStack(spacing: 6) {
+                        Text(verbatim: was).strikethrough().foregroundStyle(.secondary).monospacedDigit()
+                        if let saving = pick.saving { Text(saving).fontWeight(.semibold).foregroundStyle(Self.good) }
+                    }
+                    .chatFont(.subheadline)
+                }
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    /// Every store (or product) folded into one row, "5 stores checked", the next best and how
+    /// many weren't there under it (asked 2026-11-13: "too tall so make it come collapsed").
+    /// Tapped, it opens to them all, the pick first and those with nothing to sell last, greyed.
+    private var everyOne: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button { showsAll.toggle() } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: shown.byStore ? "storefront" : "square.stack")
+                        .chatFont(.subheadline).foregroundStyle(.secondary).frame(width: 24).accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(shown.everyTitle).chatFont(.subheadline, weight: .semibold)
+                        if let line = shown.everyLine { Text(verbatim: line).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1) }
+                    }
+                    Spacer(minLength: 6)
+                    Image(systemName: "chevron.down")
+                        .chatFont(.caption, weight: .semibold)
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(showsAll ? 180 : 0))
+                        .accessibilityHidden(true)
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 14)
+                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint(showsAll ? Self.foldHint : Self.unfoldHint)
+            .accessibilityIdentifier("purchase.every")
+            if showsAll {
+                Divider()
+                ForEach(Array(shown.listed.enumerated()), id: \.element) { n, index in
+                    if n > 0 { Divider().padding(.leading, 14) }
+                    row(shown.items[index], isPick: index == shown.lead)
+                }
+                .transition(.opacity)
+            }
+        }
+        .background(scheme.cardPanel, in: .rect(cornerRadius: 16))
+        .clipShape(.rect(cornerRadius: 16))
+        .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5) }
+    }
+
+    /// When the prices were checked, and Watch Price, which asks the agent to keep an eye on it.
+    @ViewBuilder
+    private func footer(_ pick: Shown.Item) -> some View {
+        let watcher = pick.product.price != nil && answers.said[whole.key] == nil && !pinned ? answerer : nil
+        if shown.note != nil || watcher != nil {
+            HStack(spacing: 10) {
+                if let note = shown.note {
+                    Text(note).chatFont(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                if let watcher {
+                    Button { send(.watch, watcher) } label: {
+                        Label(FollowUp.watch.title, systemImage: FollowUp.watch.symbol)
+                            .chatFont(.subheadline, weight: .medium)
+                            .foregroundStyle(watcher.busy ? Color.secondary : Color.primary)
+                            .lineLimit(1)
+                            .padding(.horizontal, 12)
+                            .frame(minHeight: 44)
+                            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(.separator, lineWidth: 1) }
+                            .contentShape(.rect(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(watcher.busy)
+                    .accessibilityHint(FollowUp.watch.hint)
+                }
+            }
+        }
     }
 
     // MARK: The others
@@ -151,6 +246,7 @@ struct PurchaseCard: View {
             }
         }
         .background(isPick ? theme.accent.opacity(0.09) : .clear)
+        .opacity(item.available ? 1 : 0.55)
     }
 
     // MARK: Opened
@@ -233,13 +329,14 @@ struct PurchaseCard: View {
 
     /// What a chip asks the agent: the English words it is known by in the note, and what it says.
     enum FollowUp: CaseIterable {
-        case why, cheaper, compare
+        case why, cheaper, compare, watch
 
         var title: String {
             switch self {
             case .cheaper: String(localized: "Cheaper options", comment: "A chip under a purchase card: asks the agent for cheaper ones")
             case .compare: String(localized: "Compare the top two", comment: "A chip under a purchase card: asks the agent to compare its first two")
             case .why: String(localized: "Why this one?", comment: "A chip under a purchase card: asks the agent why it picked its pick")
+            case .watch: String(localized: "Watch price", comment: "A purchase card's button, at its foot: asks the agent to keep an eye on the pick's price")
             }
         }
 
@@ -248,6 +345,7 @@ struct PurchaseCard: View {
             case .cheaper: "tag"
             case .compare: "square.split.2x1"
             case .why: "questionmark.bubble"
+            case .watch: "bell"
             }
         }
 
@@ -256,6 +354,7 @@ struct PurchaseCard: View {
             case .cheaper: Text("Asks your agent for cheaper ones", comment: "VoiceOver hint: a purchase card's Cheaper options")
             case .compare: Text("Asks your agent to compare the first two", comment: "VoiceOver hint: a purchase card's Compare the top two")
             case .why: Text("Asks your agent why it picked this one", comment: "VoiceOver hint: a purchase card's Why this one?")
+            case .watch: Text("Asks your agent to tell you when the price drops", comment: "VoiceOver hint: a purchase card's Watch price")
             }
         }
 
@@ -265,6 +364,7 @@ struct PurchaseCard: View {
             case .cheaper: "tapped \"Cheaper options\""
             case .compare: "tapped \"Compare the top two\""
             case .why: "tapped \"Why this one?\""
+            case .watch: "tapped \"Watch price\""
             }
         }
 
@@ -278,6 +378,7 @@ struct PurchaseCard: View {
             case .cheaper: true
             case .compare: card.items.count >= 2 && !Shown.oneProduct(card)   // one product at several stores: nothing to compare
             case .why: card.hasPick
+            case .watch: false   // at the card's foot, not among the chips
             }
         }
     }
@@ -304,6 +405,12 @@ struct PurchaseCard: View {
             let pick = ordered[0]
             return (String(localized: "Why the \(pick.name)?", comment: "The message a purchase card's Why this one? sends, with the pick's name"),
                     start + "say in a few lines why you picked \(named(pick)) over the others, and what would make another one the better buy")
+        case .watch:
+            let pick = ordered[0]
+            let at = (pick.retailer.map { " at \($0)" } ?? "") + (pick.url.map { " (\($0))" } ?? "")
+            return (String(localized: "Watch the price of the \(pick.name)", comment: "The message a purchase card's Watch price sends, with the pick's name"),
+                    start + "keep an eye on the price of \(named(pick))\(at) with keep_an_eye_on (find it with tool_search if it isn't loaded), "
+                        + "each morning for 30 days, and tell me only when it drops below what it is now or goes out of stock. Then answer in a line")
         }
     }
 
@@ -341,6 +448,8 @@ struct PurchaseCard: View {
     static let bad = shade(light: (0.698, 0.369, 0), dark: (0.941, 0.627, 0.251))
     static let star = Color(red: 1, green: 0.62, blue: 0.04)
 
+    private static var unfoldHint: Text { Text("Shows them all", comment: "VoiceOver hint: a purchase card's folded row of every store or product, closed") }
+    private static var foldHint: Text { Text("Hides them", comment: "VoiceOver hint: a purchase card's row of every store or product, open") }
     private static var showHint: Text { Text("Shows its pros, cons and details", comment: "VoiceOver hint: a product on a purchase card, closed") }
     private static var hideHint: Text { Text("Hides its details", comment: "VoiceOver hint: a product on a purchase card, open") }
 }
@@ -392,6 +501,8 @@ extension PurchaseCard {
             /// "In stock" or "Out of stock", as its store's page said (plugin 1.14.0).
             var stock: String?
             var inStock = false
+            /// Something to sell: a price, and not out of stock. The others show greyed, last.
+            var available: Bool { price != nil && product.availability != .outOfStock }
         }
 
         var items: [Item]
@@ -408,6 +519,24 @@ extension PurchaseCard {
         var symbol: String
         /// The line under it: the agent's (or the plugin's) note, else when its prices were checked.
         var note: String?
+        /// Where the pick's price sits against what it usually sells for, or its store's old price.
+        var meter: Meter?
+        /// Every one, folded: the pick, those with something to sell, then those without.
+        var listed: [Int] { [lead] + others.filter { items[$0].available } + others.filter { !items[$0].available } }
+        /// "5 stores checked", "3 options": the folded row's name.
+        var everyTitle: String {
+            byStore ? String(localized: "\(items.count) stores checked", comment: "A price check's folded row of every store it looked at")
+                : String(localized: "\(items.count) options", comment: "A purchase card's folded row of every product on it")
+        }
+        /// "Amazon $59.95 · 3 not available": under it, the next two and how many had nothing to sell.
+        var everyLine: String? {
+            let next = others.filter { items[$0].available }.prefix(2).map { i in
+                [byStore ? (items[i].product.retailer ?? items[i].product.name) : items[i].product.name, items[i].price].compactMap(\.self).joined(separator: " ")
+            }
+            let missing = others.filter { !items[$0].available }.count
+            let gone = missing > 0 ? [String(localized: "\(missing) not available", comment: "Under a purchase card's folded row: how many stores or products had no price or none in stock")] : []
+            return (next + gone).joined(separator: " · ").nilIfEmpty
+        }
 
         /// Every product is the same one at another store: each names a store, and all name the
         /// same thing or share a model number ("NV360", "WH-1000XM5").
@@ -470,7 +599,64 @@ extension PurchaseCard {
             }
             let named = PurchaseCard.symbol(for: title)
             symbol = named != "bag" ? named : (items.first.map { $0.symbol } ?? "bag")
+            let pick = card.items[card.lead]
+            meter = pick.price.flatMap { PurchaseCard.meter(price: $0, usual: card.usual, was: pick.wasPrice, currency: pick.currency ?? home, locale: locale) }
         }
+    }
+
+    /// The deal meter (design F, 2026-11-13): a bar from a little under the price to past what it
+    /// usually sells for, the price marked on it, and in words how good a price it is.
+    struct Meter: Equatable {
+        enum Verdict: Equatable { case great, good, usual, above, sale }
+        var verdict: Verdict
+        /// Where the price is on the bar, 0 to 1.
+        var price: Double
+        /// Where the usual price (or the old one) is: the bar past it is its zone.
+        var usual: Double
+        /// "$45": the bar's start.
+        var low: String
+        /// "Usual $80", "Was $219.99".
+        var reference: String
+        /// "About $20 under usual", "$71 off".
+        var gap: String?
+
+        var title: String {
+            switch verdict {
+            case .great: String(localized: "Great deal", comment: "A purchase card's deal meter: the price is well under what it usually sells for")
+            case .good: String(localized: "Good deal", comment: "A purchase card's deal meter: the price is under what it usually sells for")
+            case .usual: String(localized: "About usual", comment: "A purchase card's deal meter: the price is what it usually sells for")
+            case .above: String(localized: "Above usual", comment: "A purchase card's deal meter: the price is over what it usually sells for")
+            case .sale: String(localized: "On sale", comment: "A purchase card's deal meter: the store's price is under its own old price")
+            }
+        }
+    }
+
+    /// The meter for a price against what it usually sells for (the agent's 'usual_price'), else
+    /// against its store's old price when that is higher; nil with neither.
+    static func meter(price: Double, usual: Double?, was: Double?, currency: String, locale: Locale = .current) -> Meter? {
+        guard price > 0, let reference = usual ?? was, reference > 0, usual != nil || reference > price else { return nil }
+        let start = min(price * 0.85, reference * 0.6)
+        let step = pow(10, log10(start).rounded(.down)) / 2
+        let low = max(0, (start / step).rounded(.down) * step)
+        let high = max(reference, price) * 1.15
+        func at(_ x: Double) -> Double { min(1, max(0, (x - low) / (high - low))) }
+        let off = abs(reference - price)
+        let gap = ReplyCard.Purchase.money(off >= 10 ? off.rounded() : (off * 100).rounded() / 100, currency: currency, locale: locale)
+        let money = ReplyCard.Purchase.money(reference, currency: currency, locale: locale)
+        let ratio = price / reference
+        var meter = Meter(verdict: .sale, price: at(price), usual: at(reference),
+                          low: ReplyCard.Purchase.money(low, currency: currency, locale: locale),
+                          reference: String(localized: "Was \(money)", comment: "A purchase card's deal meter: the store's old price, e.g. Was $219.99"),
+                          gap: String(localized: "\(gap) off", comment: "A purchase card's deal meter: how much under the store's old price, e.g. $71 off"))
+        guard usual != nil else { return meter }
+        meter.reference = String(localized: "Usual \(money)", comment: "A purchase card's deal meter: what it usually sells for, e.g. Usual $80")
+        meter.verdict = ratio < 0.7 ? .great : ratio < 0.95 ? .good : ratio <= 1.02 ? .usual : .above
+        meter.gap = switch meter.verdict {
+        case .great, .good: String(localized: "About \(gap) under usual", comment: "A purchase card's deal meter: how much under what it usually sells for, e.g. About $20 under usual")
+        case .above: String(localized: "About \(gap) over usual", comment: "A purchase card's deal meter: how much over what it usually sells for, e.g. About $5 over usual")
+        case .usual, .sale: nil
+        }
+        return meter
     }
 
     /// The symbol for what a product is, by a word in its name ("headphones", "laptop"), else in the
@@ -562,34 +748,38 @@ struct ListingLink: View {
         let address = Self.address(url)
         Button { openURL(url) } label: {
             HStack(spacing: 12) {
-                picture(preview)
-                    .frame(width: side, height: side)
-                    .clipShape(.rect(cornerRadius: 8))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(preview?.title ?? named)
-                        .chatFont(.subheadline, weight: .semibold)
-                        .foregroundStyle(theme.textColor)
+                // The pick's, a filled button (design F): the card's picture is already at its top.
+                if !prominent {
+                    picture(preview)
+                        .frame(width: side, height: side)
+                        .clipShape(.rect(cornerRadius: 8))
+                }
+                VStack(alignment: prominent ? .center : .leading, spacing: 2) {
+                    Text(prominent ? named : preview?.title ?? named)
+                        .chatFont(prominent ? .body : .subheadline, weight: .semibold)
+                        .foregroundStyle(prominent ? theme.userText : theme.textColor)
                         .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+                        .multilineTextAlignment(prominent ? .center : .leading)
                     Text(verbatim: address)
                         .chatFont(.caption)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(prominent ? theme.userText.opacity(0.75) : theme.accent)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
-                Spacer(minLength: 4)
+                .frame(maxWidth: prominent ? .infinity : nil)
+                if !prominent { Spacer(minLength: 4) }
                 Image(systemName: "arrow.up.right")
                     .chatFont(.subheadline, weight: .bold)
                     .foregroundStyle(prominent ? theme.userText : theme.accent)
                     .frame(width: 30, height: 30)
-                    .background(prominent ? AnyShapeStyle(theme.accent) : AnyShapeStyle(theme.accent.opacity(0.14)), in: .circle)
+                    .background(prominent ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.accent.opacity(0.14)), in: .circle)
                     .accessibilityHidden(true)
             }
-            .padding(10)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            .background(theme.accent.opacity(prominent ? 0.09 : 0.06), in: .rect(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(theme.accent.opacity(prominent ? 0.35 : 0.2), lineWidth: 0.75))
-            .contentShape(.rect(cornerRadius: 12))
+            .padding(prominent ? 12 : 10)
+            .frame(maxWidth: .infinity, minHeight: prominent ? 52 : 44, alignment: .leading)
+            .background(prominent ? AnyShapeStyle(theme.accent) : AnyShapeStyle(theme.accent.opacity(0.06)), in: .rect(cornerRadius: prominent ? 14 : 12))
+            .overlay(RoundedRectangle(cornerRadius: prominent ? 14 : 12).strokeBorder(theme.accent.opacity(prominent ? 0 : 0.2), lineWidth: 0.75))
+            .contentShape(.rect(cornerRadius: prominent ? 14 : 12))
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -667,6 +857,68 @@ private struct ProductPicture: View {
         .task(id: settings.linkPreviews) {
             if settings.linkPreviews, image == nil, let page { await previews.request(page) }
         }
+    }
+}
+
+/// The deal meter (`PurchaseCard.Meter`): how good a price it is in words, then the bar, the
+/// price's mark on it, and the usual price's zone at its end.
+private struct DealMeter: View {
+    let meter: PurchaseCard.Meter
+    @Environment(\.theme) private var theme
+    @ScaledMetric(relativeTo: .caption2) private var labels: CGFloat = 16
+
+    private var tone: Color {
+        switch meter.verdict {
+        case .great, .good, .sale: theme.accent
+        case .usual: .secondary
+        case .above: PurchaseCard.bad
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(meter.title).chatFont(.subheadline, weight: .semibold)
+                Spacer(minLength: 0)
+                if let gap = meter.gap {
+                    Text(gap).chatFont(.footnote, weight: .semibold).foregroundStyle(tone).lineLimit(1).minimumScaleFactor(0.8)
+                }
+            }
+            GeometryReader { geo in
+                let width = geo.size.width
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.fill.tertiary)
+                    Rectangle().fill(Color.purple.opacity(0.3))
+                        .frame(width: width * (1 - meter.usual))
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    Rectangle().fill(tone.opacity(0.35)).frame(width: width * meter.price)
+                }
+                .frame(height: 10)
+                .clipShape(.capsule)
+                .overlay(alignment: .leading) {
+                    Circle().fill(tone)
+                        .overlay { Circle().strokeBorder(.white, lineWidth: 2.5) }
+                        .shadow(color: .black.opacity(0.25), radius: 1.5, y: 0.5)
+                        .frame(width: 18, height: 18)
+                        .offset(x: min(max(0, width * meter.price - 9), width - 18))
+                }
+                .frame(maxHeight: .infinity)
+            }
+            .frame(height: 18)
+            GeometryReader { geo in
+                HStack(spacing: 0) {
+                    Text(verbatim: meter.low).frame(width: max(0, geo.size.width * meter.usual - 4), alignment: .leading)
+                    Text(meter.reference).lineLimit(1).minimumScaleFactor(0.7)
+                    Spacer(minLength: 0)
+                }
+                .chatFont(.caption2)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+            }
+            .frame(height: labels)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel([meter.title, meter.gap, meter.reference].compactMap(\.self).joined(separator: ", "))
     }
 }
 

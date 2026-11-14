@@ -91,6 +91,9 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         var items: [Product]
         /// A line under them ("Prices checked Oct 30; they change.").
         var note: String?
+        /// What the pick usually sells for, as a price history or its maker's list price said
+        /// (plugin 1.29.0, 'usual_price'): the deal meter's other end. In the pick's currency.
+        var usual: Double?
 
         /// The one shown first and larger: the agent's pick, else the first.
         var lead: Int { items.firstIndex(where: \.pick) ?? 0 }
@@ -872,8 +875,10 @@ nonisolated enum ReplyCards {
         } else if let named = products.firstIndex(where: { $0.badge.map(namesPick) == true }) {
             products[named].pick = true
         }
+        let usual = money(value["usual_price"] ?? value["usualPrice"] ?? value["usual"] ?? value["typical_price"], locale: locale).amount
         return .init(title: text(value["title"]).map { String($0.prefix(120)) }, items: products,
-                     note: text(value["note"] ?? value["subtitle"]).map { String($0.prefix(200)) })
+                     note: text(value["note"] ?? value["subtitle"]).map { String($0.prefix(200)) },
+                     usual: usual.flatMap { $0 > 0 ? $0 : nil })
     }
 
     /// The code given most, the first given on a tie; nil for none.

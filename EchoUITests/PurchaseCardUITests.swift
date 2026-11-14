@@ -1,7 +1,8 @@
 import XCTest
 
-/// The purchase card (asked 2026-10-30): the pick with its store listing (2026-10-31), the others as rows that
-/// open in place to their pros, cons and specs, and the chips that ask the agent for more.
+/// The purchase card (asked 2026-10-30): the pick with its store listing (2026-10-31), the others folded into
+/// one row (2026-11-13) that opens to rows that open in place to their pros, cons and specs, and the chips
+/// that ask the agent for more.
 /// `-echo.demoCards purchase` supplies the reply. With `TEST_RUNNER_SHOT_DIR` set, the screens are
 /// written there too (`SHOT_NAME` before each name), for looking at; `TEST_RUNNER_LINK_PREVIEWS=YES`
 /// shows the products' pictures (drawn on the phone in the demo).
@@ -27,9 +28,18 @@ final class PurchaseCardUITests: XCTestCase {
         sleep(1)
         shot(app, "top")
 
+        // The others are folded into one row (design F, 2026-11-13), with Watch price at the foot.
+        let every = app.buttons["purchase.every"]
+        for _ in 0 ..< 3 where !every.isHittable { window.swipeUp() }
+        XCTAssertTrue(every.exists, "The others aren't folded into one row")
+        XCTAssertTrue(app.buttons["Watch price"].exists, "No Watch price at the card's foot")
+        // Its own line names the next one, so a row is a button by that name other than it.
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@ AND identifier != %@", "Tidal Air 3", "purchase.every")).firstMatch
+        XCTAssertFalse(row.exists, "The others show before they're unfolded")
+        every.tap()
+
         // A row opens in place to its pros, cons and specs.
-        let row = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Tidal Air 3")).firstMatch
-        XCTAssertTrue(row.exists, "The other products aren't rows")
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "The other products aren't rows")
         row.tap()
         XCTAssertTrue(listing(app, "View at Amazon").waitForExistence(timeout: 5), "The row didn't open")
         XCTAssertTrue(app.text(containing: "Folds flat").exists, "Its pros aren't shown")

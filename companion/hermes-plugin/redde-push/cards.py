@@ -351,7 +351,8 @@ SHAPES = {
     "purchase": ("'title'; 'items' (up to 6, your pick first), each {name, brand, price (a number), currency (ISO), was_price, "
                  "rating (out of 5), reviews (a count), retailer, url (the product's page), image (https), pick (true for one) "
                  "or badge (e.g. Best value), why (one line), pros, cons (a few words each), specs ({name: value}, a few)}; "
-                 "'note' (e.g. when the prices were checked)"),
+                 "'usual_price' (what the pick usually sells for, a number, only from a price history or its maker's list "
+                 "price you found: Redde shows how good a deal it is); 'note' (e.g. when the prices were checked)"),
     "home": ("'title'; 'devices', each {name, area, kind (light, switch, climate, cover, lock, sensor, fan or media), "
              "state (as Home Assistant says it: on, off, open, closed, locked, heat...), brightness (0-100), temperature "
              "(now), target (a thermostat's setting), unit, entity (its entity id)}, as they are after what you did"),

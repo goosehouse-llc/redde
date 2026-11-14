@@ -901,7 +901,7 @@ extension Conversation {
     /// (2026-11-10): shown by store, the pick first (`PurchaseCard.Shown.byStore`). Made-up links.
     private func seedPriceCheckDemo() {
         let json = #"""
-        {"cards": [{"type": "purchase", "title": "Shark Navigator NV360", "note": "Prices checked today at 2:29 PM; they change.",
+        {"cards": [{"type": "purchase", "title": "Shark Navigator NV360", "note": "Prices checked today at 2:29 PM; they change.", "usual_price": 199.99,
           "items": [
             {"name": "Shark Navigator Lift-Away Deluxe NV360", "brand": "Shark", "price": 148.90, "was_price": 219.99, "currency": "USD",
              "retailer": "Walmart", "url": "https://www.example.com/walmart-nv360", "availability": "in_stock", "pick": true,

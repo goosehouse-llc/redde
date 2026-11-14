@@ -453,7 +453,9 @@ page too slow to answer leaves the product as the agent wrote it, and the agent 
 checked. Only public web pages are read: http or https on the usual ports, never an address on the
 Hermes machine, the home network or the tailnet, checked again at every redirect. Nothing is
 bought, and no cookies or keys are sent. In Redde, a product with no picture of its own shows its
-store page's picture, with Link previews on.
+store page's picture, with Link previews on. From 1.29.0 the card may also say what the pick
+usually sells for (`usual_price`, from a price history or the maker's list price, never a guess),
+which Redde shows as a deal meter.
 
 From 1.13.0, six more the same way (asked 2026-10-31). A `recipe` card shows a recipe with its
 times, the servings its amounts are for (Redde scales them on the phone), ingredients to tick and

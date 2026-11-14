@@ -79,6 +79,47 @@ struct PurchaseCardTests {
         #expect(!PurchaseCard.Shown(noStores, locale: us).byStore, "no store named: nothing to show by store")
     }
 
+    /// Design F (2026-11-13): the deal meter from what the pick usually sells for, else its store's
+    /// old price; every store folded into one row, those with nothing to sell last.
+    @Test func theDealMeterAndTheFoldedRow() throws {
+        let card = try purchase(#"""
+        {"cards": [{"type": "purchase", "title": "Cuisinart 4-Cup Rice Cooker", "usual_price": "$80", "items": [
+          {"name": "Cuisinart CRC-400", "price": 59.99, "retailer": "Target", "pick": true, "badge": "Best pick"},
+          {"name": "Cuisinart CRC-400", "retailer": "Walmart", "availability": "OutOfStock", "price": 61},
+          {"name": "Cuisinart CRC-400", "price": 59.95, "retailer": "Amazon"},
+          {"name": "Cuisinart CRC-400", "retailer": "Best Buy"}]}]}
+        """#)
+        #expect(card.usual == 80)
+        let shown = PurchaseCard.Shown(card, locale: us)
+        let meter = try #require(shown.meter)
+        #expect(meter.verdict == .good && meter.title == "Good deal" && meter.gap == "About $20 under usual" && meter.reference == "Usual $80")
+        #expect(meter.low == "$45" && meter.price > 0 && meter.price < meter.usual && meter.usual < 1, "the price on the bar, before the usual zone")
+        #expect(shown.byStore && shown.listed == [0, 2, 1, 3], "the pick, the one with a price, then those with none to sell")
+        #expect(shown.everyTitle == "4 stores checked" && shown.everyLine == "Amazon $59.95 · 2 not available")
+
+        let ladder = PurchaseCard.meter(price: 50, usual: 100, was: nil, currency: "USD", locale: us)
+        #expect(ladder?.verdict == .great && ladder?.gap == "About $50 under usual")
+        #expect(PurchaseCard.meter(price: 100, usual: 100, was: nil, currency: "USD", locale: us)?.gap == nil, "about usual: no gap said")
+        let over = try #require(PurchaseCard.meter(price: 110, usual: 100, was: 130, currency: "USD", locale: us))
+        #expect(over.verdict == .above && over.gap == "About $10 over usual" && over.price > over.usual, "the usual price over the store's old one")
+        let sale = try #require(PurchaseCard.meter(price: 148.90, usual: nil, was: 219.99, currency: "USD", locale: us))
+        #expect(sale.verdict == .sale && sale.reference == "Was $219.99" && sale.gap == "$71 off")
+        #expect(PurchaseCard.meter(price: 149, usual: nil, was: nil, currency: "USD", locale: us) == nil, "nothing to measure against")
+        #expect(PurchaseCard.meter(price: 149, usual: nil, was: 120, currency: "USD", locale: us) == nil, "an old price under the new isn't a sale")
+    }
+
+    @Test func watchPriceAsksTheAgentToKeepAnEyeOnThePick() throws {
+        let card = try purchase(#"""
+        {"cards": [{"type": "purchase", "title": "Rice cooker", "items": [
+          {"name": "Cuisinart CRC-400", "price": 59.99, "retailer": "Target", "url": "https://example.com/t", "pick": true}]}]}
+        """#)
+        let asked = PurchaseCard.ask(.watch, card)
+        #expect(asked.shown == "Watch the price of the Cuisinart CRC-400")
+        #expect(asked.said.contains("keep_an_eye_on") && asked.said.contains("at Target (https://example.com/t)"))
+        #expect(PurchaseCard.FollowUp.asked(in: asked.said) == .watch)
+        #expect(!PurchaseCard.followUps(card).contains(.watch), "at the card's foot, not among the chips")
+    }
+
     @Test func thePickByItsFlagOrItsBadge() throws {
         let byWords = try purchase(#"{"type": "purchase", "items": [{"name": "A"}, {"name": "B", "pick": "Best overall"}, {"name": "C", "badge": "Budget pick"}]}"#)
         #expect(byWords.lead == 1 && byWords.items[1].badge == "Best overall")

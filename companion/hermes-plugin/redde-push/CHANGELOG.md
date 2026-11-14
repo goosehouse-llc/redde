@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.29.0 (2026-11-13)
+
+- How good a deal it is. A purchase card may say what the pick usually sells for, `usual_price`
+  (from a price history or the maker's list price the agent found, never a guess), and Redde's
+  new price card shows a deal meter from it: Good deal, About $20 under usual. Without one, the
+  store's own old price (`was_price`) is the meter's other end. The card's Watch price button asks
+  the agent to keep an eye on the pick's price with `keep_an_eye_on`.
+
 ## 1.28.0 (2026-11-13)
 
 - What the bots wait on you for, the same on every device. A bot (or a plugin answering for one,
