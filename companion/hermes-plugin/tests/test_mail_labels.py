@@ -198,7 +198,7 @@ class GmailLabelTests(Base):
         self.assertEqual(self.server.stores, [], "off until turned on: nothing labelled")
         box.state.save_settings({"labels": {"main": {"groups": True}}})
         box.sync(box.account())
-        self.assertIn("Redde/Newsletters", self.server.labels(1))
+        self.assertIn("Redde/Receipts", self.server.labels(1))
         self.assertIn("Redde/Needs Reply", self.server.labels(2))
         kept = box.state.account("main")
         m2 = kept["messages"]["main:INBOX:2"]
@@ -484,11 +484,11 @@ class GmailApiLabelTests(Base):
         box.state.save_settings({"labels": {"google": {"groups": True}}})
         mail.set_rules(box.state, [{"when": {"attachment": "pdf"}, "do": "label", "arg": "Family"}])
         box.sync(box.account())
-        self.assertIn(made["Redde/Newsletters"], labels["g1"])
+        self.assertIn(made["Redde/Promotions"], labels["g1"])
         self.assertIn("Label_9", labels["g1"], "the PDF rule tagged g1")
         box.label_job("google", "remove", "all")
         box.label_jobs(box.account())
-        self.assertNotIn(made["Redde/Newsletters"], labels["g1"])
+        self.assertNotIn(made["Redde/Promotions"], labels["g1"])
         self.assertNotIn("Label_9", labels["g1"])
         self.assertIn("Label_9", labels["g2"], "g2 had Family already: Redde never took it off")
 

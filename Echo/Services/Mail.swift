@@ -59,7 +59,8 @@ nonisolated struct MailAccount: Codable, Identifiable, Equatable, Sendable {
         problem = v["problem"]?.string?.nilIfEmpty
         lastSync = v["last_sync"]?.number.map { Date(timeIntervalSince1970: $0) }
         unread = v["unread"]?.int ?? 0
-        counts = (v["buckets"]?.object ?? [:]).compactMapValues(\.int)
+        // Every pile's count from plugin 1.31.0 (`piles`); before, the four (`buckets`).
+        counts = (v["piles"]?.object ?? v["buckets"]?.object ?? [:]).compactMapValues(\.int)
         canLabel = v["can_label"]?.bool ?? false
         groupLabels = v["labels"]?["groups"]?.bool ?? false
         backfill = LabelJob(json: v["backfill"])
@@ -134,6 +135,10 @@ nonisolated struct MailStatus: Codable, Equatable, Sendable {
     /// The plugin takes the settings that aren't secret in one `mail setup`.
     var setupCommand: Bool
     var brief: MailBrief?
+    /// The plugin has the piles of 1.31.0 (receipts, notifications, promotions, the person's own).
+    var hasPiles = false
+    /// The person's own piles, in their order.
+    var ownPiles: [MailPile] = []
 
     init(json v: JSONValue) {
         accounts = (v["accounts"]?.array ?? []).compactMap(MailAccount.init(json:))
@@ -141,6 +146,10 @@ nonisolated struct MailStatus: Codable, Equatable, Sendable {
         syncMinutes = v["sync_minutes"]?.int ?? 3
         setupCommand = v["setup"]?["command"]?.bool ?? false
         brief = MailBrief(json: v["brief"])
+        if let piles = v["piles"]?.array {
+            hasPiles = true
+            ownPiles = MailPile.list(piles)
+        }
     }
 
     init(accounts: [MailAccount], triage: String = "auto", syncMinutes: Int = 3, setupCommand: Bool = false, brief: MailBrief? = nil) {
@@ -148,6 +157,16 @@ nonisolated struct MailStatus: Codable, Equatable, Sendable {
     }
 
     var usable: [MailAccount] { accounts.filter(\.usable) }
+}
+
+extension MailPile {
+    /// The person's own from the plugin's list of every pile (`own` true).
+    nonisolated static func list(_ piles: [JSONValue]) -> [MailPile] {
+        piles.compactMap { p in
+            guard p["own"]?.bool == true, let id = p["id"]?.string, id.hasPrefix("p-"), let name = p["name"]?.string?.nilIfEmpty else { return nil }
+            return MailPile(id: id, name: name, about: p["about"]?.string ?? "")
+        }
+    }
 }
 
 /// An email in a list: what the plugin says of it, never its whole text.
@@ -269,6 +288,8 @@ nonisolated struct MailMessage: Equatable, Sendable {
 nonisolated struct MailRule: Codable, Identifiable, Equatable, Hashable, Sendable {
     nonisolated enum Action: String, Codable, CaseIterable, Identifiable, Sendable {
         case archive, read, label, move, notify
+        /// Into one of the piles (plugin 1.31.0); `arg` is the pile's id.
+        case group
         var id: String { rawValue }
 
         var label: String {
@@ -278,6 +299,7 @@ nonisolated struct MailRule: Codable, Identifiable, Equatable, Hashable, Sendabl
             case .label: String(localized: "Label it", comment: "An email rule's action")
             case .move: String(localized: "Move it to a folder", comment: "An email rule's action")
             case .notify: String(localized: "Tell me", comment: "An email rule's action: a notification when it arrives")
+            case .group: String(localized: "Put it in a pile", comment: "An email rule's action: file it in one of the Inbox's piles")
             }
         }
 
@@ -288,6 +310,7 @@ nonisolated struct MailRule: Codable, Identifiable, Equatable, Hashable, Sendabl
             case .label: "tag"
             case .move: "folder"
             case .notify: "bell"
+            case .group: "tray.and.arrow.down"
             }
         }
 
@@ -426,6 +449,7 @@ nonisolated struct MailRule: Codable, Identifiable, Equatable, Hashable, Sendabl
     /// The rule in a line: "From receipts@shop.example: archive it".
     var described: String {
         var what = action.takesName ? "\(action.label): \(labels.joined(separator: ", "))" : action.label
+        if action == .group, let arg, let pile = MailBucket(rawValue: arg) { what = "\(action.label): \(pile.label)" }
         if isTagging && archive { what += String(localized: ", and archive", comment: "An email tagging rule that also archives") }
         return "\(name ?? conditions): \(what)"
     }
@@ -931,6 +955,7 @@ final class MailCenter {
         do {
             let fresh = MailStatus(json: try await ask("status"))
             statusAt = .now
+            MailPiles.shared.update(newer: fresh.hasPiles, own: fresh.ownPiles)
             status = fresh
             problem = nil
             if accountID == nil || (accountID != Self.all && !fresh.accounts.contains(where: { $0.id == accountID })) {
@@ -957,7 +982,8 @@ final class MailCenter {
                 let k = key(account.id, pile)
                 // Past the end of a shorter account's mail: nothing more to ask it for.
                 if page > 0, accounts.count > 1, more[k] != true { continue }
-                let listed = MailPage(json: try await ask("list \(pile) \(page) \(account.id)"))
+                // "piles": this app knows the piles of 1.31.0 (an older plugin pays it no mind).
+                let listed = MailPage(json: try await ask("list \(pile) \(page) \(account.id) piles"))
                 threads[k] = page == 0 ? listed.threads : (threads[k] ?? []) + listed.threads.filter { t in !(threads[k] ?? []).contains { $0.id == t.id } }
                 more[k] = listed.more
             }
@@ -1240,6 +1266,22 @@ final class MailCenter {
         try await save(rules: list)
         // A plugin before 1.19.1 keeps a rule's first label only.
         if rule.also.count > 0, rules.first(where: { $0.id == rule.id })?.also.isEmpty == true { throw MailError.oneLabel }
+    }
+
+    /// The person's own piles, set whole (Email settings › Piles). A pile taken away has its mail
+    /// sorted again on the Hermes.
+    func setPiles(_ piles: [MailPile]) async throws {
+        let sent = piles.map { p -> [String: Any] in
+            var one: [String: Any] = ["name": p.name, "about": p.about]
+            if !p.id.isEmpty { one["id"] = p.id }
+            return one
+        }
+        let json = try await ask("piles set " + MailWire.json(sent))
+        let own = MailPile.list(json["piles"]?.array ?? [])
+        MailPiles.shared.update(newer: true, own: own)
+        status?.ownPiles = own
+        status?.hasPiles = true
+        await refreshStatus()
     }
 
     func setTriage(_ on: Bool) async {

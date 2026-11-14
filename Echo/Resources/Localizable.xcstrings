@@ -28762,12 +28762,6 @@
         "pl" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld niedostępny"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -28778,6 +28772,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld niedostępnych"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld niedostępny"
                 }
               },
               "other" : {
@@ -28810,12 +28810,6 @@
         "ru" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld недоступен"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -28826,6 +28820,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld недоступны"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld недоступен"
                 }
               },
               "other" : {
@@ -28876,12 +28876,6 @@
         "uk" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld недоступний"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -28892,6 +28886,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld недоступні"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld недоступний"
                 }
               },
               "other" : {
@@ -31282,12 +31282,6 @@
         "pl" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld opcja"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -31298,6 +31292,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld opcji"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld opcja"
                 }
               },
               "other" : {
@@ -31330,12 +31330,6 @@
         "ru" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld вариант"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -31346,6 +31340,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld вариантов"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вариант"
                 }
               },
               "other" : {
@@ -31396,12 +31396,6 @@
         "uk" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld варіант"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -31412,6 +31406,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld варіантів"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld варіант"
                 }
               },
               "other" : {
@@ -34057,12 +34057,6 @@
         "pl" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Sprawdzono %lld sklep"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -34073,6 +34067,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "Sprawdzono %lld sklepów"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sprawdzono %lld sklep"
                 }
               },
               "other" : {
@@ -34105,12 +34105,6 @@
         "ru" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Проверен %lld магазин"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -34121,6 +34115,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "Проверено %lld магазинов"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Проверен %lld магазин"
                 }
               },
               "other" : {
@@ -34171,12 +34171,6 @@
         "uk" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Перевірено %lld магазин"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -34187,6 +34181,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "Перевірено %lld магазинів"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Перевірено %lld магазин"
                 }
               },
               "other" : {
@@ -46822,6 +46822,113 @@
         }
       }
     },
+    "A person or matter you'd want to see soon." : {
+      "comment" : "Email piles: what the Important pile holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En person eller sag, du gerne vil se snart."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Person oder Sache, die du bald sehen möchtest."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una persona o un asunto que querrías ver pronto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une personne ou une affaire que vous voudriez voir bientôt."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una persona o una questione che vorresti vedere presto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すぐに確認したい人や用件。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "곧 확인하고 싶은 사람이나 용건."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En person eller sak du vil se snart."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een persoon of zaak die je snel wilt zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osoba lub sprawa, którą chcesz szybko zobaczyć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma pessoa ou assunto que você quer ver logo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Человек или дело, которые вы хотите увидеть поскорее."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En person eller sak du vill se snart."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yakında görmek isteyeceğiniz bir kişi ya da konu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Людина чи справа, яку ви хотіли б побачити найближчим часом."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你想尽快看到的人或事。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你想盡快看到的人或事。"
+          }
+        }
+      }
+    },
     "A photo shows instead of the face wherever Redde and Hermes Desktop show %@. It's cropped to a square and sent without where it was taken." : {
       "comment" : "Bot face picker: what a bot's photo does; the bot's name",
       "localizations" : {
@@ -56882,6 +56989,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "加入語句"
+          }
+        }
+      }
+    },
+    "Add Pile" : {
+      "comment" : "Email piles: make a new pile of the person's own",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilføj bunke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stapel hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir montón"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une pile"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi categoria"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分類を追加"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "묶음 추가"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legg til bunke"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg stapel toe"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj stos"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Pilha"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить категорию"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till hög"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yığın Ekle"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Додати категорію"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加类别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入類別"
           }
         }
       }
@@ -139485,6 +139699,113 @@
         }
       }
     },
+    "Delete Pile" : {
+      "comment" : "Email piles: delete one of the person's own piles",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slet bunke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stapel löschen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar montón"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la pile"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina categoria"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分類を削除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "묶음 삭제"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slett bunke"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijder stapel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń stos"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar Pilha"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить категорию"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera hög"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yığını Sil"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видалити категорію"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除类别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除類別"
+          }
+        }
+      }
+    },
     "Delete Section" : {
       "localizations" : {
         "da" : {
@@ -154868,6 +155189,113 @@
         }
       }
     },
+    "Edit Pile" : {
+      "comment" : "Email piles: the edit pile sheet's title",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rediger bunke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stapel bearbeiten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar montón"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier la pile"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifica categoria"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分類を編集"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "묶음 편집"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rediger bunke"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wijzig stapel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edytuj stos"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar Pilha"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить категорию"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redigera hög"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yığını Düzenle"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Редагувати категорію"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑类别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯類別"
+          }
+        }
+      }
+    },
     "Edit the Files" : {
       "comment" : "Memory: the section with MEMORY.md and USER.md, to edit as text",
       "localizations" : {
@@ -164378,6 +164806,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每小時"
+          }
+        }
+      }
+    },
+    "Every Inbox Has" : {
+      "comment" : "Email piles: the section of the seven piles every inbox has",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I alle indbakker"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In jedem Posteingang"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En todas las bandejas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans toutes les boîtes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In ogni casella"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての受信トレイに共通"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모든 받은 편지함 공통"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle innbokser har"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elke inbox heeft"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W każdej skrzynce"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em Toda Caixa de Entrada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Есть в каждом ящике"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finns i alla inkorgar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her Gelen Kutusunda Olanlar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Є в кожних вхідних"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每个收件箱都有"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每個收件匣都有"
           }
         }
       }
@@ -215621,7 +216156,7 @@
       }
     },
     "Input" : {
-      "comment" : "Tokens the model read",
+      "comment" : "Model details: price of what the model reads",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -224972,6 +225507,113 @@
         }
       }
     },
+    "Its mail is sorted again into the other piles." : {
+      "comment" : "Email piles: what deleting a pile does",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dens e-mails sorteres igen i de andre bunker."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seine E-Mails werden wieder auf die anderen Stapel verteilt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su correo se vuelve a repartir entre los demás montones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ses e-mails sont de nouveau répartis dans les autres piles."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le sue email vengono di nuovo smistate nelle altre categorie."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この分類のメールは、ほかの分類に振り分け直されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 묶음의 메일은 다른 묶음으로 다시 분류됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-posten i den sorteres på nytt i de andre bunkene."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De mail erop wordt opnieuw over de andere stapels verdeeld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jego poczta zostanie ponownie rozłożona na pozostałe stosy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os e-mails dela são reorganizados nas outras pilhas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ее письма снова разбираются по другим категориям."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dess e-post sorteras om i de andra högarna."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-postaları diğer yığınlara yeniden dağıtılır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Її листи знову розподіляються між іншими категоріями."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其中的邮件会重新归入其他类别。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其中的郵件會重新歸入其他類別。"
+          }
+        }
+      }
+    },
     "Its name, what it does, its personality, face and tools filled in. Change any of them before you make it." : {
       "localizations" : {
         "da" : {
@@ -226781,6 +227423,7 @@
     },
     "Kanban" : {
       "comment" : "The list's section with the kanban board",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -271104,6 +271747,113 @@
         }
       }
     },
+    "New Pile" : {
+      "comment" : "Email piles: the new pile sheet's title",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny bunke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Stapel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo montón"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle pile"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova categoria"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい分類"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 묶음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny bunke"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe stapel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowy stos"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova Pilha"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая категория"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny hög"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni Yığın"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нова категорія"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建类别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增類別"
+          }
+        }
+      }
+    },
     "New Place" : {
       "localizations" : {
         "da" : {
@@ -272909,6 +273659,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "電子報"
+          }
+        }
+      }
+    },
+    "Newsletters and digests you signed up to read." : {
+      "comment" : "Email piles: what the Newsletters pile holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nyhedsbreve og opsummeringer, du har tilmeldt dig."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Newsletter und Zusammenfassungen, die du abonniert hast."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boletines y resúmenes a los que te suscribiste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Newsletters et résumés auxquels vous êtes abonné."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Newsletter e riepiloghi a cui ti sei iscritto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購読しているニュースレターやダイジェスト。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "구독한 뉴스레터와 다이제스트."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nyhetsbrev og sammendrag du har meldt deg på."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwsbrieven en overzichten waarvoor je je hebt aangemeld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Newslettery i podsumowania, które subskrybujesz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Newsletters e resumos que você assinou."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рассылки и дайджесты, на которые вы подписались."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nyhetsbrev och sammanfattningar du prenumererar på."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okumak için abone olduğunuz bültenler ve özetler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розсилки й дайджести, на які ви підписалися."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你订阅来阅读的资讯邮件和摘要。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你訂閱來閱讀的電子報和摘要。"
           }
         }
       }
@@ -278124,6 +278981,113 @@
         }
       }
     },
+    "No Notifications" : {
+      "comment" : "Inbox: the Notifications pile is empty",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen meddelelser"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Mitteilungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin notificaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune notification"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna notifica"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知なし"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알림 없음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen varslinger"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen meldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak powiadomień"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma Notificação"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет уведомлений"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga notiser"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirim Yok"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Немає сповіщень"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无通知"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有通知"
+          }
+        }
+      }
+    },
     "No output was kept for this step." : {
       "localizations" : {
         "da" : {
@@ -278976,6 +279940,113 @@
         }
       }
     },
+    "No Promotions" : {
+      "comment" : "Inbox: the Promotions pile is empty",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen kampagner"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Werbung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin promociones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune promotion"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna promozione"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロモーションなし"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프로모션 없음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen kampanjer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen promoties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak ofert"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma Promoção"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет промоакций"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga kampanjer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promosyon Yok"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Немає акцій"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无促销邮件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有促銷郵件"
+          }
+        }
+      }
+    },
     "no reason given" : {
       "localizations" : {
         "da" : {
@@ -279078,6 +280149,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未提供原因"
+          }
+        }
+      }
+    },
+    "No Receipts" : {
+      "comment" : "Inbox: the Receipts pile is empty",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen kvitteringer"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Belege"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin recibos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun reçu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna ricevuta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "領収書なし"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "영수증 없음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen kvitteringer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen bonnetjes"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak paragonów"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum Recibo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет чеков"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga kvitton"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Makbuz Yok"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Немає чеків"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无收据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有收據"
           }
         }
       }
@@ -308831,6 +310009,113 @@
         }
       }
     },
+    "Orders, invoices, payments, shipping and bookings." : {
+      "comment" : "Email piles: what the Receipts pile holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordrer, fakturaer, betalinger, forsendelser og bookinger."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestellungen, Rechnungen, Zahlungen, Versand und Buchungen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedidos, facturas, pagos, envíos y reservas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commandes, factures, paiements, livraisons et réservations."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordini, fatture, pagamenti, spedizioni e prenotazioni."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注文、請求書、支払い、配送、予約。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주문, 청구서, 결제, 배송, 예약."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestillinger, fakturaer, betalinger, frakt og reservasjoner."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestellingen, facturen, betalingen, verzending en boekingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamówienia, faktury, płatności, wysyłki i rezerwacje."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedidos, faturas, pagamentos, envios e reservas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказы, счета, платежи, доставка и бронирования."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beställningar, fakturor, betalningar, frakt och bokningar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siparişler, faturalar, ödemeler, kargo ve rezervasyonlar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення, рахунки, платежі, доставка й бронювання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "订单、发票、付款、物流和预订。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂單、發票、付款、運送和預訂。"
+          }
+        }
+      }
+    },
     "Original Order" : {
       "comment" : "Arrange Tiles: forget the order and go back to the strip's own",
       "localizations" : {
@@ -310012,7 +311297,7 @@
       }
     },
     "Output" : {
-      "comment" : "Tokens the model wrote",
+      "comment" : "Model details: price of what the model writes",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -310649,6 +311934,7 @@
       }
     },
     "P%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "variations" : {
@@ -320471,7 +321757,6 @@
     },
     "Pile" : {
       "comment" : "Inbox: which pile of email is shown",
-      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -320561,6 +321846,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Категорія"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "类别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "類別"
+          }
+        }
+      }
+    },
+    "Piles" : {
+      "comment" : "Email piles page: title",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunker"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stapel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categorie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分類"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "묶음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunker"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stapels"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stosy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pilhas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Категории"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Högar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yığınlar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Категорії"
           }
         },
         "zh-Hans" : {
@@ -327200,6 +328592,113 @@
         }
       }
     },
+    "Promotions" : {
+      "comment" : "Email inbox pile: sales, offers and marketing",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kampagner"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werbung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promociones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promotions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promozioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロモーション"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프로모션"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kampanjer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promoties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oferty"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promoções"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Промоакции"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kampanjer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promosyonlar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Акції"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "促销"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "促銷"
+          }
+        }
+      }
+    },
     "Prompt" : {
       "comment" : "A bot face's mouth: a terminal's “>_” prompt (a coder's)",
       "localizations" : {
@@ -328048,6 +329547,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部改回預設模型"
+          }
+        }
+      }
+    },
+    "Put it in a pile" : {
+      "comment" : "An email rule's action: file it in one of the Inbox's piles",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Læg den i en bunke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf einen Stapel legen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ponerlo en un montón"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le mettre dans une pile"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettila in una categoria"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分類に入れる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "묶음에 넣기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legg den i en bunke"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet het op een stapel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odłóż na stos"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colocar em uma pilha"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "отнести к категории"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg det i en hög"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir yığına koy"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "віднести до категорії"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "归入类别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歸入類別"
           }
         }
       }
@@ -333949,7 +335555,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Receipts"
+            "value" : "영수증"
           }
         },
         "nb" : {
@@ -333979,7 +335585,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Receipts"
+            "value" : "Чеки"
           }
         },
         "sv" : {
@@ -334336,6 +335942,7 @@
     },
     "Recommendations" : {
       "comment" : "A purchase card's title when the agent gave none",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -357222,6 +358829,7 @@
     },
     "Run Redde's bridge on the computer with your agents (Claude Code, Codex, Gemini CLI, Goose, Hermes and others that speak ACP). `python3 redde_bridge.py --print-setup` shows the address and token. A server that speaks ACP itself, such as `goose serve`, works too." : {
       "comment" : "Setup and Settings: the ACP connection's footer",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -360738,6 +362346,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存新的睡眠或體能訓練時，以及你打開 Redde 時，會重新傳送。關閉後，它會從工作中移除。"
+          }
+        }
+      }
+    },
+    "Sales, offers and marketing." : {
+      "comment" : "Email piles: what the Promotions pile holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udsalg, tilbud og markedsføring."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rabattaktionen, Angebote und Marketing."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rebajas, ofertas y marketing."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soldes, offres et marketing."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saldi, offerte e marketing."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セール、特典、マーケティング。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "할인, 혜택, 마케팅."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salg, tilbud og markedsføring."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uitverkoop, aanbiedingen en marketing."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyprzedaże, oferty i marketing."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liquidações, ofertas e marketing."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Распродажи, предложения и реклама."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rea, erbjudanden och marknadsföring."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İndirimler, teklifler ve pazarlama."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розпродажі, пропозиції та маркетинг."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "特卖、优惠和营销。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "特賣、優惠和行銷。"
           }
         }
       }
@@ -389597,6 +391312,113 @@
         }
       }
     },
+    "Sign-in codes, security alerts, account and app notices." : {
+      "comment" : "Email piles: what the Notifications pile holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loginkoder, sikkerhedsadvarsler og meddelelser om konti og apps."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anmeldecodes, Sicherheitswarnungen, Konto- und App-Hinweise."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Códigos de inicio de sesión, alertas de seguridad y avisos de cuentas y apps."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codes de connexion, alertes de sécurité, avis de compte et d’app."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codici di accesso, avvisi di sicurezza, comunicazioni su account e app."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サインインコード、セキュリティ警告、アカウントやアプリのお知らせ。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인 코드, 보안 알림, 계정 및 앱 공지."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påloggingskoder, sikkerhetsvarsler, konto- og appvarsler."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inlogcodes, beveiligingsmeldingen, account- en appberichten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kody logowania, alerty bezpieczeństwa, powiadomienia o koncie i aplikacjach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Códigos de login, alertas de segurança, avisos de conta e de apps."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коды входа, оповещения безопасности, уведомления аккаунтов и приложений."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningskoder, säkerhetsvarningar, konto- och appmeddelanden."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş kodları, güvenlik uyarıları, hesap ve uygulama bildirimleri."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коди входу, сповіщення безпеки, повідомлення облікового запису й застосунків."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登录验证码、安全提醒、账户和App通知。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登入驗證碼、安全性警示、帳號和 App 通知。"
+          }
+        }
+      }
+    },
     "Sign-Ins" : {
       "localizations" : {
         "da" : {
@@ -395352,6 +397174,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "有人正在操作螢幕。在他們操作期間，畫面會隱藏。"
+          }
+        }
+      }
+    },
+    "Someone is waiting on your answer." : {
+      "comment" : "Email piles: what the Needs Reply pile holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nogen venter på dit svar."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jemand wartet auf deine Antwort."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alguien espera tu respuesta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelqu’un attend votre réponse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualcuno aspetta la tua risposta."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相手があなたの返信を待っています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "누군가 답장을 기다리고 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noen venter på svar fra deg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iemand wacht op je antwoord."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ktoś czeka na Twoją odpowiedź."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alguém está esperando sua resposta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кто-то ждет вашего ответа."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Någon väntar på ditt svar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biri yanıtınızı bekliyor."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хтось чекає на вашу відповідь."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有人在等你回复。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有人在等你回覆。"
           }
         }
       }
@@ -443725,6 +445654,113 @@
         }
       }
     },
+    "There's already a pile called %@." : {
+      "comment" : "Email piles: the name is in use",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der er allerede en bunke, der hedder %@."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es gibt bereits einen Stapel namens %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya hay un montón llamado %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une pile nommée %@ existe déjà."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esiste già una categoria chiamata %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@」という分類はすでにあります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘%@’ 묶음이 이미 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det finnes allerede en bunke som heter %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er is al een stapel met de naam %@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stos o nazwie %@ już istnieje."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Já existe uma pilha chamada %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Категория «%@» уже есть."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det finns redan en hög som heter %@."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ adlı bir yığın zaten var."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Категорія «%@» уже існує."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已有名为“%@”的类别。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已經有名為「%@」的類別。"
+          }
+        }
+      }
+    },
     "There's no API key for %@ on this iPhone. Add the bot again with its profile's key." : {
       "localizations" : {
         "da" : {
@@ -470737,6 +472773,7 @@
       }
     },
     "Update" : {
+      "comment" : "ACP bridge section: whether the bridge is the newest",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -477018,6 +479055,7 @@
       }
     },
     "Version" : {
+      "comment" : "ACP bridge section: the bridge's version",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -488633,6 +490671,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "我說過回家路上要順便拿什麼？"
+          }
+        }
+      }
+    },
+    "What goes in it, e.g. the kids' school, teachers and class news" : {
+      "comment" : "Email piles: the description field of a pile, with an example",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvad hører til i den, f.eks. børnenes skole, lærere og nyt fra klassen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was hineingehört, z. B. Schule der Kinder, Lehrkräfte und Neues aus der Klasse"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué va en él, p. ej., el colegio de los niños, los profesores y las noticias de clase"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qu’elle contient, par ex. l’école des enfants, les enseignants et les nouvelles de la classe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa ci va, ad es. la scuola dei bambini, gli insegnanti e le notizie della classe"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入れるもの（例：子どもの学校、先生、クラスのお知らせ）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "들어갈 메일(예: 아이 학교, 선생님, 학급 소식)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hva som hører hjemme her, f.eks. barnas skole, lærere og klassenytt"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat erop hoort, bijv. de school van de kinderen, leraren en klasnieuws"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co trafia na ten stos, np. szkoła dzieci, nauczyciele i wiadomości z klasy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que entra nela, por exemplo a escola das crianças, os professores e as notícias da turma"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что сюда попадает, например школа детей, учителя и новости класса"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vad som hör hit, t.ex. barnens skola, lärare och klassnyheter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İçine ne girer, örneğin çocukların okulu, öğretmenler ve sınıf haberleri"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Що до неї потрапляє, напр. школа дітей, учителі й новини класу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要放什么，例如孩子的学校、老师和班级消息"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要放什麼，例如孩子的學校、老師和班級消息"
           }
         }
       }
@@ -502893,6 +505038,113 @@
         }
       }
     },
+    "Worth knowing, nothing to answer." : {
+      "comment" : "Email piles: what the FYI pile holds",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Godt at vide, intet at svare på."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gut zu wissen, nichts zu beantworten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bueno saberlo, nada que responder."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bon à savoir, rien à répondre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utile da sapere, niente a cui rispondere."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "知っておくと良いもの。返信は不要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알아두면 좋지만 답장할 필요는 없는 메일."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Greit å vite, ingenting å svare på."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goed om te weten, niets om op te antwoorden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warto wiedzieć, nie trzeba odpowiadać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bom saber, nada a responder."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Полезно знать, отвечать не нужно."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bra att veta, inget att svara på."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilmeye değer, yanıt gerektirmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Корисно знати, відповідати не треба."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "值得了解，无需回复。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "值得知道，不必回覆。"
+          }
+        }
+      }
+    },
     "Write a few lines on Redde's “From Your Agent” widget, for now or for later in the day." : {
       "localizations" : {
         "da" : {
@@ -509452,6 +511704,113 @@
         }
       }
     },
+    "Your agent puts a new email in one of your piles when it fits what you wrote, ahead of the ones every inbox has; receipts stay in Receipts. A rule can put mail in a pile too." : {
+      "comment" : "Email piles: how the person's own piles are sorted into",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent lægger en ny e-mail i en af dine bunker, når den passer til det, du har skrevet, før de bunker, alle indbakker har; kvitteringer bliver i Kvitteringer. En regel kan også lægge mail i en bunke."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent legt eine neue E-Mail auf einen deiner Stapel, wenn sie zu dem passt, was du geschrieben hast – noch vor den Stapeln, die jeder Posteingang hat; Belege bleiben bei „Belege“. Auch eine Regel kann E-Mails auf einen Stapel legen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente pone un correo nuevo en uno de tus montones cuando encaja con lo que escribiste, antes que en los que tiene toda bandeja; los recibos se quedan en Recibos. Una regla también puede poner correo en un montón."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent met un nouvel e-mail dans l’une de vos piles quand il correspond à ce que vous avez écrit, avant celles de toute boîte de réception ; les reçus restent dans Reçus. Une règle peut aussi mettre des e-mails dans une pile."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente mette una nuova email in una delle tue categorie quando corrisponde a ciò che hai scritto, prima di quelle che ha ogni casella; le ricevute restano in Ricevute. Anche una regola può mettere la posta in una categoria."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新着メールがあなたの書いた内容に合うと、エージェントはすべての受信トレイに共通の分類より優先して、あなたの分類に入れます。領収書は「領収書」に残ります。ルールでメールを分類に入れることもできます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트는 새 이메일이 내가 적은 설명에 맞으면 모든 받은 편지함에 있는 묶음보다 먼저 내 묶음에 넣습니다. 영수증은 영수증 묶음에 그대로 남습니다. 규칙으로도 메일을 묶음에 넣을 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din legger en ny e-post i en av bunkene dine når den passer med det du skrev, før bunkene alle innbokser har; kvitteringer blir i Kvitteringer. En regel kan også legge e-post i en bunke."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent zet een nieuwe e-mail op een van je stapels als die past bij wat je schreef, vóór de stapels die elke inbox heeft; bonnetjes blijven bij Bonnetjes. Ook een regel kan mail op een stapel zetten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent odkłada nowy e-mail na jeden z Twoich stosów, gdy pasuje do Twojego opisu, zanim sprawdzi stosy, które ma każda skrzynka; paragony zostają w Paragonach. Reguła też może odłożyć pocztę na stos."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu agente coloca um e-mail novo em uma das suas pilhas quando ele combina com o que você escreveu, antes das pilhas que toda caixa de entrada tem; recibos ficam em Recibos. Uma regra também pode colocar e-mails em uma pilha."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент относит новое письмо к одной из ваших категорий, если оно подходит под ваше описание, раньше, чем к категориям, которые есть в каждом ящике; чеки остаются в категории «Чеки». Правило тоже может отнести письмо к категории."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent lägger ett nytt mejl i en av dina högar när det passar det du skrev, före de som finns i alla inkorgar; kvitton stannar i Kvitton. En regel kan också lägga e-post i en hög."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız, yazdıklarınıza uyan yeni bir e-postayı her gelen kutusunda olanlardan önce kendi yığınlarınızdan birine koyar; makbuzlar Makbuzlar'da kalır. Bir kural da e-postayı bir yığına koyabilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент відносить новий лист до однієї з ваших категорій, якщо він відповідає вашому опису, раніше, ніж до категорій, що є в кожних вхідних; чеки лишаються в «Чеки». Правило теж може відносити пошту до категорії."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新邮件符合你写的描述时，你的智能体会优先将其放入你的类别，而不是每个收件箱都有的类别；收据仍留在“收据”中。规则也可以将邮件放入类别。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新郵件符合你寫的描述時，你的代理會優先將它放入你的類別，而不是每個收件匣都有的類別；收據仍留在「收據」。規則也可以將郵件放入類別。"
+          }
+        }
+      }
+    },
     "Your agent reads only what you turn on here, when it asks: totals, averages, nights and workouts, never every sample. It goes to your own Hermes and nowhere else, and Redde never writes to Health." : {
       "localizations" : {
         "da" : {
@@ -509661,6 +512020,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的代理會讀取每封新郵件的寄件者、主旨和前幾行，絕不讀取全文，並將它歸類為重要、需要回覆、參考或電子報。關閉時，Redde 只會依你的郵件供應商本身的類別整理。"
+          }
+        }
+      }
+    },
+    "Your agent reads the sender, subject and first lines of each new email, never the whole of it, and puts it in one of the piles: yours, or Important, Needs Reply, FYI and the rest. Off, Redde sorts by the email's headers and your provider's categories only." : {
+      "comment" : "Email settings: what sorting does, with the piles of plugin 1.31.0",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent læser afsender, emne og de første linjer af hver ny e-mail, aldrig det hele, og lægger den i en af bunkerne: dine egne eller Vigtigt, Skal besvares, Til info og resten. Slået fra sorterer Redde kun efter e-mailens headere og din udbyders kategorier."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent liest Absender, Betreff und die ersten Zeilen jeder neuen E-Mail, nie die ganze, und legt sie auf einen der Stapel: deine eigenen oder „Wichtig“, „Antwort nötig“, „Zur Info“ und die übrigen. Wenn aus, sortiert Redde nur nach den Kopfzeilen der E-Mail und den Kategorien deines Anbieters."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente lee el remitente, el asunto y las primeras líneas de cada correo nuevo, nunca el correo entero, y lo pone en uno de los montones: los tuyos, o Importante, Por responder, Informativo y los demás. Desactivado, Redde ordena solo por los encabezados del correo y las categorías de tu proveedor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent lit l’expéditeur, l’objet et les premières lignes de chaque nouvel e-mail, jamais l’e-mail en entier, et le met dans l’une des piles : les vôtres, ou Important, À répondre, Pour info et les autres. Désactivé, Redde trie uniquement selon les en-têtes de l’e-mail et les catégories de votre fournisseur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente legge il mittente, l'oggetto e le prime righe di ogni nuova email, mai tutta, e la mette in una delle categorie: le tue, oppure Importanti, Da rispondere, Per info e le altre. Se disattivato, Redde smista solo in base alle intestazioni dell'email e alle categorie del tuo provider."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントは新着メールの送信者、件名、最初の数行だけを読み（全文は読みません）、いずれかの分類（あなたが作った分類、または「重要」「要返信」「参考」など）に入れます。オフの場合、Reddeはメールのヘッダとプロバイダのカテゴリだけで分類します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 새 이메일마다 보낸 사람, 제목, 첫 몇 줄만 읽고(전체는 읽지 않음) 내 묶음이나 중요, 답장 필요, 참고 등의 묶음 중 하나에 넣습니다. 끄면 Redde는 이메일 헤더와 제공업체 자체 카테고리로만 분류합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din leser avsenderen, emnet og de første linjene i hver ny e-post, aldri hele, og legger den i en av bunkene: dine, eller Viktig, Trenger svar, Til info og resten. Når dette er av, sorterer Redde bare etter e-posthodene og leverandørens kategorier."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent leest de afzender, het onderwerp en de eerste regels van elke nieuwe e-mail, nooit de hele e-mail, en zet hem op een van de stapels: die van jou, of Belangrijk, Antwoord nodig, Ter info en de rest. Als dit uit staat, sorteert Redde alleen op de headers van de e-mail en de categorieën van je provider."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent czyta nadawcę, temat i pierwsze wiersze każdego nowego e-maila, nigdy całości, i odkłada go na jeden ze stosów: Twój albo Ważne, Do odpowiedzi, Do wiadomości i pozostałe. Gdy wyłączone, Redde sortuje tylko według nagłówków e-maila i kategorii Twojego dostawcy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu agente lê o remetente, o assunto e as primeiras linhas de cada e-mail novo, nunca o e-mail inteiro, e o coloca em uma das pilhas: as suas, ou Importante, Precisa de Resposta, Para Saber e as demais. Desativado, o Redde organiza só pelos cabeçalhos do e-mail e pelas categorias do seu provedor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент читает отправителя, тему и первые строки каждого нового письма, но никогда не письмо целиком, и относит его к одной из категорий: вашей или «Важное», «Ждут ответа», «К сведению» и остальным. Если выключено, Redde разбирает только по заголовкам письма и категориям вашего почтового провайдера."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent läser avsändaren, ämnet och de första raderna i varje nytt mejl, aldrig hela, och lägger det i en av högarna: dina egna, eller Viktigt, Behöver svar, För kännedom och resten. Avstängt sorterar Redde bara efter mejlets huvudfält och din leverantörs kategorier."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız her yeni e-postanın göndericisini, konusunu ve ilk satırlarını okur, asla tamamını değil; ve onu yığınlardan birine koyar: sizinkilerden birine ya da Önemli, Yanıt Bekliyor, Bilginize ve diğerlerine. Kapalıyken Redde yalnızca e-postanın üst bilgilerine ve sağlayıcınızın kategorilerine göre sınıflandırır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент читає відправника, тему й перші рядки кожного нового листа, ніколи не весь лист, і відносить його до однієї з категорій: ваших або «Важливе», «Потребує відповіді», «До відома» тощо. Якщо вимкнено, Redde сортує лише за заголовками листа й категоріями вашого провайдера."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体会读取每封新邮件的发件人、主题和前几行，绝不读取全文，并将其放入一个类别：你的类别，或“重要”“待回复”“仅供参考”等。关闭后，Redde只按邮件的标头和你的邮件提供商的类别整理。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理會讀取每封新郵件的寄件者、主旨和前幾行，絕不讀取全文，並將它放入其中一個類別：你的類別，或重要、需要回覆、參考等。關閉時，Redde 只會依郵件的標頭和你的郵件供應商的類別整理。"
+          }
+        }
+      }
+    },
+    "Your agent reads this to decide what goes in the pile, so say who it's from or what it's about." : {
+      "comment" : "Email piles: under a pile's description",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent læser dette for at afgøre, hvad der hører til i bunken, så skriv, hvem det er fra, eller hvad det handler om."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent liest das, um zu entscheiden, was auf den Stapel kommt. Schreib also, von wem es ist oder worum es geht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente lee esto para decidir qué va en el montón, así que di de quién es o de qué trata."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent lit ceci pour décider de ce qui va dans la pile : indiquez de qui viennent les e-mails ou de quoi ils parlent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente legge questo testo per decidere cosa va nella categoria, quindi indica da chi arriva o di cosa parla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントはこれを読んで、この分類に何を入れるかを判断します。送信者や内容を書いてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 이 설명을 읽고 어떤 메일을 이 묶음에 넣을지 정하므로, 누가 보낸 메일인지 또는 무엇에 관한 메일인지 적어 주세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din leser dette for å avgjøre hva som skal i bunken, så skriv hvem e-posten er fra eller hva den handler om."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent leest dit om te bepalen wat er op de stapel hoort, dus zeg van wie de mail komt of waar die over gaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent czyta ten opis, by zdecydować, co trafia na stos, więc napisz, od kogo jest poczta lub czego dotyczy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu agente lê isto para decidir o que entra na pilha, então diga de quem vêm os e-mails ou do que eles tratam."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент читает это описание, чтобы решить, что относить к категории, поэтому укажите, от кого письма или о чем они."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent läser detta för att avgöra vad som hör till högen, så skriv vem det kommer från eller vad det handlar om."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız yığına neyin gireceğine karar vermek için bunu okur; bu yüzden kimden geldiğini ya da ne hakkında olduğunu yazın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент читає цей опис, щоб вирішити, що потрапляє до категорії, тож укажіть, від кого листи або про що вони."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体会读取这段描述来决定哪些邮件归入此类别，所以请写明来自谁或关于什么。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理會讀取這段描述來決定哪些郵件歸入此類別，所以請寫明來自誰或關於什麼。"
           }
         }
       }
@@ -517116,6 +519689,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的語句"
+          }
+        }
+      }
+    },
+    "Your Pile" : {
+      "comment" : "Email inbox pile: one the person made, its name not known yet",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din bunke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Stapel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu montón"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre pile"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua categoria"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自分の分類"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "내 묶음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din bunke"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jouw stapel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój stos"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua Pilha"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша категория"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din hög"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yığınınız"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша категорія"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的类别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的類別"
+          }
+        }
+      }
+    },
+    "Your Piles" : {
+      "comment" : "Email piles: the section of piles the person made",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dine bunker"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Stapel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus montones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos piles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le tue categorie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作成した分類"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "내 묶음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dine bunker"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jouw stapels"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoje stosy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suas Pilhas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши категории"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina högar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yığınlarınız"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваші категорії"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的类别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的類別"
           }
         }
       }

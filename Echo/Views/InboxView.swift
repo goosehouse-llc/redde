@@ -351,9 +351,10 @@ private struct SelectionBarLabel: View {
     }
 }
 
-/// The four piles, each its colour, its name and its count, in a row that swipes sideways
+/// The piles, each its colour, its name and its count, in a row that swipes sideways
 /// (asked 11-06: "allow for swipe scrolling on email categories"); the one shown is filled and
-/// kept in view.
+/// kept in view. With seven and the person's own (11-14), an empty one past the first three is
+/// left out unless it's the one shown.
 struct PileBar: View {
     @Binding var bucket: MailBucket
     let counts: (MailBucket) -> Int
@@ -362,7 +363,7 @@ struct PileBar: View {
         ScrollViewReader { scroller in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(MailBucket.shown) { pile in
+                    ForEach(MailBucket.shown.filter { $0 == bucket || MailBucket.older.prefix(3).contains($0) || counts($0) > 0 }) { pile in
                         chip(pile)
                             .id(pile)
                     }
@@ -415,18 +416,29 @@ extension MailBucket {
         case .important: .orange
         case .needsReply: .blue
         case .fyi: .purple
+        case .receipts: .teal
+        case .notifications: .indigo
+        case .promotions: .pink
         case .newsletters: .green
         case .unsorted: .gray
+        default: Self.ownTints[abs(rawValue.unicodeScalars.reduce(5381) { ($0 &* 33) &+ Int($1.value) }) % Self.ownTints.count]
         }
     }
+
+    /// The person's own piles' colours: from the id, so a pile keeps its colour.
+    private static let ownTints: [Color] = [.cyan, .mint, .brown, .red, .yellow]
 
     var emptyTitle: String {
         switch self {
         case .important: String(localized: "Nothing Important", comment: "Inbox: the Important pile is empty")
         case .needsReply: String(localized: "Nothing Waiting on a Reply", comment: "Inbox: the Needs Reply pile is empty")
         case .fyi: String(localized: "No FYI Mail", comment: "Inbox: the FYI pile is empty")
+        case .receipts: String(localized: "No Receipts", comment: "Inbox: the Receipts pile is empty")
+        case .notifications: String(localized: "No Notifications", comment: "Inbox: the Notifications pile is empty")
+        case .promotions: String(localized: "No Promotions", comment: "Inbox: the Promotions pile is empty")
         case .newsletters: String(localized: "No Newsletters", comment: "Inbox: the Newsletters pile is empty")
         case .unsorted: String(localized: "Nothing Waiting to Be Sorted", comment: "Inbox: the unsorted pile is empty")
+        default: String(localized: "Nothing in \(label)")
         }
     }
 }

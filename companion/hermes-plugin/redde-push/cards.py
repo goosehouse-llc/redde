@@ -389,7 +389,7 @@ SHAPES = {
               "with their sign), open, day_range (e.g. 187.20 - 191.05), year_range, market_cap (e.g. 2.71T), volume, as_of (ISO "
               "with its offset: when the price is from), delayed (true or false), market (e.g. Closed), points (the day's prices "
               "in order, for its line)}; 'note'"),
-    "inbox": ("'buckets' (up to 4: important, needs_reply, fyi, newsletters), each {bucket, count, threads (up to 5, from "
+    "inbox": ("'buckets' (up to 4 piles as redde_mail names them), each {bucket, count, threads (up to 5, from "
               "redde_mail list: id, from, subject, summary, unread)}; 'account'; 'title'"),
 }
 
@@ -612,7 +612,9 @@ def _inbox(card: dict, needs: str) -> tuple[str, str | None]:
     """An inbox (1.16.0, `mail.py`): buckets with counts and a few of their emails."""
     said = []
     for b in _list(card, "buckets")[:4]:
-        if not isinstance(b, dict) or str(b.get("bucket") or "") not in ("important", "needs_reply", "fyi", "newsletters"):
+        # The piles of 1.31.0 and the person's own (`p-…`); an older app leaves out the ones it doesn't know.
+        if not isinstance(b, dict) or not re.fullmatch(r"important|needs_reply|fyi|receipts|notifications|promotions|newsletters|p-[a-z0-9-]{1,24}",
+                                                       str(b.get("bucket") or "")):
             continue
         threads = [t for t in (b.get("threads") or [])[:5] if isinstance(t, dict) and t.get("id") and (t.get("subject") or t.get("from"))]
         count = b.get("count") if isinstance(b.get("count"), int) else len(threads)

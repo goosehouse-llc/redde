@@ -493,7 +493,11 @@ with the google-workspace skill's Gmail sign-in gets that account over the Gmail
 - Every few minutes (3 by default) the schedules' thread looks for new mail: sender, subject, a
   short snippet and flags only. Rules sort it first (Gmail's categories, list headers, receipts);
   the rest goes to the model a few at a time, as data. The person's own rules (archive, mark
-  read, label, move, tell me) run with no model, each logged and undoable.
+  read, label, move, put in a pile, tell me) run with no model, each logged and undoable.
+- From 1.31.0 there are seven piles (important, needs_reply, fyi, receipts, notifications,
+  promotions, newsletters) and up to eight of the person's own (`p-…`, a name and what goes in
+  it, kept in the mail settings), which the model sorts into first. Apps that don't add `piles`
+  to `mail list` are shown the old four, the new piles folded into newsletters and fyi.
 - The agent gets `redde_mail`. Reading an email gives its text as data, never instructions.
   Replies are drafts shown as a card in Redde and sent only unchanged after the person approves;
   trashing and the agent's unsubscribing are approved too. While an account is set up, other ways

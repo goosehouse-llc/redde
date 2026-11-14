@@ -44,16 +44,31 @@ enum MailDemo {
         thread("d4", "Dana Okafor", "dana@example.com", "Re: Kitchen quote", "Thanks, could you confirm the cabinet colour by Wednesday?",
                "needs_reply", "Dana needs the cabinet colour by Wednesday.", minutes: 300, unread: false),
         thread("d5", "Northwind Bank", "alerts@northwind.example.com", "Your statement is ready", "Your October statement is available…",
-               "fyi", "October's statement is ready.", minutes: 600, unread: false),
+               "notifications", "October's statement is ready.", minutes: 600, unread: false),
         thread("d6", "Hearth Delivery", "orders@hearth.example.com", "Your order has shipped", "Order #48213 is on its way, arriving Thursday.",
-               "fyi", "Your order ships, arriving Thursday.", minutes: 720, unread: true),
+               "receipts", "Your order ships, arriving Thursday.", minutes: 720, unread: true),
         thread("d7", "The Morning Read", "news@morningread.example.com", "Five things for Tuesday", "Today: rates, rain and a rocket launch…",
                "newsletters", "A daily news digest.", minutes: 180, unread: true, unsubscribe: true),
         thread("d8", "Lumen Coffee", "hello@lumen.example.com", "20% off beans this week", "Our autumn roast is back…",
-               "newsletters", "A coffee sale, 20% off.", minutes: 1500, unread: false, unsubscribe: true),
+               "promotions", "A coffee sale, 20% off.", minutes: 1500, unread: false, unsubscribe: true),
         thread("d9", "Shopwell", "receipts@shopwell.example.com", "Your receipt from Shopwell", "Thanks for your order. Total $42.18…",
-               "newsletters", "A $42.18 receipt.", minutes: 2000, unread: false, unsubscribe: false, receipt: true),
+               "receipts", "A $42.18 receipt.", minutes: 2000, unread: false, unsubscribe: false, receipt: true),
+        thread("d10", "Riverside PTA", "pta@riverside.example.com", "Bake sale sign-up", "We need six more bakers for Saturday's sale…",
+               "p-school", "The PTA asks for bakers for Saturday.", minutes: 260, unread: true),
+        thread("d11", "Pine Lake Cabins", "stay@pinelake.example.com", "Your stay is confirmed", "Check-in Friday from 3 pm, cabin 4…",
+               "receipts", "Cabin 4 booked, check-in Friday 3 pm.", minutes: 3000, unread: false),
+        thread("d12", "Mesh Wi-Fi", "no-reply@mesh.example.com", "New sign-in to your account", "A new device signed in from Orlando…",
+               "notifications", "A new sign-in to your Wi-Fi account.", minutes: 50, unread: true),
     ]
+
+    /// The person's own piles in the demo (Email settings › Piles), changed by `piles set`.
+    static var ownPiles: [[String: Any]] = [
+        ["id": "p-school", "name": "School", "about": "Riverside School, the PTA and the kids' teachers", "own": true]]
+
+    static var pileList: [[String: Any]] {
+        ["important", "needs_reply", "fyi", "receipts", "notifications", "promotions", "newsletters"].map { ["id": $0, "about": "", "own": false] }
+            + ownPiles
+    }
 
     private static func thread(_ id: String, _ from: String, _ address: String, _ subject: String, _ snippet: String, _ bucket: String,
                                _ summary: String, minutes: Double, unread: Bool, attachments: Bool = false, unsubscribe: Bool = false,
@@ -143,16 +158,16 @@ enum MailDemo {
                                         "can_label": true, "labels": ["groups": true], "labelled": 46,
                                         "backfill": ["state": "running", "done": 300, "total": 840],
                                         "suggest": true, "suggestions": suggestions.map { ["id": $0["id"]!, "why": $0["why"]!] },
-                                        "unread": threads.filter { $0["unread"] as! Bool }.count, "buckets": counts]]
+                                        "unread": threads.filter { $0["unread"] as! Bool }.count, "buckets": counts, "piles": counts]]
                           + (two ? [workAccount] : []),
-                          "triage": "auto", "sync_minutes": 3, "setup": ["command": true], "brief": brief])
+                          "triage": "auto", "sync_minutes": 3, "setup": ["command": true], "brief": brief, "piles": pileList])
         case "brief":
             return reply(["brief": brief])
         case "setup":
             return reply(["written": ["REDDE_MAIL_ADDRESS", "REDDE_MAIL_PROVIDER"], "status": ["accounts": [], "setup": ["command": true]]])
         case "list":
             let bucket = parts.count > 2 ? parts[2].split(separator: " ").first.map(String.init) ?? "all" : "all"
-            let account = words.hasSuffix(" work") ? "work" : "main"
+            let account = words.contains(" work") ? "work" : "main"
             let listed = (account == "work" ? workThreads : threads).filter { bucket == "all" || $0["bucket"] as! String == bucket }
             return reply(["account": account, "bucket": bucket, "page": 0, "more": false, "threads": listed])
         case "read":
@@ -187,6 +202,15 @@ enum MailDemo {
             return reply(["sent": true, "id": "dr1"])
         case "settings":
             return reply(["triage": "auto", "sync_minutes": 3])
+        case "piles":
+            if parts.count > 2, parts[2].hasPrefix("set"), let json = try? JSONValue.parse(Data(words.drop { $0 != "[" }.utf8)) {
+                ownPiles = (json.array ?? []).enumerated().map { n, p in
+                    let name = p["name"]?.string ?? "Pile"
+                    return ["id": p["id"]?.string ?? "p-" + name.lowercased().filter { $0.isLetter || $0.isNumber }, "name": name,
+                            "about": p["about"]?.string ?? "", "own": true]
+                }
+            }
+            return reply(["piles": pileList])
         case "suggest":
             if parts.count > 2, parts[2].hasPrefix("dismiss") || parts[2].hasPrefix("accept") {
                 let id = parts[2].split(separator: " ").dropFirst(2).first.map(String.init) ?? ""

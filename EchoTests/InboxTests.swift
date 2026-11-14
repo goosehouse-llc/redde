@@ -82,6 +82,57 @@ struct InboxTests {
         #expect(status.usable.map(\.id) == ["main"], "Nous's connector is listed, not usable")
     }
 
+    // More piles (plugin 1.31.0, asked 11-14: "the 4 we have do not catch everything").
+
+    private static let newerStatus = #"redde-push mail {"accounts":[{"id":"main","name":"Home","address":"me@example.com","provider":"icloud","via":"imap","usable":true,"unread":4,"buckets":{"important":2,"needs_reply":3,"fyi":8,"newsletters":24,"unsorted":0},"piles":{"important":2,"needs_reply":3,"fyi":1,"receipts":4,"notifications":7,"promotions":11,"newsletters":9,"p-school":2,"unsorted":0}}],"triage":"auto","sync_minutes":3,"piles":[{"id":"important","about":"","own":false},{"id":"receipts","about":"","own":false},{"id":"p-school","name":"School","about":"the kids' school","own":true}]}"#
+
+    @Test func aNewerPluginsPilesAreReadWithTheirOwn() throws {
+        let status = MailStatus(json: try MailWire.parse(Self.newerStatus))
+        #expect(status.hasPiles && status.ownPiles == [MailPile(id: "p-school", name: "School", about: "the kids' school")])
+        let home = try #require(status.accounts.first)
+        #expect(home.count(.receipts) == 4 && home.count(.promotions) == 11 && home.count(.fyi) == 1)
+        #expect(home.count(MailBucket(rawValue: "p-school")!) == 2)
+        let older = MailStatus(json: try MailWire.parse(Self.status))
+        #expect(!older.hasPiles && older.ownPiles.isEmpty)
+    }
+
+    @Test func onlyThePilesThePluginNamesAreRead() {
+        #expect(MailBucket(rawValue: "receipts") == .receipts && MailBucket(rawValue: "p-school")?.isOwn == true)
+        #expect(MailBucket(rawValue: "spam") == nil && MailBucket(rawValue: "p-") == nil && MailBucket(rawValue: "") == nil)
+        #expect(MailBucket.fixed.count == 7 && MailBucket.older == [.important, .needsReply, .fyi, .newsletters])
+        // Saved and read back as their names.
+        let data = try? JSONEncoder().encode([MailBucket.promotions])
+        #expect(data.map { String(decoding: $0, as: UTF8.self) } == #"["promotions"]"#)
+    }
+
+    @Test func theAppAsksForThePilesAndSetsItsOwn() async throws {
+        var sent: [String] = []
+        let center = center { words in
+            sent.append(words)
+            if words.hasPrefix("mail piles set") {
+                return #"redde-push mail {"piles":[{"id":"important","own":false},{"id":"p-school","name":"School","about":"school","own":true},{"id":"p-travel","name":"Travel","about":"","own":true}]}"#
+            }
+            if words.hasPrefix("mail list") { return Self.list }
+            return Self.newerStatus
+        }
+        await center.refreshStatus()
+        await center.load(.receipts)
+        #expect(sent.contains("mail list receipts 0 main piles"), "the list asks for the new piles")
+        try await center.setPiles([MailPile(id: "p-school", name: "School", about: "school"), MailPile(name: "Travel", about: "")])
+        let set = try #require(sent.first { $0.hasPrefix("mail piles set ") })
+        let piles = try json(String(set.dropFirst("mail piles set ".count))).array ?? []
+        #expect(piles.count == 2 && piles[0]["id"]?.string == "p-school" && piles[1]["id"] == nil, "a new pile is named by the plugin")
+        #expect(MailPiles.shared.newer)
+        MailPiles.shared.update(newer: false, own: [])
+    }
+
+    @Test func aRuleCanPutMailInAPile() throws {
+        let rule = try #require(MailRule(json: try json(#"{"id":"r1","when":{"from":"airline.com"},"do":"group","arg":"receipts"}"#)))
+        #expect(rule.action == .group && rule.arg == "receipts")
+        #expect(rule.described.hasSuffix(": Put it in a pile: Receipts"))
+        #expect(rule.json["do"] as? String == "group" && rule.json["arg"] as? String == "receipts")
+    }
+
     @Test func aListReadsEachEmailLeniently() throws {
         let page = MailPage(json: try MailWire.parse(Self.list))
         #expect(page.more)

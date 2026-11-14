@@ -50,6 +50,11 @@ struct MailSettingsView: View {
                     NavigationLink { MailRulesView() } label: {
                         Label { Text("Rules", comment: "Email settings: the rules page") } icon: { Image(systemName: "line.3.horizontal.decrease.circle") }
                     }
+                    if center.status?.hasPiles == true {
+                        NavigationLink { MailPilesView() } label: {
+                            Label { Text("Piles", comment: "Email piles page: title") } icon: { Image(systemName: "square.stack") }
+                        }
+                    }
                     if center.accounts.count > 1 {
                         // What the Inbox opens on, kept until changed here or in its menu (11-06).
                         Picker(selection: Binding(get: { center.inbox?.id ?? "" }, set: { center.accountID = $0 })) {
@@ -61,7 +66,9 @@ struct MailSettingsView: View {
                     Toggle(isOn: Binding(get: { center.status?.triage != "off" }, set: { on in Task { await center.setTriage(on) } })) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Sort New Mail", comment: "Email settings: the agent sorts the inbox")
-                            Text("Your agent reads the sender, subject and first lines of each new email, never the whole of it, and files it as Important, Needs Reply, FYI or Newsletters. Off, Redde sorts by your provider's own categories only.", comment: "Email settings: what sorting does")
+                            Text(center.status?.hasPiles == true
+                                 ? String(localized: "Your agent reads the sender, subject and first lines of each new email, never the whole of it, and puts it in one of the piles: yours, or Important, Needs Reply, FYI and the rest. Off, Redde sorts by the email's headers and your provider's categories only.", comment: "Email settings: what sorting does, with the piles of plugin 1.31.0")
+                                 : String(localized: "Your agent reads the sender, subject and first lines of each new email, never the whole of it, and files it as Important, Needs Reply, FYI or Newsletters. Off, Redde sorts by your provider's own categories only.", comment: "Email settings: what sorting does"))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
@@ -586,8 +593,12 @@ struct NewMailRule: View {
     @State private var subject = ""
     @State private var action: MailRule.Action = .archive
     @State private var name = ""
+    @State private var pile: MailBucket = .important
     @State private var problem: String?
     @Environment(\.dismiss) private var dismiss
+
+    /// Putting mail in a pile needs plugin 1.31.0.
+    private var actions: [MailRule.Action] { MailRule.Action.allCases.filter { $0 != .group || center.status?.hasPiles == true } }
 
     var body: some View {
         NavigationStack {
@@ -603,8 +614,13 @@ struct NewMailRule: View {
                 }
                 Section {
                     Picker(selection: $action) {
-                        ForEach(MailRule.Action.allCases) { Label($0.label, systemImage: $0.symbol).tag($0) }
+                        ForEach(actions) { Label($0.label, systemImage: $0.symbol).tag($0) }
                     } label: { Text("Do", comment: "Email rule: what it does") }
+                    if action == .group {
+                        Picker(selection: $pile) {
+                            ForEach(MailBucket.shown) { Label($0.label, systemImage: $0.symbol).tag($0) }
+                        } label: { Text("Pile", comment: "Inbox: which pile of email is shown") }
+                    }
                     if action.takesName {
                         TextField(action == .label ? String(localized: "Label", comment: "Email rule: label name") : String(localized: "Folder", comment: "Email rule: folder name"), text: $name)
                     }
@@ -626,7 +642,7 @@ struct NewMailRule: View {
     private func save() async {
         let rule = MailRule(id: "r\(Int(Date.now.timeIntervalSince1970))", from: from.trimmingCharacters(in: .whitespaces).nilIfEmpty,
                             subject: subject.trimmingCharacters(in: .whitespaces).nilIfEmpty, action: action,
-                            arg: action.takesName ? name.trimmingCharacters(in: .whitespaces) : nil)
+                            arg: action.takesName ? name.trimmingCharacters(in: .whitespaces) : action == .group ? pile.rawValue : nil)
         do {
             try await center.add(rule)
             dismiss()

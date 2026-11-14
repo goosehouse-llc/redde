@@ -3,6 +3,23 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.31.0 (2026-11-14)
+
+- More piles in the Inbox. Mail sorts into seven piles now: Important, Needs Reply, FYI,
+  Receipts, Notifications, Promotions and Newsletters. Receipts (orders, invoices, shipping,
+  bookings) were part of Newsletters, and so were sales and offers; sign-in codes, security
+  alerts and app notices were part of FYI. Mail already sorted is moved into the new piles once,
+  by its headers; anything you moved yourself stays where you put it.
+- Piles of your own. Name one and say what goes in it ("School: Riverside School, the PTA and
+  the kids' teachers") in Redde's Settings › Email › Piles, or ask your agent. Your agent puts new
+  mail in it when it fits, even mail sorted by its headers (a school's newsletter goes in
+  School); receipts stay in Receipts. Up to eight. Delete one and its mail is sorted again.
+- A rule can put mail in a pile (`do: "group"`), and the agent can with `redde_mail` `group`.
+  With Show Sorting in Gmail on, each pile is a Redde/… label, yours too.
+- Redde from before this plugin is shown the four piles it knows, the new ones folded into
+  Newsletters and FYI, so no mail goes missing from its tabs. Editing rules there drops a rule
+  that puts mail in a pile: update Redde first.
+
 ## 1.30.0 (2026-11-13)
 
 - Maps on the phone. With Maps turned on in Redde (Settings › Phone Tools), the agent finds places

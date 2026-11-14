@@ -36,18 +36,28 @@ final class InboxLookUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["2 Selected"].exists, "Select didn't end")
     }
 
-    func testANewsletterShowsAsLaidOut() {
-        let app = launch()
-        XCTAssertTrue(app.text(containing: "Priya Nair").waitForExistence(timeout: 15), "No demo mail")
-        let news = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Newsletters")).firstMatch
-        XCTAssertTrue(news.waitForExistence(timeout: 3), "No Newsletters tab")
-        // The tabs scroll sideways (asked 2026-11-06): Newsletters is past the screen's edge.
-        let row = news.frame.midY / app.frame.height
-        for _ in 0 ..< 3 where news.frame.maxX > app.frame.maxX {
+    /// The pile bar scrolls sideways: drags it until the chip is on the screen.
+    private func reveal(_ chip: XCUIElement, in app: XCUIApplication) {
+        let row = chip.frame.midY / app.frame.height
+        for _ in 0 ..< 5 where chip.frame.maxX > app.frame.maxX {
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: row))
                 .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: row)))
         }
-        news.tap()
+    }
+
+    private func chip(_ name: String, in app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+    }
+
+    func testANewsletterShowsAsLaidOut() {
+        let app = launch()
+        XCTAssertTrue(app.text(containing: "Priya Nair").waitForExistence(timeout: 15), "No demo mail")
+        // A sale is a promotion since 11-14 (it was in Newsletters).
+        let promotions = chip("Promotions", in: app)
+        XCTAssertTrue(promotions.waitForExistence(timeout: 3), "No Promotions tab")
+        // The tabs scroll sideways (asked 2026-11-06): Promotions is past the screen's edge.
+        reveal(promotions, in: app)
+        promotions.tap()
         let lumen = app.text(containing: "Lumen Coffee")
         XCTAssertTrue(lumen.waitForExistence(timeout: 5), "No newsletter")
         lumen.tap()
@@ -63,6 +73,52 @@ final class InboxLookUITests: XCTestCase {
         let last = app.webViews.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "You signed up")).firstMatch
         XCTAssertTrue(last.waitForExistence(timeout: 3), "The email's last line isn't there")
         // (Its frames are the page's before it's fitted, so the picture is the check of the fit.)
+    }
+
+    /// The piles of 11-14 ("the 4 we have do not catch everything"): receipts, notifications and
+    /// promotions of their own, and the person's own pile, School, named in Email settings.
+    func testMorePilesAndOneOfTheirOwn() {
+        let app = launch()
+        XCTAssertTrue(app.text(containing: "Priya Nair").waitForExistence(timeout: 15), "No demo mail")
+        for name in ["Receipts", "Notifications", "Promotions", "Newsletters", "School"] {
+            XCTAssertTrue(chip(name, in: app).waitForExistence(timeout: 3), "No \(name) tab")
+        }
+        let receipts = chip("Receipts", in: app)
+        reveal(receipts, in: app)
+        receipts.tap()
+        XCTAssertTrue(app.text(containing: "Shopwell").waitForExistence(timeout: 5), "The receipt isn't in Receipts")
+        XCTAssertTrue(app.text(containing: "Pine Lake Cabins").exists, "A booking isn't in Receipts")
+        XCTAssertFalse(app.text(containing: "Priya Nair").exists)
+        shot(app, "receipts")
+        let school = chip("School", in: app)
+        reveal(school, in: app)
+        school.tap()
+        XCTAssertTrue(app.text(containing: "Riverside PTA").waitForExistence(timeout: 5), "Their own pile is empty")
+        shot(app, "own pile")
+    }
+
+    /// Settings › Email › Piles: a pile of their own is added with what goes in it.
+    func testAPileIsAddedInSettings() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoInbox", "-echo.screen", "mailSetup"] + XCUIApplication.straightToChat
+        app.launch()
+        let piles = app.buttons["Piles"]
+        XCTAssertTrue(piles.waitForExistence(timeout: 15), "No Piles in Email settings")
+        piles.tap()
+        XCTAssertTrue(app.text(containing: "School").waitForExistence(timeout: 5), "Their pile isn't listed")
+        XCTAssertTrue(app.text(containing: "Sign-in codes").exists, "The seven aren't said")
+        app.buttons["piles.add"].tap()
+        let name = app.textFields["pile.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 3), "No new pile sheet")
+        name.tap()
+        name.typeText("Travel")
+        let about = app.descendants(matching: .any).matching(identifier: "pile.about").firstMatch
+        about.tap()
+        about.typeText("Flights, hotels and trips")
+        shot(app, "new pile")
+        app.buttons["Save"].tap()
+        XCTAssertTrue(app.text(containing: "Flights, hotels and trips").waitForExistence(timeout: 5), "The new pile isn't listed")
+        shot(app, "piles")
     }
 
     /// Hold an email: Send to Paperless labels it for Paperless-ngx (asked 2026-11-06).

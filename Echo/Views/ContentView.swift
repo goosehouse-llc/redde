@@ -262,6 +262,7 @@ struct ContentView: View {
                 case "mailSetup": MailSettingsView()
                 case "mailAdd": MailAccountSetup(done: {})
                 case "mailRules": MailRulesView()
+                case "mailPiles": MailPilesView()   // with -echo.demoInbox
                 case "mailLabels": MailTaggingView(accountID: "main")   // with -echo.demoInbox
                 case "mailReader": MailReaderView(thread: MailDemo.readerThread)
                 case "inboxCard": ScrollView { ReplyCardsView(cards: MailDemo.cards).padding() }
