@@ -121,7 +121,7 @@ extension ConversationsList {
             AnyView(drawerStats(tone, needs: needs.count))
             if !needs.isEmpty { AnyView(drawerStack(needs, tone: tone)) }
             AnyView(drawerPlaces(tone))
-            if usesLedger, botsHere, let bots = serverBots, !bots.isEmpty { AnyView(drawerTeam(tone)) }
+            if usesLedger, botsHere || awayBots != nil, let bots = serverBots, !bots.isEmpty { AnyView(drawerTeam(tone)) }
             if usesLedger, viaServe || settings.transport == .acp, settings.projectsInChatList, !hidesProjectsForDemo, !projects.isEmpty || viaServe { projectsSection }
             waitingNotesSection
         }
@@ -274,7 +274,7 @@ extension ConversationsList {
             })
         }
         for (wait, bot) in needs.botWaits {
-            let name = bot.label(mainName: settings.headerTitle)
+            let name = bot.label(mainName: botsMainName)
             let line = wait.detail.components(separatedBy: "\n").first ?? ""
             let steps = Self.drawerSteps(line)
             let title = steps == nil ? "\(name): \(wait.title)"
@@ -291,7 +291,7 @@ extension ConversationsList {
         }
         for bot in needs.bots {
             items.append(DrawerNeed(id: "bot:" + bot.name, icon: .face(faces[bot.name] ?? BotFace(seed: bot.name)),
-                                     title: bot.label(mainName: settings.headerTitle),
+                                     title: bot.label(mainName: botsMainName),
                                      detail: String(localized: "Waiting on you in its chat", comment: "The drawer: a bot marked Needs you"),
                                      pill: Self.openWord) { openBot(bot) })
         }
@@ -579,7 +579,7 @@ extension ConversationsList {
     }
 
     private func drawerMember(_ bot: HermesBot, face: BotFace, tone: DrawerTone) -> some View {
-        let name = bot.label(mainName: settings.headerTitle)
+        let name = bot.label(mainName: botsMainName)
         let isOpen = groups.open == nil && conversation.bot?.profile == bot.name
         let kind = activity.kind(of: bot, open: conversation)
         let unread = !Mutes.isMuted("bot:" + bot.name, settings: settings) && activity.isUnread(bot, open: conversation)

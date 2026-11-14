@@ -1640,6 +1640,16 @@ final class Settings: ServeEndpoint {
         return server.id
     }
 
+    #if DEBUG
+    /// `-echo.demoAwayBots`: one Hermes server "Home" saved (not the one in use), made once.
+    func demoHomeServer() -> UUID {
+        if let home = servers.first(where: { $0.name == "Home" && $0.id != activeServerID }) { return home.id }
+        let home = HermesServer(id: UUID(), name: "Home", transport: .hermesServe, serveURL: "http://hermes.test:9119")
+        servers.append(home)
+        return home.id
+    }
+    #endif
+
     func renameServer(_ id: UUID, to name: String) {
         guard let i = servers.firstIndex(where: { $0.id == id }) else { return }
         servers[i].name = name.trimmingCharacters(in: .whitespacesAndNewlines)

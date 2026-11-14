@@ -255,6 +255,12 @@ enum DevHooks {
             if has("-echo.demoPicture") { BotPictures.shared.seed("scout", BotPictures.demoPicture) }
             #endif
         }
+        // `-echo.demoAwayBots`: the app on a bridge, a Hermes server "Home" saved beside it whose
+        // bots the list keeps with All Servers on (`ConversationsList.awayBots`).
+        if has("-echo.demoAwayBots") {
+            let home = settings.demoHomeServer()
+            BotDirectory.shared.set(ConversationsList.demoBots, key: "\(home.uuidString)|")
+        }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
         if has("-echo.demoPhoneShot") { conversation.seedPhoneShotDemo() }

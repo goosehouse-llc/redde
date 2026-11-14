@@ -624,6 +624,8 @@ struct ConversationsList: View {
         // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
         // (All Profiles turned on or off loads the list again too.)
         .task(id: "\(settings.connectionKey)|\(allProfiles)|\(allServers)|\(settings.acpAllAgents ? "*" : settings.acpAgent)") { if usesLedger, isShowing { await refresh() } }
+        // With All Servers on, a Hermes server's bots stay in the list while the app is on a bridge.
+        .task(id: "\(allServers)|\(settings.activeServerID)|\(settings.showBots)") { await readAwayBots() }
         // A bridge's agents, for the title's agent menu.
         .task(id: "\(settings.transport == .acp)|\(settings.acpURL)") {
             bridgeAgents = settings.transport == .acp ? await AcpAgents.refresh(settings) : []
@@ -730,14 +732,41 @@ struct ConversationsList: View {
 
     /// The bots the list shows: none with the setting off; the main profile alone while it is the only one.
     var listedBots: [HermesBot] {
-        guard settings.showBots, botDirectory.key == settings.connectionKey else { return [] }
+        guard settings.showBots, botDirectory.key == settings.connectionKey || awayBots != nil else { return [] }
         return botDirectory.roster?.inChatList ?? []
     }
 
     /// The server's bots as last read, with the setting on: nil before they are (or can't be) read.
     var serverBots: [HermesBot]? {
-        guard settings.showBots, botDirectory.key == settings.connectionKey else { return nil }
+        guard settings.showBots, botDirectory.key == settings.connectionKey || awayBots != nil else { return nil }
         return botDirectory.roster?.bots
+    }
+
+    /// With All Servers on and the app on a connection with no bots (an agent bridge), the Hermes
+    /// server whose bots the list still shows: they stayed, and a tap on one goes back to that
+    /// server (asked 2026-11-14: "When I select a chat with a codex agent my bots disappear").
+    var awayBots: HermesServer? {
+        guard allServers, !botsHere, botDirectory.roster != nil, botDirectory.key != settings.connectionKey,
+              let id = botDirectory.key.split(separator: "|").first.flatMap({ UUID(uuidString: String($0)) }),
+              id != settings.activeServerID else { return nil }
+        return settings.servers.first { $0.id == id && $0.transport.isHermes }
+    }
+
+    /// The main agent's name among the bots: the Hermes's, also while the app is on a bridge
+    /// (`awayBots`), where the header's name is the bridge agent's.
+    var botsMainName: String {
+        awayBots == nil ? settings.headerTitle : settings.displayName.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Redde"
+    }
+
+    /// A Hermes server's bots read for the list while the app is on a bridge (`awayBots`): the
+    /// one they were last read from, else the first Hermes server with a Dashboard.
+    private func readAwayBots() async {
+        guard allServers, !botsHere, settings.showBots, awayBots == nil else { return }
+        let hermes = settings.servers.filter { $0.transport.isHermes && !$0.serveURL.isEmpty }
+        let last = botDirectory.key.split(separator: "|").first.flatMap { UUID(uuidString: String($0)) }
+        guard let server = hermes.first(where: { $0.id == last }) ?? hermes.first,
+              let roster = try? await AllServers.client(for: server).bots(), !botsHere else { return }
+        botDirectory.set(roster, key: "\(server.id.uuidString)|\(server.hermesProfile)")
     }
 
     /// The Bots section: once the server's bots are read, even with none yet but the main
@@ -751,7 +780,8 @@ struct ConversationsList: View {
             // Group chats and bots messaging each other need a bot besides the main one.
             let others = botDirectory.roster?.hasOthers == true
             // (Group chats are the Dashboard's: none on the Hermes API alone, whatever was read before.)
-            let hasRooms = !apiBotsOnly && others && groups.key == settings.connectionKey && groups.supported
+            // (Not another server's, with All Servers on: those open on their own server.)
+            let hasRooms = !apiBotsOnly && others && groups.key == settings.connectionKey && groups.supported && awayBots == nil
             let items = BotListItem.arranged(bots: bots, rooms: hasRooms ? groups.rooms : [], order: botOrder)
             Section {
                 if arrangingBots {
@@ -783,7 +813,7 @@ struct ConversationsList: View {
                                 ForEach(block.rooms) { room in groupRow(room, faces: faces) }
                             }
                         } else {
-                            botGrid(block.bots, faces: faces, hidden: hidden.count)
+                            botGrid(block.bots, faces: faces, hidden: hidden.count, actions: awayBots == nil)
                             ForEach(block.rooms) { room in groupRow(room, faces: faces) }
                         }
                     }
@@ -791,7 +821,7 @@ struct ConversationsList: View {
                         sectionAction(String(localized: "New Group Chat"), systemImage: "person.3",
                                       hint: String(localized: "Starts a chat with several bots at once")) { makingGroup = true }
                     }
-                    if !apiBotsOnly, others, botDirectory.roster?.messagingIsOn == false {
+                    if !apiBotsOnly, others, awayBots == nil, botDirectory.roster?.messagingIsOn == false {
                         sectionAction(String(localized: "Let bots message each other"), systemImage: "bubble.left.and.text.bubble.right",
                                       hint: String(localized: "Sets your main profile up as a bot on the server, as Hermes Desktop does")) { askingBotMessaging = true }
                     }
@@ -954,7 +984,7 @@ struct ConversationsList: View {
     /// A tap opens its chat; a long press, its menu (a menu of its own: in a list row a context
     /// menu opens the row's first one, whichever bot was pressed).
     private func botTile(_ bot: HermesBot, face: BotFace) -> some View {
-        let name = bot.label(mainName: settings.headerTitle)
+        let name = bot.label(mainName: botsMainName)
         let isOpen = groups.open == nil && conversation.bot?.profile == bot.name
         let muted = Mutes.isMuted("bot:" + bot.name, settings: settings)
         let marks = ChatMarks(kind: activity.kind(of: bot, open: conversation), unread: !muted && activity.isUnread(bot, open: conversation),
@@ -1040,8 +1070,18 @@ struct ConversationsList: View {
     }
 
     /// A bot's menu, on its face in the row and on its row while the bots are put in order.
+    /// Another server's bot (`awayBots`): only Open, which goes back to its server.
     @ViewBuilder
     func botMenu(_ bot: HermesBot, unread: Bool, isOpen: Bool) -> some View {
+        if awayBots != nil {
+            Button("Open Chat", systemImage: "bubble.left.and.bubble.right") { openBot(bot) }
+        } else {
+            homeBotMenu(bot, unread: unread, isOpen: isOpen)
+        }
+    }
+
+    @ViewBuilder
+    private func homeBotMenu(_ bot: HermesBot, unread: Bool, isOpen: Bool) -> some View {
         if bot.chatID != nil, !isOpen {
             if unread {
                 Button("Mark as Read", systemImage: "envelope.open") { activity.botSeen(bot.name) }
@@ -1083,7 +1123,7 @@ struct ConversationsList: View {
     /// yet seen).
     /// `labelled`: among the conversations, marked as a bot's chat.
     private func botRow(_ bot: HermesBot, face: BotFace, labelled: Bool = false) -> some View {
-        let name = bot.label(mainName: settings.headerTitle)
+        let name = bot.label(mainName: botsMainName)
         let isOpen = groups.open == nil && conversation.bot?.profile == bot.name
         // Muted: no unread dot (at work, or waiting on the person, still shows).
         let muted = Mutes.isMuted("bot:" + bot.name, settings: settings)
@@ -1109,7 +1149,7 @@ struct ConversationsList: View {
                     HStack(spacing: 6) {
                         if marks.kind == .needsYou { NeedsYouTag() }
                         if labelled { BotChatLabel(face: face) }
-                        Text(BotMessages.rowPreview(bot.preview, roster: roster, mainName: settings.headerTitle)
+                        Text(BotMessages.rowPreview(bot.preview, roster: roster, mainName: botsMainName)
                              ?? bot.description.nilIfEmpty ?? tag)
                             .lineLimit(1)
                     }
@@ -1232,6 +1272,8 @@ struct ConversationsList: View {
     }
 
     func openBot(_ bot: HermesBot) {
+        // Another server's bot (All Servers, the app on a bridge): back to that server first.
+        if let server = awayBots { ServerSwitcher.switchTo(server.id, conversation: conversation) }
         // Its chat is the conversation under the group chat: back to it, as it was.
         if groups.open != nil, conversation.bot?.profile == bot.name { return opened() }
         openingBot = bot.name
