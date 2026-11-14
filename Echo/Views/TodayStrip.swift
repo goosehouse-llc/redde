@@ -101,6 +101,8 @@ struct TodayStrip: View {
                     }
                     upNext.refresh()
                 }
+                // The Inbox tile's counts from the server, not as this device last saw them.
+                .task { await mail.refreshStatusIfStale() }
             if !shown.isEmpty {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                     ForEach(shown, id: \.key) { $0.view }

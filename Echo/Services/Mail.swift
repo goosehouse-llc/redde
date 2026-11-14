@@ -826,6 +826,8 @@ final class MailCenter {
     static let shared = MailCenter()
 
     private(set) var status: MailStatus?
+    /// When the counts were last asked for (`refreshStatusIfStale`), this launch.
+    @ObservationIgnored private var statusAt: Date?
     /// Each account's threads by pile (`all` included), as last listed.
     private(set) var threads: [String: [MailThread]] = [:]
     private(set) var more: [String: Bool] = [:]
@@ -928,6 +930,7 @@ final class MailCenter {
     func refreshStatus() async -> MailStatus? {
         do {
             let fresh = MailStatus(json: try await ask("status"))
+            statusAt = .now
             status = fresh
             problem = nil
             if accountID == nil || (accountID != Self.all && !fresh.accounts.contains(where: { $0.id == accountID })) {
@@ -1076,6 +1079,15 @@ final class MailCenter {
 
     /// The briefing deck's email page: asked of the plugin when the chat list shows, at most once an
     /// hour, and only once email is set up (the plugin answers from what it sorted; no new look).
+    /// The counts again for the Today page's Inbox tile, at most every 5 minutes: they were only
+    /// asked for when the Inbox opened, so a phone that hadn't opened it in a while showed mail
+    /// long since read (11-13: 5 unread on the phone, none on the iPad).
+    func refreshStatusIfStale(now: Date = .now) async {
+        guard isSetUp, now.timeIntervalSince(statusAt ?? .distantPast) > 300 else { return }
+        statusAt = now
+        await refreshStatus()
+    }
+
     func refreshBriefIfStale(now: Date = .now) async {
         guard isSetUp, now.timeIntervalSince(briefAt ?? .distantPast) > 3600 else { return }
         briefAt = now
