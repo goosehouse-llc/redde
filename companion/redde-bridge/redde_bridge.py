@@ -47,8 +47,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import redde_push  # noqa: E402  (beside this file)
 import redde_qr  # noqa: E402
 import redde_codex  # noqa: E402
+import redde_registry  # noqa: E402
 
-VERSION = "0.9.0"
+VERSION = "0.10.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -232,6 +233,8 @@ class Config:
     #: Where the bridge keeps what it remembers (the config's folder): chat lists for agents
     #: that keep none (`ChatIndex`). None keeps them in memory only.
     state_dir: Path | None = None
+    #: The config file, which agents added from the ACP registry are written to. None: none can be.
+    path: Path | None = None
 
     @property
     def host_port(self) -> tuple[str, int]:
@@ -284,7 +287,7 @@ def load_config(path: Path) -> Config:
     return Config(listen=raw.get("listen", "0.0.0.0:8765"), token=raw["token"], agents=agents,
                   tls_cert=raw.get("tls_cert"), tls_key=raw.get("tls_key"), host=raw.get("host"),
                   push_path=path.parent / "push.json", push_relay=raw.get("push_relay", redde_push.DEFAULT_RELAY),
-                  state_dir=path.parent)
+                  state_dir=path.parent, path=path)
 
 
 # MARK: - WebSocket (RFC 6455, server side)
@@ -857,7 +860,9 @@ class Connection:
                              "cwd": agent.config.folder, "attach": True,
                              # How it runs, for the app's Bridge section and its Update button.
                              "service": self.bridge.service if self.bridge else None,
-                             "updatable": bool(self.bridge and self.bridge.service)}
+                             "updatable": bool(self.bridge and self.bridge.service),
+                             # Agents can be added from the ACP registry (`_redde/add_agent`).
+                             "manages": bool(self.bridge and self.bridge.config.path)}
             if agent.commands is not None:
                 meta["redde"]["commands"] = agent.commands
             if agent.limits is not None:
@@ -940,6 +945,18 @@ class Connection:
             return {"agents": [{"id": agent.config.id, "name": agent.config.name, "running": agent.running}]}
         if method == "_redde/update":
             return await self._update()
+        # The agents on the bridge, from the ACP registry (0.10): listed, added, removed.
+        if method in ("_redde/registry", "_redde/add_agent", "_redde/remove_agent"):
+            if self.bridge is None or self.bridge.config.path is None:
+                raise AgentError({"code": -32601, "message": "This bridge can't add agents: it has no config file."})
+            try:
+                if method == "_redde/registry":
+                    return await self.bridge.registry(fresh=bool(params.get("fresh")))
+                if method == "_redde/add_agent":
+                    return await self.bridge.add_agent(str(params.get("id") or ""))
+                return await self.bridge.remove_agent(str(params.get("id") or ""), current=agent.config.id)
+            except redde_registry.RegistryError as error:
+                raise AgentError({"code": -32603, "message": str(error)}) from None
         # Everything else goes to the agent as it is: set_config_option, set_mode, authenticate…
         if rid is None:
             await agent.notify(method, params)
@@ -1035,11 +1052,82 @@ def _reply_text(updates: list) -> str:
 class Bridge:
     def __init__(self, config: Config):
         self.config = config
-        pusher = redde_push.Pusher(config.push_path, config.push_relay) if config.push_path else None
-        self.agents = {a.id: Agent(a, pusher, config.state_dir) for a in config.agents}
+        self.pusher = redde_push.Pusher(config.push_path, config.push_relay) if config.push_path else None
+        self.agents = {a.id: Agent(a, self.pusher, config.state_dir) for a in config.agents}
         #: "launchd" or "systemd" when this is the installed bridge, run by its service.
         self.service = service_kind()
         self.updating = False
+        #: One agent added or removed at a time (they write the config).
+        self.changing = asyncio.Lock()
+        #: The ACP registry as last read, and when (it's read again after ten minutes).
+        self.registry_read: tuple[float, list] | None = None
+
+    async def _entries(self, fresh: bool = False) -> list:
+        if fresh or self.registry_read is None or time.monotonic() - self.registry_read[0] > 600:
+            self.registry_read = (time.monotonic(), await asyncio.to_thread(redde_registry.fetch))
+        return self.registry_read[1]
+
+    async def registry(self, fresh: bool = False) -> dict:
+        """`_redde/registry`: the registry's agents this computer can run, each saying whether the
+        bridge has it, and what it needs installed first."""
+        entries = await self._entries(fresh)
+        installed = redde_registry.installed_ids([a.config for a in self.agents.values()])
+        runnable = sorted((e for e in entries if e.kind), key=lambda e: e.name.lower())
+        return {"agents": [e.summary(installed) for e in runnable], "platform": redde_registry.platform_key(),
+                "elsewhere": len(entries) - len(runnable)}
+
+    async def add_agent(self, wanted: str) -> dict:
+        """`_redde/add_agent`: a registry agent, downloaded when it's a program of its own, written
+        to the config and served from now on, without a restart."""
+        async with self.changing:
+            entries = await self._entries()
+            entry = next((e for e in entries if wanted and wanted in (e.id, e.bridge_id)), None)
+            if entry is None:
+                raise redde_registry.RegistryError(f"The ACP registry has no agent {wanted!r}")
+            if not entry.kind:
+                raise redde_registry.RegistryError(f"{entry.name} has nothing for this computer "
+                                                   f"({redde_registry.platform_key()}), or needs npx or uvx installed")
+            installed = redde_registry.installed_ids([a.config for a in self.agents.values()])
+            if entry.bridge_id in self.agents or entry.id in installed:
+                raise redde_registry.RegistryError(f"{entry.name} is on the bridge already")
+            command = entry.command
+            if entry.kind == "binary":
+                command = await asyncio.to_thread(redde_registry.download, entry, self.downloads)
+            cwd = next(iter(self.agents.values())).config.cwd if self.agents else "~"
+            text = redde_registry.table(entry.bridge_id, entry.name, command, cwd, entry.env,
+                                        f"Added from the ACP registry ({entry.id} {entry.version}).")
+            await asyncio.to_thread(redde_registry.add_to_config, self.config.path, entry.bridge_id, text)
+            config = AgentConfig(id=entry.bridge_id, name=entry.name, command=list(command), cwd=cwd, env=dict(entry.env))
+            self.config.agents.append(config)
+            self.agents[config.id] = Agent(config, self.pusher, self.config.state_dir)
+            log.info("added %s (%s %s): %s", config.id, entry.id, entry.version, " ".join(command))
+            return {"agent": {"id": config.id, "name": config.name, "running": False, "cwd": config.folder},
+                    "needs": entry.summary(installed)["needs"]}
+
+    async def remove_agent(self, ident: str, current: str | None = None) -> dict:
+        """`_redde/remove_agent`: off the config and the bridge. Its chats stay where the agent
+        keeps them; adding it again brings them back."""
+        agent = self.agents.get(ident)
+        if agent is None:
+            raise redde_registry.RegistryError(f"The bridge has no agent {ident!r}")
+        if ident == current:
+            raise redde_registry.RegistryError(f"Open another agent to remove {agent.config.name}")
+        if any(s.running for s in agent.sessions.values()):
+            raise AgentError({"code": BUSY, "message": f"{agent.config.name} is replying. Remove it once it's done."})
+        async with self.changing:
+            await asyncio.to_thread(redde_registry.remove_from_config, self.config.path, ident)
+            if agent.running:
+                agent.proc.terminate()
+            self.agents.pop(ident, None)
+            self.config.agents = [a for a in self.config.agents if a.id != ident]
+            shutil.rmtree(self.downloads / ident, ignore_errors=True)
+            log.info("removed %s", ident)
+        return {"removed": ident}
+
+    @property
+    def downloads(self) -> Path:
+        """Where downloaded agents go: beside the config."""
+        return (self.config.state_dir or INSTALL_DIR) / "agents"
 
     def restart(self) -> None:
         """Ends the agents and the bridge; the service starts the bridge again, with its new files."""
@@ -1187,7 +1275,7 @@ def print_setup(config: Config, agent_id: str | None = None, host_name: str | No
 SERVICE = os.environ.get("REDDE_BRIDGE_SERVICE", "com.goosehouse.redde-bridge")
 #: Where `--install` puts the bridge's files, so the service doesn't depend on a download or a checkout.
 INSTALL_DIR = Path(os.environ.get("REDDE_BRIDGE_HOME", "~/.local/share/redde-bridge")).expanduser()
-FILES = ("redde_bridge.py", "redde_push.py", "redde_qr.py", "redde_codex.py")
+FILES = ("redde_bridge.py", "redde_push.py", "redde_qr.py", "redde_codex.py", "redde_registry.py")
 #: Where the installer and `_redde/update` get the files (install.sh's BASE).
 UPDATE_BASE = os.environ.get("REDDE_BRIDGE_BASE",
                              "https://raw.githubusercontent.com/goosehouse-llc/redde/main/companion/redde-bridge").rstrip("/")
@@ -1477,6 +1565,57 @@ def uninstall(config_path: Path) -> None:
     print(f"The config and token are still in {config_path.expanduser().parent}; delete that folder to forget them.")
 
 
+def restart_service() -> bool:
+    """Restarts the installed bridge, so it serves the config as it is now. True when there was one."""
+    if not service_path().exists():
+        return False
+    if sys.platform == "darwin":
+        return run("launchctl", "kickstart", "-k", f"gui/{os.getuid()}/{SERVICE}").returncode == 0
+    return run("systemctl", "--user", "restart", service_path().name).returncode == 0
+
+
+def show_registry(config: Config) -> None:
+    """`--registry`: the ACP registry's agents this computer can run."""
+    try:
+        entries = redde_registry.fetch()
+    except redde_registry.RegistryError as error:
+        raise SystemExit(str(error)) from None
+    installed = redde_registry.installed_ids(config.agents)
+    runnable = sorted((e for e in entries if e.kind), key=lambda e: e.name.lower())
+    for e in runnable:
+        mark = "on the bridge" if e.bridge_id in installed or e.id in installed else ""
+        needs = e.needs
+        if needs and not mark and not shutil.which(needs[0]):
+            mark = f"needs {needs[0]}: {needs[1]}"
+        print(f"{e.id:24} {e.name:24} {e.version:12} {mark}")
+    print(f"\nAdd one: {Path(sys.argv[0]).name} --add-agent <id>   ({len(entries) - len(runnable)} more have nothing for this computer)")
+
+
+def add_agent_here(config: Config, wanted: str) -> None:
+    """`--add-agent`: the same as adding one from Redde; the installed bridge restarts to serve it."""
+    try:
+        result = asyncio.run(Bridge(config).add_agent(wanted))
+    except redde_registry.RegistryError as error:
+        raise SystemExit(str(error)) from None
+    agent = result["agent"]
+    print(f"Added {agent['name']} as [agents.{agent['id']}] in {config.path}")
+    needs = result.get("needs")
+    if needs and not needs.get("found"):
+        print(f"It runs {needs['program']}, which isn't installed here yet: {needs['install']}")
+    if restart_service():
+        print("Restarted the bridge to serve it.")
+
+
+def remove_agent_here(config: Config, ident: str) -> None:
+    try:
+        asyncio.run(Bridge(config).remove_agent(ident))
+    except (redde_registry.RegistryError, AgentError) as error:
+        raise SystemExit(str(error)) from None
+    print(f"Removed [agents.{ident}] from {config.path}")
+    if restart_service():
+        print("Restarted the bridge.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Serve ACP agents to Redde.")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -1488,6 +1627,9 @@ def main() -> None:
     parser.add_argument("--agent", help="with --print-setup: the agent the setup link and QR code are for")
     parser.add_argument("--host", help="with --print-setup or --install: the name the phone reaches this machine by, such as its "
                                        "Tailscale name (machine.tailnet.ts.net), which works away from home too")
+    parser.add_argument("--registry", action="store_true", help="list the agents in the ACP registry that this computer can run")
+    parser.add_argument("--add-agent", metavar="ID", help="add an agent from the ACP registry (pi-acp, opencode, cursor…)")
+    parser.add_argument("--remove-agent", metavar="ID", help="take an agent off the bridge (its chats stay with the agent)")
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
@@ -1504,6 +1646,15 @@ def main() -> None:
         config.listen = args.listen
     if args.print_setup:
         print_setup(config, args.agent, args.host)
+        return
+    if args.registry:
+        show_registry(config)
+        return
+    if args.add_agent:
+        add_agent_here(config, args.add_agent)
+        return
+    if args.remove_agent:
+        remove_agent_here(config, args.remove_agent)
         return
     try:
         asyncio.run(Bridge(config).serve())

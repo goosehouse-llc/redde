@@ -80,7 +80,9 @@ struct AcpServerFields: View {
             if !Task.isCancelled { bridge = found }
         }
         if let endpoint = settings.acpEndpoint, bridge != nil {
-            AcpBridgeSection(endpoint: endpoint, info: $bridge)
+            AcpBridgeSection(endpoint: endpoint, info: $bridge, agent: settings.acpAgent) {
+                Task { await listAgents() }
+            }
         }
     }
 

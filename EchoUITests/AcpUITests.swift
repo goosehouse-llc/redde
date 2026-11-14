@@ -564,4 +564,54 @@ final class AcpUITests: XCTestCase {
         XCTAssertTrue(row("Named on the phone").exists, "The name didn't stay")
         keep("acp-renamed")
     }
+
+    /// Agents from the ACP registry, added and taken off from the phone (bridge 0.10). Needs a
+    /// scratch bridge with the scripted agent (`TEST_RUNNER_REDDE_SCRATCH_BRIDGE` host:port,
+    /// `TEST_RUNNER_REDDE_SCRATCH_TOKEN`), reading a registry that lists Pi; nothing is run.
+    func testAnAgentIsAddedFromTheRegistry() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let address = env["REDDE_SCRATCH_BRIDGE"], let token = env["REDDE_SCRATCH_TOKEN"] else {
+            throw XCTSkip("No scratch bridge given (TEST_RUNNER_REDDE_SCRATCH_BRIDGE, TEST_RUNNER_REDDE_SCRATCH_TOKEN)")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.screen", "setup", "-transport", "acp", "-acpURL", address, "-acpAgent", "fake",
+                               "-acpFolder", "", "-acpAllAgents", "NO", "-echo.clearDrafts"]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        let open = app.buttons["acp-bridge-agents"]
+        for _ in 0 ..< 20 where !open.exists { sleep(1) }
+        reach(open, in: app, "Add or Remove Agents")
+        open.tap()
+
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'acp-registry-'")).firstMatch.waitForExistence(timeout: 30),
+                      "The registry isn't listed")
+        keep("registry-top")
+        let search = app.searchFields["Search agents"]
+        search.tap()
+        search.typeText("pi coding")
+        let pi = app.descendants(matching: .any)["acp-registry-pi-acp"]
+        XCTAssertTrue(pi.waitForExistence(timeout: 10), "The registry's Pi isn't listed")
+        XCTAssertTrue(app.text(containing: "Needs pi on the computer").exists, "Pi doesn't say it needs pi")
+        keep("registry-list")
+        pi.tap()
+        let confirm = app.buttons["acp-add-agent-confirm"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "No confirmation")
+        keep("registry-confirm")
+        confirm.tap()
+        XCTAssertTrue(app.text(containing: "Pi is on the bridge").waitForExistence(timeout: 20), "Pi wasn't added")
+        XCTAssertTrue(app.text(containing: "npm install -g").exists, "No word on installing pi")
+        XCTAssertFalse(pi.exists, "Pi is still offered")
+        keep("registry-added")
+
+        // Taken off again: swiped, then confirmed.
+        let row = app.staticTexts.matching(NSPredicate(format: "label == 'Pi'")).allElementsBoundByIndex.first { $0.isHittable }
+        XCTAssertNotNil(row, "Pi isn't on the bridge's list")
+        row?.swipeLeft()
+        app.buttons["Remove"].firstMatch.tap()
+        let sure = app.buttons.matching(NSPredicate(format: "label == 'Remove'")).allElementsBoundByIndex.last
+        XCTAssertTrue(sure?.waitForExistence(timeout: 5) == true, "No confirmation to remove")
+        sure?.tap()
+        XCTAssertTrue(pi.waitForExistence(timeout: 20), "Pi isn't offered again after it was removed")
+    }
 }

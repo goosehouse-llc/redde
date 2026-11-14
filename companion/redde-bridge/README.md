@@ -94,6 +94,30 @@ Any program that speaks ACP over stdio can be an agent. The agent signs in the w
 does on this computer, for example Claude Code with its own login. The bridge never sees or
 passes on a model key.
 
+## More agents, from the ACP registry
+
+The [ACP registry](https://agentclientprotocol.com/get-started/registry) lists the agents that
+speak ACP (Pi, OpenCode, Cursor, GitHub Copilot, Gemini CLI, Goose, Kiro, Qwen Code and more) and
+how to run each. The bridge reads it, so an agent can be added without editing the config:
+
+- **From Redde:** the Bridge section under the connection › **Add or Remove Agents**. Pick one,
+  and the bridge writes its `[agents.<id>]` table and serves it at once, without a restart. Swipe
+  one to take it off; its chats stay with the agent.
+- **On the computer:**
+
+  ```sh
+  python3 ~/.local/share/redde-bridge/redde_bridge.py --registry            # what this computer can run
+  python3 ~/.local/share/redde-bridge/redde_bridge.py --add-agent pi-acp    # add one (restarts the service)
+  python3 ~/.local/share/redde-bridge/redde_bridge.py --remove-agent pi
+  ```
+
+An npm or Python agent runs through `npx` or `uvx`, pinned to the registry's version. Any other
+agent is downloaded for this computer into `agents/` beside the config, and checked against the
+registry's checksum when it gives one. Some agents run a program of their own that has to be
+installed and set up first: Pi's adapter runs `pi`
+(`npm install -g @earendil-works/pi-coding-agent`, then pick a model provider in `pi`). Redde says
+so when you add one. Most agents also want a sign-in on the computer once, in Terminal.
+
 In Redde, by hand: **Settings › Connection › Set up connection… › Claude Code, Codex and others (ACP)**. Enter the address,
 the token and (when the bridge has more than one agent) pick an agent. A folder is optional.
 
@@ -147,8 +171,12 @@ Beyond plain ACP, it adds these extensions:
 | `_redde/push {command}` | pairing for notifications: `offer`, `accept <offered> <public key> <box>`, `test`, `list`; answered `{output}` in the words of Redde's Hermes plugin |
 | `_meta.redde.seq` | added to every `session/update`, so a device that catches up can skip what it already has |
 | `_redde/update` | the installed bridge updates itself from where the installer gets it (`REDDE_BRIDGE_BASE`), then restarts: `{updated, from, version}`, or `{updated: false}` when it's the newest. Refused while a reply is under way, and by a bridge run by hand (its error's `data.command` is the install line) |
+| `_redde/registry {fresh?}` | the ACP registry's agents this computer can run, each with `installed`, what it `runs`, and the program it `needs` installed first (when known). Read again after ten minutes, or with `fresh` |
+| `_redde/add_agent {id}` | adds a registry agent (by its registry id, or the bridge id without `-acp`): downloads it when it's a program of its own, writes it to the config and serves it at once. Returns `{agent, needs}` |
+| `_redde/remove_agent {id}` | takes an agent off the config and the bridge. Not the agent the request came through, and not while it's replying |
 | `session/list`, `session/set_title` | for an agent that keeps no list of its chats (Gemini CLI), the bridge keeps one: the chats started through it, named by their first message or by Rename, newest first, saved as `chats-<agent>.json` beside the config. `initialize` then says the agent can list and name them |
 | `_meta.redde.service`, `.updatable` | on `initialize`: `launchd` or `systemd` when the bridge was installed with `--install`, so it can update itself |
+| `_meta.redde.manages` | on `initialize`: agents can be added and removed (bridge 0.10) |
 | `_meta.redde.commands` | on `initialize`: the agent's slash commands as its last session said them, for a new chat that has heard none yet |
 
 Everything else goes to the agent as it is (`session/set_title`, `_session/steering`, `session/set_config_option`…). A `session/fork` is followed as the new session it makes, already open in the agent.

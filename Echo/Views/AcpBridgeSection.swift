@@ -4,7 +4,7 @@ import SwiftUI
 /// Update Available.
 nonisolated enum AcpBridge {
     /// `VERSION` in redde_bridge.py; a test keeps the two the same.
-    static let latest = "0.9.0"
+    static let latest = "0.10.0"
     /// The installer's one line, for a bridge that can't update itself.
     static let installCommand = "curl -fsSL https://raw.githubusercontent.com/goosehouse-llc/redde/main/companion/redde-bridge/install.sh | sh"
 
@@ -27,6 +27,10 @@ struct AcpBridgeSection: View {
     let endpoint: AcpEndpoint
     /// What the bridge said on `initialize` (`look(_:)`), kept by the fields above.
     @Binding var info: AcpClient.Info?
+    /// The agent this connection is on.
+    var agent: String = ""
+    /// After an agent is added to the bridge or taken off.
+    var agentsChanged: () -> Void = {}
     @State private var phase: Phase = .idle
     @State private var copied = false
 
@@ -44,6 +48,16 @@ struct AcpBridgeSection: View {
                                                                : String(localized: "User service (systemd)", comment: "ACP bridge section: installed on Linux"))
                 }
                 updateRows(version: version, updatable: info.updatable)
+                // Agents from the ACP registry (bridge 0.10): Pi, OpenCode, Cursor and the rest.
+                if info.manages {
+                    NavigationLink {
+                        AcpBridgeAgentsView(endpoint: endpoint, current: agent, changed: agentsChanged)
+                    } label: {
+                        Label(String(localized: "Add or Remove Agents", comment: "ACP bridge section: opens the bridge's agents and the ACP registry"),
+                              systemImage: "plus.rectangle.on.rectangle")
+                    }
+                    .accessibilityIdentifier("acp-bridge-agents")
+                }
             } header: {
                 Text("Bridge on the Computer", comment: "Setup and Settings: the ACP bridge's version and update section")
             } footer: {

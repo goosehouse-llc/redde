@@ -139,6 +139,8 @@ final class AcpClient {
         var service: String? = nil
         /// The bridge can update itself (`_redde/update`): an installed bridge, 0.7 or later.
         var updatable: Bool = false
+        /// Agents can be added to the bridge from the ACP registry (`_redde/add_agent`): 0.10 or later.
+        var manages: Bool = false
     }
 
     enum Event {
@@ -321,7 +323,8 @@ final class AcpClient {
                     steers: result["_meta"]?["steering"]?["supported"]?.bool ?? false,
                     commands: AcpCommand.list(.object(["availableCommands": redde?["commands"] ?? .null])),
                     service: redde?["service"]?.string,
-                    updatable: redde?["updatable"]?.bool ?? false)
+                    updatable: redde?["updatable"]?.bool ?? false,
+                    manages: redde?["manages"]?.bool ?? false)
     }
 
     /// Asks the installed bridge to update itself (`_redde/update`). It answers, then restarts,
@@ -332,6 +335,27 @@ final class AcpClient {
         // Downloading the files and checking they start can take a while on a slow line.
         let result = try await call("_redde/update", [:], timeout: 180)
         return result["updated"]?.bool == true ? result["version"]?.string : nil
+    }
+
+    /// The ACP registry's agents this bridge's computer can run (`_redde/registry`, bridge 0.10).
+    func registry(fresh: Bool = false) async throws -> [AcpRegistryAgent] {
+        try await ensureConnected()
+        let result = try await call("_redde/registry", ["fresh": .bool(fresh)], timeout: 60)
+        return (result["agents"]?.array ?? []).compactMap(AcpRegistryAgent.init)
+    }
+
+    /// Adds a registry agent to the bridge (`_redde/add_agent`), downloading it when it's a program
+    /// of its own; the bridge serves it at once. Its id on the bridge.
+    func addAgent(_ id: String) async throws -> String {
+        try await ensureConnected()
+        let result = try await call("_redde/add_agent", ["id": .string(id)], timeout: 600)
+        return result["agent"]?["id"]?.string ?? id
+    }
+
+    /// Takes an agent off the bridge (`_redde/remove_agent`); not the one this client is on.
+    func removeAgent(_ id: String) async throws {
+        try await ensureConnected()
+        _ = try await call("_redde/remove_agent", ["id": .string(id)], timeout: 60)
     }
 
     func close() {
