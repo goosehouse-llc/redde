@@ -2,84 +2,6 @@ import Foundation
 import SwiftUI
 import Observation
 
-/// Which backend a turn is sent to.
-nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
-    // Declaration order is the order Settings and setup list them: Dashboard, API, OpenAI-compatible.
-    /// `hermes serve` desktop gateway over WebSocket: live reasoning, approvals, slash commands.
-    case hermesServe
-    /// Hermes gateway sessions API — the shared ledger (Telegram, CLI, Discord, Echo), with live
-    /// reasoning and tool events. Bearer key required.
-    case hermesSessions
-    /// OpenAI-compatible `/v1/chat/completions` — used for the llama-swap "fast lane" straight to the model.
-    case chatCompletions
-    /// An agent that speaks ACP (the Agent Client Protocol): Claude Code, Codex, Gemini CLI, Goose,
-    /// Hermes's own `hermes acp`…, through the Redde bridge on its host (`AcpClient`, docs/acp.md).
-    case acp
-
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .hermesSessions: String(localized: "Hermes API (shared sessions)")
-        case .hermesServe: String(localized: "Hermes Dashboard (WebSocket)")
-        case .chatCompletions: String(localized: "OpenAI-compatible (direct to a model)")
-        case .acp: String(localized: "Other agent (ACP)", comment: "A connection: Claude Code, Codex and other agents through the Agent Client Protocol")
-        }
-    }
-    /// Its name inside its group (`Kind`), where the group's header says the rest.
-    var shortLabel: String {
-        switch self {
-        case .hermesServe: String(localized: "Dashboard (WebSocket)", comment: "A Hermes connection, listed under the header Hermes")
-        case .hermesSessions: String(localized: "API (shared sessions)", comment: "A Hermes connection, listed under the header Hermes")
-        case .acp: String(localized: "Claude Code, Codex and others (ACP)", comment: "A connection listed under the header Other Agents: agents through the Agent Client Protocol and the Redde bridge")
-        case .chatCompletions: String(localized: "OpenAI-compatible server", comment: "A connection listed under the header Direct to a Model: llama-swap, LM Studio and the like")
-        }
-    }
-
-    /// The kinds of agent a connection reaches, for grouping connections and servers.
-    enum Kind: Int, CaseIterable, Identifiable, Comparable {
-        case hermes, agent, model
-        var id: Int { rawValue }
-        static func < (a: Kind, b: Kind) -> Bool { a.rawValue < b.rawValue }
-        var title: String {
-            switch self {
-            case .hermes: String(localized: "Hermes", comment: "Group header for the Hermes connections and servers")
-            case .agent: String(localized: "Other Agents", comment: "Group header for agents over ACP (Claude Code, Codex…) and their servers")
-            case .model: String(localized: "Direct to a Model", comment: "Group header for the OpenAI-compatible connection, which talks to a model with no agent")
-            }
-        }
-        var symbol: String {
-            switch self {
-            case .hermes: "server.rack"
-            case .agent: "terminal"
-            case .model: "cpu"
-            }
-        }
-        var transports: [Transport] { Transport.allCases.filter { $0.kind == self } }
-    }
-
-    var kind: Kind {
-        switch self {
-        case .hermesServe, .hermesSessions: .hermes
-        case .acp: .agent
-        case .chatCompletions: .model
-        }
-    }
-
-    /// Uses the API server (8642) with the bearer key.
-    var usesGateway: Bool { self == .hermesSessions }
-
-    /// Old installs may have stored a transport that no longer exists; map it to the default.
-    init(from decoder: Decoder) throws {
-        let raw = try decoder.singleValueContainer().decode(String.self)
-        self = Transport(rawValue: raw) ?? .hermesSessions
-    }
-    /// Shows a server-side session list: the server keeps the conversation, and a turn left for
-    /// another chat goes on there.
-    var hasLedger: Bool { self == .hermesSessions || self == .hermesServe || self == .acp }
-    /// A Hermes connection: bots, steering, routines, the plugin and the rest Hermes alone has.
-    var isHermes: Bool { self == .hermesSessions || self == .hermesServe }
-}
-
 /// Non-secret configuration. The API key is *never* here — see `Keychain`.
 @Observable
 final class Settings: ServeEndpoint {
@@ -122,22 +44,6 @@ final class Settings: ServeEndpoint {
     var gatewayProvider: String {
         didSet { store(gatewayProvider, forKey: Keys.gatewayProvider); syncActiveServer() }
     }
-    /// The effort levels offered, lowest first; "" leaves it to the gateway, "none" turns
-    /// reasoning off. X-High and Max are for frontier models (Claude, GPT); the values are the
-    /// ones their APIs use.
-    static let reasoningEfforts: [(value: String, label: String)] = [
-        ("", String(localized: "Default", comment: "Reasoning effort: left to the server")),
-        ("none", String(localized: "None", comment: "Reasoning effort: reasoning off")),
-        ("low", String(localized: "Low", comment: "Reasoning effort")),
-        ("medium", String(localized: "Medium", comment: "Reasoning effort")),
-        ("high", String(localized: "High", comment: "Reasoning effort")),
-        ("xhigh", String(localized: "X-High", comment: "Reasoning effort, above High")),
-        ("max", String(localized: "Max", comment: "Reasoning effort: the most")),
-    ]
-
-    static func effortLabel(_ value: String) -> String {
-        reasoningEfforts.first { $0.value == value }?.label ?? value
-    }
 
     /// Ask the agent to answer in this language (an ISO code). Empty = Automatic.
     var replyLanguage: String {
@@ -151,10 +57,6 @@ final class Settings: ServeEndpoint {
             if self === Settings.shared, oldValue != measureUnits { Task { await ReplyCardsSwitch.publish() } }
         }
     }
-
-    /// Fresh installs start with reasoning off: a phone wants quick answers, and the gateway's
-    /// own default is often tuned for a desk.
-    static let defaultReasoningEffort = "none"
 
     /// "" (gateway default) or one of `reasoningEfforts`.
     var reasoningEffort: String {
@@ -231,35 +133,6 @@ final class Settings: ServeEndpoint {
     var voiceEngine: VoiceEngine {
         didSet { store(voiceEngine.rawValue, forKey: Keys.voiceEngine) }
     }
-    /// The live engine holding the voice conversations with `profile` (nil or "default": the main
-    /// agent): the bot's own choice (Edit Bot → Voice), else the one above; nil for Redde's. In
-    /// release builds since 2.2: until then development builds only, while its calls went over
-    /// WebRTC, whose own cryptography would have needed declaring; they go over a WebSocket on
-    /// Apple's TLS since 2026-10-24.
-    func liveEngine(for profile: String?) -> LiveEngine? {
-        if let profile, profile != "default", let own = botVoicesHere[profile]?.conversation { return own.live }
-        return voiceEngine.live
-    }
-    func usesLiveCall(for profile: String?) -> Bool { liveEngine(for: profile) != nil }
-    /// The voice `engine` speaks with in calls with `profile`: its own for that engine, else the
-    /// app's; one the engine doesn't offer (Redde listed OpenAI's older voices until 2026-10-25)
-    /// is its default.
-    func liveVoice(for profile: String?, engine: LiveEngine = .gptLive) -> String {
-        if let profile, profile != "default", let own = botVoicesHere[profile]?.liveVoices?[engine.rawValue],
-           engine.voicesFromAccount ? !own.isEmpty : engine.voices.contains(own) {
-            return own
-        }
-        return appLiveVoice(engine)
-    }
-    /// The app's voice for `engine` (Settings → Voice → Voice mode).
-    func appLiveVoice(_ engine: LiveEngine) -> String {
-        let picked = engine == .gptLive ? liveVoice : liveVoices[engine.rawValue]
-        if engine.voicesFromAccount { return picked ?? "" }
-        return picked.flatMap { engine.voices.contains($0) ? $0 : nil } ?? engine.defaultVoice
-    }
-    func setAppLiveVoice(_ voice: String, for engine: LiveEngine) {
-        if engine == .gptLive { liveVoice = voice } else { liveVoices[engine.rawValue] = voice }
-    }
     /// GPT-Live's voice when Redde sets the call up with its own OpenAI key.
     var liveVoice: String {
         didSet { store(liveVoice, forKey: Keys.liveVoice) }
@@ -285,7 +158,6 @@ final class Settings: ServeEndpoint {
     var liveGroupCalls: Bool {
         didSet { store(liveGroupCalls, forKey: Keys.liveGroupCalls) }
     }
-    static let liveHangUps = [1, 2, 5, 10, 0]
     /// With that on, a nod of the head approves and a shake denies, with AirPods that sense
     /// movement (`HeadGestures`). Off until asked for: iOS has to be asked for Motion & Fitness.
     var answerRequestsByNod: Bool {
@@ -303,34 +175,9 @@ final class Settings: ServeEndpoint {
     var launchScreen: LaunchScreen {
         didSet { store(launchScreen.rawValue, forKey: Keys.launchScreen) }
     }
-    /// Launch straight into the voice screen. (Once its own switch; now one of `launchScreen`.)
-    var openToVoiceScreen: Bool { launchScreen == .voice }
-    /// Who reads replies out: the iPhone's own voice, a Kokoro server, the person's Hermes with
-    /// the voice it is set up with (`HermesSpeech`, over the Dashboard), or ElevenLabs on the
-    /// person's own key (`ElevenLabsSpeech`; asked 2026-10-26, for bots' voices in group chats).
-    enum ReplyVoice: String, CaseIterable, Codable, Sendable {
-        case onDevice, kokoro, hermes, elevenLabs
-
-        var name: String {
-            switch self {
-            case .onDevice: String(localized: "On-device", comment: "Reply voice: the iPhone's own voice")
-            case .kokoro: "Kokoro"
-            case .hermes: "Hermes"
-            case .elevenLabs: "ElevenLabs"
-            }
-        }
-    }
-    /// Which voice reads what `profile` says: a bot's own reading voice (Edit Bot → Voice), else
-    /// this one. The main agent's is always this one.
-    func readingVoice(for profile: String?) -> ReplyVoice {
-        guard let profile, profile != "default", let own = botVoicesHere[profile]?.reader else { return replyVoice }
-        return own
-    }
     var replyVoice: ReplyVoice {
         didSet { store(replyVoice.rawValue, forKey: Keys.replyVoice) }
     }
-    /// Speak replies with a Kokoro server instead of the on-device voice.
-    var useKokoro: Bool { replyVoice == .kokoro }
     var kokoroURL: String {
         didSet { store(kokoroURL, forKey: Keys.kokoroURL) }
     }
@@ -364,8 +211,6 @@ final class Settings: ServeEndpoint {
     var matchReplyLanguage: Bool {
         didSet { store(matchReplyLanguage, forKey: Keys.matchReplyLanguage) }
     }
-    /// What Redde listens for: `speechLanguage`, or the iPhone's language.
-    var speechLocale: Locale { speechLanguage.isEmpty ? .current : Locale(identifier: speechLanguage) }
     /// Spoken prefixes: a leading word in a voice or Siri message ("Claude, …") becomes a text
     /// prefix ("C ") before sending. Empty by default, and typed text is never touched.
     var spokenPrefixes: [SpokenPrefix] {
@@ -419,89 +264,10 @@ final class Settings: ServeEndpoint {
     var callers: [String: [String]] {
         didSet { store(try? JSONEncoder().encode(callers), forKey: Keys.callers) }
     }
-    /// `callers` for the server in use.
-    var callersHere: [String] {
-        get { callers[activeServerID.uuidString] ?? [] }
-        set { callers[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
-    }
     /// Wake phrases, per server (its id), then agent: "default" for the main agent, else the
     /// bot's profile. None set for an agent: `Settings.wakePhrase(for:)`.
     var wakePhrases: [String: [String: WakePhrase]] {
         didSet { store(try? JSONEncoder().encode(wakePhrases), forKey: Keys.wakePhrases) }
-    }
-    /// `wakePhrases` for the server in use.
-    var wakePhrasesHere: [String: WakePhrase] {
-        get { wakePhrases[activeServerID.uuidString] ?? [:] }
-        set { wakePhrases[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
-    }
-    /// `mutes` for the server in use.
-    var mutesHere: [String: Date] {
-        get { mutes[activeServerID.uuidString] ?? [:] }
-        set { mutes[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
-    }
-    /// `pinnedModels` for the connection in use.
-    var pinnedModelsHere: [ModelChoice] {
-        get { pinnedModels[pinnedModelsKey] ?? pinnedModels[activeServerID.uuidString] ?? [] }
-        set {
-            pinnedModels[pinnedModelsKey] = newValue.isEmpty ? nil : newValue
-            if pinnedModelsKey != activeServerID.uuidString { pinnedModels[activeServerID.uuidString] = nil }
-        }
-    }
-    /// Pins go by the server's host ("host:dchermes"), not its record's id: a server added on each
-    /// device by hand has a different id on each, and the pins didn't follow (11-07). The fast lane's
-    /// are its own.
-    private var pinnedModelsKey: String {
-        if transport == .chatCompletions { return "fastLane" }
-        let address = activeServer.map { $0.serveURL.isEmpty ? $0.gatewayURL : $0.serveURL } ?? ""
-        if let host = (URL(string: address)?.host() ?? URL(string: "http://" + address)?.host())?.lowercased(), !host.isEmpty {
-            return "host:" + host
-        }
-        return activeServerID.uuidString
-    }
-    func isPinned(_ choice: ModelChoice) -> Bool { pinnedModelsHere.contains { $0.id == choice.id } }
-    /// Pins a model at the end of the pinned ones, or unpins it.
-    func togglePin(_ choice: ModelChoice) {
-        if isPinned(choice) { pinnedModelsHere.removeAll { $0.id == choice.id } }
-        else { var kept = choice; kept.isCurrent = false; pinnedModelsHere.append(kept) }
-    }
-    /// `botVoices` for the server in use.
-    var botVoicesHere: [String: BotVoice] {
-        get { botVoices[activeServerID.uuidString] ?? [:] }
-        set { botVoices[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
-    }
-
-    /// `apiBots` for the server in use.
-    var apiBotsHere: [APIBot] {
-        get { apiBots[activeServerID.uuidString] ?? [] }
-        set { apiBots[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
-    }
-
-    /// The Hermes API as a profile has it: the app's own address and key (nil, or the profile the
-    /// app is on), the main profile's ("default"), or another profile's at /p/<profile>/. Hermes
-    /// takes the API_SERVER_KEY in that profile's own .env there, often the main key put there too,
-    /// so the main key is used unless one of the profile's own was kept here.
-    func gatewayEndpoint(profile: String?) -> (url: URL, key: String)? {
-        guard let profile, profile != profileName else {
-            guard let url = gatewayBaseURL, let key = gatewayAPIKey, !key.isEmpty else { return nil }
-            return (url, key)
-        }
-        guard let base = Self.normalizedBase(gatewayURL) else { return nil }
-        let server = activeServerID.uuidString
-        let main = Keychain.read(account: Keychain.account(.gatewayAPIKey, server: server))?.nilIfEmpty
-        if profile == "default" { return main.map { (base, $0) } }
-        guard let key = Keychain.read(account: Keychain.profileAccount(profile, server: server))?.nilIfEmpty ?? main else { return nil }
-        return (base.appending(path: "p/\(profile)"), key)
-    }
-
-    /// `botOrder` for the server in use.
-    var botOrderHere: [String] {
-        get { botOrder[activeServerID.uuidString] ?? [] }
-        set { botOrder[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
-    }
-    /// `botSections` for the server in use.
-    var botSectionsHere: BotSectionsHere {
-        get { botSections[activeServerID.uuidString] ?? BotSectionsHere() }
-        set { botSections[activeServerID.uuidString] = newValue.isEmpty ? nil : newValue }
     }
     var theme: Theme {
         didSet { store(theme.rawValue, forKey: Keys.theme) }
@@ -516,153 +282,14 @@ final class Settings: ServeEndpoint {
     var chatFont: ChatFont {
         didSet { store(chatFont.rawValue, forKey: Keys.chatFont) }
     }
-    /// The active theme with your colors applied: what the app renders.
-    var resolvedTheme: ResolvedTheme { resolved(theme) }
-    func resolved(_ theme: Theme) -> ResolvedTheme { theme.resolved(with: themeColors[theme.rawValue], font: chatFont) }
-    /// Light / dark / follow the system, for the Default theme (the others fix their own).
-    enum Appearance: String, CaseIterable, Identifiable {
-        case system, light, dark
-        var id: String { rawValue }
-        var label: String {
-            switch self {
-            case .system: String(localized: "System", comment: "Appearance: follow the iPhone's light or dark setting")
-            case .light: String(localized: "Light", comment: "Appearance: light mode")
-            case .dark: String(localized: "Dark", comment: "Appearance: dark mode")
-            }
-        }
-        var colorScheme: ColorScheme? { switch self { case .system: nil; case .light: .light; case .dark: .dark } }
-    }
     var appearance: Appearance {
         didSet { store(appearance.rawValue, forKey: Keys.appearance) }
-    }
-    /// Settings → Appearance → Calendar Events: each calendar in its own colour on an agenda card,
-    /// or every event in one (asked 2026-10-30: "I'd like them yellow").
-    enum EventColor: String, CaseIterable, Identifiable {
-        case byCalendar, yellow, orange, pink, purple, blue, teal, green
-        var id: String { rawValue }
-        var color: Color? {
-            switch self {
-            case .byCalendar: nil
-            case .yellow: .yellow
-            case .orange: .orange
-            case .pink: .pink
-            case .purple: .purple
-            case .blue: .blue
-            case .teal: .teal
-            case .green: .green
-            }
-        }
-        var label: String {
-            switch self {
-            case .byCalendar: String(localized: "By Calendar", comment: "Calendar Events setting: each calendar in its own colour")
-            case .yellow: String(localized: "Yellow")
-            case .orange: String(localized: "Orange")
-            case .pink: String(localized: "Pink")
-            case .purple: String(localized: "Purple")
-            case .blue: String(localized: "Blue")
-            case .teal: String(localized: "Teal")
-            case .green: String(localized: "Green")
-            }
-        }
     }
     var eventColor: EventColor {
         didSet { store(eventColor.rawValue, forKey: Keys.eventColor) }
     }
-    /// Settings → Appearance → Cards (asked 2026-11-02): a wash of one colour over every answer
-    /// card's ground, or none. A wash, never a fill, so a card's text reads in either appearance.
-    /// White and off-white are paper instead: the card solid, and drawn as in light mode, dark
-    /// text and all, in dark mode too ("add a white or off white card color option"); black and
-    /// grey the same the other way, drawn as in dark mode ("add black and grey … as well").
-    enum CardColor: String, CaseIterable, Identifiable {
-        case plain, white, offWhite, codeBlue, grey, black, accent, bubbles, yellow, orange, pink, purple, blue, teal, green
-        var id: String { rawValue }
-        static let offWhitePaper = Color(red: 0.973, green: 0.957, blue: 0.918)
-        static let greyCard = Color(red: 0.227, green: 0.227, blue: 0.235)
-        static let blackCard = Color(red: 0.055, green: 0.055, blue: 0.06)
-        /// The Code theme's pale sky (#CBF0FF), solid, as its bubbles are in dark mode (asked 2026-11-02).
-        static let codeBlueCard = Color(red: ThemeColors.RGB.codeBlue.red, green: ThemeColors.RGB.codeBlue.green, blue: ThemeColors.RGB.codeBlue.blue)
-        /// A solid card, and the appearance its contents are drawn in; nil for a wash.
-        var solid: ColorScheme? {
-            switch self {
-            case .white, .offWhite, .codeBlue: .light
-            case .grey, .black: .dark
-            default: nil
-            }
-        }
-        func color(in theme: ResolvedTheme) -> Color? {
-            switch self {
-            case .plain: nil
-            case .white: .white
-            case .offWhite: Self.offWhitePaper
-            case .codeBlue: Self.codeBlueCard
-            case .grey: Self.greyCard
-            case .black: Self.blackCard
-            case .accent: theme.accent
-            case .bubbles: theme.userBubble
-            case .yellow: .yellow
-            case .orange: .orange
-            case .pink: .pink
-            case .purple: .purple
-            case .blue: .blue
-            case .teal: .teal
-            case .green: .green
-            }
-        }
-        var label: String {
-            switch self {
-            case .plain: String(localized: "Plain", comment: "Cards setting: answer cards without a colour")
-            case .white: String(localized: "White", comment: "Cards setting: answer cards solid white, with dark text")
-            case .offWhite: String(localized: "Off-White", comment: "Cards setting: answer cards a warm off-white, like paper, with dark text")
-            case .codeBlue: String(localized: "Code Blue")
-            case .grey: String(localized: "Graphite", comment: "Cards setting: answer cards solid dark grey, with light text")
-            case .black: String(localized: "Black", comment: "Cards setting: answer cards solid black, with light text")
-            case .accent: String(localized: "Accent", comment: "Cards setting: answer cards in the theme's accent colour")
-            case .bubbles: String(localized: "Like Your Bubbles", comment: "Cards setting: answer cards in the colour of the person's message bubbles")
-            case .yellow: String(localized: "Yellow")
-            case .orange: String(localized: "Orange")
-            case .pink: String(localized: "Pink")
-            case .purple: String(localized: "Purple")
-            case .blue: String(localized: "Blue")
-            case .teal: String(localized: "Teal")
-            case .green: String(localized: "Green")
-            }
-        }
-    }
     var cardColor: CardColor {
         didSet { store(cardColor.rawValue, forKey: Keys.cardColor) }
-    }
-    /// Settings → Appearance → Today Tiles (asked 2026-11-11: "allow me the option to change the
-    /// color of the Today tabs in the drawer"): the chat list's Today tiles on the theme's surface,
-    /// each washed in its own kind's colour (the inbox the accent, a list green, a briefing
-    /// yellow, a goal its bot's), or all in one of the cards' colours, solid ones solid.
-    enum TodayColor: Hashable, Identifiable, RawRepresentable {
-        case plain, byKind
-        case color(CardColor)
-        static var allCases: [TodayColor] { [.plain, .byKind] + CardColor.allCases.filter { $0 != .plain }.map(TodayColor.color) }
-        init?(rawValue: String) {
-            switch rawValue {
-            case "plain", "": self = .plain
-            case "byKind": self = .byKind
-            default:
-                guard let color = CardColor(rawValue: rawValue), color != .plain else { return nil }
-                self = .color(color)
-            }
-        }
-        var rawValue: String {
-            switch self {
-            case .plain: "plain"
-            case .byKind: "byKind"
-            case let .color(color): color.rawValue
-            }
-        }
-        var id: String { rawValue }
-        var label: String {
-            switch self {
-            case .plain: CardColor.plain.label
-            case .byKind: String(localized: "By Kind", comment: "Today Tiles setting: each tile in its own kind's colour (the inbox, a list, a briefing, a goal)")
-            case let .color(color): color.label
-            }
-        }
     }
     var todayColor: TodayColor {
         didSet { store(todayColor.rawValue, forKey: Keys.todayColor) }
@@ -683,18 +310,12 @@ final class Settings: ServeEndpoint {
     var todayUpNext: Bool {
         didSet { store(todayUpNext, forKey: Keys.todayUpNext) }
     }
-    /// The colour a Today tile is drawn in.
-    func todayColor(forTile key: String) -> TodayColor {
-        todayTileColors[key].flatMap(TodayColor.init(rawValue:)) ?? todayColor
-    }
     /// Settings → Appearance → Card Appearance (asked 2026-11-06: "Allow for light dark selection
     /// on calendar and other cards"): cards drawn light or dark whatever the app is, or as it is.
     /// A solid card colour (white, black) keeps its own.
     var cardAppearance: Appearance {
         didSet { store(cardAppearance.rawValue, forKey: Keys.cardAppearance) }
     }
-    /// The appearance a card is drawn in, nil for the app's.
-    var cardScheme: ColorScheme? { cardColor.solid ?? cardAppearance.colorScheme }
     /// Settings → Agent → Calendars (`CalendarChoice`, asked 2026-10-30): the calendars the agent
     /// looks at and agenda cards show, by title; empty for all of them.
     var agendaCalendars: [String] {
@@ -754,9 +375,6 @@ final class Settings: ServeEndpoint {
     var phoneTools: PhoneToolsSettings {
         didSet { if phoneTools != oldValue { store(try? JSONEncoder().encode(phoneTools), forKey: Keys.phoneTools) } }
     }
-    /// What the app renders in: the appearance choice, nil meaning follow the system.
-    /// A wallpaper picked for the theme decides light or dark itself (`Theme.Palette.scheme`).
-    var effectiveColorScheme: ColorScheme? { resolvedTheme.palette.scheme ?? appearance.colorScheme }
     /// Local notifications for approvals / replies / failures while the app is in the background.
     var notifyInBackground: Bool {
         didSet { store(notifyInBackground, forKey: Keys.notifyInBackground) }
@@ -843,7 +461,6 @@ final class Settings: ServeEndpoint {
     var chatTextSize: Int {
         didSet { store(chatTextSize, forKey: Keys.chatTextSize) }
     }
-    static let chatTextSizes = -2 ... 2
     /// Whether Redde's notifications make a sound. Kept in the app group as well: the
     /// notification extension decides for the ones a paired Hermes sends (`NotificationSound`).
     var notificationSound: Bool {
@@ -907,18 +524,6 @@ final class Settings: ServeEndpoint {
     var displayName: String {
         didSet { store(displayName, forKey: Keys.displayName) }
     }
-    var headerTitle: String {
-        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty { return trimmed }
-        // An ACP agent is called what it calls itself (Claude Code, Hermes), not Redde.
-        if transport == .acp, let socket = AcpEndpoint.make(address: acpURL, agent: acpAgent, token: nil, folder: nil)?.socketURL,
-           let name = acpAgentNames[socket.absoluteString] {
-            return name
-        }
-        // Every agent in one list: the open chat's agent, by the bridge's name for it.
-        if transport == .acp, acpAllAgents, !acpAgent.isEmpty { return AcpAgents.name(of: acpAgent, self) }
-        return "Redde"
-    }
     /// What each ACP agent calls itself, by its address, as last heard when connecting. On this
     /// device only.
     var acpAgentNames: [String: String] = UserDefaults.standard.dictionary(forKey: "acpAgentNames") as? [String: String] ?? [:] {
@@ -953,14 +558,6 @@ final class Settings: ServeEndpoint {
     var acpAllAgents: Bool {
         didSet { store(acpAllAgents, forKey: Keys.acpAllAgents); syncActiveServer() }
     }
-    /// Where the ACP agent is, when it is set up.
-    /// One agent of the bridge's (a chat's own, with every agent in one list), else the server's.
-    func acpEndpoint(agent: String?) -> AcpEndpoint? {
-        AcpEndpoint.make(address: acpURL, agent: agent ?? acpAgent, token: Keychain.read(.acpToken), folder: acpFolder)
-    }
-    var acpEndpoint: AcpEndpoint? {
-        AcpEndpoint.make(address: acpURL, agent: acpAgent, token: Keychain.read(.acpToken), folder: acpFolder)
-    }
     /// The Hermes profile Redde talks to; empty means the server's default profile. Nothing
     /// profile-related is sent for the default, so servers without profile support keep working.
     var hermesProfile: String {
@@ -971,95 +568,10 @@ final class Settings: ServeEndpoint {
     var hermesProfileHome: String {
         didSet { store(hermesProfileHome, forKey: Keys.hermesProfileHome); syncActiveServer() }
     }
-    /// The profile to name in requests, or nil for the default profile.
-    var profileName: String? {
-        let name = hermesProfile.trimmingCharacters(in: .whitespacesAndNewlines)
-        return name.isEmpty || name.lowercased() == "default" ? nil : name
-    }
-    /// The Hermes API key for requests: a named profile's own key when one is saved (the gateway
-    /// checks each profile's API_SERVER_KEY on its /p/<profile>/ routes), else the main key.
-    var gatewayAPIKey: String? {
-        if let profile = profileName, let key = Keychain.read(account: Keychain.profileAccount(profile)), !key.isEmpty {
-            return key
-        }
-        return Keychain.read(.gatewayAPIKey)
-    }
-
-    /// Where a file in the selected profile's Hermes home lives, e.g. "SOUL.md". In `home` when
-    /// the server just said where that is (`HermesServeClient.profileHome`), else in the home it
-    /// reported when the profile was picked, else Hermes's usual layout (`~/.hermes`,
-    /// `~/.hermes/profiles/<name>`).
-    func profileFilePath(_ relative: String, home: String? = nil) -> String {
-        // The home kept from picking a profile is a named profile's: not the default's.
-        var home = (home ?? (profileName == nil ? "" : hermesProfileHome)).trimmingCharacters(in: .whitespacesAndNewlines)
-        if home.isEmpty { home = profileName.map { "~/.hermes/profiles/\($0)" } ?? "~/.hermes" }
-        while home.hasSuffix("/") { home.removeLast() }
-        return home + "/" + relative
-    }
 
     /// Cloudflare Access service-token id (`CF-Access-Client-Id`); the secret lives in the Keychain.
     var cfAccessClientID: String {
         didSet { store(cfAccessClientID, forKey: Keys.cfAccessClientID); syncActiveServer() }
-    }
-
-    /// Headers Cloudflare Access expects in front of hermes serve, or empty when not configured.
-    nonisolated static func cloudflareAccessHeaders(clientID: String, secret: String?) -> [String: String] {
-        let id = clientID.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !id.isEmpty, let secret, !secret.isEmpty else { return [:] }
-        return ["CF-Access-Client-Id": id, "CF-Access-Client-Secret": secret]
-    }
-    /// The person's own headers for this server (`CustomHeader`): what a reverse proxy in front of
-    /// it asks for. Names and values both live in the Keychain, per server.
-    var customHeaders: [CustomHeader] {
-        get { CustomHeader.decode(Keychain.read(.customHeaders)) }
-        set { Keychain.write(.customHeaders, value: CustomHeader.encode(newValue)) }
-    }
-    /// The same as request fields.
-    var customHeaderFields: [String: String] { CustomHeader.fields(customHeaders) }
-    /// What every request to the Hermes API carries besides its key: the person's own headers and
-    /// a Pangolin Link's access token.
-    var apiHeaders: [String: String] {
-        customHeaderFields.merging(Self.pangolinHeaders(Keychain.read(.pangolinAPI) ?? Keychain.read(.pangolinDashboard))) { _, token in token }
-    }
-    /// What every request to the Dashboard carries besides its login: the person's own headers,
-    /// Cloudflare Access's service token and a Pangolin Link's access token.
-    var accessHeaders: [String: String] {
-        customHeaderFields
-            .merging(Self.cloudflareAccessHeaders(clientID: cfAccessClientID, secret: Keychain.read(.cfAccessClientSecret))) { _, access in access }
-            .merging(Self.pangolinHeaders(Keychain.read(.pangolinDashboard) ?? Keychain.read(.pangolinAPI))) { _, token in token }
-    }
-
-    /// A Pangolin Link's access token as the two headers Pangolin reads on every request
-    /// (docs.pangolin.net, Links: `P-Access-Token-Id`, `P-Access-Token`), or none.
-    nonisolated static func pangolinHeaders(_ stored: String?) -> [String: String] {
-        guard let stored, let (id, token) = pangolinParts(stored) else { return [:] }
-        return ["P-Access-Token-Id": id, "P-Access-Token": token]
-    }
-
-    /// What was pasted for a Pangolin access token, as it is stored (`<token-id>.<token>`): the
-    /// pair itself, its `p_token` value, or a link with `p_token=` in it. Nil when it is none of them.
-    nonisolated static func pangolinToken(_ pasted: String) -> String? {
-        var text = pasted.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let range = text.range(of: "p_token=") {
-            text = String(text[range.upperBound...].prefix { $0 != "&" && $0 != "#" })
-            text = text.removingPercentEncoding ?? text
-        }
-        guard let (id, token) = pangolinParts(text) else { return nil }
-        return id + "." + token
-    }
-
-    private nonisolated static func pangolinParts(_ text: String) -> (id: String, token: String)? {
-        let pair = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let dot = pair.firstIndex(of: ".") else { return nil }
-        let id = String(pair[..<dot]), token = String(pair[pair.index(after: dot)...])
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_."))
-        guard !id.isEmpty, !token.isEmpty, (id + token).unicodeScalars.allSatisfy(allowed.contains) else { return nil }
-        return (id, token)
-    }
-    nonisolated static let defaultServeURL = ""
-    var serveBaseURL: URL? {
-        let raw = serveURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        return URL(string: raw.hasSuffix("/") ? String(raw.dropLast()) : raw)
     }
 
     /// Fallback when the backend doesn't report its window (the gateway doesn't). 131072 suits most local models.
@@ -1071,135 +583,8 @@ final class Settings: ServeEndpoint {
     var pushRelayURL: String {
         didSet { store(pushRelayURL, forKey: Keys.pushRelayURL) }
     }
-    nonisolated static let defaultContextWindow = 131_072
-    nonisolated static let defaultKokoroURL = ""
-    nonisolated static let defaultKokoroVoice = "am_onyx(2)+bm_george(1)"
-    nonisolated static let defaultSpeechModel = "kokoro"
 
-    var speechModelOrDefault: String {
-        let typed = speechModel.trimmingCharacters(in: .whitespacesAndNewlines)
-        return typed.isEmpty ? Self.defaultSpeechModel : typed
-    }
-
-    var kokoroBaseURL: URL? {
-        let raw = kokoroURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        return URL(string: raw.hasSuffix("/") ? String(raw.dropLast()) : raw)
-    }
-
-    private let defaults: UserDefaults
-    private enum Keys {
-        static let transport = "transport"
-        static let gatewayURL = "gatewayURL"
-        static let fastLaneURL = "fastLaneURL"
-        static let fastLaneModel = "fastLaneModel"
-        static let gatewayModel = "gatewayModel"
-        static let gatewayProvider = "gatewayProvider"
-        static let reasoningEffort = "reasoningEffort"
-        static let replyLanguage = "replyLanguage"
-        static let measureUnits = MeasureUnits.key
-        static let listenOnOpen = "listenOnOpen"
-        static let wakeListening = "wakeListening"
-        static let wakePhrases = "wakePhrases"
-        static let openToVoiceScreen = "openToVoiceScreen"   // before launchScreen; read once to carry it over
-        static let launchScreen = "launchScreen"
-        static let handsFreeByDefault = "handsFreeByDefault"
-        static let newConversationForVoice = "newConversationForVoice"
-        static let talkOver = "talkOver"
-        static let interruption = "interruption"
-        static let stopPhrases = "stopPhrases"
-        static let answerRequestsByVoice = "answerRequestsByVoice"
-        static let answerRequestsByNod = "answerRequestsByNod"
-        static let shortAnswersInCar = "shortAnswersInCar"
-        static let thinkingSound = "thinkingSound"
-        static let voiceEngine = "voiceEngine"
-        static let liveVoice = "liveVoice"
-        static let liveVoices = "liveVoices"
-        static let liveHangUp = "liveHangUp"
-        static let liveWhenLocked = "liveWhenLocked"
-        static let liveGroupCalls = "liveGroupCalls"
-        static let useKokoro = "useKokoro"
-        static let replyVoice = "replyVoice"
-        static let kokoroURL = "kokoroURL"
-        static let kokoroVoice = "kokoroVoice"
-        static let speechModel = "speechModel"
-        static let elevenLabsVoice = "elevenLabsVoice"
-        static let voiceSpeed = "voiceSpeed"
-        static let speechLanguage = "speechLanguage"
-        static let matchReplyLanguage = "matchReplyLanguage"
-        static let spokenPrefixes = "spokenPrefixes"
-        static let botOrder = "botOrder"
-        static let botSections = "botSections"
-        static let apiBots = "apiBots"
-        static let botVoices = "botVoices"
-        static let pinnedModels = "pinnedModels"
-        static let mutes = "mutes"
-        static let agentCalls = "agentCalls"
-        static let callsWhileLocked = "callsWhileLocked"
-        static let callers = "callers"
-        static let contextWindow = "contextWindow"
-        static let theme = "theme"
-        static let themeColors = "themeColors"
-        static let appearance = "appearance"
-        static let voiceOrb = "voiceOrb"
-        static let orbLight = "orbLight"
-        static let carPlayCards = "carPlayCards"
-        static let carPlayVoice = "carPlayVoice"
-        static let carPlayBots = "carPlayBots"
-        static let carPlayTab = "carPlayTab"
-        static let stopAndSkipInCar = "stopAndSkipInCar"
-        static let phoneTools = "phoneTools"
-        static let notifyInBackground = "notifyInBackground"
-        static let showLiveActivity = "showLiveActivity"
-        static let keepRepliesInBackground = "keepRepliesInBackground"
-        static let suggestFollowUps = "suggestFollowUps"
-        static let earpieceAtEar = "earpieceAtEar"
-        static let announceOnAirPods = "announceOnAirPods"
-        static let briefingTapsOpenRun = "briefingTapsOpenRun"
-        static let notificationSound = "notificationSound"
-        static let returnSends = "returnSends"
-        static let chatTextSize = "chatTextSize"
-        static let botColors = "botColors"
-        static let eventColor = "eventColor"
-        static let cardColor = "cardColor"
-        static let todayColor = "todayColor"
-        static let todayTileColors = "todayTileColors"
-        static let todayTileOrder = "todayTileOrder"
-        static let todayUpNext = "todayUpNext"
-        static let cardAppearance = "cardAppearance"
-        static let chatFont = "chatFont"
-        static let agendaCalendars = CalendarChoice.key
-        static let newEventsCalendar = CalendarChoice.newEventsKey
-        static let currentLocation = CurrentLocation.key
-        static let leaveByAlerts = LeaveBy.key
-        static let linkPreviews = "linkPreviews"
-        static let addressMaps = "addressMaps"
-        static let botFaces = "botFaces"
-        static let botPictures = "botPictures"
-        static let replyCards = "replyCards"
-        static let requireBiometrics = "requireBiometrics"
-        static let siriAIEnabled = "siriAIEnabled"
-        static let siriDraftsInNewConversation = "siriDraftsInNewConversation"
-        static let showBots = "showBots"
-        static let projectsInChatList = "projectsInChatList"
-        static let notifyWhereYouAre = "notifyWhereYouAre"
-        static let hiddenChatListCards = "hiddenChatListCards"
-        static let lockGraceSeconds = "lockGraceSeconds"
-        static let displayName = "displayName"
-        static let setupDone = "setupDone"
-        static let localDefaultsApplied = "localDefaultsApplied"
-        static let pushRelayURL = "pushRelayURL"
-        static let serveURL = "serveURL"
-        static let acpURL = "acpURL"
-        static let acpAgent = "acpAgent"
-        static let acpFolder = "acpFolder"
-        static let acpAllAgents = "acpAllAgents"
-        static let serveUsername = "serveUsername"
-        static let serveOpenAccess = "serveOpenAccess"
-        static let hermesProfile = "hermesProfile"
-        static let hermesProfileHome = "hermesProfileHome"
-        static let cfAccessClientID = "cfAccessClientID"
-        static let hermesServers = "hermesServers"
-    }
+    let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -1371,516 +756,21 @@ final class Settings: ServeEndpoint {
     /// Called with each setting's key as it is saved: `CloudSync`, while Sync with iCloud is on.
     @ObservationIgnored var onStore: ((String) -> Void)?
 
-    /// The key the server list is saved under, which `onStore` names when it changes.
-    static var serversKey: String { Keys.hermesServers }
-
-    /// The settings Sync with iCloud carries to the person's other devices, by their keys here.
-    /// Each device keeps its own: the connection in use and the server it is on (and, in each
-    /// server's record, the profile and model it is on), what Redde does on opening, App Lock,
-    /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
-    /// push relay.
-    static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.todayTileOrder, Keys.todayUpNext, Keys.cardAppearance, Keys.agendaCalendars, Keys.newEventsCalendar, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
-        Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
-        Keys.fastLaneURL, Keys.fastLaneModel, Keys.pinnedModels, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
-        Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
-        Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
-        Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
-        Keys.replyVoice, Keys.kokoroURL, Keys.speechModel,
-        Keys.kokoroVoice, Keys.elevenLabsVoice, Keys.voiceSpeed, Keys.speechLanguage, Keys.matchReplyLanguage, Keys.spokenPrefixes,
-        Keys.botOrder, Keys.botSections, Keys.apiBots, Keys.botVoices, Keys.mutes, Keys.wakePhrases,
-    ]
-
-    /// A synced setting as it is saved here, for `CloudSync` to send.
-    func storedValue(_ key: String) -> Any? { defaults.object(forKey: key) }
-
-    /// A synced setting changed on another device: it takes the value saved there, or (nil) its
-    /// default. Saving it calls `onStore`, which finds iCloud holding the same and sends nothing.
-    func applySynced(_ key: String, _ value: Any?) {
-        func text(_ fallback: String = "") -> String { value as? String ?? fallback }
-        func flag(_ fallback: Bool = false) -> Bool { value as? Bool ?? fallback }
-        func pick<T: RawRepresentable>(_ fallback: T) -> T where T.RawValue == String { (value as? String).flatMap(T.init(rawValue:)) ?? fallback }
-        func decoded<T: Decodable>(_ fallback: T) -> T { (value as? Data).flatMap { try? JSONDecoder().decode(T.self, from: $0) } ?? fallback }
-        switch key {
-        case Keys.displayName: displayName = text()
-        case Keys.theme: theme = pick(Theme.standard)
-        case Keys.themeColors: themeColors = decoded([:])
-        case Keys.appearance: appearance = pick(Appearance.system)
-        case Keys.chatTextSize: chatTextSize = min(max(value as? Int ?? 0, Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
-        case Keys.botColors: botColors = flag(true)
-        case Keys.eventColor: eventColor = pick(EventColor.byCalendar)
-        case Keys.cardColor: cardColor = pick(CardColor.plain)
-        case Keys.todayColor: todayColor = pick(TodayColor.plain)
-        case Keys.todayTileColors: todayTileColors = value as? [String: String] ?? [:]
-        case Keys.todayTileOrder: todayTileOrder = value as? [String] ?? []
-        case Keys.todayUpNext: todayUpNext = flag()
-        case Keys.cardAppearance: cardAppearance = pick(Appearance.system)
-        case Keys.chatFont: chatFont = pick(ChatFont.theme)
-        case Keys.agendaCalendars: agendaCalendars = value as? [String] ?? []
-        case Keys.newEventsCalendar: newEventsCalendar = value as? String ?? ""
-        case Keys.pinnedModels: pinnedModels = decoded([:])
-        case Keys.linkPreviews: linkPreviews = flag()
-        case Keys.addressMaps: addressMaps = flag(true)
-        case Keys.botFaces: botFaces = flag(true)
-        case Keys.botPictures: botPictures = flag(true)
-        case Keys.replyCards: replyCards = flag(true)
-        case Keys.returnSends: returnSends = flag()
-        case Keys.voiceOrb: voiceOrb = pick(VoiceOrb.reddeFace)
-        case Keys.orbLight: orbLight = pick(OrbLight.nebula)
-        case Keys.carPlayCards: carPlayCards = pick(CarPlayCardLook.color)
-        case Keys.carPlayVoice: carPlayVoice = pick(CarPlayVoiceLook.bars)
-        case Keys.carPlayBots: carPlayBots = pick(CarPlayBotLook.sticker)
-        case Keys.showBots: showBots = flag(true)
-        case Keys.projectsInChatList: projectsInChatList = flag(true)
-        case Keys.notifyWhereYouAre: notifyWhereYouAre = flag(true)
-        case Keys.hiddenChatListCards: hiddenChatListCards = value as? [String] ?? []
-        case Keys.fastLaneURL: fastLaneURL = text(Self.defaultFastLaneURL)
-        case Keys.fastLaneModel: fastLaneModel = text(Self.defaultFastLaneModel)
-        case Keys.reasoningEffort: reasoningEffort = text(Self.defaultReasoningEffort)
-        case Keys.replyLanguage: replyLanguage = text()
-        case Keys.measureUnits: measureUnits = MeasureUnits(rawValue: text()) ?? .automatic
-        case Keys.contextWindow: contextWindow = (value as? Int).flatMap { $0 > 0 ? $0 : nil } ?? Self.defaultContextWindow
-        case Keys.suggestFollowUps: suggestFollowUps = flag()
-        case Keys.showLiveActivity: showLiveActivity = flag(true)
-        case Keys.keepRepliesInBackground: keepRepliesInBackground = flag(true)
-        case Keys.notificationSound: notificationSound = flag(true)
-        case Keys.announceOnAirPods: announceOnAirPods = flag()
-        case Keys.briefingTapsOpenRun: briefingTapsOpenRun = flag()
-        case Keys.earpieceAtEar: earpieceAtEar = flag(true)
-        case Keys.handsFreeByDefault: handsFreeByDefault = flag()
-        case Keys.newConversationForVoice: newConversationForVoice = flag()
-        case Keys.talkOver: talkOver = pick(TalkOver.headphones)
-        case Keys.interruption: interruption = pick(Interruption.speech)
-        case Keys.stopAndSkipInCar: stopAndSkipInCar = flag()
-        case Keys.stopPhrases: stopPhrases = value as? [String] ?? []
-        case Keys.answerRequestsByVoice: answerRequestsByVoice = flag()
-        case Keys.shortAnswersInCar: shortAnswersInCar = flag()
-        case Keys.thinkingSound: thinkingSound = pick(ThinkingSound.off)
-        case Keys.voiceEngine: voiceEngine = pick(VoiceEngine.redde)
-        case Keys.liveVoice: liveVoice = text(LiveSetup.defaultVoice)
-        case Keys.liveVoices: liveVoices = value as? [String: String] ?? [:]
-        case Keys.liveHangUp: liveHangUp = value as? Int ?? 2
-        case Keys.liveWhenLocked: liveWhenLocked = flag()
-        case Keys.liveGroupCalls: liveGroupCalls = flag()
-        case Keys.replyVoice: replyVoice = pick(ReplyVoice.onDevice)
-        case Keys.kokoroURL: kokoroURL = text(Self.defaultKokoroURL)
-        case Keys.kokoroVoice: kokoroVoice = text(Self.defaultKokoroVoice)
-        case Keys.speechModel: speechModel = text()
-        case Keys.elevenLabsVoice: elevenLabsVoice = text()
-        case Keys.voiceSpeed: voiceSpeed = (value as? Double).flatMap { $0 > 0 ? $0 : nil } ?? 1.0
-        case Keys.speechLanguage: speechLanguage = text()
-        case Keys.matchReplyLanguage: matchReplyLanguage = flag(true)
-        case Keys.spokenPrefixes: spokenPrefixes = decoded([])
-        case Keys.botOrder: botOrder = decoded([:])
-        case Keys.botSections: botSections = decoded([:])
-        case Keys.apiBots: apiBots = decoded([:])
-        case Keys.botVoices: botVoices = decoded([:])
-        case Keys.mutes: mutes = decoded([:])
-        case Keys.wakePhrases: wakePhrases = decoded([:])
-        default: break
-        }
-    }
-
-    /// Servers from another device: each in `remote` added, or brought up to date keeping what
-    /// this device chose on it (the profile and model it is on); each in `removed` taken away,
-    /// unless this device is on it. True when the active server's connection changed, so the
-    /// caller connects again.
-    @discardableResult
-    func mergeSyncedServers(_ remote: [HermesServer], removed: Set<UUID>) -> Bool {
-        var list = servers
-        for server in remote where !removed.contains(server.id) {
-            guard let i = list.firstIndex(where: { $0.id == server.id }) else {
-                list.append(server)
-                continue
-            }
-            var merged = server
-            merged.hermesProfile = list[i].hermesProfile
-            merged.hermesProfileHome = list[i].hermesProfileHome
-            merged.gatewayModel = list[i].gatewayModel
-            merged.gatewayProvider = list[i].gatewayProvider
-            // With every agent in one list, the agent is the open chat's on this device.
-            if list[i].acpAllAgents, merged.acpAllAgents { merged.acpAgent = list[i].acpAgent }
-            list[i] = merged
-        }
-        list.removeAll { removed.contains($0.id) && $0.id != activeServerID }
-        for gone in servers where !list.contains(where: { $0.id == gone.id }) { removeShortcutSessions(server: gone.id) }
-        let before = activeServer
-        guard list != servers else { return false }
-        servers = list
-        guard let after = activeServer, after != before else { return false }
-        // The working copy follows the active server's record.
-        loadingServer = true
-        defer { loadingServer = false }
-        gatewayURL = after.gatewayURL
-        serveURL = after.serveURL
-        serveUsername = after.serveUsername
-        serveOpenAccess = after.serveOpenAccess
-        acpURL = after.acpURL
-        acpAgent = after.acpAgent
-        acpFolder = after.acpFolder
-        acpAllAgents = after.acpAllAgents
-        cfAccessClientID = after.cfAccessClientID
-        if transport != .chatCompletions { transport = after.transport }
-        return true
-    }
-
-    /// The server this device is on was never set up (a new install that skipped setup): servers
-    /// from another device can take its place.
-    var activeServerIsBlank: Bool {
-        guard let server = activeServer else { return true }
-        return server.name.isEmpty && server.serveURL.isEmpty && server.gatewayURL.isEmpty
-    }
-
-    /// Takes away a server this device isn't on, its secrets left alone (the other devices still
-    /// use the ones in iCloud Keychain): a blank one after synced servers arrived.
-    func forgetServerRecord(_ id: UUID) {
-        guard id != activeServerID else { return }
-        servers.removeAll { $0.id == id }
-        removeShortcutSessions(server: id)
-    }
-
     // MARK: - Servers
-
-    /// Shortcuts keep their own session per server and profile under keys with this prefix
-    /// (`ShortcutRunner`).
-    static let shortcutSessionPrefix = "shortcutSessionID"
-    /// Quick capture's notes have a chat of their own the same way (`CaptureFiler`).
-    static let notesSessionPrefix = "notesSessionID"
-
-    /// Once: the keys from before they carried a server id (`shortcutSessionID`,
-    /// `shortcutSessionID.<profile>`, with `.serve` for the Dashboard) belong to the first server.
-    private func scopeShortcutSessionKeys() {
-        let done = "shortcutSessionKeysScoped"
-        guard !defaults.bool(forKey: done), let first = servers.first?.id.uuidString else { return }
-        let prefix = Self.shortcutSessionPrefix
-        for (key, value) in defaults.dictionaryRepresentation() where key.hasPrefix(prefix) {
-            let rest = key.dropFirst(prefix.count)
-            if rest.dropFirst().prefix(36).count == 36, UUID(uuidString: String(rest.dropFirst().prefix(36))) != nil { continue }
-            defaults.set(value, forKey: prefix + ".\(first)" + rest)
-            defaults.removeObject(forKey: key)
-        }
-        defaults.set(true, forKey: done)
-    }
-
-    /// Forgets the Shortcuts and Notes sessions of one server, or of all of them.
-    private func removeShortcutSessions(server: UUID?) {
-        for kind in [Self.shortcutSessionPrefix, Self.notesSessionPrefix] {
-            let prefix = kind + (server.map { ".\($0.uuidString)" } ?? "")
-            for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(prefix) { defaults.removeObject(forKey: key) }
-        }
-    }
 
     /// Saved Hermes servers. The connection fields above are the active server's working copy:
     /// editing them updates its record, and switching loads another record into them.
-    private(set) var servers: [HermesServer] {
+    var servers: [HermesServer] {
         didSet { store(try? JSONEncoder().encode(servers), forKey: Keys.hermesServers) }
     }
-    private(set) var activeServerID: UUID {
+    var activeServerID: UUID {
         didSet { store(activeServerID.uuidString, forKey: Keychain.activeServerKey) }
     }
-    var activeServer: HermesServer? { servers.first { $0.id == activeServerID } }
-    /// Changes whenever requests would go somewhere else: another server or another profile.
-    /// Screens that load from the server key their loading (or their identity) on it.
-    var connectionKey: String { "\(activeServerID.uuidString)|\(hermesProfile)" }
     /// Set while a server's record is being loaded into the working copy.
-    @ObservationIgnored private var loadingServer = false
-
-    /// Copies the working copy into the active server's record.
-    private func syncActiveServer() {
-        guard !loadingServer, let i = servers.firstIndex(where: { $0.id == activeServerID }) else { return }
-        var server = servers[i]
-        server.gatewayURL = gatewayURL
-        server.serveURL = serveURL
-        server.serveUsername = serveUsername
-        server.serveOpenAccess = serveOpenAccess
-        server.acpURL = acpURL
-        server.acpAgent = acpAgent
-        server.acpFolder = acpFolder
-        server.acpAllAgents = acpAllAgents
-        server.cfAccessClientID = cfAccessClientID
-        server.gatewayModel = gatewayModel
-        server.gatewayProvider = gatewayProvider
-        server.hermesProfile = hermesProfile
-        server.hermesProfileHome = hermesProfileHome
-        // The OpenAI-compatible connection isn't a server's; the record keeps its Hermes connection.
-        if transport != .chatCompletions { server.transport = transport }
-        if server != servers[i] { servers[i] = server }
-    }
-
-    /// Makes another saved server active: its record becomes the working copy and the Keychain
-    /// scope. Callers reset connections first (`ServerSwitcher`), while the old server is current.
-    func activateServer(_ id: UUID) {
-        guard id != activeServerID, let target = servers.first(where: { $0.id == id }) else { return }
-        syncActiveServer()
-        loadingServer = true
-        defer { loadingServer = false }
-        activeServerID = id
-        gatewayURL = target.gatewayURL
-        serveURL = target.serveURL
-        serveUsername = target.serveUsername
-        serveOpenAccess = target.serveOpenAccess
-        acpURL = target.acpURL
-        acpAgent = target.acpAgent
-        acpFolder = target.acpFolder
-        acpAllAgents = target.acpAllAgents
-        cfAccessClientID = target.cfAccessClientID
-        gatewayModel = target.gatewayModel
-        gatewayProvider = target.gatewayProvider
-        hermesProfile = target.hermesProfile
-        hermesProfileHome = target.hermesProfileHome
-        // The OpenAI-compatible connection isn't a server's: switching servers doesn't leave it.
-        if transport != .chatCompletions { transport = target.transport }
-    }
-
-    /// A new, empty server (not yet active). Its connection is filled in by setup.
-    @discardableResult
-    func addServer(name: String) -> UUID {
-        let server = HermesServer(id: UUID(), name: name.trimmingCharacters(in: .whitespacesAndNewlines))
-        servers.append(server)
-        return server.id
-    }
-
-    #if DEBUG
-    /// `-echo.demoAwayBots`: one Hermes server "Home" saved (not the one in use), made once. A test
-    /// that left the app on Home had it made the bridge by the next launch's arguments: that one
-    /// loses the name, and any other copies go.
-    func demoHomeServer() -> UUID {
-        if let i = servers.firstIndex(where: { $0.id == activeServerID && $0.name == "Home" }) { servers[i].name = "" }
-        let homes = servers.filter { $0.name == "Home" }
-        if let home = homes.first(where: { $0.transport == .hermesServe }) {
-            servers.removeAll { $0.name == "Home" && $0.id != home.id }
-            return home.id
-        }
-        servers.removeAll { $0.name == "Home" }
-        let home = HermesServer(id: UUID(), name: "Home", transport: .hermesServe, serveURL: "http://hermes.test:9119")
-        servers.append(home)
-        return home.id
-    }
-    #endif
-
-    func renameServer(_ id: UUID, to name: String) {
-        guard let i = servers.firstIndex(where: { $0.id == id }) else { return }
-        servers[i].name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Removes a server that isn't active, and its secrets. The last server can't be removed.
-    func removeServer(_ id: UUID) {
-        guard id != activeServerID, servers.count > 1 else { return }
-        servers.removeAll { $0.id == id }
-        let suffix = "@\(id.uuidString)"
-        for account in Keychain.allAccounts() where account.hasSuffix(suffix) { Keychain.delete(account: account) }
-        removeShortcutSessions(server: id)
-    }
-
-    /// One-time move of pre-multi-server secrets (bare `gateway-api-key` etc.) under the active
-    /// server. Each is copied and read back before the old entry goes; safe to run every launch.
-    func moveLegacySecretsToActiveServer() {
-        let server = activeServerID.uuidString
-        let accounts = Keychain.allAccounts()
-        for item in Keychain.serverScoped where accounts.contains(item.rawValue) {
-            Keychain.move(account: item.rawValue, to: Keychain.account(item, server: server))
-        }
-        let profilePrefix = Keychain.Item.gatewayAPIKey.rawValue + "."
-        for account in accounts where account.hasPrefix(profilePrefix) && !account.contains("@") {
-            Keychain.move(account: account, to: account + "@" + server)
-        }
-    }
-
-    /// Back to first-run values, with one empty server. Secrets live in the Keychain and are
-    /// cleared by the caller.
-    func reset() {
-        removeShortcutSessions(server: nil)
-        let fresh = HermesServer(id: UUID(), name: "")
-        loadingServer = true
-        servers = [fresh]
-        activeServerID = fresh.id
-        loadingServer = false
-        transport = .hermesSessions
-        gatewayURL = Self.defaultGatewayURL
-        fastLaneURL = Self.defaultFastLaneURL
-        fastLaneModel = Self.defaultFastLaneModel
-        gatewayModel = ""
-        gatewayProvider = ""
-        reasoningEffort = Self.defaultReasoningEffort
-        replyLanguage = ""
-        measureUnits = .automatic
-        listenOnOpen = false
-        wakeListening = false
-        launchScreen = .conversation
-        handsFreeByDefault = false
-        newConversationForVoice = false
-        talkOver = .headphones
-        interruption = .speech
-        stopAndSkipInCar = false
-        stopPhrases = []
-        answerRequestsByVoice = false
-        answerRequestsByNod = false
-        shortAnswersInCar = false
-        thinkingSound = .off
-        voiceEngine = .redde
-        liveVoice = LiveSetup.defaultVoice
-        liveHangUp = 2
-        liveWhenLocked = false
-        liveGroupCalls = false
-        replyVoice = .onDevice
-        kokoroURL = Self.defaultKokoroURL
-        kokoroVoice = Self.defaultKokoroVoice
-        speechModel = ""
-        elevenLabsVoice = ""
-        voiceSpeed = 1.0
-        speechLanguage = ""
-        matchReplyLanguage = true
-        spokenPrefixes = []
-        botOrder = [:]
-        botSections = [:]
-        apiBots = [:]
-        botVoices = [:]
-        mutes = [:]
-        agentCalls = false
-        callsWhileLocked = false
-        callers = [:]
-        wakePhrases = [:]
-        theme = .standard
-        themeColors = [:]
-        appearance = .system
-        voiceOrb = .reddeFace
-        orbLight = .nebula
-        carPlayCards = .color
-        carPlayVoice = .bars
-        carPlayBots = .sticker
-        phoneTools = .init()
-        notifyInBackground = false
-        showLiveActivity = true
-        keepRepliesInBackground = true
-        earpieceAtEar = true
-        announceOnAirPods = false
-        briefingTapsOpenRun = false
-        notificationSound = true
-        returnSends = false
-        chatTextSize = 0
-        chatFont = .theme
-        botColors = true
-        eventColor = .byCalendar
-        cardColor = .plain
-        todayColor = .plain
-        todayTileColors = [:]
-        todayTileOrder = []
-        todayUpNext = false
-        cardAppearance = .system
-        agendaCalendars = []
-        newEventsCalendar = ""
-        currentLocation = false
-        leaveByAlerts = false
-        linkPreviews = false
-        addressMaps = true
-        botFaces = true
-        botPictures = true
-        replyCards = true
-        requireBiometrics = false
-        siriAIEnabled = false
-        siriDraftsInNewConversation = false
-        showBots = true
-        projectsInChatList = true
-        notifyWhereYouAre = true
-        hiddenChatListCards = []
-        lockGraceSeconds = 60
-        displayName = ""
-        serveURL = Self.defaultServeURL
-        serveUsername = ""
-        serveOpenAccess = false
-        acpURL = ""
-        acpAgent = ""
-        acpFolder = ""
-        acpAllAgents = false
-        hermesProfile = ""
-        hermesProfileHome = ""
-        cfAccessClientID = ""
-        pushRelayURL = ""
-        contextWindow = Self.defaultContextWindow
-        setupDone = false
-        defaults.removeObject(forKey: Keys.localDefaultsApplied)
-    }
-
-    /// The Hermes API base. A named profile goes through the gateway's `/p/<profile>/` routes,
-    /// which exist when the gateway multiplexes profiles (`gateway.multiplex_profiles`).
-    var gatewayBaseURL: URL? {
-        guard let base = Self.normalizedBase(gatewayURL) else { return nil }
-        return profileName.map { base.appending(path: "p/\($0)") } ?? base
-    }
-
-    /// The active server's Dashboard used as one with no sign-in, the person having been warned
-    /// (asked 2026-10-30). The saved login goes (username, password, a browser sign-in): the
-    /// Dashboard has nothing to check it against, and with it saved the app would keep trying it.
-    func useDashboardWithoutLogin() {
-        serveUsername = ""
-        Keychain.delete(.serveDashboardPassword)
-        DashboardTokenStore.keychain.write(nil)
-        serveOpenAccess = true
-    }
-
-    /// True once the selected transport has what it needs to make a request.
-    var isConfigured: Bool {
-        switch transport {
-        case .hermesSessions: return gatewayBaseURL != nil && gatewayAPIKey != nil
-        case .hermesServe:
-            return serveBaseURL != nil && (DashboardSignIn.tokens(for: serveBaseURL, in: .keychain) != nil
-                || (!serveUsername.isEmpty && Keychain.read(.serveDashboardPassword) != nil) || serveOpenAccess)
-        case .chatCompletions: return activeBaseURL != nil && !fastLaneModel.isEmpty
-        case .acp: return acpEndpoint != nil
-        }
-    }
+    @ObservationIgnored var loadingServer = false
 
     /// Set after the first-run setup completes (or is skipped).
     var setupDone: Bool {
         didSet { store(setupDone, forKey: Keys.setupDone) }
-    }
-
-    /// Personal builds: prefill from a bundled, git-ignored LocalDefaults.json on first launch.
-    func applyLocalDefaultsIfPresent() {
-        guard !defaults.bool(forKey: Keys.localDefaultsApplied),
-              let url = Bundle.main.url(forResource: "LocalDefaults", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-        if let v = dict["gatewayURL"] as? String { gatewayURL = v }
-        if let v = dict["fastLaneURL"] as? String { fastLaneURL = v }
-        if let v = dict["fastLaneModel"] as? String { fastLaneModel = v }
-        if let v = dict["serveURL"] as? String { serveURL = v }
-        if let v = dict["serveUsername"] as? String { serveUsername = v }
-        if let v = dict["kokoroURL"] as? String { kokoroURL = v }
-        if let v = dict["kokoroVoice"] as? String { kokoroVoice = v }
-        if let v = dict["speechModel"] as? String { speechModel = v }
-        if let v = dict["voiceSpeed"] as? Double { voiceSpeed = v }
-        if let v = dict["transport"] as? String, let t = Transport(rawValue: v) { transport = t }
-        if let v = dict["contextWindow"] as? Int { contextWindow = v }
-        defaults.set(true, forKey: Keys.localDefaultsApplied)
-    }
-
-    /// Keys added after an install consumed LocalDefaults still prefill, but only while empty,
-    /// so a value the user set by hand is never overwritten.
-    func applyLateLocalDefaults() {
-        guard let url = Bundle.main.url(forResource: "LocalDefaults", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-        if pushRelayURL.isEmpty, let v = dict["pushRelayURL"] as? String { pushRelayURL = v }
-        if Keychain.read(.pushRegisterSecret) == nil, let v = dict["pushRegisterSecret"] as? String {
-            _ = Keychain.write(.pushRegisterSecret, value: v)
-        }
-    }
-
-    var activeBaseURL: URL? {
-        if transport == .hermesServe { return serveBaseURL }
-        if transport.usesGateway { return gatewayBaseURL }
-        if transport == .acp { return acpEndpoint?.socketURL }
-        return Self.normalizedBase(fastLaneURL.trimmingCharacters(in: .whitespacesAndNewlines))
-    }
-
-    /// Accepts the base as providers document it: trailing slash or trailing `/v1` are dropped,
-    /// because the transports add `v1/…` themselves. "https://openrouter.ai/api/v1" → ".../api".
-    nonisolated static func normalizedBase(_ raw: String) -> URL? {
-        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        while text.hasSuffix("/") { text.removeLast() }
-        if text.lowercased().hasSuffix("/v1") { text.removeLast(3) }
-        while text.hasSuffix("/") { text.removeLast() }
-        return text.isEmpty ? nil : URL(string: text)
     }
 }
