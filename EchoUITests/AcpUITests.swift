@@ -498,4 +498,70 @@ final class AcpUITests: XCTestCase {
         sleep(2)
         shot("acp-all-claude")
     }
+
+    /// A bridge chat says the agent is at it while a reply is under way (asked 2026-11-14: "add the
+    /// active Thinking on the acp chats so I know something is happening").
+    func testClaudeCodeShowsItIsWorking() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let token = env["REDDE_BRIDGE_TOKEN"], !token.isEmpty, let folder = env["REDDE_BRIDGE_FOLDER"] else {
+            throw XCTSkip("No Claude Code bridge given (TEST_RUNNER_REDDE_BRIDGE_TOKEN, TEST_RUNNER_REDDE_BRIDGE_FOLDER)")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder,
+               "-acpAllAgents", "NO"]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        let composer = app.textFields["composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
+        app.buttons["New conversation"].firstMatch.tap()
+        composer.tap()
+        composer.typeText("Think it over first: in one short sentence, why is the sky blue?")
+        app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap()
+        let thinking = app.descendants(matching: .any)["agent-thinking"]
+        XCTAssertTrue(thinking.waitForExistence(timeout: 5), "Nothing says the agent is at it")
+        XCTAssertTrue(app.text(containing: "Thinking ·").exists, "It doesn't say how long")
+        keep("acp-thinking")
+        // Gone once the reply is in.
+        let gone = NSPredicate(format: "exists == false")
+        wait(for: [expectation(for: gone, evaluatedWith: thinking)], timeout: 90)
+        keep("acp-thought")
+    }
+
+    /// A bridge chat is renamed from the list (asked 2026-11-14), and keeps its name.
+    func testABridgeChatIsRenamed() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "demo", "-acpAgent", "", "-acpFolder", "", "-acpAllAgents", "NO"]
+        app.launch()
+        let composer = app.textFields["composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
+        app.buttons["New conversation"].firstMatch.tap()
+        let words = "Rename test \(Int.random(in: 1000 ... 9999))"
+        composer.tap()
+        composer.typeText(words)
+        app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap()
+        sleep(4)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        func row(_ text: String) -> XCUIElement {
+            let all = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", text))
+            return all.allElementsBoundByIndex.first { $0.isHittable } ?? all.firstMatch
+        }
+        XCTAssertTrue(row(words).waitForExistence(timeout: 15), "The chat isn't in the list")
+        row(words).press(forDuration: 1.2)
+        let rename = app.buttons["Rename"]
+        XCTAssertTrue(rename.waitForExistence(timeout: 5), "No Rename in a bridge chat's menu")
+        rename.tap()
+        let field = app.alerts.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 40) + "Named on the phone")
+        app.alerts.buttons["Save"].tap()
+        XCTAssertTrue(row("Named on the phone").waitForExistence(timeout: 10), "The new name isn't in the list")
+        sleep(3)
+        XCTAssertTrue(row("Named on the phone").exists, "The name didn't stay")
+        keep("acp-renamed")
+    }
 }

@@ -1835,9 +1835,14 @@ struct ConversationsList: View {
     private func ownButton(_ session: HermesSessionsAPI.SessionSummary, hasDraft: Bool) -> some View {
         let marks = marks(session)
         // The open conversation is read whatever it is marked: leaving it marks it read again.
-        let canMark = session.id != conversation.serverSessionID && settings.transport.isHermes
-        // ACP version 1 has no pins, names, archive or forks for a chat (`SessionBackend.acp`).
-        let hermes = settings.transport.isHermes
+        // Another server's row (All Servers): what it can do is its own server's, done there
+        // (`SessionBackend.owning`); what goes by the server in use (marks, usage, forks) is left out.
+        let own = session.otherServer.flatMap { tag in settings.servers.first { $0.id == tag.id } }
+        let kind = own?.transport ?? settings.transport
+        let home = session.otherServer == nil
+        let canMark = home && session.id != conversation.serverSessionID && settings.transport.isHermes
+        // ACP version 1 has no pins, archive or forks for a chat (`SessionBackend.acp`).
+        let hermes = kind.isHermes
         return Button { if !selecting { open(session) } } label: { ledgerRow(session, hasDraft: hasDraft, marks: marks) }
             .buttonStyle(.plain)
             .opensConversation()
@@ -1863,7 +1868,7 @@ struct ConversationsList: View {
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button(role: .destructive) { delete(session) } label: { Label("Delete", systemImage: "trash") }
-                if hermes {
+                if hermes, home {
                     Button { archive(session) } label: { Label("Archive", systemImage: "archivebox") }
                         .tint(.gray)
                 }
@@ -1876,23 +1881,22 @@ struct ConversationsList: View {
                     }
                 }
                 if hermes {
-                    Button("Usage & cost", systemImage: "chart.bar") { usageFor = session }
+                    if home { Button("Usage & cost", systemImage: "chart.bar") { usageFor = session } }
                     Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
                     Button(session.pinned == true ? String(localized: "Unpin") : String(localized: "Pin", comment: "Pins the conversation to the top of the list"),
                            systemImage: "pin") { setPinned(session, !(session.pinned ?? false)) }
-                    Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) }
-                } else if settings.transport == .acp, let info = AcpClient.current(settings)?.info {
-                    // Claude Code keeps names for its chats, and copies them.
-                    if info.canTitle {
-                        Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
-                    }
-                    if info.canFork {
+                    if home { Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) } }
+                } else if kind == .acp {
+                    // Every bridge chat can be named: on the agent where it keeps names (or the
+                    // bridge keeps them for it), on this device where neither does (`AcpTitles`).
+                    Button("Rename", systemImage: "pencil") { renameText = session.title ?? ""; renaming = session }
+                    if home, AcpClient.current(settings)?.info?.canFork == true {
                         Button("Fork", systemImage: "arrow.triangle.branch") { fork(session) }
                     }
                 }
-                moveMenu(for: session)
+                if home { moveMenu(for: session) }
                 Button("Export as Markdown", systemImage: "square.and.arrow.up") { export(session) }
-                if hermes { Button("Archive", systemImage: "archivebox") { archive(session) } }
+                if hermes, home { Button("Archive", systemImage: "archivebox") { archive(session) } }
                 Divider()
                 Button("Delete", systemImage: "trash", role: .destructive) { delete(session) }
             }
@@ -2227,8 +2231,24 @@ struct ConversationsList: View {
     private func rename(_ session: HermesSessionsAPI.SessionSummary, to title: String) {
         renaming = nil
         let t = title.trimmingCharacters(in: .whitespaces)
-        housekeeping(session) {
-            try await SessionBackend.owning(session, conversation)?.rename(session.id, to: t)
+        guard !t.isEmpty else { return }
+        let kind = session.otherServer.flatMap { tag in settings.servers.first { $0.id == tag.id }?.transport } ?? settings.transport
+        guard kind == .acp else {
+            housekeeping(session) {
+                try await SessionBackend.owning(session, conversation)?.rename(session.id, to: t)
+            }
+            return
+        }
+        // A bridge chat: named here at once, then on the agent (or its bridge) where it keeps
+        // names, which every device then shows; this device's name goes once it has.
+        AcpTitles.set(t, for: session.id)
+        if let i = ledger.firstIndex(where: { $0.id == session.id }) { ledger[i].title = t }
+        conversation.noteServerTitles([HermesSessionsAPI.SessionSummary(id: session.id, title: t)])
+        Task {
+            if (try? await SessionBackend.owning(session, conversation)?.rename(session.id, to: t)) != nil {
+                AcpTitles.set(nil, for: session.id)
+            }
+            await refresh()
         }
     }
 

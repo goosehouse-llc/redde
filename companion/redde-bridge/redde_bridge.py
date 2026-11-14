@@ -48,7 +48,7 @@ import redde_push  # noqa: E402  (beside this file)
 import redde_qr  # noqa: E402
 import redde_codex  # noqa: E402
 
-VERSION = "0.8.0"
+VERSION = "0.9.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -843,14 +843,15 @@ class Connection:
         agent = self.agent
         if method == "initialize":
             result = dict(await agent.ensure_started())
+            # The bridge lists the chats of an agent that keeps no list (`ChatIndex`), and keeps the
+            # names of any agent that keeps none (Codex): a chat can be named on every agent.
+            caps = dict(result.get("agentCapabilities") or {})
+            sessions = dict(caps.get("sessionCapabilities") or {})
             if agent.keeps_list:
-                # The bridge lists the agent's chats and keeps their names (`ChatIndex`).
-                caps = dict(result.get("agentCapabilities") or {})
-                sessions = dict(caps.get("sessionCapabilities") or {})
                 sessions["list"] = {}
-                sessions.setdefault("title", {})
-                caps["sessionCapabilities"] = sessions
-                result["agentCapabilities"] = caps
+            sessions.setdefault("title", {})
+            caps["sessionCapabilities"] = sessions
+            result["agentCapabilities"] = caps
             meta = dict(result.get("_meta") or {})
             meta["redde"] = {"bridge": VERSION, "agent": agent.config.id, "name": agent.config.name,
                              "cwd": agent.config.folder, "attach": True,
@@ -896,15 +897,21 @@ class Connection:
             return _NO_REPLY
         if method == "session/list" and (await agent.ensure_started()) is not None and agent.keeps_list:
             return agent.index.page(params.get("cwd"))
-        if method == "session/set_title" and agent.keeps_list and agent.capability("sessionCapabilities", "title") is None:
+        if method == "session/set_title" and (await agent.ensure_started()) is not None \
+                and agent.capability("sessionCapabilities", "title") is None:
             agent.index.rename(params["sessionId"], str(params.get("title") or ""))
             agent.session(params["sessionId"]).title = params.get("title") or None
             return {}
         if method == "session/list":
             result = await agent.request(method, params)
+            named = agent.capability("sessionCapabilities", "title") is None
             for info in (result or {}).get("sessions") or []:
                 if info.get("sessionId") and info.get("cwd"):
                     agent.session(info["sessionId"]).cwd = info["cwd"]
+                # A name given through the bridge, for an agent that keeps none.
+                kept = agent.index.rows.get(info.get("sessionId") or "") if named else None
+                if kept and kept.get("title"):
+                    info["title"] = kept["title"]
             return result
         if method in ("session/delete", "session/close"):
             result = await agent.request(method, params)

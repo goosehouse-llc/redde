@@ -4,7 +4,7 @@ import SwiftUI
 /// Update Available.
 nonisolated enum AcpBridge {
     /// `VERSION` in redde_bridge.py; a test keeps the two the same.
-    static let latest = "0.8.0"
+    static let latest = "0.9.0"
     /// The installer's one line, for a bridge that can't update itself.
     static let installCommand = "curl -fsSL https://raw.githubusercontent.com/goosehouse-llc/redde/main/companion/redde-bridge/install.sh | sh"
 

@@ -69,3 +69,21 @@ struct AcpAgentsTests {
         #expect(!AcpAgentChoices.asks(settings))
     }
 }
+
+/// A bridge chat named on this device (`AcpTitles`) is listed by that name.
+struct AcpTitlesTests {
+    @Test func aNameGivenHereIsTheListsName() {
+        let id = "s-\(UUID().uuidString)"
+        let row = JSONValue.object(["sessionId": .string(id), "title": .string("Fix the build")])
+        #expect(AcpSessions.summary(row)?.title == "Fix the build")
+        AcpTitles.set("Login page", for: id)
+        defer { AcpTitles.set(nil, for: id) }
+        #expect(AcpSessions.summary(row)?.title == "Login page")
+        AcpTitles.set(nil, for: id)
+        #expect(AcpSessions.summary(row)?.title == "Fix the build")
+    }
+
+    @Test func hermessOwnChatsAreCalledHermes() {
+        #expect(HermesSessionsAPI.SessionSummary(id: "a", source: "desktop").sourceLabel == "Hermes")
+    }
+}

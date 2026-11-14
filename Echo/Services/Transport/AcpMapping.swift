@@ -830,6 +830,8 @@ nonisolated enum AcpSessions {
         guard let id = row["sessionId"]?.string else { return nil }
         var fields: [String: JSONValue] = ["id": .string(id)]   // no source: the list tags only chats from elsewhere
         if let title = row["title"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty { fields["title"] = .string(title) }
+        // A name given on this device to a chat its agent keeps none for (`AcpTitles`).
+        if let named = AcpTitles.title(for: id) { fields["title"] = .string(named) }
         if let cwd = row["cwd"]?.string { fields["cwd"] = .string(cwd) }
         if let at = row["updatedAt"]?.string.flatMap(date) {
             fields["last_active"] = .number(at.timeIntervalSince1970)
@@ -844,6 +846,23 @@ nonisolated enum AcpSessions {
         let fractional = ISO8601DateFormatter()
         fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return fractional.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+    }
+}
+
+/// Names given on this device to bridge chats whose agent keeps none (Codex, and others before
+/// bridge 0.9 kept names for them; asked 2026-11-14 "allow for renaming of the chat for ACP
+/// chats"). By session id; a name the agent takes is dropped here once it has.
+nonisolated enum AcpTitles {
+    private static let key = "acpTitles"
+
+    static func title(for session: String) -> String? {
+        (UserDefaults.standard.dictionary(forKey: key) as? [String: String])?[session]
+    }
+
+    static func set(_ title: String?, for session: String) {
+        var all = UserDefaults.standard.dictionary(forKey: key) as? [String: String] ?? [:]
+        all[session] = title?.nilIfEmpty
+        UserDefaults.standard.set(all, forKey: key)
     }
 }
 

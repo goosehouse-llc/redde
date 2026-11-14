@@ -145,6 +145,17 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
             return []
         return [json.loads(l)["params"] for l in self.log.read_text().splitlines() if json.loads(l)["method"] == method]
 
+    async def test_an_agent_that_keeps_no_names_is_named_by_the_bridge(self):
+        # Codex lists its chats but keeps no names (no `sessionCapabilities.title`): the bridge does.
+        c = await self.client()
+        caps = (await c.call("initialize", {"protocolVersion": 1}))["result"]["agentCapabilities"]
+        self.assertIn("title", caps["sessionCapabilities"])
+        sid = (await c.call("session/new", {}))["result"]["sessionId"]
+        self.assertEqual((await c.call("session/set_title", {"sessionId": sid, "title": "Login page"}))["result"], {})
+        rows = (await c.call("session/list"))["result"]["sessions"]
+        self.assertEqual({r["sessionId"]: r.get("title") for r in rows}[sid], "Login page")
+        self.assertNotIn("session/set_title", self.log.read_text(), "the agent isn't asked")
+
     async def test_wrong_token_is_refused(self):
         with self.assertRaises(PermissionError):
             await Client.open(self.port, token="nope")

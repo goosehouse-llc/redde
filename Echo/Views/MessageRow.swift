@@ -193,7 +193,10 @@ struct MessageRow: View, Equatable {
                     }
                 }
             }
-            if isLive, (foldsWorkingText ? message.text : replyBody).isEmpty {
+            if isLive, (foldsWorkingText ? message.text : replyBody).isEmpty, agentAtWork {
+                // A bridge agent before its first words: "Thinking", and for how long.
+                agentThinkingLine
+            } else if isLive, (foldsWorkingText ? message.text : replyBody).isEmpty {
                 // Waiting for the first token: the app's waveform, breathing.
                 WaveformPulse(color: theme.accent)
                     .padding(.horizontal, flatReply ? 2 : 16)
@@ -280,6 +283,9 @@ struct MessageRow: View, Equatable {
                     .contextMenu { userMenu }
                     .sheet(isPresented: $selecting) { SelectableTextSheet(text: message.text) }
             }
+            // A bridge agent still at it after some words: "Thinking" at the foot of the reply, as
+            // it can go quiet for a long while between its words and its steps.
+            if isLive, agentAtWork, !(foldsWorkingText ? message.text : replyBody).isEmpty { agentThinkingLine }
             // The page of the first web link, with Link previews on (`LinkPreviewSlot`), once a
             // reply has finished.
             if !isLive, !message.isSteer, message.error == nil, hasTextBubble, !(foldsWorkingText && turn?.foldsText == true) { LinkPreviewSlot(text: message.text) }
@@ -360,6 +366,30 @@ struct MessageRow: View, Equatable {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// The reply under way is a bridge agent's (Claude Code, Codex…), whose live state is shown at
+    /// its foot (asked 2026-11-14: "add the active Thinking on the acp chats so I know something
+    /// is happening"); the turn's last row only.
+    private var agentAtWork: Bool {
+        message.role == .assistant && conversation?.connection == .acp && turn?.isFinal != false
+    }
+
+    /// "Thinking · 12 sec", shimmering, while a bridge agent's turn runs.
+    private var agentThinkingLine: some View {
+        HStack(spacing: 8) {
+            WaveformPulse(color: theme.accent, height: 14, spacing: 3)
+            TimelineView(.periodic(from: message.createdAt, by: 1)) { context in
+                ShimmerText(text: String(localized: "Thinking · \(Self.elapsed(from: message.createdAt, to: context.date))",
+                                         comment: "A bridge agent's reply under way: how long it has been at it, as Thinking · 12 sec"))
+                    .chatFont(.subheadline)
+                    .monospacedDigit()
+            }
+        }
+        .padding(.horizontal, flatReply ? 2 : 4)
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("agent-thinking")
     }
 
     /// "5 sec", "1 min 12 sec".

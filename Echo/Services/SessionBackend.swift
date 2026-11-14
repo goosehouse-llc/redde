@@ -24,6 +24,20 @@ enum SessionBackend {
         return settings.transport == .hermesServe ? .serve(.shared) : conversation.ledgerAPI(profile: nil).map(SessionBackend.ledger)
     }
 
+    /// A saved server's own backend, not the one in use: its Dashboard, its Hermes API, or its
+    /// bridge (`agent`, else the one it is set to).
+    static func of(_ server: HermesServer, agent: String? = nil) -> SessionBackend? {
+        switch server.transport {
+        case .hermesServe: return .serve(AllServers.client(for: server))
+        case .hermesSessions: return AllServers.api(for: server).map(SessionBackend.ledger)
+        case .acp:
+            let token = Keychain.read(account: Keychain.account(.acpToken, server: server.id.uuidString))
+            return AcpEndpoint.make(address: server.acpURL, agent: agent ?? server.acpAgent, token: token, folder: server.acpFolder)
+                .map { .acp(AcpClient.client(for: $0)) }
+        case .chatCompletions: return nil
+        }
+    }
+
     private static var notOnACP: AcpError {
         AcpError(code: -32601, message: String(localized: "This agent doesn't keep that for its chats.", comment: "A chat list action an ACP agent can't do"))
     }
@@ -31,6 +45,12 @@ enum SessionBackend {
     /// For a row of the list: its own profile's, when it is another's. On the Dashboard the row's
     /// profile was noted for its id when it was listed, so every call about it names it.
     static func owning(_ session: HermesSessionsAPI.SessionSummary, _ conversation: Conversation, settings: Settings = .shared) -> SessionBackend? {
+        // Another server's row, with All Servers on: that server's (2026-11-14: a Hermes chat's
+        // Rename went to the bridge the app was on).
+        if let tag = session.otherServer {
+            guard let server = settings.servers.first(where: { $0.id == tag.id }) else { return nil }
+            return of(server, agent: session.acpAgent)
+        }
         if settings.transport == .acp {
             // With every agent in one list, a row is its own agent's.
             if let agent = session.acpAgent, let client = AcpAgents.client(for: agent, settings) { return .acp(client) }

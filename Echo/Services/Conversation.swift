@@ -1691,9 +1691,15 @@ final class Conversation {
         guard bot == nil else { return }
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         if connection == .acp {
-            // Named on the agent where it keeps names (Claude Code); otherwise the name is this device's.
-            if let sessionID = serverSessionID, !trimmed.isEmpty, let client = AcpClient.current(settings) {
-                _ = try await client.setTitle(sessionID, title: trimmed)
+            // Named on the agent where it keeps names (Claude Code, or its bridge for it); otherwise
+            // the name is this device's (`AcpTitles`), which the list's next read keeps (it put
+            // the old name back before, 2026-11-14).
+            if let sessionID = serverSessionID, !trimmed.isEmpty {
+                AcpTitles.set(trimmed, for: sessionID)
+                if let client = settings.acpEndpoint(agent: acpAgent).map(AcpClient.client(for:)),
+                   (try? await client.setTitle(sessionID, title: trimmed)) == true {
+                    AcpTitles.set(nil, for: sessionID)
+                }
             }
         } else if let sessionID = serverSessionID {
             guard !trimmed.isEmpty else { return }

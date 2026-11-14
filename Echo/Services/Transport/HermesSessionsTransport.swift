@@ -419,6 +419,8 @@ nonisolated struct HermesSessionsAPI: Sendable {
             switch source ?? "" {
             case "api_server", "api-server": "Redde / API"
             case "cli": "CLI"
+            // Hermes's own chats (its Dashboard and Desktop app), by its name (asked 2026-11-14).
+            case "desktop": "Hermes"
             case "": "?"
             default: (source ?? "").replacingOccurrences(of: "_", with: " ").capitalized
             }
