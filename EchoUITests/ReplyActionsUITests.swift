@@ -213,5 +213,35 @@ final class ReplyActionsUITests: XCTestCase {
         thumbs.tap()
         XCTAssertTrue(app.buttons["You reacted 👍. Remove"].waitForExistence(timeout: 3), "The reaction doesn't show under the reply")
     }
-}
 
+    /// A suggested reply's hold menu turns them off (they weren't good, 11-13); Settings › Writing
+    /// shows it off, and turns them back on.
+    func testSuggestedRepliesTurnOffFromTheirMenu() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoQuote", "-echo.clearDrafts"] + XCUIApplication.straightToChat
+        app.launch()
+        let chip = app.buttons["What time works best?"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 15), "No suggested replies")
+        chip.press(forDuration: 1.0)
+        let off = app.buttons["Turn Off Suggested Replies"]
+        XCTAssertTrue(off.waitForExistence(timeout: 5), "No way to turn them off in a suggestion's menu")
+        off.tap()
+        XCTAssertTrue(chip.waitForNonExistence(timeout: 3), "The suggestions stayed")
+
+        app.terminate()
+        app.launchArguments = ["-echo.screen", "settings"] + XCUIApplication.straightToChat
+        app.launch()
+        let writing = app.buttons["Writing"].firstMatch
+        _ = app.navigationBars.firstMatch.waitForExistence(timeout: 15)
+        for _ in 0 ..< 12 where !(writing.exists && writing.isHittable) { app.swipeUp() }
+        XCTAssertTrue(writing.exists, "No Writing in Settings")
+        writing.tap()
+        let toggle = app.switches["Suggest Replies"].firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5), "No Suggest Replies in Writing")
+        XCTAssertEqual(toggle.value as? String, "0", "Settings doesn't show them off")
+        // Back on, as the next run expects.
+        toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
+        XCTAssertEqual(toggle.value as? String, "1", "Settings didn't turn them back on")
+    }
+}

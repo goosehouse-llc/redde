@@ -31,6 +31,12 @@ struct FollowUpChips: View {
                                 Button("Edit Before Sending", systemImage: "pencil") {
                                     LaunchRouter.shared.requestDraft(text: text, attachments: [])
                                 }
+                                // Off where they show, not only in Settings › Writing, which turns them back on.
+                                Button(String(localized: "Turn Off Suggested Replies", comment: "A suggested reply's hold menu: stops suggesting replies under the agent's answers (Settings › Writing › Suggest Replies turns them back on)"),
+                                       systemImage: "eye.slash") {
+                                    Settings.shared.suggestFollowUps = false
+                                    conversation.clearFollowUps()
+                                }
                             }
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
