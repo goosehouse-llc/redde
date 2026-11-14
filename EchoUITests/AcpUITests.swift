@@ -457,7 +457,8 @@ final class AcpUITests: XCTestCase {
         app.navigationBars.buttons.element(boundBy: 0).tap()
         // Both agents' chats, each with its agent's name on the row.
         func marked(_ agent: String) -> XCUIElement {
-            app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", agent)).firstMatch
+            let all = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ AND NOT (label CONTAINS 'model')", agent))
+            return all.allElementsBoundByIndex.first { $0.isHittable } ?? all.firstMatch
         }
         XCTAssertTrue(app.text(containing: "conversations").waitForExistence(timeout: 60), "The list didn't load")
         // Below the projects, the chats themselves.
@@ -465,6 +466,13 @@ final class AcpUITests: XCTestCase {
             app.swipeUp()
         }
         shot("acp-all-list")
+        // The title is the agent menu: All Agents, then each agent.
+        let menu = app.buttons["agent-menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 10), "No agent menu in the title")
+        menu.tap()
+        XCTAssertTrue(app.buttons["Antigravity"].waitForExistence(timeout: 5), "The agent menu doesn't list the agents")
+        shot("acp-all-menu")
+        app.buttons["All Agents"].firstMatch.tap()
         XCTAssertTrue(marked("Codex").exists, "No chat of Codex's in the list")
         XCTAssertTrue(marked("Claude Code").exists, "No chat of Claude Code's in the list")
         // A chat of Codex's opens on Codex, though the app was on Claude Code.

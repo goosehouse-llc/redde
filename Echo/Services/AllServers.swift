@@ -39,6 +39,11 @@ enum AllServers {
             found = try await api.listSessions()
         case .acp:
             let token = Keychain.read(account: Keychain.account(.acpToken, server: server.id.uuidString))
+            // Every agent in one list on that bridge: every agent's chats here too.
+            if server.acpAllAgents {
+                found = try await AcpAgents.everyAgent(address: server.acpURL, token: token, folder: server.acpFolder)
+                break
+            }
             guard let endpoint = AcpEndpoint.make(address: server.acpURL, agent: server.acpAgent, token: token, folder: server.acpFolder) else {
                 throw TransportError.noAPIKey
             }

@@ -29,6 +29,43 @@ final class TodayStripUITests: XCTestCase {
         }
     }
 
+    /// A list's own page (2026-11-14, "make the to do list nicer to look at"): its name and ring,
+    /// what's left, then what's done; checking one off moves it down to Done.
+    func testAListOpensAsItsOwnPage() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoLists", "-echo.drawerPage", "today"] + XCUIApplication.straightToChat
+        app.launch()
+        let chat = app.scrollViews.firstMatch
+        XCTAssertTrue(chat.waitForExistence(timeout: 15))
+        chat.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: chat.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        let groceries = tile(app, "Groceries")
+        XCTAssertTrue(groceries.waitForExistence(timeout: 5), "No list tile")
+        reach(app, groceries)
+        groceries.tap()
+        /// The page's own row (the tile behind it says the same words).
+        func item(_ text: String) -> XCUIElement {
+            let all = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", text))
+            return all.allElementsBoundByIndex.first { $0.isHittable } ?? all.firstMatch
+        }
+        XCTAssertTrue(app.staticTexts["2 of 5 done"].waitForExistence(timeout: 5), "The list didn't open")
+        let milk = item("Oat milk")
+        XCTAssertTrue(milk.waitForExistence(timeout: 5), "The list didn't open")
+        XCTAssertTrue(app.staticTexts["2 of 5 done"].exists, "No count under the name")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "list-page"; shot.lifetime = .keepAlways; add(shot)
+        milk.tap()
+        XCTAssertTrue(app.staticTexts["3 of 5 done"].waitForExistence(timeout: 5), "Checking one off didn't count")
+        for name in ["Sourdough", "Lemons"] {
+            item(name).tap()
+        }
+        XCTAssertTrue(app.staticTexts["All done"].waitForExistence(timeout: 5), "Every item done doesn't say so")
+        sleep(1)
+        let done = XCTAttachment(screenshot: app.screenshot())
+        done.name = "list-all-done"; done.lifetime = .keepAlways; add(done)
+    }
+
     func testAGoalTileOpensTheGoal() {
         let app = openDrawer()
         let goal = tile(app, "Run a 10K by March")

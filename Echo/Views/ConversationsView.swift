@@ -72,6 +72,8 @@ struct ConversationsList: View {
     @AppStorage("sessions.allProfiles") private var allProfiles = false
     /// Every saved server's chats in the list, each tagged with its server (`AllServers`).
     @AppStorage("sessions.allServers") private var allServers = false
+    /// A bridge connection's agents, for the title's agent menu (`agentMenu`).
+    @State private var bridgeAgents: [AcpEndpoint.Agent] = []
     /// The servers that didn't answer, with All Servers on.
     @State private var serversUnreachable: [String] = []
     /// The bot whose chat is being found or made.
@@ -351,11 +353,64 @@ struct ConversationsList: View {
         #endif
     }
 
-    var showsProfileMenu: Bool { settings.transport.isHermes && (allProfiles || menuProfiles.count > 1) }
+    var showsProfileMenu: Bool { settings.transport.isHermes && (allProfiles || menuProfiles.count > 1) || showsAgentMenu }
+
+    /// On a bridge with more than one agent, the title's menu is its agents', as a Hermes's is its
+    /// profiles' (asked 2026-11-14: All Agents was out of sight in the connection's setup).
+    var showsAgentMenu: Bool { settings.transport == .acp && bridgeAgents.count > 1 }
 
     var profileMenu: some View { profileMenu(inTitle: false) }
 
+    @ViewBuilder
     func profileMenu(inTitle: Bool) -> some View {
+        if settings.transport == .acp { agentMenu(inTitle: inTitle) } else { hermesProfileMenu(inTitle: inTitle) }
+    }
+
+    /// All Agents, then each of the bridge's: every agent's chats in one list, or one agent's.
+    private func agentMenu(inTitle: Bool) -> some View {
+        let all = settings.acpAllAgents
+        let title = all ? String(localized: "All Agents", comment: "The chat list's agent menu on a bridge: every agent's chats in one list")
+            : bridgeAgents.first { $0.id == settings.acpAgent }?.name ?? settings.headerTitle
+        return Menu {
+            Button { settings.acpAllAgents = true } label: {
+                Label { Text("All Agents", comment: "The chat list's agent menu on a bridge: every agent's chats in one list") }
+                    icon: { Image(systemName: all ? "checkmark" : "rectangle.stack") }
+            }
+            Divider()
+            ForEach(bridgeAgents) { agent in
+                Button {
+                    let moved = agent.id != settings.acpAgent
+                    settings.acpAllAgents = false
+                    settings.acpAgent = agent.id
+                    // The chat open is another agent's: a new one with this agent.
+                    if moved, conversation.serverSessionID != nil || conversation.hasMessages { conversation.reset() }
+                } label: {
+                    if !all, agent.id == settings.acpAgent { Label(agent.name, systemImage: "checkmark") } else { Text(agent.name) }
+                }
+            }
+        } label: {
+            if inTitle {
+                HStack(spacing: 4) {
+                    Text(title).lineLimit(1).font(.headline)
+                    Image(systemName: "chevron.down").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                }
+                .foregroundStyle(.primary)
+            } else {
+                HStack(spacing: 6) {
+                    Image(systemName: all ? "rectangle.stack" : "terminal")
+                    Text(title).lineLimit(1)
+                    Image(systemName: "chevron.up.chevron.down").chatFont(.caption2, weight: .semibold)
+                }
+                .chatFont(.subheadline, weight: .medium)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .accessibilityIdentifier("agent-menu")
+        .accessibilityLabel(Text("Agent", comment: "ACP connection field: which of the bridge's agents"))
+        .accessibilityValue(title)
+    }
+
+    private func hermesProfileMenu(inTitle: Bool) -> some View {
         let current = settings.profileName ?? ProfileCatalog.defaultID
         // With All Profiles on, where new chats start still shows when it isn't the main agent:
         // the app was left on another profile once and nothing said so (2026-10-29).
@@ -568,7 +623,11 @@ struct ConversationsList: View {
         // which stays up).
         // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
         // (All Profiles turned on or off loads the list again too.)
-        .task(id: "\(settings.connectionKey)|\(allProfiles)|\(allServers)") { if usesLedger, isShowing { await refresh() } }
+        .task(id: "\(settings.connectionKey)|\(allProfiles)|\(allServers)|\(settings.acpAllAgents ? "*" : settings.acpAgent)") { if usesLedger, isShowing { await refresh() } }
+        // A bridge's agents, for the title's agent menu.
+        .task(id: "\(settings.transport == .acp)|\(settings.acpURL)") {
+            bridgeAgents = settings.transport == .acp ? await AcpAgents.refresh(settings) : []
+        }
         .onChange(of: settings.connectionKey) {
             // The old server's or profile's sessions must not linger while the new list loads.
             ledger = []
@@ -1949,7 +2008,8 @@ struct ConversationsList: View {
                 }
                 // With every agent in one list: which agent it's with.
                 if let agent = session.acpAgent {
-                    Label(AcpAgents.name(of: agent, settings), systemImage: "terminal")
+                    let bridge = session.otherServer.flatMap { tag in settings.servers.first { $0.id == tag.id }?.acpURL } ?? settings.acpURL
+                    Label(AcpAgents.name(of: agent, address: bridge), systemImage: "terminal")
                         .labelStyle(.titleAndIcon)
                         .chatFont(.caption2, weight: .semibold)
                         .foregroundStyle(.secondary)

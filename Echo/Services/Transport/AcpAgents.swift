@@ -13,31 +13,51 @@ enum AcpAgents {
 
     /// The bridge's agents as last listed, for New Chat's menu before the list has been asked.
     static func known(_ settings: Settings = .shared) -> [AcpEndpoint.Agent] {
-        guard let key = key(settings), let data = UserDefaults.standard.data(forKey: key),
+        known(address: settings.acpURL)
+    }
+
+    static func known(address: String) -> [AcpEndpoint.Agent] {
+        guard let key = key(address), let data = UserDefaults.standard.data(forKey: key),
               let agents = try? JSONDecoder().decode([AcpEndpoint.Agent].self, from: data) else { return [] }
         return agents
     }
 
+    /// The bridge's agents, asked again (kept for `known`); the ones known when it doesn't answer.
+    static func refresh(_ settings: Settings = .shared) async -> [AcpEndpoint.Agent] {
+        guard settings.transport == .acp, let bridge = settings.acpEndpoint,
+              let found = try? await bridge.agents(), !found.isEmpty else { return known(settings) }
+        remember(found, settings)
+        return found
+    }
+
     /// Kept for `known`, whenever the bridge lists them.
     static func remember(_ agents: [AcpEndpoint.Agent], _ settings: Settings = .shared) {
-        guard let key = key(settings), let data = try? JSONEncoder().encode(agents) else { return }
+        remember(agents, address: settings.acpURL)
+    }
+
+    private static func remember(_ agents: [AcpEndpoint.Agent], address: String) {
+        guard let key = key(address), let data = try? JSONEncoder().encode(agents) else { return }
         UserDefaults.standard.set(data, forKey: key)
     }
 
     /// Per bridge address (the agents are the bridge's, whichever is picked).
-    private static func key(_ settings: Settings) -> String? {
-        AcpEndpoint.make(address: settings.acpURL, agent: "", token: nil, folder: nil)?.agentsURL.map { "acpAgents." + $0.absoluteString }
+    private static func key(_ address: String) -> String? {
+        AcpEndpoint.make(address: address, agent: "", token: nil, folder: nil)?.agentsURL.map { "acpAgents." + $0.absoluteString }
     }
 
     /// Every agent's chats, newest first, each row tagged with its agent. An agent that doesn't
     /// answer is left out; when none does, the first error is thrown.
     static func everyAgent(_ settings: Settings = .shared) async throws -> [HermesSessionsAPI.SessionSummary] {
-        guard let bridge = settings.acpEndpoint else { throw TransportError.noAPIKey }
+        try await everyAgent(address: settings.acpURL, token: Keychain.read(.acpToken), folder: settings.acpFolder)
+    }
+
+    /// Every agent's chats on the bridge at `address` (another saved server's, with All Servers on).
+    static func everyAgent(address: String, token: String?, folder: String) async throws -> [HermesSessionsAPI.SessionSummary] {
+        guard let bridge = AcpEndpoint.make(address: address, agent: "", token: token, folder: folder) else { throw TransportError.noAPIKey }
         let agents = try await bridge.agents()
-        if !agents.isEmpty { remember(agents, settings) }
-        let token = bridge.token
+        if !agents.isEmpty { remember(agents, address: address) }
         let asked = agents.compactMap { agent -> (AcpEndpoint.Agent, Task<[HermesSessionsAPI.SessionSummary], Error>)? in
-            guard let endpoint = AcpEndpoint.make(address: settings.acpURL, agent: agent.id, token: token, folder: settings.acpFolder) else { return nil }
+            guard let endpoint = AcpEndpoint.make(address: address, agent: agent.id, token: token, folder: folder) else { return nil }
             return (agent, Task { try await within(patience) { @MainActor in AcpSessions.summaries(try await AcpClient.client(for: endpoint).listSessions()) } })
         }
         var rows: [HermesSessionsAPI.SessionSummary] = []
@@ -61,7 +81,12 @@ enum AcpAgents {
 
     /// What an agent is called: the bridge's name for it, else its id.
     static func name(of agent: String, _ settings: Settings = .shared) -> String {
-        known(settings).first { $0.id == agent }?.name ?? agent
+        name(of: agent, address: settings.acpURL)
+    }
+
+    /// The same, on the bridge at `address` (another server's row, with All Servers on).
+    static func name(of agent: String, address: String) -> String {
+        known(address: address).first { $0.id == agent }?.name ?? agent
     }
 
     /// One agent's own client on this bridge, for a row of its (rename, delete).
