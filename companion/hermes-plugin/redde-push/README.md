@@ -457,6 +457,11 @@ store page's picture, with Link previews on. From 1.29.0 the card may also say w
 usually sells for (`usual_price`, from a price history or the maker's list price, never a guess),
 which Redde shows as a deal meter.
 
+From 1.30.0 the phone tools have a Maps area: places near the iPhone or a place named, how long
+the way takes with traffic (driving, walking, cycling, transit) with its turns, and Apple Maps
+opened to go there (`phone_maps_search`, `phone_maps_directions`, `phone_maps_open`), offered only
+while Maps is on in Redde.
+
 From 1.13.0, six more the same way (asked 2026-10-31). A `recipe` card shows a recipe with its
 times, the servings its amounts are for (Redde scales them on the phone), ingredients to tick and
 steps. A `delivery` card shows a package's tracking, a `flight` card a flight or a trip's legs with

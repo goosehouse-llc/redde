@@ -57,6 +57,9 @@ nonisolated struct DeviceToolRunner: Sendable {
         case .homeList: try await DeviceHome.list(args)
         case .homeSet: try await DeviceHome.set(args)
         case .homeScene: try await DeviceHome.scene(args)
+        case .mapsSearch: try await DeviceMaps.search(args)
+        case .mapsDirections: try await DeviceMaps.directions(args)
+        case .mapsOpen: try await DeviceMaps.open(args)
         }
     }
 }
@@ -184,6 +187,17 @@ nonisolated struct DeviceAsk: Equatable, Sendable {
         case .homeScene:
             title = String(localized: "Run the scene \(quoted("scene") ?? "")", comment: "Apple Home: run a scene, named in quotes")
             detail = String(localized: "In Apple Home", comment: "Where a phone tool's change happens")
+        case .mapsSearch:
+            title = String(localized: "Look up places in Apple Maps", comment: "A phone tool's question: the agent searches Apple Maps")
+            detail = [quoted("query"), quoted("near").map { String(localized: "near \($0)", comment: "Where a Maps search looks, a place in quotes") }
+                ?? String(localized: "near your iPhone", comment: "Where a Maps search looks: where the phone is")].compactMap { $0 }.joined(separator: " ")
+        case .mapsDirections:
+            title = String(localized: "Work out the way to \(quoted("to") ?? "")", comment: "Apple Maps: travel time and directions to a place, named in quotes")
+            detail = quoted("from").map { String(localized: "From \($0)", comment: "A delivery card: where the package comes from, e.g. From Apple") }
+                ?? String(localized: "From where your iPhone is", comment: "Where a way starts: the phone")
+        case .mapsOpen:
+            title = String(localized: "Open Apple Maps to \(quoted("to") ?? "")", comment: "Apple Maps opens with the way to a place, named in quotes")
+            detail = String(localized: "Ready to go", comment: "Apple Maps opened with directions, ready to start")
         case .healthRead:
             title = String(localized: "Read your Health data")
             let kind = args["type"]?.string.flatMap { HealthKind(rawValue: $0.lowercased()) }

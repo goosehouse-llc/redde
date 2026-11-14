@@ -374,6 +374,17 @@ class PhoneTools(unittest.TestCase):
         self.assertTrue(self.phone.offers("home"))
         self.assertFalse(self.phone.offers("health"))
 
+    def test_maps_is_offered_alone_and_small(self):
+        names = ("phone_maps_search", "phone_maps_directions", "phone_maps_open")
+        for name in names:
+            self.assertEqual(device.TOOLS[name][0], "maps")
+        size = sum(len(json.dumps({"name": n, "description": device.TOOLS[n][1], "parameters": {
+            "type": "object", "properties": device.TOOLS[n][2], "required": device.TOOLS[n][3]}})) for n in names)
+        self.assertLess(size, 2600)
+        self.phone.set_areas(["maps"])
+        self.assertTrue(self.phone.offers("maps"))
+        self.assertFalse(self.phone.offers("home"))
+
     def test_the_names_are_the_ones_the_app_and_the_manifest_know(self):
         manifest = (HERE / "plugin.yaml").read_text()
         listed = re.findall(r"^  - (phone_\w+)$", manifest, re.M)

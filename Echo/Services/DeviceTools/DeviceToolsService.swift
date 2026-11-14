@@ -327,6 +327,7 @@ final class DeviceToolsService {
             case .allow where area == .people: "on; iOS asks the person before a call goes out, and a message is theirs to send"
             case .allow where area == .widget: "on; written on without asking"
             case .allow where area == .health: "on; read without asking"
+            case .allow where area == .maps: "on; looked up without asking"
             case .allow where area == .home: "on; changes go ahead without asking, except locks, garage doors, doors, windows and the alarm, which the person is asked about"
             case .allow: "on; reading needs no asking, changes are asked about"
             }
@@ -337,6 +338,9 @@ final class DeviceToolsService {
             // What phone_health_read may be asked for: only these, and only on a device with Health.
             health["health_shared"] = .array(settings.phoneTools.sharedHealth.map { .string($0.rawValue) })
             if !DeviceHealth.available { health["health_note"] = .string("This device has no Apple Health: Health is read on the user's iPhone.") }
+        }
+        if settings.phoneTools.access(.maps, agent: agent, server: server) != .off, !CurrentLocationService.shared.allowed {
+            health["maps_note"] = .string("Location is off for Redde: give Maps a place to start from (near or from).")
         }
         if settings.phoneTools.access(.home, agent: agent, server: server) != .off, !DeviceHome.available {
             health["home_note"] = .string("Apple Home is on the user's iPhone: this Mac can't reach it.")

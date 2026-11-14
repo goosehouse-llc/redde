@@ -1262,109 +1262,109 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Når Steder er slået til, bruger Redde, hvor du er, til at angive et sted og opdage, når du ankommer eller tager af sted; kun “ankommet hjem” sendes til din server. Når Aktuel placering er slået til, får din egen agent at vide omtrent, hvor du er, når du spørger om steder, vejvisning eller vejret. Når Afgangsalarmer er slået til, beregner Redde ud fra, hvor du er, hvornår du skal af sted til en begivenhed; hvor du er, sendes kun til Apple Kort for at finde vejen."
+            "value" : "Når Steder er slået til, bruger Redde, hvor du er, til at angive et sted og opdage, når du ankommer eller tager af sted; kun “ankommet hjem” sendes til din server. Når Aktuel placering er slået til, får din egen agent at vide omtrent, hvor du er, når du spørger om steder, vejvisning eller vejret. Når Afgangsalarmer er slået til, beregner Redde ud fra, hvor du er, hvornår du skal af sted til en begivenhed; hvor du er, sendes kun til Apple Kort for at finde vejen. Når Kort er slået til under Telefonværktøjer, bruger Apple Kort din lokalitet til at finde steder og rejsetider til din agent, som får stederne og afstanden at vide."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wenn Orte aktiviert ist, verwendet Redde deinen Standort, um einen Ort festzulegen und zu bemerken, wann du ankommst oder gehst; nur „zu Hause angekommen“ geht an deinen Server. Wenn Aktueller Standort aktiviert ist, erfährt dein eigener Agent ungefähr, wo du bist, wenn du nach Orten, Wegbeschreibungen oder dem Wetter fragst. Wenn Aufbruch-Hinweise aktiviert sind, berechnet Redde anhand deines Standorts, wann du zu einem Termin losmusst; dein Standort geht nur an Apple Karten, für den Weg dorthin."
+            "value" : "Wenn Orte aktiviert ist, verwendet Redde deinen Standort, um einen Ort festzulegen und zu bemerken, wann du ankommst oder gehst; nur „zu Hause angekommen“ geht an deinen Server. Wenn Aktueller Standort aktiviert ist, erfährt dein eigener Agent ungefähr, wo du bist, wenn du nach Orten, Wegbeschreibungen oder dem Wetter fragst. Wenn Aufbruch-Hinweise aktiviert sind, berechnet Redde anhand deines Standorts, wann du zu einem Termin losmusst; dein Standort geht nur an Apple Karten, für den Weg dorthin. Wenn Karten unter Telefon-Tools an ist, nutzt Apple Karten deinen Standort, um Orte und Fahrzeiten für deinen Agenten zu finden; er erfährt die Orte und wie weit sie entfernt sind."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only \"arrived at Home\" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there."
+            "value" : "With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only \"arrived at Home\" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there. With Maps on in Phone Tools, Apple Maps uses where you are to find places and travel times for your agent, which hears the places and how far they are."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Con Lugares activado, Redde usa tu ubicación para definir un lugar y para detectar cuándo llegas o te vas; solo “llegada a casa” llega a tu servidor. Con Ubicación actual activada, tu propio agente sabe aproximadamente dónde estás cuando preguntas por lugares, indicaciones o el tiempo. Con Avisos de salida activados, Redde calcula desde donde estás cuándo salir hacia un evento; tu ubicación solo va a Mapas de Apple, para el trayecto."
+            "value" : "Con Lugares activado, Redde usa tu ubicación para definir un lugar y para detectar cuándo llegas o te vas; solo “llegada a casa” llega a tu servidor. Con Ubicación actual activada, tu propio agente sabe aproximadamente dónde estás cuando preguntas por lugares, indicaciones o el tiempo. Con Avisos de salida activados, Redde calcula desde donde estás cuándo salir hacia un evento; tu ubicación solo va a Mapas de Apple, para el trayecto. Con Mapas activado en Herramientas del teléfono, Mapas de Apple usa dónde estás para encontrar lugares y tiempos de viaje para tu agente, que recibe los lugares y lo lejos que están."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quand Lieux est activé, Redde utilise votre position pour définir un lieu et remarquer quand vous arrivez ou partez ; seul « arrivée à la maison » est envoyé à votre serveur. Quand Position actuelle est activé, votre propre agent apprend à peu près où vous êtes lorsque vous posez une question sur des lieux, un itinéraire ou la météo. Quand Alertes de départ est activé, Redde calcule à partir de votre position quand partir pour un événement ; votre position n’est envoyée qu’à Plans, pour le trajet."
+            "value" : "Quand Lieux est activé, Redde utilise votre position pour définir un lieu et remarquer quand vous arrivez ou partez ; seul « arrivée à la maison » est envoyé à votre serveur. Quand Position actuelle est activé, votre propre agent apprend à peu près où vous êtes lorsque vous posez une question sur des lieux, un itinéraire ou la météo. Quand Alertes de départ est activé, Redde calcule à partir de votre position quand partir pour un événement ; votre position n’est envoyée qu’à Plans, pour le trajet. Quand Plans est activé dans Outils du téléphone, Plans utilise votre position pour trouver des lieux et des temps de trajet pour votre agent, qui apprend les lieux et leur distance."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Con Luoghi attivo, Redde usa la tua posizione per impostare un luogo e accorgersi di quando arrivi o te ne vai; al tuo server arriva solo “arrivo a casa”. Con Posizione attuale attiva, il tuo agente sa più o meno dove sei quando chiedi di luoghi, indicazioni o meteo. Con Avvisi di partenza attivi, Redde calcola da dove sei quando partire per un evento; la tua posizione va solo ad Apple Mappe, per il percorso."
+            "value" : "Con Luoghi attivo, Redde usa la tua posizione per impostare un luogo e accorgersi di quando arrivi o te ne vai; al tuo server arriva solo “arrivo a casa”. Con Posizione attuale attiva, il tuo agente sa più o meno dove sei quando chiedi di luoghi, indicazioni o meteo. Con Avvisi di partenza attivi, Redde calcola da dove sei quando partire per un evento; la tua posizione va solo ad Apple Mappe, per il percorso. Con Mappe attivo negli Strumenti del telefono, Mappe di Apple usa la tua posizione per trovare luoghi e tempi di percorrenza per il tuo agente, che riceve i luoghi e la loro distanza."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "場所をオンにすると、Reddeは現在地を使って場所を設定し、到着や出発に気づきます。サーバに送られるのは「自宅に到着」だけです。現在地をオンにすると、場所、経路、天気について尋ねたときに、あなた自身のエージェントにおおよその現在地が伝わります。出発通知をオンにすると、Reddeは現在地から予定に向けて出発する時刻を計算します。現在地は経路を調べるためにAppleマップにのみ送られます。"
+            "value" : "場所をオンにすると、Reddeは現在地を使って場所を設定し、到着や出発に気づきます。サーバに送られるのは「自宅に到着」だけです。現在地をオンにすると、場所、経路、天気について尋ねたときに、あなた自身のエージェントにおおよその現在地が伝わります。出発通知をオンにすると、Reddeは現在地から予定に向けて出発する時刻を計算します。現在地は経路を調べるためにAppleマップにのみ送られます。 電話ツールでマップがオンのときは、Appleマップが現在地を使ってエージェントのために場所や所要時間を探し、エージェントには場所と距離だけが伝わります。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "장소를 켜면 Redde가 현재 위치를 사용해 장소를 설정하고 도착이나 출발을 알아채며, 서버에는 “집에 도착”만 전송됩니다. 현재 위치를 켜면 장소, 길 안내, 날씨를 물어볼 때 내 에이전트가 대략적인 위치를 알게 됩니다. 출발 알림을 켜면 Redde가 현재 위치에서 일정으로 출발할 시간을 계산합니다. 현재 위치는 경로를 찾기 위해 Apple 지도에만 전달됩니다."
+            "value" : "장소를 켜면 Redde가 현재 위치를 사용해 장소를 설정하고 도착이나 출발을 알아채며, 서버에는 “집에 도착”만 전송됩니다. 현재 위치를 켜면 장소, 길 안내, 날씨를 물어볼 때 내 에이전트가 대략적인 위치를 알게 됩니다. 출발 알림을 켜면 Redde가 현재 위치에서 일정으로 출발할 시간을 계산합니다. 현재 위치는 경로를 찾기 위해 Apple 지도에만 전달됩니다. 휴대폰 도구에서 지도가 켜져 있으면 Apple 지도가 현재 위치를 사용해 에이전트를 위한 장소와 이동 시간을 찾으며, 에이전트는 장소와 거리만 알게 됩니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Når Steder er slått på, bruker Redde hvor du er til å angi et sted og merke når du kommer eller drar; bare «kommet hjem» går til tjeneren din. Når Nåværende posisjon er slått på, får din egen agent vite omtrent hvor du er når du spør om steder, veibeskrivelser eller været. Med Avreisevarsler på regner Redde ut fra der du er når du bør dra til en hendelse; posisjonen din går bare til Apple Kart, for veien dit."
+            "value" : "Når Steder er slått på, bruker Redde hvor du er til å angi et sted og merke når du kommer eller drar; bare «kommet hjem» går til tjeneren din. Når Nåværende posisjon er slått på, får din egen agent vite omtrent hvor du er når du spør om steder, veibeskrivelser eller været. Med Avreisevarsler på regner Redde ut fra der du er når du bør dra til en hendelse; posisjonen din går bare til Apple Kart, for veien dit. Når Kart er på i Telefonverktøy, bruker Apple Kart hvor du er til å finne steder og reisetider for agenten din, som får vite stedene og hvor langt unna de er."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Met Locaties aan gebruikt Redde waar je bent om een locatie in te stellen en te merken wanneer je aankomt of vertrekt; alleen ‘thuis aangekomen’ gaat naar je server. Met Huidige locatie aan hoort je eigen agent ongeveer waar je bent als je vraagt naar plekken, routes of het weer. Met Vertrekmeldingen aan berekent Redde vanaf je locatie wanneer je naar een afspraak moet vertrekken; je locatie gaat alleen naar Apple Kaarten, voor de route."
+            "value" : "Met Locaties aan gebruikt Redde waar je bent om een locatie in te stellen en te merken wanneer je aankomt of vertrekt; alleen ‘thuis aangekomen’ gaat naar je server. Met Huidige locatie aan hoort je eigen agent ongeveer waar je bent als je vraagt naar plekken, routes of het weer. Met Vertrekmeldingen aan berekent Redde vanaf je locatie wanneer je naar een afspraak moet vertrekken; je locatie gaat alleen naar Apple Kaarten, voor de route. Als Kaarten aanstaat bij Telefoontools, gebruikt Apple Kaarten waar je bent om plekken en reistijden voor je agent te vinden; die hoort de plekken en hoe ver ze zijn."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gdy Miejsca są włączone, Redde używa Twojej lokalizacji, aby ustawić miejsce i zauważać, kiedy przybywasz lub wychodzisz; do Twojego serwera trafia tylko „przybycie do domu”. Gdy Bieżąca lokalizacja jest włączona, Twój własny agent dowiaduje się, mniej więcej gdzie jesteś, kiedy pytasz o miejsca, trasy lub pogodę. Gdy Alerty wyjścia są włączone, Redde na podstawie Twojej lokalizacji oblicza, kiedy wyjść na wydarzenie; Twoja lokalizacja trafia tylko do Map Apple, by wyznaczyć drogę."
+            "value" : "Gdy Miejsca są włączone, Redde używa Twojej lokalizacji, aby ustawić miejsce i zauważać, kiedy przybywasz lub wychodzisz; do Twojego serwera trafia tylko „przybycie do domu”. Gdy Bieżąca lokalizacja jest włączona, Twój własny agent dowiaduje się, mniej więcej gdzie jesteś, kiedy pytasz o miejsca, trasy lub pogodę. Gdy Alerty wyjścia są włączone, Redde na podstawie Twojej lokalizacji oblicza, kiedy wyjść na wydarzenie; Twoja lokalizacja trafia tylko do Map Apple, by wyznaczyć drogę. Gdy Mapy są włączone w Narzędziach telefonu, Mapy Apple korzystają z Twojej lokalizacji, by znaleźć miejsca i czasy dojazdu dla Twojego agenta, który poznaje miejsca i odległości."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Com Locais ativado, o Redde usa onde você está para definir um local e perceber quando você chega ou sai; só “chegou em casa” vai para o seu servidor. Com Localização atual ativada, seu próprio agente fica sabendo mais ou menos onde você está quando você pergunta sobre lugares, rotas ou o tempo. Com Alertas de Saída ativados, o Redde calcula a partir de onde você está quando sair para um evento; sua localização vai só para o Mapas da Apple, para o trajeto."
+            "value" : "Com Locais ativado, o Redde usa onde você está para definir um local e perceber quando você chega ou sai; só “chegou em casa” vai para o seu servidor. Com Localização atual ativada, seu próprio agente fica sabendo mais ou menos onde você está quando você pergunta sobre lugares, rotas ou o tempo. Com Alertas de Saída ativados, o Redde calcula a partir de onde você está quando sair para um evento; sua localização vai só para o Mapas da Apple, para o trajeto. Com Mapas ativado em Ferramentas do telefone, o Apple Mapas usa onde você está para encontrar lugares e tempos de viagem para o seu agente, que recebe os lugares e a distância até eles."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Когда «Места» включены, Redde использует ваше местоположение, чтобы задать место и замечать, когда вы приходите или уходите; на сервер уходит только «прибытие домой». Когда включена «Текущая геопозиция», ваш собственный агент узнаёт, где вы примерно находитесь, когда вы спрашиваете о местах, маршрутах или погоде. Когда включены Оповещения о выходе, Redde по вашей геопозиции рассчитывает, когда выходить на событие; геопозиция передаётся только в Apple Карты, для построения маршрута."
+            "value" : "Когда «Места» включены, Redde использует ваше местоположение, чтобы задать место и замечать, когда вы приходите или уходите; на сервер уходит только «прибытие домой». Когда включена «Текущая геопозиция», ваш собственный агент узнаёт, где вы примерно находитесь, когда вы спрашиваете о местах, маршрутах или погоде. Когда включены Оповещения о выходе, Redde по вашей геопозиции рассчитывает, когда выходить на событие; геопозиция передаётся только в Apple Карты, для построения маршрута. Если в инструментах телефона включены Карты, Apple Карты используют ваше местоположение, чтобы найти места и время в пути для вашего агента; он узнаёт места и расстояние до них."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Med Platser på använder Redde var du är för att ange en plats och märka när du kommer fram eller åker; bara ”kommit hem” går till din server. Med Aktuell plats på får din egen agent veta ungefär var du är när du frågar om platser, vägbeskrivningar eller vädret. Med Avresepåminnelser på räknar Redde ut från var du är när du ska åka till en händelse; din plats skickas bara till Apple Kartor, för vägen dit."
+            "value" : "Med Platser på använder Redde var du är för att ange en plats och märka när du kommer fram eller åker; bara ”kommit hem” går till din server. Med Aktuell plats på får din egen agent veta ungefär var du är när du frågar om platser, vägbeskrivningar eller vädret. Med Avresepåminnelser på räknar Redde ut från var du är när du ska åka till en händelse; din plats skickas bara till Apple Kartor, för vägen dit. När Kartor är på under Telefonverktyg använder Apple Kartor var du är för att hitta platser och restider åt din agent, som får veta platserna och hur långt bort de är."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yerler açıkken Redde, bir yer belirlemek ve vardığınızı ya da ayrıldığınızı fark etmek için nerede olduğunuzu kullanır; sunucunuza yalnızca “eve varıldı” gider. Mevcut Konum açıkken yerler, yol tarifleri veya hava durumu hakkında sorduğunuzda kendi ajanınız yaklaşık nerede olduğunuzu öğrenir. Çıkış Uyarıları açıkken Redde, bulunduğunuz yere göre bir etkinliğe ne zaman çıkmanız gerektiğini hesaplar; konumunuz yalnızca yol tarifi için Apple Haritalar'a gider."
+            "value" : "Yerler açıkken Redde, bir yer belirlemek ve vardığınızı ya da ayrıldığınızı fark etmek için nerede olduğunuzu kullanır; sunucunuza yalnızca “eve varıldı” gider. Mevcut Konum açıkken yerler, yol tarifleri veya hava durumu hakkında sorduğunuzda kendi ajanınız yaklaşık nerede olduğunuzu öğrenir. Çıkış Uyarıları açıkken Redde, bulunduğunuz yere göre bir etkinliğe ne zaman çıkmanız gerektiğini hesaplar; konumunuz yalnızca yol tarifi için Apple Haritalar'a gider. Telefon Araçları’nda Haritalar açıkken Apple Haritalar, ajanın için yerleri ve yol sürelerini bulmak üzere konumunu kullanır; ajan yalnızca yerleri ve uzaklıklarını öğrenir."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Коли «Місця» ввімкнено, Redde використовує ваше місцезнаходження, щоб задати місце й помічати, коли ви приходите або йдете; на сервер надходить лише «прибуття додому». Коли ввімкнено «Поточне місцезнаходження», ваш власний агент дізнається, де ви приблизно перебуваєте, коли ви питаєте про місця, маршрути чи погоду. Коли ввімкнено Сповіщення про вихід, Redde за вашим місцезнаходженням розраховує, коли виходити на подію; місцезнаходження передається лише в Apple Карти, для маршруту."
+            "value" : "Коли «Місця» ввімкнено, Redde використовує ваше місцезнаходження, щоб задати місце й помічати, коли ви приходите або йдете; на сервер надходить лише «прибуття додому». Коли ввімкнено «Поточне місцезнаходження», ваш власний агент дізнається, де ви приблизно перебуваєте, коли ви питаєте про місця, маршрути чи погоду. Коли ввімкнено Сповіщення про вихід, Redde за вашим місцезнаходженням розраховує, коли виходити на подію; місцезнаходження передається лише в Apple Карти, для маршруту. Якщо в інструментах телефону увімкнено Карти, Apple Карти використовують ваше місцезнаходження, щоб знайти місця й час у дорозі для вашого агента; він дізнається місця та відстань до них."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开地点后，Redde会使用你的位置来设置地点，并察觉你何时到达或离开；只有“已到家”会发送到你的服务器。打开当前位置后，当你询问地点、路线或天气时，你自己的智能体会知道你的大致位置。打开出发提醒后，Redde 会根据你所在的位置计算何时出发去参加日程；你的位置只会发送给 Apple 地图，用于规划路线。"
+            "value" : "打开地点后，Redde会使用你的位置来设置地点，并察觉你何时到达或离开；只有“已到家”会发送到你的服务器。打开当前位置后，当你询问地点、路线或天气时，你自己的智能体会知道你的大致位置。打开出发提醒后，Redde 会根据你所在的位置计算何时出发去参加日程；你的位置只会发送给 Apple 地图，用于规划路线。 在“手机工具”中开启“地图”后，Apple 地图会使用你的位置为你的智能体查找地点和路程时间，智能体只会得知地点及其距离。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟地點後，Redde 會使用你的位置來設定地點，並察覺你何時抵達或離開；只有「已到家」會傳送到你的伺服器。開啟目前位置後，當你詢問地點、路線或天氣時，你自己的代理會知道你的大概位置。開啟出發提醒後，Redde 會根據你所在的位置計算何時出發前往行程；你的位置只會傳送給 Apple 地圖，用於規劃路線。"
+            "value" : "開啟地點後，Redde 會使用你的位置來設定地點，並察覺你何時抵達或離開；只有「已到家」會傳送到你的伺服器。開啟目前位置後，當你詢問地點、路線或天氣時，你自己的代理會知道你的大概位置。開啟出發提醒後，Redde 會根據你所在的位置計算何時出發前往行程；你的位置只會傳送給 Apple 地圖，用於規劃路線。 在「手機工具」中開啟「地圖」後，Apple 地圖會使用你的位置為你的代理查找地點和路程時間，代理只會得知地點及其距離。"
           }
         }
       }

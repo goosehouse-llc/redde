@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.30.0 (2026-11-13)
+
+- Maps on the phone. With Maps turned on in Redde (Settings › Phone Tools), the agent finds places
+  near the iPhone or near a place it names (`phone_maps_search`), works out how long the way takes
+  with the traffic now, by car, on foot, by bike or by transit, with the turns if asked
+  (`phone_maps_directions`), and opens Apple Maps ready to go (`phone_maps_open`). Apple Maps
+  answers; the agent hears places, times and distances, not the phone's coordinates.
+
 ## 1.29.0 (2026-11-13)
 
 - How good a deal it is. A purchase card may say what the pick usually sells for, `usual_price`

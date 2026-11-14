@@ -56,7 +56,7 @@ NO_PHONE_IN_A_JOB = ("The iPhone can't be reached from a scheduled job: Redde an
                      "chat. Go on without it, and don't call phone tools again in this run.")
 #: A request nobody collected, or a saved file nobody needs any more, is cleared out after this.
 STALE = 600.0
-AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget", "people", "health", "home")
+AREAS = ("calendar", "reminders", "contacts", "photos", "files", "alarms", "widget", "people", "health", "home", "maps")
 #: A Hermes profile's name, as the phone may give it.
 PROFILE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
 # What a bot has when the phone hasn't set it, of the main agent's areas (1.25.0, asked 2026-11-10).
@@ -264,6 +264,28 @@ TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
     }, ["target"]),
     "phone_home_scene": ("home", _WHERE + "Runs an Apple Home scene by name. One that unlocks or opens something asks the "
                          "user first.", {"scene": _text("The scene's name.")}, ["scene"]),
+    "phone_maps_search": ("maps", _WHERE + "Finds places with Apple Maps near the user's iPhone, or near a place you name: "
+                          "name, address, category, distance, phone, website, coordinates. To show them, use a 'places' card.", {
+        "query": _text("What to find, like 'coffee', 'pharmacy open late' or 'Lake Eola Park'."),
+        "near": _text("A place to search around instead of the iPhone's location."),
+        "radius_km": {"type": "number", "description": "How far around (default 10)."},
+        "limit": _count("At most this many (default 5, at most 10)."),
+    }, ["query"]),
+    "phone_maps_directions": ("maps", _WHERE + "How long the way to a place takes with Apple Maps, with traffic now: travel "
+                              "time, distance, arrival, route name, tolls and notices; with steps, the turns. Transit gives "
+                              "times only. From the iPhone's location unless from is given. " + _WHEN, {
+        "to": _text("Where to: a place's name or address, or 'lat,lon'."),
+        "from": _text("Where from, if not the iPhone's location."),
+        "mode": {"type": "string", "enum": ["driving", "walking", "transit", "cycling"], "description": "Default driving."},
+        "arrive_by": _text("Arrive by when."), "depart_at": _text("Leave when."),
+        "steps": {"type": "boolean", "description": "Give the turns."},
+        "alternatives": {"type": "boolean", "description": "Up to 3 routes."},
+    }, ["to"]),
+    "phone_maps_open": ("maps", _WHERE + "Opens Apple Maps on the iPhone with the way to a place, ready for the user to start: "
+                        "when they say to go or navigate there.", {
+        "to": _text("Where to: a place's name or address, or 'lat,lon'."),
+        "mode": {"type": "string", "enum": ["driving", "walking", "transit", "cycling"], "description": "Default driving."},
+    }, ["to"]),
     "phone_widget_clear": ("widget","Runs on the user's iPhone, through the Redde app: takes everything off Redde's \"From Your "
                            "Agent\" widget, what was set for later included. Works with Redde closed too, as phone_widget_set "
                            "does.", {}, []),

@@ -274,6 +274,8 @@ struct PhoneToolsSettingsView: View {
         // iOS is asked kind by kind, as each is chosen (`HealthShareView`).
         case .health: DeviceHealth.available
         case .home: await DeviceHome.allowed()
+        // Location makes "near me" work; without it, places are searched near a place named.
+        case .maps: await CurrentLocationService.shared.askToUse() || true
         }
     }
 

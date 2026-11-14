@@ -16,7 +16,7 @@ import Foundation
 /// A tool belongs to an area, and an area is off until it is turned on in Settings → Phone
 /// tools, which is also when iOS is asked for its permission.
 nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiable {
-    case calendar, reminders, contacts, photos, files, alarms, widget, people, health, home
+    case calendar, reminders, contacts, photos, files, alarms, widget, people, health, home, maps
 
     var id: String { rawValue }
 
@@ -32,6 +32,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .people: String(localized: "Calls and Messages", comment: "A phone tools area (Settings → Phone tools)")
         case .health: String(localized: "Health", comment: "A phone tools area (Settings → Phone tools): Apple Health")
         case .home: String(localized: "Apple Home", comment: "A phone tools area (Settings → Phone tools): HomeKit's accessories and scenes")
+        case .maps: String(localized: "Maps", comment: "The button under a places card that opens them all in Apple Maps")
         }
     }
 
@@ -48,6 +49,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .people: "Calls and Messages"
         case .health: "Health"
         case .home: "Apple Home"
+        case .maps: "Maps"
         }
     }
 
@@ -63,6 +65,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .people: "phone.bubble"
         case .health: "heart"
         case .home: "homekit"
+        case .maps: "map"
         }
     }
 
@@ -79,6 +82,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
         case .people: String(localized: "Start a call or a FaceTime, and write a message for you to send. iOS asks before a call goes out, and sending a message is your tap.")
         case .health: String(localized: "Read the Apple Health data you choose below: totals, averages and nights. It can't write to Health.")
         case .home: String(localized: "See and control your Apple Home: lights, plugs, the thermostat, blinds and scenes. Locks, garage doors, doors, windows and the alarm always ask you first.")
+        case .maps: String(localized: "Find places, see how long the way takes with traffic, and open Apple Maps to go. It uses where your iPhone is, if Location is on for Redde.", comment: "What the Maps phone tools area lets the agent do (Settings → Phone tools)")
         }
     }
 
@@ -90,7 +94,7 @@ nonisolated enum DeviceArea: String, CaseIterable, Codable, Sendable, Identifiab
     /// area but the widget's, which is only written on.
     var allowLabel: String {
         self == .people ? String(localized: "On", comment: "A phone tools area's setting: switched on")
-            : self == .widget || self == .home ? String(localized: "Allow", comment: "A phone tools area's setting: the agent goes ahead unasked")
+            : self == .widget || self == .home || self == .maps ? String(localized: "Allow", comment: "A phone tools area's setting: the agent goes ahead unasked")
             : String(localized: "Allow reading", comment: "A phone tools area's setting: the agent reads unasked")
     }
     /// The same, as the button on a question that offers it.
@@ -125,6 +129,9 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
     case homeList = "phone_home_list"
     case homeSet = "phone_home_set"
     case homeScene = "phone_home_scene"
+    case mapsSearch = "phone_maps_search"
+    case mapsDirections = "phone_maps_directions"
+    case mapsOpen = "phone_maps_open"
 
     /// Every phone tool's name starts with this: how a turn's tool is told from the agent's own.
     static let prefix = "phone_"
@@ -143,6 +150,7 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
         case .peopleCall, .peopleMessage: .people
         case .healthRead: .health
         case .homeList, .homeSet, .homeScene: .home
+        case .mapsSearch, .mapsDirections, .mapsOpen: .maps
         }
     }
 
@@ -162,11 +170,12 @@ nonisolated enum DeviceTool: String, CaseIterable, Sendable {
     var changesHome: Bool { self == .homeSet || self == .homeScene }
 
     /// iOS puts it to the person itself, on the screen: its own question before photos are
-    /// deleted or a call goes out, and the Messages sheet, where sending is their tap. Redde
-    /// doesn't ask first, and can't do it at all unless it is on the screen.
+    /// deleted or a call goes out, and the Messages sheet, where sending is their tap; or it
+    /// happens in front of them, Apple Maps opening. Redde doesn't ask first, and can't do it at
+    /// all unless it is on the screen.
     var asksItself: Bool {
         switch self {
-        case .photosDelete, .peopleCall, .peopleMessage: true
+        case .photosDelete, .peopleCall, .peopleMessage, .mapsOpen: true
         default: false
         }
     }
