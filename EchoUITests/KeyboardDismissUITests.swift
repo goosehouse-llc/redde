@@ -14,11 +14,15 @@ final class KeyboardDismissUITests: XCTestCase {
         return app
     }
 
-    private func keyboardUp(_ app: XCUIApplication) {
+    private func keyboardUp(_ app: XCUIApplication) throws {
         let field = app.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 20), "No message field")
         for _ in 0 ..< 4 where !app.keyboards.firstMatch.waitForExistence(timeout: 2) { field.tap() }
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "No keyboard came up (is a hardware keyboard attached?)")
+        // With the Mac's keyboard connected the simulator keeps its own below the screen, and
+        // there's nothing to put away.
+        try XCTSkipIf(app.keyboards.firstMatch.frame.minY >= app.windows.firstMatch.frame.maxY,
+                      "The software keyboard is hidden: I/O ▸ Keyboard ▸ Connect Hardware Keyboard is on")
     }
 
     /// A drag from the middle of the chat down to the bottom of the screen, as a thumb does.
@@ -36,18 +40,18 @@ final class KeyboardDismissUITests: XCTestCase {
         add(shot)
     }
 
-    func testDraggingALongChatDownPutsTheKeyboardAway() {
+    func testDraggingALongChatDownPutsTheKeyboardAway() throws {
         let app = launch(["-echo.demo"])
-        keyboardUp(app)
+        try keyboardUp(app)
         keep("long chat, keyboard up")
         dragDown(app)
         keep("long chat, after the drag")
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 3), "The keyboard stayed after a drag down the chat")
     }
 
-    func testSwipingTheMessageBoxDownPutsTheKeyboardAway() {
+    func testSwipingTheMessageBoxDownPutsTheKeyboardAway() throws {
         let app = launch(["-echo.demo"])
-        keyboardUp(app)
+        try keyboardUp(app)
         let field = app.textFields.firstMatch
         field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
             .press(forDuration: 0.05, thenDragTo: field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 3)), withVelocity: .fast, thenHoldForDuration: 0)
@@ -55,9 +59,9 @@ final class KeyboardDismissUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 3), "The keyboard stayed after a swipe down the message box")
     }
 
-    func testDraggingAnEmptyChatDownPutsTheKeyboardAway() {
+    func testDraggingAnEmptyChatDownPutsTheKeyboardAway() throws {
         let app = launch(["-echo.fresh", "-echo.clearDrafts"])
-        keyboardUp(app)
+        try keyboardUp(app)
         keep("empty chat, keyboard up")
         dragDown(app)
         keep("empty chat, after the drag")

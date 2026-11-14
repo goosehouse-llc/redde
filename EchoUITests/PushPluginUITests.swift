@@ -24,6 +24,13 @@ final class PushPluginUITests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", fragment)).firstMatch
     }
 
+    /// The question's own button: on iOS 26 it's in a sheet over the screen's button of the same name.
+    private func confirm(_ label: String, in app: XCUIApplication) {
+        let inSheet = app.sheets.buttons[label]
+        XCTAssertTrue(inSheet.waitForExistence(timeout: 5), "No question before \(label.lowercased())")
+        inSheet.tap()
+    }
+
     func testAMissingPluginIsInstalledFromThePhone() {
         continueAfterFailure = false
         let app = open(["missing"])
@@ -34,7 +41,7 @@ final class PushPluginUITests: XCTestCase {
         install.tap()
         // It says what will happen, and does nothing until agreed to.
         XCTAssertTrue(text("github.com/goosehouse-llc/redde", in: app).waitForExistence(timeout: 5), "Installing didn't say where the plugin comes from")
-        app.buttons.matching(NSPredicate(format: "label == 'Install the Plugin'")).element(boundBy: app.buttons.matching(NSPredicate(format: "label == 'Install the Plugin'")).count - 1).tap()
+        confirm("Install the Plugin", in: app)
         XCTAssertTrue(text("is on this Hermes.", in: app).waitForExistence(timeout: 10), "The plugin isn't shown as installed")
         XCTAssertFalse(install.exists, "The install button is still offered")
         XCTAssertFalse(text("hermes gateway restart", in: app).exists, "A restart was asked for where none is needed")
@@ -48,9 +55,7 @@ final class PushPluginUITests: XCTestCase {
         let update = app.buttons["Update the Plugin"]
         XCTAssertTrue(update.waitForExistence(timeout: 5))
         update.tap()
-        let confirm = app.buttons.matching(NSPredicate(format: "label == 'Update the Plugin'"))
-        XCTAssertTrue(confirm.firstMatch.waitForExistence(timeout: 5))
-        confirm.element(boundBy: confirm.count - 1).tap()
+        confirm("Update the Plugin", in: app)
         XCTAssertTrue(text("Restart the gateway and the Dashboard", in: app).waitForExistence(timeout: 10), "The restart isn't asked for")
         XCTAssertTrue(text("hermes gateway restart", in: app).exists, "The command isn't shown")
         shot("plugin needs restart")

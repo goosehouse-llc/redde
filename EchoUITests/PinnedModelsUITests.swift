@@ -17,7 +17,8 @@ final class PinnedModelsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.demoModels", "-echo.screen", "model"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Model"].waitForExistence(timeout: 20), "The model picker didn't open")
-        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'qwen36-35b-q4'")).firstMatch
+        // Rows begin with the name; the chat's header behind the sheet names the model too.
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'qwen36-35b-q4'")).firstMatch
         if app.staticTexts["Pinned"].waitForExistence(timeout: 3) {
             // Left pinned by a run that stopped halfway.
             row.press(forDuration: 1.0)
@@ -33,7 +34,7 @@ final class PinnedModelsUITests: XCTestCase {
         // The Pinned section is at the top, scrolled out of the half-height sheet to reach the
         // model (a swipe down on the sheet closes it), so the row's pin mark says it here; the
         // section itself is checked when the picker opens again below.
-        let marked = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Pinned' OR (label CONTAINS 'qwen36-35b-q4' AND label CONTAINS 'Pinned')")).firstMatch
+        let marked = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Pinned' OR (label BEGINSWITH 'qwen36-35b-q4' AND label CONTAINS 'Pinned')")).firstMatch
         XCTAssertTrue(marked.waitForExistence(timeout: 5), "The model isn't marked pinned after pinning")
         shot("pinned in the picker", app)
 

@@ -13,10 +13,11 @@ final class ChatControlsUITests: XCTestCase {
         add(attachment)
     }
 
-    /// The switch itself, inside its row: a tap on the row's middle lands on the label.
+    /// The switch itself, at the row's trailing end: a tap on the row's middle lands on the
+    /// label, which on iOS 26 doesn't flip it.
     private func flip(_ row: XCUIElement) {
         let knob = row.switches.firstMatch
-        (knob.exists ? knob : row).tap()
+        if knob.exists { knob.tap() } else { row.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
     }
 
     private func value(of element: XCUIElement, becomes wanted: String, within timeout: TimeInterval = 5) -> Bool {

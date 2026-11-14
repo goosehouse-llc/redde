@@ -104,6 +104,7 @@ final class PromoVideoUITests: XCTestCase {
     /// device; design/screenshots): the chat list's Bots, and a group chat's voice screen once the
     /// round has come to Quill, the third bot, with the others' answers above it.
     func testBotsShots() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["PROMO_VIDEO"] == "1", "Promo video shots run on request")
         let dir = URL(fileURLWithPath: try XCTUnwrap(ProcessInfo.processInfo.environment["SHOT_DIR"], "SHOT_DIR is where they go"))
         let kind = UIDevice.current.userInterfaceIdiom == .pad ? "pad" : "ph"
         var voice: [String] = []

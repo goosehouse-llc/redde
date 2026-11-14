@@ -23,9 +23,10 @@ final class ReplyActionsUITests: XCTestCase {
         app.buttons["Copy reply"].tap()
         let toast = app.staticTexts["Copied"]
         XCTAssertTrue(toast.waitForExistence(timeout: 3), "No toast after copying")
+        let bottom = toast.frame.maxY   // read at once: the toast goes after a moment
         XCTAssertTrue(app.buttons["Copied"].exists, "The copy button didn't turn into a check")
         let composer = app.textFields.firstMatch.exists ? app.textFields.firstMatch : app.textViews.firstMatch
-        XCTAssertLessThan(toast.frame.maxY, composer.frame.minY, "The toast sits under the composer")
+        XCTAssertLessThan(bottom, composer.frame.minY, "The toast sits under the composer")
     }
 
     /// While a reply is being worked on its thinking stays folded (2026-11-13: opening itself
