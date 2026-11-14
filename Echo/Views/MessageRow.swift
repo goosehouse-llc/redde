@@ -38,12 +38,21 @@ struct MessageRow: View, Equatable {
     /// shows in the turn's fold), and the last note for a finished reply that wrote nothing else,
     /// stopped or failed after its notes, so it isn't left empty.
     private var replyBody: String {
+        // In the chat: everything it wrote, the working with the answer, in the order it came.
+        guard foldsWorkingText else {
+            return (message.notes.map(\.text) + [message.text])
+                .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                .joined(separator: "\n\n")
+        }
         if turn?.foldsText == true { return "" }
         if !isLive, message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, let last = message.notes.last {
             return last.text
         }
         return message.text
     }
+
+    /// The working kept in the steps fold: voice mode's only (`foldsWorkingText`).
+    private var foldedNotes: [WorkingNote] { foldsWorkingText ? message.notes : [] }
 
     private var hasTextBubble: Bool {
         !(shownText.isEmpty && (!message.attachments.isEmpty || !namedPictures.isEmpty))
@@ -92,6 +101,7 @@ struct MessageRow: View, Equatable {
     @Environment(\.theme) private var theme
     /// A bot's name, in its chat; else the agent's (`settings.headerTitle`).
     @Environment(\.replySpeaker) private var replySpeaker
+    @Environment(\.foldsWorkingText) private var foldsWorkingText
     @Environment(\.replyFace) private var replyFace
     @Environment(\.fileSource) private var fileSource
     @State private var settings = Settings.shared
@@ -183,7 +193,7 @@ struct MessageRow: View, Equatable {
                     }
                 }
             }
-            if isLive, message.text.isEmpty {
+            if isLive, (foldsWorkingText ? message.text : replyBody).isEmpty {
                 // Waiting for the first token: the app's waveform, breathing.
                 WaveformPulse(color: theme.accent)
                     .padding(.horizontal, flatReply ? 2 : 16)
@@ -272,7 +282,7 @@ struct MessageRow: View, Equatable {
             }
             // The page of the first web link, with Link previews on (`LinkPreviewSlot`), once a
             // reply has finished.
-            if !isLive, !message.isSteer, message.error == nil, hasTextBubble, turn?.foldsText != true { LinkPreviewSlot(text: message.text) }
+            if !isLive, !message.isSteer, message.error == nil, hasTextBubble, !(foldsWorkingText && turn?.foldsText == true) { LinkPreviewSlot(text: message.text) }
             // A map, places, the weather, the time the reply shows (`ReplyCards`), as soon as they're asked for.
             if message.role == .assistant, let cards = message.cards, !cards.isEmpty { ReplyCardsView(cards: cards, pending: isLive) }
             // Bots it handed work to (`message_agent`): each at work on it or done, a tap from its chat.
@@ -408,8 +418,9 @@ struct MessageRow: View, Equatable {
                                     .truncationMode(.head)
                             }
                         }
-                        if !segment.tools.isEmpty || !segment.notes.isEmpty {
-                            stepRows(segment.tools, notes: segment.notes, animated: isLive && segment.messageID == message.id,
+                        let notes = foldsWorkingText ? segment.notes : []
+                        if !segment.tools.isEmpty || !notes.isEmpty {
+                            stepRows(segment.tools, notes: notes, animated: isLive && segment.messageID == message.id,
                                      loadID: segment.messageID,
                                      load: onLoadTurnToolDetails.map { loader in
                                          { @MainActor @Sendable in await loader(segment.messageID) }
@@ -480,7 +491,7 @@ struct MessageRow: View, Equatable {
                     .monospacedDigit()
             }
             if open {
-                stepRows(tools, notes: message.notes, animated: isLive, loadID: message.id, load: onLoadToolDetails)
+                stepRows(tools, notes: foldedNotes, animated: isLive, loadID: message.id, load: onLoadToolDetails)
                     .modifier(FoldBody())
             }
         }

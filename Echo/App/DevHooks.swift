@@ -230,6 +230,8 @@ enum DevHooks {
         if has("-echo.demo") { conversation.seedDemo() }
         if has("-echo.demoShort") { conversation.keepFirstMessages(2) }
         if has("-echo.demoTwo") { conversation.keepFirstMessages(4) }
+        // What the first reply wrote between its tool calls (`WorkingNote`), for the chat to show.
+        if has("-echo.demoNotes") { conversation.seedWorkingNoteDemo() }
         // A message quoting the first reply, the last one quoted in the composer, and suggested replies.
         if has("-echo.demoQuote") { conversation.seedQuoteDemo(far: has("-echo.demoQuoteFar")) }
         if has("-echo.demoLibrary") { conversation.seedDemoLibrary() }

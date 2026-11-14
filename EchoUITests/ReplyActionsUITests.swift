@@ -244,4 +244,21 @@ final class ReplyActionsUITests: XCTestCase {
         toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
         XCTAssertEqual(toggle.value as? String, "1", "Settings didn't turn them back on")
     }
+
+    /// What the agent wrote between its tool calls shows in the chat's reply, not only in the steps
+    /// fold (11-13: the fold is voice mode's alone).
+    func testWorkingTextShowsInTheReply() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoShort", "-echo.demoNotes", "-echo.clearDrafts"] + XCUIApplication.straightToChat
+        app.launch()
+        XCTAssertTrue(app.text(containing: "I've added a reminder").waitForExistence(timeout: 15), "The demo reply didn't appear")
+        let note = app.text(containing: "Let me check the vet's hours")
+        XCTAssertTrue(note.exists, "The working text isn't in the reply")
+        XCTAssertTrue(app.text(containing: "Used 2 tools").exists, "The steps fold went")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "working-text-in-reply"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
 }

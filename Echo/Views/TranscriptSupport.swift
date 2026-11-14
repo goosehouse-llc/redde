@@ -217,6 +217,10 @@ extension EnvironmentValues {
     /// True in the transcript, where there is a composer for a quote to go to. Sheets it presents
     /// inherit it; a subagent's transcript and voice mode leave it off.
     @Entry var asksAboutSelection = false
+    /// What the agent writes between tool calls ("Let me check the calendar…", `WorkingNote`)
+    /// goes into the steps fold instead of the reply: voice mode's, to keep it short. The chat
+    /// shows it in the reply, as written (his call, 11-13).
+    @Entry var foldsWorkingText = false
     /// Who the replies are from, when not the agent by its own name: a bot, in its chat.
     @Entry var replySpeaker: String?
     /// That bot's face, beside its name on each reply.

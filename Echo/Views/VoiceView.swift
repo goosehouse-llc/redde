@@ -385,6 +385,8 @@ struct VoiceView: View {
                         MessageRow(message: message,
                                    isLive: conversation.isStreaming && message.id == conversation.messages.last?.id,
                                    showActions: false)
+                            // Voice keeps the working out of the way, in the steps fold.
+                            .environment(\.foldsWorkingText, true)
                             .id(message.id)
                     }
                     if let tool = session.activeTool, session.phase == .thinking {

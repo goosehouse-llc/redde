@@ -522,6 +522,14 @@ extension Conversation {
     /// Screenshot helper: trims the seeded demo to its first messages.
     func keepFirstMessages(_ n: Int) { mutateMessagesForDemo { $0 = Array($0.prefix(n)) } }
 
+    /// `-echo.demoNotes`: the first reply wrote a line before its tool calls.
+    func seedWorkingNoteDemo() {
+        mutateMessagesForDemo { messages in
+            guard let index = messages.firstIndex(where: { $0.role == .assistant }) else { return }
+            messages[index].notes = [WorkingNote(text: "Let me check the vet's hours before I set that up.", afterTools: 0)]
+        }
+    }
+
     /// `-echo.demoQuote`: a message of the person's that quotes the first reply, the last reply
     /// quoted in the composer, and three suggested replies. `far`: a dozen exchanges between the
     /// reply and the message quoting it, so it is off screen even on a tall iPad.
