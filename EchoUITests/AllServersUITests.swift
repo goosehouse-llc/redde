@@ -56,4 +56,39 @@ final class AllServersUITests: XCTestCase {
         after.lifetime = .keepAlways
         add(after)
     }
+
+    /// New Chat, held, starts a chat on another saved connection (asked 2026-11-14: a Claude chat
+    /// while on Hermes). Here the app is on a bridge, and "Home" is a Hermes server.
+    func testNewChatHeldOffersTheOtherConnections() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demoAwayBots", "-transport", "acp", "-acpURL", "demo", "-acpAgent", "", "-acpAllAgents", "NO",
+                               "-sessions.allServers", "NO", "-echo.clearDrafts"] + XCUIApplication.straightToChat
+        app.launch()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 20))
+        if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
+        func holdNewChat() {
+            let button = app.buttons.matching(NSPredicate(format: "label == 'New conversation'")).allElementsBoundByIndex.first { $0.isHittable }
+            XCTAssertNotNil(button, "No New Chat button")
+            button?.press(forDuration: 1.2)
+        }
+        holdNewChat()
+        let home = app.buttons["Chat with Home"]
+        XCTAssertTrue(home.waitForExistence(timeout: 5), "Holding New Chat doesn't offer the Hermes server")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "new-chat-held"
+        shot.lifetime = .keepAlways
+        add(shot)
+        home.tap()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
+        // On Home now: held again, New Chat offers the bridge and not Home.
+        if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
+        holdNewChat()
+        let bridge = app.buttons["Chat with demo"]
+        XCTAssertTrue(bridge.waitForExistence(timeout: 5), "Holding New Chat on Home doesn't offer the bridge")
+        XCTAssertFalse(app.buttons["Chat with Home"].exists, "The app didn't move to Home")
+        // Back on the bridge, so the next test's launch finds it as it was.
+        bridge.tap()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
+    }
 }

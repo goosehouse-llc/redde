@@ -804,9 +804,24 @@ struct ContentView: View {
                         // can be moved to another agent this way too).
                         Menu {
                             AcpAgentChoices(settings: settings) { conversation.reset() }
+                            NewChatElsewhere(settings: settings, conversation: conversation) {}
                         } label: {
                             Label("New conversation", systemImage: "square.and.pencil")
                         }
+                        #if os(macOS)
+                        .menuIndicator(.hidden)
+                        #endif
+                    } else if !NewChatElsewhere.choices(settings).isEmpty {
+                        // Held: a chat on another connection (Claude Code from Hermes).
+                        Menu {
+                            NewChatElsewhere(settings: settings, conversation: conversation) {}
+                        } label: {
+                            Label("New conversation", systemImage: "square.and.pencil")
+                        } primaryAction: {
+                            conversation.reset()
+                        }
+                        .accessibilityIdentifier("new-chat-elsewhere")
+                        .keyboardShortcut("n", modifiers: .command)
                         #if os(macOS)
                         .menuIndicator(.hidden)
                         #endif

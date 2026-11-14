@@ -557,6 +557,7 @@ struct ConversationsList: View {
                                 conversation.reset()
                                 opened()
                             }
+                            NewChatElsewhere(settings: settings, conversation: conversation) { opened() }
                             Divider()
                             Button { addingGoal = true } label: {
                                 Label { Text("New Goal", comment: "Button: opens the sheet to set a new goal") } icon: { Image(systemName: "flag.checkered") }
@@ -567,6 +568,9 @@ struct ConversationsList: View {
                         .accessibilityIdentifier("new-chat-agents")
                     } else {
                         Menu {
+                            // Held: a chat on another connection too (Claude Code from Hermes).
+                            NewChatElsewhere(settings: settings, conversation: conversation) { opened() }
+                            Divider()
                             Button { addingGoal = true } label: {
                                 Label { Text("New Goal", comment: "Button: opens the sheet to set a new goal") } icon: { Image(systemName: "flag.checkered") }
                             }

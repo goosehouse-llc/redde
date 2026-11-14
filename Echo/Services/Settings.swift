@@ -1641,9 +1641,17 @@ final class Settings: ServeEndpoint {
     }
 
     #if DEBUG
-    /// `-echo.demoAwayBots`: one Hermes server "Home" saved (not the one in use), made once.
+    /// `-echo.demoAwayBots`: one Hermes server "Home" saved (not the one in use), made once. A test
+    /// that left the app on Home had it made the bridge by the next launch's arguments: that one
+    /// loses the name, and any other copies go.
     func demoHomeServer() -> UUID {
-        if let home = servers.first(where: { $0.name == "Home" && $0.id != activeServerID }) { return home.id }
+        if let i = servers.firstIndex(where: { $0.id == activeServerID && $0.name == "Home" }) { servers[i].name = "" }
+        let homes = servers.filter { $0.name == "Home" }
+        if let home = homes.first(where: { $0.transport == .hermesServe }) {
+            servers.removeAll { $0.name == "Home" && $0.id != home.id }
+            return home.id
+        }
+        servers.removeAll { $0.name == "Home" }
         let home = HermesServer(id: UUID(), name: "Home", transport: .hermesServe, serveURL: "http://hermes.test:9119")
         servers.append(home)
         return home.id
