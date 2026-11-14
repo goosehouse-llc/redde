@@ -160,7 +160,9 @@ final class ReplyActionsUITests: XCTestCase {
         add(first)
         let origin = app.coordinate(withNormalizedOffset: .zero)
         let handle = origin.withOffset(CGVector(dx: before.end.x, dy: before.end.y + 4))
-        handle.press(forDuration: 0.15, thenDragTo: origin.withOffset(CGVector(dx: min(before.end.x + 140, 380), dy: before.end.y + 4)))
+        // Along the line and down one, within the window (on the iPad the reply starts past the sidebar).
+        let width = app.windows.firstMatch.frame.width
+        handle.press(forDuration: 0.15, thenDragTo: origin.withOffset(CGVector(dx: min(before.end.x + 140, width - 30), dy: before.end.y + 34)))
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "handle-dragged"
         shot.lifetime = .keepAlways
@@ -260,5 +262,44 @@ final class ReplyActionsUITests: XCTestCase {
         shot.name = "working-text-in-reply"
         shot.lifetime = .keepAlways
         add(shot)
+    }
+
+    /// A long-press selects the word under the finger wherever it is in a reply: a heading, a
+    /// list, a quote, the last line (11-13: on the phone only some places selected; on the iPad
+    /// none). Each theme draws replies in its own face, which the selectable copy has to match.
+    func testALongPressSelectsWhereverItIs() {
+        continueAfterFailure = true
+        for theme in ["standard", "paper", "arcade"] {
+            for words in ["Kitchen remodel", "Plumbing rough-in", "Earliest slot", "Ping me if you want"] {
+                // A fresh launch for each press: nothing left selected from the last.
+                let app = XCUIApplication()
+                app.launchArguments = ["-echo.demo", "-echo.demoTwo", "-echo.clearDrafts", "-theme", theme, "-chatTextSize", "0"]
+                    + XCUIApplication.straightToChat
+                app.launch()
+                let target = app.text(containing: words)
+                guard target.waitForExistence(timeout: 15) else { XCTFail("\(theme): no \(words)"); continue }
+                let height = app.windows.firstMatch.frame.height
+                for _ in 0 ..< 6 where !(target.isHittable && target.frame.minY > 120 && target.frame.maxY < height - 160) {
+                    if target.frame.midY < height / 2 { app.swipeDown() } else { app.swipeUp() }
+                    sleep(1)
+                }
+                let y = target.frame.midY
+                target.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).press(forDuration: 0.8)
+                // The run with something selected: every run of the reply reports, an empty one with 0.
+                let selection = app.textViews.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND NOT identifier BEGINSWITH %@",
+                                                                   "inline-selection|", "inline-selection|0|")).firstMatch
+                if selection.waitForExistence(timeout: 3) {
+                    let parts = selection.identifier.split(separator: "|").compactMap { Int($0) }
+                    XCTAssertEqual(CGFloat(parts[2]), y, accuracy: 24, "\(theme): the press on \(words) selected a line away (end at \(parts[2]), press at \(Int(y)))")
+                } else {
+                    XCTFail("\(theme): a press on \(words) selected nothing")
+                }
+                let shot = XCTAttachment(screenshot: app.screenshot())
+                shot.name = "\(theme) \(words)"
+                shot.lifetime = .keepAlways
+                add(shot)
+                app.terminate()
+            }
+        }
     }
 }
