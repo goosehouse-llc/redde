@@ -342,7 +342,7 @@ struct PushPairingSheet: View {
                 let pairing = if let offer {
                     try await PushService.shared.pair(offer)
                 } else if viaBridge, let client = AcpClient.current() {
-                    try await PushService.shared.pairDirectly(through: PushService.command(overACP: client))
+                    try await AcpAgents.pair(through: client)
                 } else {
                     try await PushService.shared.pairDirectly()
                 }

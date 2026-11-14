@@ -771,6 +771,9 @@ struct ContentView: View {
                             if conversation.bot != nil {
                                 Button("Conversation with \(settings.headerTitle)", systemImage: "square.and.pencil") { conversation.reset() }
                             }
+                            if AcpAgentChoices.asks(settings) {
+                                AcpAgentChoices(settings: settings) { conversation.reset() }
+                            }
                             if !conversation.isIncognito {
                                 Button("Incognito Chat", systemImage: "eyeglasses") { conversation.startIncognito() }
                                     .keyboardShortcut("n", modifiers: [.command, .shift])
@@ -796,6 +799,17 @@ struct ContentView: View {
                         // A bot has one chat: a new one is that chat started over (asked first).
                         Button("Start Fresh", systemImage: "arrow.counterclockwise") { confirmingFresh = true }
                             .disabled(conversation.isStreaming || !conversation.hasMessages)
+                    } else if AcpAgentChoices.asks(settings) {
+                        // Every agent on the bridge in one list: New Chat asks which (an empty chat
+                        // can be moved to another agent this way too).
+                        Menu {
+                            AcpAgentChoices(settings: settings) { conversation.reset() }
+                        } label: {
+                            Label("New conversation", systemImage: "square.and.pencil")
+                        }
+                        #if os(macOS)
+                        .menuIndicator(.hidden)
+                        #endif
                     } else {
                         Button("New conversation", systemImage: "square.and.pencil") {
                             conversation.reset()

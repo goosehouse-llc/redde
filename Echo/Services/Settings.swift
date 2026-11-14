@@ -915,6 +915,8 @@ final class Settings: ServeEndpoint {
            let name = acpAgentNames[socket.absoluteString] {
             return name
         }
+        // Every agent in one list: the open chat's agent, by the bridge's name for it.
+        if transport == .acp, acpAllAgents, !acpAgent.isEmpty { return AcpAgents.name(of: acpAgent, self) }
         return "Redde"
     }
     /// What each ACP agent calls itself, by its address, as last heard when connecting. On this
@@ -947,7 +949,15 @@ final class Settings: ServeEndpoint {
     var acpFolder: String {
         didSet { store(acpFolder, forKey: Keys.acpFolder); syncActiveServer() }
     }
+    /// Every agent on the bridge in one chat list; `acpAgent` follows the open chat.
+    var acpAllAgents: Bool {
+        didSet { store(acpAllAgents, forKey: Keys.acpAllAgents); syncActiveServer() }
+    }
     /// Where the ACP agent is, when it is set up.
+    /// One agent of the bridge's (a chat's own, with every agent in one list), else the server's.
+    func acpEndpoint(agent: String?) -> AcpEndpoint? {
+        AcpEndpoint.make(address: acpURL, agent: agent ?? acpAgent, token: Keychain.read(.acpToken), folder: acpFolder)
+    }
     var acpEndpoint: AcpEndpoint? {
         AcpEndpoint.make(address: acpURL, agent: acpAgent, token: Keychain.read(.acpToken), folder: acpFolder)
     }
@@ -1182,6 +1192,7 @@ final class Settings: ServeEndpoint {
         static let acpURL = "acpURL"
         static let acpAgent = "acpAgent"
         static let acpFolder = "acpFolder"
+        static let acpAllAgents = "acpAllAgents"
         static let serveUsername = "serveUsername"
         static let serveOpenAccess = "serveOpenAccess"
         static let hermesProfile = "hermesProfile"
@@ -1312,6 +1323,7 @@ final class Settings: ServeEndpoint {
         acpURL = defaults.string(forKey: Keys.acpURL) ?? ""
         acpAgent = defaults.string(forKey: Keys.acpAgent) ?? ""
         acpFolder = defaults.string(forKey: Keys.acpFolder) ?? ""
+        acpAllAgents = defaults.bool(forKey: Keys.acpAllAgents)
         hermesProfile = defaults.string(forKey: Keys.hermesProfile) ?? ""
         hermesProfileHome = defaults.string(forKey: Keys.hermesProfileHome) ?? ""
         cfAccessClientID = defaults.string(forKey: Keys.cfAccessClientID) ?? ""
@@ -1486,6 +1498,8 @@ final class Settings: ServeEndpoint {
             merged.hermesProfileHome = list[i].hermesProfileHome
             merged.gatewayModel = list[i].gatewayModel
             merged.gatewayProvider = list[i].gatewayProvider
+            // With every agent in one list, the agent is the open chat's on this device.
+            if list[i].acpAllAgents, merged.acpAllAgents { merged.acpAgent = list[i].acpAgent }
             list[i] = merged
         }
         list.removeAll { removed.contains($0.id) && $0.id != activeServerID }
@@ -1504,6 +1518,7 @@ final class Settings: ServeEndpoint {
         acpURL = after.acpURL
         acpAgent = after.acpAgent
         acpFolder = after.acpFolder
+        acpAllAgents = after.acpAllAgents
         cfAccessClientID = after.cfAccessClientID
         if transport != .chatCompletions { transport = after.transport }
         return true
@@ -1581,6 +1596,7 @@ final class Settings: ServeEndpoint {
         server.acpURL = acpURL
         server.acpAgent = acpAgent
         server.acpFolder = acpFolder
+        server.acpAllAgents = acpAllAgents
         server.cfAccessClientID = cfAccessClientID
         server.gatewayModel = gatewayModel
         server.gatewayProvider = gatewayProvider
@@ -1606,6 +1622,7 @@ final class Settings: ServeEndpoint {
         acpURL = target.acpURL
         acpAgent = target.acpAgent
         acpFolder = target.acpFolder
+        acpAllAgents = target.acpAllAgents
         cfAccessClientID = target.cfAccessClientID
         gatewayModel = target.gatewayModel
         gatewayProvider = target.gatewayProvider
@@ -1756,6 +1773,7 @@ final class Settings: ServeEndpoint {
         acpURL = ""
         acpAgent = ""
         acpFolder = ""
+        acpAllAgents = false
         hermesProfile = ""
         hermesProfileHome = ""
         cfAccessClientID = ""

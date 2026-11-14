@@ -495,15 +495,32 @@ struct ConversationsList: View {
                     }
                     #if os(iOS)
                     // Held: New Goal (2.4) too.
-                    Menu {
-                        Button { addingGoal = true } label: {
-                            Label { Text("New Goal", comment: "Button: opens the sheet to set a new goal") } icon: { Image(systemName: "flag.checkered") }
+                    if AcpAgentChoices.asks(settings) {
+                        // Every agent on the bridge in one list: New Chat asks which.
+                        Menu {
+                            AcpAgentChoices(settings: settings) {
+                                conversation.reset()
+                                opened()
+                            }
+                            Divider()
+                            Button { addingGoal = true } label: {
+                                Label { Text("New Goal", comment: "Button: opens the sheet to set a new goal") } icon: { Image(systemName: "flag.checkered") }
+                            }
+                        } label: {
+                            Label("New conversation", systemImage: "square.and.pencil")
                         }
-                    } label: {
-                        Label("New conversation", systemImage: "square.and.pencil")
-                    } primaryAction: {
-                        conversation.reset()
-                        opened()
+                        .accessibilityIdentifier("new-chat-agents")
+                    } else {
+                        Menu {
+                            Button { addingGoal = true } label: {
+                                Label { Text("New Goal", comment: "Button: opens the sheet to set a new goal") } icon: { Image(systemName: "flag.checkered") }
+                            }
+                        } label: {
+                            Label("New conversation", systemImage: "square.and.pencil")
+                        } primaryAction: {
+                            conversation.reset()
+                            opened()
+                        }
                     }
                     #endif
                 }
@@ -1930,6 +1947,17 @@ struct ConversationsList: View {
                         .lineLimit(1)
                         .fixedSize()
                 }
+                // With every agent in one list: which agent it's with.
+                if let agent = session.acpAgent {
+                    Label(AcpAgents.name(of: agent, settings), systemImage: "terminal")
+                        .labelStyle(.titleAndIcon)
+                        .chatFont(.caption2, weight: .semibold)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .background(.quaternary, in: .capsule)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
                 // Another profile's, with All Profiles on: whose it is.
                 if let route = session.elsewhere {
                     Text(profileLabel(route.profile))
@@ -2038,6 +2066,8 @@ struct ConversationsList: View {
             }
             let sessions = allProfiles
                 ? try await SessionBackend.everyProfile(conversation, bots: botDirectory.roster)
+                : settings.transport == .acp && settings.acpAllAgents
+                ? try await AcpAgents.everyAgent(settings)
                 : try await backend.listSessions()
             guard current else { return }
             ledger = sessions
@@ -2225,6 +2255,8 @@ struct ConversationsList: View {
                 try await conversation.loadServeSession(session, elsewhere: route)
             }
         } else if settings.transport == .acp {
+            // With every agent in one list, the app moves to the chat's agent.
+            AcpAgents.use(session.acpAgent, settings)
             try await conversation.loadAcpSession(session)
         } else if viaServe {
             try await conversation.loadServeSession(session)

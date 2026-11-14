@@ -53,7 +53,7 @@ nonisolated struct AcpEndpoint: Hashable, Sendable {
     }
 
     /// One of the bridge's agents.
-    nonisolated struct Agent: Identifiable, Hashable, Sendable {
+    nonisolated struct Agent: Identifiable, Hashable, Codable, Sendable {
         var id: String
         var name: String
     }

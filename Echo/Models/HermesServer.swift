@@ -25,6 +25,9 @@ nonisolated struct HermesServer: Codable, Identifiable, Equatable, Sendable {
     var acpURL = ""
     var acpAgent = ""
     var acpFolder = ""
+    /// Every agent on the bridge in one chat list (asked 2026-11-14), each chat on its own agent;
+    /// `acpAgent` is then the one the open chat, or a new one, is with.
+    var acpAllAgents = false
 
     init(id: UUID, name: String, transport: Transport = .hermesServe, gatewayURL: String = "", serveURL: String = "",
          serveUsername: String = "", cfAccessClientID: String = "", gatewayModel: String = "", gatewayProvider: String = "",
@@ -56,6 +59,7 @@ nonisolated struct HermesServer: Codable, Identifiable, Equatable, Sendable {
         acpURL = try c.decodeIfPresent(String.self, forKey: .acpURL) ?? ""
         acpAgent = try c.decodeIfPresent(String.self, forKey: .acpAgent) ?? ""
         acpFolder = try c.decodeIfPresent(String.self, forKey: .acpFolder) ?? ""
+        acpAllAgents = try c.decodeIfPresent(Bool.self, forKey: .acpAllAgents) ?? false
     }
 
     /// Its name, else the host of whichever address it uses, else a placeholder.

@@ -433,4 +433,61 @@ final class AcpUITests: XCTestCase {
         composer.typeText(text)
         app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap()
     }
+    /// Every agent on the bridge in one list (asked 2026-11-14): Claude Code's and Codex's chats
+    /// together, each marked with its agent; New Chat asks which, and the chat is that agent's.
+    func testEveryAgentInOneList() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let token = env["REDDE_BRIDGE_TOKEN"], !token.isEmpty, let folder = env["REDDE_BRIDGE_FOLDER"] else {
+            throw XCTSkip("No Claude Code bridge given (TEST_RUNNER_REDDE_BRIDGE_TOKEN, TEST_RUNNER_REDDE_BRIDGE_FOLDER)")
+        }
+        func shot(_ name: String) {
+            keep(name)
+            if let dir = env["REDDE_SHOTS"] {
+                try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
+            }
+        }
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder,
+               "-acpAllAgents", "YES"]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        // Both agents' chats, each with its agent's name on the row.
+        func marked(_ agent: String) -> XCUIElement {
+            app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", agent)).firstMatch
+        }
+        XCTAssertTrue(app.text(containing: "conversations").waitForExistence(timeout: 60), "The list didn't load")
+        // Below the projects, the chats themselves.
+        for _ in 0 ..< 10 where !(marked("Codex").exists && marked("Claude Code").exists) {
+            app.swipeUp()
+        }
+        shot("acp-all-list")
+        XCTAssertTrue(marked("Codex").exists, "No chat of Codex's in the list")
+        XCTAssertTrue(marked("Claude Code").exists, "No chat of Claude Code's in the list")
+        // A chat of Codex's opens on Codex, though the app was on Claude Code.
+        marked("Codex").tap()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 30), "No message field")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "placeholderValue CONTAINS 'Codex' OR label CONTAINS 'Ask Codex'")).firstMatch
+            .waitForExistence(timeout: 30), "Codex's chat isn't on Codex")
+        sleep(2)
+        shot("acp-all-open-codex")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        let new = app.buttons["new-chat-agents"]
+        XCTAssertTrue(new.waitForExistence(timeout: 10), "New Chat doesn't ask which agent")
+        new.tap()
+        let claude = app.buttons["new-chat-agent-claude"]
+        XCTAssertTrue(claude.waitForExistence(timeout: 5), "Claude Code isn't offered")
+        XCTAssertTrue(app.buttons["new-chat-agent-codex"].exists, "Codex isn't offered")
+        shot("acp-all-new")
+        claude.tap()
+        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 10), "No message field")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "placeholderValue CONTAINS 'Claude Code' OR label CONTAINS 'Ask Claude Code'")).firstMatch
+            .waitForExistence(timeout: 30), "The new chat isn't Claude Code's")
+        sleep(2)
+        shot("acp-all-claude")
+    }
 }

@@ -66,6 +66,9 @@ final class Conversation {
     /// The profile this conversation lives in when it is another than the selected one and not a
     /// bot's chat: opened from the chat list with All Profiles on. Every call about it names it.
     private(set) var elsewhere: ProfileRoute?
+    /// The bridge agent this chat is with, with every agent in one list (`AcpAgents`); nil
+    /// otherwise. The server's agent follows it while the chat is open.
+    private(set) var acpAgent: String?
     /// An agent's call just answered in this conversation (`AgentCalls`): its line, told to the
     /// agent with what the person says first after it (`CallNote`), within ten minutes. Gone when
     /// another conversation opens.
@@ -1476,9 +1479,10 @@ final class Conversation {
     func load(_ record: ConversationRecord) {
         cancel(leaving: true)
         persist()
+        AcpAgents.use(record.acpAgent, settings)
         become(id: record.id, createdAt: record.createdAt, messages: record.restoredMessages,
                outbox: record.outbox ?? [], serverSessionID: record.serverSessionID, name: record.name, bot: record.bot,
-               elsewhere: record.elsewhere)
+               elsewhere: record.elsewhere, acpAgent: record.acpAgent)
         sessionTransport = record.serverSessionID == nil ? nil : record.transport
         // A held message from an earlier launch goes out if it can.
         retryAttempt = 0
@@ -1503,7 +1507,7 @@ final class Conversation {
 
     private func become(id: UUID = UUID(), createdAt: Date = .now, messages: [Message] = [],
                         outbox: [OutboxItem] = [], serverSessionID: String? = nil, name: String? = nil, bot: BotRef? = nil,
-                        elsewhere: ProfileRoute? = nil) {
+                        elsewhere: ProfileRoute? = nil, acpAgent: String? = nil) {
         endIncognito()   // the one being left, if it was one, goes
         noteSeen()   // the one being left
         answeringCall = nil
@@ -1527,6 +1531,9 @@ final class Conversation {
         self.serverSessionID = serverSessionID
         self.bot = bot
         self.elsewhere = bot == nil ? elsewhere : nil
+        // A chat with no agent of its own yet is with the one the server is on (opened from the
+        // list, the list has just moved the server to it).
+        self.acpAgent = settings.transport == .acp && settings.acpAllAgents ? acpAgent ?? settings.acpAgent.nilIfEmpty : nil
         // Every call about a bot's chat, or another profile's, names that profile, from the first one.
         if let profile = routeProfile, let serverSessionID { dashboard.noteProfile(profile, forStored: serverSessionID) }
         startsIn = nil
@@ -1551,13 +1558,13 @@ final class Conversation {
             assistantTurnStarts: turnStarts.isEmpty ? nil : turnStarts,
             outbox: outbox.isEmpty ? nil : outbox,
             serverID: settings.transport == .chatCompletions ? nil : settings.activeServerID,
-            name: name, bot: bot, elsewhere: elsewhere)
+            name: name, bot: bot, elsewhere: elsewhere, acpAgent: acpAgent)
         // Unchanged content keeps its stamp: the list is ordered by updatedAt and relaunch opens
         // the newest, so merely viewing a conversation must not make it "newest".
         if let existing = store.cachedRecord(id: id),
            existing.messages == kept, existing.outbox == record.outbox,
            existing.serverSessionID == serverSessionID, existing.transport == record.transport,
-           existing.serverID == record.serverID, existing.name == name, existing.bot == bot { return }
+           existing.serverID == record.serverID, existing.name == name, existing.bot == bot, existing.acpAgent == acpAgent { return }
         store.upsert(record)
     }
 
@@ -1833,7 +1840,7 @@ final class Conversation {
             return HermesSessionsTransport(baseURL: api.baseURL, apiKey: api.apiKey, headers: api.headers)
         case .hermesServe: return HermesServeTransport(client: dashboard)
         case .chatCompletions: return ChatCompletionsTransport(baseURL: url, apiKey: Keychain.read(.fastLaneAPIKey))
-        case .acp: return settings.acpEndpoint.map(AcpTransport.init(endpoint:))
+        case .acp: return settings.acpEndpoint(agent: acpAgent).map(AcpTransport.init(endpoint:))
         }
     }
 
@@ -1937,10 +1944,20 @@ final class Conversation {
     /// under way in it joined, through the bridge. While a turn runs the bridge won't replay the
     /// history (the two would mix): the copy kept here shows, and the turn is joined.
     func loadAcpSession(_ summary: HermesSessionsAPI.SessionSummary) async throws {
+        // Every agent in one list: the chat opens on its agent, as the row, this chat or the copy
+        // kept here knows it. Not known (a tapped notification for a chat never opened here), it
+        // is looked for with each agent in turn.
+        let known = summary.acpAgent ?? (summary.id == serverSessionID ? acpAgent : nil)
+            ?? store.summaries.first { $0.serverSessionID == summary.id }?.acpAgent
+        AcpAgents.use(known, settings)
         guard let client = AcpClient.current(settings) else { throw TransportError.noAPIKey }
         var messages: [Message]
         do {
-            messages = AcpHistory.messages(try await client.load(summary.id))
+            do {
+                messages = AcpHistory.messages(try await client.load(summary.id))
+            } catch let error as AcpError where !error.isBusy && known == nil && settings.acpAllAgents {
+                messages = AcpHistory.messages(try await AcpAgents.find(summary.id, failing: error, settings))
+            }
         } catch let error as AcpError where error.isBusy {
             messages = []
             if let kept = store.summaries.first(where: { $0.serverSessionID == summary.id }) {

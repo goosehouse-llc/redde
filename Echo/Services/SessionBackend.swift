@@ -31,7 +31,11 @@ enum SessionBackend {
     /// For a row of the list: its own profile's, when it is another's. On the Dashboard the row's
     /// profile was noted for its id when it was listed, so every call about it names it.
     static func owning(_ session: HermesSessionsAPI.SessionSummary, _ conversation: Conversation, settings: Settings = .shared) -> SessionBackend? {
-        if settings.transport == .acp { return list(conversation, settings: settings) }
+        if settings.transport == .acp {
+            // With every agent in one list, a row is its own agent's.
+            if let agent = session.acpAgent, let client = AcpAgents.client(for: agent, settings) { return .acp(client) }
+            return list(conversation, settings: settings)
+        }
         guard let route = session.elsewhere else { return list(conversation, settings: settings) }
         return route.viaAPI ? conversation.ledgerAPI(profile: route.profile).map(SessionBackend.ledger) : .serve(.shared)
     }

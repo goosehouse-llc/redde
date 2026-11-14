@@ -37,6 +37,16 @@ struct AcpServerFields: View {
                 } else {
                     LabeledContent(String(localized: "Agent", comment: "ACP connection field: which of the bridge's agents"), value: agents[0].name)
                 }
+                if agents.count > 1 {
+                    Toggle(isOn: $settings.acpAllAgents) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Every Agent in One List", comment: "ACP connection: list every agent's chats together")
+                            Text("Each chat is marked with its agent, and New Chat asks which one.", comment: "ACP connection: what Every Agent in One List does")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .accessibilityIdentifier("acp-all-agents")
+                }
                 TextField(String(localized: "Folder on the computer (optional)", comment: "ACP connection field: where new chats work"), text: $settings.acpFolder)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 // No computer to hand (App Review among them): Redde's own agent, in the app.
@@ -81,6 +91,7 @@ struct AcpServerFields: View {
         guard let endpoint = AcpEndpoint.make(address: settings.acpURL, agent: "", token: typed.isEmpty ? Keychain.read(.acpToken) : typed, folder: nil),
               let found = try? await endpoint.agents(), !Task.isCancelled else { agents = []; return }
         agents = found
+        if !found.isEmpty { AcpAgents.remember(found, settings) }
         if !found.isEmpty, !found.contains(where: { $0.id == settings.acpAgent }) { settings.acpAgent = found[0].id }
     }
 }

@@ -28,6 +28,9 @@ nonisolated struct ConversationRecord: Identifiable, Codable, Equatable, Sendabl
     var bot: BotRef? = nil
     /// Another profile it lives in (`Conversation.elsewhere`). Absent in older files.
     var elsewhere: ProfileRoute? = nil
+    /// The bridge agent it is with, with every agent in one list (`Conversation.acpAgent`).
+    /// Absent in older files.
+    var acpAgent: String? = nil
 
     var turnCount: Int { messages.filter { $0.role == .user && !$0.isSteer }.count }
 
@@ -55,11 +58,13 @@ nonisolated struct ConversationSummary: Identifiable, Codable, Equatable, Sendab
     var serverID: UUID?
     var bot: BotRef?
     var elsewhere: ProfileRoute?
+    var acpAgent: String?
 
     init(_ record: ConversationRecord) {
         serverID = record.serverID
         bot = record.bot
         elsewhere = record.elsewhere
+        acpAgent = record.acpAgent
         id = record.id
         title = record.title
         createdAt = record.createdAt

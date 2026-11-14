@@ -378,6 +378,9 @@ nonisolated struct HermesSessionsAPI: Sendable {
         /// Another saved server's, with All Servers on (`AllServers`): which, never by the server
         /// (a key no Hermes list has, so the rows decode as before).
         var otherServer: ServerTag?
+        /// The bridge agent it is with, with every agent in one list (`AcpAgents`): set by the
+        /// app, never by the server.
+        var acpAgent: String?
 
         var totalTokens: Int { (input_tokens ?? 0) + (output_tokens ?? 0) }
         var cost: Double? { actual_cost_usd ?? estimated_cost_usd }

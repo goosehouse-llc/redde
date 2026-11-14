@@ -60,7 +60,8 @@ enum CarPlayChats {
         guard let backend = SessionBackend.list(conversation, settings: settings) else {
             throw TransportError.malformed(SessionBackend.notConfiguredMessage)
         }
-        let sessions = try await backend.listSessions()
+        // Every agent on the bridge in one list, as on the phone.
+        let sessions = settings.transport == .acp && settings.acpAllAgents ? try await AcpAgents.everyAgent(settings) : try await backend.listSessions()
         conversation.noteServerTitles(sessions)
         return rows(sessions: sessions, currentSessionID: conversation.serverSessionID, limit: limit)
     }
