@@ -32,7 +32,7 @@ final class ReplyDocumentUITests: XCTestCase {
     func testAFileNamedButNotFetchedSaysWhy() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoDocument"] + XCUIApplication.straightToChat
+        Self.withoutDashboardLogin(app)
         app.launch()
         XCTAssertTrue(app.text(containing: "briefing as a file").waitForExistence(timeout: 20), "The demo reply didn't appear")
         XCTAssertFalse(app.text(containing: "MEDIA:").exists, "The path shows as text")
@@ -47,7 +47,7 @@ final class ReplyDocumentUITests: XCTestCase {
     func testAPathInAReplyOpensItsFile() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demoDocument"] + XCUIApplication.straightToChat
+        Self.withoutDashboardLogin(app)
         app.launch()
         XCTAssertTrue(app.text(containing: "two voice samples").waitForExistence(timeout: 20), "The demo reply didn't appear")
         let path = app.links["/home/hermes/voices/bm_lewis.wav"]
@@ -59,5 +59,13 @@ final class ReplyDocumentUITests: XCTestCase {
         add(attachment)
         path.tap()
         XCTAssertTrue(app.text(containing: "bm_lewis.wav: Files your agent sends").waitForExistence(timeout: 5), "The tap didn't reach the file")
+    }
+
+    /// The demo reply with no Dashboard login, whatever an earlier test left on the simulator
+    /// (a password saved by another test made the tap try a server that isn't there).
+    private static func withoutDashboardLogin(_ app: XCUIApplication) {
+        app.launchArguments = ["-echo.demoDocument", "-serveOpenAccess", "NO"] + XCUIApplication.straightToChat
+        app.launchEnvironment["ECHO_TEST_SERVE_PASSWORD"] = ""   // empty deletes
+        app.launchEnvironment["ECHO_TEST_SERVE_SIGNIN"] = ""
     }
 }
