@@ -267,6 +267,63 @@ final class ReplyActionsUITests: XCTestCase {
     /// A long-press selects the word under the finger wherever it is in a reply: a heading, a
     /// list, a quote, the last line (11-13: on the phone only some places selected; on the iPad
     /// none). Each theme draws replies in its own face, which the selectable copy has to match.
+    /// A finger held on after the word is selected, as a person's is (2026-11-13: "it just grabs
+    /// the whole text block" on the iPad, where a text view drags its selection by default): the
+    /// selection stays, and nothing is picked up to drag.
+    func testAHeldPressKeepsItsSelection() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoTwo", "-echo.clearDrafts"] + XCUIApplication.straightToChat
+        app.launch()
+        let target = app.text(containing: "Plumbing rough-in")
+        XCTAssertTrue(target.waitForExistence(timeout: 15), "No demo reply")
+        let height = app.windows.firstMatch.frame.height
+        for _ in 0 ..< 6 where !(target.isHittable && target.frame.minY > 120 && target.frame.maxY < height - 160) {
+            if target.frame.midY < height / 2 { app.swipeDown() } else { app.swipeUp() }
+            sleep(1)
+        }
+        target.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).press(forDuration: 2.5)
+        let selection = app.textViews.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND NOT identifier BEGINSWITH %@",
+                                                           "inline-selection|", "inline-selection|0|")).firstMatch
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "held press"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(selection.waitForExistence(timeout: 3), "A held press left nothing selected")
+        XCTAssertTrue(app.buttons["Copy"].exists || app.menuItems["Copy"].exists, "No Copy menu after a held press")
+    }
+
+    /// The same in other faces and sizes (2026-11-13, "only seems to work in certain places" on
+    /// the iPhone): the text swapped in is laid out as the reply was, so the press lands on its word.
+    func testALongPressSelectsInEveryFaceAndSize() {
+        continueAfterFailure = true
+        for (font, size) in [("georgia", "2"), ("newYork", "-2"), ("mono", "1"), ("iowan", "2"), ("rounded", "-1"), ("system", "2")] {
+            for words in ["Kitchen remodel", "Earliest slot", "Ping me if you want"] {
+                let app = XCUIApplication()
+                app.launchArguments = ["-echo.demo", "-echo.demoTwo", "-echo.clearDrafts", "-chatFont", font, "-chatTextSize", size]
+                    + XCUIApplication.straightToChat
+                app.launch()
+                let target = app.text(containing: words)
+                guard target.waitForExistence(timeout: 15) else { XCTFail("\(font) \(size): no \(words)"); continue }
+                let height = app.windows.firstMatch.frame.height
+                for _ in 0 ..< 6 where !(target.isHittable && target.frame.minY > 120 && target.frame.maxY < height - 160) {
+                    if target.frame.midY < height / 2 { app.swipeDown() } else { app.swipeUp() }
+                    sleep(1)
+                }
+                let y = target.frame.midY
+                target.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).press(forDuration: 0.8)
+                let selection = app.textViews.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND NOT identifier BEGINSWITH %@",
+                                                                   "inline-selection|", "inline-selection|0|")).firstMatch
+                if selection.waitForExistence(timeout: 3) {
+                    let parts = selection.identifier.split(separator: "|").compactMap { Int($0) }
+                    XCTAssertEqual(CGFloat(parts[2]), y, accuracy: 24, "\(font) \(size): the press on \(words) selected a line away (end at \(parts[2]), press at \(Int(y)))")
+                } else {
+                    XCTFail("\(font) \(size): a press on \(words) selected nothing")
+                }
+                app.terminate()
+            }
+        }
+    }
+
     func testALongPressSelectsWhereverItIs() {
         continueAfterFailure = true
         for theme in ["standard", "paper", "arcade"] {

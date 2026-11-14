@@ -13,10 +13,25 @@ struct LiveTransportTests {
         return (response as? HTTPURLResponse).map { (200 ..< 500).contains($0.statusCode) } ?? false
     }
 
+    /// Whether an OpenAI-compatible server lists the model.
+    private static func serves(_ model: String, at base: URL) async -> Bool {
+        var request = URLRequest(url: base.appending(path: "v1/models"))
+        request.timeoutInterval = 3
+        guard let (data, _) = try? await URLSession.shared.data(for: request),
+              let listed = (try? JSONValue.parse(data))?["data"]?.array else { return false }
+        return listed.contains { $0["id"]?.string == model }
+    }
+
     @Test(.enabled(if: TestEndpoints.fastLane != nil, "no fast-lane endpoint in LocalDefaults.json"))
     func fastLaneStreamsAReply() async throws {
         guard let base = TestEndpoints.fastLane, await Self.reachable(base.appending(path: "v1/models")) else {
             print("SKIP: no reachable fast-lane endpoint configured")
+            return
+        }
+        // The server's models change; one LocalDefaults.json names that it no longer serves is a
+        // stale setting, not a broken transport (2026-11-13: llama-swap's 404 "no router").
+        guard await Self.serves(TestEndpoints.fastLaneModel, at: base) else {
+            print("SKIP: the fast lane doesn't serve \(TestEndpoints.fastLaneModel) any more: update fastLaneModel in LocalDefaults.json")
             return
         }
         let transport = ChatCompletionsTransport(baseURL: base, apiKey: nil)

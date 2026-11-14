@@ -144,6 +144,10 @@ private struct InlineTextView: UIViewRepresentable {
         let view = ReplyTextView(frame: .zero)  // TextKit 2; `init(usingTextLayoutManager:)` skips a subclass's own properties
         view.isEditable = false
         view.isSelectable = true
+        // No dragging the text out: on the iPad a text view drags its selection by default, and
+        // the finger still down from the press picked the reply's text up instead of selecting
+        // (2026-11-13: "it just grabs the whole text block").
+        view.textDragInteraction?.isEnabled = false
         view.isScrollEnabled = false
         view.backgroundColor = .clear
         view.textContainerInset = .zero

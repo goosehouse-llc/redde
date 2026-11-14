@@ -12,9 +12,12 @@ final class CalendarTints {
     /// Lowercased title → colour. Two calendars with one title (the same team in two accounts):
     /// the first Calendar lists.
     var tints: [String: Color] = [:]
-    @ObservationIgnored private var loaded = false
+    @ObservationIgnored private var loaded: Bool
     @ObservationIgnored private var changes: NSObjectProtocol?
     @ObservationIgnored private var store: EKEventStore?
+
+    /// `reads`: false for a test's own colours, never replaced by the device's calendars.
+    init(reads: Bool = true) { loaded = !reads }
 
     /// The calendar's colour, or nil when this device has no calendar by that title or Redde may
     /// not see the calendars.
