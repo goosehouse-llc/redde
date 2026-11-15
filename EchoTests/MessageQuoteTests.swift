@@ -69,6 +69,35 @@ struct SuggestedReplyTests {
         #expect(FollowUps.endingQuestion("Why? Because it was late.") == nil)
     }
 
+    @Test func optionsAReplyListsAreTheChipsAsTheyAre() {
+        let flights = "I found three nonstop options on Friday:\n1. **United** 6:05 AM, $189\n2. Southwest 11:40 AM, $214\n3. Frontier 4:15 PM — cheapest\n\nWhich one should I hold?"
+        #expect(FollowUps.listedOptions(flights) == ["United 6:05 AM, $189", "Southwest 11:40 AM, $214", "Frontier 4:15 PM"])
+        let pick = "Two jackets fit:\n- Navy: lighter\n- Green: has a hood\nWant the navy or the green one?"
+        #expect(FollowUps.listedOptions(pick) == ["Navy", "Green"])
+        // A list of what was done, then a yes or no: not options.
+        #expect(FollowUps.listedOptions("Here's what changed:\n- Fixed the crash\n- Faster launch\nShould I commit it?").isEmpty)
+        // No question after the list, or an option too long for a chip.
+        #expect(FollowUps.listedOptions("Steps:\n1. Grind\n2. Steep\nThen strain.").isEmpty)
+        #expect(FollowUps.listedOptions("Pick:\n1. A\n2. \(String(repeating: "long ", count: 12))\nWhich?").isEmpty)
+    }
+
+    @Test func aReplyIsReadForWhatItCallsFor() {
+        #expect(FollowUps.kind(of: "Your afternoon is free. Want me to block 2–4 for focus time?") == .yesNo("Want me to block 2–4 for focus time?"))
+        #expect(FollowUps.kind(of: "Sure. When should I remind you?") == .ask("When should I remind you?"))
+        #expect(FollowUps.kind(of: "Mañana estará soleado. ¿Quieres que lo apunte?") == .ask("Quieres que lo apunte?"))
+        #expect(FollowUps.kind(of: "Done — the office lights are off.") == .next)
+        // A short "done" gets no chips; a longer answer, or a short question, does.
+        #expect(!FollowUps.worthSuggesting("Done — the office lights are off."))
+        #expect(FollowUps.worthSuggesting("Sure. When should I remind you?"))
+        #expect(FollowUps.worthSuggesting("Mix 1 part coarse-ground coffee with 4 parts cold water and steep it for 12 to 18 hours."))
+    }
+
+    @Test func theFastLanePicksFromWhatsThere() {
+        #expect(FollowUps.source(fastLaneSet: false, preferFastLane: true) == (FollowUps.onDeviceAvailable ? .onDevice : .none))
+        #expect(FollowUps.source(fastLaneSet: true, preferFastLane: true) == .fastLane)
+        #expect(FollowUps.source(fastLaneSet: true, preferFastLane: false) == (FollowUps.onDeviceAvailable ? .onDevice : .fastLane))
+    }
+
     @Test func atMostThreeAndOneLineEach() {
         let chips = FollowUps.tidy(["One\nmore line", "Two", "Three", "Four"], reply: "")
         #expect(chips == ["One", "Two", "Three"])
@@ -91,7 +120,8 @@ struct OnDeviceSuggestionTests {
                                                    reply: "About 9 minutes for a hard-boiled egg, 6 for a jammy yolk. Start them in boiling water and cool them in ice water.")
         let choice = await FollowUps.suggestOnDevice(question: "Which jacket should I get?",
                                                      reply: "Both are warm enough for Chicago. The navy one is lighter, the green one has a hood. Navy or green?")
-        print("SUGGESTED asked: \(asked)\nSUGGESTED told: \(told)\nSUGGESTED choice: \(choice)")
+        let done = await FollowUps.suggestOnDevice(question: "Turn off the office lights", reply: "Done — the office lights are off.")
+        print("SUGGESTED asked: \(asked)\nSUGGESTED told: \(told)\nSUGGESTED choice: \(choice)\nSUGGESTED done: \(done)")
         #expect(!asked.isEmpty && asked.count <= 3)
         #expect(!told.isEmpty && told.count <= 3)
     }

@@ -394,6 +394,11 @@ final class Settings: ServeEndpoint {
     var suggestFollowUps: Bool {
         didSet { store(suggestFollowUps, forKey: Keys.suggestFollowUps) }
     }
+    /// Suggested replies written by the fast lane's model even where Apple's on-device one could
+    /// write them: a bigger model, but the chat leaves the phone to be read. Off at first.
+    var suggestionsFromFastLane: Bool {
+        didSet { store(suggestionsFromFastLane, forKey: Keys.suggestionsFromFastLane) }
+    }
     /// Route replies to the earpiece when the proximity sensor says the phone is at your ear.
     /// Redde's background alerts are time-sensitive, so Siri can read them on AirPods (Announce
     /// Notifications) and they can break through a Focus.
@@ -666,6 +671,7 @@ final class Settings: ServeEndpoint {
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
         keepRepliesInBackground = defaults.object(forKey: Keys.keepRepliesInBackground) as? Bool ?? true
         suggestFollowUps = defaults.object(forKey: Keys.suggestFollowUps) as? Bool ?? true
+        suggestionsFromFastLane = defaults.bool(forKey: Keys.suggestionsFromFastLane)
         speechLanguage = defaults.string(forKey: Keys.speechLanguage) ?? ""
         matchReplyLanguage = defaults.object(forKey: Keys.matchReplyLanguage) as? Bool ?? true
         earpieceAtEar = defaults.object(forKey: Keys.earpieceAtEar) as? Bool ?? true

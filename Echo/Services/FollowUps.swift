@@ -3,21 +3,26 @@ import Foundation
 import FoundationModels
 #endif
 
-/// Three things the person might send next, once a reply has finished: answers to what the agent
-/// asked, or follow-up questions. Written on the device by Apple's own model where it can
-/// (Apple Intelligence on; 2026-11-11, "suggested replies" from the Conduit gap list), so
-/// nothing leaves the phone and it works on both connections; else by the model on the
-/// OpenAI-compatible connection (the fast lane), when that's set up. Never the agent: an extra
-/// prompt in the agent's session would land in the chat.
+/// Three things the person might send next, once a reply has finished. A reply that lists
+/// options and asks which gets those options, word for word and with no model. Any other is
+/// read for what it calls for (a yes or no, an answer such as a time, or what to do or ask next)
+/// and a model writes three for that: Apple's on-device model where it can (Apple Intelligence
+/// on; nothing leaves the phone), or the model on the OpenAI-compatible connection (the fast
+/// lane) when that's set up and the person chose it, or when it's the only one. Both work on
+/// every connection. Never the agent: an extra prompt in the agent's session would land in the
+/// chat. (2026-11-11, "suggested replies" from the Conduit gap list; reworked 2026-11-14 after
+/// "they are currently not very good": options came back as "Yes, Frontier", a done task got
+/// "Are the lights dim?", a question for a time got "Later?".)
 nonisolated enum FollowUps {
     static let count = 3
 
     /// Where suggestions come from on this device.
     enum Source: Equatable { case onDevice, fastLane, none }
 
-    static func source(fastLaneSet: Bool) -> Source {
-        if onDeviceAvailable { return .onDevice }
-        return fastLaneSet ? .fastLane : .none
+    /// The on-device model unless the person chose the fast lane's, or it's the only one there.
+    static func source(fastLaneSet: Bool, preferFastLane: Bool = false) -> Source {
+        if fastLaneSet, preferFastLane || !onDeviceAvailable { return .fastLane }
+        return onDeviceAvailable ? .onDevice : .none
     }
 
     /// Apple's on-device model is there, switched on, downloaded, and speaks the person's language.
@@ -31,19 +36,35 @@ nonisolated enum FollowUps {
         #endif
     }
 
-    #if canImport(FoundationModels)
-    @Generable
-    struct Answers {
-        @Guide(description: "Three different short answers the person could give to the assistant's question, in the person's voice: for example one yes, one no, one asking for a change", .count(3))
-        var replies: [String]
+    // MARK: What the reply calls for
+
+    /// What a finished reply calls for from the person.
+    enum Kind: Equatable {
+        /// It offers to do something and asks whether to ("Want me to book it?").
+        case yesNo(String)
+        /// It asks for something only the person knows ("When should I remind you?").
+        case ask(String)
+        /// It asks nothing: what to have it do or ask next.
+        case next
     }
 
-    @Generable
-    struct Questions {
-        @Guide(description: "Three short questions the person could type to the assistant next, each ending with a question mark and about something the reply didn't already say, such as: How long does it keep?", .count(3))
-        var replies: [String]
+    /// The words a yes-or-no question starts with (English; any other language's question is
+    /// answered as an `ask`, which suits a yes or no as well).
+    private static let yesNoStarts: Set<String> = ["want", "would", "should", "shall", "do", "does", "did", "can", "could",
+                                                   "is", "are", "will", "may", "ok", "okay", "need", "anything"]
+
+    static func kind(of reply: String) -> Kind {
+        guard let asked = endingQuestion(reply) else { return .next }
+        let first = asked.lowercased().split(whereSeparator: { !$0.isLetter }).first.map(String.init) ?? ""
+        return yesNoStarts.contains(first) ? .yesNo(asked) : .ask(asked)
     }
-    #endif
+
+    /// Whether a model should write suggestions for this reply: not after a short one that asks
+    /// nothing ("Done, the lights are off."), where every suggestion tried was noise ("Are the
+    /// lights dimmed?", 2026-11-14).
+    static func worthSuggesting(_ reply: String) -> Bool {
+        kind(of: reply) != .next || PlainText.display(reply).count > 60
+    }
 
     /// What the reply asks the person at its end, if it does: its last sentence, when that ends
     /// with a question mark.
@@ -51,39 +72,126 @@ nonisolated enum FollowUps {
         let text = PlainText.display(reply).trimmingCharacters(in: .whitespacesAndNewlines)
         guard text.hasSuffix("?") || text.hasSuffix("？") else { return nil }
         let body = text.dropLast()
-        let start = body.lastIndex(where: { ".!?。！？\n".contains($0) }).map { body.index(after: $0) } ?? body.startIndex
+        let start = body.lastIndex(where: { ".!?。！？\n¿".contains($0) }).map { body.index(after: $0) } ?? body.startIndex
         let sentence = text[start...].trimmingCharacters(in: .whitespacesAndNewlines)
         return sentence.count >= 3 ? sentence : nil
     }
 
+    /// The options a reply lists just before asking which: a numbered or bulleted list right
+    /// above its closing question. Each option up to its first dash or colon ("Frontier 4:15 PM,
+    /// $142"); none when any is too long to be a chip, or the question is a yes or no that isn't
+    /// about picking one ("Here's what changed: … Should I commit?").
+    static func listedOptions(_ reply: String) -> [String] {
+        guard let asked = endingQuestion(reply) else { return [] }
+        if case .yesNo = kind(of: reply) {
+            let words = asked.lowercased()
+            guard words.contains("which") || words.contains(" one") || words.contains(" or ") else { return [] }
+        }
+        // The lines above the question, back to the first that isn't an item.
+        var lines = reply.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        guard !lines.isEmpty else { return [] }
+        lines.removeLast()   // the question
+        var options: [String] = []
+        for line in lines.reversed() {
+            guard let marker = line.range(of: #"^(\d{1,2}[.)]|[-•*])\s+"#, options: .regularExpression) else { break }
+            options.insert(String(line[marker.upperBound...]), at: 0)
+        }
+        guard (2 ... 6).contains(options.count) else { return [] }
+        let labels = options.map(optionLabel)
+        guard labels.allSatisfy({ (2 ... 40).contains($0.count) }) else { return [] }
+        var seen = Set<String>()
+        return labels.filter { seen.insert($0.lowercased()).inserted }.prefix(4).map { $0 }
+    }
+
+    /// An option as a chip: no Markdown, up to its first dash or colon, no full stop.
+    private static func optionLabel(_ item: String) -> String {
+        var label = item.replacingOccurrences(of: #"\[([^\]]*)\]\([^)]*\)"#, with: "$1", options: .regularExpression)
+            .replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: "").replacingOccurrences(of: "`", with: "")
+        if let cut = label.range(of: #"\s+[—–-]\s+|:\s"#, options: .regularExpression) { label = String(label[..<cut.lowerBound]) }
+        return label.trimmingCharacters(in: CharacterSet(charactersIn: " .,;:"))
+    }
+
+    /// What the model is asked for, by what the reply calls for.
+    static func request(for kind: Kind) -> String {
+        switch kind {
+        case .yesNo(let asked):
+            return """
+                The assistant asked: "\(asked.prefix(200))"
+                Write three replies: the first says yes in a way that names what to do, the second \
+                says no, the third asks for one change. For example, for "Want me to book the 7pm \
+                table?": Yes, book it / No, not tonight / Make it 8pm instead
+                """
+        case .ask(let asked):
+            return """
+                The assistant asked: "\(asked.prefix(200))"
+                Write three different answers the person might give, each the answer itself, not a \
+                question. For example, for "What time should I set it for?": Tomorrow at 9am / \
+                Tonight at 7 / In an hour
+                """
+        case .next:
+            return """
+                Write what the person might send next: two short questions about this topic that \
+                the reply did not answer, and one short request for the assistant to do one more \
+                thing related to it, starting with a verb.
+                """
+        }
+    }
+
+    // MARK: On this device
+
+    #if canImport(FoundationModels)
+    @Generable
+    struct Replies {
+        @Guide(description: "Three different short replies the person could send", .count(3))
+        var replies: [String]
+    }
+
+    /// What to send next after a reply that asks nothing. Three fields rather than a list: asked
+    /// for a list, the model wrote "Add it to my notes / Mark as done" after anything (2026-11-14).
+    @Generable
+    struct Next {
+        @Guide(description: "A short question the person could ask the assistant about this topic that the reply did not answer")
+        var question: String
+        @Guide(description: "A different short question about this topic that the reply did not answer")
+        var another: String
+        @Guide(description: "A short request asking the assistant to do one more thing related to this reply, starting with a verb")
+        var request: String
+    }
+    #endif
+
+    /// The instructions both models get.
+    private static let instructions = """
+        You write the replies a person could tap to send next in a chat with their AI assistant. \
+        Each one is the person talking to the assistant: short (two to six words), specific to this \
+        chat, in the language the person wrote in. Never something the assistant would say, never a \
+        question the reply already answered, never just thanks.
+        """
+
+    private static func chat(question: String, reply: String, limit: (Int, Int)) -> String {
+        """
+        The person wrote:
+        \(question.prefix(limit.0))
+
+        The assistant replied:
+        \(reply.prefix(limit.1))
+        """
+    }
+
     /// The suggestions of Apple's on-device model, or none: it isn't available, its guardrails
-    /// turned the chat down, or nothing usable came back. A reply that ends by asking gets
-    /// answers to that; any other, questions to ask next. One instruction for both was answered
-    /// with questions alone, some of them in the assistant's voice (tried 2026-11-11).
+    /// turned the chat down, or nothing usable came back.
     @concurrent static func suggestOnDevice(question: String, reply: String) async -> [String] {
         #if canImport(FoundationModels)
         guard onDeviceAvailable else { return [] }
-        let session = LanguageModelSession(instructions: """
-            You write what a person could send next in a chat with their AI assistant. Every \
-            suggestion is the person speaking to the assistant, under eight words, in the language \
-            the person wrote in. Nothing the assistant would say, no thanks or greetings alone.
-            """)
-        let chat = """
-            The person wrote:
-            \(question.prefix(600))
-
-            The assistant replied:
-            \(reply.prefix(2000))
-            """
-        let options = GenerationOptions(temperature: 0.5, maximumResponseTokens: 90)
+        let session = LanguageModelSession(instructions: instructions)
+        let chat = chat(question: question, reply: reply, limit: (600, 2000)) + "\n\n"
+        let options = GenerationOptions(temperature: 0.4, maximumResponseTokens: 90)
+        let kind = kind(of: reply)
         do {
-            if let asked = endingQuestion(reply) {
-                let answer = try await session.respond(to: chat + "\n\nThe assistant asked the person: \"\(asked.prefix(200))\" Suggest three answers to it.",
-                                                       generating: Answers.self, options: options)
-                return tidy(answer.content.replies, reply: reply)
+            if kind == .next {
+                let next = try await session.respond(to: chat + request(for: kind), generating: Next.self, options: options).content
+                return tidy([next.question, next.another, next.request], reply: reply)
             }
-            let answer = try await session.respond(to: chat + "\n\nSuggest three questions the person could ask next.",
-                                                   generating: Questions.self, options: options)
+            let answer = try await session.respond(to: chat + request(for: kind), generating: Replies.self, options: options)
             return tidy(answer.content.replies, reply: reply)
         } catch {
             return []
@@ -93,8 +201,8 @@ nonisolated enum FollowUps {
         #endif
     }
 
-    /// The on-device model's suggestions as chips: one line each, short, not the reply's own last
-    /// words, no two alike, three at most.
+    /// Suggestions as chips: one line each, short, not the reply's own last words, no two alike,
+    /// three at most.
     static func tidy(_ replies: [String], reply: String) -> [String] {
         var seen = Set<String>()
         let replyEnd = reply.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -111,8 +219,10 @@ nonisolated enum FollowUps {
         .map { $0 }
     }
 
-    /// The suggestions, or none: the fast lane isn't set up, the model didn't answer in time,
-    /// or what it wrote wasn't questions.
+    // MARK: On the fast lane
+
+    /// The fast lane model's suggestions, or none: it isn't set up, didn't answer in time, or
+    /// wrote nothing usable.
     static func suggest(question: String, reply: String, baseURL: URL, apiKey: String?, model: String) async -> [String] {
         struct Msg: Encodable { var role: String; var content: String }
         struct Body: Encodable {
@@ -120,48 +230,44 @@ nonisolated enum FollowUps {
             var messages: [Msg]
             var stream = false
             var max_tokens = 120
-            var temperature = 0.7
+            var temperature = 0.5
             var chat_template_kwargs: [String: JSONValue]?
         }
         struct Response: Decodable {
             struct Choice: Decodable { struct Message: Decodable { var content: String? }; var message: Message? }
             var choices: [Choice]?
         }
-        let prompt = """
-            The user asked:
-            \(question.prefix(1200))
+        let prompt = chat(question: question, reply: reply, limit: (1200, 2400)) + "\n\n" + request(for: kind(of: reply)) + """
 
-            The assistant replied:
-            \(reply.prefix(2400))
 
-            Write \(count) short follow-up questions the user might ask next, in the user's language. \
-            Under eight words each, one per line, no numbering, bullets or other text.
+            Write exactly \(count), one per line, with no numbering, bullets, quotes or other text.
             """
         var request = URLRequest(url: baseURL.appending(path: "chat/completions"))
         request.httpMethod = "POST"
         request.timeoutInterval = 25
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let apiKey, !apiKey.isEmpty { request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization") }
-        let body = Body(model: model, messages: [Msg(role: "user", content: prompt)],
+        let body = Body(model: model, messages: [Msg(role: "system", content: instructions), Msg(role: "user", content: prompt)],
                         chat_template_kwargs: ChatCompletionsTransport.thinkingKwargs(effort: "none", baseURL: baseURL))
         guard let data = try? JSONEncoder().encode(body) else { return [] }
         request.httpBody = data
         guard let (response, http) = try? await URLSession.shared.data(for: request),
               let status = (http as? HTTPURLResponse)?.statusCode, (200 ..< 300).contains(status),
               let content = try? JSONDecoder().decode(Response.self, from: response).choices?.first?.message?.content else { return [] }
-        return parse(content)
+        return tidy(parse(content, questionsOnly: false), reply: reply)
     }
 
-    /// One question per line; numbering, bullets and quotes stripped; nothing that isn't a
-    /// question or runs long.
-    static func parse(_ text: String) -> [String] {
+    /// One suggestion per line; numbering, bullets and quotes stripped; nothing that runs long,
+    /// introduces a list ("Here are some ideas:"), or, with `questionsOnly`, isn't a question.
+    static func parse(_ text: String, questionsOnly: Bool = true) -> [String] {
         var seen = Set<String>()
         return text.split(whereSeparator: \.isNewline).compactMap { raw -> String? in
             var line = raw.trimmingCharacters(in: .whitespaces)
             while let first = line.first, first.isNumber || "-•*.)".contains(first) || first == " " { line.removeFirst() }
             line = line.trimmingCharacters(in: CharacterSet(charactersIn: " \"“”'"))
-            guard line.count >= 4, line.count <= 80, line.hasSuffix("?") || line.hasSuffix("？"),
-                  seen.insert(line.lowercased()).inserted else { return nil }
+            let isQuestion = line.hasSuffix("?") || line.hasSuffix("？")
+            guard line.count >= (questionsOnly ? 4 : 2), line.count <= 80, !line.hasSuffix(":"),
+                  isQuestion || !questionsOnly, seen.insert(line.lowercased()).inserted else { return nil }
             return line
         }
         .prefix(count)

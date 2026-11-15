@@ -49059,6 +49059,113 @@
         }
       }
     },
+    "A reply that lists choices and asks which one shows them under it, to tap. For suggestions under every reply, turn on Apple Intelligence or set up an OpenAI-compatible connection." : {
+      "comment" : "Settings › Writing footer: no model can write suggested replies on this device",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et svar, der giver valgmuligheder og spørger hvilken, viser dem under sig, klar til at trykke på. Vil du have forslag under hvert svar, så slå Apple Intelligence til eller opsæt en OpenAI-kompatibel forbindelse."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Antwort, die Möglichkeiten aufzählt und fragt, welche es sein soll, zeigt sie darunter zum Antippen. Für Vorschläge unter jeder Antwort schalte Apple Intelligence ein oder richte eine OpenAI-kompatible Verbindung ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una respuesta que enumera opciones y pregunta cuál muestra esas opciones debajo, para tocarlas. Para tener sugerencias bajo cada respuesta, activa Apple Intelligence o configura una conexión compatible con OpenAI."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une réponse qui énumère des choix et demande lequel les affiche en dessous, à toucher. Pour des suggestions sous chaque réponse, activez Apple Intelligence ou configurez une connexion compatible OpenAI."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una risposta che elenca delle scelte e chiede quale mostra le scelte sotto di sé, da toccare. Per avere suggerimenti sotto ogni risposta, attiva Apple Intelligence o configura una connessione compatibile con OpenAI."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択肢を挙げてどれにするか尋ねる返信には、その選択肢が下に表示され、タップで選べます。すべての返信の下に候補を出すには、Apple Intelligenceをオンにするか、OpenAI互換の接続を設定してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택지를 나열하고 어느 것인지 묻는 답장에는 그 선택지가 아래에 표시되어 탭할 수 있습니다. 모든 답장 아래에 제안을 받으려면 Apple Intelligence를 켜거나 OpenAI 호환 연결을 설정하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et svar som lister opp valg og spør hvilket, viser dem under seg, klare til å trykke på. Vil du ha forslag under hvert svar, slå på Apple Intelligence eller sett opp en OpenAI-kompatibel tilkobling."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een antwoord dat keuzes opsomt en vraagt welke, toont die eronder om op te tikken. Voor suggesties onder elk antwoord zet je Apple Intelligence aan of stel je een OpenAI-compatibele verbinding in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odpowiedź, która wymienia opcje i pyta, którą wybrać, pokazuje je pod sobą do stuknięcia. Aby mieć sugestie pod każdą odpowiedzią, włącz Apple Intelligence albo skonfiguruj połączenie zgodne z OpenAI."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma resposta que lista opções e pergunta qual mostra essas opções embaixo, para tocar. Para ter sugestões embaixo de cada resposta, ative a Apple Intelligence ou configure uma conexão compatível com OpenAI."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если ответ перечисляет варианты и спрашивает, какой выбрать, они появляются под ним — их можно нажать. Чтобы подсказки были под каждым ответом, включите Apple Intelligence или настройте OpenAI-совместимое подключение."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett svar som räknar upp val och frågar vilket visar dem under sig, redo att trycka på. Vill du ha förslag under varje svar, slå på Apple Intelligence eller ställ in en OpenAI-kompatibel anslutning."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seçenekleri sıralayıp hangisini istediğini soran bir yanıt, bunları altında dokunmaya hazır gösterir. Her yanıtın altında öneri görmek için Apple Intelligence’ı açın veya OpenAI uyumlu bir bağlantı kurun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Якщо відповідь перелічує варіанти й питає, який обрати, вони з’являються під нею — їх можна торкнутися. Щоб підказки були під кожною відповіддю, увімкніть Apple Intelligence або налаштуйте OpenAI-сумісне підключення."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果回复列出了选项并询问选哪个，这些选项会显示在回复下方，轻点即可。若想在每条回复下都有建议，请打开 Apple 智能，或设置一个兼容 OpenAI 的连接。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果回覆列出了選項並詢問要選哪個，這些選項會顯示在回覆下方，點一下即可。若想在每則回覆下都有建議，請開啟 Apple Intelligence，或設定一個相容 OpenAI 的連線。"
+          }
+        }
+      }
+    },
     "A ring of light around Redde's spark" : {
       "localizations" : {
         "da" : {
@@ -154455,7 +154562,7 @@
       }
     },
     "Earlier" : {
-      "comment" : "In a briefing's sheet: the same job's earlier runs, under the newest",
+      "comment" : "The conversation list's section for conversations with no date",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -193841,7 +193948,7 @@
       }
     },
     "Hermes" : {
-      "comment" : "Name of a color theme in Settings → Appearance",
+      "comment" : "Group header for the Hermes connections and servers",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -415521,7 +415628,7 @@
       }
     },
     "System" : {
-      "comment" : "Settings → Appearance → Font: San Francisco",
+      "comment" : "Appearance: follow the iPhone's light or dark setting",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -451631,6 +451738,113 @@
         }
       }
     },
+    "This Device" : {
+      "comment" : "Settings › Writing › Written By: suggested replies written by Apple Intelligence on this device",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne enhed"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Gerät"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo dispositivo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このデバイス"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne enheten"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit apparaat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To urządzenie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это устройство"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här enheten"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu cihaz"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей пристрій"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此设备"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此裝置"
+          }
+        }
+      }
+    },
     "This device answered the code, but that Hermes hasn't sent anything back. The pairing command may have ended: run it again and use the new code." : {
       "comment" : "Pairing sheet: the plugin never confirmed a pairing made with a code",
       "localizations" : {
@@ -458783,6 +458997,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在每則回覆下方顯示三個你接下來可能會問的問題，由你的 OpenAI 相容連線上的模型撰寫。"
+          }
+        }
+      }
+    },
+    "Three things you might send next under each reply, written by the model on your OpenAI-compatible connection, which is sent the reply to write them." : {
+      "comment" : "Settings › Writing footer: suggested replies come from the fast-lane model",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tre ting, du måske vil sende som det næste, under hvert svar, skrevet af modellen på din OpenAI-kompatible forbindelse, som får svaret tilsendt for at skrive dem."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drei Dinge, die du als Nächstes senden könntest, unter jeder Antwort, geschrieben vom Modell deiner OpenAI-kompatiblen Verbindung, dem die Antwort dafür gesendet wird."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tres cosas que podrías enviar a continuación bajo cada respuesta, escritas por el modelo de tu conexión compatible con OpenAI, al que se envía la respuesta para escribirlas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trois choses que vous pourriez envoyer ensuite sous chaque réponse, écrites par le modèle de votre connexion compatible OpenAI, à qui la réponse est envoyée pour les écrire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tre cose che potresti inviare dopo, sotto ogni risposta, scritte dal modello della tua connessione compatibile con OpenAI, a cui viene inviata la risposta per scriverle."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "各返信の下に、次に送れそうな内容を3つ表示します。OpenAI互換の接続のモデルが書き、そのために返信がモデルに送られます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "각 답장 아래에 다음에 보낼 만한 세 가지를 표시합니다. OpenAI 호환 연결의 모델이 작성하며, 이를 위해 답장이 모델로 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tre ting du kanskje vil sende videre under hvert svar, skrevet av modellen på den OpenAI-kompatible tilkoblingen din, som får tilsendt svaret for å skrive dem."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drie dingen die je hierna zou kunnen sturen onder elk antwoord, geschreven door het model op je OpenAI-compatibele verbinding, dat daarvoor het antwoord krijgt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trzy rzeczy, które możesz wysłać dalej, pod każdą odpowiedzią, napisane przez model z połączenia zgodnego z OpenAI, do którego wysyłana jest odpowiedź, by je napisać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Três coisas que você poderia enviar em seguida, embaixo de cada resposta, escritas pelo modelo da sua conexão compatível com OpenAI, que recebe a resposta para escrevê-las."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Три варианта того, что можно отправить дальше, под каждым ответом. Их пишет модель OpenAI-совместимого подключения, которой для этого отправляется ответ."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tre saker du kanske vill skicka härnäst under varje svar, skrivna av modellen på din OpenAI-kompatibla anslutning, som får svaret skickat till sig för att skriva dem."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her yanıtın altında, sonra gönderebileceğiniz üç şey. OpenAI uyumlu bağlantınızdaki model yazar; bunun için yanıt modele gönderilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Три варіанти того, що можна надіслати далі, під кожною відповіддю. Їх пише модель OpenAI-сумісного підключення, якій для цього надсилається відповідь."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在每条回复下显示你接下来可能发送的三条内容，由兼容 OpenAI 的连接上的模型撰写，回复会发送给该模型以便撰写。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在每則回覆下顯示你接下來可能傳送的三則內容，由相容 OpenAI 的連線上的模型撰寫，回覆會傳送給該模型以便撰寫。"
           }
         }
       }
@@ -508988,6 +509309,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在寫入檔案"
+          }
+        }
+      }
+    },
+    "Written By" : {
+      "comment" : "Settings › Writing: which model writes the suggested replies, this device's (Apple Intelligence) or the OpenAI-compatible connection's",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skrevet af"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschrieben von"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escritas por"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rédigées par"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scritte da"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作成元"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "작성"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skrevet av"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschreven door"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pisane przez"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escritas por"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кто пишет"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skrivna av"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yazan"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хто пише"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撰写者"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撰寫者"
           }
         }
       }

@@ -253,20 +253,31 @@ extension Conversation {
         followUps = []
     }
 
-    /// Suggested replies to a finished reply (`FollowUps`): from Apple's on-device model where
-    /// there is one, else the fast lane's; shown only while that reply is still the last message.
+    /// Suggested replies to a finished reply (`FollowUps`): the options it lists, at once; else
+    /// written by Apple's on-device model or the fast lane's (the person's pick, or whichever is
+    /// there), the other one standing in when the fast lane is quiet; shown only while that
+    /// reply is still the last message.
     func suggestFollowUps(question: String, replyID: UUID, reply: String) {
         guard settings.suggestFollowUps, !reply.isEmpty, !isWorkerTranscript else { return }
+        let options = FollowUps.listedOptions(reply)
+        if !options.isEmpty {
+            followUps = options
+            return
+        }
+        guard FollowUps.worthSuggesting(reply) else { return }
         let base = Settings.normalizedBase(settings.fastLaneURL)
         let fastLane = base != nil && !settings.fastLaneModel.isEmpty
-        let source = FollowUps.source(fastLaneSet: fastLane)
+        let source = FollowUps.source(fastLaneSet: fastLane, preferFastLane: settings.suggestionsFromFastLane)
         guard source != .none else { return }
         let (model, key) = (settings.fastLaneModel, fastLane ? Keychain.read(.fastLaneAPIKey) : nil)
         followUpTask = Task { [weak self] in
-            let suggestions = switch source {
+            var suggestions = switch source {
             case .onDevice: await FollowUps.suggestOnDevice(question: question, reply: reply)
             case .fastLane: await FollowUps.suggest(question: question, reply: reply, baseURL: base!, apiKey: key, model: model)
             case .none: [String]()
+            }
+            if suggestions.isEmpty, source == .fastLane, !Task.isCancelled {
+                suggestions = await FollowUps.suggestOnDevice(question: question, reply: reply)
             }
             guard let self, !Task.isCancelled, messages.last?.id == replyID, !isStreaming else { return }
             followUps = suggestions

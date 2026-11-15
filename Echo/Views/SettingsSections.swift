@@ -305,14 +305,25 @@ struct AppearanceSettings: View {
 struct ComposerSettings: View {
     @State private var settings = Settings.shared
 
+    private var fastLaneSet: Bool {
+        Settings.normalizedBase(settings.fastLaneURL) != nil && !settings.fastLaneModel.isEmpty
+    }
+
     private var suggestionSource: FollowUps.Source {
-        FollowUps.source(fastLaneSet: Settings.normalizedBase(settings.fastLaneURL) != nil && !settings.fastLaneModel.isEmpty)
+        FollowUps.source(fastLaneSet: fastLaneSet, preferFastLane: settings.suggestionsFromFastLane)
     }
 
     var body: some View {
         Section {
+            // On even with no model: a reply that lists choices still gets them as chips.
             Toggle("Suggest Replies", isOn: $settings.suggestFollowUps)
-                .disabled(suggestionSource == .none)
+            if settings.suggestFollowUps, fastLaneSet, FollowUps.onDeviceAvailable {
+                Picker(String(localized: "Written By", comment: "Settings › Writing: which model writes the suggested replies, this device's (Apple Intelligence) or the OpenAI-compatible connection's"),
+                       selection: $settings.suggestionsFromFastLane) {
+                    Text(String(localized: "This Device", comment: "Settings › Writing › Written By: suggested replies written by Apple Intelligence on this device")).tag(false)
+                    Text(verbatim: settings.fastLaneModel).tag(true)
+                }
+            }
         } header: {
             Text("Replies")
         } footer: {
@@ -320,9 +331,9 @@ struct ComposerSettings: View {
             case .onDevice:
                 Text("Three things you might send next under each reply, written on this device by Apple Intelligence. Nothing is sent anywhere to write them.")
             case .fastLane:
-                Text("Three things you might ask next under each reply, written by the model on your OpenAI-compatible connection.")
+                Text(String(localized: "Three things you might send next under each reply, written by the model on your OpenAI-compatible connection, which is sent the reply to write them.", comment: "Settings › Writing footer: suggested replies come from the fast-lane model"))
             case .none:
-                Text("Three things you might send next under each reply. They need Apple Intelligence on this device, or an OpenAI-compatible connection set up.")
+                Text(String(localized: "A reply that lists choices and asks which one shows them under it, to tap. For suggestions under every reply, turn on Apple Intelligence or set up an OpenAI-compatible connection.", comment: "Settings › Writing footer: no model can write suggested replies on this device"))
             }
         }
         Section {

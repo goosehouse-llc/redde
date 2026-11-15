@@ -13,6 +13,11 @@ struct FollowUpParsingTests {
         #expect(lines == ["Is it late?", "Why the 18th?", "Who pays?"])
     }
 
+    @Test func answersAndRequestsCountWhenNotOnlyQuestions() {
+        let lines = FollowUps.parse("Here are some ideas:\n1. Yes, book it\n2. No, not tonight\n3. Make it 8pm instead\n4. Extra", questionsOnly: false)
+        #expect(lines == ["Yes, book it", "No, not tonight", "Make it 8pm instead"])
+    }
+
     @Test func nothingUsableMeansNoChips() {
         #expect(FollowUps.parse("I cannot help with that.").isEmpty)
         #expect(FollowUps.parse("").isEmpty)

@@ -67,6 +67,7 @@ extension Settings {
         static let showLiveActivity = "showLiveActivity"
         static let keepRepliesInBackground = "keepRepliesInBackground"
         static let suggestFollowUps = "suggestFollowUps"
+        static let suggestionsFromFastLane = "suggestionsFromFastLane"
         static let earpieceAtEar = "earpieceAtEar"
         static let announceOnAirPods = "announceOnAirPods"
         static let briefingTapsOpenRun = "briefingTapsOpenRun"
@@ -130,7 +131,7 @@ extension Settings {
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.todayTileOrder, Keys.todayUpNext, Keys.cardAppearance, Keys.agendaCalendars, Keys.newEventsCalendar, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.pinnedModels, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
-        Keys.suggestFollowUps, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
+        Keys.suggestFollowUps, Keys.suggestionsFromFastLane, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
         Keys.replyVoice, Keys.kokoroURL, Keys.speechModel,
@@ -188,6 +189,7 @@ extension Settings {
         case Keys.measureUnits: measureUnits = MeasureUnits(rawValue: text()) ?? .automatic
         case Keys.contextWindow: contextWindow = (value as? Int).flatMap { $0 > 0 ? $0 : nil } ?? Self.defaultContextWindow
         case Keys.suggestFollowUps: suggestFollowUps = flag()
+        case Keys.suggestionsFromFastLane: suggestionsFromFastLane = flag()
         case Keys.showLiveActivity: showLiveActivity = flag(true)
         case Keys.keepRepliesInBackground: keepRepliesInBackground = flag(true)
         case Keys.notificationSound: notificationSound = flag(true)
