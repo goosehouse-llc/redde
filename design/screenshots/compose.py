@@ -217,40 +217,39 @@ CORAL = (206, 92, 58); PEACH = (255, 222, 204); TEAL = (12, 84, 92); MINT = (178
 phone = [
   ('ph-chat-dark', '01-hero',    'Your agent, in your pocket.',  'Voice or text, on your own server. Nothing in between.', BLUE, WHITE, MIST),
   ('ph-voice',    '02-voice',    'Just talk.',                   'An orb that moves with your voice. On-device speech, hands-free if you like.', (24, 32, 46), WHITE, MIST),
-  ('ph-goal',     '03-goals',    'Goals it works toward.',       'Tell your agent what you want done. It plans the steps, checks in, and shows how far along you are.', CORAL, WHITE, PEACH),
-  ('ph-inbox',    '04-inbox',    'Your inbox, sorted.',          'Important, Needs Reply, FYI and News, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,
+  # 2.6: other agents through the Redde bridge, shown with the demo agent built into Redde (StoreShotsUITests.testAgentAtWork).
+  ('ph-agent',    '03-agents',   'Claude Code, Codex and more.', 'Coding agents on your computer, through the free Redde bridge. See every change and approve it from your phone.', PAPER, INK, SAND),
+  ('ph-inbox',    '04-inbox',    'Your inbox, sorted.',          'Seven piles and your own, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,
    [(READER, 0.80, (0.50, 0.66), -1.5)]),
-  ('ph-today',    '05-today',    'Today, above your chats.',     'Your inbox, lists, briefings and goals in one row. Coming Up shows what your agent will do next.', (24, 32, 46), WHITE, MIST,
-   [(COMINGUP, 0.80, (0.50, 0.80), 1.5)]),
-  ('ph-memory',   '06-memory',   'Memory you can see.',          'What your agent knows about you, in plain sentences. Change it, add to it, or bring it from ChatGPT or Claude.', PAPER, INK, SAND),
+  ('ph-today',    '05-today',    'What needs you, first.',       'Approvals, what’s working, your team and your day, at the top of your chats.', (24, 32, 46), WHITE, MIST),
+  ('ph-goal',     '06-goals',    'Goals it works toward.',       'Tell your agent what you want done. It plans the steps, checks in, and shows how far along you are.', CORAL, WHITE, PEACH),
   # 2.3.1: things to buy (the agent's pick, prices, stock), with a flight and the home's controls over it.
   ('ph-purchase', '07-answers',  'Answers you can use.',         'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
    [(FLIGHT, 0.45, (0.245, 0.865), -1.5), (HOME, 0.43, (0.765, 0.855), 1.5)], 2380),
   # 2.0: the bots. Raw shots from PromoVideoUITests.testBotsShots (see README).
-  ('ph-bots',     '08-bots',     'Meet the crew.',               'Each bot has a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
+  ('ph-crew',     '08-bots',     'Meet the crew.',               'Each bot has a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
   ('ph-approve',  '09-approve',  'Nothing happens without you.', 'Check an email before it sends. Approvals say in plain words what will change.', CHAR, BONE, ASH,
    [(REVIEW, 0.76, (0.50, 0.32), -1.5)]),
 ]
 pad = [
   ('pad-default-dark', '01-ipad',      'Built for iPad.',              'Sessions, scheduled jobs and the Kanban board beside the conversation.', BLUE, WHITE, MIST),
   ('pad-voice',        '02-ipad-voice','Just talk.',                   'An orb that moves with your voice. On-device speech, spoken replies, hands-free if you like.', (24, 32, 46), WHITE, MIST),
-  ('pad-today',        '03-ipad-goals', 'Goals it works toward.',      'Tell your agent what you want done. It plans the steps, checks in, and shows how far along you are.', CORAL, WHITE, PEACH,
-   [(GOAL, 0.40, (0.64, 0.58), -1.0)]),
-  ('pad-today',        '04-ipad-inbox', 'Your inbox, sorted.',         'Important, Needs Reply, FYI and News, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,
+  ('pad-agent',        '03-ipad-agents', 'Claude Code, Codex and more.', 'Coding agents on your computer, through the free Redde bridge. See every change and approve it from your phone.', PAPER, INK, SAND),
+  ('pad-today',        '04-ipad-inbox', 'Your inbox, sorted.',         'Seven piles and your own, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,
    [(INBOX, 0.40, (0.60, 0.28), -1.5), (READER, 0.36, (0.70, 0.66), 1.5)]),
-  ('pad-today',        '05-ipad-today', 'Today, above your chats.',    'Your inbox, lists, briefings and goals in one row. Coming Up shows what your agent will do next.', (24, 32, 46), WHITE, MIST,
+  ('pad-today',        '05-ipad-today', 'What needs you, first.',      'Approvals, what’s working, your team and your day, at the top of your chats. Coming Up shows what’s next.', (24, 32, 46), WHITE, MIST,
    [(COMINGUP, 0.44, (0.64, 0.42), 1.0)]),
-  ('pad-today-paper',  '06-ipad-memory', 'Memory you can see.',       'What your agent knows about you, in plain sentences. Change it, add to it, or bring it from ChatGPT or Claude.', PAPER, INK, SAND,
-   [(MEMORY, 0.40, (0.64, 0.56), -1.0)]),
+  ('pad-today',        '06-ipad-goals',  'Goals it works toward.',      'Tell your agent what you want done. It plans the steps, checks in, and shows how far along you are.', CORAL, WHITE, PEACH,
+   [(GOAL, 0.40, (0.64, 0.58), -1.0)]),
   ('pad-purchase',     '07-ipad-answers', 'Answers you can use.',      'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
    [(FLIGHT, 0.28, (0.19, 0.60), -1.5), (HOME, 0.24, (0.19, 0.80), 2.0)]),
-  ('pad-bots',         '08-ipad-bots', 'Meet the crew.',               'Each bot has a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
+  ('pad-crew',         '08-ipad-bots', 'Meet the crew.',               'Each bot has a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
   ('pad-approve',      '09-ipad-approve', 'Nothing happens without you.', 'Check an email before it sends. Approvals say in plain words what will change.', CHAR, BONE, ASH,
    [(REVIEW, 0.38, (0.64, 0.73), -1.5)]),
 ]
 # iPad slots whose capture leaves most of the 13-inch screen empty, drawn larger in the frame (zoom.py):
 # the day's question and card, and the crew's screen, restacked larger.
-ZOOMED = {}   # 2.3's day and crew slots (zoom.day, zoom.crew) left in 2.4
+ZOOMED = {'08-ipad-bots': zoom.crew}   # 2.6: the crew is back (2.3's day slot, zoom.day, stays out)
 for kind, slots in (('iphone-6.9', phone), ('ipad-13', pad)):
     for src, name, h, s, bg, fg, sfg, *cards in slots:
         if ONLY and name not in ONLY: continue
