@@ -437,7 +437,114 @@
         }
       }
     },
+    "%@ attachments aren't supported on the Hermes API alone. Save the Hermes Dashboard login in Settings → Connection → Connection details, and they go to the server through it." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-vedhæftninger understøttes ikke på Hermes API alene. Gem login til Hermes Dashboard i Indstillinger → Forbindelse → Forbindelsesdetaljer, så går de til serveren gennem det."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-Anhänge werden über die Hermes API allein nicht unterstützt. Sichere die Hermes-Dashboard-Anmeldung in Einstellungen → Verbindung → Verbindungsdetails, dann gehen sie darüber an den Server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los adjuntos de %@ no son compatibles solo con la Hermes API. Guarda el inicio de sesión del Hermes Dashboard en Ajustes → Conexión → Datos de conexión, y llegarán al servidor a través de él."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pièces jointes %@ ne sont pas prises en charge avec Hermes API uniquement. Enregistrez l’identifiant du Hermes Dashboard dans Réglages → Connexion → Détails de connexion, et elles passeront par lui vers le serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli allegati %@ non sono supportati solo con la Hermes API. Salva l'accesso alla Hermes Dashboard in Impostazioni → Connessione → Dettagli connessione, e arriveranno al server tramite la Dashboard."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes APIだけでは%@の添付ファイルに対応していません。設定 → 接続 → 接続の詳細でHermes Dashboardのログイン情報を保存すると、それを経由してサーバに送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes API만으로는 %@ 첨부 파일이 지원되지 않습니다. 설정 → 연결 → 연결 세부사항에 Hermes Dashboard 로그인 정보를 저장하면 Dashboard를 통해 서버로 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-vedlegg støttes ikke på Hermes API alene. Lagre påloggingen til Hermes Dashboard i Innstillinger → Tilkobling → Tilkoblingsdetaljer, så går de til tjeneren via den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-bijlagen worden niet ondersteund op alleen de Hermes API. Bewaar de Hermes Dashboard-login in Instellingen → Verbinding → Verbindingsgegevens, dan gaan ze daarlangs naar de server."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Załączniki typu %@ nie są obsługiwane w samym Hermes API. Zapisz login do Hermes Dashboard w Ustawienia → Połączenie → Szczegóły połączenia, a trafią na serwer przez Dashboard."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anexos de %@ não são aceitos só com a Hermes API. Salve o login do Hermes Dashboard em Ajustes → Conexão → Detalhes da conexão, e eles vão para o servidor por ele."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вложения типа «%@» не поддерживаются только через Hermes API. Сохраните вход в Hermes Dashboard в «Настройки» → «Подключение» → «Сведения о подключении», и они будут отправляться на сервер через него."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilagor av typen %@ stöds inte enbart via Hermes API. Spara inloggningen för Hermes Dashboard i Inställningar → Anslutning → Anslutningsuppgifter, så går de till servern via den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ekleri tek başına Hermes API'de desteklenmiyor. Hermes Dashboard girişini Ayarlar → Bağlantı → Bağlantı ayrıntıları bölümünde kaydedin, ekler onun üzerinden sunucuya gitsin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладення типу %@ не підтримуються лише через Hermes API. Збережіть дані входу Hermes Dashboard у Параметри → З’єднання → Відомості про з’єднання, і вони надходитимуть на сервер через нього."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅使用Hermes API时不支持%@附件。在设置 → 连接 → 连接详细信息中保存Hermes Dashboard登录信息后，它们会经由Dashboard发送到服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "僅使用 Hermes API 時不支援 %@ 附件。請在「設定」→「連線」→「連線詳細資訊」中儲存 Hermes Dashboard 登入資訊，附件就會透過它傳送到伺服器。"
+          }
+        }
+      }
+    },
     "%@ attachments aren't supported on the Hermes API alone. Save the Hermes Dashboard login in Settings → Connection details, and they go to the server through it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -9830,7 +9937,114 @@
         }
       }
     },
+    "Couldn't reach your iPhone, which asks for the watch while Redde is on the Dashboard. Add the Hermes API there (Settings › Connection › Connection details) and the watch asks on its own." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke nå din iPhone, som spørger for uret, mens Redde er på Dashboard. Tilføj Hermes API der (Indstillinger › Forbindelse › Forbindelsesdetaljer), så spørger uret selv."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein iPhone war nicht erreichbar; es fragt für die Watch, solange Redde das Dashboard nutzt. Füge dort die Hermes API hinzu (Einstellungen › Verbindung › Verbindungsdetails), dann fragt die Watch selbst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo contactar con tu iPhone, que pregunta en nombre del reloj mientras Redde usa el Dashboard. Añade allí la Hermes API (Ajustes › Conexión › Datos de conexión) y el reloj preguntará por su cuenta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de joindre votre iPhone, qui fait les demandes pour la montre tant que Redde est sur le Dashboard. Ajoutez-y Hermes API (Réglages › Connexion › Détails de connexion) et la montre demandera seule."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile raggiungere il tuo iPhone, che fa le domande per l'Apple Watch mentre Redde è sulla Dashboard. Aggiungi lì la Hermes API (Impostazioni › Connessione › Dettagli connessione) e l'Apple Watch chiederà da solo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneに接続できませんでした。ReddeがDashboardを使用している間は、iPhoneがApple Watchの代わりに質問します。iPhoneでHermes APIを追加すると（設定 › 接続 › 接続の詳細）、Apple Watchが単独で質問できるようになります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 Dashboard를 사용하는 동안 Apple Watch 대신 질문하는 iPhone에 연결할 수 없습니다. iPhone에서 Hermes API를 추가하면(설정 › 연결 › 연결 세부사항) Apple Watch가 직접 질문합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke nå iPhonen din, som spør for klokken mens Redde er på Dashboard. Legg til Hermes API der (Innstillinger › Tilkobling › Tilkoblingsdetaljer), så spør klokken på egen hånd."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan je iPhone niet bereiken, die namens de Apple Watch vraagt terwijl Redde op het Dashboard zit. Voeg daar de Hermes API toe (Instellingen › Verbinding › Verbindingsgegevens), dan vraagt de Apple Watch zelf."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak połączenia z iPhone'em, który pyta w imieniu zegarka, gdy Redde korzysta z Dashboard. Dodaj tam Hermes API (Ustawienia › Połączenie › Szczegóły połączenia), a zegarek będzie pytać samodzielnie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível acessar seu iPhone, que pergunta pelo relógio enquanto o Redde está no Dashboard. Adicione a Hermes API lá (Ajustes › Conexão › Detalhes da conexão) e o relógio pergunta sozinho."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет связи с iPhone, который задает вопросы за часы, пока Redde подключен к Dashboard. Добавьте там Hermes API («Настройки» › «Подключение» › «Сведения о подключении»), и часы будут спрашивать сами."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunde inte nå din iPhone, som frågar åt klockan medan Redde använder Dashboard. Lägg till Hermes API där (Inställningar › Anslutning › Anslutningsuppgifter) så frågar klockan på egen hand."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde Dashboard'dayken saat adına soran iPhone'unuza ulaşılamadı. iPhone'da Hermes API'yi de ekleyin (Ayarlar › Bağlantı › Bağlantı ayrıntıları), saat kendi başına sorsun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося зв’язатися з вашим iPhone, який надсилає запити за годинник, поки Redde працює через Dashboard. Додайте там Hermes API (Параметри › З’єднання › Відомості про з’єднання), і годинник запитуватиме сам."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接你的iPhone；当Redde使用Dashboard时，由iPhone代手表提问。请在iPhone上添加Hermes API（设置 › 连接 › 连接详细信息），手表就能自行提问。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連線到你的 iPhone；當 Redde 使用 Dashboard 時，手錶需透過 iPhone 詢問。請在 iPhone 上加入 Hermes API（「設定」›「連線」›「連線詳細資訊」），手錶就能自行詢問。"
+          }
+        }
+      }
+    },
     "Couldn't reach your iPhone, which asks for the watch while Redde is on the Dashboard. Add the Hermes API there (Settings › Connection details) and the watch asks on its own." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {

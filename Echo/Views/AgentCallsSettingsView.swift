@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Settings → Notifications → Calls from Agents (`AgentCalls`): calls on or off on this iPhone,
-/// and which agents on the server in use may call it.
+/// Settings → Voice → Calls from Agents (`AgentCalls`; under Notifications until 2026-11-15): calls
+/// on or off on this iPhone, and which agents on the server in use may call it.
 struct AgentCallsSettingsView: View {
     @State private var settings = Settings.shared
     @State private var calls = AgentCalls.shared
@@ -90,7 +90,7 @@ struct AgentCallsSettingsView: View {
     private var problem: Problem? {
         if !push.pairings.contains(where: \.isPaired) {
             return Problem(text: String(localized: "Pair this iPhone for notifications first: calls come the same way."),
-                           link: .init(title: String(localized: "Notify When Redde Is Closed"), destination: AnyView(PushSettingsView())))
+                           link: .init(title: String(localized: "Alerts When Redde Is Closed"), destination: AnyView(PushSettingsView())))
         }
         if settings.serveBaseURL == nil {
             return Problem(text: String(localized: "Calls need the Dashboard login, which is how Redde tells your Hermes who may call."))
@@ -100,8 +100,8 @@ struct AgentCallsSettingsView: View {
             return Problem(text: String(localized: "Calls need the Redde plugin 1.8.0 or later on your Hermes."),
                            link: .init(title: String(localized: "Redde Plugin"), destination: AnyView(ReddePluginView())))
         case .noPairing:
-            return Problem(text: String(localized: "This iPhone isn't paired with the Hermes Redde is on now, so it can't call you. Pair it from Notify When Redde Is Closed."),
-                           link: .init(title: String(localized: "Notify When Redde Is Closed"), destination: AnyView(PushSettingsView())))
+            return Problem(text: String(localized: "This iPhone isn't paired with the Hermes Redde is on now, so it can't call you. Pair it from Alerts When Redde Is Closed."),
+                           link: .init(title: String(localized: "Alerts When Redde Is Closed"), destination: AnyView(PushSettingsView())))
         case .noDashboard:
             return Problem(text: String(localized: "Calls need the Dashboard login, which is how Redde tells your Hermes who may call."))
         case .failed(let reason):

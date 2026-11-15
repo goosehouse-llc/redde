@@ -103,7 +103,7 @@ nonisolated enum ConnectionTester {
     /// What to say when an access gate turns the check away.
     private static func gated(_ url: URL, status: Int, headers: [String: String]) -> String {
         headers.isEmpty
-            ? String(localized: "\(url.host() ?? String(localized: "The host")) is behind an access gate (HTTP \(status)). Add what it asks for under Settings → Connection details: a Cloudflare Access service token, a Pangolin access token, or the proxy's own headers.")
+            ? String(localized: "\(url.host() ?? String(localized: "The host")) is behind an access gate (HTTP \(status)). Add what it asks for under Settings → Connection → Connection details: a Cloudflare Access service token, a Pangolin access token, or the proxy's own headers.")
             : String(localized: "The access gate in front of \(url.host() ?? String(localized: "the host")) turned the request away (HTTP \(status)). Check the Cloudflare Access client ID and secret, the Pangolin access token, or the custom headers.")
     }
 

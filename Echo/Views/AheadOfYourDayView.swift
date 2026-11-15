@@ -215,14 +215,14 @@ struct AheadOfYourDayView: View {
         let line = status(of: .pairing)
         return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 12) {
-                Label { Text("Notify When Redde Is Closed") } icon: { Image(systemName: "bell.badge") }
+                Label { Text("Alerts When Redde Is Closed") } icon: { Image(systemName: "bell.badge") }
                 Spacer(minLength: 4)
                 StatusMark(status: line)
             }
             if let line { StatusLine(status: line).padding(.leading, 40) }
             if setup.plan.pairing == .byCode, !setup.situation.paired {
                 Button { pairingByCode = true } label: {
-                    Text("Pair with a Code…", comment: "Ahead of Your Day: opens Settings → Notifications → Notify When Redde Is Closed to pair with the plugin's code")
+                    Text("Pair with a Code…", comment: "Ahead of Your Day: opens Settings → Notifications → Alerts When Redde Is Closed to pair with the plugin's code")
                 }
                 .padding(.leading, 40)
             }
@@ -312,7 +312,7 @@ struct AheadOfYourDayView: View {
         case .connection:
             if let problem = setup.listProblem { return .failed(problem) }
             return setup.situation.jobs ? nil
-                : .failed(String(localized: "Your agent's daily jobs need the Hermes Dashboard login or the Hermes API key. Add one in Settings → Connection details.", comment: "Ahead of Your Day: no connection that can make Hermes jobs"))
+                : .failed(String(localized: "Your agent's daily jobs need the Hermes Dashboard login or the Hermes API key. Add one in Settings → Connection → Connection details.", comment: "Ahead of Your Day: no connection that can make Hermes jobs"))
         case .plugin:
             switch plan.plugin {
             case .run, .skip(.upToDate):
@@ -330,7 +330,7 @@ struct AheadOfYourDayView: View {
             case .skip(.alreadyPaired): return .skipped(String(localized: "Paired"))
             case .skip(.notNeeded): return .skipped(String(localized: "Not needed for what you picked.", comment: "Ahead of Your Day: the plugin or a pairing, when only Leave-By Alerts are picked"))
             case .direct: return .skipped(String(localized: "Not paired yet. Redde offers it at the end, so ideas and briefings arrive with Redde closed.", comment: "Ahead of Your Day: pairing over the Dashboard comes after Turn On"))
-            case .byCode: return .needsYou(String(localized: "So ideas and briefings arrive with Redde closed, pair this device with a code in Settings → Notifications → Notify When Redde Is Closed.", comment: "Ahead of Your Day: pairing over the Hermes API takes the plugin's code"))
+            case .byCode: return .needsYou(String(localized: "So ideas and briefings arrive with Redde closed, pair this device with a code in Settings → Notifications → Alerts When Redde Is Closed.", comment: "Ahead of Your Day: pairing over the Hermes API takes the plugin's code"))
             case .skip: return nil
             }
         }

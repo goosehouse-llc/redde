@@ -97,7 +97,7 @@ nonisolated enum WatchRelay {
         var errorDescription: String? {
             switch self {
             case .phoneOutOfReach:
-                String(localized: "Couldn't reach your iPhone, which asks for the watch while Redde is on the Dashboard. Add the Hermes API there (Settings › Connection details) and the watch asks on its own.")
+                String(localized: "Couldn't reach your iPhone, which asks for the watch while Redde is on the Dashboard. Add the Hermes API there (Settings › Connection › Connection details) and the watch asks on its own.")
             case let .phone(reason): reason
             }
         }

@@ -501,7 +501,7 @@ final class AheadOfYourDaySetup {
         if !jobsWanted { return .skipped(String(localized: "Leave-By Alerts are worked out on this device.", comment: "Ahead of Your Day: only Leave-By Alerts picked, nothing asked of the server")) }
         if let listProblem { return .failed(listProblem) }
         guard situation.jobs else {
-            return .failed(String(localized: "Your agent's daily jobs need the Hermes Dashboard login or the Hermes API key. Add one in Settings → Connection details.", comment: "Ahead of Your Day: no connection that can make Hermes jobs"))
+            return .failed(String(localized: "Your agent's daily jobs need the Hermes Dashboard login or the Hermes API key. Add one in Settings → Connection → Connection details.", comment: "Ahead of Your Day: no connection that can make Hermes jobs"))
         }
         return .done(situation.dashboard ? String(localized: "Through the Hermes Dashboard.", comment: "Ahead of Your Day: how the daily jobs are made")
             : String(localized: "Through the Hermes API.", comment: "Ahead of Your Day: how the daily jobs are made"))
@@ -526,11 +526,11 @@ final class AheadOfYourDaySetup {
         case .direct:
             return .needsYou(String(localized: "Pair this device so ideas and briefings arrive with Redde closed.", comment: "Ahead of Your Day: offering to pair for notifications"))
         case .byCode:
-            return .needsYou(String(localized: "So ideas and briefings arrive with Redde closed, pair this device with a code in Settings → Notifications → Notify When Redde Is Closed.", comment: "Ahead of Your Day: pairing over the Hermes API takes the plugin's code"))
+            return .needsYou(String(localized: "So ideas and briefings arrive with Redde closed, pair this device with a code in Settings → Notifications → Alerts When Redde Is Closed.", comment: "Ahead of Your Day: pairing over the Hermes API takes the plugin's code"))
         case .skip(.alreadyPaired):
             return .skipped(String(localized: "Paired"))
         case .skip(.waitsForRestart):
-            return .needsYou(String(localized: "Once Hermes has restarted, pair this device in Settings → Notifications → Notify When Redde Is Closed.", comment: "Ahead of Your Day: pairing waits for the plugin to load"))
+            return .needsYou(String(localized: "Once Hermes has restarted, pair this device in Settings → Notifications → Alerts When Redde Is Closed.", comment: "Ahead of Your Day: pairing waits for the plugin to load"))
         case .skip:
             return nil
         }
