@@ -2,23 +2,14 @@ import CoreGraphics
 import EventKit
 import Foundation
 
-/// The calendar and reminders tools, through EventKit. Each call makes its own store and hands
-/// back plain values: EventKit's objects don't cross between threads, and its callbacks come on
-/// threads of their own. None of this is tied to the main actor, and the tools run off it
-/// (`DeviceToolRunner.run`); what is called from the main actor elsewhere runs there.
+/// The calendar and reminders tools, through EventKit: the app's one store (`CalendarReader`),
+/// off the main actor, handing back plain values (EventKit's objects stay with the store). The
+/// tools themselves run off the main actor too (`DeviceToolRunner.run`).
 nonisolated enum DeviceCalendar {
     // MARK: - Permission
 
     /// Whether iOS lets Redde at the calendar (or the reminders), asking the first time.
-    static func allowed(_ type: EKEntityType) async -> Bool {
-        switch EKEventStore.authorizationStatus(for: type) {
-        case .fullAccess: return true
-        case .notDetermined:
-            let store = EKEventStore()
-            return (try? await (type == .event ? store.requestFullAccessToEvents() : store.requestFullAccessToReminders())) ?? false
-        default: return false
-        }
-    }
+    static func allowed(_ type: EKEntityType) async -> Bool { await CalendarReader.shared.allowed(type) }
 
     // MARK: - Events
 
@@ -43,18 +34,19 @@ nonisolated enum DeviceCalendar {
         // "Up to the 14th" means the whole of the 14th.
         if let text = args["end"]?.string, DeviceDates.isDayOnly(text) { end = end.addingTimeInterval(86400) }
         guard end > start else { throw DeviceToolError("\"end\" has to be after \"start\".") }
-        let store = EKEventStore()
-        let calendars = shared(in: store)
-        // None of the chosen calendars is on this phone: nothing to read (an empty list would be all).
-        if calendars?.isEmpty == true { return .object(["events": .array([]), "more": .number(0)]) }
-        let found = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars))
-            .filter { event in matches([event.title, event.location, event.notes], query: query) }
-            .sorted { $0.startDate < $1.startDate }
         let limit = args.limit(default: 50, most: most)
-        return .object([
-            "events": .array(found.prefix(limit).map(describe)),
-            "more": .number(Double(max(0, found.count - limit))),
-        ])
+        return await CalendarReader.shared.read { [end] store in
+            let calendars = shared(in: store)
+            // None of the chosen calendars is on this phone: nothing to read (an empty list would be all).
+            if calendars?.isEmpty == true { return .object(["events": .array([]), "more": .number(0)]) }
+            let found = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars))
+                .filter { event in matches([event.title, event.location, event.notes], query: query) }
+                .sorted { $0.startDate < $1.startDate }
+            return .object([
+                "events": .array(found.prefix(limit).map(describe)),
+                "more": .number(Double(max(0, found.count - limit))),
+            ])
+        }
     }
 
     /// How far ahead a search with no end looks.
@@ -82,39 +74,41 @@ nonisolated enum DeviceCalendar {
         let allDay = args["all_day"]?.bool ?? DeviceDates.isDayOnly(startText)
         let end = try args.date("end") ?? (allDay ? start : start.addingTimeInterval(3600))
         guard end >= start else { throw DeviceToolError("\"end\" has to be after \"start\".") }
-        let store = EKEventStore()
-        let event = EKEvent(eventStore: store)
-        event.title = title
-        event.startDate = start
-        event.endDate = end
-        event.isAllDay = allDay
-        event.location = args["location"]?.string
-        event.notes = args["notes"]?.string
-        // Only into a calendar the agent may use; the others aren't named either.
-        let writable = (shared(in: store) ?? store.calendars(for: .event)).filter(\.allowsContentModifications)
-        if let named = args["calendar"]?.string?.nilIfEmpty {
-            guard let calendar = writable.first(where: { $0.title.caseInsensitiveCompare(named) == .orderedSame }) else {
-                let names = writable.map(\.title).joined(separator: ", ")
-                throw DeviceToolError("There is no calendar called \"\(named)\" that can be added to. The ones that can: \(names.isEmpty ? "none" : names).")
+        let location = args["location"]?.string, notes = args["notes"]?.string, named = args["calendar"]?.string?.nilIfEmpty
+        return try await CalendarReader.shared.read { store in
+            let event = EKEvent(eventStore: store)
+            event.title = title
+            event.startDate = start
+            event.endDate = end
+            event.isAllDay = allDay
+            event.location = location
+            event.notes = notes
+            // Only into a calendar the agent may use; the others aren't named either.
+            let writable = (shared(in: store) ?? store.calendars(for: .event)).filter(\.allowsContentModifications)
+            if let named {
+                guard let calendar = writable.first(where: { $0.title.caseInsensitiveCompare(named) == .orderedSame }) else {
+                    let names = writable.map(\.title).joined(separator: ", ")
+                    throw DeviceToolError("There is no calendar called \"\(named)\" that can be added to. The ones that can: \(names.isEmpty ? "none" : names).")
+                }
+                event.calendar = calendar
+            } else if let chosen = CalendarChoice.newEvents,
+                      let calendar = store.calendars(for: .event).first(where: { $0.allowsContentModifications && $0.title.caseInsensitiveCompare(chosen) == .orderedSame }) {
+                // The calendar chosen for new events in Settings → Agent → Calendars, ahead of the
+                // Calendar app's default; chosen there, it may be added to even when it isn't shown.
+                event.calendar = calendar
+            } else if let calendar = store.defaultCalendarForNewEvents, writable.contains(where: { $0.calendarIdentifier == calendar.calendarIdentifier }) {
+                event.calendar = calendar
+            } else if let calendar = writable.first {
+                event.calendar = calendar
+            } else {
+                throw DeviceToolError(CalendarChoice.chosen.isEmpty ? "The iPhone has no calendar to add events to."
+                                      : "None of the calendars chosen in Redde's Settings → Calendars can be added to on this iPhone.")
             }
-            event.calendar = calendar
-        } else if let chosen = CalendarChoice.newEvents,
-                  let calendar = store.calendars(for: .event).first(where: { $0.allowsContentModifications && $0.title.caseInsensitiveCompare(chosen) == .orderedSame }) {
-            // The calendar chosen for new events in Settings → Agent → Calendars, ahead of the
-            // Calendar app's default; chosen there, it may be added to even when it isn't shown.
-            event.calendar = calendar
-        } else if let calendar = store.defaultCalendarForNewEvents, writable.contains(where: { $0.calendarIdentifier == calendar.calendarIdentifier }) {
-            event.calendar = calendar
-        } else if let calendar = writable.first {
-            event.calendar = calendar
-        } else {
-            throw DeviceToolError(CalendarChoice.chosen.isEmpty ? "The iPhone has no calendar to add events to."
-                                  : "None of the calendars chosen in Redde's Settings → Calendars can be added to on this iPhone.")
+            do { try store.save(event, span: .thisEvent) } catch { throw DeviceToolError("The event couldn't be saved: \(error.localizedDescription)") }
+            // Planned shows what the agent added.
+            PhoneMade.note(.init(kind: .event, id: event.eventIdentifier ?? "", title: title, at: start, added: .now))
+            return .object(["added": describe(event)])
         }
-        do { try store.save(event, span: .thisEvent) } catch { throw DeviceToolError("The event couldn't be saved: \(error.localizedDescription)") }
-        // Planned shows what the agent added.
-        PhoneMade.note(.init(kind: .event, id: event.eventIdentifier ?? "", title: title, at: start, added: .now))
-        return .object(["added": describe(event)])
     }
 
     /// A colour as "#RRGGBB" in sRGB.
@@ -147,28 +141,29 @@ nonisolated enum DeviceCalendar {
     /// `list` (a list's name), `include_completed`, `limit`.
     static func reminders(_ args: JSONValue) async throws -> JSONValue {
         guard await allowed(.reminder) else { throw DeviceToolError.refused(.reminders) }
-        let store = EKEventStore()
-        var lists: [EKCalendar]?
-        if let named = args["list"]?.string?.nilIfEmpty {
-            let matching = store.calendars(for: .reminder).filter { $0.title.caseInsensitiveCompare(named) == .orderedSame }
-            guard !matching.isEmpty else {
-                throw DeviceToolError("There is no reminders list called \"\(named)\". The lists: \(store.calendars(for: .reminder).map(\.title).joined(separator: ", ")).")
+        let named = args["list"]?.string?.nilIfEmpty
+        @Sendable func lists(in store: EKEventStore) -> [EKCalendar]? {
+            named.map { named in store.calendars(for: .reminder).filter { $0.title.caseInsensitiveCompare(named) == .orderedSame } }
+        }
+        if let named {
+            try await CalendarReader.shared.read { store in
+                guard lists(in: store)?.isEmpty == false else {
+                    throw DeviceToolError("There is no reminders list called \"\(named)\". The lists: \(store.calendars(for: .reminder).map(\.title).joined(separator: ", ")).")
+                }
             }
-            lists = matching
         }
         let all = args["include_completed"]?.bool == true
-        let predicate = all ? store.predicateForReminders(in: lists)
-            : store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: lists)
         let limit = args.limit(default: 50, most: 200)
         // The fetch answers on a thread of EventKit's own; the reminders are turned into plain
         // values there, before they leave it.
-        let found: [JSONValue] = await withCheckedContinuation { done in
-            store.fetchReminders(matching: predicate) { reminders in
-                let sorted = (reminders ?? []).sorted { a, b in
-                    (a.dueDateComponents?.date ?? .distantFuture, a.title ?? "") < (b.dueDateComponents?.date ?? .distantFuture, b.title ?? "")
-                }
-                done.resume(returning: sorted.map(describe))
+        let found: [JSONValue] = await CalendarReader.shared.reminders(matching: { store in
+            all ? store.predicateForReminders(in: lists(in: store))
+                : store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: lists(in: store))
+        }) { _, reminders in
+            reminders.sorted { a, b in
+                (a.dueDateComponents?.date ?? .distantFuture, a.title ?? "") < (b.dueDateComponents?.date ?? .distantFuture, b.title ?? "")
             }
+            .map(describe)
         }
         return .object([
             "reminders": .array(Array(found.prefix(limit))),
@@ -180,42 +175,46 @@ nonisolated enum DeviceCalendar {
     static func addReminder(_ args: JSONValue) async throws -> JSONValue {
         guard await allowed(.reminder) else { throw DeviceToolError.refused(.reminders) }
         let title = try args.required("title")
-        let store = EKEventStore()
-        let reminder = EKReminder(eventStore: store)
-        reminder.title = title
-        reminder.notes = args["notes"]?.string
-        if let named = args["list"]?.string?.nilIfEmpty {
-            guard let list = store.calendars(for: .reminder).first(where: { $0.title.caseInsensitiveCompare(named) == .orderedSame && $0.allowsContentModifications }) else {
-                throw DeviceToolError("There is no reminders list called \"\(named)\". The lists: \(store.calendars(for: .reminder).map(\.title).joined(separator: ", ")).")
+        let notes = args["notes"]?.string, named = args["list"]?.string?.nilIfEmpty
+        let dueText = args["due"]?.string, due = try args.date("due")
+        return try await CalendarReader.shared.read { store in
+            let reminder = EKReminder(eventStore: store)
+            reminder.title = title
+            reminder.notes = notes
+            if let named {
+                guard let list = store.calendars(for: .reminder).first(where: { $0.title.caseInsensitiveCompare(named) == .orderedSame && $0.allowsContentModifications }) else {
+                    throw DeviceToolError("There is no reminders list called \"\(named)\". The lists: \(store.calendars(for: .reminder).map(\.title).joined(separator: ", ")).")
+                }
+                reminder.calendar = list
+            } else {
+                guard let list = store.defaultCalendarForNewReminders() else { throw DeviceToolError("The iPhone has no reminders list to add to.") }
+                reminder.calendar = list
             }
-            reminder.calendar = list
-        } else {
-            guard let list = store.defaultCalendarForNewReminders() else { throw DeviceToolError("The iPhone has no reminders list to add to.") }
-            reminder.calendar = list
+            if let text = dueText, let due {
+                let dayOnly = DeviceDates.isDayOnly(text)
+                var parts: Set<Calendar.Component> = [.year, .month, .day]
+                if !dayOnly { parts.formUnion([.hour, .minute]) }
+                reminder.dueDateComponents = Calendar.current.dateComponents(parts, from: due)
+                // A time of day is a time to be told.
+                if !dayOnly { reminder.addAlarm(EKAlarm(absoluteDate: due)) }
+            }
+            do { try store.save(reminder, commit: true) } catch { throw DeviceToolError("The reminder couldn't be saved: \(error.localizedDescription)") }
+            PhoneMade.note(.init(kind: .reminder, id: reminder.calendarItemIdentifier, title: title,
+                                 at: reminder.dueDateComponents.flatMap { Calendar.current.date(from: $0) }, added: .now))
+            return .object(["added": describe(reminder)])
         }
-        if let text = args["due"]?.string, let due = try args.date("due") {
-            let dayOnly = DeviceDates.isDayOnly(text)
-            var parts: Set<Calendar.Component> = [.year, .month, .day]
-            if !dayOnly { parts.formUnion([.hour, .minute]) }
-            reminder.dueDateComponents = Calendar.current.dateComponents(parts, from: due)
-            // A time of day is a time to be told.
-            if !dayOnly { reminder.addAlarm(EKAlarm(absoluteDate: due)) }
-        }
-        do { try store.save(reminder, commit: true) } catch { throw DeviceToolError("The reminder couldn't be saved: \(error.localizedDescription)") }
-        PhoneMade.note(.init(kind: .reminder, id: reminder.calendarItemIdentifier, title: title,
-                             at: reminder.dueDateComponents.flatMap { Calendar.current.date(from: $0) }, added: .now))
-        return .object(["added": describe(reminder)])
     }
 
     /// `id`, as a list gave it.
     static func completeReminder(_ args: JSONValue) async throws -> JSONValue {
         guard await allowed(.reminder) else { throw DeviceToolError.refused(.reminders) }
         let id = try args.required("id")
-        let store = EKEventStore()
-        guard let reminder = store.calendarItem(withIdentifier: id) as? EKReminder else { throw DeviceToolError("There is no reminder with that id.") }
-        reminder.isCompleted = true
-        do { try store.save(reminder, commit: true) } catch { throw DeviceToolError("The reminder couldn't be saved: \(error.localizedDescription)") }
-        return .object(["completed": describe(reminder)])
+        return try await CalendarReader.shared.read { store in
+            guard let reminder = store.calendarItem(withIdentifier: id) as? EKReminder else { throw DeviceToolError("There is no reminder with that id.") }
+            reminder.isCompleted = true
+            do { try store.save(reminder, commit: true) } catch { throw DeviceToolError("The reminder couldn't be saved: \(error.localizedDescription)") }
+            return .object(["completed": describe(reminder)])
+        }
     }
 
     // MARK: - Ticks from Redde
@@ -230,17 +229,15 @@ nonisolated enum DeviceCalendar {
         guard EKEventStore.authorizationStatus(for: .reminder) == .fullAccess else { return false }
         let wanted = folded(text)
         guard !wanted.isEmpty else { return false }
-        let store = EKEventStore()
         // Done: the ones still open. Undone: those done in the last week (the tick taken back).
-        let predicate = done ? store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: nil)
-            : store.predicateForCompletedReminders(withCompletionDateStarting: now.addingTimeInterval(-7 * 86400), ending: now, calendars: nil)
-        return await withCheckedContinuation { finished in
-            store.fetchReminders(matching: predicate) { reminders in
-                let candidates = (reminders ?? []).filter { $0.calendar?.allowsContentModifications != false }
-                guard let reminder = match(wanted, in: candidates, done: done) else { finished.resume(returning: false); return }
-                reminder.isCompleted = done
-                finished.resume(returning: (try? store.save(reminder, commit: true)) != nil)
-            }
+        return await CalendarReader.shared.reminders(matching: { store in
+            done ? store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: nil)
+                : store.predicateForCompletedReminders(withCompletionDateStarting: now.addingTimeInterval(-7 * 86400), ending: now, calendars: nil)
+        }) { store, reminders in
+            let candidates = reminders.filter { $0.calendar?.allowsContentModifications != false }
+            guard let reminder = match(wanted, in: candidates, done: done) else { return false }
+            reminder.isCompleted = done
+            return (try? store.save(reminder, commit: true)) != nil
         }
     }
 
@@ -255,28 +252,27 @@ nonisolated enum DeviceCalendar {
     /// first. None without Reminders access (this never asks) or without a due date.
     static func remindersDue(by end: Date) async -> [DueReminder] {
         guard EKEventStore.authorizationStatus(for: .reminder) == .fullAccess else { return [] }
-        let store = EKEventStore()
-        let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: end, calendars: nil)
-        return await withCheckedContinuation { finished in
-            store.fetchReminders(matching: predicate) { reminders in
-                let due = (reminders ?? []).compactMap { r -> DueReminder? in
-                    guard let date = r.dueDateComponents.flatMap({ Calendar.current.date(from: $0) }), date <= end,
-                          let title = r.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
-                    return DueReminder(id: r.calendarItemIdentifier, title: title, due: date)
-                }
-                finished.resume(returning: due.sorted { $0.due < $1.due })
+        return await CalendarReader.shared.reminders(matching: { store in
+            store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: end, calendars: nil)
+        }) { _, reminders in
+            let due = reminders.compactMap { r -> DueReminder? in
+                guard let date = r.dueDateComponents.flatMap({ Calendar.current.date(from: $0) }), date <= end,
+                      let title = r.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+                return DueReminder(id: r.calendarItemIdentifier, title: title, due: date)
             }
+            return due.sorted { $0.due < $1.due }
         }
     }
 
     /// Which of these reminders are done now (or gone from Reminders altogether).
     static func finished(_ ids: Set<String>) async -> Set<String> {
         guard !ids.isEmpty, EKEventStore.authorizationStatus(for: .reminder) == .fullAccess else { return [] }
-        let store = EKEventStore()
-        return Set(ids.filter { id in
-            guard let reminder = store.calendarItem(withIdentifier: id) as? EKReminder else { return true }
-            return reminder.isCompleted
-        })
+        return await CalendarReader.shared.read { store in
+            Set(ids.filter { id in
+                guard let reminder = store.calendarItem(withIdentifier: id) as? EKReminder else { return true }
+                return reminder.isCompleted
+            })
+        }
     }
 
     /// The reminder an item means: its title the item's, or the item's start when the item adds a

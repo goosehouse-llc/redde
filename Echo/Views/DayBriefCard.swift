@@ -134,7 +134,7 @@ struct DayBriefAgenda: View {
         .task(id: brief.day) {
             guard agenda == nil else { return }
             let span = brief.span()
-            let phone = await LeaveByCalendar.shared.agenda(from: span.start, to: span.end, day: brief.day)
+            let phone = await CalendarReader.shared.agenda(from: span.start, to: span.end, day: brief.day)
             agenda = brief.agenda(phone: phone)
         }
     }

@@ -15,15 +15,24 @@ struct CalendarsSettingsView: View {
     @State private var accounts: [Account] = []
     @State private var seen: [String] = []
     /// This device's calendars that can be added to, for New Events.
-    @State private var writable: [(title: String, color: Color)] = []
+    @State private var writable: [Row] = []
     @State private var newEvents = Settings.shared.newEventsCalendar
     @Environment(\.openURL) private var openURL
 
     /// One account's calendars ("iCloud", "Gmail"), each by its title and its own colour.
-    struct Account: Identifiable {
+    nonisolated struct Account: Identifiable, Sendable {
         var id: String
         var title: String
-        var calendars: [(title: String, color: Color)]
+        var calendars: [Row]
+    }
+
+    /// One calendar, known by its identifier: two in one account can have the same title (a
+    /// subscription and a calendar of the same name), and a list keyed by title showed one twice
+    /// and the other not at all.
+    nonisolated struct Row: Identifiable, Sendable {
+        var id: String
+        var title: String
+        var color: Color
     }
 
     var body: some View {
@@ -41,7 +50,7 @@ struct CalendarsSettingsView: View {
             if limiting {
                 ForEach(accounts) { account in
                     Section(account.title) {
-                        ForEach(account.calendars, id: \.title) { row($0.title, color: $0.color) }
+                        ForEach(account.calendars) { row($0.title, color: $0.color) }
                     }
                 }
                 if !others.isEmpty {
@@ -58,7 +67,7 @@ struct CalendarsSettingsView: View {
                 Section {
                     Picker("New Events", selection: $newEvents) {
                         Text("Calendar's Default").tag("")
-                        ForEach(writable, id: \.title) { calendar in
+                        ForEach(writable) { calendar in
                             Label { Text(calendar.title) } icon: { Image(systemName: "circle.fill").imageScale(.small).foregroundStyle(calendar.color) }
                                 .tag(calendar.title)
                         }
@@ -95,7 +104,7 @@ struct CalendarsSettingsView: View {
         }
         .navigationTitle("Calendars")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear(perform: load)
+        .task { await load() }
     }
 
     /// The calendars cards named and those chosen elsewhere (another device, by iCloud) that
@@ -125,7 +134,7 @@ struct CalendarsSettingsView: View {
                 Button("Show Calendars on This Device") {
                     Task {
                         _ = await DeviceCalendar.allowed(.event)
-                        load()
+                        await load()
                     }
                 }
             } footer: {
@@ -158,21 +167,33 @@ struct CalendarsSettingsView: View {
         settings.agendaCalendars = chosen
     }
 
-    private func load() {
+    /// This device's calendars, read off the main actor (`CalendarReader`).
+    private func load() async {
         access = ComposerContext.calendarAccess
-        accounts = access == .granted ? Self.deviceAccounts() : []
-        writable = access == .granted
-            ? EKEventStore().calendars(for: .event).filter(\.allowsContentModifications)
-                .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
-                .map { (title: $0.title, color: Color(cgColor: $0.cgColor)) }
-            : []
         seen = CalendarChoice.seen
+        guard access == .granted else {
+            accounts = []
+            writable = []
+            return
+        }
+        let read = await CalendarReader.shared.read { store in
+            (accounts: Self.deviceAccounts(in: store),
+             writable: store.calendars(for: .event).filter(\.allowsContentModifications)
+                .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+                .map(Self.row))
+        }
+        accounts = read.accounts
+        writable = read.writable
+    }
+
+    nonisolated private static func row(_ calendar: EKCalendar) -> Row {
+        Row(id: calendar.calendarIdentifier, title: calendar.title, color: Color(cgColor: calendar.cgColor))
     }
 
     /// This device's calendars by account, iCloud and the other accounts first, then the ones on
-    /// the device alone, subscriptions and birthdays, as Calendar orders them. Never asks.
-    private static func deviceAccounts() -> [Account] {
-        let store = EKEventStore()
+    /// the device alone, subscriptions and birthdays, as Calendar orders them. Never asks. A
+    /// calendar EventKit gives no account is listed under no name rather than left out.
+    nonisolated private static func deviceAccounts(in store: EKEventStore) -> [Account] {
         func rank(_ type: EKSourceType) -> Int {
             switch type {
             case .calDAV, .exchange, .mobileMe: 0
@@ -183,11 +204,11 @@ struct CalendarsSettingsView: View {
             }
         }
         let bySource = Dictionary(grouping: store.calendars(for: .event)) { $0.source?.sourceIdentifier ?? "" }
-        return bySource.values.compactMap { calendars -> (rank: Int, account: Account)? in
-            guard let source = calendars.first?.source else { return nil }
-            let rows = calendars.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
-                .map { (title: $0.title, color: Color(cgColor: $0.cgColor)) }
-            return (rank(source.sourceType), Account(id: source.sourceIdentifier, title: source.title, calendars: rows))
+        return bySource.compactMap { key, calendars -> (rank: Int, account: Account)? in
+            guard !calendars.isEmpty else { return nil }
+            let source = calendars.first?.source
+            let rows = calendars.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }.map(row)
+            return (source.map { rank($0.sourceType) } ?? 2, Account(id: key, title: source?.title ?? "", calendars: rows))
         }
         .sorted { ($0.rank, $0.account.title) < ($1.rank, $1.account.title) }
         .map(\.account)

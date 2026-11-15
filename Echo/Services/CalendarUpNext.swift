@@ -10,7 +10,7 @@ import SwiftUI
 final class CalendarUpNext {
     static let shared = CalendarUpNext()
 
-    struct Event: Equatable {
+    nonisolated struct Event: Equatable, Sendable {
         var id: String
         var title: String
         var start: Date
@@ -23,58 +23,53 @@ final class CalendarUpNext {
     }
 
     private(set) var next: Event?
-    @ObservationIgnored private var store: EKEventStore?
     @ObservationIgnored private var changes: NSObjectProtocol?
+    /// The latest reading asked for: an older one coming back later is dropped.
+    @ObservationIgnored private var reading = 0
 
     var canRead: Bool { EKEventStore.authorizationStatus(for: .event) == .fullAccess }
 
     /// Asks for calendar access when it hasn't been asked yet. True once Redde may read them.
-    func ask() async -> Bool {
-        switch EKEventStore.authorizationStatus(for: .event) {
-        case .fullAccess: return true
-        case .notDetermined:
-            let store = self.store ?? EKEventStore()
-            self.store = store
-            return (try? await store.requestFullAccessToEvents()) ?? false
-        default: return false
-        }
-    }
+    func ask() async -> Bool { await CalendarReader.shared.allowed(.event) }
 
+    /// Reads the next event again, off the main actor (`CalendarReader`): `next` follows a moment later.
     func refresh(now: Date = .now) {
         guard canRead else {
             if next != nil { next = nil }
             return
         }
-        let store = self.store ?? EKEventStore()
-        self.store = store
         if changes == nil {
-            changes = NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: store, queue: .main) { _ in
+            changes = NotificationCenter.default.addObserver(forName: CalendarReader.changed, object: nil, queue: .main) { _ in
                 MainActor.assumeIsolated { CalendarUpNext.shared.refresh() }
             }
         }
-        let calendars = DeviceCalendar.shared(in: store)
-        guard calendars?.isEmpty != true, let end = Calendar.current.date(byAdding: .day, value: 7, to: now) else {
-            if next != nil { next = nil }
-            return
+        reading += 1
+        let turn = reading
+        Task {
+            let events = await CalendarReader.shared.read { store -> [Event]? in
+                let calendars = DeviceCalendar.shared(in: store)
+                guard calendars?.isEmpty != true, let end = Calendar.current.date(byAdding: .day, value: 7, to: now) else { return nil }
+                // From a few hours back, so an event under way is found too.
+                return store.events(matching: store.predicateForEvents(withStart: now.addingTimeInterval(-6 * 3600), end: end, calendars: calendars))
+                    .filter { !$0.isAllDay && !Self.declined($0) }
+                    .map { Event(id: $0.eventIdentifier ?? UUID().uuidString, title: $0.title ?? String(localized: "(untitled)", comment: "A calendar event with no title"),
+                                 start: $0.startDate, end: $0.endDate, location: $0.location, color: $0.calendar.map { Color(cgColor: $0.cgColor) }) }
+            }
+            guard turn == reading else { return }
+            let found = events.flatMap { Self.pick($0, now: now) }
+            if found != next { next = found }
         }
-        // From a few hours back, so an event under way is found too.
-        let events = store.events(matching: store.predicateForEvents(withStart: now.addingTimeInterval(-6 * 3600), end: end, calendars: calendars))
-            .filter { !$0.isAllDay && !Self.declined($0) }
-            .map { Event(id: $0.eventIdentifier ?? UUID().uuidString, title: $0.title ?? String(localized: "(untitled)", comment: "A calendar event with no title"),
-                         start: $0.startDate, end: $0.endDate, location: $0.location, color: $0.calendar.map { Color(cgColor: $0.cgColor) }) }
-        let found = Self.pick(events, now: now)
-        if found != next { next = found }
     }
 
     /// The event to show: the first that hasn't ended, by when it starts. An event under way for
     /// more than three hours (a workday, a trip) is the day's background, not what's next.
-    static func pick(_ events: [Event], now: Date) -> Event? {
+    nonisolated static func pick(_ events: [Event], now: Date) -> Event? {
         events
             .filter { $0.end > now && !($0.start <= now && $0.end.timeIntervalSince($0.start) > 3 * 3600) }
             .min { ($0.start, $0.end) < ($1.start, $1.end) }
     }
 
-    private static func declined(_ event: EKEvent) -> Bool {
+    nonisolated private static func declined(_ event: EKEvent) -> Bool {
         event.attendees?.first(where: \.isCurrentUser)?.participantStatus == .declined
     }
 
