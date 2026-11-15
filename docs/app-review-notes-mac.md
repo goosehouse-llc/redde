@@ -18,21 +18,21 @@ TO TEST
 Hermes screens (Skills, Memory, Files, Plugins, bots, Projects, Kanban) need a self-hosted Hermes server. Plugins are installed by that server; the app runs no plugin code.
 
 ICLOUD (off by default)
-Settings > iCloud keeps servers and settings in the user's own iCloud (key-value store and iCloud Keychain), shared with the iPhone app. Nothing goes to us.
+Settings > General > Sync with iCloud keeps servers and settings in the user's own iCloud (key-value store and iCloud Keychain), shared with the iPhone app. Nothing goes to us.
 
 LINK PREVIEWS (off by default)
-Settings > Appearance: the app opens a linked page for its title and picture.
+Settings > Replies & Writing: the app opens a linked page for its title and picture.
 
 IN-APP PURCHASES
 Settings > About > Support Redde: three optional one-time tips (consumables) that unlock nothing, the same as on iPhone.
 
 SANDBOX ENTITLEMENTS
 Outgoing network: the user's servers and model endpoints.
-Incoming network (com.apple.security.network.server): one feature, Redde > Settings… > Connection > Sign in with a browser, for a Hermes Dashboard that signs people in with Google or another identity provider (OAuth for native apps with PKCE, RFC 8252). The Dashboard returns the browser to a one-time listener on http://127.0.0.1:<random port>/callback: Hermes accepts only a loopback return address (RFC 8252 7.3), so a custom URL scheme can't be used. The listener is bound to 127.0.0.1 only, exists only while the sign-in sheet is open, answers the one request carrying that sign-in's state, then closes. Redde listens for nothing else.
+Incoming network (com.apple.security.network.server): one feature, Redde > Settings… > Connection > Connection details > Sign in with a browser, for a Hermes Dashboard that signs people in with Google or another identity provider (OAuth for native apps with PKCE, RFC 8252). The Dashboard returns the browser to a one-time listener on http://127.0.0.1:<random port>/callback: Hermes accepts only a loopback return address (RFC 8252 7.3), so a custom URL scheme can't be used. The listener is bound to 127.0.0.1 only, exists only while the sign-in sheet is open, answers the one request carrying that sign-in's state, then closes. Redde listens for nothing else.
 Microphone, camera: voice mode and showing the agent something in it, only when the user starts them; speech is transcribed on the device.
 User-selected files: attaching a file, saving one a reply sent, exporting a conversation.
-Calendars, contacts, photos: Settings > Phone tools, each area off until the user turns it on, when macOS asks its permission; data goes only to the user's server. Calendars also: Settings > Agent > Calendars (their names) and Leave-By Alerts (next events, to Apple Maps only).
-Location (off by default, Settings > Agent): Current Location sends roughly where the Mac is (neighborhood, ~100 m) to the user's own server only with a question about places, directions or weather; Leave-By Alerts send it to Apple Maps only, for the travel time.
+Calendars, contacts, photos: Settings > Phone tools, each area off until the user turns it on, when macOS asks its permission; data goes only to the user's server. Calendars also: Settings > Calendars (their names) and Leave-By Alerts (next events, to Apple Maps only).
+Location (off by default, Settings > Location): Current Location sends roughly where the Mac is (neighborhood, ~100 m) to the user's own server only with a question about places, directions or weather; Leave-By Alerts send it to Apple Maps only, for the travel time.
 
 APP TRANSPORT SECURITY
 Plain HTTP is allowed (NSAllowsArbitraryLoads): self-hosted servers on private networks usually have no public TLS certificate. The review endpoint is HTTPS.

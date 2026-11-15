@@ -44,7 +44,7 @@ Screens ask `SessionBackend` for the current backend instead of branching on the
 
 A Dashboard that signs people in with Google or another identity provider (Hermes's `self_hosted`
 OIDC plugin, Nous Portal) has no password to give the app. There the person taps **Sign in with a
-browser** (Settings → Connection details, and first-run setup), and the app does OAuth for native
+browser** (Settings → Connection → Connection details, and first-run setup), and the app does OAuth for native
 apps (RFC 8252) with PKCE against the Dashboard's own routes, which Hermes has had since 0.21 and
 announces in `/api/status` as `auth_flows: native_pkce` (`Services/DashboardSignIn.swift`):
 
@@ -80,7 +80,7 @@ changes its platform setting in Hermes's config (`PUT /api/tools/toolsets/{name}
 switch stops Redde loading that skill (`PUT /api/skills/toggle`).
 
 **Plugins** (`PluginsView`, `HermesPlugins.swift`; asked 2026-10-26: "search and install of
-official hermes plugins through Redde"): Settings → Plugins for the profile Redde is on, Edit Bot →
+official hermes plugins through Redde"): Settings → Agent → Plugins for the profile Redde is on, Edit Bot →
 Plugins for a bot (a profile's own; a new bot starts with a copy of the main profile's). Dashboard
 only: the Hermes API has no plugin calls.
 - **Finding:** Nous Research publishes the curated catalog Hermes itself reads
@@ -144,7 +144,7 @@ and drops it into the editor for review.
 
 ### The gateway itself
 
-Settings → Gateway is the Hermes server as its own Dashboard administers it (`GatewayAdmin.swift`,
+Settings → Agent → Gateway is the Hermes server as its own Dashboard administers it (`GatewayAdmin.swift`,
 `GatewayModel.swift`, `GatewayView.swift`). All of it is the Dashboard's REST API, the routes its
 own web pages use, and the same in Hermes 0.21.0, 0.21.3 and 0.21.5; the Hermes API server has
 none of them, so the screen takes the Dashboard login.
@@ -188,7 +188,7 @@ model against each release.
 
 ### The server's files
 
-Settings → Files is the Hermes host's folders, through the Dashboard's own file manager
+Settings → Agent → Files is the Hermes host's folders, through the Dashboard's own file manager
 (`ServerFiles.swift`, `ServerFilesModel.swift`, `FilesView.swift`). The routes are the same in
 Hermes 0.21.0, 0.21.3 and 0.21.5, and like the Gateway screen it takes the Dashboard login.
 
@@ -356,7 +356,7 @@ reloads the conversation list.
   phone's location) and the system's weather symbols. A place without coordinates is looked up
   on the phone (`PlaceLookup`, MapKit's search, once a run). Lenient: numbers as text, lat/lng,
   "sunny" for clear; a card or place that can't be drawn is dropped, never the whole call. The
-  tool is always offered, never behind tool search, unless Settings → Agent → Cards in replies is
+  tool is always offered, never behind tool search, unless Settings → Replies & Writing → Cards in replies is
   off (`/redde-push cards off`, `ReplyCardsSwitch`; its description rides on every prompt); off,
   it also refuses a call that reaches it through `tool_call` (0.21.5 lets a model). Plugin 1.6.0; 1.6.1 sends back a
   weather reading with no condition (a model filled one with 0 and "" while its reply said 85°F and clear,
@@ -394,7 +394,7 @@ reloads the conversation list.
     the phone said, and to call `redde_show` first. Hermes appends it to that user message only.
   `lab.sh cards` passes on 0.21.0 to 0.22.2; `ReplyCardsTests`, `ReplyCardsUITests`
   (`-echo.demoCards`), `companion/hermes-plugin/tests/test_cards.py` (Open-Meteo faked).
-- **Link previews** (Settings → Appearance, **off by default**; asked on Reddit 2026-10-23, "image
+- **Link previews** (Settings → Replies & Writing, **off by default**; asked on Reddit 2026-10-23, "image
   / link preview in chats", his pick of three: a switch, the phone fetching, rather than a tap per
   link or Hermes fetching for it). Under a finished message, yours or a reply, with a web link: a
   card for the first one (`LinkPreviewLinks.first`: http or https, not in code, not a picture),
@@ -449,7 +449,7 @@ reloads the conversation list.
 Hermes's Bot Mode, as Hermes Desktop has it, on the Dashboard connection and on the Hermes API
 (below; `ServerBots.swift`). A bot is a Hermes profile with one conversation of its own: the session titled exactly "Bot Chat" on
 that profile. Hermes counts every profile as one. The chat list's **Bots** section lists them once
-the server has a profile besides the main one, and has New Bot either way (Settings → Appearance
+the server has a profile besides the main one, and has New Bot either way (Settings → Chat List
 → Bots in the chat list turns it off; it was under Hermes server until GitHub issue 32). Each bot is a little creature of its own (`BotAvatar.swift`): a speech bubble at
 heart, its tail the corner nearest its bottom left drawn sharp as a message bubble's is (a round or
 egg shape gets a corner there, a pointed one sharpens that point), in one of eight shapes (round,
@@ -481,7 +481,7 @@ wherever its face is drawn:
 - `BotAvatar` draws the picture as a rounded square, a little inside the face's frame.
 - `BotPictures` fetches it with `profiles.get_asset` (every release from 0.21.0), once per launch. It
   keeps a 384-pixel copy per server under Caches, so lists show it at once.
-- Settings → Appearance → Pictures from Hermes switches it off (it is on by default).
+- Settings → Replies & Writing → Pictures from Hermes switches it off (it is on by default).
 - The face picker still shows the creature.
 - `-echo.demoPicture` gives the demo's Scout a picture. Lab `bots` checks that a picture set as
   Hermes Desktop sets one comes over for that bot and no other.
@@ -1241,7 +1241,7 @@ the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
   removes the drafts too. The conversation list marks a row that has one ("Draft"): `Drafts`
   is observable in that one respect, which conversations have a draft, so the list is redrawn
   when a draft begins or ends and not with every key.
-- **Return** (Settings → Writing). SwiftUI's multi-line field always starts a new line on
+- **Return** (Settings → Replies & Writing). SwiftUI's multi-line field always starts a new line on
   Return. Set to send, the composer takes a draft that grew by exactly one line break for a
   Return (`ComposerView.isReturn`), takes the break out and sends; on a keyboard Return sends
   and Shift-Return is the line break (`onKeyPress`).
@@ -1352,7 +1352,7 @@ with pull-to-refresh.
 On the Dashboard the list starts with **Projects** (`projects.tree`), grouped by working directory
 and repo: the ones someone made (`isAuto: false`) even before their first conversation, the ones
 Hermes found (repositories conversations ran in) once they have one, then a **New Project** row.
-Settings → Appearance → Projects in the chat list takes the section away (GitHub issue 32, for a
+Settings → Chat List → Projects in the chat list takes the section away (GitHub issue 32, for a
 small screen); their conversations are in the list either way. Search, pin, rename, fork, archive and delete go through `PATCH /api/sessions/{id}`, fork
 through `POST /api/sessions/{id}/fork` (API) or `session.branch` (Dashboard). Rows show token totals
 and the gateway's cost estimate; long-press for the full usage breakdown. Any conversation exports
@@ -1522,7 +1522,7 @@ on and around it:
   polled per frame. At rest they are a row of 6 pt dashes with one small crest running across
   them every five seconds.
 - **The light** under the bars, masked by the orb's own silhouette (a bubble's tail included) and
-  picked under Settings → Appearance → Orb light (`OrbLight`): **Nebula**, three patches in the
+  picked under Settings → Voice → Orb light (`OrbLight`): **Nebula**, three patches in the
   phase colour and hues beside it on their own rhythms, the whole turning with its hue drifting
   (`DriftingBlobs`); **Aurora**, three ribbons sweeping across like a curtain (`AuroraLight`);
   **Core**, a pulsing nucleus with sparks orbiting and motes rising (`CoreLight`). The light is
@@ -1833,7 +1833,7 @@ asked for, a turn that ended without a reply, and a handed-off task coming back;
 plugin hook for only the first two, and how the rest are told is in [docs/push.md](push.md), with
 the design, the wire formats and what has to happen before it ships.
 
-**Calls from agents** (`AgentCalls`, Settings → Notifications → Calls from Agents; off until
+**Calls from agents** (`AgentCalls`, Settings → Voice → Calls from Agents; off until
 turned on, this phone's alone, not synced). An agent the phone allows (`Settings.callers`, per
 server: "default" and bots' profiles) rings it like a phone call: the plugin's `call_user`
 (`calls.py`, 1.8.0) seals a `call` note (`p`, `d`, `b` its opening line, `s`, `i`) and the relay
@@ -2527,7 +2527,7 @@ it is doing ("Working", "Needs you") or when it was last talked to, never what i
 is in the bot's mood (`CarPlayArtwork.BotMood`, `botPose`): working it looks up and away with a
 thought bubble, needing you it stares, mouth open, with a gold "!", and after a day with no chat
 (`asleepAfter`) its eyes are nearly shut beside z's. The cards come in five looks, picked in
-Settings → Appearance → CarPlay bot cards (`CarPlayBotLook`, `Settings.carPlayBots`, synced; the
+Settings → CarPlay → CarPlay bot cards (`CarPlayBotLook`, `Settings.carPlayBots`, synced; the
 row shows with Bots): Sticker (a new install's: bright in the bot's colours, the face a sticker
 with a white edge), Stage (a spotlight), Peek (a face too big for its card), Wide (the Ask
 tab's 16 by 9, three across) and Glow; `CarPlayArtworkTests` holds each dark enough where the
@@ -2650,7 +2650,7 @@ Choosing it in Settings plays it twice, like a ringtone. When it starts and stop
 how it carries in a car are for ears, and nobody has listened yet.
 
 The brand lives in artwork drawn in code (`CarPlay/CarPlayArtwork.swift`). The Ask tab's cards
-come in six looks, picked in Settings → Appearance → CarPlay cards (`CarPlayCardLook`,
+come in six looks, picked in Settings → CarPlay → CarPlay cards (`CarPlayCardLook`,
 `Settings.carPlayCards`; the row is left out on an iPad, which has no CarPlay). Color, the one a
 new install has, gives each card its own: blue to ask, gold to talk and green for a new chat,
 with a plain white symbol. The others are Glow, Orb, Gold, Graphite and Marks, the last being the
@@ -2660,7 +2660,7 @@ writes a card's two lines over the bottom left of its picture, in white by day a
 every look is dark in that corner and keeps its mark to the right; `CarPlayArtworkTests` holds
 the contrast for each. The voice card's pictures
 move: a state's image is an animation to CarPlay (a loop of 0.3 to 5 seconds, 150 points at
-most). They come in five looks, picked in Settings → Appearance → CarPlay voice screen
+most). They come in five looks, picked in Settings → CarPlay → CarPlay voice screen
 (`CarPlayVoiceLook`, `Settings.carPlayVoice`; asked 2026-10-13): Bars, Lamps, KITT, Orb and
 Redde. Redde (asked 2026-10-19) is Redde's own bot face (`BotFace.main`, drawn by `BotAvatar` in
 its colour through `BotAvatar.picture`), with no disc, in a soft light of the
@@ -2970,7 +2970,7 @@ the handover itself is tested on a real watch.
   Pangolin's header authentication is a Basic `Authorization` header: Custom headers, for the
   Dashboard only, as on the Hermes API that header carries the key; there a Link's token is the way.
 - **Custom headers:** for a reverse proxy that asks for a header of its own (`Models/CustomHeader.swift`,
-  Settings → Connection details). Per server, names and values both in the Keychain. They ride on
+  Settings → Connection → Connection details). Per server, names and values both in the Keychain. They ride on
   every Dashboard request and WebSocket handshake (the client's `URLSession` carries them, with
   the Cloudflare pair) and on every Hermes API request, the watch's included (`WatchConnection.headers`,
   kept in the watch's Keychain). A header the app sets itself (the API key's `Authorization`) wins.
@@ -2987,7 +2987,7 @@ the handover itself is tested on a real watch.
 
 ### Sync with iCloud
 
-Settings → iCloud → Sync with iCloud (`Services/CloudSync.swift`): the person's settings and Hermes
+Settings → General → Sync with iCloud (`Services/CloudSync.swift`): the person's settings and Hermes
 servers on every device signed in to the same Apple Account. Off until turned on, on each device.
 
 - **Where:** the settings in `Settings.syncedKeys` and each server's record go in iCloud's
