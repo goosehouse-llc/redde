@@ -159,8 +159,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         chats.showsSpinnerWhileEmpty = true
         chatsTab = chats
         var templates: [CPTemplate] = [ask, chats]
-        // Bots live on the Dashboard (on the Hermes API, through its login), while the chat list shows them.
-        if BotDirectory.available(settings) {
+        tabsServer = settings.activeServerID
+        // Bots live on the Dashboard (on the Hermes API, through its login), while the chat list
+        // shows them; on an agent bridge, a Hermes server's bots stay (`awayServer`).
+        if BotDirectory.available(settings) || awayServer != nil {
             let bots = CPListTemplate(title: String(localized: "Bots", comment: "CarPlay: the tab with your bots"), sections: [])
             bots.tabImage = UIImage(systemName: "person.2.fill")
             bots.emptyViewTitleVariants = [String(localized: "Loading…")]
@@ -245,10 +247,94 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         // standing mostly empty; on a small one the cards fill the screen and these are a scroll
         // away.
         let others = chats.filter { !$0.isCurrent }.prefix(Self.recentOnAsk).map { self.row(for: $0) }
-        let top = CPListSection(items: [row, noteRow(), brevityRow()])
+        let top = CPListSection(items: [row] + [serverRow()].compactMap { $0 } + [noteRow(), brevityRow()])
         guard !others.isEmpty else { return [top] }
         return [top, CPListSection(items: others, header: String(localized: "Recent", comment: "CarPlay: the conversations last carried on"),
                                    sectionIndexTitle: nil)]
+    }
+
+    /// With more than one server saved, which one the car is on; pressed, the list of them, to
+    /// move to another (asked 2026-11-14: "there is no way to switch servers, so when it first
+    /// connects when on a claude code chat, the bots are not there, and I cannot get them back").
+    func serverRow() -> CPListItem? {
+        guard settings.servers.count > 1, let active = settings.activeServer else { return nil }
+        let item = CPListItem(text: String(localized: "Server"), detailText: active.title,
+                              image: CarPlayArtwork.serverMark(), accessoryImage: nil, accessoryType: .disclosureIndicator)
+        item.handler = { [weak self] _, completion in
+            self?.showServers()
+            completion()
+        }
+        return item
+    }
+
+    /// The saved servers, the one in use ticked; pressed, the car (and the phone) move to it.
+    private func showServers() {
+        guard let controller else { return }
+        let items = settings.servers.map { server in
+            let here = server.id == settings.activeServerID
+            let item = CPListItem(text: server.title, detailText: server.transport.shortLabel,
+                                  image: CarPlayArtwork.serverMark(here: here), accessoryImage: nil, accessoryType: .none)
+            item.handler = { [weak self] _, completion in
+                self?.switchServer(to: server.id)
+                completion()
+            }
+            return item
+        }
+        let list = CPListTemplate(title: String(localized: "Servers", comment: "Email setup: section"), sections: [CPListSection(items: items)])
+        controller.pushTemplate(list, animated: true, completion: nil)
+    }
+
+    /// The phone moved to another server, and the car's tabs are made again for it: its chats,
+    /// and its bots (or, on a bridge, a Hermes server's). Not private, for the tests.
+    func switchServer(to id: UUID) {
+        if id != settings.activeServerID, let conversation {
+            note("server \(id.uuidString.prefix(8))")
+            ServerSwitcher.switchTo(id, conversation: conversation, settings: settings)
+        }
+        rebuildTabs()
+    }
+
+    /// The server the tabs were made for.
+    private var tabsServer: UUID?
+
+    /// The tabs made again for the server the phone is on now, back on Ask.
+    private func rebuildTabs() {
+        guard let controller else { return }
+        botsWatch?.cancel()
+        botsWatch = nil
+        botsShown = []
+        chats = []
+        let tabs = rootTemplate()
+        tabs.delegate = self
+        controller.setRootTemplate(tabs, animated: true, completion: nil)
+        reloadChats()
+        reloadBots()
+    }
+
+    /// The phone moved to another server on its own (the Servers screen, a chat on another
+    /// connection): the car follows once nothing is over its tabs.
+    private func armServerObservation() {
+        withObservationTracking {
+            _ = settings.activeServerID
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                self?.serverChanged()
+                self?.armServerObservation()
+            }
+        }
+    }
+
+    private var followingServer = false
+
+    private func serverChanged() {
+        guard controller != nil, tabsServer != settings.activeServerID, !followingServer else { return }
+        followingServer = true
+        Task { [weak self] in
+            while let self, self.controller != nil, self.shownModal != nil { try? await Task.sleep(for: .seconds(1)) }
+            guard let self else { return }
+            self.followingServer = false
+            if self.controller != nil, self.tabsServer != self.settings.activeServerID { self.rebuildTabs() }
+        }
     }
 
     /// Quick capture: under the cards, a row that listens for a note and files it (`CaptureInbox`).
@@ -505,15 +591,44 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         drawAhead()
     }
 
+    /// On a connection with no bots (an agent bridge), the Hermes server whose bots the Bots tab
+    /// shows all the same: the one they were last read from, else the first with a Dashboard. A
+    /// press on one moves to that server first, as the phone's chat list does.
+    var awayServer: HermesServer? {
+        guard settings.showBots, !BotDirectory.available(settings) else { return nil }
+        let hermes = settings.servers.filter { $0.transport.isHermes && !$0.serveURL.isEmpty && $0.id != settings.activeServerID }
+        let last = bots.key.split(separator: "|").first.flatMap { UUID(uuidString: String($0)) }
+        return hermes.first { $0.id == last } ?? hermes.first
+    }
+
+    /// The key the Bots tab's roster is kept under: this connection's, or the away server's.
+    private var botsKey: String {
+        awayServer.map { "\($0.id.uuidString)|\($0.hermesProfile)" } ?? settings.connectionKey
+    }
+
+    /// The main agent's name on the cards: the Hermes's, also on a bridge, where the header's
+    /// name is the bridge agent's.
+    private var botsMainName: String {
+        awayServer == nil ? settings.headerTitle : settings.displayName.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "Redde"
+    }
+
     /// The bots the phone last read for this connection; nil when it has none.
     private func cachedRoster() -> BotRoster? {
-        guard bots.key == settings.connectionKey, let roster = bots.roster, !roster.listed.isEmpty else { return nil }
+        guard bots.key == botsKey, let roster = bots.roster, !roster.listed.isEmpty else { return nil }
         return roster
     }
 
     /// The server's bots, read again; if that fails, the phone's as they are by then, not as they
     /// were before the read (they may have moved on while it was out, and the cards with them).
     private func freshRoster() async -> BotRoster? {
+        if let away = awayServer {
+            let key = botsKey
+            if let fresh = try? await AllServers.client(for: away).bots() {
+                bots.set(fresh, key: key)
+                return fresh
+            }
+            return bots.key == key ? bots.roster : nil
+        }
         if let fresh = try? await bots.refresh(settings: settings) { return fresh }
         return bots.key == settings.connectionKey ? bots.roster : nil
     }
@@ -540,13 +655,22 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// each face in its bot's mood; and what the cards say, to tell whether anything changed.
     /// Above them, whose chat is open, as the Ask tab says which conversation it carries on.
     private func botRows(_ roster: BotRoster) -> (rows: [any CPListTemplateItem], shown: [String]) {
-        let listed = Array(roster.listed(in: settings.botOrderHere).prefix(Self.mostBots))
-        guard !listed.isEmpty else { return ([], []) }
+        let all = roster.listed(in: settings.botOrderHere)
+        guard !all.isEmpty else { return ([], []) }
         let faces = roster.faces
         let look = settings.carPlayBots
+        // One row of cards, never more. Two rows sent CarPlay's own process round its layout
+        // until the phone killed it, the car stuck on "Loading…" (2026-11-08 with one row that
+        // wrapped, 2026-11-14 with two rows of four, six bots on a 568-by-263 screen): two rows
+        // are about as tall as the screen, the scroll bar that comes and goes with them narrows
+        // the cards, and their height changes with their width. With more bots than a row holds,
+        // its last card opens them all as a plain list, whose rows are as tall at any width.
+        let perRow = look == .wide ? 3 : 4
+        let listed = all.count > perRow ? Array(all.prefix(perRow - 1)) : all
+        let rest = all.dropFirst(listed.count)
         var shown: [String] = []
-        let cards = listed.map { bot in
-            let name = bot.label(mainName: settings.headerTitle)
+        var cards = listed.map { bot in
+            let name = bot.label(mainName: botsMainName)
             let face = faces[bot.name] ?? BotFace(seed: bot.name)
             let mood = botMood(bot)
             let detail = botDetail(bot, mood)
@@ -560,31 +684,63 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             }
             return CPListImageRowItemCardElement(image: picture, showsImageFullHeight: false, title: name, subtitle: detail, tintColor: nil)
         }
-        let open = conversation?.bot.flatMap { open in listed.first { $0.name == open.profile } }?.label(mainName: settings.headerTitle)
+        if !rest.isEmpty {
+            let others = rest.prefix(4).map { (face: faces[$0.name] ?? BotFace(seed: $0.name), name: $0.label(mainName: botsMainName)) }
+            let picture = CarPlayArtwork.allBotsCard(others, look: look)
+            let title = String(localized: "All Bots", comment: "CarPlay: the card and list with every bot, when more than fit on the Bots tab")
+            shown.append("all|\(rest.map(\.name).joined(separator: ","))|" + CarPlayArtwork.allBotsCardKey(others, look: look))
+            if #available(iOS 26.4, *) {
+                cards.append(CPListImageRowItemCardElement(thumbnail: CPThumbnailImage(image: picture), title: title, subtitle: nil, tintColor: nil))
+            } else {
+                cards.append(CPListImageRowItemCardElement(image: picture, showsImageFullHeight: false, title: title, subtitle: nil, tintColor: nil))
+            }
+        }
+        let open = conversation?.bot.flatMap { open in all.first { $0.name == open.profile } }?.label(mainName: botsMainName)
         shown.append("open|\(open ?? "")")
-        // Rows of a few cards each that never wrap. One row that wraps let CarPlay's own process
-        // go round in its layout until the phone killed it, over and over, the car stuck on
-        // "Loading…" (2026-11-08, six bots on a 568-point screen): two lines made the list just
-        // too tall, the scroll bar that came with it narrowed the row, and the row's height
-        // changed with its width. A row that keeps to one line is as tall at any width.
-        let perRow = look == .wide ? 3 : 4
-        let rows = stride(from: 0, to: cards.count, by: perRow).map { start in
-            let row = CPListImageRowItem(text: start == 0 ? open.map { String(localized: "Now with \($0)", comment: "CarPlay: the bot whose chat is open") } : nil,
-                                         cardElements: Array(cards[start..<min(start + perRow, cards.count)]), allowsMultipleLines: false)
-            // The card spins until the completion is called: here, until the voice card is on its way up.
-            row.listImageRowHandler = { [weak self] _, index, completion in
+        let row = CPListImageRowItem(text: open.map { String(localized: "Now with \($0)", comment: "CarPlay: the bot whose chat is open") },
+                                     cardElements: cards, allowsMultipleLines: false)
+        // The card spins until the completion is called: here, until the voice card is on its way
+        // up, or the list of all the bots is.
+        row.listImageRowHandler = { [weak self] _, index, completion in
+            Task { @MainActor in
+                if listed.indices.contains(index) {
+                    await self?.talk(to: listed[index])
+                } else if !rest.isEmpty {
+                    self?.showAllBots(all, faces: faces)
+                }
+                completion()
+            }
+        }
+        return ([row], shown)
+    }
+
+    /// Every bot as a plain row, its face beside its name, for when more bots than a row of cards
+    /// holds: pressed, Redde talks to it, as a card does.
+    private func showAllBots(_ all: [HermesBot], faces: [String: BotFace]) {
+        controller?.pushTemplate(allBotsList(all, faces: faces), animated: true, completion: nil)
+    }
+
+    /// The All Bots list. Not private, for the tests and the preview.
+    func allBotsList(_ all: [HermesBot], faces: [String: BotFace]) -> CPListTemplate {
+        let items = all.prefix(CPListTemplate.maximumItemCount).map { bot in
+            let name = bot.label(mainName: botsMainName)
+            let mood = botMood(bot)
+            let face = faces[bot.name] ?? BotFace(seed: bot.name)
+            let item = CPListItem(text: name, detailText: botDetail(bot, mood),
+                                  image: CarPlayArtwork.botRowFace(face, named: name, mood: mood), accessoryImage: nil, accessoryType: .none)
+            item.accessibilityLabel = String(localized: "\(name), \(botDetail(bot, mood, spoken: true))",
+                                             comment: "CarPlay, VoiceOver: a bot's card, its name and what it is doing")
+            item.handler = { [weak self] _, completion in
                 Task { @MainActor in
-                    if listed.indices.contains(start + index) { await self?.talk(to: listed[start + index]) }
+                    await self?.talk(to: bot)
                     completion()
                 }
             }
-            return row as any CPListTemplateItem
+            return item
         }
-        return (rows, shown)
+        let title = String(localized: "All Bots", comment: "CarPlay: the card and list with every bot, when more than fit on the Bots tab")
+        return CPListTemplate(title: title, sections: [CPListSection(items: items)])
     }
-
-    /// At most this many bots on the tab.
-    private static let mostBots = 12
 
     /// What a bot is up to: what its chat is doing, or, quiet, how long it has been.
     func botMood(_ bot: HermesBot) -> CarPlayArtwork.BotMood {
@@ -689,9 +845,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// between pressing the bot button and it switching to the listening/speaking screen").
     /// Returns once the card is on its way up; the chat opens on.
     private func talk(to bot: HermesBot) async {
-        guard let conversation, let session else { return }
+        guard conversation != nil, session != nil else { return }
         stopVoice()
         note("pressed \(bot.name)")
+        // Another server's bot (the car is on a bridge): to its server first.
+        if let away = awayServer { switchServer(to: away.id) }
+        guard let conversation, let session else { return }
         guard conversation.bot?.profile != bot.name else {
             reloadChats()
             reloadBots()
@@ -746,7 +905,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// a second for its pictures in the face look (measured 2026-10-24); other looks draw one set
     /// for every chat.
     private var drawingAhead: Task<Void, Never>?
-    /// Bots whose faces are drawn ahead: as many as fit across his car's screen (`mostBots`).
+    /// Bots whose faces are drawn ahead: a row of cards' worth, and one.
     /// About 30 MB a face, kept while the car is connected and it is among the newest
     /// (`CarPlayArtwork.voiceSetsKept`, which must stay above this and the open chat's).
     private static let botsDrawnAhead = 5
@@ -1067,6 +1226,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         armLookObservation()
         armVoiceLookObservation()
         armNotesObservation()
+        armServerObservation()
     }
 
     private func armPhaseObservation() {

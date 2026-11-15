@@ -105,7 +105,18 @@ struct CarPlayPreviewTests {
             screens.append(("bots\(look == .sticker ? "" : "-\(look.rawValue)")", { self.list(CPListTemplate(title: "Bots", sections: [CPListSection(items: rows)])) }))
         }
         h.settings.carPlayBots = .sticker
+        // The list the All Bots card opens, when there are more bots than a row of cards holds.
+        if let roster = directory.roster {
+            let all = roster.listed(in: h.settings.botOrderHere)
+            screens.append(("allbots", { self.list(h.delegate.allBotsList(all, faces: roster.faces)) }))
+        }
         screens += CarPlayCardLook.allCases.filter { $0 != .color }.map { ("ask-\($0.rawValue)", ask($0)) }
+        // The Server row, with a second server saved.
+        screens.append(("ask-server", {
+            let home = h.settings.addServer(name: "Home")
+            defer { h.settings.servers.removeAll { $0.id == home } }
+            return ask(.color)()
+        }))
         // The Short Answers row with its switch on.
         screens.append(("ask-short", {
             h.settings.shortAnswersInCar = true

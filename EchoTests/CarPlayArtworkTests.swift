@@ -67,6 +67,11 @@ struct CarPlayArtworkTests {
         white.color = BotFace.white
         var lime = BotFace(seed: "b")
         lime.color = 10
+        let allBots = Art.allBotsCard([(white, "Scout"), (lime, "Quill"), (BotFace.main, "Redde")], look: look)
+        for (x, y) in [(0.06, 0.92), (0.25, 0.80), (0.45, 0.90), (0.50, 0.76)] {
+            let contrast = 1.05 / (try relativeLuminance(of: allBots, at: CGPoint(x: x, y: y)) + 0.05)
+            #expect(allBots.size == Art.botCardSize(look) && contrast >= 3.5, "\(look) All Bots: white words at \(x), \(y) have a contrast of \(contrast)")
+        }
         for face in [white, lime, BotFace.main] {
             for mood in Art.BotMood.allCases {
                 let image = Art.botCard(face, named: "Scout", mood: mood, look: look)

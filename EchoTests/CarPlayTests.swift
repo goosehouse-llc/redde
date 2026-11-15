@@ -527,26 +527,61 @@ struct CarPlayTests {
         try await waitUntil("listening") { h.recognizer.starts == 1 }
     }
 
-    /// More bots than a row holds go on further rows, none of which wraps: a row that wrapped sent
-    /// CarPlay's own process round its layout until the phone killed it, the car stuck on
-    /// "Loading…" (2026-11-08, six bots on a 568-point screen). A card on a later row still opens
-    /// its own bot.
-    @Test func manyBotsGoOnRowsThatNeverWrap() async throws {
-        let (h, _) = botsHarness((1...6).map { HermesBot(name: "bot\($0)", chatID: "s-\($0)", lastActive: .now.addingTimeInterval(Double(-60 * $0))) })
+    /// The tab is one row of cards however many bots there are: two rows sent CarPlay's own
+    /// process round its layout until the phone killed it, the car stuck on "Loading…" (2026-11-08
+    /// and again 11-14, six bots on a 568-by-263 screen). With more than a row holds, its last card
+    /// is All Bots; a row that holds them all has none.
+    @Test func manyBotsKeepToOneRowWithAnAllBotsCard() async throws {
+        let six = (1...6).map { HermesBot(name: "bot\($0)", chatID: "s-\($0)", lastActive: .now.addingTimeInterval(Double(-60 * $0))) }
+        let (h, directory) = botsHarness(six)
         let opened = Opened()
         h.delegate.openBot = { opened.bots.append($0.name) }
         for look in CarPlayBotLook.allCases {
             h.settings.carPlayBots = look
-            let rows = await h.delegate.botRows().compactMap { $0 as? CPListImageRowItem }
-            let perRow = look == .wide ? 3 : 4
-            #expect(rows.map(\.elements.count) == (look == .wide ? [3, 3] : [4, 2]), "\(look)")
-            #expect(rows.allSatisfy { !$0.allowsMultipleLines && $0.elements.count <= perRow }, "\(look): a row wraps")
+            let rows = await h.delegate.botRows()
+            let row = try #require(rows.first as? CPListImageRowItem)
+            let titles = row.elements.compactMap { ($0 as? CPListImageRowItemCardElement)?.title }
+            #expect(rows.count == 1 && !row.allowsMultipleLines, "\(look)")
+            #expect(titles.count == (look == .wide ? 3 : 4) && titles.last == "All Bots", "\(look): \(titles)")
         }
         h.settings.carPlayBots = .sticker
-        let second = try #require(await h.delegate.botRows().last as? CPListImageRowItem)
-        let titles = second.elements.compactMap { ($0 as? CPListImageRowItemCardElement)?.title }
-        try await press(card: 1, in: second)
-        #expect(opened.bots == [titles[1]], "the card pressed, not the second bot of all")
+        let row = try #require(await h.delegate.botRows().first as? CPListImageRowItem)
+        try await press(card: 1, in: row)
+        #expect(opened.bots == ["bot2"], "a card still opens its own bot")
+
+        directory.set(BotRoster(bots: Array(six.prefix(4))), key: h.settings.connectionKey)
+        let four = try #require(await h.delegate.botRows().first as? CPListImageRowItem)
+        #expect(four.elements.compactMap { ($0 as? CPListImageRowItemCardElement)?.title } == ["bot1", "bot2", "bot3", "bot4"], "no All Bots card when they fit")
+    }
+
+    /// With two servers saved, the Ask tab has a Server row, and the car moves the phone to
+    /// another (asked 2026-11-14, "there is no way to switch servers"). On a bridge, the Bots tab
+    /// shows a Hermes server's bots all the same.
+    @Test func theCarSwitchesServersAndKeepsTheBotsOnABridge() async throws {
+        let h = Harness()
+        h.settings.transport = .hermesServe
+        h.settings.showBots = true
+        #expect(h.settings.servers.count > 1 || h.delegate.serverRow() == nil, "no Server row with one server")
+        let home = h.settings.addServer(name: "Home")
+        if let i = h.settings.servers.firstIndex(where: { $0.id == home }) { h.settings.servers[i].serveURL = "http://home.invalid" }
+        if h.settings.activeServer != nil {
+            let row = try #require(h.delegate.serverRow(), "a Server row once there are two")
+            #expect(row.detailText == h.settings.activeServer?.title)
+        }
+
+        h.settings.transport = .acp
+        #expect(h.delegate.awayServer?.id == home, "on a bridge, the bots are another server's")
+        #expect(h.delegate.rootTemplate().templates.count == 3, "with a Bots tab")
+        let directory = BotDirectory()
+        directory.set(BotRoster(bots: [HermesBot(name: "default", isDefault: true), HermesBot(name: "scout", title: "Scout")]),
+                      key: "\(home.uuidString)|")
+        h.delegate.bots = directory
+        let cards = try #require(await h.delegate.botRows().first as? CPListImageRowItem)
+        #expect(cards.elements.compactMap { ($0 as? CPListImageRowItemCardElement)?.title }.last == "Scout")
+
+        h.delegate.switchServer(to: home)
+        #expect(h.settings.activeServerID == home && h.settings.transport.isHermes)
+        #expect(h.delegate.awayServer == nil, "on the Hermes server its bots are its own")
     }
 
     /// Presses a card the way the car does, by its place in the row.

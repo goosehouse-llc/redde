@@ -156,6 +156,21 @@ enum CarPlayArtwork {
         symbol("text.badge.minus", height: 21, colour: gold, centre: CGPoint(x: rect.midX, y: rect.midY))
     }
 
+    /// Beside "Server" on the Ask tab, and beside each server in the list it opens, the one in use
+    /// ticked; in the manner of the pencil.
+    static func serverMark(here: Bool = false) -> UIImage { here ? serverHere : serverThere }
+
+    private static let serverThere = drawnServer(here: false), serverHere = drawnServer(here: true)
+
+    private static func drawnServer(here: Bool) -> UIImage {
+        render(CGSize(width: 44, height: 44), opaque: false) { ctx, rect in
+            ctx.addPath(UIBezierPath(roundedRect: rect, cornerRadius: 10).cgPath)
+            ctx.clip()
+            gradient(ctx, rect)
+            symbol(here ? "checkmark.circle.fill" : "server.rack", height: 21, colour: gold, centre: CGPoint(x: rect.midX, y: rect.midY))
+        }
+    }
+
     /// The end of the Short Answers row: a switch, as iOS draws one. CarPlay's lists have none
     /// of their own, only a picture at the end of a row. Green with the knob to the right is on.
     static func switchMark(on: Bool) -> UIImage { on ? switchOn : switchOff }
@@ -299,6 +314,43 @@ enum CarPlayArtwork {
         }
         botPictures[key] = picture
         return picture
+    }
+
+    /// What the All Bots card is drawn from: the faces on it, and the look.
+    static func allBotsCardKey(_ bots: [(face: BotFace, name: String)], look: CarPlayBotLook) -> String {
+        "all " + bots.map { botCardKey($0.face, named: $0.name, mood: .ready, look: look) }.joined(separator: "+")
+    }
+
+    /// The last card on the Bots tab when there are more bots than a row of cards holds: the
+    /// faces of up to four that didn't fit, on graphite. The car writes "All Bots" under them.
+    static func allBotsCard(_ bots: [(face: BotFace, name: String)], look: CarPlayBotLook) -> UIImage {
+        let key = allBotsCardKey(bots, look: look)
+        if let made = botPictures[key] { return made }
+        let shown = Array(bots.prefix(4))
+        let picture = render(botCardSize(look), opaque: true) { ctx, rect in
+            let w = rect.width, h = rect.height
+            linear(ctx, [rgb(0x3A3A3C), rgb(0x161618)], from: .zero, to: CGPoint(x: w * 0.6, y: h))
+            // Two to a line, the lines centred: one face, two side by side, two over one, or four.
+            let side = h * 0.29, step = side * 1.14
+            let centre = look == .wide ? CGPoint(x: w * 0.70, y: h * 0.40) : CGPoint(x: w / 2, y: h * 0.35)
+            let lines = (shown.count + 1) / 2
+            for (i, bot) in shown.enumerated() {
+                let line = i / 2, onLine = min(2, shown.count - line * 2), place = i % 2
+                let c = CGPoint(x: centre.x + (CGFloat(place) - CGFloat(onLine - 1) / 2) * step,
+                                y: centre.y + (CGFloat(line) - CGFloat(lines - 1) / 2) * step)
+                guard let image = BotAvatar.picture(of: bot.face, named: bot.name, side: side, scale: 3) else { continue }
+                image.draw(in: CGRect(x: c.x - side / 2, y: c.y - side / 2, width: side, height: side))
+            }
+            underWords(ctx, rect, 0.5)
+        }
+        botPictures[key] = picture
+        return picture
+    }
+
+    /// A bot's face for its row in the All Bots list, in its mood: as big as a row's picture
+    /// gets (`CPListItem.maximumImageSize`).
+    static func botRowFace(_ face: BotFace, named name: String, mood: BotMood) -> UIImage? {
+        BotAvatar.picture(of: face, named: name, side: 40, pose: botPose(mood), scale: 3)
     }
 
     /// The pose a mood puts a face in: working it looks up and away, thinking; needing you it
