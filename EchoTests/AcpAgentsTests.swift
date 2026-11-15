@@ -68,6 +68,19 @@ struct AcpAgentsTests {
         settings.acpAllAgents = false
         #expect(!AcpAgentChoices.asks(settings))
     }
+
+    /// The name given to the Hermes agent isn't a bridge agent's (2026-11-14: "Sol is thinking" in
+    /// a Claude Code chat).
+    @Test func aBridgeAgentKeepsItsOwnName() {
+        let settings = settings(allAgents: false)
+        settings.displayName = "Sol"
+        AcpAgents.remember([.init(id: "claude", name: "Claude Code")], settings)
+        #expect(settings.headerTitle == "Claude Code")
+        settings.acpAgent = "goose"
+        #expect(settings.headerTitle == "goose", "an agent the bridge hasn't named goes by its id")
+        settings.transport = .hermesServe
+        #expect(settings.headerTitle == "Sol")
+    }
 }
 
 /// A bridge chat named on this device (`AcpTitles`) is listed by that name.

@@ -84,16 +84,22 @@ extension Settings {
     }
 
     var headerTitle: String {
+        // A bridge agent is called what it calls itself (Claude Code, Codex), not by the name given
+        // to the Hermes agent (2026-11-14: "Sol is thinking" in a Claude Code chat).
+        if transport == .acp, let name = acpAgentName { return name }
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { return trimmed }
-        // An ACP agent is called what it calls itself (Claude Code, Hermes), not Redde.
-        if transport == .acp, let socket = AcpEndpoint.make(address: acpURL, agent: acpAgent, token: nil, folder: nil)?.socketURL,
+        return "Redde"
+    }
+
+    /// The bridge agent the app is on, by what it calls itself when connected, else the bridge's
+    /// name for it, else its id. Nil when there is no agent (the demo agent before it has said).
+    var acpAgentName: String? {
+        if let socket = AcpEndpoint.make(address: acpURL, agent: acpAgent, token: nil, folder: nil)?.socketURL,
            let name = acpAgentNames[socket.absoluteString] {
             return name
         }
-        // Every agent in one list: the open chat's agent, by the bridge's name for it.
-        if transport == .acp, acpAllAgents, !acpAgent.isEmpty { return AcpAgents.name(of: acpAgent, self) }
-        return "Redde"
+        return acpAgent.isEmpty ? nil : AcpAgents.name(of: acpAgent, self)
     }
 
     /// Where the ACP agent is, when it is set up.
