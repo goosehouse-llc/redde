@@ -31,11 +31,24 @@ nonisolated enum DeviceDates {
 
     /// With the phone's own offset, so the agent reads the time the person lives in.
     static func string(_ date: Date, timeZone: TimeZone = .current) -> String {
+        formatter(for: timeZone).string(from: date)
+    }
+
+    /// One formatter per time zone, made once (making one is the dear part, and a copy of the
+    /// calendar writes a thousand dates). Each is only read once made: ISO8601DateFormatter is
+    /// thread-safe, the dictionary is behind the lock.
+    private static func formatter(for timeZone: TimeZone) -> ISO8601DateFormatter {
+        formattersLock.lock()
+        defer { formattersLock.unlock() }
+        if let made = formatters[timeZone] { return made }
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
         formatter.timeZone = timeZone
-        return formatter.string(from: date)
+        formatters[timeZone] = formatter
+        return formatter
     }
+    private static let formattersLock = NSLock()
+    nonisolated(unsafe) private static var formatters: [TimeZone: ISO8601DateFormatter] = [:]
 
     /// For a person: "Tuesday, October 13 at 9:00 AM".
     static func spoken(_ date: Date) -> String {

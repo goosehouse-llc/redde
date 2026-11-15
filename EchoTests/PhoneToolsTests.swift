@@ -23,6 +23,19 @@ struct PhoneToolsTests {
         #expect(DeviceDates.isDayOnly("2026-10-13") && !DeviceDates.isDayOnly("2026-10-13T09:00"))
         #expect(DeviceDates.parse("next Tuesday") == nil)
         #expect(DeviceDates.string(nine, timeZone: calendar.timeZone) == "2026-10-13T09:00:00-04:00")
+        // Each zone its own (the formatters are kept, one a zone), from any thread.
+        let tokyo = try #require(TimeZone(identifier: "Asia/Tokyo")), utc = try #require(TimeZone(identifier: "UTC"))
+        #expect(DeviceDates.string(nine, timeZone: tokyo) == "2026-10-13T22:00:00+09:00")
+        #expect(DeviceDates.string(nine, timeZone: utc) == "2026-10-13T13:00:00Z")
+        #expect(DeviceDates.string(nine, timeZone: calendar.timeZone) == "2026-10-13T09:00:00-04:00")
+        let zones = [tokyo, utc, calendar.timeZone]
+        let made = Array(repeating: zones, count: 50).flatMap { $0 }
+        var written = [String](repeating: "", count: made.count)
+        written.withUnsafeMutableBufferPointer { out in
+            nonisolated(unsafe) let out = out
+            DispatchQueue.concurrentPerform(iterations: made.count) { out[$0] = DeviceDates.string(nine, timeZone: made[$0]) }
+        }
+        #expect(written == made.map { DeviceDates.string(nine, timeZone: $0) })
     }
 
     @Test func argumentsThatAreMissingOrWrongSaySo() throws {

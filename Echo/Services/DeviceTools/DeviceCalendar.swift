@@ -4,7 +4,8 @@ import Foundation
 
 /// The calendar and reminders tools, through EventKit. Each call makes its own store and hands
 /// back plain values: EventKit's objects don't cross between threads, and its callbacks come on
-/// threads of their own, which is why none of this is tied to the main actor.
+/// threads of their own. None of this is tied to the main actor, and the tools run off it
+/// (`DeviceToolRunner.run`); what is called from the main actor elsewhere runs there.
 nonisolated enum DeviceCalendar {
     // MARK: - Permission
 

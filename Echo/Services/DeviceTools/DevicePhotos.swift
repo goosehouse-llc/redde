@@ -156,14 +156,15 @@ nonisolated enum DevicePhotos {
         request.deliveryMode = .highQualityFormat   // one answer, the good one
         request.resizeMode = .exact
         request.isNetworkAccessAllowed = true       // it may be in iCloud only
-        let jpeg: Data? = await withCheckedContinuation { done in
+        // Photos answers on the main thread: the picture is taken from there and pressed here.
+        let picture = await withCheckedContinuation { done in
             PHImageManager.default().requestImage(for: asset, targetSize: CGSize(width: edge, height: edge), contentMode: .aspectFit, options: request) { image, _ in
-                // Small enough to hand to the server in one piece (`DeviceFiles.mostBytes`): a
-                // busy picture is pressed harder before it is called too big.
-                let pressed = [0.72, 0.5, 0.32].lazy.compactMap { image?.jpegData(compressionQuality: $0) }.first { $0.count <= DeviceFiles.mostBytes }
-                done.resume(returning: pressed)
+                done.resume(returning: Handed(image))
             }
         }
+        // Small enough to hand to the server in one piece (`DeviceFiles.mostBytes`): a busy
+        // picture is pressed harder before it is called too big.
+        let jpeg = [0.72, 0.5, 0.32].lazy.compactMap { picture.value?.jpegData(compressionQuality: $0) }.first { $0.count <= DeviceFiles.mostBytes }
         guard let jpeg else { throw DeviceToolError("The picture couldn't be read, or is too large to send at that size (it may also still be downloading from iCloud). Try a smaller max_edge.") }
         var fields = describe(asset).object ?? [:]
         if let caption = written(on: asset).caption { fields["caption"] = .string(caption) }
@@ -186,6 +187,12 @@ nonisolated enum DevicePhotos {
             throw DeviceToolError("The photos couldn't be deleted: \(error.localizedDescription)")
         }
         return .object(["deleted": .number(Double(count)), "note": .string("They are in Recently Deleted for 30 days.")])
+    }
+
+    /// A picture handed from Photos' thread to the tool's, which alone uses it from then on.
+    private struct Handed<Value>: @unchecked Sendable {
+        let value: Value
+        init(_ value: Value) { self.value = value }
     }
 
     private static func describe(_ asset: PHAsset) -> JSONValue {

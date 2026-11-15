@@ -7,7 +7,10 @@ import AppKit
 
 /// Carries out one phone tool and gives back what it found or did, as the JSON the agent reads.
 /// The permission questions (is the area on, does the person have to be asked) are settled
-/// before this is called (`DeviceToolsService`).
+/// before this is called (`DeviceToolsService`). Off the main actor (`run` is `@concurrent`): a
+/// tool reads EventKit, Photos, Contacts or HealthKit, which can take a while, and Keep a Copy
+/// reads two months of events; what has to be on the main actor (opening a URL, Maps, Messages,
+/// Apple Home) goes there itself.
 nonisolated struct DeviceToolRunner: Sendable {
     var files = DeviceFiles()
     #if os(iOS)
@@ -18,7 +21,7 @@ nonisolated struct DeviceToolRunner: Sendable {
     var people = DevicePeople()
     #endif
 
-    func run(_ tool: DeviceTool, _ args: JSONValue, info: JSONValue = .object([:])) async throws -> JSONValue {
+    @concurrent func run(_ tool: DeviceTool, _ args: JSONValue, info: JSONValue = .object([:])) async throws -> JSONValue {
         switch tool {
         case .info: info
         // `copy_most` comes only from Keep a Copy (the agent's arguments are `args`, not `info`).
