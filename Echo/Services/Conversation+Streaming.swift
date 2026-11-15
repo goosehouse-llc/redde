@@ -181,6 +181,9 @@ extension Conversation {
         flushTask?.cancel()
         flushTask = nil
         guard let id = pendingFor, !(pendingText.isEmpty && pendingReasoning.isEmpty && pendingUsage == nil) else { return }
+        #if DEBUG
+        FrameMonitor.count("flush")   // streamed updates per tour step (`-echo.tour`)
+        #endif
         let text = pendingText, reasoning = pendingReasoning, usage = pendingUsage
         pendingText = ""; pendingReasoning = ""; pendingUsage = nil
         update(id) { message in

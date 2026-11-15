@@ -216,6 +216,9 @@ struct ConversationsList: View {
     var body: some View {
         // In stages, as ContentView.body is: in one chain an unoptimized build kept 290 KB of the
         // phone's 1 MB main-thread stack here (2026-11-13).
+        #if DEBUG
+        let _ = FrameMonitor.count("list body")   // how often it runs per tour step (`-echo.tour`)
+        #endif
         listSheets(AnyView(sessionsList
         // From inside the navigation stack: hiding the whole panel doesn't reach UIKit's list,
         // and VoiceOver could swipe into rows parked off screen.

@@ -26,7 +26,9 @@ import WidgetKit
 ///   `-echo.autoScroll [seconds]`, the transcript (or list) scrolls up and back by itself, to measure;
 ///   with `-echo.autoOpen [times]`, the conversation and the shortest other one are opened in turn;
 ///   with `-echo.autoType "text"`, the text is typed into the composer a letter at a time; with
-///   `-echo.tour`, the app goes through what people do in it by itself, each step measured.
+///   `-echo.tour`, the app goes through what people do in it by itself, each step measured;
+///   `-echo.tour calendar` measures the start screen and Keep a Copy with the phone's calendar
+///   (`-echo.demoCalendarEvents n` puts n events on the simulator's).
 /// - `-echo.demoProjects`: fill the conversation list's Projects from a fixture (Dashboard connection).
 ///   Add `-echo.demoMarks` for rows marked working, needing you and unread (`ChatActivity`), and
 ///   `-echo.demoBots` for the Bots section, with a bot's chat open (Quill's) (`-echo.demoBotCount n`
@@ -324,6 +326,9 @@ enum DevHooks {
             }
             CalendarUpNext.shared.refresh()
         }
+        // `-echo.demoCalendarEvents n`: n events on the simulator's calendar over the past week and
+        // the coming two months (titles "Redde Perf: …"), for `-echo.tour calendar`; made once.
+        if let count = value("-echo.demoCalendarEvents").flatMap(Int.init) { seedCalendarEvents(count) }
         if has("-echo.demoAgenda") { conversation.seedAgendaDemo(tomorrowOnly: value("-echo.demoAgenda") == "tomorrow") }
         if has("-echo.demoAsks") { conversation.seedAsksDemo(more: has("-echo.demoAsksMore")) }
         if let kind = value("-echo.demoApprovalCard") { conversation.seedApprovalDemo(kind) }
@@ -556,6 +561,33 @@ enum DevHooks {
                 conversation.reset()
             }
         }
+    }
+
+    /// `-echo.demoCalendarEvents n`: tops the simulator's calendar up to n events titled
+    /// "Redde Perf: …", spread over the past week and the coming two months, three a day or so.
+    private static func seedCalendarEvents(_ count: Int) {
+        let store = EKEventStore()
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess, let calendar = store.defaultCalendarForNewEvents else { return }
+        let day = Calendar.current.startOfDay(for: .now)
+        let from = day.addingTimeInterval(-7 * 86400), to = day.addingTimeInterval(61 * 86400)
+        let have = store.events(matching: store.predicateForEvents(withStart: from, end: to, calendars: nil))
+            .filter { $0.title?.hasPrefix("Redde Perf: ") == true }.count
+        guard have < count else { return }
+        let span = to.timeIntervalSince(from)
+        for i in have ..< count {
+            let event = EKEvent(eventStore: store)
+            event.calendar = calendar
+            event.title = "Redde Perf: Meeting \(i)"
+            event.location = "Room \(i % 12), 200 East Robinson St, Orlando, FL"
+            event.notes = "Agenda for meeting \(i): the plan, the numbers, and what comes next."
+            // Spread evenly, at a quarter hour between 8 AM and 6 PM.
+            let at = from.addingTimeInterval(span * Double(i) / Double(count))
+            let start = Calendar.current.startOfDay(for: at).addingTimeInterval(Double(8 * 3600 + (i * 37 % 40) * 900))
+            event.startDate = start
+            event.endDate = start.addingTimeInterval(i % 5 == 0 ? 3600 : 1800)
+            try? store.save(event, span: .thisEvent, commit: false)
+        }
+        try? store.commit()
     }
 }
 
