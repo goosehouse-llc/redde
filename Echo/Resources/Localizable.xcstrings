@@ -5644,7 +5644,114 @@
         }
       }
     },
+    "%@ attachments aren't supported on the Hermes API alone. Save the Hermes Dashboard login in Settings → Connection → Connection details, and they go to the server through it." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-vedhæftninger understøttes ikke på Hermes API alene. Gem login til Hermes Dashboard i Indstillinger → Forbindelse → Forbindelsesdetaljer, så går de til serveren gennem det."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-Anhänge werden über die Hermes API allein nicht unterstützt. Sichere die Hermes-Dashboard-Anmeldung in Einstellungen → Verbindung → Verbindungsdetails, dann gehen sie darüber an den Server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los adjuntos de %@ no son compatibles solo con la Hermes API. Guarda el inicio de sesión del Hermes Dashboard en Ajustes → Conexión → Datos de conexión, y llegarán al servidor a través de él."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pièces jointes %@ ne sont pas prises en charge avec Hermes API uniquement. Enregistrez l’identifiant du Hermes Dashboard dans Réglages → Connexion → Détails de connexion, et elles passeront par lui vers le serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli allegati %@ non sono supportati solo con la Hermes API. Salva l'accesso alla Hermes Dashboard in Impostazioni → Connessione → Dettagli connessione, e arriveranno al server tramite la Dashboard."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes APIだけでは%@の添付ファイルに対応していません。設定 → 接続 → 接続の詳細でHermes Dashboardのログイン情報を保存すると、それを経由してサーバに送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes API만으로는 %@ 첨부 파일이 지원되지 않습니다. 설정 → 연결 → 연결 세부사항에 Hermes Dashboard 로그인 정보를 저장하면 Dashboard를 통해 서버로 전송됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-vedlegg støttes ikke på Hermes API alene. Lagre påloggingen til Hermes Dashboard i Innstillinger → Tilkobling → Tilkoblingsdetaljer, så går de til tjeneren via den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-bijlagen worden niet ondersteund op alleen de Hermes API. Bewaar de Hermes Dashboard-login in Instellingen → Verbinding → Verbindingsgegevens, dan gaan ze daarlangs naar de server."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Załączniki typu %@ nie są obsługiwane w samym Hermes API. Zapisz login do Hermes Dashboard w Ustawienia → Połączenie → Szczegóły połączenia, a trafią na serwer przez Dashboard."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anexos de %@ não são aceitos só com a Hermes API. Salve o login do Hermes Dashboard em Ajustes → Conexão → Detalhes da conexão, e eles vão para o servidor por ele."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вложения типа «%@» не поддерживаются только через Hermes API. Сохраните вход в Hermes Dashboard в «Настройки» → «Подключение» → «Сведения о подключении», и они будут отправляться на сервер через него."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilagor av typen %@ stöds inte enbart via Hermes API. Spara inloggningen för Hermes Dashboard i Inställningar → Anslutning → Anslutningsuppgifter, så går de till servern via den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ekleri tek başına Hermes API'de desteklenmiyor. Hermes Dashboard girişini Ayarlar → Bağlantı → Bağlantı ayrıntıları bölümünde kaydedin, ekler onun üzerinden sunucuya gitsin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладення типу %@ не підтримуються лише через Hermes API. Збережіть дані входу Hermes Dashboard у Параметри → З’єднання → Відомості про з’єднання, і вони надходитимуть на сервер через нього."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅使用Hermes API时不支持%@附件。在设置 → 连接 → 连接详细信息中保存Hermes Dashboard登录信息后，它们会经由Dashboard发送到服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "僅使用 Hermes API 時不支援 %@ 附件。請在「設定」→「連線」→「連線詳細資訊」中儲存 Hermes Dashboard 登入資訊，附件就會透過它傳送到伺服器。"
+          }
+        }
+      }
+    },
     "%@ attachments aren't supported on the Hermes API alone. Save the Hermes Dashboard login in Settings → Connection details, and they go to the server through it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -9212,7 +9319,114 @@
         }
       }
     },
+    "%@ is behind an access gate (HTTP %lld). Add what it asks for under Settings → Connection → Connection details: a Cloudflare Access service token, a Pangolin access token, or the proxy's own headers." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ er bag en adgangsport (HTTP %lld). Tilføj det, den beder om, under Indstillinger → Forbindelse → Forbindelsesdetaljer: et Cloudflare Access-servicetoken, et Pangolin-adgangstoken eller proxyens egne headere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ liegt hinter einer Zugangssperre (HTTP %lld). Füge unter Einstellungen → Verbindung → Verbindungsdetails hinzu, was sie verlangt: ein Cloudflare-Access-Diensttoken, ein Pangolin-Zugriffstoken oder die eigenen Header des Proxys."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ está detrás de una puerta de acceso (HTTP %lld). Añade lo que pide en Ajustes → Conexión → Datos de conexión: un token de servicio de Cloudflare Access, un token de acceso de Pangolin o los encabezados propios del proxy."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ est derrière un contrôle d’accès (HTTP %lld). Ajoutez ce qu’il demande dans Réglages → Connexion → Détails de connexion : un jeton de service Cloudflare Access, un jeton d’accès Pangolin, ou les en-têtes propres au proxy."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ è dietro un controllo di accesso (HTTP %lld). Aggiungi ciò che richiede in Impostazioni → Connessione → Dettagli connessione: un token di servizio Cloudflare Access, un token di accesso Pangolin o le intestazioni del proxy."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@はアクセスゲートの背後にあります（HTTP %lld）。設定 → 接続 → 接続の詳細で、求められているもの（Cloudflare Accessのサービストークン、Pangolinのアクセストークン、またはプロキシ独自のヘッダ）を追加してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@이(가) 접근 게이트 뒤에 있습니다(HTTP %lld). 설정 → 연결 → 연결 세부사항에서 요구하는 항목을 추가하십시오: Cloudflare Access 서비스 토큰, Pangolin 접근 토큰 또는 프록시 자체 헤더."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ er bak en tilgangssperre (HTTP %lld). Legg til det den ber om under Innstillinger → Tilkobling → Tilkoblingsdetaljer: et tjenestetoken for Cloudflare Access, et Pangolin-tilgangstoken eller proxyens egne headere."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ zit achter een toegangspoort (HTTP %lld). Voeg toe waar die om vraagt onder Instellingen → Verbinding → Verbindingsgegevens: een Cloudflare Access-servicetoken, een Pangolin-toegangstoken of de eigen headers van de proxy."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ jest za bramką dostępu (HTTP %lld). Dodaj to, czego wymaga, w Ustawienia → Połączenie → Szczegóły połączenia: token usługi Cloudflare Access, token dostępu Pangolin lub własne nagłówki proxy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ está atrás de um portal de acesso (HTTP %lld). Adicione o que ele pede em Ajustes → Conexão → Detalhes da conexão: um token de serviço do Cloudflare Access, um token de acesso do Pangolin ou os cabeçalhos do próprio proxy."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ находится за защитой доступа (HTTP %lld). Добавьте то, что она требует, в «Настройки» → «Подключение» → «Сведения о подключении»: сервисный токен Cloudflare Access, токен доступа Pangolin или собственные заголовки прокси."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ligger bakom en åtkomstspärr (HTTP %lld). Lägg till det den kräver under Inställningar → Anslutning → Anslutningsuppgifter: en tjänsttoken för Cloudflare Access, en åtkomsttoken för Pangolin eller proxyns egna headers."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bir erişim kapısının arkasında (HTTP %lld). İstediğini Ayarlar → Bağlantı → Bağlantı ayrıntıları bölümünde ekleyin: bir Cloudflare Access hizmet token'ı, bir Pangolin erişim token'ı ya da proxy'nin kendi üst bilgileri."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ за захистом доступу (HTTP %lld). Додайте потрібне в Параметри → З’єднання → Відомості про з’єднання: сервісний токен Cloudflare Access, токен доступу Pangolin або власні заголовки проксі."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@位于访问控制之后（HTTP %lld）。请在设置 → 连接 → 连接详细信息中添加它要求的内容：Cloudflare Access服务令牌、Pangolin访问令牌，或代理自己的标头。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 位於存取閘門後方（HTTP %lld）。請在「設定」→「連線」→「連線詳細資訊」中加入它要求的項目：Cloudflare Access 服務權杖、Pangolin 存取權杖，或代理伺服器自己的標頭。"
+          }
+        }
+      }
+    },
     "%@ is behind an access gate (HTTP %lld). Add what it asks for under Settings → Connection details: a Cloudflare Access service token, a Pangolin access token, or the proxy's own headers." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -42150,7 +42364,114 @@
         }
       }
     },
+    "A bot's schedules are kept with its other settings on your server, through the Dashboard. Add its login in Settings → Connection → Connection details." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bots tidsplaner gemmes sammen med dens andre indstillinger på din server via Dashboard. Tilføj dets login i Indstillinger → Forbindelse → Forbindelsesdetaljer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Zeitpläne eines Bots liegen mit seinen anderen Einstellungen auf deinem Server, über das Dashboard. Füge seine Anmeldung in Einstellungen → Verbindung → Verbindungsdetails hinzu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las programaciones de un bot se guardan con sus demás ajustes en tu servidor, a través del Dashboard. Añade su inicio de sesión en Ajustes → Conexión → Datos de conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les planifications d’un bot sont conservées avec ses autres réglages sur votre serveur, via le Dashboard. Ajoutez son identifiant dans Réglages → Connexion → Détails de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pianificazioni di un bot sono salvate con le altre sue impostazioni sul tuo server, tramite la Dashboard. Aggiungi il suo accesso in Impostazioni → Connessione → Dettagli connessione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ボットのスケジュールは、Dashboardを通じてほかの設定とともにサーバに保存されます。設定 → 接続 → 接続の詳細でログイン情報を追加してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "봇의 예약은 Dashboard를 통해 서버에 다른 설정과 함께 보관됩니다. 설정 → 연결 → 연결 세부사항에서 로그인 정보를 추가하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidsplanene til en bot lagres sammen med de andre innstillingene på tjeneren din, via Dashboard. Legg til påloggingen i Innstillinger → Tilkobling → Tilkoblingsdetaljer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De planningen van een bot worden bij zijn andere instellingen op je server bewaard, via het Dashboard. Voeg de login ervan toe in Instellingen → Verbinding → Verbindingsgegevens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harmonogramy bota są przechowywane z jego pozostałymi ustawieniami na Twoim serwerze, przez Dashboard. Dodaj login do niego w Ustawienia → Połączenie → Szczegóły połączenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os agendamentos de um bot ficam com os outros ajustes dele no seu servidor, pelo Dashboard. Adicione o login dele em Ajustes → Conexão → Detalhes da conexão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расписания бота хранятся вместе с другими его настройками на вашем сервере, через Dashboard. Добавьте вход в него в «Настройки» → «Подключение» → «Сведения о подключении»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bots scheman sparas med dess andra inställningar på din server, via Dashboard. Lägg till dess inloggning i Inställningar → Anslutning → Anslutningsuppgifter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir botun zamanlamaları, diğer ayarlarıyla birlikte Dashboard aracılığıyla sunucunuzda saklanır. Girişini Ayarlar → Bağlantı → Bağlantı ayrıntıları bölümünde ekleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розклади бота зберігаються разом з іншими його параметрами на вашому сервері, через Dashboard. Додайте його дані входу в Параметри → З’єднання → Відомості про з’єднання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "机器人的定时任务与其其他设置一起，通过Dashboard保存在你的服务器上。请在设置 → 连接 → 连接详细信息中添加其登录信息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "機器人的排程會透過 Dashboard 與它的其他設定一起保存在你的伺服器上。請在「設定」→「連線」→「連線詳細資訊」中加入 Dashboard 登入資訊。"
+          }
+        }
+      }
+    },
     "A bot's schedules are kept with its other settings on your server, through the Dashboard. Add its login in Settings → Hermes server." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -48743,7 +49064,7 @@
       }
     },
     "A reminder from Apple Reminders goes on this list on the day it's due, and one that's overdue stays until it's done. Tick it on either and it's ticked on both. Your iPhone or Mac adds them when Redde opens, as Reminders lives there." : {
-      "comment" : "Settings › Top of the Chat List: under Reminders on Their Day",
+      "comment" : "Settings › Chat List and Settings › Calendars: under Reminders on Their Day",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -49381,7 +49702,7 @@
       }
     },
     "A reply that lists choices and asks which one shows them under it, to tap. For suggestions under every reply, turn on Apple Intelligence or set up an OpenAI-compatible connection." : {
-      "comment" : "Settings › Writing footer: no model can write suggested replies on this device",
+      "comment" : "Settings › Replies & Writing footer: no model can write suggested replies on this device",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -70253,7 +70574,7 @@
       }
     },
     "An agent you allow rings this device like a phone call when something shouldn't wait." : {
-      "comment" : "Footer under Calls from Agents, in Settings › Notifications (an iPhone or an iPad)",
+      "comment" : "Footer under Calls from Agents, in Settings › Voice (an iPhone or an iPad)",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -104824,7 +105145,7 @@
       }
     },
     "Cards you pinned from a reply, like a checklist." : {
-      "comment" : "Settings › Top of the Chat List: under Pinned",
+      "comment" : "Settings › Chat List: under Pinned",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -109190,6 +109511,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更改%@的擁有者"
+          }
+        }
+      }
+    },
+    "Chat List" : {
+      "comment" : "Settings page: what the chat list shows: bots, projects, the cards and Today tiles above the conversations",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatliste"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatliste"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista de chats"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste des discussions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elenco chat"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チャットリスト"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "채팅 목록"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatteliste"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatlijst"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista czatów"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista de Conversas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список чатов"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chattlista"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sohbet Listesi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список чатів"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聊天列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聊天列表"
           }
         }
       }
@@ -122692,7 +123120,7 @@
       }
     },
     "Connection" : {
-      "comment" : "Email account page: section",
+      "comment" : "Settings page: the kind of connection, setting one up, and every connection's URLs, keys and logins",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -132371,7 +132799,114 @@
         }
       }
     },
+    "Couldn't reach your iPhone, which asks for the watch while Redde is on the Dashboard. Add the Hermes API there (Settings › Connection › Connection details) and the watch asks on its own." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke nå din iPhone, som spørger for uret, mens Redde er på Dashboard. Tilføj Hermes API der (Indstillinger › Forbindelse › Forbindelsesdetaljer), så spørger uret selv."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein iPhone war nicht erreichbar; es fragt für die Watch, solange Redde das Dashboard nutzt. Füge dort die Hermes API hinzu (Einstellungen › Verbindung › Verbindungsdetails), dann fragt die Watch selbst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo contactar con tu iPhone, que pregunta en nombre del reloj mientras Redde usa el Dashboard. Añade allí la Hermes API (Ajustes › Conexión › Datos de conexión) y el reloj preguntará por su cuenta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de joindre votre iPhone, qui fait les demandes pour la montre tant que Redde est sur le Dashboard. Ajoutez-y Hermes API (Réglages › Connexion › Détails de connexion) et la montre demandera seule."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile raggiungere il tuo iPhone, che fa le domande per l'Apple Watch mentre Redde è sulla Dashboard. Aggiungi lì la Hermes API (Impostazioni › Connessione › Dettagli connessione) e l'Apple Watch chiederà da solo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneに接続できませんでした。ReddeがDashboardを使用している間は、iPhoneがApple Watchの代わりに質問します。iPhoneでHermes APIを追加すると（設定 › 接続 › 接続の詳細）、Apple Watchが単独で質問できるようになります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 Dashboard를 사용하는 동안 Apple Watch 대신 질문하는 iPhone에 연결할 수 없습니다. iPhone에서 Hermes API를 추가하면(설정 › 연결 › 연결 세부사항) Apple Watch가 직접 질문합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke nå iPhonen din, som spør for klokken mens Redde er på Dashboard. Legg til Hermes API der (Innstillinger › Tilkobling › Tilkoblingsdetaljer), så spør klokken på egen hånd."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan je iPhone niet bereiken, die namens de Apple Watch vraagt terwijl Redde op het Dashboard zit. Voeg daar de Hermes API toe (Instellingen › Verbinding › Verbindingsgegevens), dan vraagt de Apple Watch zelf."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak połączenia z iPhone'em, który pyta w imieniu zegarka, gdy Redde korzysta z Dashboard. Dodaj tam Hermes API (Ustawienia › Połączenie › Szczegóły połączenia), a zegarek będzie pytać samodzielnie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível acessar seu iPhone, que pergunta pelo relógio enquanto o Redde está no Dashboard. Adicione a Hermes API lá (Ajustes › Conexão › Detalhes da conexão) e o relógio pergunta sozinho."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет связи с iPhone, который задает вопросы за часы, пока Redde подключен к Dashboard. Добавьте там Hermes API («Настройки» › «Подключение» › «Сведения о подключении»), и часы будут спрашивать сами."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunde inte nå din iPhone, som frågar åt klockan medan Redde använder Dashboard. Lägg till Hermes API där (Inställningar › Anslutning › Anslutningsuppgifter) så frågar klockan på egen hand."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde Dashboard'dayken saat adına soran iPhone'unuza ulaşılamadı. iPhone'da Hermes API'yi de ekleyin (Ayarlar › Bağlantı › Bağlantı ayrıntıları), saat kendi başına sorsun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося зв’язатися з вашим iPhone, який надсилає запити за годинник, поки Redde працює через Dashboard. Додайте там Hermes API (Параметри › З’єднання › Відомості про з’єднання), і годинник запитуватиме сам."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接你的iPhone；当Redde使用Dashboard时，由iPhone代手表提问。请在iPhone上添加Hermes API（设置 › 连接 › 连接详细信息），手表就能自行提问。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連線到你的 iPhone；當 Redde 使用 Dashboard 時，手錶需透過 iPhone 詢問。請在 iPhone 上加入 Hermes API（「設定」›「連線」›「連線詳細資訊」），手錶就能自行詢問。"
+          }
+        }
+      }
+    },
     "Couldn't reach your iPhone, which asks for the watch while Redde is on the Dashboard. Add the Hermes API there (Settings › Connection details) and the watch asks on its own." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -153394,7 +153929,7 @@
       }
     },
     "Each goal's progress." : {
-      "comment" : "Settings › Top of the Chat List: under Goals",
+      "comment" : "Settings › Chat List: under Goals",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -154885,7 +155420,7 @@
       }
     },
     "Each shows only when it has something in it. Tap a section's title in the chat list to fold it away to a count." : {
-      "comment" : "Settings › Top of the Chat List: footer",
+      "comment" : "Settings › Chat List: footer under the cards",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -159561,7 +160096,7 @@
       }
     },
     "Email" : {
-      "comment" : "Ahead of Your Day: the email section",
+      "comment" : "Settings › Email: title",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -159881,7 +160416,114 @@
         }
       }
     },
+    "Email goes through your Hermes's Redde plugin, which Redde reaches with the Hermes Dashboard login (Settings › Connection › Connection details). Over the Hermes API alone it can't be asked." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-mail går gennem din Hermes' Redde-plugin, som Redde når med login til Hermes Dashboard (Indstillinger › Forbindelse › Forbindelsesdetaljer). Via Hermes API alene kan den ikke spørges."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-Mail läuft über das Redde-Plugin deines Hermes, das Redde über die Hermes-Dashboard-Anmeldung erreicht (Einstellungen › Verbindung › Verbindungsdetails). Über die Hermes API allein ist es nicht erreichbar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El correo pasa por el plugin de Redde de tu Hermes, al que Redde llega con el inicio de sesión del Hermes Dashboard (Ajustes › Conexión › Datos de conexión). Solo con la Hermes API no se le puede pedir."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’e-mail passe par le plugin Redde de votre Hermes, que Redde joint avec l’identifiant du Hermes Dashboard (Réglages › Connexion › Détails de connexion). Avec Hermes API seul, il est impossible d’y accéder."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'email passa dal plugin Redde del tuo Hermes, che Redde raggiunge con l'accesso alla Hermes Dashboard (Impostazioni › Connessione › Dettagli connessione). Con la sola Hermes API non le si può chiedere niente."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メールはHermesのReddeプラグインを通じて処理され、ReddeはHermes Dashboardのログイン情報（設定 › 接続 › 接続の詳細）で接続します。Hermes APIだけでは依頼できません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이메일은 Hermes의 Redde 플러그인을 거치며, Redde는 Hermes Dashboard 로그인(설정 › 연결 › 연결 세부사항)으로 플러그인에 연결합니다. Hermes API만으로는 요청할 수 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-post går gjennom Redde-tillegget på din Hermes, som Redde når med påloggingen til Hermes Dashboard (Innstillinger › Tilkobling › Tilkoblingsdetaljer). Via Hermes API alene kan det ikke spørres."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-mail gaat via de Redde-plug-in van je Hermes, die Redde bereikt met de Hermes Dashboard-login (Instellingen › Verbinding › Verbindingsgegevens). Via alleen de Hermes API kan het niet worden gevraagd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-mail działa przez wtyczkę Redde na Twoim Hermesie, z którą Redde łączy się przez login do Hermes Dashboard (Ustawienia › Połączenie › Szczegóły połączenia). Przez samo Hermes API nie da się o niego zapytać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O e-mail passa pelo plugin do Redde no seu Hermes, que o Redde acessa com o login do Hermes Dashboard (Ajustes › Conexão › Detalhes da conexão). Só com a Hermes API, não é possível consultá-lo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Почта работает через плагин Redde на вашем Hermes, к которому Redde обращается со входом Hermes Dashboard («Настройки» › «Подключение» › «Сведения о подключении»). Только через Hermes API к ней не обратиться."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-post går via Redde-tillägget på din Hermes, som Redde når med inloggningen för Hermes Dashboard (Inställningar › Anslutning › Anslutningsuppgifter). Enbart via Hermes API går det inte att fråga."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-posta, Hermes'inizdeki Redde eklentisi üzerinden çalışır; Redde ona Hermes Dashboard girişiyle ulaşır (Ayarlar › Bağlantı › Bağlantı ayrıntıları). Yalnızca Hermes API üzerinden e-postaya ulaşılamaz."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пошта працює через плагін Redde на вашому Hermes, до якого Redde звертається з даними входу Hermes Dashboard (Параметри › З’єднання › Відомості про з’єднання). Лише через Hermes API до неї не звернутися."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "邮件通过你的Hermes上的Redde插件处理，Redde使用Hermes Dashboard登录信息连接它（设置 › 连接 › 连接详细信息）。仅通过Hermes API无法请求。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "郵件透過你 Hermes 的 Redde 外掛處理，Redde 會使用 Hermes Dashboard 登入資訊連接它（「設定」›「連線」›「連線詳細資訊」）。僅透過 Hermes API 時無法使用。"
+          }
+        }
+      }
+    },
     "Email goes through your Hermes's Redde plugin, which Redde reaches with the Hermes Dashboard login (Settings › Connection). Over the Hermes API alone it can't be asked." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -172399,7 +173041,114 @@
         }
       }
     },
+    "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection → Connection details." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filer, din agent sender, kommer via Hermes Dashboard. Tilføj dets login i Indstillinger → Forbindelse → Forbindelsesdetaljer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dateien deines Agenten kommen über das Hermes Dashboard. Füge seine Anmeldung in Einstellungen → Verbindung → Verbindungsdetails hinzu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los archivos que envía tu agente llegan a través del Hermes Dashboard. Añade su inicio de sesión en Ajustes → Conexión → Datos de conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les fichiers envoyés par votre agent passent par le Hermes Dashboard. Ajoutez son identifiant dans Réglages → Connexion → Détails de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I file inviati dal tuo agente arrivano tramite la Hermes Dashboard. Aggiungi il suo accesso in Impostazioni → Connessione → Dettagli connessione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントが送るファイルはHermes Dashboard経由で届きます。設定 → 接続 → 接続の詳細でログイン情報を追加してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 보내는 파일은 Hermes Dashboard를 통해 전달됩니다. 설정 → 연결 → 연결 세부사항에서 로그인 정보를 추가하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filer agenten din sender, kommer via Hermes Dashboard. Legg til påloggingen i Innstillinger → Tilkobling → Tilkoblingsdetaljer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestanden die je agent stuurt, komen via het Hermes Dashboard. Voeg de login ervan toe in Instellingen → Verbinding → Verbindingsgegevens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pliki wysyłane przez agenta przychodzą przez Hermes Dashboard. Dodaj login do niego w Ustawienia → Połączenie → Szczegóły połączenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os arquivos que seu agente envia chegam pelo Hermes Dashboard. Adicione o login dele em Ajustes → Conexão → Detalhes da conexão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файлы от агента приходят через Hermes Dashboard. Добавьте вход в него в «Настройки» → «Подключение» → «Сведения о подключении»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filer som din agent skickar kommer via Hermes Dashboard. Lägg till dess inloggning i Inställningar → Anslutning → Anslutningsuppgifter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınızın gönderdiği dosyalar Hermes Dashboard üzerinden gelir. Girişini Ayarlar → Bağlantı → Bağlantı ayrıntıları bölümünde ekleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файли, які надсилає ваш агент, надходять через Hermes Dashboard. Додайте його дані входу в Параметри → З’єднання → Відомості про з’єднання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体发送的文件经由Hermes Dashboard传送。请在设置 → 连接 → 连接详细信息中添加其登录信息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理傳送的檔案會經由 Hermes Dashboard 傳來。請在「設定」→「連線」→「連線詳細資訊」中加入它的登入資訊。"
+          }
+        }
+      }
+    },
     "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection details." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -173993,7 +174742,7 @@
       }
     },
     "Finding where you are…" : {
-      "comment" : "Settings → Your Day → Location → Current Location, while the first fix is found",
+      "comment" : "Settings → Location → Current Location, while the first fix is found",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -182014,6 +182763,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gemini API 金鑰（Google AI Studio）"
+          }
+        }
+      }
+    },
+    "General" : {
+      "comment" : "Settings page: where Redde opens, Sync with iCloud, the lock, and erasing everything",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generelt"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allgemein"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Général"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generali"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일반"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generelt"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algemeen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogólne"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geral"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Основные"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allmänt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genel"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загальні"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
           }
         }
       }
@@ -192461,7 +193317,7 @@
       }
     },
     "Heads-ups, wrap-ups and your jobs' answers." : {
-      "comment" : "Settings › Top of the Chat List: under Briefings",
+      "comment" : "Settings › Chat List: under Briefings",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -201644,6 +202500,7 @@
       }
     },
     "Hermes server" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -204727,7 +205584,7 @@
       }
     },
     "Hide Up Next" : {
-      "comment" : "The Up Next tile's hold menu: turn the tile off (Settings › Appearance › Top of the Chat List turns it back on)",
+      "comment" : "The Up Next tile's hold menu: turn the tile off (Settings › Chat List turns it back on)",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -206113,7 +206970,7 @@
       }
     },
     "Home, Work, the gym: arriving or leaving tells the agent you choose, with what you wrote for it." : {
-      "comment" : "Settings › Your Day › Location: under Places",
+      "comment" : "Settings › Location: under Places",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -230947,7 +231804,7 @@
       }
     },
     "Keeping Watch" : {
-      "comment" : "Settings › Your Day: watches, triggers, location and health",
+      "comment" : "Settings › Your Day: watches, triggers and health",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -238291,6 +239148,7 @@
       }
     },
     "Let your agent use this device's calendar, reminders, contacts, photos and a folder of files, set alarms, write on a widget, and start calls and messages, through Redde." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -243969,7 +244827,7 @@
       }
     },
     "Location" : {
-      "comment" : "The location permission, as the device's settings name it",
+      "comment" : "Settings › Location: title",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -263983,7 +264841,7 @@
       }
     },
     "Morning Ideas to take or put away." : {
-      "comment" : "Settings › Top of the Chat List: under Ideas for you",
+      "comment" : "Settings › Chat List: under Ideas for you",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -269208,6 +270066,7 @@
     },
     "Needs email on your Hermes: connect an account in Settings → Agent → Email (or add an email MCP server in Settings → Gateway), then check again." : {
       "comment" : "A watch that reads email, on a Hermes that can't",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -269309,6 +270168,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "需要你的 Hermes 上有郵件：在「設定」→「代理」→「郵件」中連接帳號（或在「設定」→「閘道」中加入郵件 MCP 伺服器），然後再檢查一次。"
+          }
+        }
+      }
+    },
+    "Needs email on your Hermes: connect an account in Settings → Email (or add an email MCP server in Settings → Agent → Gateway), then check again." : {
+      "comment" : "A watch that reads email, on a Hermes that can't",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kræver e-mail på din Hermes: forbind en konto i Indstillinger → E-mail (eller tilføj en e-mail-MCP-server i Indstillinger → Agent → Gateway), og tjek så igen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Braucht E-Mail auf deinem Hermes: Verbinde ein Konto unter Einstellungen → E-Mail (oder füge einen E-Mail-MCP-Server unter Einstellungen → Agent → Gateway hinzu) und prüfe dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Necesita correo en tu Hermes: conecta una cuenta en Ajustes → Correo (o añade un servidor MCP de correo en Ajustes → Agente → Gateway) y vuelve a comprobarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requiert l’e-mail sur votre Hermes : connectez un compte dans Réglages → E-mail (ou ajoutez un serveur MCP d’e-mail dans Réglages → Agent → Passerelle), puis vérifiez à nouveau."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serve l'email sul tuo Hermes: collega un account in Impostazioni → Email (o aggiungi un server MCP email in Impostazioni → Agente → Gateway), poi controlla di nuovo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesにメールが必要です：設定 → メールでアカウントを接続するか（または設定 → エージェント → ゲートウェイでメールのMCPサーバを追加して）、もう一度確認してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes에 이메일이 필요합니다. 설정 → 이메일에서 계정을 연결하거나(또는 설정 → 에이전트 → 게이트웨이에서 이메일 MCP 서버 추가) 다시 확인하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krever e-post på din Hermes: koble til en konto i Innstillinger → E-post (eller legg til en MCP-tjener for e-post i Innstillinger → Agent → Gateway), og sjekk igjen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vereist e-mail op je Hermes: verbind een account in Instellingen → E-mail (of voeg een e-mail-MCP-server toe in Instellingen → Agent → Gateway) en controleer dan opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wymaga e-maila na Twoim Hermesie: połącz konto w Ustawienia → E-mail (lub dodaj serwer MCP poczty w Ustawienia → Agent → Brama), a potem sprawdź ponownie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requer e-mail no seu Hermes: conecte uma conta em Ajustes → E-mail (ou adicione um servidor MCP de e-mail em Ajustes → Agente → Gateway) e verifique de novo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нужна почта на вашем Hermes: подключите учетную запись в «Настройки» → «Почта» (или добавьте почтовый MCP-сервер в «Настройки» → «Агент» → «Шлюз») и проверьте снова."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kräver e-post på din Hermes: anslut ett konto i Inställningar → E-post (eller lägg till en MCP-server för e-post i Inställningar → Agent → Gateway), och kontrollera sedan igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'inizde e-posta gerekir: Ayarlar → E-posta'da bir hesap bağlayın (ya da Ayarlar → Ajan → Ağ Geçidi'nde bir e-posta MCP sunucusu ekleyin), sonra yeniden kontrol edin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Потрібна пошта на вашому Hermes: під’єднайте обліковий запис у Параметри → Пошта (або додайте поштовий сервер MCP у Параметри → Агент → Шлюз), а потім перевірте знову."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要你的Hermes上有邮件：在“设置 → 邮件”中连接一个账户（或在“设置 → 智能体 → 网关”中添加邮件MCP服务器），然后再检查一次。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要你的 Hermes 上有郵件：在「設定」→「郵件」中連接帳號（或在「設定」→「代理」→「閘道」中加入郵件 MCP 伺服器），然後再檢查一次。"
           }
         }
       }
@@ -269632,7 +270598,114 @@
         }
       }
     },
+    "Needs the Hermes Dashboard connection: its address and login, in Settings › Connection › Connection details. Until then the on-device voice reads replies." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kræver forbindelsen til Hermes Dashboard: dets adresse og login i Indstillinger › Forbindelse › Forbindelsesdetaljer. Indtil da læser stemmen på enheden svar op."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Braucht die Hermes-Dashboard-Verbindung: Adresse und Anmeldung, unter Einstellungen › Verbindung › Verbindungsdetails. Bis dahin liest die Stimme auf dem Gerät die Antworten vor."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Necesita la conexión del Hermes Dashboard: su dirección y su inicio de sesión, en Ajustes › Conexión › Datos de conexión. Hasta entonces, la voz del dispositivo lee las respuestas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requiert la connexion Hermes Dashboard : son adresse et son identifiant, dans Réglages › Connexion › Détails de connexion. D’ici là, la voix sur l’appareil lit les réponses."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Richiede la connessione Hermes Dashboard: indirizzo e accesso, in Impostazioni › Connessione › Dettagli connessione. Fino ad allora le risposte le legge la voce sul dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard接続（設定 › 接続 › 接続の詳細のアドレスとログイン情報）が必要です。それまではデバイス上の音声が返答を読み上げます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard 연결이 필요합니다: 설정 › 연결 › 연결 세부사항에서 주소와 로그인 정보를 입력하십시오. 그때까지는 기기 내 음성이 응답을 읽습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krever tilkoblingen til Hermes Dashboard: adressen og påloggingen, i Innstillinger › Tilkobling › Tilkoblingsdetaljer. Inntil da leser stemmen på enheten opp svarene."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vereist de verbinding met het Hermes Dashboard: het adres en de login, in Instellingen › Verbinding › Verbindingsgegevens. Tot die tijd leest de stem op het apparaat antwoorden voor."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wymaga połączenia z Hermes Dashboard: jego adresu i loginu w Ustawienia › Połączenie › Szczegóły połączenia. Do tego czasu odpowiedzi czyta głos na urządzeniu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Precisa da conexão do Hermes Dashboard: o endereço e o login dele, em Ajustes › Conexão › Detalhes da conexão. Até lá, a voz do dispositivo lê as respostas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нужно подключение к Hermes Dashboard: его адрес и данные входа в «Настройки» › «Подключение» › «Сведения о подключении». До тех пор ответы читает голос на устройстве."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kräver anslutningen till Hermes Dashboard: dess adress och inloggning, i Inställningar › Anslutning › Anslutningsuppgifter. Till dess läser rösten på enheten upp svar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard bağlantısı gerekir: Ayarlar › Bağlantı › Bağlantı ayrıntıları bölümünde adresi ve girişi. O zamana kadar yanıtları aygıttaki ses okur."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Потрібне з’єднання Hermes Dashboard: його адреса й дані входу в Параметри › З’єднання › Відомості про з’єднання. Доти відповіді читає голос на пристрої."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要Hermes Dashboard连接：请在“设置 › 连接 › 连接详细信息”中填写其地址和登录信息。在此之前，由设备端声音朗读回复。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要 Hermes Dashboard 連線：在「設定」›「連線」›「連線詳細資訊」中填入它的位址和登入資訊。在此之前，回覆會由裝置上的聲音朗讀。"
+          }
+        }
+      }
+    },
     "Needs the Hermes Dashboard connection: its address and login, under Connection. Until then the on-device voice reads replies." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -293851,6 +294924,7 @@
       }
     },
     "Notify When Redde Is Closed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -300284,8 +301358,116 @@
         }
       }
     },
+    "Once Hermes has restarted, pair this device in Settings → Notifications → Alerts When Redde Is Closed." : {
+      "comment" : "Ahead of Your Day: pairing waits for the plugin to load",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Hermes er genstartet, kan du parre denne enhed i Indstillinger → Meddelelser → Meddelelser, når Redde er lukket."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobald Hermes neu gestartet ist, kopple dieses Gerät unter Einstellungen → Mitteilungen → Mitteilungen, wenn Redde geschlossen ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando Hermes se haya reiniciado, vincula este dispositivo en Ajustes → Notificaciones → Avisos con Redde cerrado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une fois Hermes redémarré, jumelez cet appareil dans Réglages → Notifications → Alertes quand Redde est fermé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopo il riavvio di Hermes, abbina questo dispositivo in Impostazioni → Notifiche → Avvisi con Redde chiusa."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesが再起動したら、設定 → 通知 → Reddeが閉じているときの通知 でこのデバイスをペアリングしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes가 재시작되면 설정 → 알림 → Redde가 닫혀 있을 때 알림에서 이 기기를 페어링하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når Hermes har startet på nytt, sammenkobler du denne enheten i Innstillinger → Varslinger → Varslinger når Redde er lukket."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zodra Hermes opnieuw is gestart, koppel je dit apparaat in Instellingen → Meldingen → Meldingen als Redde gesloten is."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Po ponownym uruchomieniu Hermesa sparuj to urządzenie w Ustawienia → Powiadomienia → Powiadomienia przy zamkniętym Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Depois que o Hermes reiniciar, emparelhe este dispositivo em Ajustes → Notificações → Alertas com o Redde Fechado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда Hermes перезапустится, создайте пару с этим устройством в «Настройки» → «Уведомления» → «Уведомления при закрытом Redde»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När Hermes har startats om parkopplar du den här enheten i Inställningar → Notiser → Notiser när Redde är stängd."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes yeniden başlatıldıktan sonra bu cihazı Ayarlar → Bildirimler → Redde Kapalıyken Bildirimler bölümünde eşleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли Hermes перезапуститься, створіть пару з цим пристроєм у Параметри → Сповіщення → Сповіщення, коли Redde закрито."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 重新启动后，请在“设置 → 通知 → Redde关闭时的提醒”中配对此设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 重新啟動後，請在「設定」→「通知」→「Redde 關閉時的提醒」中配對此裝置。"
+          }
+        }
+      }
+    },
     "Once Hermes has restarted, pair this device in Settings → Notifications → Notify When Redde Is Closed." : {
       "comment" : "Ahead of Your Day: pairing waits for the plugin to load",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -316335,7 +317517,7 @@
       }
     },
     "Pair with a Code…" : {
-      "comment" : "Ahead of Your Day: opens Settings → Notifications → Notify When Redde Is Closed to pair with the plugin's code",
+      "comment" : "Ahead of Your Day: opens Settings → Notifications → Alerts When Redde Is Closed to pair with the plugin's code",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -325607,6 +326789,7 @@
     },
     "Pinned cards, your Inbox, Goals, Ideas and Briefings." : {
       "comment" : "Settings › Appearance: under Top of the Chat List",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -344017,7 +345200,7 @@
       }
     },
     "Redde isn't allowed your location. Open Settings…" : {
-      "comment" : "Settings → Your Day → Location → Current Location, when location is denied for Redde",
+      "comment" : "Settings → Location → Current Location, when location is denied for Redde",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -347206,6 +348389,7 @@
       }
     },
     "Redde's plugin on your Hermes: cards in replies, phone tools, the widget your agent writes on and notifications when Redde is closed all come through it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -348919,7 +350103,7 @@
       }
     },
     "Reminders on Their Day" : {
-      "comment" : "Settings › Top of the Chat List: put Apple Reminders on a list when they're due",
+      "comment" : "Settings › Chat List and Settings › Calendars: put Apple Reminders on a list when they're due",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -354658,6 +355842,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "回覆"
+          }
+        }
+      }
+    },
+    "Replies & Writing" : {
+      "comment" : "Settings page: suggested replies, cards and link previews in replies, and the Return key",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svar og skrivning"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antworten und Schreiben"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respuestas y escritura"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponses et écriture"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Risposte e scrittura"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返答と入力"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "응답 및 작성"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svar og skriving"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antwoorden en schrijven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odpowiedzi i pisanie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respostas e Escrita"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответы и набор текста"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svar och skrivande"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yanıtlar ve Yazma"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відповіді та введення"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回复与写作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回覆與撰寫"
           }
         }
       }
@@ -368961,7 +370252,114 @@
         }
       }
     },
+    "Saving a key needs this server's Hermes Dashboard login (Settings › Connection › Connection details). Over the Hermes API alone there's no safe way to hand it over, so nothing was sent." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det kræver denne servers Hermes Dashboard-login at gemme en nøgle (Indstillinger › Forbindelse › Forbindelsesdetaljer). Via Hermes API alene er der ingen sikker måde at overdrage den på, så intet blev sendt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Speichern eines Schlüssels braucht es die Hermes-Dashboard-Anmeldung dieses Servers (Einstellungen › Verbindung › Verbindungsdetails). Nur über die Hermes API gibt es keinen sicheren Weg, ihn zu übergeben, daher wurde nichts gesendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para guardar una clave hace falta el inicio de sesión del Hermes Dashboard de este servidor (Ajustes › Conexión › Datos de conexión). Solo con la Hermes API no hay forma segura de entregarla, así que no se envió nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’enregistrement d’une clé nécessite l’identifiant du Hermes Dashboard de ce serveur (Réglages › Connexion › Détails de connexion). Avec Hermes API seule, il n’existe aucun moyen sûr de la transmettre, donc rien n’a été envoyé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per salvare una chiave serve l'accesso alla Hermes Dashboard di questo server (Impostazioni › Connessione › Dettagli connessione). Con la sola Hermes API non c'è un modo sicuro per consegnarla, quindi non è stato inviato nulla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーを保存するには、このサーバのHermes Dashboardのログインが必要です（設定 › 接続 › 接続の詳細）。Hermes APIだけでは安全に渡す方法がないため、何も送信していません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "키를 저장하려면 이 서버의 Hermes Dashboard 로그인이 필요합니다(설정 › 연결 › 연결 세부사항). Hermes API만으로는 안전하게 전달할 방법이 없으므로 아무것도 보내지 않았습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For å lagre en nøkkel trengs Hermes Dashboard-påloggingen for denne tjeneren (Innstillinger › Tilkobling › Tilkoblingsdetaljer). Med bare Hermes API finnes det ingen trygg måte å overlevere den på, så ingenting ble sendt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voor het bewaren van een sleutel is de Hermes Dashboard-login van deze server nodig (Instellingen › Verbinding › Verbindingsgegevens). Met alleen de Hermes API is er geen veilige manier om hem over te dragen, dus er is niets verstuurd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisanie klucza wymaga logowania do Hermes Dashboard tego serwera (Ustawienia › Połączenie › Szczegóły połączenia). Przez samo Hermes API nie da się go bezpiecznie przekazać, więc nic nie wysłano."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar uma chave exige o login do Hermes Dashboard deste servidor (Ajustes › Conexão › Detalhes da conexão). Só pela Hermes API não há como entregá-la com segurança, então nada foi enviado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы сохранить ключ, нужен вход в Hermes Dashboard этого сервера («Настройки» › «Подключение» › «Сведения о подключении»). Через один только Hermes API безопасно передать его нельзя, поэтому ничего не отправлено."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "För att spara en nyckel krävs den här serverns Hermes Dashboard-inloggning (Inställningar › Anslutning › Anslutningsuppgifter). Med bara Hermes API finns det inget säkert sätt att lämna över den, så inget skickades."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir anahtarı kaydetmek için bu sunucunun Hermes Dashboard girişi gerekir (Ayarlar › Bağlantı › Bağlantı ayrıntıları). Yalnızca Hermes API üzerinden onu güvenle iletmenin yolu yok, bu yüzden hiçbir şey gönderilmedi."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоб зберегти ключ, потрібен вхід у Hermes Dashboard цього сервера (Параметри › З’єднання › Відомості про з’єднання). Лише через Hermes API передати його безпечно не можна, тому нічого не надіслано."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存储密钥需要此服务器的 Hermes Dashboard 登录信息（设置 › 连接 › 连接详细信息）。仅通过 Hermes API 无法安全地传递它，因此未发送任何内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存金鑰需要此伺服器的 Hermes Dashboard 登入資訊（「設定」›「連線」›「連線詳細資訊」）。僅透過 Hermes API 無法安全地傳遞它，因此未傳送任何內容。"
+          }
+        }
+      }
+    },
     "Saving a key needs this server's Hermes Dashboard login (Settings › Connection). Over the Hermes API alone there's no safe way to hand it over, so nothing was sent." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -399537,8 +400935,116 @@
         }
       }
     },
+    "So ideas and briefings arrive with Redde closed, pair this device with a code in Settings → Notifications → Alerts When Redde Is Closed." : {
+      "comment" : "Ahead of Your Day: pairing over the Hermes API takes the plugin's code",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par denne enhed med en kode i Indstillinger → Meddelelser → Meddelelser, når Redde er lukket, så idéer og briefinger kommer, også når Redde er lukket."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Damit Ideen und Briefings auch bei geschlossenem Redde ankommen, kopple dieses Gerät mit einem Code unter Einstellungen → Mitteilungen → Mitteilungen, wenn Redde geschlossen ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para que las ideas y los informes lleguen con Redde cerrado, vincula este dispositivo con un código en Ajustes → Notificaciones → Avisos con Redde cerrado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour que les idées et les briefings arrivent quand Redde est fermé, jumelez cet appareil avec un code dans Réglages → Notifications → Alertes quand Redde est fermé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perché idee e briefing arrivino con Redde chiusa, abbina questo dispositivo con un codice in Impostazioni → Notifiche → Avvisi con Redde chiusa."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeが閉じていてもアイデアとブリーフィングが届くように、設定 → 通知 → Reddeが閉じているときの通知 で、コードを使ってこのデバイスをペアリングしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 닫혀 있어도 아이디어와 브리핑이 도착하도록 설정 → 알림 → Redde가 닫혀 있을 때 알림에서 코드로 이 기기를 페어링하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sammenkoble denne enheten med en kode i Innstillinger → Varslinger → Varslinger når Redde er lukket, så idéer og briefinger kommer også når Redde er lukket."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppel dit apparaat met een code in Instellingen → Meldingen → Meldingen als Redde gesloten is, zodat ideeën en briefings ook binnenkomen als Redde gesloten is."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aby pomysły i briefingi docierały przy zamkniętym Redde, sparuj to urządzenie kodem w Ustawienia → Powiadomienia → Powiadomienia przy zamkniętym Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para que ideias e briefings cheguem com o Redde fechado, emparelhe este dispositivo com um código em Ajustes → Notificações → Alertas com o Redde Fechado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы идеи и сводки приходили при закрытом Redde, создайте пару с этим устройством по коду в «Настройки» → «Уведомления» → «Уведомления при закрытом Redde»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parkoppla den här enheten med en kod i Inställningar → Notiser → Notiser när Redde är stängd, så att idéer och briefingar kommer även när Redde är stängd."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kapalıyken de fikirlerin ve brifinglerin gelmesi için bu cihazı Ayarlar → Bildirimler → Redde Kapalıyken Bildirimler bölümünde bir kodla eşleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоб ідеї та зведення надходили, коли Redde закрито, створіть пару з цим пристроєм за кодом у Параметри → Сповіщення → Сповіщення, коли Redde закрито."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为了在 Redde 关闭时也能收到想法和简报，请在“设置 → 通知 → Redde关闭时的提醒”中用代码配对此设备。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為了在 Redde 關閉時也能收到點子和簡報，請在「設定」→「通知」→「Redde 關閉時的提醒」中用代碼配對此裝置。"
+          }
+        }
+      }
+    },
     "So ideas and briefings arrive with Redde closed, pair this device with a code in Settings → Notifications → Notify When Redde Is Closed." : {
       "comment" : "Ahead of Your Day: pairing over the Hermes API takes the plugin's code",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -429904,6 +431410,113 @@
         }
       }
     },
+    "The App" : {
+      "comment" : "Settings: header of the group of pages about the app itself (General, Appearance, Chat List, Voice…)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’app"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'app"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "앱"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De app"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplikacja"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O App"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приложение"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uygulama"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Програма"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        }
+      }
+    },
     "The approval wasn't answered" : {
       "localizations" : {
         "da" : {
@@ -431607,6 +433220,7 @@
       }
     },
     "The calendars your agent looks at when you ask what's on, and the events calendar cards show." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -437557,7 +439171,114 @@
         }
       }
     },
+    "The Hermes Dashboard couldn't be asked. Phone tools need its login: Settings → Connection → Connection details." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard kunne ikke spørges. Telefonværktøjer kræver dets login: Indstillinger → Forbindelse → Forbindelsesdetaljer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Hermes Dashboard konnte nicht gefragt werden. Telefon-Tools brauchen seine Anmeldung: Einstellungen → Verbindung → Verbindungsdetails."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo preguntar al Hermes Dashboard. Las Herramientas del teléfono necesitan su inicio de sesión: Ajustes → Conexión → Datos de conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’interroger le Hermes Dashboard. Les Outils du téléphone requièrent son identifiant : Réglages → Connexion → Détails de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile interrogare la Hermes Dashboard. Gli Strumenti del telefono richiedono il suo accesso: Impostazioni → Connessione → Dettagli connessione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboardに問い合わせできませんでした。デバイスツールにはそのログイン情報が必要です：設定 → 接続 → 接続の詳細。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard에 요청할 수 없습니다. 휴대폰 도구에는 Dashboard 로그인이 필요합니다: 설정 → 연결 → 연결 세부사항."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke spørre Hermes Dashboard. Telefonverktøy trenger påloggingen: Innstillinger → Tilkobling → Tilkoblingsdetaljer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het Hermes Dashboard kon niet worden gevraagd. Telefoontools hebben de login ervan nodig: Instellingen → Verbinding → Verbindingsgegevens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zapytać Hermes Dashboard. Narzędzia telefonu wymagają loginu do niego: Ustawienia → Połączenie → Szczegóły połączenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível consultar o Hermes Dashboard. As Ferramentas do telefone precisam do login dele: Ajustes → Conexão → Detalhes da conexão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обратиться к Hermes Dashboard. Для инструментов телефона нужен вход в него: «Настройки» → «Подключение» → «Сведения о подключении»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard kunde inte tillfrågas. Telefonverktyg kräver dess inloggning: Inställningar → Anslutning → Anslutningsuppgifter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard'a sorulamadı. Telefon araçları için onun girişi gerekir: Ayarlar → Bağlantı → Bağlantı ayrıntıları."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося звернутися до Hermes Dashboard. Інструментам телефона потрібні його дані входу: Параметри → З’єднання → Відомості про з’єднання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法询问Hermes Dashboard。手机工具需要其登录信息：设置 → 连接 → 连接详细信息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法詢問 Hermes Dashboard。手機工具需要它的登入資訊：「設定」→「連線」→「連線詳細資訊」。"
+          }
+        }
+      }
+    },
     "The Hermes Dashboard couldn't be asked. Phone tools need its login: Settings → Connection details." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -441064,7 +442785,7 @@
       }
     },
     "The next event on your calendars, as a Today tile." : {
-      "comment" : "Settings › Top of the Chat List: under Up Next",
+      "comment" : "Settings › Chat List and Settings › Calendars: under Up Next",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -453023,7 +454744,7 @@
       }
     },
     "This Device" : {
-      "comment" : "Settings › Writing › Written By: suggested replies written by Apple Intelligence on this device",
+      "comment" : "Settings › Replies & Writing › Written By: suggested replies written by Apple Intelligence on this device",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -454298,8 +456019,116 @@
         }
       }
     },
+    "This Hermes Dashboard asks for a login now. It had no sign-in when this server was set up. Add its username and password, or sign in with a browser, under Settings › Connection › Connection details." : {
+      "comment" : "A Dashboard set up with no sign-in has turned its login on",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Hermes Dashboard beder nu om login. Det havde intet login, da denne server blev sat op. Tilføj dets brugernavn og adgangskode, eller log ind med en browser, under Indstillinger › Forbindelse › Forbindelsesdetaljer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Hermes Dashboard verlangt jetzt eine Anmeldung. Als dieser Server eingerichtet wurde, hatte es keine. Füge Benutzername und Passwort hinzu oder melde dich mit einem Browser an, unter Einstellungen › Verbindung › Verbindungsdetails."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes Dashboard ahora pide iniciar sesión. No tenía inicio de sesión cuando se configuró este servidor. Añade su usuario y contraseña, o inicia sesión con un navegador, en Ajustes › Conexión › Datos de conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce Hermes Dashboard demande désormais un identifiant. Il n’en avait pas quand ce serveur a été configuré. Ajoutez son nom d’utilisateur et son mot de passe, ou connectez-vous avec un navigateur, dans Réglages › Connexion › Détails de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa Hermes Dashboard ora chiede l'accesso. Non lo aveva quando questo server è stato configurato. Aggiungi nome utente e password, o accedi con un browser, in Impostazioni › Connessione › Dettagli connessione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このHermes Dashboardは現在ログインを求めています。このサーバを設定したときはログインがありませんでした。設定 › 接続 › 接続の詳細で、ユーザ名とパスワードを追加するか、ブラウザでサインインしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Hermes Dashboard는 이제 로그인을 요구합니다. 이 서버를 설정했을 때는 로그인이 없었습니다. 설정 › 연결 › 연결 세부사항에서 사용자 이름과 암호를 추가하거나 브라우저로 로그인하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette Hermes Dashboard ber nå om pålogging. Det hadde ingen pålogging da denne tjeneren ble satt opp. Legg til brukernavnet og passordet, eller logg på med en nettleser, under Innstillinger › Tilkobling › Tilkoblingsdetaljer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Hermes Dashboard vraagt nu om een login. Het had geen login toen deze server werd ingesteld. Voeg de gebruikersnaam en het wachtwoord toe, of log in met een browser, onder Instellingen › Verbinding › Verbindingsgegevens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten Hermes Dashboard prosi teraz o logowanie. Nie miał logowania, gdy konfigurowano ten serwer. Dodaj jego nazwę użytkownika i hasło albo zaloguj się przez przeglądarkę w Ustawienia › Połączenie › Szczegóły połączenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes Dashboard agora pede login. Ele não tinha login quando este servidor foi configurado. Adicione o usuário e a senha, ou inicie sessão com um navegador, em Ajustes › Conexão › Detalhes da conexão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот Hermes Dashboard теперь требует вход. Когда этот сервер настраивали, входа не было. Добавьте имя пользователя и пароль или войдите через браузер в «Настройки» › «Подключение» › «Сведения о подключении»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här Hermes Dashboard ber nu om inloggning. Den hade ingen inloggning när servern konfigurerades. Lägg till dess användarnamn och lösenord, eller logga in med en webbläsare, under Inställningar › Anslutning › Anslutningsuppgifter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Hermes Dashboard artık giriş istiyor. Bu sunucu ayarlandığında girişi yoktu. Ayarlar › Bağlantı › Bağlantı ayrıntıları bölümünde kullanıcı adını ve parolasını ekleyin ya da tarayıcıyla giriş yapın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей Hermes Dashboard тепер вимагає входу. Коли цей сервер налаштовували, входу не було. Додайте ім’я користувача й пароль або увійдіть через браузер у Параметри › З’єднання › Відомості про з’єднання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此Hermes Dashboard现在要求登录。设置此服务器时它没有登录。请在设置 › 连接 › 连接详细信息中添加其用户名和密码，或使用浏览器登录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Hermes Dashboard 現在要求登入。設定此伺服器時它沒有登入。請在「設定」›「連線」›「連線詳細資訊」中加入其使用者名稱和密碼，或使用瀏覽器登入。"
+          }
+        }
+      }
+    },
     "This Hermes Dashboard asks for a login now. It had no sign-in when this server was set up. Add its username and password, or sign in with a browser, under Settings › Connection details." : {
       "comment" : "A Dashboard set up with no sign-in has turned its login on",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -456001,7 +457830,114 @@
         }
       }
     },
+    "This iPhone isn't paired with the Hermes Redde is on now, so it can't call you. Pair it from Alerts When Redde Is Closed." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne iPhone er ikke parret med den Hermes, Redde er på nu, så den kan ikke ringe til dig. Par den fra “Meddelelser, når Redde er lukket”."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses iPhone ist nicht mit dem Hermes gekoppelt, mit dem Redde gerade verbunden ist, daher kann er dich nicht anrufen. Kopple es über „Mitteilungen, wenn Redde geschlossen ist“."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este iPhone no está vinculado con el Hermes que usa Redde ahora, así que no puede llamarte. Vincúlalo desde Avisos con Redde cerrado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet iPhone n’est pas jumelé avec l’Hermes sur lequel Redde est en ce moment : il ne peut donc pas vous appeler. Jumelez-le depuis Alertes quand Redde est fermé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo iPhone non è abbinato all'Hermes su cui si trova ora Redde, quindi non può chiamarti. Abbinalo da Avvisi con Redde chiusa."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このiPhoneは、Reddeが現在使用しているHermesとペアリングされていないため、着信を受けられません。「Reddeが閉じているときの通知」からペアリングしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 iPhone은 Redde가 현재 사용 중인 Hermes와 페어링되지 않아 에이전트가 전화를 걸 수 없습니다. Redde가 닫혀 있을 때 알림에서 페어링하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne iPhonen er ikke sammenkoblet med den Hermes Redde er på nå, så den kan ikke ringe deg. Sammenkoble den fra Varslinger når Redde er lukket."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze iPhone is niet gekoppeld met de Hermes waarop Redde nu zit, dus die kan je niet bellen. Koppel hem via ‘Meldingen als Redde gesloten is’."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten iPhone nie jest sparowany z Hermesem, z którym Redde jest teraz połączone, więc nie może do Ciebie zadzwonić. Sparuj go w Powiadomienia przy zamkniętym Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este iPhone não está emparelhado com o Hermes em que o Redde está agora, então ele não pode ligar para você. Emparelhe em Alertas com o Redde Fechado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот iPhone не связан в пару с Hermes, к которому сейчас подключен Redde, поэтому он не может вам звонить. Создайте пару в разделе «Уведомления при закрытом Redde»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här iPhonen är inte parkopplad med den Hermes som Redde använder nu, så den kan inte ringa dig. Parkoppla den från Notiser när Redde är stängd."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu iPhone, Redde'nin şu an bağlı olduğu Hermes ile eşlenmedi, bu yüzden sizi arayamaz. Redde Kapalıyken Bildirimler bölümünden eşleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей iPhone не має пари з Hermes, до якого зараз під’єднано Redde, тому він не може вам телефонувати. Створіть пару в «Сповіщення, коли Redde закрито»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此iPhone未与Redde当前所用的Hermes配对，因此无法给你打电话。请通过“Redde关闭时的提醒”进行配对。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這部 iPhone 尚未與 Redde 目前使用的 Hermes 配對，因此它無法打給你。請從「Redde 關閉時的提醒」進行配對。"
+          }
+        }
+      }
+    },
     "This iPhone isn't paired with the Hermes Redde is on now, so it can't call you. Pair it from Notify When Redde Is Closed." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -460180,6 +462116,7 @@
       }
     },
     "Three things you might ask next under each reply, written by the model on your OpenAI-compatible connection." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -460286,7 +462223,7 @@
       }
     },
     "Three things you might send next under each reply, written by the model on your OpenAI-compatible connection, which is sent the reply to write them." : {
-      "comment" : "Settings › Writing footer: suggested replies come from the fast-lane model",
+      "comment" : "Settings › Replies & Writing footer: suggested replies come from the fast-lane model",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -460499,6 +462436,7 @@
       }
     },
     "Three things you might send next under each reply. They need Apple Intelligence on this device, or an OpenAI-compatible connection set up." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -463598,7 +465536,7 @@
       }
     },
     "To-do lists and the like, once you ask an agent for one." : {
-      "comment" : "Settings › Top of the Chat List: under Lists",
+      "comment" : "Settings › Chat List: under Lists",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -466596,7 +468534,7 @@
       }
     },
     "Top of the Chat List" : {
-      "comment" : "Settings › Appearance: which cards show above the conversations",
+      "comment" : "Settings › Chat List: the section of the cards that show above the conversations",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -476201,7 +478139,7 @@
       }
     },
     "Up Next needs full access to your calendars. Allow it in Settings, under Privacy & Security › Calendars." : {
-      "comment" : "Settings › Top of the Chat List: Up Next is on but calendar access was refused",
+      "comment" : "Settings › Chat List and Settings › Calendars: Up Next is on but calendar access was refused",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -510598,7 +512536,7 @@
       }
     },
     "Written By" : {
-      "comment" : "Settings › Writing: which model writes the suggested replies, this device's (Apple Intelligence) or the OpenAI-compatible connection's",
+      "comment" : "Settings › Replies & Writing: which model writes the suggested replies, this device's (Apple Intelligence) or the OpenAI-compatible connection's",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -513818,6 +515756,113 @@
         }
       }
     },
+    "Your Agent" : {
+      "comment" : "Settings: header of the group of the agent's pages (Agent, Redde Plugin, Your Day, Email, Phone Tools, Calendars, Location)",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "내 에이전트"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój agent"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理"
+          }
+        }
+      }
+    },
     "Your agent also keeps memories with %@. Those aren't shown here; this page shows Hermes's own memory, which it reads at the start of every conversation." : {
       "localizations" : {
         "da" : {
@@ -515028,7 +517073,7 @@
       }
     },
     "Your agent hears “near %@”." : {
-      "comment" : "Settings → Your Day → Location → Current Location: the place the agent is told, e.g. near Thornton Park, Orlando, FL",
+      "comment" : "Settings → Location → Current Location: the place the agent is told, e.g. near Thornton Park, Orlando, FL",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -517160,7 +519205,114 @@
         }
       }
     },
+    "Your agent's briefings come here: the Evening Wrap-up, heads-ups before events, and any daily brief you ask it for. Set them up in Settings → Your Day." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agents briefinger kommer her: Aftenopsummeringen, forvarsler før begivenheder og enhver daglig briefing, du beder den om. Konfigurer dem i Indstillinger → Din dag."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hier landen die Briefings deines Agenten: der Abendrückblick, Vorabhinweise vor Terminen und jedes tägliche Briefing, um das du ihn bittest. Richte sie unter Einstellungen → Dein Tag ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aquí llegan los informes de tu agente: el Resumen de la noche, los avisos antes de eventos y cualquier informe diario que le pidas. Configúralos en Ajustes → Tu día."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les briefings de votre agent arrivent ici : le Bilan du soir, les alertes avant les événements et tout résumé quotidien que vous lui demandez. Configurez-les dans Réglages → Votre journée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui arrivano i briefing del tuo agente: il Riepilogo serale, gli avvisi prima degli eventi e qualsiasi briefing quotidiano che gli chiedi. Impostali in Impostazioni → La tua giornata."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントのブリーフィングはここに届きます。夜の振り返り、予定前のお知らせ、依頼した毎日のまとめなどです。設定 → あなたの1日で設定してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트의 브리핑이 여기에 표시됩니다. 저녁 하루 정리, 일정 전 사전 알림, 요청한 일일 브리핑이 포함됩니다. 설정 → 나의 하루에서 설정하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentens briefinger kommer hit: Kveldsoppsummeringen, forvarsler før hendelser og alle daglige briefinger du ber den om. Sett dem opp i Innstillinger → Dagen din."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hier komen de briefings van je agent: de Avondterugblik, seintjes voor afspraken en elke dagelijkse briefing waar je om vraagt. Stel ze in bij Instellingen → Je dag."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutaj trafiają briefingi Twojego agenta: Wieczorne podsumowanie, zapowiedzi przed wydarzeniami i każdy codzienny briefing, o który go poprosisz. Skonfiguruj je w Ustawienia → Twój dzień."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os briefings do seu agente chegam aqui: o Resumo da Noite, avisos antes dos eventos e qualquer resumo diário que você pedir. Configure-os em Ajustes → Seu Dia."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сюда приходят сводки агента: «Вечерние итоги», предупреждения перед событиями и любые ежедневные сводки, которые вы у него попросите. Настройте их в «Настройки» → «Ваш день»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agents briefingar hamnar här: Kvällssammanfattningen, förvarningar före händelser och alla dagliga briefingar du ber den om. Ställ in dem i Inställningar → Din dag."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınızın brifingleri buraya gelir: Akşam Özeti, etkinlik öncesi hatırlatmalar ve ondan istediğiniz her günlük brifing. Bunları Ayarlar → Gününüz bölümünde ayarlayın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сюди надходять зведення агента: «Вечірні підсумки», попередження перед подіями та будь-які щоденні зведення, які ви в нього попросите. Налаштуйте їх у «Параметри» → «Ваш день»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体的简报会出现在这里：晚间总结、日程前提醒，以及你要求的任何每日简报。请在设置 → 你的一天中设置。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理的簡報會出現在這裡：晚間總結、行程前提醒，以及你要求的任何每日簡報。請在「設定」→「你的一天」中設定。"
+          }
+        }
+      }
+    },
     "Your agent's briefings come here: the Evening Wrap-up, heads-ups before events, and any daily brief you ask it for. Set them up in Settings, Agent." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -517266,8 +519418,116 @@
         }
       }
     },
+    "Your agent's daily jobs need the Hermes Dashboard login or the Hermes API key. Add one in Settings → Connection → Connection details." : {
+      "comment" : "Ahead of Your Day: no connection that can make Hermes jobs",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agents daglige job kræver login til Hermes Dashboard eller Hermes API-nøglen. Tilføj et af dem i Indstillinger → Forbindelse → Forbindelsesdetaljer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die täglichen Jobs deines Agenten brauchen die Hermes-Dashboard-Anmeldung oder den Hermes-API-Schlüssel. Füge eins davon in Einstellungen → Verbindung → Verbindungsdetails hinzu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las tareas diarias de tu agente necesitan el inicio de sesión del Hermes Dashboard o la clave de la Hermes API. Añade uno en Ajustes → Conexión → Datos de conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les tâches quotidiennes de votre agent requièrent l’identifiant du Hermes Dashboard ou la clé de l’API Hermes. Ajoutez-en un dans Réglages → Connexion → Détails de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I job giornalieri del tuo agente richiedono l'accesso alla Hermes Dashboard o la chiave della Hermes API. Aggiungine uno in Impostazioni → Connessione → Dettagli connessione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントの毎日のジョブには、Hermes Dashboardのログイン情報かHermes APIのキーが必要です。設定 → 接続 → 接続の詳細で追加してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트의 매일 작업에는 Hermes Dashboard 로그인 또는 Hermes API 키가 필요합니다. 설정 → 연결 → 연결 세부사항에서 추가하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentens daglige jobber krever påloggingen til Hermes Dashboard eller Hermes API-nøkkelen. Legg til en av dem i Innstillinger → Tilkobling → Tilkoblingsdetaljer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De dagelijkse taken van je agent vereisen de Hermes Dashboard-login of de Hermes API-sleutel. Voeg er een toe in Instellingen → Verbinding → Verbindingsgegevens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codzienne zadania agenta wymagają loginu do Hermes Dashboard lub klucza Hermes API. Dodaj jedno z nich w Ustawienia → Połączenie → Szczegóły połączenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As tarefas diárias do seu agente precisam do login do Hermes Dashboard ou da chave da Hermes API. Adicione um deles em Ajustes → Conexão → Detalhes da conexão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ежедневным заданиям агента нужен вход в Hermes Dashboard или ключ Hermes API. Добавьте одно из них в «Настройки» → «Подключение» → «Сведения о подключении»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentens dagliga jobb kräver inloggningen för Hermes Dashboard eller nyckeln för Hermes API. Lägg till något av dem i Inställningar → Anslutning → Anslutningsuppgifter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınızın günlük görevleri için Hermes Dashboard girişi veya Hermes API anahtarı gerekir. Birini Ayarlar → Bağlantı → Bağlantı ayrıntıları bölümünde ekleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоденним завданням агента потрібні дані входу Hermes Dashboard або ключ Hermes API. Додайте щось одне в Параметри → З’єднання → Відомості про з’єднання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体的每日任务需要 Hermes Dashboard 登录信息或 Hermes API 密钥。请在“设置 → 连接 → 连接详细信息”中添加其中一项。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理的每日工作需要 Hermes Dashboard 登入資訊或 Hermes API 金鑰。請在「設定」→「連線」→「連線詳細資訊」中加入其中一項。"
+          }
+        }
+      }
+    },
     "Your agent's daily jobs need the Hermes Dashboard login or the Hermes API key. Add one in Settings → Connection details." : {
       "comment" : "Ahead of Your Day: no connection that can make Hermes jobs",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -517373,7 +519633,114 @@
         }
       }
     },
+    "Your agent's memory is read through the Hermes Dashboard. Add its login in Settings › Connection › Connection details to see it here." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agents hukommelse læses via Hermes Dashboard. Tilføj dets login i Indstillinger › Forbindelse › Forbindelsesdetaljer for at se den her."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Gedächtnis deines Agenten wird über das Hermes Dashboard gelesen. Füge seine Anmeldung unter Einstellungen › Verbindung › Verbindungsdetails hinzu, um es hier zu sehen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La memoria de tu agente se lee a través del Hermes Dashboard. Añade su inicio de sesión en Ajustes › Conexión › Datos de conexión para verla aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La mémoire de votre agent est lue via le Hermes Dashboard. Ajoutez son identifiant dans Réglages › Connexion › Détails de connexion pour la voir ici."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La memoria del tuo agente si legge tramite la Hermes Dashboard. Aggiungi il suo accesso in Impostazioni › Connessione › Dettagli connessione per vederla qui."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントのメモリはHermes Dashboard経由で読み込みます。ここに表示するには、設定 › 接続 › 接続の詳細でログイン情報を追加してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트의 메모리는 Hermes Dashboard를 통해 읽습니다. 여기에서 보려면 설정 › 연결 › 연결 세부사항에서 로그인 정보를 추가하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentens minne leses via Hermes Dashboard. Legg til påloggingen i Innstillinger › Tilkobling › Tilkoblingsdetaljer for å se det her."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het geheugen van je agent wordt gelezen via het Hermes Dashboard. Voeg de login toe in Instellingen › Verbinding › Verbindingsgegevens om het hier te zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pamięć agenta jest odczytywana przez Hermes Dashboard. Dodaj jego login w Ustawienia › Połączenie › Szczegóły połączenia, aby ją tu zobaczyć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A memória do seu agente é lida pelo Hermes Dashboard. Adicione o login dele em Ajustes › Conexão › Detalhes da conexão para vê-la aqui."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Память агента читается через Hermes Dashboard. Добавьте вход в него в «Настройки» › «Подключение» › «Сведения о подключении», чтобы видеть ее здесь."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agents minne läses via Hermes Dashboard. Lägg till dess inloggning i Inställningar › Anslutning › Anslutningsuppgifter för att se det här."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınızın belleği Hermes Dashboard üzerinden okunur. Burada görmek için girişini Ayarlar › Bağlantı › Bağlantı ayrıntıları bölümünde ekleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пам’ять агента читається через Hermes Dashboard. Додайте його дані входу в Параметри › З’єднання › Відомості про з’єднання, щоб бачити її тут."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体的记忆通过Hermes Dashboard读取。请在“设置 › 连接 › 连接详细信息”中添加其登录信息，以便在这里查看。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理的記憶是透過 Hermes Dashboard 讀取的。請在「設定」›「連線」›「連線詳細資訊」中加入其登入資訊，即可在這裡查看。"
+          }
+        }
+      }
+    },
     "Your agent's memory is read through the Hermes Dashboard. Add its login in Settings › Connection to see it here." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -518542,7 +520909,7 @@
       }
     },
     "Your Day" : {
-      "comment" : "Settings page: what the agent does on its own through the day: daily jobs, goals, watches, location",
+      "comment" : "Settings page: what the agent does on its own through the day: daily jobs, goals, watches, approvals",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -519181,7 +521548,7 @@
       }
     },
     "Your email, once an account is set up." : {
-      "comment" : "Settings › Top of the Chat List: under Inbox",
+      "comment" : "Settings › Chat List: under Inbox",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -522380,8 +524747,116 @@
         }
       }
     },
+    "Your inbox, to-do lists, briefings, goals and the next event on your calendar show here as they come. Settings › Chat List picks which." : {
+      "comment" : "The Today page with no tiles: what shows there",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din indbakke, to do-lister, briefinger, mål og den næste begivenhed i din kalender vises her, når de kommer. Indstillinger › Chatliste vælger hvilke."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Posteingang, deine To-do-Listen, Briefings, Ziele und der nächste Termin in deinem Kalender erscheinen hier, sobald es sie gibt. Einstellungen › Chatliste legt fest, welche."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu bandeja de entrada, tus listas de pendientes, informes, objetivos y el próximo evento de tu calendario aparecen aquí a medida que llegan. Ajustes › Lista de chats elige cuáles."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre boîte de réception, vos listes de tâches, briefings, objectifs et le prochain événement de votre calendrier s’affichent ici à mesure qu’ils arrivent. Réglages › Liste des discussions choisit lesquels."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua posta in arrivo, le liste di cose da fare, i briefing, gli obiettivi e il prossimo evento del calendario compaiono qui man mano che arrivano. Impostazioni › Elenco chat sceglie quali."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "受信トレイ、ToDoリスト、ブリーフィング、目標、カレンダーの次の予定が届きしだいここに表示されます。設定 › チャットリストで表示するものを選べます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "받은편지함, 할 일 목록, 브리핑, 목표, 캘린더의 다음 일정이 생기는 대로 여기에 표시돼요. 설정 › 채팅 목록에서 무엇을 표시할지 고를 수 있어요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innboksen, gjøremålslistene, orienteringene, målene og den neste hendelsen i kalenderen din vises her etter hvert som de kommer. Innstillinger › Chatteliste velger hvilke."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je inbox, takenlijsten, briefings, doelen en het volgende agenda-item verschijnen hier zodra ze er zijn. Instellingen › Chatlijst kiest welke."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja skrzynka, listy zadań, briefingi, cele i najbliższe wydarzenie z kalendarza pojawiają się tu na bieżąco. Ustawienia › Lista czatów wybiera, które."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua caixa de entrada, listas de tarefas, resumos, metas e o próximo evento do calendário aparecem aqui conforme chegam. Ajustes › Lista de Conversas escolhe quais."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Входящие, списки дел, сводки, цели и следующее событие календаря появляются здесь по мере поступления. Что показывать, выбирается в «Настройки» › «Список чатов»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din inkorg, dina att göra-listor, genomgångar, mål och nästa händelse i kalendern visas här när de kommer. Inställningar › Chattlista väljer vilka."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gelen kutunuz, yapılacaklar listeleriniz, özetleriniz, hedefleriniz ve takviminizdeki bir sonraki etkinlik geldikçe burada görünür. Ayarlar › Sohbet Listesi hangilerinin görüneceğini seçer."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пошта, списки справ, зведення, цілі та наступна подія календаря з’являються тут, щойно вони є. Що показувати, вибирається в Параметри › Список чатів."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的收件箱、待办清单、简报、目标和日历上的下一个日程会在出现时显示在这里。设置 › 聊天列表可选择显示哪些。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的收件匣、待辦清單、簡報、目標和行事曆上的下一個行程會在出現時顯示在這裡。設定 › 聊天列表可選擇顯示哪些。"
+          }
+        }
+      }
+    },
     "Your inbox, to-do lists, briefings, goals and the next event on your calendar show here as they come. Settings › Top of the Chat List picks which." : {
       "comment" : "The Today page with no tiles: what shows there",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -525677,7 +528152,114 @@
         }
       }
     },
+    "Your sign-in to the Hermes Dashboard has expired. Sign in again under Settings → Connection → Connection details." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit login til Hermes Dashboard er udløbet. Log ind igen under Indstillinger → Forbindelse → Forbindelsesdetaljer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Anmeldung beim Hermes Dashboard ist abgelaufen. Melde dich unter Einstellungen → Verbindung → Verbindungsdetails erneut an."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu sesión en el Hermes Dashboard ha caducado. Vuelve a iniciar sesión en Ajustes → Conexión → Datos de conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre connexion au Hermes Dashboard a expiré. Reconnectez-vous dans Réglages → Connexion → Détails de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo accesso alla Hermes Dashboard è scaduto. Accedi di nuovo in Impostazioni → Connessione → Dettagli connessione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboardへのサインインの有効期限が切れました。設定 → 接続 → 接続の詳細で再度サインインしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard 로그인이 만료되었습니다. 설정 → 연결 → 연결 세부사항에서 다시 로그인하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påloggingen din til Hermes Dashboard har utløpt. Logg på igjen under Innstillinger → Tilkobling → Tilkoblingsdetaljer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je login bij het Hermes Dashboard is verlopen. Log opnieuw in onder Instellingen → Verbinding → Verbindingsgegevens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoje logowanie do Hermes Dashboard wygasło. Zaloguj się ponownie w Ustawienia → Połączenie → Szczegóły połączenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua sessão no Hermes Dashboard expirou. Inicie sessão de novo em Ajustes → Conexão → Detalhes da conexão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Срок входа в Hermes Dashboard истек. Войдите снова в «Настройки» → «Подключение» → «Сведения о подключении»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din inloggning på Hermes Dashboard har gått ut. Logga in igen under Inställningar → Anslutning → Anslutningsuppgifter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard oturumunuzun süresi doldu. Ayarlar → Bağlantı → Bağlantı ayrıntıları bölümünde yeniden giriş yapın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Термін вашого входу в Hermes Dashboard минув. Увійдіть знову в Параметри → З’єднання → Відомості про з’єднання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的Hermes Dashboard登录已过期。请在设置 → 连接 → 连接详细信息中重新登录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes Dashboard 登入已過期。請在「設定」→「連線」→「連線詳細資訊」中重新登入。"
+          }
+        }
+      }
+    },
     "Your sign-in to the Hermes Dashboard has expired. Sign in again under Settings → Connection." : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {

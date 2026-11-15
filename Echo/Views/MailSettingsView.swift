@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings › Agent › Email: the accounts on the Hermes, adding one, the sorting and the rules.
+/// Settings › Email: the accounts on the Hermes, adding one, the sorting and the rules.
 struct MailSettingsView: View {
     @State private var center = MailCenter.shared
     @State private var adding = false
@@ -89,7 +89,7 @@ struct MailSettingsView: View {
                 Section { Label(problem, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.secondary) }
             }
         }
-        .navigationTitle(Text("Email", comment: "Settings › Agent › Email: title"))
+        .navigationTitle(Text("Email", comment: "Settings › Email: title"))
         .confirmationDialog(Text("Remove \(removing?.name ?? "")?", comment: "Email settings: confirm removing an account"),
                             isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible,
                             presenting: removing) { account in

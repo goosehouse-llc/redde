@@ -108,7 +108,7 @@ nonisolated enum DeviceCalendar {
             event.calendar = calendar
         } else {
             throw DeviceToolError(CalendarChoice.chosen.isEmpty ? "The iPhone has no calendar to add events to."
-                                  : "None of the calendars chosen in Redde's Settings → Agent → Calendars can be added to on this iPhone.")
+                                  : "None of the calendars chosen in Redde's Settings → Calendars can be added to on this iPhone.")
         }
         do { try store.save(event, span: .thisEvent) } catch { throw DeviceToolError("The event couldn't be saved: \(error.localizedDescription)") }
         // Planned shows what the agent added.

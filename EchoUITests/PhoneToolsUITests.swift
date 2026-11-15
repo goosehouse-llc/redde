@@ -28,8 +28,7 @@ final class PhoneToolsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings", "-echo.demoPlugin", "there"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
-        app.openSettingsPage("Agent")
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Phone tools'")).firstMatch
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH[c] 'Phone tools'")).firstMatch
         reach(row, in: app, "The Phone tools row")
         row.tap()
         XCTAssertTrue(app.navigationBars["Phone Tools"].waitForExistence(timeout: 10), "The Phone tools screen didn't open")
@@ -85,8 +84,7 @@ final class PhoneToolsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings", "-echo.demoPlugin", "there"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
-        app.openSettingsPage("Agent")
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Phone tools'")).firstMatch
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH[c] 'Phone tools'")).firstMatch
         reach(row, in: app, "The Phone tools row")
         row.tap()
         let master = app.switches["Phone tools"]

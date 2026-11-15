@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The CarPlay cards row of the Appearance section: collapsed to the current look, it opens on
+/// The CarPlay cards row of Settings → CarPlay: collapsed to the current look, it opens on
 /// all six, each shown as the three pictures the car is given.
 struct CarPlayCardSettings: View {
     @State private var settings = Settings.shared

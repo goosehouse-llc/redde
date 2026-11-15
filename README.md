@@ -51,8 +51,8 @@ and can't read them ([docs/push.md](docs/push.md)).
 - **The agent's plan.** When Hermes keeps a task list for a long job, the reply shows it as a
   checklist: what is done, what it is on, what is left.
 - **The server too.** What the gateway is connected to, its MCP servers with a switch and a test
-  for each, its logs, and restarting or updating Hermes, from Settings → Gateway. And its
-  folders, from Settings → Files: look at a file, edit a text one, upload, make folders, delete.
+  for each, its logs, and restarting or updating Hermes, from Settings → Agent → Gateway. And its
+  folders, from Settings → Agent → Files: look at a file, edit a text one, upload, make folders, delete.
 - **Set up by code.** Scan a QR code or open a setup link and the connection fills itself in. A
   device that is set up can show the code for the next one.
 - **Everywhere on iOS.** Siri and Shortcuts (also by Hermes profile: "Ask Work in Redde"), the
@@ -84,7 +84,7 @@ Profiles need Hermes 0.21 or later. Over the Hermes API a named profile also nee
 
 A Dashboard that signs you in with Google or another identity provider has no password to type:
 tap **Sign in with a browser** (Hermes 0.21 or later). A server behind a reverse proxy that asks
-for a header of its own takes it under Settings → Connection details → Custom headers, next to
+for a header of its own takes it under Settings → Connection → Connection details → Custom headers, next to
 the Cloudflare Access service token. Behind [Pangolin](https://pangolin.net), make a Link to the
 resource and paste its access token under Pangolin there (`id.token`, or the link with `p_token=`):
 one for the Dashboard and one for the Hermes API, or one for both.

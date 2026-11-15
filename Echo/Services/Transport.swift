@@ -34,6 +34,16 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Its name on its own, short enough for a row's value (Settings' Connection row).
+    var name: String {
+        switch self {
+        case .hermesServe: String(localized: "Hermes Dashboard", comment: "Session Details: the connection")
+        case .hermesSessions: String(localized: "Hermes API", comment: "Session Details: the connection")
+        case .acp: String(localized: "Other agent (ACP)", comment: "A connection: Claude Code, Codex and other agents through the Agent Client Protocol")
+        case .chatCompletions: String(localized: "OpenAI-compatible")
+        }
+    }
+
     /// The kinds of agent a connection reaches, for grouping connections and servers.
     enum Kind: Int, CaseIterable, Identifiable, Comparable {
         case hermes, agent, model

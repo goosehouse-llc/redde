@@ -4,7 +4,7 @@ import SwiftUI
 /// this new functionality"): what the agent does on its own through the day, which had grown to
 /// fifteen rows of Settings → Agent. The daily jobs are one row (`DailyJobsView`), Coming Up and
 /// Agent Activity one (they were the same screen on two tabs), and Places, Current Location and
-/// Leave-By Alerts one page (`LocationSettingsView`).
+/// Leave-By Alerts one page (`LocationSettingsView`, on the first screen since 2026-11-15).
 struct YourDaySettings: View {
     /// An API key or a Dashboard login is stored: the jobs, goals and watches are on the server.
     let canReachGateway: Bool
@@ -49,16 +49,14 @@ struct YourDaySettings: View {
             NavigationLink { WatchesView() } label: { Label("Watches & Follow-ups", systemImage: "eye") }
                 .disabled(!canReachGateway)
             NavigationLink { TriggersView() } label: { Label("Triggers from Your iPhone", systemImage: "bolt.badge.clock") }
-            NavigationLink { LocationSettingsView() } label: {
-                Label { Text("Location", comment: "Settings › Your Day: Places, Current Location and Leave-By Alerts") } icon: { Image(systemName: "location") }
-            }
+            // Location: a page of the first screen since 2026-11-15 (`LocationSettingsView`).
             #if os(iOS)
             if HealthDays.available {
                 NavigationLink { HealthDaysView() } label: { Label("Health", systemImage: "heart.text.square") }
             }
             #endif
         } header: {
-            Text("Keeping Watch", comment: "Settings › Your Day: watches, triggers, location and health")
+            Text("Keeping Watch", comment: "Settings › Your Day: watches, triggers and health")
         } footer: {
             Text("Things your agent keeps an eye on and tells you only when they change, loose ends it brings back when they're due, and work it starts from your iPhone: arriving home, a time of day, a Focus.",
                  comment: "Settings › Your Day › Keeping Watch: footer")
@@ -140,8 +138,9 @@ struct DailyJobsView: View {
     }
 }
 
-/// Settings → Your Day → Location: the places the iPhone notices, the agent hearing roughly where
-/// you are, and when to leave for events, which were three places on Settings → Agent.
+/// Settings → Location: the places the iPhone notices, the agent hearing roughly where you are, and
+/// when to leave for events, which were three places on Settings → Agent, then a page of Your Day
+/// (until 2026-11-15).
 struct LocationSettingsView: View {
     var body: some View {
         Form {
@@ -152,13 +151,13 @@ struct LocationSettingsView: View {
                 }
             } footer: {
                 Text("Home, Work, the gym: arriving or leaving tells the agent you choose, with what you wrote for it.",
-                     comment: "Settings › Your Day › Location: under Places")
+                     comment: "Settings › Location: under Places")
             }
             #endif
             CurrentLocationSection()
             LeaveByAlertsSection()
         }
-        .navigationTitle(Text("Location", comment: "Settings › Your Day › Location: title"))
+        .navigationTitle(Text("Location", comment: "Settings › Location: title"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif

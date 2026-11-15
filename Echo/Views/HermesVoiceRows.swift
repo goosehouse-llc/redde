@@ -24,7 +24,7 @@ struct HermesVoiceRows: View {
             }
             .onDisappear { release() }
         } else {
-            Text("Needs the Hermes Dashboard connection: its address and login, under Connection. Until then the on-device voice reads replies.")
+            Text("Needs the Hermes Dashboard connection: its address and login, in Settings › Connection › Connection details. Until then the on-device voice reads replies.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The cards above the conversations in the chat list (2.4 tidy, asked 2026-11-05): Pinned, Inbox,
 /// Goals, Ideas and Briefings could stack until the chats were off the screen. Each can be left out
-/// (Settings → Appearance → Top of the Chat List, `Settings.hiddenChatListCards`, synced), and each
+/// (Settings → Chat List, `Settings.hiddenChatListCards`, synced), and each
 /// with a header folds away to its header and a count, the way Bots does (`FoldingHeader`).
 enum ChatListCard: String, CaseIterable, Identifiable {
     case pinned, inbox, lists, goals, ideas, briefings
@@ -22,12 +22,12 @@ enum ChatListCard: String, CaseIterable, Identifiable {
 
     var detail: String {
         switch self {
-        case .pinned: String(localized: "Cards you pinned from a reply, like a checklist.", comment: "Settings › Top of the Chat List: under Pinned")
-        case .inbox: String(localized: "Your email, once an account is set up.", comment: "Settings › Top of the Chat List: under Inbox")
-        case .lists: String(localized: "To-do lists and the like, once you ask an agent for one.", comment: "Settings › Top of the Chat List: under Lists")
-        case .goals: String(localized: "Each goal's progress.", comment: "Settings › Top of the Chat List: under Goals")
-        case .ideas: String(localized: "Morning Ideas to take or put away.", comment: "Settings › Top of the Chat List: under Ideas for you")
-        case .briefings: String(localized: "Heads-ups, wrap-ups and your jobs' answers.", comment: "Settings › Top of the Chat List: under Briefings")
+        case .pinned: String(localized: "Cards you pinned from a reply, like a checklist.", comment: "Settings › Chat List: under Pinned")
+        case .inbox: String(localized: "Your email, once an account is set up.", comment: "Settings › Chat List: under Inbox")
+        case .lists: String(localized: "To-do lists and the like, once you ask an agent for one.", comment: "Settings › Chat List: under Lists")
+        case .goals: String(localized: "Each goal's progress.", comment: "Settings › Chat List: under Goals")
+        case .ideas: String(localized: "Morning Ideas to take or put away.", comment: "Settings › Chat List: under Ideas for you")
+        case .briefings: String(localized: "Heads-ups, wrap-ups and your jobs' answers.", comment: "Settings › Chat List: under Briefings")
         }
     }
 
@@ -97,16 +97,37 @@ extension FoldingHeader where Accessory == EmptyView {
     }
 }
 
-/// Settings → Appearance → Top of the Chat List: which cards show above the conversations.
+/// Settings → Chat List (2026-11-15; Settings → Appearance → Top of the Chat List before): whether
+/// bots and projects are listed, and which cards and Today tiles show above the conversations.
 struct ChatListCardsSettingsView: View {
     @State private var settings = Settings.shared
-    @State private var addsReminders = true
-    @State private var listName = ""
-    /// Turning on Up Next found calendar access refused.
-    @State private var calendarRefused = false
 
     var body: some View {
         Form {
+            // What the chat list shows above the conversations (GitHub issue 32; on Settings →
+            // Appearance until 2026-11-15).
+            if BotDirectory.reachable(settings) || settings.transport == .hermesServe {
+                Section {
+                    if BotDirectory.reachable(settings) {
+                        Toggle(isOn: $settings.showBots) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Bots in the chat list")
+                                Text("Your server's bots and group chats, at the top of the list.")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    if settings.transport == .hermesServe {
+                        Toggle(isOn: $settings.projectsInChatList) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Projects in the chat list")
+                                Text("Your Hermes projects, above the conversations. Off, their conversations are still in the list.")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
             Section {
                 ForEach(ChatListCard.allCases) { card in
                     Toggle(isOn: Binding(get: { _ = settings.hiddenChatListCards; return card.isShown }, set: { card.show($0) })) {
@@ -118,60 +139,83 @@ struct ChatListCardsSettingsView: View {
                         } icon: { Image(systemName: card.symbol) }
                     }
                 }
+            } header: {
+                Text("Top of the Chat List", comment: "Settings › Chat List: the section of the cards that show above the conversations")
             } footer: {
                 Text("Each shows only when it has something in it. Tap a section's title in the chat list to fold it away to a count.",
-                     comment: "Settings › Top of the Chat List: footer")
+                     comment: "Settings › Chat List: footer under the cards")
             }
-            // The next event on the calendar as a Today tile (2026-11-12), off until it's wanted.
-            Section {
-                Toggle(isOn: Binding(get: { settings.todayUpNext }, set: { on in
-                    settings.todayUpNext = on
-                    guard on else { return }
-                    // Back on the Today page too, if its hold menu hid it there.
-                    UserDefaults.standard.set(false, forKey: "today.page.calendarHidden")
-                    Task {
-                        calendarRefused = !(await CalendarUpNext.shared.ask())
-                        CalendarUpNext.shared.refresh()
-                    }
-                })) {
-                    Label {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Up Next", comment: "Today strip: the tile with the next event on the calendar")
-                            Text("The next event on your calendars, as a Today tile.", comment: "Settings › Top of the Chat List: under Up Next")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                    } icon: { Image(systemName: "calendar") }
-                }
-            } footer: {
-                if settings.todayUpNext, calendarRefused {
-                    Text("Up Next needs full access to your calendars. Allow it in Settings, under Privacy & Security › Calendars.",
-                         comment: "Settings › Top of the Chat List: Up Next is on but calendar access was refused")
-                }
-            }
-            // Apple Reminders onto a list on their day (2026-11-09).
-            Section {
-                Toggle(isOn: Binding(get: { addsReminders }, set: { addsReminders = $0; TodayLists.shared.addsReminders = $0 })) {
-                    Text("Reminders on Their Day", comment: "Settings › Top of the Chat List: put Apple Reminders on a list when they're due")
-                }
-                if addsReminders {
-                    TextField(String(localized: "List", comment: "Settings › Top of the Chat List: which list reminders go on"),
-                              text: Binding(get: { listName }, set: { listName = $0; TodayLists.shared.remindersList = $0 }),
-                              prompt: Text(TodayLists.remindersListDefault))
-                        .textInputAutocapitalization(.words)
-                }
-            } footer: {
-                Text("A reminder from Apple Reminders goes on this list on the day it's due, and one that's overdue stays until it's done. Tick it on either and it's ticked on both. Your iPhone or Mac adds them when Redde opens, as Reminders lives there.",
-                     comment: "Settings › Top of the Chat List: under Reminders on Their Day")
-            }
+            UpNextTileSection()
+            RemindersOnTheirDaySection()
         }
-        .onAppear {
-            calendarRefused = settings.todayUpNext && !CalendarUpNext.shared.canRead
-            addsReminders = TodayLists.shared.addsReminders
-            listName = TodayLists.shared.remindersList
-        }
-        .navigationTitle(Text("Top of the Chat List", comment: "Settings › Appearance: which cards show above the conversations"))
+        .navigationTitle(Text("Chat List", comment: "Settings page: what the chat list shows: bots, projects, the cards and Today tiles above the conversations"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+    }
+}
+
+/// The Up Next tile's switch: the next event on the calendar as a Today tile (2026-11-12), off
+/// until it's wanted. On Settings → Chat List, where the tile shows, and Settings → Calendars.
+struct UpNextTileSection: View {
+    @State private var settings = Settings.shared
+    /// Turning on Up Next found calendar access refused.
+    @State private var calendarRefused = false
+
+    var body: some View {
+        Section {
+            Toggle(isOn: Binding(get: { settings.todayUpNext }, set: { on in
+                settings.todayUpNext = on
+                guard on else { return }
+                // Back on the Today page too, if its hold menu hid it there.
+                UserDefaults.standard.set(false, forKey: "today.page.calendarHidden")
+                Task {
+                    calendarRefused = !(await CalendarUpNext.shared.ask())
+                    CalendarUpNext.shared.refresh()
+                }
+            })) {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Up Next", comment: "Today strip: the tile with the next event on the calendar")
+                        Text("The next event on your calendars, as a Today tile.", comment: "Settings › Chat List and Settings › Calendars: under Up Next")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                } icon: { Image(systemName: "calendar") }
+            }
+        } footer: {
+            if settings.todayUpNext, calendarRefused {
+                Text("Up Next needs full access to your calendars. Allow it in Settings, under Privacy & Security › Calendars.",
+                     comment: "Settings › Chat List and Settings › Calendars: Up Next is on but calendar access was refused")
+            }
+        }
+        .onAppear { calendarRefused = settings.todayUpNext && !CalendarUpNext.shared.canRead }
+    }
+}
+
+/// Apple Reminders onto a list on their day (2026-11-09), and which list. On Settings → Chat List
+/// and Settings → Calendars.
+struct RemindersOnTheirDaySection: View {
+    @State private var addsReminders = true
+    @State private var listName = ""
+
+    var body: some View {
+        Section {
+            Toggle(isOn: Binding(get: { addsReminders }, set: { addsReminders = $0; TodayLists.shared.addsReminders = $0 })) {
+                Text("Reminders on Their Day", comment: "Settings › Chat List and Settings › Calendars: put Apple Reminders on a list when they're due")
+            }
+            if addsReminders {
+                TextField(String(localized: "List", comment: "Settings › Chat List and Settings › Calendars: which list reminders go on"),
+                          text: Binding(get: { listName }, set: { listName = $0; TodayLists.shared.remindersList = $0 }),
+                          prompt: Text(TodayLists.remindersListDefault))
+                    .textInputAutocapitalization(.words)
+            }
+        } footer: {
+            Text("A reminder from Apple Reminders goes on this list on the day it's due, and one that's overdue stays until it's done. Tick it on either and it's ticked on both. Your iPhone or Mac adds them when Redde opens, as Reminders lives there.",
+                 comment: "Settings › Chat List and Settings › Calendars: under Reminders on Their Day")
+        }
+        .onAppear {
+            addsReminders = TodayLists.shared.addsReminders
+            listName = TodayLists.shared.remindersList
+        }
     }
 }

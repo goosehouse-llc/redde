@@ -644,7 +644,7 @@ extension ConversationsList {
         case .today:
             List {
                 TodayStrip(openGoal: { shownGoal = $0 })
-                // As Settings › Top of the Chat List has them (read for redraws).
+                // As Settings › Chat List has them (read for redraws).
                 let _ = settings.hiddenChatListCards
                 if ChatListCard.pinned.isShown { PinnedCardsSection() }
                 if ChatListCard.ideas.isShown { IdeasSection(take: takeIdea) }

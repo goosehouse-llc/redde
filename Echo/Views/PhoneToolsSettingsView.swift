@@ -318,7 +318,7 @@ struct PhoneToolsSettingsView: View {
                 Text("Looking for the plugin…").foregroundStyle(.secondary)
             }
         case .unknown:
-            Text("The Hermes Dashboard couldn't be asked. Phone tools need its login: Settings → Connection details.")
+            Text("The Hermes Dashboard couldn't be asked. Phone tools need its login: Settings → Connection → Connection details.")
                 .foregroundStyle(.secondary)
         case let .known(state):
             VStack(alignment: .leading, spacing: 6) {

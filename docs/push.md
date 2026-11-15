@@ -75,7 +75,7 @@ in use (`WhereYouAre` in the app, `Store.where_you_are` in the plugin):
   in use, possibly none (a chat muted on the Mac in use stays quiet; the iPhone doesn't take the
   Mac's place). With none in use, every device, as before. The widget's data, Leave-By wakes, a
   pairing's first note, `test` and calls go where they always went.
-- **Off.** Settings › Alerts When Redde Is Closed › Only Where You Are (on by default, synced):
+- **Off.** Settings › Notifications › Alerts When Redde Is Closed › Only Where You Are (on by default, synced):
   off, a device says nothing, and what it said before runs out.
 - **Over the Hermes API alone** there is no way to the plugin's commands, so nothing is said and
   every device hears.
@@ -357,7 +357,7 @@ agent: call_user(line)  ─▶  plugin seals a "call" note  ─▶  relay, kind 
   CallKit at once, so the app has to ring for every one it is sent; that is why the gate is on
   the plugin's side.
 - **The tool returns** once Apple has the push; it isn't told whether the person answered.
-- **On the phone** (`AgentCalls`, Settings → Notifications → Calls from Agents): PushKit gives
+- **On the phone** (`AgentCalls`, Settings → Voice → Calls from Agents): PushKit gives
   the address, set up at launch so a push can start the app; CallKit rings with the agent's name.
   Answered: voice mode in that agent's chat, hands-free, saying the line first, and the person's
   first words go to the agent with a note that they answer its call (`CallNote`). Not answered

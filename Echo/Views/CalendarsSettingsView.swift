@@ -1,10 +1,12 @@
 import EventKit
 import SwiftUI
 
-/// Settings → Agent → Calendars (`CalendarChoice`, asked 2026-10-30: "choose which calendars to
+/// Settings → Calendars (`CalendarChoice`, asked 2026-10-30: "choose which calendars to
 /// look at"): all of them, or only the ones switched on here. Offered are this device's calendars,
 /// by account as Calendar lists them, once Redde may see them (a button asks), and the ones calendar
 /// cards have named, which are the agent's: its calendars are on the server, matched by title.
+/// Under them, where new events go, how calendar cards color events, the Up Next tile and
+/// Reminders on Their Day (a page of the first screen since 2026-11-15; under Agent before).
 struct CalendarsSettingsView: View {
     private let settings = Settings.shared
     /// The switch is off, so the calendars show to choose from, even with none chosen yet.
@@ -36,6 +38,22 @@ struct CalendarsSettingsView: View {
                     ? Text("Only the calendars switched on here. With none on, all of them. Phone tools read and add to only these on this device.")
                     : Text("Your agent looks at every calendar when you ask what's on, calendar cards show every event, and phone tools can read and add to every calendar on this device.")
             }
+            if limiting {
+                ForEach(accounts) { account in
+                    Section(account.title) {
+                        ForEach(account.calendars, id: \.title) { row($0.title, color: $0.color) }
+                    }
+                }
+                if !others.isEmpty {
+                    Section {
+                        ForEach(others, id: \.self) { row($0, color: AgendaCard.color(of: $0)) }
+                    } header: {
+                        Text("On Calendar Cards")
+                    }
+                }
+                deviceAccess
+            }
+            // Below the calendars to choose from, so they stay under the switch that shows them.
             if access == .granted, !writable.isEmpty {
                 Section {
                     Picker("New Events", selection: $newEvents) {
@@ -52,21 +70,28 @@ struct CalendarsSettingsView: View {
                     Text("Where an event your agent adds goes, unless you ask for another calendar. Calendar's Default is the one set in Settings → Apps → Calendar.")
                 }
             }
-            if limiting {
-                ForEach(accounts) { account in
-                    Section(account.title) {
-                        ForEach(account.calendars, id: \.title) { row($0.title, color: $0.color) }
+            // How calendar cards color events (on Settings → Appearance until 2026-11-15).
+            Section {
+                Picker(selection: Binding(get: { settings.eventColor }, set: { settings.eventColor = $0 })) {
+                    ForEach(Settings.EventColor.allCases) { choice in
+                        if let color = choice.color {
+                            Label { Text(choice.label) } icon: { Image(systemName: "circle.fill").foregroundStyle(color) }.tag(choice)
+                        } else {
+                            Text(choice.label).tag(choice)
+                        }
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Calendar Events")
+                        Text("On a calendar card: each calendar in its own color, or every event in one.")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                if !others.isEmpty {
-                    Section {
-                        ForEach(others, id: \.self) { row($0, color: AgendaCard.color(of: $0)) }
-                    } header: {
-                        Text("On Calendar Cards")
-                    }
-                }
-                deviceAccess
             }
+            // The calendar in the chat list too (also on Settings → Chat List): the next event as a
+            // Today tile, and reminders on a list on their day.
+            UpNextTileSection()
+            RemindersOnTheirDaySection()
         }
         .navigationTitle("Calendars")
         .navigationBarTitleDisplayMode(.inline)

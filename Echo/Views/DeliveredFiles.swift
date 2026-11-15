@@ -69,7 +69,7 @@ struct DeliveredFileChip: View {
     static func fetch(_ path: String, in source: FileSource?) async -> Result<URL, Problem> {
         let dashboard = HermesServeClient.shared
         guard await dashboard.canUse() else {
-            return .failure(Problem(text: String(localized: "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection details.")))
+            return .failure(Problem(text: String(localized: "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection → Connection details.")))
         }
         do {
             return .success(try await dashboard.downloadDelivered(path: path, in: source))

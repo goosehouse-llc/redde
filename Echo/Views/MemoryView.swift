@@ -31,7 +31,7 @@ struct MemoryView: View {
         List {
             if model.needsLogin {
                 Section {
-                    Text("Your agent's memory is read through the Hermes Dashboard. Add its login in Settings › Connection to see it here.")
+                    Text("Your agent's memory is read through the Hermes Dashboard. Add its login in Settings › Connection › Connection details to see it here.")
                         .foregroundStyle(.secondary)
                 }
             } else {

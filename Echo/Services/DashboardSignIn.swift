@@ -100,7 +100,7 @@ nonisolated enum DashboardSignIn {
             switch self {
             case .notOffered(let why): why
             case .noCode: String(localized: "The browser came back without signing in. Try again.")
-            case .expired: String(localized: "Your sign-in to the Hermes Dashboard has expired. Sign in again under Settings → Connection.")
+            case .expired: String(localized: "Your sign-in to the Hermes Dashboard has expired. Sign in again under Settings → Connection → Connection details.")
             case .refused(let detail): String(localized: "The Hermes Dashboard refused the sign-in: \(detail)")
             }
         }

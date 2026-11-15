@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The CarPlay voice screen row of the Appearance section: collapsed to the current look, it
+/// The CarPlay voice screen row of Settings → CarPlay: collapsed to the current look, it
 /// opens on all four, each shown as its Listening, Thinking and Speaking pictures. The chosen
 /// look's pictures move as they do on the car, unless Reduce Motion is on; the others stand
 /// still until they are picked.

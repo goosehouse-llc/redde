@@ -96,7 +96,7 @@ nonisolated enum DashboardSignInChange: LocalizedError, Equatable {
     }
 
     static var nowAsksText: String {
-        String(localized: "This Hermes Dashboard asks for a login now. It had no sign-in when this server was set up. Add its username and password, or sign in with a browser, under Settings › Connection details.",
+        String(localized: "This Hermes Dashboard asks for a login now. It had no sign-in when this server was set up. Add its username and password, or sign in with a browser, under Settings › Connection › Connection details.",
                comment: "A Dashboard set up with no sign-in has turned its login on")
     }
     static var noLongerAsksText: String {

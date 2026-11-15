@@ -52,7 +52,7 @@ approvals:
   see as cards in Redde.
 - Hermes's smart policy lets harmless commands (`ls`, `cat`) run and asks for the rest; add paths
   you never want touched under `approvals.deny`.
-- Redde's **Before Acting** (Settings → Agent) sets how much each bot may do on its own: Ask Me
+- Redde's **Before Acting** (Settings → Your Day) sets how much each bot may do on its own: Ask Me
   First, Small Things Are Fine, or Act, Tell Me After.
 - Keys never go in a chat. When an agent needs one, it asks in Redde (Keys Asked For) and what you
   paste goes sealed into that profile's `.env`.
@@ -78,7 +78,7 @@ approvals:
 - **Memory:** an MCP memory server (Basic Memory works well) instead of only Hermes's MEMORY.md.
 - **Calendar:** a calendar MCP on a machine that has your calendars; Redde's calendar cards and
   Leave-By Alerts use the same events. Or Redde's phone tools read the iPhone's calendars (only the
-  ones chosen in Settings → Agent → Calendars).
+  ones chosen in Settings → Calendars).
 - **Schedules:** Hermes 0.22 hides some tools until the agent searches for them. So the agent can
   set reminders and routines without fumbling, keep `cronjob_manage` out of the deferred list:
 
@@ -94,7 +94,7 @@ approvals:
 ## The Redde plugin
 
 `hermes plugins install goosehouse-llc/redde/companion/hermes-plugin/redde-push --enable`, or let
-Redde do it: Settings → Agent → Ahead of Your Day installs or updates it and turns on the daily
+Redde do it: Settings → Your Day → Ahead of Your Day installs or updates it and turns on the daily
 jobs. It brings notifications while Redde is closed, answer cards, Morning Ideas, heads-ups,
 watches, goals, phone tools and email.
 
@@ -108,7 +108,7 @@ Two things that bite:
 
 - Hermes's **email platform** is a chat channel over a separate address, and it marks every
   existing message as read when it starts: never point it at your own inbox. For your inbox, use
-  Redde's email (Settings → Agent → Email).
+  Redde's email (Settings → Email).
 - Don't give one bot every tool "just in case": prompt size is speed on a local model.
 - Changing the main model mid-chat on a local box swaps it out for everyone; keep one main model
   loaded and give bots models that fit alongside it.

@@ -174,7 +174,7 @@ enum WatchTemplate: Hashable, Sendable {
         return servers.contains(where: readsEmail)
     }
 
-    static let needsEmailHint = String(localized: "Needs email on your Hermes: connect an account in Settings → Agent → Email (or add an email MCP server in Settings → Gateway), then check again.",
+    static let needsEmailHint = String(localized: "Needs email on your Hermes: connect an account in Settings → Email (or add an email MCP server in Settings → Agent → Gateway), then check again.",
                                        comment: "A watch that reads email, on a Hermes that can't")
 
     // MARK: Making and finding

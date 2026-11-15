@@ -745,7 +745,7 @@ struct BriefingsList: View {
     var body: some View {
             List {
                 if inbox.briefings.isEmpty {
-                    Text("Your agent's briefings come here: the Evening Wrap-up, heads-ups before events, and any daily brief you ask it for. Set them up in Settings, Agent.")
+                    Text("Your agent's briefings come here: the Evening Wrap-up, heads-ups before events, and any daily brief you ask it for. Set them up in Settings → Your Day.")
                         .chatFont(.footnote).foregroundStyle(.secondary)
                 }
                 // Each job once, its newest run; the earlier ones in its sheet (2026-11-05).

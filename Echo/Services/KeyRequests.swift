@@ -94,7 +94,7 @@ nonisolated enum KeyRequestError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .noDashboard:
-            String(localized: "Saving a key needs this server's Hermes Dashboard login (Settings › Connection). Over the Hermes API alone there's no safe way to hand it over, so nothing was sent.")
+            String(localized: "Saving a key needs this server's Hermes Dashboard login (Settings › Connection › Connection details). Over the Hermes API alone there's no safe way to hand it over, so nothing was sent.")
         case .noPlugin:
             String(localized: "This Hermes's Redde plugin can't take keys yet. Update the plugin there, restart Hermes, and try again.")
         case .gone: String(localized: "That request was answered already, or it expired.")

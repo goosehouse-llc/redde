@@ -4,7 +4,7 @@ import SwiftUI
 /// 2026-11-06 until that list was retired): the Inbox, the briefings not read yet and the goals
 /// as tiles two to a row, each showing what it is (the unread count, a list's items, a goal's
 /// ring, the next event). A tap opens what a tile is; a briefing's hold menu has Done and Later.
-/// Each kind still follows Settings → Appearance → Top of the Chat List. The person's lists (2026-11-09, `TodayLists`) come right after
+/// Each kind still follows Settings → Chat List. The person's lists (2026-11-09, `TodayLists`) come right after
 /// the Inbox, one tile each, and stay until a list is deleted. Up Next (2026-11-12, when turned
 /// on) is the next event on the calendar. The tiles go in the order the person arranged them
 /// (2026-11-12: Move Left / Right on a tile's hold menu, or Arrange Tiles…).
@@ -275,7 +275,7 @@ struct TodayStrip: View {
                     settings.todayUpNext = false
                     calendarHiddenOnPage = true
                 } label: {
-                    Label { Text("Hide Up Next", comment: "The Up Next tile's hold menu: turn the tile off (Settings › Appearance › Top of the Chat List turns it back on)") } icon: { Image(systemName: "eye.slash") }
+                    Label { Text("Hide Up Next", comment: "The Up Next tile's hold menu: turn the tile off (Settings › Chat List turns it back on)") } icon: { Image(systemName: "eye.slash") }
                 }
                 TileColorMenu(key: tile.key)
             }
@@ -730,7 +730,7 @@ private struct TodayPageEmpty: View {
                 .foregroundStyle(tone.places[0])
             Text("Nothing for Today Yet", comment: "The Today page with no tiles")
                 .font(.system(.headline, design: tone.design, weight: .bold))
-            Text("Your inbox, to-do lists, briefings, goals and the next event on your calendar show here as they come. Settings › Top of the Chat List picks which.",
+            Text("Your inbox, to-do lists, briefings, goals and the next event on your calendar show here as they come. Settings › Chat List picks which.",
                  comment: "The Today page with no tiles: what shows there")
                 .chatFont(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
         }

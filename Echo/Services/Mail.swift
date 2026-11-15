@@ -607,7 +607,7 @@ nonisolated enum MailError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .noDashboard:
-            String(localized: "Email goes through your Hermes's Redde plugin, which Redde reaches with the Hermes Dashboard login (Settings › Connection). Over the Hermes API alone it can't be asked.")
+            String(localized: "Email goes through your Hermes's Redde plugin, which Redde reaches with the Hermes Dashboard login (Settings › Connection › Connection details). Over the Hermes API alone it can't be asked.")
         case .noPlugin:
             String(localized: "This Hermes's Redde plugin doesn't do email yet. Update the plugin (Settings › Redde Plugin), restart Hermes, and try again.")
         case let .server(code, message):

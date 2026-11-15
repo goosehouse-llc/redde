@@ -28,7 +28,7 @@ struct BotSchedulesView: View {
             List {
                 if !reachable {
                     ContentUnavailableView("Needs the Hermes Dashboard", systemImage: "clock.badge.questionmark",
-                                           description: Text("A bot's schedules are kept with its other settings on your server, through the Dashboard. Add its login in Settings → Hermes server."))
+                                           description: Text("A bot's schedules are kept with its other settings on your server, through the Dashboard. Add its login in Settings → Connection → Connection details."))
                 } else if let problem {
                     Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 } else if jobs.isEmpty, !loading {

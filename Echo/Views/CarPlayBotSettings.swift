@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The CarPlay bot cards row of the Appearance section: collapsed to the current look, it opens
+/// The CarPlay bot cards row of Settings → CarPlay: collapsed to the current look, it opens
 /// on all five, each shown as four cards in the four moods (your own bots, once Redde has read
 /// them).
 struct CarPlayBotSettings: View {
