@@ -30,6 +30,24 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "2.6", items: [
+            Item(symbol: "terminal", title: String(localized: "Claude Code, Codex and more", comment: "What's New 2.6: other agents through the Redde bridge"),
+                 detail: String(localized: "Chat or talk with Claude Code, Codex, Gemini CLI and other agents through the free Redde bridge on your computer: Settings → Set up connection… → Claude Code, Codex and others (ACP). Add agents from the official registry, see them all in one list, or try the Demo Agent with no computer at all.", comment: "What's New 2.6: other agents")),
+            Item(symbol: "rectangle.stack", title: String(localized: "A new drawer", comment: "What's New 2.6: the chat list's new drawer"),
+                 detail: String(localized: "Your chat list starts with what needs you: your next event, approvals, what's working and unread, and your bots. Today, Planned, Board and Made are pages of their own, and Today has a Calendar tile.", comment: "What's New 2.6: the drawer")),
+            Item(symbol: "map", title: String(localized: "Maps for your agent", comment: "What's New 2.6: Maps as a phone tool"),
+                 detail: String(localized: "Your agent finds places near you, says how long the way takes with traffic now, and opens Apple Maps ready to go. Turn it on in Settings → Phone Tools → Maps. It takes the Redde plugin 1.30.", comment: "What's New 2.6: Maps")),
+            Item(symbol: "tray.2", title: String(localized: "Inbox piles", comment: "What's New 2.6: the inbox's seven piles and piles of your own"),
+                 detail: String(localized: "Your inbox in seven piles, with Receipts, Notifications and Promotions, and up to eight of your own in Settings → Email → Piles. It takes the Redde plugin 1.31.", comment: "What's New 2.6: inbox piles")),
+            Item(symbol: "text.bubble", title: String(localized: "Quotes and suggested replies", comment: "What's New 2.6: quoting a message, better suggested replies"),
+                 detail: String(localized: "Quote any message in your next one. When a reply lists choices, they become chips at once, and other suggestions fit what the reply asks.", comment: "What's New 2.6: quotes and suggestions")),
+            Item(symbol: "tag", title: String(localized: "Better price cards", comment: "What's New 2.6: the purchase card's deal meter"),
+                 detail: String(localized: "A deal meter shows how a price compares with the usual one, every store sits in one row, and Watch price follows it for you.", comment: "What's New 2.6: price cards")),
+            Item(symbol: "gamecontroller", title: String(localized: "Arcade", comment: "Name of a color theme in Settings → Appearance: neon colours on dark navy, like an arcade"),
+                 detail: String(localized: "A new theme: neon on navy by night, lavender by day. Settings → Appearance.", comment: "What's New 2.6: the Arcade theme")),
+            Item(symbol: "car", title: String(localized: "CarPlay"),
+                 detail: String(localized: "Switch servers from the Ask tab. With more bots than fit on the Bots tab, an All Bots card lists them all.", comment: "What's New 2.6: CarPlay")),
+        ]),
         Release(version: "2.5", items: [
             Item(symbol: "square.stack.3d.up", title: String(localized: "Workstreams", comment: "What's New 2.5: a bot hands a job to a chat of its own that works in the background"),
                  detail: String(localized: "Ask any bot to work on something in the background: it hands the job to a chat of its own and tells you when it's done or needs you. Its chat shows what's running, to open, answer or stop. On both connections, with the Redde plugin 1.23 on your Hermes.", comment: "What's New 2.5: workstreams")),

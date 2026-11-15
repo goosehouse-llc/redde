@@ -3,8 +3,10 @@ import XCTest
 /// What the UI tests share: the launch arguments nearly all of them start from, finding a piece
 /// of text on screen, and the conversation list's rows.
 extension XCUIApplication {
-    /// A launch that lands on the chat: setup done, no voice mode at launch, no app lock.
-    static let straightToChat = ["-setupDone", "YES", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO", "-requireBiometrics", "NO"]
+    /// A launch that lands on the chat: setup done, no voice mode at launch, no app lock, and no
+    /// What's New (after a version bump it came up over the list on the next launch, 2026-11-14).
+    static let straightToChat = ["-setupDone", "YES", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO", "-requireBiometrics", "NO",
+                                 "-whatsNewSeenVersion", "999"]
 
     /// The first text on screen that contains `fragment`.
     func text(containing fragment: String) -> XCUIElement {

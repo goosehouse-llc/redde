@@ -43635,6 +43635,113 @@
         }
       }
     },
+    "A deal meter shows how a price compares with the usual one, every store sits in one row, and Watch price follows it for you." : {
+      "comment" : "What's New 2.6: price cards",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tilbudsmåler viser, hvordan prisen ligger i forhold til den normale, alle butikker står på én række, og Hold øje med prisen følger den for dig."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Angebotsskala zeigt, wie ein Preis im Vergleich zum üblichen liegt, alle Shops stehen in einer Reihe, und „Preis beobachten“ behält ihn für dich im Blick."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un medidor de oferta muestra cómo está un precio frente al habitual, todas las tiendas caben en una fila y Vigilar precio lo sigue por ti."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une jauge compare le prix au prix habituel, tous les magasins tiennent sur une seule ligne, et Suivre le prix le surveille pour vous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un indicatore mostra com'è un prezzo rispetto a quello abituale, tutti i negozi stanno in una riga, e Segui il prezzo lo tiene d'occhio per te."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お得度メーターで価格がいつもと比べてどうかがわかり、すべてのストアが1列に並び、「価格を見守る」が価格を追い続けます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "할인 지표가 가격이 평소 가격과 비교해 어떤지 보여 주고, 모든 스토어가 한 줄에 놓이며, 가격 지켜보기가 가격을 계속 추적합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tilbudsmåler viser hvordan prisen er sammenlignet med den vanlige, alle butikkene står på én rad, og Følg med på prisen holder øye med den for deg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een dealmeter laat zien hoe een prijs zich verhoudt tot de gewone prijs, alle winkels staan op één rij, en Prijs volgen houdt hem voor je in de gaten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miernik okazji pokazuje, jak cena wypada na tle zwykłej, wszystkie sklepy mieszczą się w jednym rzędzie, a Obserwuj cenę śledzi ją za Ciebie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um medidor de oferta mostra como um preço se compara ao de costume, todas as lojas ficam em uma fileira, e Acompanhar preço fica de olho nele por você."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Шкала выгоды показывает, как цена соотносится с обычной, все магазины помещаются в один ряд, а «Следить за ценой» присматривает за ней за вас."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En dealmätare visar hur ett pris står sig mot det vanliga, alla butiker ligger på en rad, och Bevaka priset håller koll på det åt dig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fırsat göstergesi bir fiyatın olağan fiyatla nasıl karşılaştırıldığını gösterir, tüm mağazalar tek sırada durur ve Fiyatı izle onu sizin için takip eder."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Шкала вигоди показує, як ціна співвідноситься зі звичайною, усі магазини — в одному рядку, а «Стежити за ціною» відстежує її за вас."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "划算度指示条显示价格与常价相比如何，所有商店排成一行，“关注价格”会替你持续跟踪。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "划算度指示條顯示價格與常價相比如何，所有商店排成一列，「關注價格」會替你持續追蹤。"
+          }
+        }
+      }
+    },
     "A face too big for its card, peeking in" : {
       "localizations" : {
         "da" : {
@@ -46079,6 +46186,113 @@
         }
       }
     },
+    "A new drawer" : {
+      "comment" : "What's New 2.6: the chat list's new drawer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En ny skuffe"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine neue Ablage"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nuevo cajón"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nouveau tiroir"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nuovo cassetto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいドロワー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 서랍"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En ny skuff"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een nieuwe lade"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowa szuflada"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma nova gaveta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая панель"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En ny låda"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni bir çekmece"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нове зведення"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全新抽屉"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全新抽屜"
+          }
+        }
+      }
+    },
     "A new level that asks the model to skip thinking and answer straight away. Some models and servers decide that for themselves." : {
       "localizations" : {
         "da" : {
@@ -46393,6 +46607,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新伺服器可從設定碼自動填寫：在其設定畫面中掃描或貼上設定碼。"
+          }
+        }
+      }
+    },
+    "A new theme: neon on navy by night, lavender by day. Settings → Appearance." : {
+      "comment" : "What's New 2.6: the Arcade theme",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et nyt tema: neon på midnatsblå om natten, lavendel om dagen. Indstillinger → Udseende."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein neues Farbschema: Neon auf Mitternachtsblau bei Nacht, Lavendel bei Tag. Einstellungen → Erscheinungsbild."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un tema nuevo: neón sobre azul medianoche de noche, lavanda de día. Ajustes → Aspecto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nouveau thème : néon sur bleu marine la nuit, lavande le jour. Réglages → Apparence."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nuovo tema: neon su blu scuro di notte, lavanda di giorno. Impostazioni → Aspetto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいテーマ：夜はネイビーにネオン、昼はラベンダー。設定 → 外観。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 테마: 밤에는 네이비 위의 네온, 낮에는 라벤더. 설정 → 모양."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et nytt tema: neon på midnattsblått om natten, lavendel om dagen. Innstillinger → Utseende."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een nieuw thema: neon op marineblauw 's nachts, lavendel overdag. Instellingen → Weergave."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowy motyw: neon na granacie nocą, lawenda za dnia. Ustawienia → Wygląd."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um novo tema: neon sobre azul-marinho à noite, lavanda de dia. Ajustes → Aparência."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая тема: неон на тёмно-синем ночью, лаванда днём. «Настройки» → «Оформление»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett nytt tema: neon på marinblått på natten, lavendel på dagen. Inställningar → Utseende."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni bir tema: geceleri lacivert üzerinde neon, gündüzleri lavanta. Ayarlar → Görünüm."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нова тема: неон на темно-синьому вночі, лаванда вдень. Параметри → Вигляд."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全新主题：夜间是藏青底上的霓虹，白天是薰衣草紫。设置 → 外观。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全新主題：夜間是藏青底上的霓虹，白天是薰衣草紫。「設定」→「外觀」。"
           }
         }
       }
@@ -90621,6 +90942,113 @@
         }
       }
     },
+    "Better price cards" : {
+      "comment" : "What's New 2.6: the purchase card's deal meter",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bedre priskort"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bessere Preiskarten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mejores tarjetas de precio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De meilleures cartes de prix"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schede prezzo migliori"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進化した価格カード"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "더 나아진 가격 카드"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bedre priskort"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Betere prijskaarten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lepsze karty cen"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartões de preço melhores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Улучшенные карточки цен"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bättre priskort"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha iyi fiyat kartları"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кращі картки цін"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更好的价格卡片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更好的價格卡片"
+          }
+        }
+      }
+    },
     "better: %@" : {
       "comment" : "VoiceOver: which option of a comparison card is better on a row",
       "localizations" : {
@@ -108766,6 +109194,113 @@
         }
       }
     },
+    "Chat or talk with Claude Code, Codex, Gemini CLI and other agents through the free Redde bridge on your computer: Settings → Set up connection… → Claude Code, Codex and others (ACP). Add agents from the official registry, see them all in one list, or try the Demo Agent with no computer at all." : {
+      "comment" : "What's New 2.6: other agents",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skriv eller tal med Claude Code, Codex, Gemini CLI og andre agenter via den gratis Redde-bro på din computer: Indstillinger → Konfigurer forbindelse… → Claude Code, Codex og andre (ACP). Tilføj agenter fra det officielle register, se dem alle på én liste, eller prøv demoagenten helt uden computer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatte oder sprich mit Claude Code, Codex, Gemini CLI und anderen Agenten über die kostenlose Redde-Bridge auf deinem Computer: Einstellungen → Verbindung einrichten … → Claude Code, Codex und andere (ACP). Füge Agenten aus der offiziellen Registry hinzu, sieh sie alle in einer Liste, oder probier den Demo-Agent ganz ohne Computer aus."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatea o habla con Claude Code, Codex, Gemini CLI y otros agentes a través del puente de Redde gratuito en tu ordenador: Ajustes → Configurar conexión… → Claude Code, Codex y otros (ACP). Añade agentes desde el registro oficial, velos todos en una lista o prueba el agente de demostración sin ningún ordenador."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Écrivez ou parlez à Claude Code, Codex, Gemini CLI et d’autres agents via la passerelle Redde gratuite sur votre ordinateur : Réglages → Configurer la connexion… → Claude Code, Codex et autres (ACP). Ajoutez des agents depuis le registre officiel, retrouvez-les tous dans une seule liste, ou essayez l’agent de démo sans aucun ordinateur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrivi o parla con Claude Code, Codex, Gemini CLI e altri agenti tramite il bridge di Redde gratuito sul tuo computer: Impostazioni → Configura connessione… → Claude Code, Codex e altri (ACP). Aggiungi agenti dal registro ufficiale, vedili tutti in un solo elenco, o prova l'agente demo senza alcun computer."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コンピュータ上の無料のReddeブリッジを通じて、Claude Code、Codex、Gemini CLIなどのエージェントとチャットや音声で話せます：設定 → 接続を設定… → Claude Code、Codex など（ACP）。公式レジストリからエージェントを追加して1つのリストですべてを確認でき、コンピュータがなくてもデモエージェントを試せます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "컴퓨터의 무료 Redde 브리지를 통해 Claude Code, Codex, Gemini CLI 등 여러 에이전트와 채팅하거나 대화하십시오: 설정 → 연결 설정… → Claude Code, Codex 등(ACP). 공식 레지스트리에서 에이전트를 추가하고 한 목록에서 모두 확인하거나, 컴퓨터 없이 데모 에이전트를 사용해 보십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skriv eller snakk med Claude Code, Codex, Gemini CLI og andre agenter via den gratis Redde-broen på datamaskinen din: Innstillinger → Konfigurer tilkobling… → Claude Code, Codex og andre (ACP). Legg til agenter fra det offisielle registeret, se alle i én liste, eller prøv demoagenten helt uten datamaskin."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat of praat met Claude Code, Codex, Gemini CLI en andere agents via de gratis Redde-bridge op je computer: Instellingen → Stel verbinding in… → Claude Code, Codex en andere (ACP). Voeg agents toe uit het officiële register, zie ze allemaal in één lijst, of probeer de demo-agent helemaal zonder computer."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pisz lub rozmawiaj z Claude Code, Codex, Gemini CLI i innymi agentami przez darmowy mostek Redde na Twoim komputerze: Ustawienia → Skonfiguruj połączenie… → Claude Code, Codex i inne (ACP). Dodawaj agentów z oficjalnego rejestru, oglądaj wszystkich na jednej liście albo wypróbuj agenta demo zupełnie bez komputera."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Converse por texto ou voz com Claude Code, Codex, Gemini CLI e outros agentes pela ponte gratuita do Redde no seu computador: Ajustes → Configurar conexão… → Claude Code, Codex e outros (ACP). Adicione agentes do registro oficial, veja todos em uma lista ou experimente o agente de demonstração sem computador nenhum."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переписывайтесь или говорите с Claude Code, Codex, Gemini CLI и другими агентами через бесплатный мост Redde на вашем компьютере: «Настройки» → «Настроить подключение…» → «Claude Code, Codex и другие (ACP)». Добавляйте агентов из официального реестра, смотрите их всех в одном списке или попробуйте демо-агента вовсе без компьютера."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatta eller prata med Claude Code, Codex, Gemini CLI och andra agenter genom den kostnadsfria Redde-bryggan på din dator: Inställningar → Ställ in anslutning… → Claude Code, Codex och andra (ACP). Lägg till agenter från det officiella registret, se alla i en lista, eller prova demoagenten helt utan dator."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilgisayarınızdaki ücretsiz Redde köprüsü üzerinden Claude Code, Codex, Gemini CLI ve diğer ajanlarla yazışın ya da konuşun: Ayarlar → Bağlantıyı ayarla… → Claude Code, Codex ve diğerleri (ACP). Resmî kayıt defterinden ajan ekleyin, hepsini tek listede görün ya da hiç bilgisayar olmadan Demo Ajanı'nı deneyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пишіть або говоріть із Claude Code, Codex, Gemini CLI та іншими агентами через безкоштовний міст Redde на вашому комп’ютері: Параметри → Налаштувати з’єднання… → Claude Code, Codex та інші (ACP). Додавайте агентів з офіційного реєстру, бачте їх усіх в одному списку або спробуйте демо-агента взагалі без комп’ютера."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过你电脑上免费的Redde桥接，与Claude Code、Codex、Gemini CLI等智能体聊天或通话：设置 → 设置连接… → Claude Code、Codex 等（ACP）。从官方注册表添加智能体，在一个列表中查看全部，或无需电脑即可试用演示智能体。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過你電腦上免費的 Redde 橋接，與 Claude Code、Codex、Gemini CLI 等代理聊天或通話：「設定」→「設定連線…」→「Claude Code、Codex 等（ACP）」。從官方登錄表加入代理，在一個列表中查看全部，或不需電腦即可試用示範代理。"
+          }
+        }
+      }
+    },
     "Chat text size" : {
       "localizations" : {
         "da" : {
@@ -113232,6 +113767,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Claude Code"
+          }
+        }
+      }
+    },
+    "Claude Code, Codex and more" : {
+      "comment" : "What's New 2.6: other agents through the Redde bridge",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex og mere"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex und mehr"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex y más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex et plus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex e altro"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code、Codex など"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex 등"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex og mer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex en meer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex i więcej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex e mais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex и не только"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex och fler"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex ve daha fazlası"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex та інші"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code、Codex 等"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code、Codex 等"
           }
         }
       }
@@ -215947,6 +216589,113 @@
         }
       }
     },
+    "Inbox piles" : {
+      "comment" : "What's New 2.6: the inbox's seven piles and piles of your own",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunker i indbakken"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stapel im Posteingang"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montones en la bandeja de entrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des piles dans la boîte de réception"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categorie nella posta in arrivo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "受信トレイの分類"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "받은 편지함 묶음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunker i innboksen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inbox-stapels"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stosy w skrzynce odbiorczej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pilhas na Caixa de Entrada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Категории входящих"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Högar i inkorgen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gelen Kutusu yığınları"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Категорії вхідних"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收件箱类别"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收件匣類別"
+          }
+        }
+      }
+    },
     "Inbox Shows" : {
       "comment" : "Email settings: which account the Inbox shows",
       "localizations" : {
@@ -252306,6 +253055,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "地址地圖"
+          }
+        }
+      }
+    },
+    "Maps for your agent" : {
+      "comment" : "What's New 2.6: Maps as a phone tool",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kort til din agent"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karten für deinen Agenten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapas para tu agente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plans pour votre agent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mappe per il tuo agente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントにマップを"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트를 위한 지도"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kart for agenten din"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaarten voor je agent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapy dla Twojego agenta"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapas para seu agente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карты для агента"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kartor för din agent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız için Haritalar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карти для вашого агента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为智能体带来地图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為代理帶來地圖"
           }
         }
       }
@@ -332858,6 +333714,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "引用"
+          }
+        }
+      }
+    },
+    "Quote any message in your next one. When a reply lists choices, they become chips at once, and other suggestions fit what the reply asks." : {
+      "comment" : "What's New 2.6: quotes and suggestions",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citér en hvilken som helst besked i din næste. Når et svar opremser valg, bliver de straks til knapper, og andre forslag passer til det, svaret spørger om."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zitiere jede Nachricht in deiner nächsten. Zählt eine Antwort Optionen auf, werden sie sofort zu Tasten, und andere Vorschläge passen zu dem, was die Antwort fragt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cita cualquier mensaje en el siguiente. Cuando una respuesta enumera opciones, se convierten al instante en botones, y las demás sugerencias se ajustan a lo que pide la respuesta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citez n’importe quel message dans le suivant. Quand une réponse propose des choix, ils deviennent aussitôt des boutons, et les autres suggestions collent à ce que demande la réponse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cita qualsiasi messaggio nel successivo. Quando una risposta elenca delle scelte, diventano subito pulsanti, e gli altri suggerimenti si adattano a ciò che chiede la risposta."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "どのメッセージも次のメッセージで引用できます。返答に選択肢があるとすぐにチップになり、ほかの提案も返答の問いかけに合わせて表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어떤 메시지든 다음 메시지에서 인용하십시오. 답에 선택지가 나열되면 바로 칩으로 바뀌고, 다른 제안도 답이 묻는 내용에 맞춰집니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siter en hvilken som helst melding i den neste. Når et svar lister opp valg, blir de straks til knapper, og andre forslag passer til det svaret spør om."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citeer elk bericht in je volgende. Noemt een antwoord keuzes, dan worden dat meteen knoppen, en andere suggesties passen bij wat het antwoord vraagt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zacytuj dowolną wiadomość w kolejnej. Gdy odpowiedź wymienia opcje, od razu stają się przyciskami, a pozostałe sugestie pasują do tego, o co pyta odpowiedź."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cite qualquer mensagem na próxima. Quando uma resposta lista opções, elas viram botões na hora, e as outras sugestões combinam com o que a resposta pergunta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цитируйте любое сообщение в следующем. Если ответ перечисляет варианты, они сразу становятся кнопками, а остальные подсказки подходят к тому, о чём спрашивает ответ."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citera vilket meddelande som helst i ditt nästa. När ett svar listar val blir de knappar direkt, och andra förslag passar det svaret frågar om."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herhangi bir mesajı bir sonrakinde alıntılayın. Bir yanıt seçenekler sıraladığında bunlar hemen düğmelere dönüşür, diğer öneriler de yanıtın sorduğuna uyar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цитуйте будь-яке повідомлення в наступному. Коли відповідь пропонує варіанти, вони одразу стають кнопками, а інші підказки пасують до того, про що питає відповідь."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可在下一条消息中引用任意消息。当回复列出选项时，它们会立即变成快捷按钮，其他建议也会贴合回复所问的内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可在下一則訊息中引用任何訊息。當回覆列出選項時，它們會立即變成快捷按鈕，其他建議也會貼合回覆所問的內容。"
+          }
+        }
+      }
+    },
+    "Quotes and suggested replies" : {
+      "comment" : "What's New 2.6: quoting a message, better suggested replies",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citater og foreslåede svar"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zitate und vorgeschlagene Antworten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citas y respuestas sugeridas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citations et réponses suggérées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citazioni e risposte suggerite"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "引用と提案された返信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인용과 제안된 답장"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitater og foreslåtte svar"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citaten en voorgestelde antwoorden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cytaty i sugerowane odpowiedzi"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citações e respostas sugeridas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цитаты и предложенные ответы"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citat och föreslagna svar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alıntılar ve önerilen yanıtlar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цитати й запропоновані відповіді"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "引用与建议的回复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "引用與建議的回覆"
           }
         }
       }
@@ -415199,6 +416269,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "關閉技能後 Redde 就不再載入它；可使用編輯器編輯或建立技能。"
+          }
+        }
+      }
+    },
+    "Switch servers from the Ask tab. With more bots than fit on the Bots tab, an All Bots card lists them all." : {
+      "comment" : "What's New 2.6: CarPlay",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skift server fra fanen Spørg. Når der er flere bots, end der er plads til på fanen Bots, viser et Alle bots-kort dem alle."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wechsle den Server im Tab „Fragen“. Passen nicht alle Bots in den Tab „Bots“, listet eine Karte „Alle Bots“ sie alle auf."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia de servidor desde la pestaña Preguntar. Si hay más bots de los que caben en la pestaña Bots, una tarjeta Todos los bots los muestra todos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changez de serveur depuis l’onglet Demander. S’il y a plus de bots que l’onglet Bots ne peut en afficher, une carte Tous les bots les liste tous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia server dal pannello Chiedi. Se i bot sono più di quanti ne entrino nel pannello Bot, una scheda Tutti i bot li elenca tutti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「質問」タブからサーバを切り替えられます。「ボット」タブに収まりきらないほどボットがあるときは、「すべてのボット」カードにすべて表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "질문 탭에서 서버를 전환하십시오. 봇 탭에 다 들어가지 않을 만큼 봇이 많으면 모든 봇 카드에 전부 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bytt tjener fra Spør-fanen. Når det er flere boter enn det er plass til i Boter-fanen, viser et Alle boter-kort alle sammen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wissel van server vanaf het tabblad Vraag. Passen niet alle bots op het tabblad Bots, dan zet een kaart Alle bots ze allemaal op een rij."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przełączaj serwery z zakładki Zapytaj. Gdy botów jest więcej, niż zmieści zakładka Boty, karta Wszystkie boty pokazuje je wszystkie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Troque de servidor pela aba Perguntar. Com mais bots do que cabem na aba Bots, um cartão Todos os bots lista todos eles."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переключайте серверы на вкладке «Спросить». Если ботов больше, чем помещается на вкладке «Боты», карточка «Все боты» покажет их всех."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Byt server från fliken Fråga. Med fler bottar än som får plats på fliken Bottar listar ett Alla bottar-kort dem allihop."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunucuları Sor sekmesinden değiştirin. Botlar sekmesine sığmayacak kadar bot varsa Tüm botlar kartı hepsini listeler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перемикайте сервери з вкладки «Запитати». Якщо ботів більше, ніж уміщує вкладка «Боти», картка «Усі боти» покаже їх усіх."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“提问”标签页切换服务器。机器人多到“机器人”标签页放不下时，“全部机器人”卡片会列出所有机器人。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「詢問」標籤頁切換伺服器。機器人多到「機器人」標籤頁放不下時，「全部機器人」卡片會列出所有機器人。"
           }
         }
       }
@@ -513385,6 +514562,113 @@
         }
       }
     },
+    "Your agent finds places near you, says how long the way takes with traffic now, and opens Apple Maps ready to go. Turn it on in Settings → Phone Tools → Maps. It takes the Redde plugin 1.30." : {
+      "comment" : "What's New 2.6: Maps",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent finder steder i nærheden, siger, hvor lang tid turen tager med trafikken lige nu, og åbner Apple Kort klar til at køre. Slå det til i Indstillinger → Telefonværktøjer → Kort. Det kræver Redde-plugin 1.30."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent findet Orte in deiner Nähe, sagt, wie lange der Weg mit dem aktuellen Verkehr dauert, und öffnet Apple Karten startklar. Schalte es ein unter Einstellungen → Telefon-Tools → Karten. Dafür braucht es das Redde-Plugin 1.30."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente encuentra lugares cerca de ti, te dice cuánto tarda el camino con el tráfico de ahora y abre Mapas de Apple listo para salir. Actívalo en Ajustes → Herramientas del teléfono → Mapas. Necesita el plugin de Redde 1.30."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent trouve des lieux près de vous, indique la durée du trajet avec la circulation actuelle et ouvre Plans, prêt à partir. Activez-le dans Réglages → Outils du téléphone → Plans. Il faut le plugin Redde 1.30."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente trova luoghi vicino a te, dice quanto dura il percorso con il traffico di adesso e apre Mappe di Apple pronta per partire. Attivalo in Impostazioni → Strumenti del telefono → Mappe. Serve il plugin Redde 1.30."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントが近くの場所を探し、今の交通状況での所要時間を伝え、すぐ出発できる状態でAppleマップを開きます。設定 → デバイスツール → マップでオンにします。Reddeプラグイン1.30が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 주변 장소를 찾고, 현재 교통 상황에서 걸리는 시간을 알려 주며, 바로 출발할 수 있게 Apple 지도를 엽니다. 설정 → 휴대폰 도구 → 지도에서 켜십시오. Redde 플러그인 1.30이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din finner steder i nærheten, sier hvor lang tid turen tar med trafikken nå, og åpner Apple Kart klar til å dra. Slå det på i Innstillinger → Telefonverktøy → Kart. Det krever Redde-tillegget 1.30."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent vindt plekken bij je in de buurt, zegt hoe lang de route met het verkeer van nu duurt en opent Apple Kaarten, klaar om te gaan. Zet het aan in Instellingen → Telefoontools → Kaarten. Hiervoor is de Redde-plug-in 1.30 nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój agent znajduje miejsca w pobliżu, mówi, ile potrwa droga przy obecnym ruchu, i otwiera Mapy Apple gotowe do drogi. Włącz to w Ustawienia → Narzędzia telefonu → Mapy. Wymaga wtyczki Redde 1.30."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu agente encontra lugares perto de você, diz quanto tempo leva o caminho com o trânsito de agora e abre o Apple Mapas pronto para sair. Ative em Ajustes → Ferramentas do Telefone → Mapas. Requer o plugin do Redde 1.30."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент находит места рядом с вами, говорит, сколько займёт дорога с учётом пробок прямо сейчас, и открывает Apple Карты, готовые к поездке. Включите в «Настройки» → «Инструменты телефона» → «Карты». Нужен плагин Redde 1.30."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent hittar platser nära dig, säger hur lång tid vägen tar med trafiken just nu och öppnar Apple Kartor redo att köra. Slå på det i Inställningar → Telefonverktyg → Kartor. Det kräver Redde-tillägget 1.30."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız yakınınızdaki yerleri bulur, yolun şu anki trafikle ne kadar süreceğini söyler ve Apple Haritalar'ı yola çıkmaya hazır açar. Ayarlar → Telefon Araçları → Haritalar'dan açın. Redde eklentisi 1.30 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент знаходить місця поблизу, каже, скільки триватиме дорога з урахуванням поточних заторів, і відкриває Apple Карти з готовим маршрутом. Увімкніть у Параметри → Інструменти телефона → Карти. Потрібен плагін Redde 1.30."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体会查找附近的地点，告诉你按当前路况路上要多久，并打开 Apple 地图，随时出发。在设置 → 手机工具 → 地图中开启。需要Redde插件1.30。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理會查找附近的地點，告訴你依目前路況路上要多久，並打開 Apple 地圖，隨時出發。在「設定」→「手機工具」→「地圖」中開啟。需要 Redde 外掛 1.30。"
+          }
+        }
+      }
+    },
     "Your agent has %lld ideas for you" : {
       "localizations" : {
         "da" : {
@@ -516934,6 +518218,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在機器人的聊天中，你的對話框和按鈕會採用它的顏色；Redde 自己的聊天則會採用其臉孔的顏色（如果有的話）。群組聊天維持主題的顏色。"
+          }
+        }
+      }
+    },
+    "Your chat list starts with what needs you: your next event, approvals, what's working and unread, and your bots. Today, Planned, Board and Made are pages of their own, and Today has a Calendar tile." : {
+      "comment" : "What's New 2.6: the drawer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din chatliste starter med det, der har brug for dig: din næste begivenhed, godkendelser, det, der arbejder og er ulæst, og dine bots. I dag, Planlagt, Tavle og Lavet er egne sider, og I dag har et Kalender-felt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Chatliste beginnt mit dem, was dich braucht: dein nächster Termin, Genehmigungen, was gerade arbeitet und was ungelesen ist, und deine Bots. „Heute“, „Geplant“, „Board“ und „Erstellt“ sind eigene Seiten, und „Heute“ hat eine Kalender-Kachel."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu lista de chats empieza por lo que te necesita: tu próximo evento, las aprobaciones, lo que está trabajando y lo no leído, y tus bots. Hoy, Planificado, Tablero y Creaciones son páginas propias, y Hoy tiene un mosaico de Calendario."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre liste de discussions commence par ce qui vous attend : votre prochain événement, les approbations, ce qui est en cours et non lu, et vos bots. Aujourd’hui, Prévu, Tableau et Créations ont chacun leur page, et Aujourd’hui a une tuile Calendrier."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'elenco delle chat inizia da ciò che tocca a te: il tuo prossimo evento, le approvazioni, ciò che è al lavoro e non letto, e i tuoi bot. Oggi, Pianificato, Bacheca e Creati hanno pagine tutte loro, e Oggi ha un riquadro Calendario."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チャットリストの先頭に、対応が必要なものが並びます：次の予定、承認、作業中と未読のもの、そしてボット。「今日」「予定済み」「ボード」「作成物」はそれぞれ専用のページになり、「今日」には「カレンダー」タイルがあります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "채팅 목록은 확인이 필요한 항목부터 시작합니다: 다음 일정, 승인, 작업 중인 항목과 읽지 않은 항목, 그리고 봇. 오늘, 계획됨, 보드, 만든 항목은 각각 별도의 페이지가 되었고, 오늘에는 캘린더 타일이 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chattelisten din starter med det som trenger deg: den neste hendelsen din, godkjenninger, det som jobber og er ulest, og botene dine. I dag, Planlagt, Tavle og Laget er egne sider, og I dag har en Kalender-flis."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je chatlijst begint met wat jou nodig heeft: je volgende afspraak, goedkeuringen, wat bezig en ongelezen is, en je bots. Vandaag, Gepland, Bord en Gemaakt zijn eigen pagina's, en Vandaag heeft een Agenda-tegel."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista czatów zaczyna się od tego, co czeka na Ciebie: najbliższego wydarzenia, zatwierdzeń, tego, co trwa i jest nieprzeczytane, oraz Twoich botów. Dzisiaj, Zaplanowane, Tablica i Utworzone mają własne strony, a Dzisiaj ma kafelek Kalendarz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua lista de conversas começa pelo que precisa de você: seu próximo evento, aprovações, o que está em andamento e não lido, e seus bots. Hoje, Planejado, Quadro e Criações têm páginas próprias, e Hoje tem um bloco de Calendário."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список чатов начинается с того, что ждёт вас: ближайшее событие, одобрения, то, что выполняется и не прочитано, и ваши боты. «Сегодня», «Запланировано», «Доска» и «Созданное» стали отдельными страницами, а в «Сегодня» есть плитка «Календарь»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din chattlista börjar med det som behöver dig: din nästa händelse, godkännanden, det som pågår och är oläst, och dina bottar. Idag, Planerat, Tavla och Skapat är egna sidor, och Idag har en Kalender-ruta."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sohbet listeniz size ihtiyaç duyanlarla başlar: sıradaki etkinliğiniz, onaylar, çalışanlar ve okunmamışlar, ve botlarınız. Bugün, Planlananlar, Pano ve Üretilenler artık ayrı sayfalar ve Bugün'de bir Takvim kutucuğu var."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список чатів починається з того, що потребує вас: наступна подія, схвалення, те, що працює, і непрочитане, а також ваші боти. «Сьогодні», «Заплановане», «Дошка» і «Створене» тепер окремі сторінки, а в «Сьогодні» є плитка «Календар»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的聊天列表从需要你处理的内容开始：下一个日程、批准、工作中和未读的内容，以及你的机器人。“今天”、“计划中”、“看板”和“成果”各有独立页面，“今天”还有“日历”卡片。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的聊天列表從需要你處理的內容開始：下一個行程、核准、工作中和未讀的內容，以及你的機器人。「今天」、「已規劃」、「看板」和「成果」各有獨立頁面，「今天」還有「行事曆」卡片。"
           }
         }
       }
@@ -520771,6 +522162,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的收件匣 · %@"
+          }
+        }
+      }
+    },
+    "Your inbox in seven piles, with Receipts, Notifications and Promotions, and up to eight of your own in Settings → Email → Piles. It takes the Redde plugin 1.31." : {
+      "comment" : "What's New 2.6: inbox piles",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din indbakke i syv bunker med Kvitteringer, Meddelelser og Kampagner, og op til otte af dine egne i Indstillinger → E-mail → Bunker. Det kræver Redde-plugin 1.31."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Posteingang in sieben Stapeln, mit „Belege“, „Mitteilungen“ und „Werbung“, und bis zu acht eigenen unter Einstellungen → E-Mail → Stapel. Dafür braucht es das Redde-Plugin 1.31."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu bandeja de entrada en siete montones, con Recibos, Notificaciones y Promociones, y hasta ocho propios en Ajustes → Correo → Montones. Necesita el plugin de Redde 1.31."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre boîte de réception en sept piles, dont Reçus, Notifications et Promotions, et jusqu’à huit piles à vous dans Réglages → E-mail → Piles. Il faut le plugin Redde 1.31."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La posta in arrivo in sette categorie, tra cui Ricevute, Notifiche e Promozioni, e fino a otto tue in Impostazioni → Email → Categorie. Serve il plugin Redde 1.31."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "受信トレイを7つの分類に整理します。「領収書」「通知」「プロモーション」があり、設定 → メール → 分類で独自の分類を最大8つ追加できます。Reddeプラグイン1.31が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "받은 편지함이 영수증, 알림, 프로모션을 포함한 7개 묶음으로 나뉘며, 설정 → 이메일 → 묶음에서 나만의 묶음을 최대 8개까지 추가할 수 있습니다. Redde 플러그인 1.31이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innboksen din i sju bunker, med Kvitteringer, Varslinger og Kampanjer, og opptil åtte egne i Innstillinger → E-post → Bunker. Det krever Redde-tillegget 1.31."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je inbox in zeven stapels, met Bonnetjes, Meldingen en Promoties, en tot acht eigen stapels in Instellingen → E-mail → Stapels. Hiervoor is de Redde-plug-in 1.31 nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skrzynka odbiorcza w siedmiu stosach, w tym Paragony, Powiadomienia i Oferty, oraz do ośmiu własnych w Ustawienia → E-mail → Stosy. Wymaga wtyczki Redde 1.31."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua caixa de entrada em sete pilhas, com Recibos, Notificações e Promoções, e até oito suas em Ajustes → E-mail → Pilhas. Requer o plugin do Redde 1.31."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Входящие в семи категориях, включая «Чеки», «Уведомления» и «Промоакции», и до восьми своих в «Настройки» → «Почта» → «Категории». Нужен плагин Redde 1.31."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din inkorg i sju högar, med Kvitton, Notiser och Kampanjer, och upp till åtta egna i Inställningar → E-post → Högar. Det kräver Redde-tillägget 1.31."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gelen kutunuz yedi yığında: Makbuzlar, Bildirimler ve Promosyonlar dahil; Ayarlar → E-posta → Yığınlar'da sekiz taneye kadar kendi yığınınızı da ekleyin. Redde eklentisi 1.31 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваші вхідні в семи категоріях, серед них «Чеки», «Сповіщення» й «Акції», плюс до восьми власних у Параметри → Пошта → Категорії. Потрібен плагін Redde 1.31."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的收件箱分为七个类别，包括“收据”、“通知”和“促销”，还可在设置 → 邮件 → 类别中添加最多八个自定义类别。需要Redde插件1.31。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的收件匣分為七個類別，包括「收據」、「通知」和「促銷」，還可在「設定」→「郵件」→「類別」中加入最多八個自訂類別。需要 Redde 外掛 1.31。"
           }
         }
       }
