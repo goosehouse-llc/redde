@@ -197,6 +197,131 @@ What was tried and dropped:
   "Show earlier" sooner: the owner's call.
 - `xctrace record` hung again on the simulator; `sample <pid>` with the tour works.
 
+## 2026-11-15: second round of fixes
+
+A simulator of its own (iPhone 18 Pro Max, iOS 27.0), Debug `-O` builds frozen per commit, a
+fresh install for each tour, the builds alternated (A, B, A, B …) and each run started only once
+the one-minute load was under 10–12. The Mac was busy all day (Sophos, PerfPowerServices, a
+shader compile that took the load past 100), so every number below is slower than the same
+step on 11-11/11-12; compare the columns of one table, not a column with the tables above.
+Medians of four runs unless a table says otherwise, worst frame then ms late in all. **All of these were taken under load:**
+each tour started with the one-minute load at 8–12 (an idle Mac is ~2), finished at 8–24,
+and one (the first base tour of the last table) finished at 86 when a shader compile started
+mid-tour; it is kept in the medians and is not an outlier among them.
+
+The tour now counts things per step (`FrameMonitor.count`, shown as `[name n]` after a step):
+`flush` (streamed updates applied), `list body` (the chat list's body worked out again) and
+`copy ms` (Keep a Copy's refresh). `-echo.tour calendar` opens a new conversation three times
+and refreshes Keep a Copy three times, with the calendar and reminders allowed;
+`-echo.demoCalendarEvents 400` puts 400 events on the simulator's calendar first.
+
+**Was streaming slower than on 11-12? No.** 269b8ac (11-12) and 175f83a (today's base) built
+the same way, alternated, four tours each:
+
+| Step | 11-12 build | 11-15 base |
+|---|---:|---:|
+| streaming | 27 / 254 | 20 / 183 |
+| streaming to the end | 119 / 779 | 127 / 856 |
+| second reply | 83 / 1,416 | 76 / 1,428 |
+| focus the composer | 570 / 606 | 664 / 694 |
+| open the list | 154 / 166 | 186 / 190 |
+| open a short conversation | 104 / 110 | 132 / 134 |
+| open Settings | 384 / 384 | 351 / 356 |
+
+The 11-12 build is as slow today as the base: the streaming numbers being above the 11-11 table
+is this Mac, not the code. The screens shown for the first time (composer, list, short
+conversation) are 10–25% slower on the base, within run-to-run noise for the composer.
+
+**1. The hidden chat list followed every streamed update when bots were set up.** Each bot's
+row asked `ChatActivity.messaging`, which read the open conversation's last message's tools, so
+the list's body ran once per flush (255 bodies for 254 flushes in the second reply).
+`Conversation.messagingTargets` is now kept with the header and changes only when a new target
+appears. `-echo.tour -echo.demoBots`:
+
+| Step | before | after | list bodies |
+|---|---:|---:|---:|
+| thinking | 22 / 120 | 17 / 17 | 24 → 0 |
+| streaming | 26 / 439 | 19 / 103 | 62 → 0 |
+| scroll while streaming | 20 / 274 | 18 / 51 | 52 → 0 |
+| streaming to the end | 106 / 1,238 | 138 / 612 | 116 → 2 |
+| second reply | 49 / 2,002 | 76 / 800 | 255 → 2 |
+
+The worst single frame of the last two steps went up in these runs (ranges 63–142 → 83–158 and
+35–73 → 68–107); the total halved. Nothing else changed.
+
+**2. Phone tools ran on the main actor.** `DeviceToolRunner.run` is `@concurrent`, the
+calendar, reminders, photos and dates are read off the main actor, the date formatters are
+kept (one per time zone, behind a lock), and the copy's JSON is encoded off the main actor.
+
+**3. Every calendar read made a new `EKEventStore`.** `CalendarReader` is one store, kept
+until the calendar or reminders permission changes, read off the main actor; it passes on
+Calendar's changes once per half second (`CalendarReader.changed`). The start screen's next
+event, Up Next, the calendar colours, the day brief, Leave-By Alerts, the calendar attachment,
+pinned reminders and the phone tools all use it. Calendar tour, 400 events, four runs, worst
+frame of each of the three times:
+
+| Step | before fix 2 | fix 2 | fix 3 |
+|---|---:|---:|---:|
+| new conversation (×3) | 146, 142, 153 | 156, 120, 148 | 97, 79, 72 |
+| Keep a Copy (×3) | 396, 404, 400 | 0, 0, 0 | 0, 0, 0 |
+| Keep a Copy refresh took | 406, 406, 395 ms | 232, 214, 188 ms | 140, 89, 84 ms |
+
+Keep a Copy froze the screen for ~0.4 s each time; now it doesn't freeze at all and finishes
+in under a tenth of a second once the store is warm.
+
+**4. A reply's end was read ~80 times on the main actor.** `FollowUps.listedOptions`,
+`worthSuggesting` and `kind` each made the whole reply plain text again (`PlainText.display`,
+about twenty regular-expression passes, several times over). `FollowUps.decide` makes the same
+decision from one plain-text pass, off the main actor (`deciding`), and hands the kind on to
+the model. Timed in a test build (`-Onone`, median of 15): the old questions took 1.2–1.4 ms
+on the main actor for a 5,400-letter reply and 4.7–5.1 ms for a 21,500-letter one; `decide`
+takes 0.3 and 1.3 ms, now off the main actor. That is a fraction of a frame at the end of a
+reply, too little for the tour to tell apart: "streaming to the end" was 104 / 620 before and
+98 / 519 after (four runs each, ranges 73–123 and 71–116).
+
+**All four together, against the base.** Eleven tours of each, in three batches, alternated
+(the last two batches with the order turned round):
+
+| Step | 11-11 | 11-12 | 11-15 base | 11-15 fixes | Worst-frame limit | ms-late limit |
+|---|---:|---:|---:|---:|---:|---:|
+| new conversation | 132 | | 142 / 142 | 134 / 134 | 170 | |
+| focus the composer | 408 | 361 | 532 / 576 | 550 / 599 | 530 | |
+| type | 67 / 445 | – / 305 | 72 / 526 | 97 / 623 | 90 | 600 |
+| send | 110 | | 108 / 117 | 104 / 104 | 140 | |
+| streaming | 18 / 26 | | 21 / 133 | 19 / 134 | 40 | |
+| scroll while streaming | 17 / 33 | | 19 / 83 | 17 / 36 | 40 | |
+| streaming to the end | 88 / 270 | – / 212 | 88 / 379 | 106 / 637 | 130 | 400 |
+| second reply | 56 / 412 | – / 305 | 66 / 874 | 55 / 1,156 | 80 | 550 |
+| open the list | 212 | 160 | 180 | 181 | 280 | |
+| open the long one | 338 | 317 | 296 | 313 | 430 | |
+| open a short conversation | 125 | | 119 | 120 | 165 | |
+| back to the long one | 270 | 250 | 242 | 260 | 350 | |
+| open voice mode | 310 | 274 | 287 | 299 | 400 | |
+| open Settings | 440 | 387 | 346 | 347 | 560 | |
+
+- **Streaming is not slower with the fixes; this Mac is.** The totals (ms late in all) spread
+  over the same range on both builds: "streaming to the end" 165–907 on the base and 267–840
+  with the fixes, "second reply" 279–1,430 and 420–1,345. Taking a run of each at random, the
+  base's was the lower 57% and 54% of the time, so the medians' gap is noise (means 511 against
+  600, and 894 against 970). The worst frames are inside their limits on both.
+- **Over the limits today, on both builds:** focusing the composer (~550 against 530), and the
+  streaming totals (ms late in all) above. The 11-12 build gave the same numbers today, so the
+  limits stand; take the next baseline on a quiet Mac before changing them.
+- **With bots set up** (`-echo.demoBots`) the totals were 2–4 times these before fix 1, and the
+  same as these after it.
+
+What didn't pan out, or is left:
+
+- **The calendar settings list** grouped rows by title (`ForEach(id: \.title)`): two calendars
+  with one title in one account showed the first twice and hid the second, and calendars with
+  no account were left out. Both fixed (rows by `calendarIdentifier`). Nothing else hides a
+  subscribed calendar there.
+- **The calendar colours** are read off the main actor now, so the first card after launch can
+  draw a moment without its calendar's colour.
+- **The second reply** still makes 55–85 late frames for ~255 streamed updates (one every three
+  or four), each 17–20 ms late: the transcript's own cost per update, unchanged by these fixes.
+  Its total swings with the Mac's load (383 to 1,221 ms over four runs of one build).
+
 ## Limits
 
 Each limit is today's number plus about 20–30%, rounded. Where a number varied a lot between
