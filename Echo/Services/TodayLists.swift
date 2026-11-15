@@ -68,7 +68,7 @@ final class TodayLists {
     /// Apple Reminders, for `addDueReminders` (made-up ones in tests).
     @ObservationIgnored var dueReminders: (Date) async -> [DeviceCalendar.DueReminder] = { await DeviceCalendar.remindersDue(by: $0) }
     @ObservationIgnored var finishedReminders: (Set<String>) async -> Set<String> = { await DeviceCalendar.finished($0) }
-    /// Settings › Appearance › Top of the Chat List: reminders onto a list on their day, and which.
+    /// Settings › Chat List and Settings › Calendars: reminders onto a list on their day, and which.
     @ObservationIgnored var settingsStore: UserDefaults = .standard
     /// One change at a time, in the order they were made.
     @ObservationIgnored private var sending: Task<Void, Never>?

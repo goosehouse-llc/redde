@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import Testing
 @testable import Echo
 
@@ -37,7 +38,20 @@ struct UXTidyTests {
 
     @Test func theDailyJobsPageListsAllFive() {
         #expect(Set(DailyJobsView.jobs.map(\.name)).count == 5)
-        let pages = SettingsPage.allCases
-        #expect(pages.firstIndex(of: .day)! < pages.firstIndex(of: .agent)!)
+        // Your Day sits in the Your Agent group, after Agent itself (2026-11-15).
+        let pages = SettingsPage.agentPages
+        #expect(pages.firstIndex(of: .agent)! < pages.firstIndex(of: .day)!)
+    }
+
+    /// Settings' first screen (2026-11-15): every page is in one group only, Location, Email,
+    /// Phone Tools and Calendars in Your Agent, General first among the app's pages.
+    @Test func everySettingsPageHasOneHome() {
+        let app = [SettingsPage.general, .appearance, .chatList, .writing, .voice, .notifications, .carPlay, .siri]
+        let agent = SettingsPage.agentPages
+        #expect(Set(app).isDisjoint(with: agent))
+        #expect(Set(app + agent + [.connection]) == Set(SettingsPage.allCases))
+        #expect(agent.contains(.location) && agent.contains(.email) && agent.contains(.phoneTools) && agent.contains(.calendars))
+        #expect(SettingsPage.appPages.first == .general)
+        #expect(!SettingsPage.appPages.contains(.carPlay) || UIDevice.current.userInterfaceIdiom == .phone, "CarPlay is an iPhone's")
     }
 }

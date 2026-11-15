@@ -433,8 +433,7 @@ final class PromoVideoUITests: XCTestCase {
         let app = try launch(["-echo.demoPhone", "settings", "-echo.screen", "settings", "-echo.demoPlugin", "there",
                               "-theme", "claudeCode", "-appearance", "dark"])
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20))
-        app.openSettingsPage("Agent")
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Phone tools'")).firstMatch
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH[c] 'Phone tools'")).firstMatch
         for _ in 0 ..< 14 where !(row.exists && row.isHittable) { app.swipeUp() }
         hold(0.6)
         row.tap()
@@ -453,6 +452,7 @@ final class PromoVideoUITests: XCTestCase {
     func testSetUpByCode() throws {
         let app = try launch(["-echo.demo", "-echo.screen", "settings", "-theme", "claudeCode", "-appearance", "dark"])
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20))
+        app.openSettingsPage("Connection")
         let button = app.buttons["Set up another device…"].firstMatch
         for _ in 0 ..< 6 where !button.isHittable { app.swipeUp(velocity: .slow) }
         hold(1.5)

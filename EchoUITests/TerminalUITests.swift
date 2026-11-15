@@ -45,6 +45,8 @@ final class TerminalUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Agent")
         let row = app.buttons["Terminal"]
         for _ in 0 ..< 10 where !(row.exists && row.isHittable) { app.swipeUp() }
         XCTAssertTrue(row.waitForExistence(timeout: 10), "no Terminal row in Settings")

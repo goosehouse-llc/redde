@@ -95,7 +95,7 @@ enum OrbLight: String, CaseIterable, Identifiable {
 
 }
 
-/// The Voice orb rows of the Appearance section: the face (collapsed to the current orb, expands
+/// The Voice orb rows of Settings → Voice: the face (collapsed to the current orb, expands
 /// to the grid) and the light inside it.
 struct VoiceOrbSettings: View {
     @State private var settings = Settings.shared

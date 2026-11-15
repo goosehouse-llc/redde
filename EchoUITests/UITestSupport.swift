@@ -46,10 +46,11 @@ extension XCUIApplication {
 }
 
 extension XCUIApplication {
-    /// Opens one of Settings' pages (Appearance, Writing, Voice, Siri, Agent) from its first
-    /// screen, which is open already.
+    /// Opens one of Settings' pages (Connection, Agent, Phone Tools, General, Appearance, Chat
+    /// List, Replies & Writing, Voice, CarPlay, Siri…) from its first screen, which is open
+    /// already. A row with a value (Connection, Phone Tools, Calendars) reads "Title, value".
     func openSettingsPage(_ title: String, file: StaticString = #filePath, line: UInt = #line) {
-        let row = buttons.matching(NSPredicate(format: "label == %@", title)).firstMatch
+        let row = buttons.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", title, title + ", ")).firstMatch
         for _ in 0 ..< 6 where !(row.exists && row.isHittable) { swipeUp() }
         XCTAssertTrue(row.exists && row.isHittable, "No \(title) in Settings", file: file, line: line)
         row.tap()

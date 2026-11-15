@@ -235,13 +235,13 @@ final class ReplyActionsUITests: XCTestCase {
         app.terminate()
         app.launchArguments = ["-echo.screen", "settings"] + XCUIApplication.straightToChat
         app.launch()
-        let writing = app.buttons["Writing"].firstMatch
+        let writing = app.buttons["Replies & Writing"].firstMatch
         _ = app.navigationBars.firstMatch.waitForExistence(timeout: 15)
         for _ in 0 ..< 12 where !(writing.exists && writing.isHittable) { app.swipeUp() }
-        XCTAssertTrue(writing.exists, "No Writing in Settings")
+        XCTAssertTrue(writing.exists, "No Replies & Writing in Settings")
         writing.tap()
         let toggle = app.switches["Suggest Replies"].firstMatch
-        XCTAssertTrue(toggle.waitForExistence(timeout: 5), "No Suggest Replies in Writing")
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5), "No Suggest Replies in Replies & Writing")
         XCTAssertEqual(toggle.value as? String, "0", "Settings doesn't show them off")
         // Back on, as the next run expects.
         toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()

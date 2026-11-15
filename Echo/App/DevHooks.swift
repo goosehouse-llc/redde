@@ -114,9 +114,10 @@ import WidgetKit
 ///   the Heads-Ups page, where they are too.
 /// - `-echo.demoPlanned`: Planned (and Coming Up) with a made-up week, phone alarms and reminders included.
 ///   With `-echo.plannedEnd`, the page opens at its end (what is paused, All Scheduled Jobs).
-/// - `-echo.settingsAnchor [icloud|plugin|day]`: scroll Settings to the context and memory files, to iCloud,
-///   to the Redde Plugin row, or open Your Day. `-echo.screen dailyJobs|location|chatListCards` open the
-///   2.4 tidy's pages on their own.
+/// - `-echo.settingsAnchor [icloud|plugin|day|<page>]`: open Settings on Agent's context and memory files,
+///   General's Sync with iCloud, the Redde Plugin row, or any page by its `SettingsPage` name
+///   (`connection`, `general`, `chatList`, `carPlay`…). `-echo.screen dailyJobs|location|chatListCards`
+///   open the 2.4 tidy's pages on their own.
 /// - `-echo.expandAppIcons`: open Settings' app icon grid.
 /// - `-echo.draft "text"`: type a question into a focused composer (keyboard screenshots).
 ///   `-echo.clearDrafts` forgets every conversation's unsent draft first (UI tests).

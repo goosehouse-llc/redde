@@ -75,6 +75,7 @@ final class SetupCodeUITests: XCTestCase {
         continueAfterFailure = false
         let app = launch(["-echo.screen", "settings"])
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 15), "Settings didn't open")
+        app.openSettingsPage("Connection")
         let button = app.buttons["Set up another device…"].firstMatch
         for _ in 0 ..< 6 where !button.isHittable { app.swipeUp(velocity: .slow) }
         button.tap()
@@ -86,6 +87,6 @@ final class SetupCodeUITests: XCTestCase {
         XCTAssertEqual(app.switches["Include passwords and keys"].value as? String, "0")
         // (Copy link is left alone: the Simulator app mirrors its clipboard to the Mac's.)
         app.navigationBars["Set up another device"].buttons["Done"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Connection"].waitForExistence(timeout: 5))
     }
 }

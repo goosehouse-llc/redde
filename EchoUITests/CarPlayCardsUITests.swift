@@ -38,7 +38,7 @@ final class CarPlayCardsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
-        app.openSettingsPage("Appearance")
+        app.openSettingsPage("CarPlay")
         let row = app.staticTexts["CarPlay cards"]
         reach(row, in: app, "The CarPlay cards row")
         row.tap()
@@ -69,7 +69,7 @@ final class CarPlayCardsUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
-        app.openSettingsPage("Appearance")
+        app.openSettingsPage("CarPlay")
         let row = app.staticTexts["CarPlay voice screen"]
         reach(row, in: app, "The CarPlay voice screen row")
         row.tap()

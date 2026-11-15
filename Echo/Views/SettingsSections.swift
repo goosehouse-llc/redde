@@ -134,28 +134,7 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            Toggle(isOn: $settings.botPictures) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Pictures from Hermes")
-                    Text("A bot with a picture, from Change Face or Hermes Desktop, shows that picture instead of its face.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            Picker(selection: $settings.eventColor) {
-                ForEach(Settings.EventColor.allCases) { choice in
-                    if let color = choice.color {
-                        Label { Text(choice.label) } icon: { Image(systemName: "circle.fill").foregroundStyle(color) }.tag(choice)
-                    } else {
-                        Text(choice.label).tag(choice)
-                    }
-                }
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Calendar Events")
-                    Text("On a calendar card: each calendar in its own color, or every event in one.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            }
+            // Pictures from Hermes: Settings → Replies & Writing. Calendar Events: Settings → Calendars.
             Picker(selection: $settings.cardColor) {
                 ForEach(Settings.CardColor.allCases) { choice in
                     if let color = choice.color(in: active) {
@@ -206,59 +185,11 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            // What the chat list shows above the conversations (GitHub issue 32).
-            if BotDirectory.reachable(settings) {
-                Toggle(isOn: $settings.showBots) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Bots in the chat list")
-                        Text("Your server's bots and group chats, at the top of the list.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            if settings.transport == .hermesServe {
-                Toggle(isOn: $settings.projectsInChatList) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Projects in the chat list")
-                        Text("Your Hermes projects, above the conversations. Off, their conversations are still in the list.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            // Pinned, Inbox, Goals, Ideas and Briefings (2.4 tidy): which of them show.
-            NavigationLink { ChatListCardsSettingsView() } label: {
-                LabeledContent {
-                    let shown = ChatListCard.allCases.filter(\.isShown).count
-                    shown == ChatListCard.allCases.count ? Text("All", comment: "Settings › Top of the Chat List: every card shows")
-                        : shown == 0 ? Text("None", comment: "Settings › Top of the Chat List: no card shows")
-                        : Text("\(shown) of \(ChatListCard.allCases.count)", comment: "Settings › Top of the Chat List: how many cards show, e.g. 3 of 5")
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Top of the Chat List", comment: "Settings › Appearance: which cards show above the conversations")
-                        Text("Pinned cards, your Inbox, Goals, Ideas and Briefings.", comment: "Settings › Appearance: under Top of the Chat List")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            Toggle(isOn: $settings.linkPreviews) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Link previews")
-                    Text("A card with the page's title and picture under a message with a link, and pictures on purchase, recipe and show cards. To get them, Redde opens the page or the picture itself, so the site sees the visit. Off, Redde only talks to your own servers.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            }
+            // What the chat list shows (bots, projects, the cards above the conversations):
+            // Settings → Chat List. Link previews: Replies & Writing. The voice orb: Voice. The
+            // CarPlay looks: CarPlay (2026-11-15).
             #if os(iOS)
             AppIconSettings()
-            #endif
-            VoiceOrbSettings()
-            #if os(iOS)
-            // An iPad has no CarPlay.
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                CarPlayCardSettings()
-                CarPlayVoiceSettings()
-                // The Bots tab is there with Bots on the Dashboard (or the Hermes API through its login).
-                if BotDirectory.available(settings) { CarPlayBotSettings() }
-            }
             #endif
         } header: {
             Text("Appearance")
@@ -318,9 +249,9 @@ struct ComposerSettings: View {
             // On even with no model: a reply that lists choices still gets them as chips.
             Toggle("Suggest Replies", isOn: $settings.suggestFollowUps)
             if settings.suggestFollowUps, fastLaneSet, FollowUps.onDeviceAvailable {
-                Picker(String(localized: "Written By", comment: "Settings › Writing: which model writes the suggested replies, this device's (Apple Intelligence) or the OpenAI-compatible connection's"),
+                Picker(String(localized: "Written By", comment: "Settings › Replies & Writing: which model writes the suggested replies, this device's (Apple Intelligence) or the OpenAI-compatible connection's"),
                        selection: $settings.suggestionsFromFastLane) {
-                    Text(String(localized: "This Device", comment: "Settings › Writing › Written By: suggested replies written by Apple Intelligence on this device")).tag(false)
+                    Text(String(localized: "This Device", comment: "Settings › Replies & Writing › Written By: suggested replies written by Apple Intelligence on this device")).tag(false)
                     Text(verbatim: settings.fastLaneModel).tag(true)
                 }
             }
@@ -331,9 +262,45 @@ struct ComposerSettings: View {
             case .onDevice:
                 Text("Three things you might send next under each reply, written on this device by Apple Intelligence. Nothing is sent anywhere to write them.")
             case .fastLane:
-                Text(String(localized: "Three things you might send next under each reply, written by the model on your OpenAI-compatible connection, which is sent the reply to write them.", comment: "Settings › Writing footer: suggested replies come from the fast-lane model"))
+                Text(String(localized: "Three things you might send next under each reply, written by the model on your OpenAI-compatible connection, which is sent the reply to write them.", comment: "Settings › Replies & Writing footer: suggested replies come from the fast-lane model"))
             case .none:
-                Text(String(localized: "A reply that lists choices and asks which one shows them under it, to tap. For suggestions under every reply, turn on Apple Intelligence or set up an OpenAI-compatible connection.", comment: "Settings › Writing footer: no model can write suggested replies on this device"))
+                Text(String(localized: "A reply that lists choices and asks which one shows them under it, to tap. For suggestions under every reply, turn on Apple Intelligence or set up an OpenAI-compatible connection.", comment: "Settings › Replies & Writing footer: no model can write suggested replies on this device"))
+            }
+        }
+        // What comes under a reply: cards, maps and their units (on Settings → Agent until 2026-11-15).
+        Section {
+            Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {
+                Label("Cards in replies", systemImage: "map")
+            }
+            Toggle(isOn: Binding(get: { Settings.shared.addressMaps }, set: { Settings.shared.addressMaps = $0 })) {
+                Label("Maps for addresses", systemImage: "mappin.and.ellipse")
+            }
+            Picker(selection: Binding(get: { Settings.shared.measureUnits }, set: { Settings.shared.measureUnits = $0 })) {
+                Text(MeasureUnits.usesUS(.automatic) ? String(localized: "Automatic (US)") : String(localized: "Automatic (Metric)"))
+                    .tag(MeasureUnits.automatic)
+                Text("US (miles, °F)").tag(MeasureUnits.us)
+                Text("Metric (km, °C)").tag(MeasureUnits.metric)
+            } label: {
+                Label("Units", systemImage: "ruler")
+            }
+        } footer: {
+            Text("Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter. With Maps for addresses on, a reply or a heads-up that names a street address gets a map of it, found by Apple Maps.")
+        }
+        // Pictures in the chat that come from elsewhere (on Settings → Appearance until 2026-11-15).
+        Section {
+            Toggle(isOn: $settings.linkPreviews) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Link previews")
+                    Text("A card with the page's title and picture under a message with a link, and pictures on purchase, recipe and show cards. To get them, Redde opens the page or the picture itself, so the site sees the visit. Off, Redde only talks to your own servers.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Toggle(isOn: $settings.botPictures) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Pictures from Hermes")
+                    Text("A bot with a picture, from Change Face or Hermes Desktop, shows that picture instead of its face.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
         }
         Section {
@@ -352,15 +319,16 @@ struct ComposerSettings: View {
     }
 }
 
-/// Which Hermes server and profile Redde talks to: near the top of Settings, since they decide
-/// whose sessions, skills and memory everything below shows. Hidden on the OpenAI-compatible
-/// connection.
-struct ProfileSettings: View {
+/// The first screen's Connection group: which Hermes server and profile Redde talks to (hidden on
+/// the OpenAI-compatible connection), since they decide whose sessions, skills and memory
+/// everything below shows, and the Connection page, its row saying which connection is in use.
+/// The model rows follow it (`ModelSettings`).
+struct ConnectionGroup: View {
     @State private var settings = Settings.shared
 
     var body: some View {
-        if settings.transport != .chatCompletions {
-            Section {
+        Section {
+            if settings.transport != .chatCompletions {
                 NavigationLink { ServersView() } label: {
                     LabeledContent {
                         Text(settings.activeServer?.title ?? "").foregroundStyle(.secondary).lineLimit(1)
@@ -377,18 +345,74 @@ struct ProfileSettings: View {
                         }
                     }
                 }
-            } header: {
-                settings.transport == .acp ? Text("Agent", comment: "Settings: the section of the ACP agent's server") : Text("Hermes server")
-            } footer: {
-                settings.transport == .acp
-                ? Text("The computer Redde reaches the agent on, through the Redde bridge. Chats are the agent's own: it keeps them, and they show on every device.",
-                       comment: "Settings: footer of the ACP agent's server section")
-                : Text(String(localized: "The server and agent profile Redde talks to. Chats, skills, tools, cron jobs and memory all follow them.")
-                     + (BotDirectory.reachable(settings)
-                        ? " " + String(localized: "Bots are your other profiles, as Hermes Desktop shows them: each has one chat of its own, listed under Bots once the server has more than one profile.")
-                            + (settings.transport == .hermesSessions ? " " + String(localized: "On the Hermes API they go by the Dashboard's login.") : "")
-                        : ""))
             }
+            NavigationLink(value: SettingsPage.connection) {
+                LabeledContent {
+                    Text(settings.transport.name).foregroundStyle(.secondary).lineLimit(1)
+                } label: {
+                    Label(SettingsPage.connection.title, systemImage: SettingsPage.connection.symbol)
+                }
+            }
+        } header: {
+            Text("Connection", comment: "Settings: header of the group of the server, the profile, the connection and the model")
+        } footer: {
+            VStack(alignment: .leading, spacing: 6) {
+                if settings.transport == .acp {
+                    Text("The computer Redde reaches the agent on, through the Redde bridge. Chats are the agent's own: it keeps them, and they show on every device.",
+                         comment: "Settings: footer of the ACP agent's server section")
+                } else if settings.transport != .chatCompletions {
+                    Text(String(localized: "The server and agent profile Redde talks to. Chats, skills, tools, cron jobs and memory all follow them.")
+                         + (BotDirectory.reachable(settings)
+                            ? " " + String(localized: "Bots are your other profiles, as Hermes Desktop shows them: each has one chat of its own, listed under Bots once the server has more than one profile.")
+                                + (settings.transport == .hermesSessions ? " " + String(localized: "On the Hermes API they go by the Dashboard's login.") : "")
+                            : ""))
+                }
+                // Kept in sight while the server is used with no sign-in (asked 2026-10-30): here
+                // and on the Connection page.
+                if settings.serveOpenAccess, settings.serveUsername.isEmpty, !settings.serveURL.isEmpty {
+                    Label(DashboardFormMode.openWarning, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
+        }
+    }
+}
+
+/// The first screen's Your Agent group: what the agent knows and does, Redde's plugin on the
+/// server, and what of this device it may use (Email, Phone Tools and Calendars were rows of
+/// Settings → Agent, and Location of Your Day, until 2026-11-15).
+struct AgentGroup: View {
+    @State private var settings = Settings.shared
+
+    var body: some View {
+        Section {
+            ForEach(SettingsPage.agentPages) { page in
+                NavigationLink(value: page) {
+                    switch page {
+                    case .phoneTools:
+                        LabeledContent {
+                            settings.phoneTools.on ? Text("On") : Text("Off")
+                        } label: {
+                            Label(page.title, systemImage: page.symbol)
+                        }
+                    case .calendars:
+                        LabeledContent {
+                            (settings.agendaCalendars.isEmpty ? Text("All") : Text(settings.agendaCalendars.joined(separator: ", "))).lineLimit(1)
+                        } label: {
+                            Label(page.title, systemImage: page.symbol)
+                        }
+                    default:
+                        Label(page.title, systemImage: page.symbol)
+                    }
+                }
+                // A row of its own, not inside Agent (asked 2026-10-23): it is on the server, and
+                // much of Redde comes through it.
+                if page == .agent {
+                    ReddePluginLink().id("plugin")
+                }
+            }
+        } header: {
+            Text("Your Agent", comment: "Settings: header of the group of the agent's pages (Agent, Redde Plugin, Your Day, Email, Phone Tools, Calendars, Location)")
         }
     }
 }
@@ -441,8 +465,6 @@ struct TransportSettings: View {
             Button("Set up connection…", systemImage: "network") { showSetup = true }
             Button("Set up another device…", systemImage: "qrcode") { sharing = settings.activeServer }
                 .sheet(item: $sharing) { SetupCodeView(server: $0) }
-        } header: {
-            Text("Connection")
         } footer: {
             // Kept in sight while the server is used with no sign-in (asked 2026-10-30).
             if settings.serveOpenAccess, settings.serveUsername.isEmpty, !settings.serveURL.isEmpty {
@@ -453,7 +475,7 @@ struct TransportSettings: View {
     }
 }
 
-/// The model and reasoning effort, per transport.
+/// The model and reasoning effort, per transport: the end of the first screen's Connection group.
 struct ModelSettings: View {
     @State private var settings = Settings.shared
 
@@ -462,8 +484,10 @@ struct ModelSettings: View {
             NavigationLink {
                 ModelPickerView(fromSettings: true)
             } label: {
-                LabeledContent("Model") {
+                LabeledContent {
                     Text(modelSummary).foregroundStyle(.secondary).lineLimit(1)
+                } label: {
+                    Label("Model", systemImage: "cpu")
                 }
             }
             // Keys, endpoints, the default, fallback and helper models on the server (2026-11-11).
@@ -471,11 +495,9 @@ struct ModelSettings: View {
                 NavigationLink {
                     ModelsProvidersView(profile: settings.profileName ?? "default", owner: settings.headerTitle)
                 } label: {
-                    Text("Models & Providers")
+                    Label("Models & Providers", systemImage: "square.stack.3d.up")
                 }
             }
-        } header: {
-            Text("Model")
         } footer: {
             if settings.transport != .chatCompletions {
                 Text("Each conversation has its own model, picked from its menu. Without one, it runs on the model your server is set to, or a bot's chat on the bot's own.",
@@ -492,7 +514,7 @@ struct ModelSettings: View {
     }
 }
 
-/// Settings → Your Day → Location → Current Location (`CurrentLocation`, asked 2026-10-30): the switch, and
+/// Settings → Location → Current Location (`CurrentLocation`, asked 2026-10-30): the switch, and
 /// under it, while on, what the agent hears, or that the device doesn't allow it, with the way to
 /// Settings. Turning it on asks for the permission the first time.
 struct CurrentLocationSection: View {
@@ -518,20 +540,20 @@ struct CurrentLocationSection: View {
         Group {
             if service.refused {
                 Button(String(localized: "Redde isn't allowed your location. Open Settings…",
-                              comment: "Settings → Your Day → Location → Current Location, when location is denied for Redde")) {
+                              comment: "Settings → Location → Current Location, when location is denied for Redde")) {
                     if let url = URL(string: Self.settingsLink) { openURL(url) }
                 }
             } else if let kept = service.kept {
                 let place = kept.words ?? String(format: "%.3f, %.3f", kept.latitude, kept.longitude)
                 Label {
-                    Text("Your agent hears “near \(place)”.", comment: "Settings → Your Day → Location → Current Location: the place the agent is told, e.g. near Thornton Park, Orlando, FL")
+                    Text("Your agent hears “near \(place)”.", comment: "Settings → Location → Current Location: the place the agent is told, e.g. near Thornton Park, Orlando, FL")
                 } icon: {
                     Image(systemName: "location.fill").foregroundStyle(.tint)
                 }
                 .foregroundStyle(.secondary)
             } else if service.allowed || service.finding {
                 Label {
-                    Text("Finding where you are…", comment: "Settings → Your Day → Location → Current Location, while the first fix is found")
+                    Text("Finding where you are…", comment: "Settings → Location → Current Location, while the first fix is found")
                 } icon: {
                     ProgressView().controlSize(.small)
                 }
@@ -553,7 +575,7 @@ struct CurrentLocationSection: View {
     }
 }
 
-/// Settings → Your Day → Location → Leave-By Alerts (`LeaveBy`, asked 2026-10-30), and the Heads-Ups page under
+/// Settings → Location → Leave-By Alerts (`LeaveBy`, asked 2026-10-30), and the Heads-Ups page under
 /// Getting There: the switch; under it, while on, the way of getting about (`showsWay`) and the
 /// next alert, or what the device doesn't allow, with the way to Settings. Turning it on asks for
 /// what it needs (`LeaveByAlerts.turned`).
@@ -691,55 +713,9 @@ struct AgentSettings<Details: View>: View {
             Text("When an agent needs a key, it asks here, not in a chat. What you paste goes sealed straight into that profile's .env on your Hermes.")
         }
 
-        // The day's jobs, goals, watches, location and approvals: Settings → Your Day (`YourDaySettings`).
-
-        Section {
-            // Email (2.4): the accounts on the Hermes, the Inbox, the rules.
-            NavigationLink { MailSettingsView() } label: {
-                Label { Text("Email", comment: "Settings › Agent › Email") } icon: { Image(systemName: "envelope") }
-            }
-            NavigationLink { PhoneToolsSettingsView() } label: {
-                LabeledContent {
-                    Settings.shared.phoneTools.on ? Text("On") : Text("Off")
-                } label: {
-                    Label("Phone tools", systemImage: "iphone.gen3")
-                }
-            }
-        } footer: {
-            Text("Let your agent use this device's calendar, reminders, contacts, photos and a folder of files, set alarms, write on a widget, and start calls and messages, through Redde.")
-        }
-
-        // Which calendars the agent looks at and cards show (`CalendarChoice`, asked 2026-10-30).
-        Section {
-            NavigationLink { CalendarsSettingsView() } label: {
-                LabeledContent {
-                    (Settings.shared.agendaCalendars.isEmpty ? Text("All") : Text(Settings.shared.agendaCalendars.joined(separator: ", "))).lineLimit(1)
-                } label: {
-                    Label("Calendars", systemImage: "calendar")
-                }
-            }
-        } footer: {
-            Text("The calendars your agent looks at when you ask what's on, and the events calendar cards show.")
-        }
-
-        Section {
-            Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {
-                Label("Cards in replies", systemImage: "map")
-            }
-            Toggle(isOn: Binding(get: { Settings.shared.addressMaps }, set: { Settings.shared.addressMaps = $0 })) {
-                Label("Maps for addresses", systemImage: "mappin.and.ellipse")
-            }
-            Picker(selection: Binding(get: { Settings.shared.measureUnits }, set: { Settings.shared.measureUnits = $0 })) {
-                Text(MeasureUnits.usesUS(.automatic) ? String(localized: "Automatic (US)") : String(localized: "Automatic (Metric)"))
-                    .tag(MeasureUnits.automatic)
-                Text("US (miles, °F)").tag(MeasureUnits.us)
-                Text("Metric (km, °C)").tag(MeasureUnits.metric)
-            } label: {
-                Label("Units", systemImage: "ruler")
-            }
-        } footer: {
-            Text("Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter. With Maps for addresses on, a reply or a heads-up that names a street address gets a map of it, found by Apple Maps.")
-        }
+        // The day's jobs, goals, watches and approvals: Settings → Your Day (`YourDaySettings`).
+        // Email, Phone Tools and Calendars: pages of their own on the first screen; cards, maps
+        // and units in replies: Settings → Replies & Writing (2026-11-15).
 
         Section {
             if !canEditFiles { filesLocked }
@@ -900,6 +876,17 @@ struct VoiceSettings: View {
                     : String(localized: "Voice mode is a \($0.name) call: \($0.company)'s voice talks and listens at once, and hands anything real to your agent. Bots can have their own (Edit Bot → Voice).") }
                  ?? String(localized: "Your iPhone listens, your agent answers, and the reading voice below reads the answer out. Or make voice mode a live call with GPT-Live, Gemini Live, Grok Voice or ElevenLabs. Bots can have their own (Edit Bot → Voice)."))
         }
+        // Next to voice mode, as answering one is a call with your agent (under Notifications
+        // until 2026-11-15). A Mac has no CallKit.
+        #if os(iOS)
+        Section {
+            NavigationLink { AgentCallsSettingsView() } label: {
+                LabeledContent("Calls from Agents", value: settings.agentCalls ? String(localized: "On") : String(localized: "Off"))
+            }
+        } footer: {
+            Text(String(localized: "An agent you allow rings this device like a phone call when something shouldn't wait.", comment: "Footer under Calls from Agents, in Settings › Voice (an iPhone or an iPad)"))
+        }
+        #endif
         Section {
             Picker("Reading voice", selection: $settings.replyVoice) {
                 Text("On-device").tag(Settings.ReplyVoice.onDevice)
@@ -1067,23 +1054,22 @@ struct VoiceSettings: View {
                     ? " " + String(localized: "“Nod or shake to answer” adds your head, with AirPods that sense movement (AirPods Pro, AirPods Max, AirPods 3 or later): once the request has been read out, nod a couple of times to approve, or shake your head to deny. iOS asks for Motion & Fitness when you turn it on; the movement is read on this device and kept nowhere.")
                     : ""))
         }
-        // An iPad has no car.
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            Section {
-                Toggle(isOn: $settings.stopAndSkipInCar) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Stop and Skip in the car")
-                        Text("While Redde speaks in the car, say “stop” to end the reply, or “skip” to jump to its end.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                Toggle("Short answers in the car", isOn: $settings.shortAnswersInCar)
-            } header: {
-                Text("In the car")
-            } footer: {
-                Text("“Stop and Skip in the car” listens for two words alone while Redde speaks: “stop”, which ends the reply as a stop phrase does, and “skip”, which jumps to its end (hands-free then listens for what's next). The car's speakers sit near its microphone, so it is off until you turn it on. “Short answers in the car”: a question asked by voice while your iPhone is connected to a car asks your agent for two or three sentences and to offer the rest; say “more” and it carries on. On the Hermes Dashboard connection the request is a line added to your message, which other apps on the same server will show.")
-            }
+        // How voice mode looks (on Settings → Appearance until 2026-11-15). The car's own
+        // settings: Settings → CarPlay; where Redde opens: Settings → General.
+        Section {
+            VoiceOrbSettings()
         }
+    }
+}
+
+/// Settings → General: where Redde opens (from Voice), Sync with iCloud, the lock, and erasing
+/// everything, at the bottom (from the first screen, 2026-11-15).
+struct GeneralSettings: View {
+    /// Closes Settings after erasing (this page's own dismiss would only go back a page).
+    let closeSettings: () -> Void
+    @State private var settings = Settings.shared
+
+    var body: some View {
         Section {
             Picker("When Redde opens", selection: $settings.launchScreen) {
                 Text("Last conversation").tag(Settings.LaunchScreen.conversation)
@@ -1100,8 +1086,42 @@ struct VoiceSettings: View {
         } footer: {
             Text("Where Redde starts: your last conversation, the conversation list, or voice mode. “Listen whenever Redde opens” starts the mic as well, so “Hey Siri, open Redde” goes straight to listening.")
         }
+        ICloudSettings()
+        LockSettings()
+        ResetSettings(closeSettings: closeSettings)
     }
 }
+
+#if os(iOS)
+/// Settings → CarPlay (2026-11-15), an iPhone's only: how the car's screens look (from
+/// Appearance) and what Redde does in the car (from Voice).
+struct CarPlaySettings: View {
+    @State private var settings = Settings.shared
+
+    var body: some View {
+        Section {
+            CarPlayCardSettings()
+            CarPlayVoiceSettings()
+            // The Bots tab is there with Bots on the Dashboard (or the Hermes API through its login).
+            if BotDirectory.available(settings) { CarPlayBotSettings() }
+        }
+        Section {
+            Toggle(isOn: $settings.stopAndSkipInCar) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Stop and Skip in the car")
+                    Text("While Redde speaks in the car, say “stop” to end the reply, or “skip” to jump to its end.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Toggle("Short answers in the car", isOn: $settings.shortAnswersInCar)
+        } header: {
+            Text("In the car")
+        } footer: {
+            Text("“Stop and Skip in the car” listens for two words alone while Redde speaks: “stop”, which ends the reply as a stop phrase does, and “skip”, which jumps to its end (hands-free then listens for what's next). The car's speakers sit near its microphone, so it is off until you turn it on. “Short answers in the car”: a question asked by voice while your iPhone is connected to a car asks your agent for two or three sentences and to offer the rest; say “more” and it carries on. On the Hermes Dashboard connection the request is a line added to your message, which other apps on the same server will show.")
+        }
+    }
+}
+#endif
 
 /// Settings → Notifications: what Redde tells you while you're elsewhere, and how. Under Voice
 /// until 2026-10-26, when that page was split up ("there are a ton of voice settings now").
@@ -1132,15 +1152,7 @@ struct NotificationSettings: View {
         } footer: {
             Text(String(localized: "Your Hermes sends them instead once Redde is closed, to each iPhone, iPad and Mac you pair.", comment: "Footer under Alerts When Redde Is Closed, in Settings › Notifications"))
         }
-        #if os(iOS)
-        Section {
-            NavigationLink { AgentCallsSettingsView() } label: {
-                LabeledContent("Calls from Agents", value: settings.agentCalls ? String(localized: "On") : String(localized: "Off"))
-            }
-        } footer: {
-            Text(String(localized: "An agent you allow rings this device like a phone call when something shouldn't wait.", comment: "Footer under Calls from Agents, in Settings › Notifications (an iPhone or an iPad)"))
-        }
-        #endif
+        // Calls from Agents: Settings → Voice, beside voice mode (2026-11-15).
         // Two things on screen while a reply is worked on (2026-11-01: "a couple are very similar
         // wording"): Redde's Live Activity, and iOS's own "<agent> is working" card.
         Section {
@@ -1302,10 +1314,12 @@ struct AboutSettings: View {
     }
 }
 
-/// Back to a fresh install: conversations, attachments, credentials, settings, widget data.
+/// Back to a fresh install: conversations, attachments, credentials, settings, widget data. At the
+/// bottom of Settings → General; Settings closes once it's done.
 struct ResetSettings: View {
+    /// Closes Settings, from the page this is on.
+    let closeSettings: () -> Void
     @Environment(Conversation.self) private var conversation
-    @Environment(\.dismiss) private var dismiss
     @State private var confirming = false
 
     var body: some View {
@@ -1346,7 +1360,7 @@ struct ResetSettings: View {
         WidgetCenter.shared.reloadAllTimelines()
         Notifier.shared.clearDelivered()
         Settings.shared.reset()
-        dismiss()
+        closeSettings()
     }
 }
 

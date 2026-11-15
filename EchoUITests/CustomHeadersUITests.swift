@@ -10,6 +10,7 @@ final class CustomHeadersUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat + ["-echo.screen", "settings"]
         app.launch()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20), "Settings didn't open")
+        app.openSettingsPage("Connection")
         let details = app.buttons["Connection details"]
         for _ in 0 ..< 8 where !(details.exists && details.isHittable) { app.swipeUp() }
         details.tap()
