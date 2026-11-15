@@ -85,7 +85,7 @@ Claude Code, Codex and other agents, a new drawer, and better suggested replies.
 • What your agent writes between its tool calls now shows in the chat.
 • CarPlay: switch servers from the Ask tab, and with more bots than fit on the Bots tab, an All Bots card lists them all. Your bots stay there while you're on a bridge.
 • Faster launch, typing and opening a chat. Choose the calendar your agent's new events go to. Removing a server asks first.
-• Fixes: the connection test said Connected for an address that led to a web page (GitHub #77). Voice mode read code out line by line. Selecting a reply's text shrank it at larger text sizes. Weather and light cards are easier to read in the dark.
+• Fixes: the connection test said Connected for an address that led to a web page (GitHub #77). Voice mode read code out line by line. CarPlay stopped loading with more than four bots. Selecting a reply's text shrank it at larger text sizes. Weather and light cards are easier to read in the dark.
 
 Most of this takes the Redde plugin 1.31 on your Hermes: Settings → Redde Plugin offers the update. Other agents take the Redde bridge 0.10 on your computer.
 
