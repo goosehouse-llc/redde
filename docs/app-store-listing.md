@@ -15,8 +15,8 @@ No other company's product names here or in the keywords (Claude Code, Codex, He
 ## Promotional text (170, editable without a new build)
 New in 2.6: Claude Code, Codex and other agents through the free Redde bridge, a new drawer that starts with what needs you, Maps for your agent, and smarter replies.
 
-## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
-assistant,carplay,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,coding,acp
+## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name or subtitle)
+assistant,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,code,terminal,acp
 
 ## Description (4000)
 
