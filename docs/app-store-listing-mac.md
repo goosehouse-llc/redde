@@ -1,4 +1,4 @@
-# App Store listing — Redde Agent, for Mac
+# App Store listing — Redde: AI Agents, Voice & Chat, for Mac
 
 The Mac app's own version page in App Store Connect: the same App Store record as the iPhone and
 iPad app (bundle id com.goosehouse.echo, one purchase for all three), platform macOS. Name,
@@ -66,7 +66,7 @@ Most of this takes the Redde plugin 1.27 on your Hermes.
 ## Before submitting the Mac's 2.5
 - Mac 2.5 (294), archived from the same commit as the iPhone's. Mac 2.4 (292) was still with App Review on 2026-11-11; App Store Connect may not take a new Mac version until it clears.
 - Only claimed after a look on the Mac: workstreams' strip and Work sheet, Models & Providers, Choose Photo in Change Face, the briefing weather card, the window-hidden pause. Drop a line from the What's New above if it isn't seen working.
-- The record's name changes to "Redde Agent" for the Mac too (APP286553-D).
+- The record's name is shared with the Mac: "Redde Agent" from 2.5 (APP286553-D), "Redde: AI Agents, Voice & Chat" once iOS 2.6 is approved (2026-11-15).
 
 ## What's New in 2.4 (4000)
 
