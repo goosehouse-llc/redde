@@ -67,6 +67,7 @@ struct DeliveredFileChip: View {
     /// Fetches a file a reply names through the Dashboard, on either connection: its copy on this
     /// phone, or why there isn't one.
     static func fetch(_ path: String, in source: FileSource?) async -> Result<URL, Problem> {
+        if let bridge = source?.bridge { return await fetch(path, from: bridge, session: source?.sessionID) }
         let dashboard = HermesServeClient.shared
         guard await dashboard.canUse() else {
             return .failure(Problem(text: String(localized: "Files your agent sends come through the Hermes Dashboard. Add its login in Settings → Connection → Connection details.")))
@@ -80,6 +81,24 @@ struct DeliveredFileChip: View {
                 : String(localized: "It isn't on the server where the reply says.")))
         } catch TransportError.http(let status, _) where status == 403 {
             return .failure(Problem(text: String(localized: "The server won't share this file.")))
+        } catch {
+            return .failure(Problem(text: String(localized: "Couldn't fetch it: \(error.localizedDescription)")))
+        }
+    }
+
+    /// The same from the Redde bridge's computer, for a chat with an agent through it.
+    @MainActor
+    static func fetch(_ path: String, from bridge: AcpEndpoint, session: String?) async -> Result<URL, Problem> {
+        do {
+            guard let file = try await AcpClient.client(for: bridge).file(path: path, session: session) else {
+                return .failure(Problem(text: String(localized: "This bridge can't send files yet. Update it in Settings → Connection → Connection details.",
+                                                     comment: "A file a reply names, on a Redde bridge older than 0.11")))
+            }
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let url = folder.appendingPathComponent(file.name)
+            try file.data.write(to: url)
+            return .success(url)
         } catch {
             return .failure(Problem(text: String(localized: "Couldn't fetch it: \(error.localizedDescription)")))
         }

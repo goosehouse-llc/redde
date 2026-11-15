@@ -210,7 +210,7 @@ extension VoiceSession {
                     if !ask(interrupt) { activeTool = "waiting for you" }
                 case .interruptExpired:
                     activeTool = nil
-                case .status, .sessionID, .runID, .subagent, .prefill, .todos, .title:
+                case .status, .sessionID, .runID, .subagent, .prefill, .todos, .title, .picture:
                     break
                 }
             }

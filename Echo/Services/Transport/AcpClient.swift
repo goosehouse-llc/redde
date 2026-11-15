@@ -148,6 +148,8 @@ final class AcpClient {
         var updatable: Bool = false
         /// Agents can be added to the bridge from the ACP registry (`_redde/add_agent`): 0.10 or later.
         var manages: Bool = false
+        /// The bridge hands over the pictures and documents a reply names (`_redde/file`): 0.11 or later.
+        var handsFiles: Bool = false
     }
 
     enum Event {
@@ -339,7 +341,28 @@ final class AcpClient {
                     commands: AcpCommand.list(.object(["availableCommands": redde?["commands"] ?? .null])),
                     service: redde?["service"]?.string,
                     updatable: redde?["updatable"]?.bool ?? false,
-                    manages: redde?["manages"]?.bool ?? false)
+                    manages: redde?["manages"]?.bool ?? false,
+                    handsFiles: redde?["files"]?.bool ?? false)
+    }
+
+    /// A file a reply names, from the bridge's computer (`_redde/file`): absolute, from `~`, or
+    /// from the chat's folder. Throws the bridge's reason when it won't hand it over (a kind it
+    /// keeps to itself, a hidden folder, too big, not there); nil from a bridge before 0.11.
+    func file(path: String, session: String?) async throws -> (name: String, mimeType: String, data: Data)? {
+        try await ensureConnected()
+        guard info?.handsFiles == true else { return nil }
+        var params: [String: JSONValue] = ["path": .string(path)]
+        if let session { params["sessionId"] = .string(session) }
+        let result = try await call("_redde/file", params, timeout: 60)
+        guard let base64 = result["data"]?.string, let data = Data(base64Encoded: base64), !data.isEmpty else { return nil }
+        return (result["name"]?.string ?? (path as NSString).lastPathComponent,
+                result["mimeType"]?.string ?? "application/octet-stream", data)
+    }
+
+    /// The same file as a data URL, or nil when the bridge can't or won't hand it over.
+    func readDataURL(path: String, session: String?) async -> String? {
+        guard let file = try? await file(path: path, session: session) else { return nil }
+        return "data:\(file.mimeType);base64,\(file.data.base64EncodedString())"
     }
 
     /// Asks the installed bridge to update itself (`_redde/update`). It answers, then restarts,

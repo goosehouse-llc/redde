@@ -39,6 +39,9 @@ nonisolated enum TurnEvent: Sendable, Equatable {
     case runID(String)
     /// The agent named the chat while it works (ACP `session_info_update`: OpenClaw, Claude Code).
     case title(String)
+    /// A picture the agent handed over in its reply, bytes and all: an ACP `image` block, in a
+    /// message or in what a tool returned (Claude Code reading a screenshot). Shown with the reply.
+    case picture(Attachment)
     /// The agent is waiting on you (hermes serve): approval, clarifying question, sudo, secret.
     case interrupt(Interrupt, runtimeSession: String)
     /// A pending interrupt timed out on the gateway.

@@ -226,6 +226,8 @@ extension Conversation {
                 // (On the Hermes API, the Dashboard is asked only when the reply names a file.)
                 var fetchesFiles = transportKind == .hermesServe
                 if !fetchesFiles, transportKind == .hermesSessions, replyNamesFiles(replyID) { fetchesFiles = await dashboard.canUse() }
+                // An agent through the bridge: from the bridge's computer, where the bridge hands files over.
+                if transportKind == .acp, replyNamesFiles(replyID) { fetchesFiles = fetchesReplyFiles }
                 if fetchesFiles {
                     await resolveServeMedia(replyID)
                     try Task.checkCancellation()   // Stop during the fetch must not finish the turn
@@ -460,6 +462,9 @@ extension Conversation {
             // it's a bot's.
             guard bot == nil, let id = serverSessionID, AcpTitles.title(for: id) == nil else { break }
             setName(Self.name(fromServerTitle: title, firstQuestion: messages.first { $0.role == .user && !$0.isSteer }?.text))
+        case let .picture(picture):
+            flushDeltas()
+            update(replyID) { $0.attachments.append(picture) }
         case let .runID(id):
             currentRunID = id
             // A run goes on on the host whatever becomes of the app: noted, so it can be taken up

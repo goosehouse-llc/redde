@@ -529,6 +529,60 @@ final class AcpUITests: XCTestCase {
         keep("acp-thought")
     }
 
+    /// A picture the agent reads (Claude Code's screenshots) comes with its reply (asked
+    /// 2026-11-14: CarPlay previews from a Claude Code chat weren't shown). The demo agent's.
+    func testAPictureTheAgentReadsIsShown() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "demo", "-acpAgent", "", "-acpFolder", "", "-acpAllAgents", "NO"]
+        app.launch()
+        let composer = app.textFields["composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
+        app.buttons["New conversation"].firstMatch.tap()
+        composer.tap()
+        composer.typeText("Take a screenshot")
+        app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap()
+        XCTAssertTrue(app.text(containing: "Here's the screen").waitForExistence(timeout: 30), "No reply")
+        let photo = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'picture'")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 10), "The picture isn't with the reply")
+        sleep(1)
+        keep("acp-picture")
+        // It stays after the chat is opened again, from the agent's replay.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let rows = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Take a screenshot' AND NOT (label CONTAINS 'Model:')"))
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 15), "The chat isn't in the list")
+        (rows.allElementsBoundByIndex.first { $0.isHittable } ?? rows.firstMatch).tap()
+        XCTAssertTrue(photo.waitForExistence(timeout: 15), "The picture is gone once the chat is opened again")
+        keep("acp-picture-reopened")
+    }
+
+    /// A picture a reply names by its path comes from the bridge's computer (`_redde/file`, bridge
+    /// 0.11). Needs a scratch bridge with the scripted agent, which says back what it's sent, and
+    /// `shots/carplay.png` in its folder (`TEST_RUNNER_REDDE_SCRATCH_BRIDGE`, `…_TOKEN`).
+    func testAPictureAReplyNamesComesFromTheBridge() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let address = env["REDDE_SCRATCH_BRIDGE"], let token = env["REDDE_SCRATCH_TOKEN"] else {
+            throw XCTSkip("No scratch bridge given (TEST_RUNNER_REDDE_SCRATCH_BRIDGE, TEST_RUNNER_REDDE_SCRATCH_TOKEN)")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", address, "-acpAgent", "fake", "-acpFolder", "", "-acpAllAgents", "NO"]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        let composer = app.textFields["composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
+        app.buttons["New conversation"].firstMatch.tap()
+        composer.tap()
+        composer.typeText("MEDIA:shots/carplay.png")
+        app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap()
+        let photo = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'carplay'")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 30), "The picture the reply names wasn't fetched")
+        sleep(1)
+        keep("acp-bridge-picture")
+    }
+
     /// A bridge chat is renamed from the list (asked 2026-11-14), and keeps its name.
     func testABridgeChatIsRenamed() {
         continueAfterFailure = false

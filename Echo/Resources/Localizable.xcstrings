@@ -453358,6 +453358,113 @@
         }
       }
     },
+    "This bridge can't send files yet. Update it in Settings → Connection → Connection details." : {
+      "comment" : "A file a reply names, on a Redde bridge older than 0.11",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne bro kan ikke sende filer endnu. Opdater den i Indstillinger → Forbindelse → Forbindelsesdetaljer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Bridge kann noch keine Dateien senden. Aktualisiere sie in Einstellungen → Verbindung → Verbindungsdetails."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este puente aún no puede enviar archivos. Actualízalo en Ajustes → Conexión → Datos de conexión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce pont ne peut pas encore envoyer de fichiers. Mettez-le à jour dans Réglages → Connexion → Détails de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo bridge non può ancora inviare file. Aggiornalo in Impostazioni → Connessione → Dettagli connessione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このブリッジはまだファイルを送信できません。設定 → 接続 → 接続の詳細でアップデートしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 브리지는 아직 파일을 보낼 수 없습니다. 설정 → 연결 → 연결 세부사항에서 업데이트하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne broen kan ikke sende filer ennå. Oppdater den i Innstillinger → Tilkobling → Tilkoblingsdetaljer."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze bridge kan nog geen bestanden sturen. Werk hem bij in Instellingen → Verbinding → Verbindingsgegevens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten most nie może jeszcze wysyłać plików. Zaktualizuj go w Ustawienia → Połączenie → Szczegóły połączenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta ponte ainda não pode enviar arquivos. Atualize-a em Ajustes → Conexão → Detalhes da conexão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот мост пока не умеет отправлять файлы. Обновите его в «Настройки» → «Подключение» → «Сведения о подключении»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här bryggan kan inte skicka filer än. Uppdatera den i Inställningar → Anslutning → Anslutningsuppgifter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu köprü henüz dosya gönderemiyor. Ayarlar → Bağlantı → Bağlantı ayrıntıları bölümünden güncelleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей міст поки не може надсилати файли. Оновіть його в Параметри → З’єднання → Відомості про з’єднання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此桥接还不能发送文件。请在设置 → 连接 → 连接详细信息中更新它。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此橋接尚無法傳送檔案。請在「設定」→「連線」→「連線詳細資訊」中更新它。"
+          }
+        }
+      }
+    },
     "This card color keeps its own look." : {
       "comment" : "Card Appearance's note with White, Black and the like picked",
       "localizations" : {

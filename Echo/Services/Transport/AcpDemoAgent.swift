@@ -1,4 +1,7 @@
 import Foundation
+import CoreGraphics
+import ImageIO
+import UniformTypeIdentifiers
 
 /// Redde's own demo agent (address `demo`): an agent over ACP that runs inside the app, so the
 /// Other Agents connection can be seen without a computer, a bridge or a token. Built for App
@@ -212,13 +215,14 @@ actor AcpDemoAgent {
 
     // MARK: A turn
 
-    enum Script: Equatable { case tour, plan, question, help }
+    enum Script: Equatable { case tour, plan, question, screenshot, help }
 
     /// What a message asks the demo for: a slash command, or its words.
     static func script(for said: String, first: Bool) -> Script {
         let words = said.lowercased()
         if words.hasPrefix("/plan") || words.contains("plan") { return .plan }
         if words.hasPrefix("/question") || words.contains("question") || words.contains("ask me") { return .question }
+        if words.hasPrefix("/screenshot") || ["screenshot", "picture", "how does it look"].contains(where: words.contains) { return .screenshot }
         if first || words.hasPrefix("/tour") || ["fix", "tour", "demo", "edit", "note", "show me"].contains(where: words.contains) { return .tour }
         return .help
     }
@@ -238,8 +242,9 @@ actor AcpDemoAgent {
         case .tour: return await tour(id)
         case .plan: return await plan(id)
         case .question: return await question(id)
+        case .screenshot: return await screenshot(id)
         case .help:
-            await say(id, "I'm Redde's demo agent, so I can only show what Redde does with a coding agent. Try “Fix the notes”, “Show me a plan” or “Ask me a question”, or type / for my commands.")
+            await say(id, "I'm Redde's demo agent, so I can only show what Redde does with a coding agent. Try “Fix the notes”, “Show me a plan”, “Take a screenshot” or “Ask me a question”, or type / for my commands.")
             return "end_turn"
         }
     }
@@ -312,6 +317,50 @@ actor AcpDemoAgent {
         }
         return "end_turn"
     }
+
+    /// A screenshot the agent takes and looks at, as Claude Code reads one: the picture comes back
+    /// in the step's content, and Redde shows it with the reply.
+    private func screenshot(_ id: String) async -> String {
+        await think(id, "I'll take a screenshot of the app and look at it.")
+        await step(id, "shot-1", kind: "execute", title: "xcrun simctl io booted screenshot screen.png",
+                   input: ["command": .string("xcrun simctl io booted screenshot screen.png")],
+                   content: [.object(["type": .string("content"), "content": text("Wrote screen.png")])])
+        guard await carryOn(id) else { return "cancelled" }
+        let picture: [JSONValue] = Self.screenPNG.map {
+            [.object(["type": .string("content"), "content": .object(["type": .string("image"), "mimeType": .string("image/png"),
+                                                                       "data": .string($0.base64EncodedString())])])]
+        } ?? []
+        await step(id, "read-shot", kind: "read", title: "Read screen.png", input: ["file_path": .string("screen.png")], content: picture)
+        await say(id, "Here's the screen: a title bar and three chats. Pictures an agent takes or reads come with its reply, like this one.")
+        return "end_turn"
+    }
+
+    /// The demo's screenshot, drawn: a phone screen with a title bar and three rows.
+    static let screenPNG: Data? = {
+        let width = 390, height = 640
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.setFillColor(CGColor(srgbRed: 0.95, green: 0.95, blue: 0.97, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        context.setFillColor(CGColor(srgbRed: 0.35, green: 0.32, blue: 0.85, alpha: 1))
+        context.fill(CGRect(x: 0, y: height - 110, width: width, height: 110))
+        for row in 0..<3 {
+            let y = CGFloat(height - 200 - row * 110)
+            context.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1))
+            context.addPath(CGPath(roundedRect: CGRect(x: 20, y: y, width: CGFloat(width - 40), height: 90), cornerWidth: 18, cornerHeight: 18, transform: nil))
+            context.fillPath()
+            context.setFillColor(CGColor(srgbRed: 0.35 + Double(row) * 0.2, green: 0.6, blue: 0.9 - Double(row) * 0.2, alpha: 1))
+            context.fillEllipse(in: CGRect(x: 36, y: y + 21, width: 48, height: 48))
+            context.setFillColor(CGColor(srgbRed: 0.8, green: 0.8, blue: 0.84, alpha: 1))
+            context.fill(CGRect(x: 100, y: y + 52, width: 200, height: 12))
+            context.fill(CGRect(x: 100, y: y + 28, width: 140, height: 10))
+        }
+        guard let image = context.makeImage() else { return nil }
+        let data = NSMutableData()
+        guard let out = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(out, image, nil)
+        return CGImageDestinationFinalize(out) ? data as Data : nil
+    }()
 
     /// A question with choices, as Claude Code's AskUserQuestion asks it (a form).
     private func question(_ id: String) async -> String {
@@ -432,6 +481,7 @@ actor AcpDemoAgent {
             .object(["name": .string("tour"), "description": .string("Fix the notes, step by step")]),
             .object(["name": .string("plan"), "description": .string("Show a plan to approve")]),
             .object(["name": .string("question"), "description": .string("Ask you a question")]),
+            .object(["name": .string("screenshot"), "description": .string("Take a screenshot and show it")]),
         ])])
     }
 

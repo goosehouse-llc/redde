@@ -341,7 +341,10 @@ final class Conversation {
     var phoneTools = DeviceToolsService.shared
 
     /// A file on the server as a data URL, over the Dashboard's file API. Tests put their own here.
-    var fetchServerFile: (String, FileSource) async -> String? = { try? await HermesServeClient.shared.readDataURL(path: $0, in: $1) }
+    var fetchServerFile: (String, FileSource) async -> String? = { path, source in
+        if let bridge = source.bridge { return await AcpClient.client(for: bridge).readDataURL(path: path, session: source.sessionID) }
+        return try? await HermesServeClient.shared.readDataURL(path: path, in: source)
+    }
 
     var reopenedMedia: Task<Void, Never>?
 }

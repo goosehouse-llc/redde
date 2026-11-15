@@ -140,7 +140,21 @@ extension Conversation {
     }
 
     /// Where the files this chat's replies name are on the server.
-    var fileSource: FileSource { FileSource(sessionID: serverSessionID, profile: routeProfile ?? settings.profileName) }
+    var fileSource: FileSource {
+        FileSource(sessionID: serverSessionID, profile: routeProfile ?? settings.profileName,
+                   bridge: connection == .acp ? settings.acpEndpoint : nil)
+    }
+
+    /// Whether this chat's replies have their files fetched: the Dashboard's on the Hermes
+    /// connections, the bridge's (0.11 on) for an agent through it.
+    var fetchesReplyFiles: Bool {
+        switch connection {
+        case .hermesServe: true
+        case .hermesSessions: dashboard.hasCredentials
+        case .acp: AcpClient.current(settings)?.info?.handsFiles == true
+        default: false
+        }
+    }
 
     /// How many replies of a chat opened from the server have their files fetched again.
     static let reopenedMediaReach = 8
@@ -151,7 +165,7 @@ extension Conversation {
     /// newest of them are fetched once more, newest first; older ones stay as they are written.
     func resolveReopenedMedia() {
         reopenedMedia?.cancel()
-        guard settings.transport == .hermesServe || (settings.transport == .hermesSessions && dashboard.hasCredentials) else { return }
+        guard fetchesReplyFiles else { return }
         let opened = id
         let replies = messages.reversed().lazy.filter { !ServeMedia.candidates(in: $0.text).isEmpty }
             .prefix(Self.reopenedMediaReach).map(\.id)

@@ -8,6 +8,9 @@ import UniformTypeIdentifiers
 nonisolated struct FileSource: Equatable, Sendable {
     var sessionID: String?
     var profile: String?
+    /// A chat with an agent through the Redde bridge: its files come from the bridge's computer
+    /// (`_redde/file`), not from a Dashboard.
+    var bridge: AcpEndpoint? = nil
 
     /// What a Dashboard file route is told of it: the session only for a relative path (Hermes
     /// 0.21.3 on; 0.21.0 doesn't know it), the profile when it isn't the default one.

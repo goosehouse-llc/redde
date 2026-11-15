@@ -140,6 +140,19 @@ struct AcpDemoTests {
         #expect(kinds(updates).contains("plan"))
     }
 
+    @Test func aScreenshotComesWithTheReply() async throws {
+        let line = Line()
+        let session = try await newChat(line)
+        line.prompt(session, "Take a screenshot")
+        let (stop, updates) = try await line.untilDone()
+        #expect(stop == "end_turn")
+        var mapper = AcpTurnMapper()
+        let pictures = updates.flatMap { mapper.events(for: $0) }.compactMap { if case let .picture(p) = $0 { p } else { nil } }
+        #expect(pictures.count == 1)
+        #expect(pictures.first?.kind == .image)
+        #expect(pictures.first.map { $0.data.count > 1000 } == true)
+    }
+
     @Test func aQuestionIsAForm() async throws {
         let line = Line()
         let session = try await newChat(line)

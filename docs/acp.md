@@ -200,6 +200,8 @@ renamed and deleted; they are kept in the app's caches.
 | `tool_call` | `.toolStarted(name: title, args: rawInput)` |
 | `tool_call_update` completed / failed | `.toolFinished(output: content text)` |
 | `diff` content (`path`, `oldText`, `newText`) | the step's output as a unified diff (`AcpDiff`, kept by `AcpChanges` since the call's last update comes with its content empty; Claude Code's own `_meta.claudeCode.toolResponse.structuredPatch` where it comes, for the file's line numbers): Changes +n −n in colour on the step, View changes opens `PatchView` |
+| `image` content (`data`, `mimeType`), or an embedded `resource` with an image `blob`: in `agent_message_chunk`, or in a tool call's content (Claude Code reading a screenshot) | `.picture`: a photo with the reply (`AcpPictures`), each picture once per reply; a picture known only by `uri` has no bytes and isn't shown. In a replay, the agent's pictures go with its reply and the person's with their message |
+| a path the reply names (`MEDIA:`, `![](/abs/path)`, `[IMAGE: …]`, as on Hermes) | fetched through the bridge (`_redde/file`, bridge 0.11, `_meta.redde.files`) and shown as a photo or file; a tap on a file chip or a path link fetches it the same way. Older bridges: the chip says to update the bridge |
 | `plan` | `.todos` (entries numbered as ids) |
 | `usage_update` | `.usage(contextUsed: used, contextMax: size)` |
 | `usage_update` `_meta["_claude/rateLimit"]` (Claude Code) | Plan Usage in the model sheet (`AcpLimits`): each of `unifiedWindows` (5-hour, weekly, weekly per model) as a bar with the share used and when it resets; orange at `allowed_warning` or 80 %, red and Reached at `rejected`. The account's, kept on the client from the last update |
@@ -211,7 +213,7 @@ renamed and deleted; they are kept in the app's caches.
 | `notice` | a status line |
 | prompt answer / `_redde/turn_ended` | `.done`; `refusal`, `max_tokens` as a note |
 | `session/list` | the chat list (title, `updatedAt`, `cwd`); with chats in two folders or more, the list's Projects are the folders (`AcpProjects`), each with its chats and New Conversation, which starts the chat's `session/new` in that folder |
-| `session/load` replay | the transcript: user chunks, agent chunks, tool calls, thoughts, plan; Claude Code's "[Request interrupted by user…]" notes left out |
+| `session/load` replay | the transcript: user chunks, agent chunks, tool calls, thoughts, plan, pictures; Claude Code's "[Request interrupted by user…]" notes left out |
 | `_meta.redde.name`, else `agentInfo.title` | what the app calls the assistant (header, Ask …, the reply's name) when no name is set in Settings, kept per address |
 | `session/delete` (when offered) | Delete |
 | `session/fork` (when `sessionCapabilities.fork` is offered, as Claude Code does) | Fork in the chat list: a copy in the same folder, named "… (fork)" with `session/set_title`, opened with its history. The bridge (0.4.0) follows the new session, so its first prompt needs no resume |

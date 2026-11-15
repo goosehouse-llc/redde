@@ -17,11 +17,19 @@ nonisolated struct AcpTurnMapper: Sendable {
     /// The files each call changed, kept from the update that said so: the call's last update
     /// often comes with its content empty.
     private var changes = AcpChanges()
+    /// The pictures handed to the reply so far: a tool call's updates repeat its content.
+    private var pictures = AcpPictures.Seen()
 
     init() {}
 
     mutating func events(for update: JSONValue) -> [TurnEvent] {
         changes.note(update)
+        // A person's own pictures come back as `user_message_chunk`: not the reply's.
+        let shown = update["sessionUpdate"]?.string == "user_message_chunk" ? [] : pictures.new(in: update)
+        return mapped(update) + shown.map(TurnEvent.picture)
+    }
+
+    private mutating func mapped(_ update: JSONValue) -> [TurnEvent] {
         switch update["sessionUpdate"]?.string {
         case "agent_message_chunk":
             guard let text = Self.text(update["content"]), !text.isEmpty else { return [] }
@@ -203,6 +211,7 @@ nonisolated enum AcpHistory {
         var lastAgentID: String?
         var toolIndex: [String: Int] = [:]
         var changes = AcpChanges()
+        var pictures = AcpPictures.Seen()
         func reply() -> Int {
             if let last = out.indices.last, out[last].role == .assistant { return last }
             out.append(Message(role: .assistant, text: ""))
@@ -211,6 +220,10 @@ nonisolated enum AcpHistory {
         }
         for update in updates {
             changes.note(update)
+            // A person's pictures are theirs each time (the same one sent twice shows twice).
+            let shown = update["sessionUpdate"]?.string == "user_message_chunk" ? AcpPictures.of(update) : pictures.new(in: update)
+            // The agent's pictures are its reply's, whatever else the update says or doesn't.
+            if !shown.isEmpty, update["sessionUpdate"]?.string != "user_message_chunk" { out[reply()].attachments += shown }
             switch update["sessionUpdate"]?.string {
             case "user_message_chunk":
                 let text = AcpTurnMapper.text(update["content"]) ?? ""
@@ -220,6 +233,9 @@ nonisolated enum AcpHistory {
                 } else {
                     out.append(Message(role: .user, text: text))
                 }
+                // The pictures sent with it. The reply after it is a new one, its pictures all its own.
+                out[out.count - 1].attachments += shown
+                pictures = AcpPictures.Seen()
                 lastUserID = id
                 lastAgentID = nil
             case "agent_message_chunk":
@@ -257,12 +273,14 @@ nonisolated enum AcpHistory {
                 continue
             }
         }
-        // A reply that is all tools and no words still shows; a user row with no words doesn't, nor
+        // A reply that is all tools and no words still shows; a user row with no words and no
+        // pictures doesn't, nor
         // Claude Code's note of a stop ("[Request interrupted by user for tool use]", after a "No").
         for i in out.indices where out[i].role == .user { out[i].text = CarBrevity.strip(out[i].text) }
         return out.filter {
             let text = $0.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            return $0.role == .assistant || !(text.isEmpty || text.wholeMatch(of: /\[Request interrupted by user[^\]]*\]/) != nil)
+            return $0.role == .assistant || !$0.attachments.isEmpty
+                || !(text.isEmpty || text.wholeMatch(of: /\[Request interrupted by user[^\]]*\]/) != nil)
         }
     }
 
@@ -281,6 +299,43 @@ nonisolated enum AcpHistory {
         }
         if case let .toolFinished(_, _, output)? = AcpTurnMapper.finished(update, name: tool.name), let output {
             tool.output = output
+        }
+    }
+}
+
+/// Pictures in an update, as photo attachments: an `image` block (base64 `data` and its
+/// `mimeType`), or an embedded `resource` that is a picture (`blob`), in a message chunk or in a
+/// tool call's content. A picture known only by `uri` has no bytes to show.
+nonisolated enum AcpPictures {
+    static func of(_ update: JSONValue) -> [Attachment] {
+        switch update["sessionUpdate"]?.string {
+        case "agent_message_chunk", "user_message_chunk":
+            return update["content"].flatMap(picture).map { [$0] } ?? []
+        case "tool_call", "tool_call_update":
+            return (update["content"]?.array ?? []).compactMap { $0["type"]?.string == "content" ? $0["content"].flatMap(picture) : nil }
+        default:
+            return []
+        }
+    }
+
+    static func picture(_ block: JSONValue) -> Attachment? {
+        let (data, mime, uri): (String?, String?, String?) = switch block["type"]?.string {
+        case "image": (block["data"]?.string, block["mimeType"]?.string, block["uri"]?.string)
+        case "resource": (block["resource"]?["blob"]?.string, block["resource"]?["mimeType"]?.string, block["resource"]?["uri"]?.string)
+        default: (nil, nil, nil)
+        }
+        guard let data, !data.isEmpty, let mime = mime?.lowercased(), mime.hasPrefix("image/") else { return nil }
+        let named = uri.flatMap { URL(string: $0)?.lastPathComponent }.flatMap { $0.contains(".") ? $0 : nil }
+        return ServeMedia.attachment(dataURL: "data:\(mime == "image/jpg" ? "image/jpeg" : mime);base64,\(data)",
+                                     name: named ?? "picture")
+    }
+
+    /// The pictures a reply has already been given, so one isn't shown twice.
+    struct Seen: Sendable {
+        private var hashes: Set<Int> = []
+
+        mutating func new(in update: JSONValue) -> [Attachment] {
+            AcpPictures.of(update).filter { hashes.insert($0.data.hashValue).inserted }
         }
     }
 }

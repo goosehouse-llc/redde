@@ -34,6 +34,66 @@ struct AcpTests {
         #expect(finished == [.toolFinished(name: "terminal", failed: false, output: "terminal result\n- **exit_code:** 0")])
     }
 
+    // MARK: Pictures (asked 2026-11-14: CarPlay previews from a Claude Code chat weren't shown)
+
+    private static let dot = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+    private func pictures(_ events: [TurnEvent]) -> [Echo.Attachment] {
+        events.compactMap { if case let .picture(picture) = $0 { picture } else { nil } }
+    }
+
+    /// claude-agent-acp 0.106.0's Read of a PNG: its tool_result's image block, as ACP content.
+    @Test func aPictureAToolReadIsShownWithTheReply() {
+        var mapper = AcpTurnMapper()
+        _ = mapper.events(for: json(#"{"rawInput": {"file_path": "/tmp/carplay.png"}, "title": "Read carplay.png", "kind": "read", "toolCallId": "t1", "sessionUpdate": "tool_call"}"#))
+        let read = json(#"{"content": [{"content": {"type": "image", "data": "\#(Self.dot)", "mimeType": "image/png"}, "type": "content"}], "status": "completed", "toolCallId": "t1", "sessionUpdate": "tool_call_update"}"#)
+        let events = mapper.events(for: read)
+        #expect(events.first == .toolFinished(name: "Read carplay.png", failed: false, output: nil))
+        let shown = pictures(events)
+        #expect(shown.count == 1)
+        #expect(shown.first?.kind == .image)
+        #expect(shown.first?.mimeType == "image/png")
+        #expect(shown.first?.data == Data(base64Encoded: Self.dot))
+        // The same picture again (a call's updates repeat its content) isn't shown twice.
+        #expect(pictures(mapper.events(for: read)).isEmpty)
+    }
+
+    @Test func aPictureInTheReplyIsShownAndThePersonsOwnIsnt() {
+        var mapper = AcpTurnMapper()
+        let sent = mapper.events(for: json(#"{"content": {"type": "image", "data": "\#(Self.dot)", "mimeType": "image/jpg", "uri": "file:///Users/x/shot.jpg"}, "sessionUpdate": "agent_message_chunk"}"#))
+        #expect(sent.count == 1)
+        #expect(pictures(sent).first?.filename == "shot.jpg")
+        #expect(pictures(sent).first?.mimeType == "image/jpeg")
+        // The person's own picture, echoed back, is theirs.
+        var other = AcpTurnMapper()
+        #expect(other.events(for: json(#"{"content": {"type": "image", "data": "\#(Self.dot)", "mimeType": "image/png"}, "sessionUpdate": "user_message_chunk"}"#)).isEmpty)
+        // A picture known only by its address, or not a picture, shows nothing.
+        #expect(other.events(for: json(#"{"content": {"type": "image", "data": "", "mimeType": "image/png", "uri": "https://x/a.png"}, "sessionUpdate": "agent_message_chunk"}"#)).isEmpty)
+        #expect(other.events(for: json(#"{"content": {"type": "resource", "resource": {"uri": "file:///a.pdf", "mimeType": "application/pdf", "blob": "JVBERg=="}}, "sessionUpdate": "agent_message_chunk"}"#)).isEmpty)
+        // An embedded picture resource is one.
+        let embedded = other.events(for: json(#"{"content": {"type": "resource", "resource": {"uri": "file:///w/diagram.png", "mimeType": "image/png", "blob": "\#(Self.dot)"}}, "sessionUpdate": "agent_message_chunk"}"#))
+        #expect(pictures(embedded).first?.filename == "diagram.png")
+    }
+
+    @Test func aReplayKeepsItsPictures() {
+        let image = #"{"type": "image", "data": "\#(Self.dot)", "mimeType": "image/png"}"#
+        let replay = [
+            json(#"{"content": {"type": "text", "text": "How does CarPlay look?"}, "sessionUpdate": "user_message_chunk"}"#),
+            json(#"{"content": \#(image), "sessionUpdate": "user_message_chunk"}"#),
+            json(#"{"title": "Read carplay.png", "toolCallId": "t1", "sessionUpdate": "tool_call"}"#),
+            json(#"{"content": [{"content": \#(image), "type": "content"}], "status": "completed", "toolCallId": "t1", "sessionUpdate": "tool_call_update"}"#),
+            json(#"{"content": {"type": "text", "text": "Like this."}, "sessionUpdate": "agent_message_chunk"}"#),
+            json(#"{"content": {"type": "text", "text": "Only a picture:"}, "sessionUpdate": "user_message_chunk"}"#),
+            json(#"{"content": \#(image), "sessionUpdate": "agent_message_chunk"}"#),
+        ]
+        let messages = AcpHistory.messages(replay)
+        #expect(messages.map(\.text) == ["How does CarPlay look?", "Like this.", "Only a picture:", ""])
+        #expect(messages.map(\.attachments.count) == [1, 1, 0, 1], "a reply's picture once, and again in a later reply")
+        // A person's message that is only a picture still shows.
+        let alone = AcpHistory.messages([json(#"{"content": \#(image), "sessionUpdate": "user_message_chunk"}"#)])
+        #expect(alone.map(\.attachments.count) == [1])
+    }
+
     /// Claude Code (claude-agent-acp 0.106.0, 2026-11-11) announces a call bare and fills it in.
     @Test func aBareCallWaitsForWhatItDoes() {
         var mapper = AcpTurnMapper()
