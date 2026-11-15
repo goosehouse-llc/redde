@@ -327,7 +327,8 @@ enum DevHooks {
             CalendarUpNext.shared.refresh()
         }
         // `-echo.demoCalendarEvents n`: n events on the simulator's calendar over the past week and
-        // the coming two months (titles "Redde Perf: …"), for `-echo.tour calendar`; made once.
+        // the coming two months (titles "Perf seed: …"), for `-echo.tour calendar`; made once, and
+        // taken away again with 0.
         if let count = value("-echo.demoCalendarEvents").flatMap(Int.init) { seedCalendarEvents(count) }
         if has("-echo.demoAgenda") { conversation.seedAgendaDemo(tomorrowOnly: value("-echo.demoAgenda") == "tomorrow") }
         if has("-echo.demoAsks") { conversation.seedAsksDemo(more: has("-echo.demoAsksMore")) }
@@ -564,20 +565,27 @@ enum DevHooks {
     }
 
     /// `-echo.demoCalendarEvents n`: tops the simulator's calendar up to n events titled
-    /// "Redde Perf: …", spread over the past week and the coming two months, three a day or so.
+    /// "Perf seed: …", spread over the past week and the coming two months, three a day or so; 0
+    /// takes them away. (Not "Redde …": the on-device tests search the calendar for "Redde test".)
     private static func seedCalendarEvents(_ count: Int) {
         let store = EKEventStore()
         guard EKEventStore.authorizationStatus(for: .event) == .fullAccess, let calendar = store.defaultCalendarForNewEvents else { return }
         let day = Calendar.current.startOfDay(for: .now)
         let from = day.addingTimeInterval(-7 * 86400), to = day.addingTimeInterval(61 * 86400)
-        let have = store.events(matching: store.predicateForEvents(withStart: from, end: to, calendars: nil))
-            .filter { $0.title?.hasPrefix("Redde Perf: ") == true }.count
+        let seeded = store.events(matching: store.predicateForEvents(withStart: from, end: to, calendars: nil))
+            .filter { $0.title?.hasPrefix("Perf seed: ") == true }
+        if count == 0 {
+            for event in seeded { try? store.remove(event, span: .thisEvent, commit: false) }
+            try? store.commit()
+            return
+        }
+        let have = seeded.count
         guard have < count else { return }
         let span = to.timeIntervalSince(from)
         for i in have ..< count {
             let event = EKEvent(eventStore: store)
             event.calendar = calendar
-            event.title = "Redde Perf: Meeting \(i)"
+            event.title = "Perf seed: Meeting \(i)"
             event.location = "Room \(i % 12), 200 East Robinson St, Orlando, FL"
             event.notes = "Agenda for meeting \(i): the plan, the numbers, and what comes next."
             // Spread evenly, at a quarter hour between 8 AM and 6 PM.
