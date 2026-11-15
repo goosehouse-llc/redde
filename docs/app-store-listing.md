@@ -1,20 +1,22 @@
-# App Store listing — Redde Agent
+# App Store listing — Redde: AI Agents, Voice & Chat
 
 Character limits are Apple's. Everything here describes shipped, verified behaviour.
 
 ## Name (30)
-Redde Agent
+Redde: AI Agents, Voice & Chat
 
-Until 2.5 it was "Hermes Redde" (2.5 went in as "Redde: AI Agent Voice & Chat" for an hour, then "Redde Agent", his pick 2026-11-11). Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
+From 2.6 (his pick 2026-11-15: the release where Redde talks to other agents too; 2.6 was pulled from review to change it). Before: "Redde Agent" (2.5), "Hermes Redde" until 2.5 (2.5 went in as "Redde: AI Agent Voice & Chat" for an hour, then "Redde Agent", his pick 2026-11-11). The name and subtitle are set in App Store Connect → App Information (the store script doesn't send them). Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
 
 ## Subtitle (30)
-Talk, chat and run your agent
+Every agent, one app
+
+No other company's product names here or in the keywords (Claude Code, Codex, Hermes): Apple rejects them in metadata.
 
 ## Promotional text (170, editable without a new build)
 New in 2.6: Claude Code, Codex and other agents through the free Redde bridge, a new drawer that starts with what needs you, Maps for your agent, and smarter replies.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
-assistant,carplay,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,ai,voice
+assistant,carplay,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,coding,acp
 
 ## Description (4000)
 
