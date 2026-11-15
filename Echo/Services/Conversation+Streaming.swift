@@ -259,30 +259,36 @@ extension Conversation {
     /// Suggested replies to a finished reply (`FollowUps`): the options it lists, at once; else
     /// written by Apple's on-device model or the fast lane's (the person's pick, or whichever is
     /// there), the other one standing in when the fast lane is quiet; shown only while that
-    /// reply is still the last message.
+    /// reply is still the last message. What the reply calls for is read off the main actor
+    /// (`FollowUps.deciding`): reading a long reply took a frame or more as it ended.
     func suggestFollowUps(question: String, replyID: UUID, reply: String) {
         guard settings.suggestFollowUps, !reply.isEmpty, !isWorkerTranscript else { return }
-        let options = FollowUps.listedOptions(reply)
-        if !options.isEmpty {
-            followUps = options
-            return
-        }
-        guard FollowUps.worthSuggesting(reply) else { return }
         let base = Settings.normalizedBase(settings.fastLaneURL)
         let fastLane = base != nil && !settings.fastLaneModel.isEmpty
         let source = FollowUps.source(fastLaneSet: fastLane, preferFastLane: settings.suggestionsFromFastLane)
-        guard source != .none else { return }
-        let (model, key) = (settings.fastLaneModel, fastLane ? Keychain.read(.fastLaneAPIKey) : nil)
+        let model = settings.fastLaneModel
         followUpTask = Task { [weak self] in
+            let decision = await FollowUps.deciding(reply)
+            guard let self, !Task.isCancelled, messages.last?.id == replyID, !isStreaming else { return }
+            let kind: FollowUps.Kind
+            switch decision {
+            case .options(let options):
+                followUps = options
+                return
+            case .suggest(let called): kind = called
+            case .nothing: return
+            }
+            guard source != .none else { return }
+            let key = fastLane ? Keychain.read(.fastLaneAPIKey) : nil
             var suggestions = switch source {
-            case .onDevice: await FollowUps.suggestOnDevice(question: question, reply: reply)
-            case .fastLane: await FollowUps.suggest(question: question, reply: reply, baseURL: base!, apiKey: key, model: model)
+            case .onDevice: await FollowUps.suggestOnDevice(question: question, reply: reply, kind: kind)
+            case .fastLane: await FollowUps.suggest(question: question, reply: reply, baseURL: base!, apiKey: key, model: model, kind: kind)
             case .none: [String]()
             }
             if suggestions.isEmpty, source == .fastLane, !Task.isCancelled {
-                suggestions = await FollowUps.suggestOnDevice(question: question, reply: reply)
+                suggestions = await FollowUps.suggestOnDevice(question: question, reply: reply, kind: kind)
             }
-            guard let self, !Task.isCancelled, messages.last?.id == replyID, !isStreaming else { return }
+            guard !Task.isCancelled, messages.last?.id == replyID, !isStreaming else { return }
             followUps = suggestions
         }
     }
