@@ -50,7 +50,7 @@ import redde_qr  # noqa: E402
 import redde_codex  # noqa: E402
 import redde_registry  # noqa: E402
 
-VERSION = "0.10.2"
+VERSION = "0.11.0"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -60,6 +60,56 @@ LOG_LIMIT = 4000                      # updates kept per session for catch-up (o
 BUSY = -32002                         # ACP's "resource not found" range; used here for "busy"
 
 log = logging.getLogger("redde-bridge")
+
+#: What `_redde/file` hands a device: pictures, documents and sound a reply names, the kinds the
+#: chat shows (Redde's `ServeMedia`). Not code, keys or config: what the agent works on stays on
+#: the computer.
+FILE_KINDS = {
+    "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "gif": "image/gif", "webp": "image/webp",
+    "bmp": "image/bmp", "heic": "image/heic", "tiff": "image/tiff",
+    "pdf": "application/pdf", "txt": "text/plain", "md": "text/markdown", "markdown": "text/markdown",
+    "csv": "text/csv", "log": "text/plain", "html": "text/html", "htm": "text/html", "rtf": "text/rtf",
+    "mp3": "audio/mpeg", "m4a": "audio/mp4", "aac": "audio/aac", "wav": "audio/wav", "ogg": "audio/ogg",
+    "opus": "audio/ogg", "flac": "audio/flac", "aiff": "audio/aiff", "caf": "audio/x-caf",
+    "mp4": "video/mp4", "mov": "video/quicktime",
+}
+FILE_LIMIT = 25 * 1024 * 1024
+
+
+def read_shown_file(raw: Any, folder: str) -> Path | str:
+    """The file a reply named, for `_redde/file`: absolute, from `~`, or from the chat's folder.
+    The answer is the path, or why not, in words for the chat. Only the kinds in `FILE_KINDS`,
+    nothing hidden (a dot folder such as ~/.ssh or ~/.config holds keys) and nothing over
+    `FILE_LIMIT`, checked on the file a link leads to as well as on the name asked for. Inside
+    the chat's own project folder a hidden folder is fine (Claude Code's worktrees are in
+    .claude/worktrees), unless that folder is the home folder."""
+    if not isinstance(raw, str) or not raw.strip() or "\x00" in raw:
+        return "No file named."
+    named = Path(raw.strip().removeprefix("file://")).expanduser()
+    if not named.is_absolute():
+        named = Path(folder).expanduser() / named
+    try:
+        real = named.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return f"There's no file at {raw.strip()}."
+    try:
+        project = Path(folder).expanduser().resolve()
+    except (OSError, RuntimeError):
+        project = None
+    if project in (Path.home().resolve(), Path("/")):
+        project = None
+    for path in (named, real):
+        if path.suffix.lower().lstrip(".") not in FILE_KINDS:
+            return f"The bridge doesn't hand over {path.suffix} files." if path.suffix \
+                else "The bridge doesn't hand over files with no extension."
+        inside = project is not None and (path.resolve() if path is named else path).is_relative_to(project)
+        if not inside and any(part.startswith(".") and part not in (".", "..") for part in path.parts):
+            return "The bridge doesn't hand over files in hidden folders."
+    if not real.is_file():
+        return f"{raw.strip()} isn't a file."
+    if real.stat().st_size > FILE_LIMIT:
+        return f"{real.name} is too big to send ({real.stat().st_size // (1024 * 1024)} MB)."
+    return real
 
 
 # MARK: - Config
@@ -867,7 +917,9 @@ class Connection:
                              "service": self.bridge.service if self.bridge else None,
                              "updatable": bool(self.bridge and self.bridge.service),
                              # Agents can be added from the ACP registry (`_redde/add_agent`).
-                             "manages": bool(self.bridge and self.bridge.config.path)}
+                             "manages": bool(self.bridge and self.bridge.config.path),
+                             # Pictures and documents a reply names, for the chat (`_redde/file`, 0.11).
+                             "files": True}
             if agent.commands is not None:
                 meta["redde"]["commands"] = agent.commands
             if agent.limits is not None:
@@ -958,6 +1010,13 @@ class Connection:
             return {"output": await asyncio.to_thread(agent.pusher.command, str(params.get("command") or ""), agent.config.id)}
         if method == "_redde/agents":
             return {"agents": [{"id": agent.config.id, "name": agent.config.name, "running": agent.running}]}
+        if method == "_redde/file":
+            path = read_shown_file(params.get("path"), agent.folder(None, params.get("sessionId")))
+            if isinstance(path, str):
+                raise AgentError({"code": -32602, "message": path})
+            data = await asyncio.to_thread(path.read_bytes)
+            return {"name": path.name, "mimeType": FILE_KINDS[path.suffix.lower().lstrip(".")],
+                    "data": base64.b64encode(data).decode()}
         if method == "_redde/update":
             return await self._update()
         # The agents on the bridge, from the ACP registry (0.10): listed, added, removed.

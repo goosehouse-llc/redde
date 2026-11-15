@@ -181,6 +181,37 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(update["params"]["_meta"]["redde"]["seq"], 1)
         await c.wait_for(lambda m: m.get("method") == "_redde/turn_ended")
 
+    async def test_a_picture_a_reply_names_is_handed_over(self):
+        c = await self.client()
+        self.assertTrue((await c.call("initialize", {"protocolVersion": 1}))["result"]["_meta"]["redde"]["files"])
+        png = b"\x89PNG\r\n\x1a\n" + b"x" * 100
+        Path(self.dir.name, "shots").mkdir()
+        Path(self.dir.name, "shots", "carplay.png").write_bytes(png)
+        sid = (await c.call("session/new", {}))["result"]["sessionId"]
+        for path in ("shots/carplay.png", str(Path(self.dir.name, "shots", "carplay.png")), "file://" + self.dir.name + "/shots/carplay.png"):
+            got = (await c.call("_redde/file", {"path": path, "sessionId": sid}))["result"]
+            self.assertEqual((got["name"], got["mimeType"], base64.b64decode(got["data"])), ("carplay.png", "image/png", png), path)
+        # A hidden folder in the chat's own folder is fine (Claude Code's worktrees).
+        Path(self.dir.name, ".claude", "worktrees").mkdir(parents=True)
+        Path(self.dir.name, ".claude", "worktrees", "a.png").write_bytes(png)
+        self.assertIn("result", await c.call("_redde/file", {"path": ".claude/worktrees/a.png"}))
+
+    async def test_files_the_bridge_keeps_to_itself(self):
+        c = await self.client()
+        with tempfile.TemporaryDirectory() as other:
+            Path(other, ".ssh").mkdir()
+            Path(other, ".ssh", "key.png").write_bytes(b"secret")
+            Path(self.dir.name, "config.json").write_text("{}")
+            Path(self.dir.name, "notes").write_text("x")
+            Path(self.dir.name, "big.png").write_bytes(b"\0" * (rb.FILE_LIMIT + 1))
+            Path(self.dir.name, "looks.png").symlink_to(Path(self.dir.name, "config.json"))
+            Path(self.dir.name, "leads-out.png").symlink_to(Path(other, ".ssh", "key.png"))
+            for path, words in [(str(Path(other, ".ssh", "key.png")), "hidden"), ("config.json", ".json"),
+                                ("notes", "no extension"), ("big.png", "too big"), ("looks.png", ".json"),
+                                ("leads-out.png", "hidden"), ("gone.png", "no file"), ("", "No file"), (5, "No file")]:
+                reply = await c.call("_redde/file", {"path": path})
+                self.assertIn(words, reply.get("error", {}).get("message", ""), path)
+
     async def test_a_turn_goes_on_without_the_phone_and_is_caught_up(self):
         a = await self.client()
         sid = (await a.call("session/new", {}))["result"]["sessionId"]

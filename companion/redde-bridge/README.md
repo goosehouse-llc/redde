@@ -181,9 +181,11 @@ Beyond plain ACP, it adds these extensions:
 | `_redde/registry {fresh?}` | the ACP registry's agents this computer can run, each with `installed`, what it `runs`, and the program it `needs` installed first (when known). Read again after ten minutes, or with `fresh` |
 | `_redde/add_agent {id}` | adds a registry agent (by its registry id, or the bridge id without `-acp`): downloads it when it's a program of its own, writes it to the config and serves it at once. Returns `{agent, needs}` |
 | `_redde/remove_agent {id}` | takes an agent off the config and the bridge. Not the agent the request came through, and not while it's replying |
+| `_redde/file {path, sessionId?}` | a picture, document or sound a reply names, from this computer (0.11): absolute, from `~`, or from the chat's folder. Answers `{name, mimeType, data}` (base64). Only those kinds (images, PDF, text, Markdown, CSV, HTML, audio, MP4/MOV; never code, JSON or config), 25 MB at most, nothing in a hidden folder (`~/.ssh`, `~/.config`) except inside the chat's own project folder (Claude Code's `.claude/worktrees`) when that isn't the home folder; a link is checked where it leads too |
 | `session/list`, `session/set_title` | for an agent that keeps no list of its chats (Gemini CLI), the bridge keeps one: the chats started through it, named by their first message or by Rename, newest first, saved as `chats-<agent>.json` beside the config. `initialize` then says the agent can list and name them |
 | `_meta.redde.service`, `.updatable` | on `initialize`: `launchd` or `systemd` when the bridge was installed with `--install`, so it can update itself |
 | `_meta.redde.manages` | on `initialize`: agents can be added and removed (bridge 0.10) |
+| `_meta.redde.files` | on `initialize`: the bridge hands over the files a reply names (`_redde/file`, bridge 0.11) |
 | `_meta.redde.commands` | on `initialize`: the agent's slash commands as its last session said them, for a new chat that has heard none yet |
 
 Everything else goes to the agent as it is (`session/set_title`, `_session/steering`, `session/set_config_option`…). A `session/fork` is followed as the new session it makes, already open in the agent.
