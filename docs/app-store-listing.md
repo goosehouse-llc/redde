@@ -11,29 +11,33 @@ Until 2.5 it was "Hermes Redde" (2.5 went in as "Redde: AI Agent Voice & Chat" f
 Talk, chat and run your agent
 
 ## Promotional text (170, editable without a new build)
-New in 2.5: bots that work in the background, models and provider keys set from your phone, free local calls, phone tools for bots, and better battery life.
+New in 2.6: Claude Code, Codex and other agents through the free Redde bridge, a new drawer that starts with what needs you, Maps for your agent, and smarter replies.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 assistant,carplay,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,ai,voice
 
 ## Description (4000)
 
-Redde is a complete iPhone, iPad and Mac client for Hermes, the open-source AI agent, with CarPlay and an Apple Watch app. Talk or type, watch it work, let it get ahead of your day, and give it a crew: bots with faces and voices of their own.
+Redde is a complete iPhone, iPad and Mac client for your own AI agent: Hermes, the open-source agent, or Claude Code, Codex and other coding agents on your computer. Talk or type, watch it work, let it get ahead of your day, and give it a crew of bots.
 
 You bring the backend. Redde has no account and no analytics, and your conversations go only to your server, and to a voice service if you pick one.
 
 AHEAD OF YOUR DAY
 • Goals: tell your agent what you want to get done. It plans the steps, checks in on a schedule and shows your progress above your chats.
-• Morning Ideas, a Week Ahead and an Evening Wrap-up arrive as cards to swipe. Before an event, a heads-up says what to bring, and Leave-By Alerts work out from your calendar and Apple Maps when to go.
-• "Let me know when it ships", "check back Friday": watches and follow-ups come back on their own. Places tell your agent you've arrived; Health-aware days, if you allow.
-• Answers come as cards: your day as a timeline, the weather by the hour, places on a map, an email to check before it sends, a list to tick off.
+• Morning Ideas, a Week Ahead and an Evening Wrap-up arrive as cards. Leave-By Alerts work out from your calendar and Apple Maps when to go.
+• "Let me know when it ships": watches and follow-ups come back on their own.
+• Answers come as cards: your day, the weather, places on a map, prices with a deal meter, a list to tick off.
+
+CODING AGENTS
+• Claude Code, Codex, Gemini CLI and other ACP agents, through the free Redde bridge on your Mac or Linux computer. Add more from the ACP registry.
+• See each step and file change, approve commands and answer questions, by chat or voice, in the car too. Or try the built-in Demo Agent.
 
 BOTS
-• Each Hermes profile is a bot with a face, a voice and a chat of its own. Start from a template (Researcher, Writer, Coder, Home, Planner) and make its job, model and tools your own.
+• Each Hermes profile is a bot with a face, a voice and a chat of its own. Start from a template and make its job, model and tools your own.
 • Type @ to hand work to another bot, or put two to six in a group chat. A bot can work in the background and tell you when it's done. Give one a schedule and its answer arrives with a notification, even with Redde closed.
 
 TALK, DON'T TYPE
-• Tap the mic or say "Hey" and your agent's name, ask, hear the answer, or show it what the camera sees. Speech is recognized on your device; replies are read by the built-in voice, Kokoro, ElevenLabs or your Hermes.
+• Tap the mic or say "Hey" and your agent's name, or show it what the camera sees. Speech is recognized on your device; replies are read by the built-in voice, Kokoro, ElevenLabs or your Hermes.
 • Or talk live, interrupting any time: a free local call in your reading voice, or GPT-Live, Gemini Live, Grok Voice or ElevenLabs on your own key. An agent you allow can call you.
 • Hands-free until you say "that's all". CarPlay, Apple Watch, Siri, widgets and the Action Button. Spoken prefixes switch models or go to a bot.
 
@@ -42,24 +46,23 @@ SEE THE AGENT WORK
 • Approve or answer from a notification, out loud, or with a nod in AirPods. Notifications reach you with Redde closed, encrypted end to end.
 
 A FULL CLIENT
-• Start a chat on the phone, continue on the desktop. Search, pin, fork, archive, or go incognito.
-• An email inbox your agent sorts, with rules you set. Gmail or any mailbox; nothing is sent until you approve it.
-• Projects, scheduled jobs, the Kanban board, skills, plugins, memory you can see and edit, MCP servers, files and an SSH terminal.
-• Phone tools: your agent can use your calendar, reminders, contacts, photos and files, Apple Home and the Health data you choose, set alarms and start calls and texts, each only if you allow it.
+• Start a chat on the phone, continue on the desktop. Search, pin, fork, quote, or go incognito.
+• An email inbox your agent sorts into piles, yours too, with rules you set. Gmail or any mailbox; nothing is sent until you approve it.
+• Projects, scheduled jobs, a Kanban board, skills, plugins, memory you can edit, MCP servers, files and an SSH terminal.
+• Phone tools: your agent can use your calendar, reminders, contacts, photos, Apple Home, Maps and the Health data you choose, set alarms and start calls and texts, each only if you allow it.
 • Markdown, code, tables, diagrams and math; pictures, PDFs and audio open in place.
-• Attach photos, files or a day's calendar, or share from any app. Regenerate, edit and resend.
 
 YOUR BACKEND, YOUR RULES
-• Connect through the Hermes Dashboard or the Hermes API, on your LAN, over a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Several servers in one list, synced with iCloud.
+• Connect through the Hermes Dashboard or API, on your LAN, a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Several servers, synced with iCloud.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM, Ollama or a hosted provider.
-• Set up by QR code or link, and set models and keys from the phone. Credentials stay in the Keychain; a key your agent asks for goes sealed straight to your server.
-• In 17 languages. Face ID lock, eight themes, iPad split view, iPhone Duo, and a native Mac app.
+• Set up by QR code, and set models and keys from the phone. Credentials stay in the Keychain.
+• In 17 languages. Face ID lock, nine themes, iPad split view, iPhone Duo, and a native Mac app.
 • The one service we run is an optional relay for notifications, which can't read them.
 
 REQUIRES
-A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible endpoint; bots need Hermes. Redde includes no model and no AI service of its own.
+A Hermes agent (github.com/NousResearch/hermes-agent), an OpenAI-compatible endpoint, or the Redde bridge for other agents; bots need Hermes. Redde includes no model and no AI service of its own.
 
-Hermes is an open-source project by Nous Research. Redde is an independent client, not affiliated with it.
+Hermes is an open-source project by Nous Research. Redde is an independent client, not affiliated with Nous Research, Anthropic, OpenAI or Google.
 
 ## Header and Search Results (pictures, optional)
 Two pictures App Store Connect has taken since October 2026, on the version page under Product Page Information → Header and Search Results. People on iOS 27 and later see them; without them the page and the search result look as before (screenshots in the search result). Both are in `design/screenshots/creative/`, made by `design/screenshots/creative.py`.
@@ -80,7 +83,7 @@ Claude Code, Codex and other agents, a new drawer, and better suggested replies.
 • Arcade, a new theme: neon on navy by night, lavender by day.
 • Your Inbox in seven piles, with Receipts, Notifications and Promotions, plus up to eight of your own.
 • Maps for your agent: places near you, how long the way takes with traffic now, and Apple Maps opened ready to go (Phone Tools → Maps).
-• Price cards with a deal meter, every store in one row, and Watch Price.
+• Price cards with a deal meter, every store in one row, and Watch price.
 • Quote any message in your next one. Suggested replies are on: a reply's options become chips at once, and other suggestions fit what it asks, written on your device or by your OpenAI-compatible connection's model (Settings → Writing → Written By).
 • What your agent writes between its tool calls now shows in the chat.
 • CarPlay: switch servers from the Ask tab, and with more bots than fit on the Bots tab, an All Bots card lists them all. Your bots stay there while you're on a bridge.
@@ -96,10 +99,10 @@ Most of this takes the Redde plugin 1.31 on your Hermes: Settings → Redde Plug
 - Nothing new to declare. Maps uses Location When In Use, already declared; its purpose string now names Maps, in all 17 languages. The review notes (docs/app-review-notes.md) have the demo agent's exact taps, Maps under Phone tools and Location, and step 1's new label (3,909 characters with the placeholder): `scripts/app-store-push.py notes` puts the key in and sends them.
 - App Privacy stays "Data Not Collected": an agent's chats go from the device to the person's own computer running the Redde bridge, and from there to that agent and its provider; the ACP registry list is fetched by that computer, not the phone; suggested replies written by a model go only to the person's own OpenAI-compatible connection; Maps lookups go to Apple. The bridge's notifications use the same relay as the plugin's. Goosehouse LLC receives none of it.
 - The privacy policy: docs/privacy.md (November 14 lines: other agents through the Redde bridge, the ACP registry list and agent downloads on the computer, the demo agent, Maps as a phone tool, suggested replies, Up Next and the Calendar tile). Publish it before submitting.
-- The plugin: main must serve 1.31.0 (the Inbox's seven piles and piles of your own need it; 1.28 brought bot waits from the server, 1.29 the usual price for the deal meter, 1.30 Maps). Publish a GitHub release for it (the last is redde-push-1.27.0).
+- The plugin: main must serve 1.31.0 (the Inbox's seven piles and piles of your own need it; 1.28 brought bot waits from the server, 1.29 the usual price for the deal meter, 1.30 Maps). Its GitHub release is drafted (docs/plugin-release-1.31.0.md; a draft on GitHub, published at release; the last published is redde-push-1.27.0).
 - The bridge: main must serve 0.10.1, since the installer and Update Bridge fetch companion/redde-bridge from main. 0.10.1 also offers OpenClaw, which hasn't been tried live yet: it stays out of What's New.
 - Screenshots: the drawer replaced the chat list's tabs (Chats / Planned / Kanban / Made) and the Today strip, so every shot that shows the chat list is out of date. iPhone: `05-today` and `08-bots`. iPad: every slot with the sidebar beside it, `pano-01a`, `03-ipad-goals`, `04-ipad-inbox`, `05-ipad-today`, `06-ipad-memory`, `07-ipad-answers`, `08-ipad-bots` and `09-ipad-approve`. Also `04-inbox` / `04-ipad-inbox`, whose caption says "Important, Needs Reply, FYI and News" over the old pile chips, and `07-answers` / `07-ipad-answers`, which show the purchase card before the deal meter. iPhone `pano-01a`/`01b`, `03-goals`, `06-memory`, `09-approve` and `10-privacy` look unaffected. An agent shot (the demo agent's diff or approval) is optional.
-- The description says "eight themes" (nine with Arcade) and speaks of Hermes alone; a line for other agents through the Redde bridge, and new promotional text for 2.6, before submitting.
+- The description and promotional text are written for 2.6 (other agents through the Redde bridge, nine themes, Maps, piles). The keywords name no other company's product, as Apple asks.
 - The website: "new in 2.6" at release (deploys are the owner's word).
 - Close GitHub #77 at release.
 
