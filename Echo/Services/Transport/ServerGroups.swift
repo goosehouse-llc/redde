@@ -486,11 +486,16 @@ extension HermesServeClient {
 
 #if DEBUG
 extension GroupRoom {
+    /// The main agent's name in the demo rooms: the launch's `-displayName`, else Redde.
+    private static var demoMainName: String {
+        UserDefaults.standard.string(forKey: "displayName").flatMap { $0.isEmpty ? nil : $0 } ?? "Redde"
+    }
+
     /// `-echo.demoBots`: a group chat of three of the demo bots.
     static let demo = GroupRoom(.object([
         "room_id": .string("demo-room"), "name": .string("Weekend hike"), "updated_at": .number(Date.now.timeIntervalSince1970 - 300),
         "members": .array([
-            .object(["member_id": .string("default"), "profile": .string("default"), "handle": .string("hermes"), "display_name": .string("Redde")]),
+            .object(["member_id": .string("default"), "profile": .string("default"), "handle": .string("hermes"), "display_name": .string(demoMainName)]),
             .object(["member_id": .string("scout"), "profile": .string("scout"), "handle": .string("scout"), "display_name": .string("Scout")]),
             .object(["member_id": .string("writer"), "profile": .string("writer"), "handle": .string("writer"), "display_name": .string("Quill")]),
         ]),

@@ -23,6 +23,13 @@ nonisolated struct AcpEndpoint: Hashable, Sendable {
         var text = address.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
         if text.lowercased() == demoAddress {
+            #if DEBUG
+            // `-echo.demoCoders`: the agents video's stand-ins for Claude Code and Codex, each a
+            // demo agent of its own (`AcpDemoAgent.persona`).
+            if ProcessInfo.processInfo.arguments.contains("-echo.demoCoders"), AcpDemoAgent.personas[agent] != nil {
+                return AcpEndpoint(socketURL: URL(string: "redde-demo://\(agent)")!, agentsURL: nil, token: nil, folder: nil)
+            }
+            #endif
             return AcpEndpoint(socketURL: URL(string: "redde-demo://agent")!, agentsURL: nil, token: nil, folder: nil)
         }
         if !text.contains("://") { text = "ws://" + text }
@@ -240,7 +247,15 @@ final class AcpClient {
     private func connect() async throws {
         let task: any AcpSocket
         if endpoint.isDemo {
+            #if DEBUG
+            if let persona = endpoint.socketURL.host, AcpDemoAgent.personas[persona] != nil {
+                task = AcpDemoSocket(pace: .milliseconds(60), store: AcpDemoAgent.store(persona: persona))
+            } else {
+                task = AcpDemoSocket()
+            }
+            #else
             task = AcpDemoSocket()
+            #endif
         } else {
             var request = URLRequest(url: endpoint.socketURL)
             request.timeoutInterval = 20

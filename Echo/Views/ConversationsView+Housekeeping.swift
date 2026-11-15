@@ -12,7 +12,8 @@ extension ConversationsList {
         #if DEBUG
         // Dev hook: `-echo.demoProjects` fills the list from a fixture, so the project-folder
         // path can be driven without a gateway.
-        if DevHooks.demoProjects {
+        // (The agents video's demo agent, saved beside it, lists its own chats.)
+        if DevHooks.demoProjects, !(DemoAgents.on && settings.transport == .acp) {
             projects = Self.demoProjects
             folders = Self.demoProjects
             ledger = Self.demoProjects.flatMap { $0.lanes.flatMap(\.sessions) } + Self.demoScheduledRuns

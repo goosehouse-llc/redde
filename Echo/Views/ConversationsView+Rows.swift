@@ -554,6 +554,10 @@ enum DateGroup {
 
     /// The time on a row: a clock time today, a weekday this week, a date before that.
     static func rowTime(_ date: Date, now: Date = .now) -> String {
+        #if DEBUG
+        // The agents video: what happens while it's filmed, at its 9:41 morning.
+        if DemoAgents.on, let shown = DemoAgents.shown(date) { return shown.formatted(date: .omitted, time: .shortened) }
+        #endif
         let cal = Calendar.current
         if cal.isDate(date, inSameDayAs: now) { return date.formatted(date: .omitted, time: .shortened) }
         if let week = cal.date(byAdding: .day, value: -6, to: now), date > week { return date.formatted(.dateTime.weekday(.abbreviated)) }

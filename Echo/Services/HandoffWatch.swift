@@ -135,6 +135,14 @@ final class HandoffWatch {
     /// while one was just made: read often until it is answered. Otherwise often only while the bot
     /// is at it, and now and then to see if it starts.
     func start(_ profile: String, eager: Bool = false) {
+        #if DEBUG
+        // The agents video: the hand-off under Sol's reply (its row asks eagerly) played, not read,
+        // and no other chat read (`DemoAgents`).
+        if DemoAgents.on, Settings.shared.transport != .acp {
+            if eager { DemoAgents.playHandoff(profile) { [weak self] in self?.progress[profile] = $0 } }
+            return
+        }
+        #endif
         lookers[profile, default: 0] += 1
         if eager { eagerFor[profile, default: 0] += 1 }
         nextRead[profile] = .now

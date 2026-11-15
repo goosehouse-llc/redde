@@ -80,7 +80,7 @@ extension ConversationsList {
         if DevHooks.has("-echo.demoBotWait") {
             drawerBotWaits = [NewDrawer.BotWait(id: "demo-wait", profile: "writer", title: "Waiting on your approval",
                                                 detail: "Server steps: systemctl restart hermes-gateway\nSay \"go\" to see the card.",
-                                                word: "go", at: .now.addingTimeInterval(-240))]
+                                                word: "go", at: (DemoAgents.on ? DemoAgents.clock : .now).addingTimeInterval(-240))]
         }
         #endif
         while !Task.isCancelled {
@@ -143,7 +143,7 @@ extension ConversationsList {
         }
             ?? Date.now.formatted(.dateTime.weekday(.wide).month().day())
         return VStack(alignment: .leading, spacing: 6) {
-            Text(verbatim: Self.drawerHello(at: .now))
+            Text(verbatim: Self.drawerHello(at: Self.helloNow))
                 .font(.system(.title, design: tone.design, weight: .heavy))
                 .foregroundStyle(tone.ink)
             Text(verbatim: line)
@@ -160,6 +160,14 @@ extension ConversationsList {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .drawerRow(top: 4, bottom: 8)
+    }
+
+    /// Now, for the hello (the agents video's morning, whatever the Mac's clock says).
+    static var helloNow: Date {
+        #if DEBUG
+        if DemoAgents.on { return DemoAgents.clock }
+        #endif
+        return .now
     }
 
     static func drawerHello(at now: Date) -> String {

@@ -380,7 +380,7 @@ def shot(i):
     kind, take, a, b, words, colour, _, _, bars, extra = SHOTS[i]
     if kind == 'ring': return ring_page(i)
     length = BAR * bars + SLIDE
-    speed = (b - a) / length
+    speed = (b - a - extra.get('dropped', 0)) / length   # (`dropped`: the seconds `fix` leaves out)
     starts = LANDS_AT[i] - SLIDE
     caption(f'{V}/{P}-cap{i}.png', words, colour, extra.get('clock'))
     mc.glow_card(f'{V}/{P}-glow{i}.png', colour)

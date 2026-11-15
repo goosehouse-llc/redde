@@ -97,6 +97,7 @@ extension Conversation {
         if let transportOverride { return transportOverride }
         #if DEBUG
         if DemoDay.on { return DemoDayTransport() }   // the day's video: canned answers
+        if DemoAgents.on, connection != .acp { return DemoAgentsTransport() }   // the agents video's
         #endif
         guard let url = settings.activeBaseURL else { return nil }
         let key = settings.gatewayAPIKey
@@ -295,6 +296,9 @@ extension Conversation {
     /// A long chat opens in pages (`openLongBotChat`); the main profile's Bot Chat, kept forever,
     /// is the one that gets there.
     func openBot(_ bot: HermesBot, mainName: String) async throws {
+        #if DEBUG
+        if DemoAgents.on, settings.transport != .acp { return DemoAgents.show(bot, in: self, mainName: mainName) }   // the agents video
+        #endif
         if bot.viaAPI { return try await openAPIBot(bot, mainName: mainName) }
         let (stored, isNew) = try await dashboard.botChat(for: bot)
         let ref = BotRef(profile: bot.name, name: bot.label(mainName: mainName))

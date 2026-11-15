@@ -264,8 +264,9 @@ extension ConversationsList {
             // `-echo.demoPicture`: Scout has a picture from Hermes Desktop.
             var bot = bot
             bot.hasPicture = bot.name == "scout" && DevHooks.has("-echo.demoPicture")
-            // The models they run on, for the Topology map.
-            bot.model = ["default": "qwen3.6-35b-a3b", "scout": "qwen3.6-35b-a3b", "writer": "anthropic/claude-sonnet-4.5",
+            // The models they run on, for the Topology map (none in the agents video, whose
+            // headers would show them).
+            bot.model = DemoAgents.on ? nil : ["default": "qwen3.6-35b-a3b", "scout": "qwen3.6-35b-a3b", "writer": "anthropic/claude-sonnet-4.5",
                          "fixit": "gemma-4-12b"][bot.name]
             return bot
         } + extraDemoBots + claudeDemoBot

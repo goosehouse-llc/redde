@@ -149,9 +149,14 @@ actor AcpDemoAgent {
     private func answer(_ method: String, _ params: JSONValue) async throws -> JSONValue {
         switch method {
         case "initialize":
+            #if DEBUG
+            let title = persona.flatMap { Self.personas[$0] } ?? "Demo Agent"
+            #else
+            let title = "Demo Agent"
+            #endif
             return .object([
                 "protocolVersion": .number(1),
-                "agentInfo": .object(["name": .string("redde-demo"), "title": .string("Demo Agent"), "version": .string(Bundle.main.shortVersion)]),
+                "agentInfo": .object(["name": .string("redde-demo"), "title": .string(title), "version": .string(Bundle.main.shortVersion)]),
                 "agentCapabilities": .object([
                     "loadSession": .bool(true),
                     "promptCapabilities": .object(["image": .bool(false), "embeddedContext": .bool(false)]),
@@ -226,6 +231,9 @@ actor AcpDemoAgent {
             chats[id]?.title = title.isEmpty ? "Demo" : title
             await tell(id, .object(["sessionUpdate": .string("session_info_update"), "title": .string(chats[id]?.title ?? "")]))
         }
+        #if DEBUG
+        if let persona { return await standIn(persona, id) }
+        #endif
         switch Self.script(for: said, first: first) {
         case .tour: return await tour(id)
         case .plan: return await plan(id)
@@ -326,6 +334,93 @@ actor AcpDemoAgent {
         await say(id, "You picked “\(picked)”. Hello from Redde's demo agent!")
         return "end_turn"
     }
+
+    #if DEBUG
+    // MARK: The agents video's stand-ins
+
+    /// `-echo.demoCoders` (the agents video, design/video/make_agents.py): scripted stand-ins for
+    /// Claude Code and Codex, by the agent named in the demo address's place (`redde-demo://claude`).
+    /// Each keeps its chats in a file of its own. Nothing here is either agent's: the words are
+    /// the video's.
+    static let personas = ["claude": "Claude Code", "codex": "Codex"]
+
+    static func store(persona: String) -> URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appending(path: "redde-demo-agent-\(persona).json")
+    }
+
+    /// Which stand-in this is, by its store's name; nil for the demo agent itself.
+    private var persona: String? {
+        guard let name = store?.deletingPathExtension().lastPathComponent, name.hasPrefix("redde-demo-agent-") else { return nil }
+        let persona = String(name.dropFirst("redde-demo-agent-".count))
+        return Self.personas[persona] == nil ? nil : persona
+    }
+
+    static let loginBefore = """
+        func signIn() async throws -> User {
+            guard session.expiresAt > .now else {
+                throw LoginError.expired
+            }
+            return try await api.user(session)
+        }
+        """
+    static let loginAfter = """
+        func signIn() async throws -> User {
+            if session.expiresAt <= .now {
+                session = try await api.refresh(session)
+            }
+            return try await api.user(session)
+        }
+        """
+
+    private func standIn(_ persona: String, _ id: String) async -> String {
+        let file = "Login.swift"
+        let diff: JSONValue = .object(["type": .string("diff"), "path": .string(file), "oldText": .string(Self.loginBefore), "newText": .string(Self.loginAfter)])
+        let entries = persona == "claude" ? ["Find the bug", "Fix it", "Run the tests"] : ["Read the change", "Review it", "Test a failed refresh"]
+        if persona == "claude" {
+            await think(id, "Sign-in fails once the session has run out. I'll find where the session is checked.")
+            await todos(id, ["in_progress", "pending", "pending"], entries: entries)
+            await step(id, "read-1", kind: "read", title: "Read \(file)", input: ["path": .string(file)],
+                       content: [.object(["type": .string("content"), "content": text(Self.loginBefore)])])
+            await todos(id, ["completed", "in_progress", "pending"], entries: entries)
+            await step(id, "edit-1", kind: "edit", title: "Edit \(file)",
+                       input: ["file_path": .string(file), "old_string": .string("throw LoginError.expired"), "new_string": .string("session = try await api.refresh(session)")],
+                       content: [diff])
+            await todos(id, ["completed", "completed", "in_progress"], entries: entries)
+        } else {
+            await think(id, "Reading Claude Code's change to \(file).")
+            await todos(id, ["in_progress", "pending", "pending"], entries: entries)
+            await step(id, "read-1", kind: "read", title: "Read the change to \(file)", input: ["path": .string(file)], content: [diff])
+            await todos(id, ["completed", "completed", "pending"], entries: entries)
+            await say(id, "Looks good ✅ The session is refreshed before sign-in, so nobody gets signed out.\n\nOne gap: no test covers a refresh that fails. I'll add one and run the login tests.")
+        }
+        let command = persona == "claude" ? "swift test" : "swift test --filter LoginTests"
+        let reason = persona == "claude" ? "Run the tests" : "Add a test and run the login tests"
+        let call: [String: JSONValue] = ["toolCallId": .string("run-1"), "kind": .string("execute"), "title": .string(command),
+                                         "rawInput": .object(["command": .string(command), "description": .string(reason)])]
+        await tell(id, .object(["sessionUpdate": .string("tool_call"), "status": .string("pending")].merging(call) { $1 }))
+        let answer = await ask(id, "session/request_permission", [
+            "sessionId": .string(id), "toolCall": .object(call),
+            "options": .array([
+                .object(["optionId": .string("allow"), "name": .string("Allow"), "kind": .string("allow_once")]),
+                .object(["optionId": .string("deny"), "name": .string("Deny"), "kind": .string("reject_once")]),
+            ]),
+        ])
+        guard !cancelled.contains(id) else { return "cancelled" }
+        guard answer["outcome"]?["optionId"]?.string == "allow" else {
+            await tell(id, .object(["sessionUpdate": .string("tool_call_update"), "toolCallId": .string("run-1"), "status": .string("failed")]))
+            await say(id, "Okay, I didn't run them.")
+            return "end_turn"
+        }
+        let passed = persona == "claude" ? "Test Suite 'All tests' passed\nExecuted 42 tests, with 0 failures" : "Test Suite 'LoginTests' passed\nExecuted 7 tests, with 0 failures"
+        await step(id, "run-1", kind: "execute", title: command, input: ["command": .string(command), "description": .string(reason)],
+                   content: [.object(["type": .string("content"), "content": text(passed)])], update: true)
+        await todos(id, ["completed", "completed", "completed"], entries: entries)
+        await say(id, persona == "claude"
+            ? "Fixed ✅ When the session has run out, sign-in now refreshes it instead of failing. All 42 tests pass."
+            : "Added the test, and all 7 login tests pass.")
+        return "end_turn"
+    }
+    #endif
 
     // MARK: Parts of a turn
 

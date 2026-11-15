@@ -35,6 +35,11 @@ import WidgetKit
 ///   it is written, and `-echo.groupVoice [bot]` the voice screen on the room (with that bot's reply being read; with
 ///   `-echo.demoDraft`, the sample reply read as it is written; with `-echo.demoRound`, a question
 ///   and the three bots answering it in turn).
+/// - `-echo.demoAgents [profile]`: the agents video (`DemoAgents`): with `-echo.demoProjects -echo.demoBots
+///   -displayName Sol`, each sample bot's chat opens from the Team row, answers are canned, and a hand-off to
+///   Quill is played under Sol's reply. `-echo.spareAgent NAME`: Redde's demo agent saved as a server beside it.
+/// - `-echo.demoCoders`: stand-ins for Claude Code and Codex saved as servers (`AcpDemoAgent.personas`).
+///   `-echo.showTouches`: a ring where the screen is touched (`DemoTouches`), for the videos.
 /// - `-echo.demoHosts`: replace any real endpoints with example hosts.
 /// - `-echo.spareServer NAME`: a saved server of that name, not switched to, if there isn't one (UI tests
 ///   remove it from Servers).
@@ -249,7 +254,7 @@ enum DevHooks {
         // The Projects section only shows on the Dashboard connection.
         if demoProjects { settings.transport = .hermesServe }
         if demoBots {
-            if !DemoDay.on { conversation.seedBotDemo() }   // (the day's video starts on a chat of Sol's)
+            if !DemoDay.on, !DemoAgents.on { conversation.seedBotDemo() }   // (the day's and agents' videos open their own)
             BotDirectory.shared.set(ConversationsList.demoBots, key: settings.connectionKey)
             #if canImport(UIKit)
             if has("-echo.demoPicture") { BotPictures.shared.seed("scout", BotPictures.demoPicture) }
@@ -290,6 +295,10 @@ enum DevHooks {
             conversation.streamCallDemo(after: delay)
         }
         DemoDay.applyAtLaunch(conversation: conversation, settings: settings)
+        DemoAgents.applyAtLaunch(conversation: conversation, settings: settings)
+        #if os(iOS)
+        DemoTouches.install()
+        #endif
         if has("-echo.demoAudio") { conversation.seedAudioDemo() }
         if has("-echo.demoDocument") { conversation.seedDocumentDemo() }
         if has("-echo.demoPage") { conversation.seedPageDemo() }
@@ -434,6 +443,28 @@ enum DevHooks {
         if has("-echo.demoStream") { conversation.streamDemo(askingAfter: value("-echo.demoStream").flatMap(Double.init)) }
         if let name = value("-echo.spareServer"), !settings.servers.contains(where: { $0.name == name }) {
             _ = settings.addServer(name: name)
+        }
+        // `-echo.spareAgent NAME`: Redde's demo agent saved as a server of that name, not switched to.
+        if let name = value("-echo.spareAgent"), !settings.servers.contains(where: { $0.name == name }) {
+            var agent = HermesServer(id: UUID(), name: name, transport: .acp)
+            agent.acpURL = AcpEndpoint.demoAddress
+            settings.servers.append(agent)
+        }
+        // `-echo.demoCoders`: stand-ins for Claude Code and Codex (`AcpDemoAgent.personas`), each
+        // saved as an Other Agents server of its own, not switched to.
+        if has("-echo.demoCoders") {
+            for (id, name) in AcpDemoAgent.personas.sorted(by: { $0.value < $1.value }) where !settings.servers.contains(where: { $0.name == name }) {
+                var agent = HermesServer(id: UUID(), name: name, transport: .acp)
+                agent.acpURL = AcpEndpoint.demoAddress
+                agent.acpAgent = id
+                settings.servers.append(agent)
+            }
+            // Their names from the start (as a connected agent's are), not only once they've said.
+            for (id, name) in AcpDemoAgent.personas {
+                if let socket = AcpEndpoint.make(address: AcpEndpoint.demoAddress, agent: id, token: nil, folder: nil)?.socketURL {
+                    settings.acpAgentNames[socket.absoluteString] = name
+                }
+            }
         }
         if has("-echo.demoHosts") {
             settings.gatewayURL = "https://redde.home.example:8642"

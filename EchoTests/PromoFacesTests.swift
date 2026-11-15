@@ -14,6 +14,9 @@ struct PromoFacesTests {
         var faces: [(String, BotFace)] = [("redde", .main)]
         for bot in roster.bots where !bot.isDefault { faces.append((bot.name, roster.faces[bot.name] ?? BotFace(seed: bot.name))) }
         for template in BotTemplate.all { faces.append((template.id, template.face)) }
+        // The demo bots again under names of their own: a template's id ("writer") is a demo bot's
+        // name too, and its face is written over the bot's (the agents video wants Quill's).
+        for bot in roster.bots where !bot.isDefault { faces.append(("bot-" + bot.name, roster.faces[bot.name] ?? BotFace(seed: bot.name))) }
         try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
         for (name, face) in faces {
             let picture = try #require(BotAvatar.picture(of: face, side: 300, scale: 2))

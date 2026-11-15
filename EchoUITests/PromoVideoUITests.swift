@@ -1048,4 +1048,354 @@ final class PromoVideoUITests: XCTestCase {
         hold(2.5)
         mark("end")
     }
+
+    // MARK: Agents, for Reddit (design/video, `make_agents.py`)
+
+    /// The sample bots on the new drawer, in the standard theme, dark (`DemoAgents`: each bot's chat
+    /// opens from the Team row, and the answers are canned). Main agent: Sol.
+    /// On the Dashboard connection (as `-echo.demoProjects` has it; `launch`'s `-transport` would take
+    /// the app back off it), so @ offers the bots.
+    private func agents(_ extra: [String] = []) throws -> XCUIApplication {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["PROMO_VIDEO"] == "1", "Promo video shots run on request")
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = XCUIApplication.straightToChat
+            + ["-echo.demoHosts", "-transport", "hermesServe", "-echo.demoProjects", "-echo.demoBots", "-echo.demoAgents", "-displayName", "Sol",
+               "-echo.clearDrafts", "-suggestFollowUps", "<false/>", "-mutes", "<>", "-theme", "standard", "-appearance", "dark"] + extra
+        app.launch()
+        return app
+    }
+
+    /// The list, from an open chat (the iPhone's chat covers it).
+    private func toList(_ app: XCUIApplication) {
+        let list = app.buttons["Conversations"].firstMatch
+        if list.waitForExistence(timeout: 3), list.isHittable { list.tap() }
+    }
+
+    /// A face in the drawer's Team row.
+    private func member(_ app: XCUIApplication, _ name: String) -> XCUIElement {
+        let all = app.buttons.matching(NSPredicate(format: "label == %@", name))
+        return all.hittable(within: 10) ?? all.firstMatch
+    }
+
+    /// The drawer, then Quill, Scout and Fix-it opened from the Team row in turn, back to the
+    /// drawer between them.
+    func testAgentsTeam() throws {
+        let app = try agents(["-echo.screen", "sessions", "-echo.demoMarks"])
+        XCTAssertTrue(app.staticTexts["Good morning"].firstMatch.waitForExistence(timeout: 20), "no drawer")
+        hold(1.5)
+        mark("start")
+        hold(2.0)
+        for (name, words) in [("Quill", "fog"), ("Scout", "Falls Loop"), ("Fix-it", "backup")] {
+            member(app, name).tap()
+            XCTAssertTrue(app.text(containing: words).waitForExistence(timeout: 10), "\(name)'s chat didn't open")
+            mark(name.lowercased().replacingOccurrences(of: "-", with: ""))
+            hold(2.0)
+            toList(app)
+            mark("list")
+            hold(1.2)
+        }
+        mark("end")
+        hold(1.0)
+    }
+
+    /// Sol's chat: a hike asked for and answered as it streams, Scout asked with an @ (its answer
+    /// here, under its face), the invite handed to Quill (its progress under Sol's reply), and
+    /// Quill's chat opened from there.
+    func testAgentsChat() throws {
+        let app = try agents()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.text(containing: "call the vet").waitForExistence(timeout: 10), "not Sol's chat")
+        hold(1.5)
+        mark("start")
+        hold(0.8)
+        field.tap()
+        hold(0.4)
+        func send() { app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap() }
+        field.typeText("Find us a hike for Saturday morning")
+        hold(0.4)
+        send()
+        mark("asked")
+        XCTAssertTrue(app.text(containing: "waterfall halfway").waitForExistence(timeout: 20), "no hike")
+        mark("hike")
+        hold(2.5)
+        field.tap()
+        field.typeText("@sc")
+        let scout = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "@scout")).firstMatch
+        XCTAssertTrue(scout.waitForExistence(timeout: 5), "Scout wasn't offered")
+        mark("offered")
+        hold(1.0)
+        scout.tap()
+        hold(0.6)
+        // (the caret stays where "@sc" ended: put it at the end of "@scout ")
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5)).tap()
+        hold(0.3)
+        field.typeText("is the trail open?")
+        hold(0.4)
+        send()
+        mark("mentioned")
+        XCTAssertTrue(app.text(containing: "footbridge").waitForExistence(timeout: 20), "Scout didn't answer")
+        mark("scout")
+        hold(2.5)
+        field.tap()
+        field.typeText("Ask Quill to write the invite")
+        hold(0.4)
+        send()
+        mark("handed")
+        let answered = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Quill answered")).firstMatch
+        XCTAssertTrue(answered.waitForExistence(timeout: 30), "Quill never answered")
+        mark("answered")
+        hold(1.8)
+        answered.tap()
+        XCTAssertTrue(app.text(containing: "Coffee").waitForExistence(timeout: 10), "Quill's chat didn't open on the invite")
+        mark("quill")
+        hold(3.0)
+        mark("end")
+    }
+
+    /// The group chat's voice screen: one question, and Sol, Scout and Quill answering in turn,
+    /// each in its own voice (Kokoro's, at `TEST_RUNNER_KOKORO_URL`, when given).
+    func testAgentsVoiceRound() throws {
+        var voice: [String] = []
+        if let url = ProcessInfo.processInfo.environment["KOKORO_URL"], !url.isEmpty {
+            voice = ["-replyVoice", "kokoro", "-kokoroURL", url, "-voiceSpeed", "1"]
+        }
+        let app = try agents(["-echo.screen", "sessions", "-echo.openGroup", "-echo.demoRound", "-echo.groupVoice"] + voice)
+        var label: XCUIElement?
+        for name in ["Sol", "Scout", "Quill"] {
+            label = app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "\(name) is speaking")).firstMatch
+            XCTAssertTrue(label!.waitForExistence(timeout: 40), "\(name) never spoke")
+            mark(name.lowercased())
+        }
+        if let label { wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: label)], timeout: 30) }
+        mark("end")
+        hold(1.5)
+    }
+
+    /// The group chat, a bot's reply coming in as it is written.
+    func testAgentsGroup() throws {
+        let app = try agents(["-echo.screen", "sessions", "-echo.openGroup", "-echo.demoDraft"])
+        XCTAssertTrue(app.text(containing: "Weekend hike").waitForExistence(timeout: 20), "no group chat")
+        mark("start")
+        hold(9.0)
+        mark("end")
+    }
+
+    /// What waits on you, from several bots, on the drawer: the stack opened.
+    func testAgentsWaiting() throws {
+        let app = try agents(["-echo.screen", "sessions", "-echo.demoMarks", "-echo.demoBotWait"])
+        XCTAssertTrue(app.staticTexts["Good morning"].firstMatch.waitForExistence(timeout: 20), "no drawer")
+        hold(1.5)
+        mark("start")
+        hold(1.5)
+        let more = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "more")).firstMatch
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "no stack")
+        more.tap()
+        mark("opened")
+        hold(2.5)
+        mark("end")
+    }
+
+    /// From the drawer, the server menu to Redde's demo agent (a coding agent, as Claude Code or
+    /// Codex through the bridge): a new chat, "Fix the notes", its approval allowed, and back to
+    /// Home and the team.
+    func testAgentsCodingAgent() throws {
+        let app = try agents(["-echo.screen", "sessions", "-echo.demoMarks", "-echo.spareAgent", "Demo Agent"])
+        XCTAssertTrue(app.staticTexts["Good morning"].firstMatch.waitForExistence(timeout: 20), "no drawer")
+        hold(1.5)
+        mark("start")
+        hold(1.2)
+        let server = app.buttons["Server"].firstMatch
+        XCTAssertTrue(server.waitForExistence(timeout: 5), "no server menu")
+        server.tap()
+        let agent = app.buttons["Demo Agent"].firstMatch
+        XCTAssertTrue(agent.waitForExistence(timeout: 5), "the demo agent isn't in the menu")
+        mark("menu")
+        hold(1.2)
+        agent.tap()
+        mark("switched")
+        hold(2.0)
+        let new = app.buttons.matching(NSPredicate(format: "label == 'New conversation'")).allElementsBoundByIndex.first { $0.isHittable }
+        XCTAssertNotNil(new, "no New Chat")
+        new?.tap()
+        let composer = app.textFields["composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 20), "no message field")
+        hold(1.0)
+        composer.tap()
+        hold(0.4)
+        composer.typeText("Fix the notes")
+        hold(0.4)
+        app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap()
+        mark("sent")
+        let allow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Allow'")).firstMatch
+        XCTAssertTrue(allow.waitForExistence(timeout: 60), "the demo agent didn't ask")
+        mark("asked")
+        if app.keyboards.firstMatch.exists {
+            let hide = app.keyboards.buttons["Hide keyboard"]
+            if hide.exists { hide.tap() } else { app.swipeDown() }
+        }
+        hold(2.0)
+        allow.tap()
+        mark("allowed")
+        XCTAssertTrue(app.text(containing: "all three checks pass").waitForExistence(timeout: 30), "the agent didn't finish")
+        mark("done")
+        hold(2.5)
+        toList(app)
+        hold(1.0)
+        let back = app.buttons["Server"].firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 5), "no server menu on the bridge")
+        back.tap()
+        let home = app.buttons["Home"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 5), "Home isn't in the menu")
+        hold(1.0)
+        home.tap()
+        mark("home")
+        XCTAssertTrue(app.staticTexts["Team"].firstMatch.waitForExistence(timeout: 10) || app.staticTexts["TEAM"].firstMatch.exists, "the team isn't back")
+        hold(3.0)
+        mark("end")
+    }
+
+    // MARK: Agents, the coding agents' cut (2026-11-15)
+
+    /// The whole job in one take, with a ring where the screen is touched: the server menu with the
+    /// Hermes server and the stand-ins for Claude Code and Codex (`-echo.demoCoders`); Sol asked what's
+    /// left; New Chat held for a chat with Claude Code, which fixes the bug (its approval allowed) and
+    /// shows its change; New Chat held again for Codex, which reviews it and asks to run tests (left
+    /// waiting); back to Home and Quill for the release notes; and the drawer's stack, Codex's ask on
+    /// top of the bots'.
+    func testAgentsCoders() throws {
+        let app = try agents(["-echo.screen", "sessions", "-echo.demoMarks", "-echo.demoCoders", "-echo.showTouches"])
+        XCTAssertTrue(app.staticTexts["Good morning"].firstMatch.waitForExistence(timeout: 20), "no drawer")
+        func send() { app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap() }
+        func hideKeyboard() {
+            guard app.keyboards.firstMatch.exists else { return }
+            let hide = app.keyboards.buttons["Hide keyboard"]
+            if hide.exists { hide.tap() } else { app.swipeDown() }
+        }
+        func ask(_ words: String) {
+            let composer = app.textFields["composer"].exists ? app.textFields["composer"] : app.textFields.firstMatch
+            XCTAssertTrue(composer.waitForExistence(timeout: 20), "no message field")
+            composer.tap()
+            hold(0.5)
+            composer.typeText(words)
+            hold(0.8)
+            send()
+        }
+        /// New Chat held, and a chat with `name` picked from its menu.
+        func chat(with name: String) {
+            hideKeyboard()
+            let new = app.buttons["new-chat-elsewhere"].firstMatch
+            XCTAssertTrue(new.waitForExistence(timeout: 10), "no New Chat to hold")
+            new.press(forDuration: 1.0)
+            let pick = app.buttons["new-chat-elsewhere-\(name)"].firstMatch
+            XCTAssertTrue(pick.waitForExistence(timeout: 5), "\(name) isn't in New Chat's menu")
+            mark("held" + name.lowercased().filter(\.isLetter))
+            hold(2.0)
+            pick.tap()
+            mark("with" + name.lowercased().filter(\.isLetter))
+        }
+        hold(2.0)
+        mark("start")
+        hold(1.5)
+        // Every agent: the Hermes server and the coding agents, in the server menu.
+        let server = app.buttons["Server"].firstMatch
+        XCTAssertTrue(server.waitForExistence(timeout: 5), "no server menu")
+        server.tap()
+        XCTAssertTrue(app.buttons["Codex"].firstMatch.waitForExistence(timeout: 5), "the coding agents aren't in the menu")
+        mark("menu")
+        hold(3.5)
+        app.staticTexts["Good morning"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        mark("closed")
+        hold(2.0)
+        // Sol: what's left.
+        member(app, "Sol").tap()
+        XCTAssertTrue(app.text(containing: "call the vet").waitForExistence(timeout: 10), "not Sol's chat")
+        mark("sol")
+        hold(1.5)
+        ask("What's left before the release?")
+        mark("asked")
+        XCTAssertTrue(app.text(containing: "release notes").waitForExistence(timeout: 20), "Sol didn't answer")
+        mark("answered")
+        hideKeyboard()
+        hold(3.5)
+        // Claude Code: the fix.
+        chat(with: "Claude Code")
+        hold(2.5)
+        ask("Fix the login bug")
+        mark("sent")
+        let allow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Allow'")).firstMatch
+        XCTAssertTrue(allow.waitForExistence(timeout: 60), "Claude Code didn't ask")
+        hideKeyboard()
+        mark("approval")
+        hold(3.0)
+        allow.tap()
+        mark("allowed")
+        XCTAssertTrue(app.text(containing: "42 tests pass").waitForExistence(timeout: 30), "Claude Code didn't finish")
+        mark("fixed")
+        hold(3.5)
+        // Its change.
+        var changes = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'View changes'")).firstMatch
+        if !changes.waitForExistence(timeout: 2) {
+            let steps = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'tools' OR label CONTAINS[c] 'tool steps'")).allElementsBoundByIndex.last { $0.isHittable }
+            steps?.tap()
+            mark("steps")
+            hold(1.5)
+            let edit = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Edit Login.swift'")).allElementsBoundByIndex.last { $0.isHittable }
+                ?? app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'Edit Login.swift'")).allElementsBoundByIndex.last { $0.isHittable }
+            edit?.tap()
+            mark("edit")
+            hold(1.5)
+            changes = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'View changes'")).firstMatch
+        }
+        XCTAssertTrue(changes.waitForExistence(timeout: 5), "no View changes")
+        changes.tap()
+        mark("diff")
+        hold(4.5)
+        let done = app.buttons["Done"].firstMatch
+        if done.exists, done.isHittable { done.tap() } else { app.swipeDown() }
+        mark("diffclosed")
+        hold(1.5)
+        // Codex: the review.
+        chat(with: "Codex")
+        hold(2.5)
+        ask("Review Claude Code's change")
+        mark("reviewsent")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Allow'")).firstMatch.waitForExistence(timeout: 60), "Codex didn't ask")
+        hideKeyboard()
+        mark("reviewed")
+        hold(4.5)
+        // Back to the team: Home, then Quill.
+        toList(app)
+        mark("drawer")
+        hold(1.5)
+        let back = app.buttons["Server"].firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 5), "no server menu on Codex")
+        back.tap()
+        let home = app.buttons["Home"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 5), "Home isn't in the menu")
+        hold(1.5)
+        home.tap()
+        mark("home")
+        hold(2.5)
+        member(app, "Quill").tap()
+        XCTAssertTrue(app.text(containing: "fog").waitForExistence(timeout: 10), "Quill's chat didn't open")
+        mark("quill")
+        hold(1.5)
+        ask("Write the release notes from today's changes")
+        mark("notessent")
+        XCTAssertTrue(app.text(containing: "shorter version").waitForExistence(timeout: 20), "Quill didn't write the notes")
+        mark("notes")
+        hideKeyboard()
+        hold(4.0)
+        // What needs you: Codex's ask on top of the bots'.
+        toList(app)
+        mark("needs")
+        hold(3.0)
+        let more = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "more")).firstMatch
+        if more.waitForExistence(timeout: 3) { more.tap() }
+        mark("opened")
+        hold(4.5)
+        mark("end")
+    }
 }

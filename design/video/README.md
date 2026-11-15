@@ -474,3 +474,83 @@ for each, and `/usr/bin/python3 make_day23.py` (and `ipad`, `long`). The cut poi
 iPad's in `day23_ipad_cuts.py`), set from frames, not marks: a still screen writes no frames, so a UI
 test's marks run ahead of the footage, and a take's last still screen is gone. A black frame as the
 idea's chat opens is dropped (`fix`). The small Reddit copy is made as before (two passes at a set rate).
+
+## Agents, for Reddit (2.6)
+
+`redde-agents-reddit.mp4` (886×1920, 94.4 s, framed) and the copy for posting under 5 MB,
+`redde-agents-reddit-small.mp4` (664×1440, two passes at a set rate), are here in design/video and not
+in git. `make_agents.py` made them on 2026-11-15 (`small` for the copy, `pages` for stills of the title
+and the closing).
+
+This is the second cut. The first, from 11-14, is kept as `redde-agents-reddit-v1*.mp4` and is remade by
+`make_agents_v1.py` from the g1–g6 takes. Their word on it: "it was really hard to follow what was being
+done. We want to showcase multiple agents like using Claude and Codex alongside the Hermes bots. The video
+moved too fast to understand how it was being used."
+
+So this cut follows one small job:
+- Each shot is three or four 2.5 s bars of the deep song, with the footage near its own pace (1.0–1.3×).
+- Each shot has one caption, naming what is done in plain words. What the person types is in “quotes”
+  and italics.
+- A ring shows every touch. The app draws it: `-echo.showTouches`, `Echo/App/DemoTouches.swift`.
+
+The shots (bars in brackets):
+- Title (2): Redde falls in and says "Hi! I'm Redde. Meet the team!". Then "Your Hermes bots, /
+  Claude Code and Codex. / One app.", with Scout and Quill on one side and two terminal tiles (the coding
+  agents) on the other.
+- All your agents (3): the drawer's server menu tapped open, showing Hermes (Home) and Other Agents (Claude
+  Code, Codex).
+- Ask a Hermes bot (3): “What's left before the release?”, and Sol answers "the login bug and the release
+  notes".
+- Switch to Claude Code (3): New Chat held in Sol's chat, then "Chat with Claude Code" picked. The new
+  chat says Claude Code in its header.
+- Claude Code gets to work (3): “Fix the login bug”, followed by its thinking, tasks, steps and the
+  approval card.
+- Let it run the tests (3): Allow Once tapped, then "Fixed ✅ … All 42 tests pass."
+- See the change (4): the steps opened, then Edit Login.swift with its diff inline, then View Changes
+  and the diff sheet.
+- Switch to Codex (3): New Chat held again, then "Chat with Codex".
+- Codex reviews it (3): “Review Claude Code's change”, and the review comes in, followed by its ask to
+  run `swift test --filter LoginTests`, left waiting.
+- Back to your Hermes bots (3): the drawer, the server menu, Home, then Quill on the Team row.
+- Quill writes it up (3): “Write the release notes from today's changes”, and the notes come in.
+- What needs you (3): the drawer, with Codex's ask on top (Take a Look) and "3 more" opened to show
+  the bots'.
+- Closing (2): Redde drops onto the icon and says "Go team!". The lines are "Hermes bots, Claude Code and
+  Codex. / Switch with a hold. / Every ask in one stack.", with the bots and the two terminal tiles
+  along the bottom. Small print reads "Claude Code and Codex replies scripted for this video."
+
+Claude Code and Codex are scripted stand-ins, which the closing's small print says.
+- `-echo.demoCoders` saves two Other Agents servers, "Claude Code" and "Codex". Both use the demo
+  address with agent `claude` or `codex`.
+- In DEBUG, `AcpEndpoint.make` gives each of them a demo socket of its own (`redde-demo://claude`), and
+  `AcpDemoAgent` plays that agent's script. Its chats are kept in `redde-demo-agent-<agent>.json`.
+- Everything else is the app's own: the server menu, New Chat's hold menu (`NewChatElsewhere`), the
+  ACP steps, approvals and diff, and the drawer's stack.
+- With `-echo.demoAgents` on, rows read their time as if it were 9:41 (`DemoAgents.shown`), and the demo
+  bots show no model names.
+
+The Hermes side is `-echo.demoAgents` (`Echo/Services/DemoAgents.swift`, DEBUG only), with
+`-echo.demoProjects -echo.demoBots -displayName Sol` and `-transport hermesServe`:
+- Each sample bot's chat opens from the Team row.
+- The answers are canned (`DemoAgentsTransport`), and nothing goes to a server.
+
+The take is `PromoVideoUITests.testAgentsCoders`, all in one take. Record it with
+`take_agents.sh c1-coders testAgentsCoders`. The script reinstalls Redde on the simulator "Redde agents
+video" (DCA5C0E8-5B1A-4AB7-A901-5525B2CBE6C5, iPhone 18 Pro Max, iOS 27.0, the default), sets the status
+bar to 9:41 and records. Build into `DerivedData-agents` at the repo root first:
+
+    xcodebuild -project Echo.xcodeproj -scheme EchoUITests -destination "id=$SIM" -derivedDataPath DerivedData-agents build-for-testing
+    ./take_agents.sh c1-coders testAgentsCoders
+    ffmpeg -i c1-coders.mov -vf fps=30 -c:v libx264 -crf 12 -preset fast -pix_fmt yuv420p cfr-c1-coders.mov
+    /usr/bin/python3 make_agents.py && /usr/bin/python3 make_agents.py small
+
+Set the cut points in `SHOTS` from frames, not marks. A shot's `fix` leaves out still stretches, and
+`dropped` gives make_day.py the seconds it removed, so the footage keeps its pace.
+
+The first cut's takes (g1-team … g6-coding: `testAgentsTeam`, `testAgentsChat`, `testAgentsGroup`,
+`testAgentsVoiceRound`, `testAgentsWaiting`, `testAgentsCodingAgent`) and its voice lines
+(`agents_voices.py`: `voice-agents-hello.wav`, `voice-agents-bye.wav`, which this cut uses too) are
+recorded the same way.
+
+Mind the clock. Record on one side of midnight, or the drawer's date ("Sunday, Nov 15") will differ
+between takes.

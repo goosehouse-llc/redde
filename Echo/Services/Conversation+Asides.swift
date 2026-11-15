@@ -125,6 +125,7 @@ extension Conversation {
         if let transportOverride { return (transportOverride, "aside-" + bot.name) }
         #if DEBUG
         if DemoDay.on { return (DemoDayTransport(), "aside-" + bot.name) }   // the day's video: canned answers
+        if DemoAgents.on { return (DemoAgentsTransport(bot: bot.name), "aside-" + bot.name) }   // the agents video's
         #endif
         return try await BotTurns.transport(for: bot, mainName: mainName, settings: settings, dashboard: dashboard)
     }

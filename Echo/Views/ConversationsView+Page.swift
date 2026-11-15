@@ -238,7 +238,7 @@ extension ConversationsList {
     /// `-echo.demoDay`: no Projects in the day's video (`DemoDay`).
     var hidesProjectsForDemo: Bool {
         #if DEBUG
-        DemoDay.on
+        DemoDay.on || DemoAgents.on
         #else
         false
         #endif
