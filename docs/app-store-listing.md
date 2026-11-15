@@ -69,6 +69,40 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
+## What's New in 2.6 (4000)
+Claude Code, Codex and other agents, a new drawer, and better suggested replies.
+
+• Other agents. Redde now works with Claude Code, Codex, Gemini CLI, Antigravity and other agents that speak ACP (the Agent Client Protocol), through Redde's free bridge on your Mac or Linux computer: install it with one line and scan its code. Chat or talk, in the car too: steps, file changes, approvals, plans and questions, with notifications when Redde is closed. Where the agent offers it, pick its mode and model, steer a reply, fork a chat, send a PDF and see your plan's usage.
+• Add agents from your phone, from the official ACP registry: Pi, OpenCode, Cursor and dozens more. Update the bridge from the app too.
+• All Agents: every agent on a bridge in one list, or pick one from the chat list's title. Hold New Chat to start a chat on another server or agent. Your bots stay in the list while you're on the bridge.
+• No computer yet? Try the Demo Agent, built into Redde, in the agent connection's setup.
+• A new drawer. The chat list starts with what needs you: your next event, what's waiting, working and unread, approvals as a stack, and your bots in a row. Today, Planned, Board and Made are pages of their own, in place of the old tabs. Today has a Calendar tile, and its tiles go in the order you choose. A list opens on its own page.
+• Arcade, a new theme: neon on navy by night, lavender by day.
+• Your Inbox in seven piles, with Receipts, Notifications and Promotions, plus up to eight of your own.
+• Maps for your agent: places near you, how long the way takes with traffic now, and Apple Maps opened ready to go (Phone Tools → Maps).
+• Price cards with a deal meter, every store in one row, and Watch Price.
+• Quote any message in your next one. Suggested replies are on: a reply's options become chips at once, and other suggestions fit what it asks, written on your device or by your OpenAI-compatible connection's model (Settings → Writing → Written By).
+• What your agent writes between its tool calls now shows in the chat.
+• CarPlay: switch servers from the Ask tab, and with more bots than fit on the Bots tab, an All Bots card lists them all. Your bots stay there while you're on a bridge.
+• Faster launch, typing and opening a chat. Choose the calendar your agent's new events go to. Removing a server asks first.
+• Fixes: the connection test said Connected for an address that led to a web page (GitHub #77). Voice mode read code out line by line. Selecting a reply's text shrank it at larger text sizes. Weather and light cards are easier to read in the dark.
+
+Most of this takes the Redde plugin 1.31 on your Hermes: Settings → Redde Plugin offers the update. Other agents take the Redde bridge 0.10 on your computer.
+
+## Before submitting 2.6
+- The build is 2.6 (295), iPhone and iPad, archived from main once everything since 2.5 (294) is committed and pushed. The Mac waits: App Store Connect takes no new Mac version until the Mac's 2.5 clears review. When the Mac's 2.6 goes, its review notes (docs/app-review-notes-mac.md) need step 1's new label ("OpenAI-compatible server", under Direct to a Model: the setup sheet now groups connections) and, if the Mac offers it, a line for the demo agent.
+- Run the whole UI suite (it passes on iOS 26 since 0f37a6e) and the unit tests. Then put the Release build on an iPhone and an iPad, check it launches (a deep view type has overflowed the stack at launch before), and try the demo agent as App Review will: Set up Redde → "Claude Code, Codex and others (ACP)" → Try the Demo Agent.
+- Try the car once on 295: the Bots tab is one row of cards, with an All Bots card when there are more (two rows froze CarPlay on 11-08 and 11-14), the Ask tab has a Server row with two or more servers, and a Hermes server's bots stay on the Bots tab while on a bridge.
+- Nothing new to declare. Maps uses Location When In Use, already declared; its purpose string now names Maps, in all 17 languages. The review notes (docs/app-review-notes.md) have the demo agent's exact taps, Maps under Phone tools and Location, and step 1's new label (3,909 characters with the placeholder): `scripts/app-store-push.py notes` puts the key in and sends them.
+- App Privacy stays "Data Not Collected": an agent's chats go from the device to the person's own computer running the Redde bridge, and from there to that agent and its provider; the ACP registry list is fetched by that computer, not the phone; suggested replies written by a model go only to the person's own OpenAI-compatible connection; Maps lookups go to Apple. The bridge's notifications use the same relay as the plugin's. Goosehouse LLC receives none of it.
+- The privacy policy: docs/privacy.md (November 14 lines: other agents through the Redde bridge, the ACP registry list and agent downloads on the computer, the demo agent, Maps as a phone tool, suggested replies, Up Next and the Calendar tile). Publish it before submitting.
+- The plugin: main must serve 1.31.0 (the Inbox's seven piles and piles of your own need it; 1.28 brought bot waits from the server, 1.29 the usual price for the deal meter, 1.30 Maps). Publish a GitHub release for it (the last is redde-push-1.27.0).
+- The bridge: main must serve 0.10.1, since the installer and Update Bridge fetch companion/redde-bridge from main. 0.10.1 also offers OpenClaw, which hasn't been tried live yet: it stays out of What's New.
+- Screenshots: the drawer replaced the chat list's tabs (Chats / Planned / Kanban / Made) and the Today strip, so every shot that shows the chat list is out of date. iPhone: `05-today` and `08-bots`. iPad: every slot with the sidebar beside it, `pano-01a`, `03-ipad-goals`, `04-ipad-inbox`, `05-ipad-today`, `06-ipad-memory`, `07-ipad-answers`, `08-ipad-bots` and `09-ipad-approve`. Also `04-inbox` / `04-ipad-inbox`, whose caption says "Important, Needs Reply, FYI and News" over the old pile chips, and `07-answers` / `07-ipad-answers`, which show the purchase card before the deal meter. iPhone `pano-01a`/`01b`, `03-goals`, `06-memory`, `09-approve` and `10-privacy` look unaffected. An agent shot (the demo agent's diff or approval) is optional.
+- The description says "eight themes" (nine with Arcade) and speaks of Hermes alone; a line for other agents through the Redde bridge, and new promotional text for 2.6, before submitting.
+- The website: "new in 2.6" at release (deploys are the owner's word).
+- Close GitHub #77 at release.
+
 ## What's New in 2.5 (4000)
 Bots that work in the background, models from your phone, free local calls, and better battery life.
 
