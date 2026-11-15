@@ -30,6 +30,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import secrets
 import shutil
 import socket
@@ -49,7 +50,7 @@ import redde_qr  # noqa: E402
 import redde_codex  # noqa: E402
 import redde_registry  # noqa: E402
 
-VERSION = "0.10.1"
+VERSION = "0.10.2"
 PROTOCOL_VERSION = 1
 DEFAULT_CONFIG = Path(os.environ.get("REDDE_BRIDGE_CONFIG", "~/.config/redde-bridge/config.toml")).expanduser()
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -638,6 +639,10 @@ class Agent:
             return
         session = self.session(sid)
         said = params.get("update") or {}
+        if said.get("sessionUpdate") == "session_info_update" and isinstance(said.get("title"), str) \
+                and _is_key(said["title"], sid, said.get("_meta")):
+            said = {k: v for k, v in said.items() if k != "title"}
+            params = dict(params, update=said)
         if said.get("sessionUpdate") == "available_commands_update" and isinstance(said.get("availableCommands"), list):
             self.commands = said["availableCommands"]
         if session.loading is not None:
@@ -910,13 +915,23 @@ class Connection:
         if method == "session/list":
             result = await agent.request(method, params)
             named = agent.capability("sessionCapabilities", "title") is None
+            rows, seen = [], set()
             for info in (result or {}).get("sessions") or []:
+                info["sessionId"] = _short_id(info.get("sessionId"))
+                if info["sessionId"] in seen:
+                    continue
+                seen.add(info["sessionId"])
+                rows.append(info)
+                if isinstance(info.get("title"), str) and _is_key(info["title"], info["sessionId"], info.get("_meta")):
+                    del info["title"]
                 if info.get("sessionId") and info.get("cwd"):
                     agent.session(info["sessionId"]).cwd = info["cwd"]
                 # A name given through the bridge, for an agent that keeps none.
                 kept = agent.index.rows.get(info.get("sessionId") or "") if named else None
                 if kept and kept.get("title"):
                     info["title"] = kept["title"]
+            if isinstance(result, dict) and "sessions" in result:
+                result["sessions"] = rows
             return result
         if method in ("session/delete", "session/close"):
             result = await agent.request(method, params)
@@ -1028,6 +1043,25 @@ class Connection:
 
 
 _NO_REPLY = object()
+
+
+# OpenClaw calls a chat by its own key ("agent:main:acp-bridge:<id>") until someone names it, and
+# lists the chats made here under that key. The key is no name, and the chat is the one the phone
+# knows by its short id (OpenClaw opens it by either).
+_OPENCLAW_KEY = re.compile(r"(?:agent:[^:\s]+:)?acp-bridge:([0-9A-Fa-f-]{36})")
+
+
+def _is_key(title: str, sid: str | None, meta: Any = None) -> bool:
+    """Whether an agent's name for a chat is only the chat's id."""
+    words = title.strip()
+    key = meta.get("sessionKey") if isinstance(meta, dict) else None
+    return words in (sid, key) or _OPENCLAW_KEY.fullmatch(words) is not None
+
+
+def _short_id(sid: Any) -> Any:
+    """The id the phone has for a chat OpenClaw lists under its main agent's key."""
+    found = re.fullmatch(r"agent:main:acp-bridge:([0-9A-Fa-f-]{36})", sid) if isinstance(sid, str) else None
+    return found.group(1) if found else sid
 
 
 def _prompt_text(prompt: Any) -> str:

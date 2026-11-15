@@ -352,6 +352,57 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
             rb.UPDATE_BASE, rb.INSTALL_DIR = saved
 
 
+class OpenClawTests(unittest.IsolatedAsyncioTestCase):
+    """OpenClaw names a chat by its own key and lists the chats made here under that key."""
+
+    async def asyncSetUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.port = free_port()
+        agent = rb.AgentConfig(id="openclaw", name="OpenClaw", command=[sys.executable, str(HERE / "fake_agent.py")],
+                               cwd=self.dir.name, env={"FAKE_AGENT_OPENCLAW": "1"})
+        self.bridge = rb.Bridge(rb.Config(listen=f"127.0.0.1:{self.port}", token=TOKEN, agents=[agent]))
+        self.server = asyncio.create_task(self.bridge.serve())
+        for _ in range(50):
+            try:
+                _, w = await asyncio.open_connection("127.0.0.1", self.port)
+                w.close()
+                break
+            except OSError:
+                await asyncio.sleep(0.05)
+        self.c = await Client.open(self.port, agent="openclaw")
+        await self.c.call("initialize", {"protocolVersion": 1})
+
+    async def asyncTearDown(self):
+        self.c.writer.close()
+        agent = self.bridge.agents["openclaw"]
+        if agent.running:
+            agent.proc.kill()
+            await agent.proc.wait()
+        self.server.cancel()
+        self.dir.cleanup()
+
+    async def test_the_key_is_no_name_and_the_chat_keeps_its_short_id(self):
+        sid = (await self.c.call("session/new", {}))["result"]["sessionId"]
+        await self.c.call("session/prompt", {"sessionId": sid, "prompt": [{"type": "text", "text": "hello"}]})
+        infos = [m["params"]["update"] for m in self.c.heard if m.get("method") == "session/update"
+                 and m["params"]["update"].get("sessionUpdate") == "session_info_update"]
+        self.assertTrue(infos)
+        self.assertNotIn("title", infos[0], "the key isn't passed on as a name")
+        self.assertIsNone(self.bridge.agents["openclaw"].session(sid).title)
+        rows = (await self.c.call("session/list"))["result"]["sessions"]
+        self.assertEqual([r["sessionId"] for r in rows], [sid, "agent:main:main"])
+        self.assertFalse(any("title" in r for r in rows))
+
+    def test_keys_are_told_from_names(self):
+        key = "agent:main:acp-bridge:c749d470-4064-4cf9-8af9-bd95597b161f"
+        self.assertTrue(rb._is_key(key, "c749d470-4064-4cf9-8af9-bd95597b161f"))
+        self.assertTrue(rb._is_key("agent:main:main", "agent:main:main"))
+        self.assertFalse(rb._is_key("Fix the login page", "c749d470-4064-4cf9-8af9-bd95597b161f"))
+        self.assertEqual(rb._short_id(key), "c749d470-4064-4cf9-8af9-bd95597b161f")
+        self.assertEqual(rb._short_id("agent:ops:acp-bridge:c749d470-4064-4cf9-8af9-bd95597b161f"),
+                         "agent:ops:acp-bridge:c749d470-4064-4cf9-8af9-bd95597b161f")
+
+
 class ChatListTests(unittest.IsolatedAsyncioTestCase):
     """An agent that keeps no list of its chats (Gemini CLI): the bridge keeps it."""
 

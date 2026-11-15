@@ -17,6 +17,7 @@ import time
 import uuid
 
 LOG = os.environ.get("FAKE_AGENT_LOG")
+OPENCLAW = os.environ.get("FAKE_AGENT_OPENCLAW") == "1"
 lock = threading.Lock()
 sessions: dict[str, list] = {}
 waiting: dict = {}
@@ -83,6 +84,9 @@ def prompt(rid, params):
         result = waiting.pop(ask).get("result", {})
         chunk(sid, f"{result.get('action')} {json.dumps(result.get('content', {}), sort_keys=True)}")
     else:
+        if OPENCLAW:
+            key = f"agent:main:acp-bridge:{sid}"
+            update(sid, {"sessionUpdate": "session_info_update", "title": key, "_meta": {"sessionKey": key}})
         chunk(sid, f"echo: {text}")
     write({"jsonrpc": "2.0", "id": rid, "result": {"stopReason": "end_turn"}})
 
@@ -105,7 +109,8 @@ def main():
                    "agentCapabilities": {"loadSession": True, "sessionCapabilities":
                                          {"list": {}, "resume": {}} if os.environ.get("FAKE_AGENT_LISTS") != "0" else {}}}})
         elif method == "session/new":
-            sid = "s-" + uuid.uuid4().hex[:8]
+            # FAKE_AGENT_OPENCLAW=1: like OpenClaw, whose chats are named and listed by its own key.
+            sid = str(uuid.uuid4()) if OPENCLAW else "s-" + uuid.uuid4().hex[:8]
             sessions[sid] = []
             result = {"sessionId": sid}
             if os.environ.get("FAKE_AGENT_LISTS") == "0":
@@ -127,7 +132,12 @@ def main():
         elif method == "session/resume":
             write({"jsonrpc": "2.0", "id": rid, "result": {}})
         elif method == "session/list":
-            write({"jsonrpc": "2.0", "id": rid, "result": {"sessions": [{"sessionId": s, "cwd": "/tmp"} for s in sessions]}})
+            if OPENCLAW:
+                rows = [{"sessionId": f"agent:main:acp-bridge:{s}", "cwd": "/tmp", "title": f"agent:main:acp-bridge:{s}"} for s in sessions]
+                rows.append({"sessionId": "agent:main:main", "cwd": "/tmp", "title": "agent:main:main"})
+            else:
+                rows = [{"sessionId": s, "cwd": "/tmp"} for s in sessions]
+            write({"jsonrpc": "2.0", "id": rid, "result": {"sessions": rows}})
         elif method == "session/prompt":
             threading.Thread(target=prompt, args=(rid, params), daemon=True).start()
         elif method == "session/cancel":
