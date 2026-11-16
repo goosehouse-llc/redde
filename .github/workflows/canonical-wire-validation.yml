@@ -1,0 +1,25 @@
+name: Canonical wire validation
+on: push
+permissions:
+  contents: read
+jobs:
+  synthetic-wire-tests:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run isolated Swift request-shape tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          swift --version
+          package="$RUNNER_TEMP/canonical-wire"
+          mkdir -p "$package/Sources/Echo" "$package/Tests/EchoTests"
+          cp Echo/Services/Transport/{JSONValue,HermesServeWire}.swift "$package/Sources/Echo/"
+          cp EchoTests/HermesServeWireTests.swift "$package/Tests/EchoTests/"
+          cat > "$package/Package.swift" <<'SWIFT'
+          // swift-tools-version: 6.2
+          import PackageDescription
+          let package = Package(name: "Echo", products: [.library(name: "Echo", targets: ["Echo"])],
+              targets: [.target(name: "Echo"), .testTarget(name: "EchoTests", dependencies: ["Echo"])])
+          SWIFT
+          swift test --package-path "$package"
