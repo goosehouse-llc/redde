@@ -31,11 +31,14 @@ nonisolated struct HermesServeTransport: HermesTransport {
         var early: [HermesServeClient.Event]?
         /// The socket dropped during the turn: what came meanwhile wasn't heard (`settleGap`).
         var gapped = false
+        var admissionID: String?
         init(runtime: String, stored: String) { self.runtime = runtime; self.stored = stored }
     }
 
     func stream(_ request: TurnRequest) -> AsyncThrowingStream<TurnEvent, Error> {
-        AsyncThrowingStream { continuation in
+        // The outbox keeps this message id across retries; socket RPC ids do not.
+        let submissionID = request.turnKey?.nilIfEmpty ?? UUID().uuidString
+        return AsyncThrowingStream { continuation in
             let task = Task { @MainActor in
                 let client = self.client
                 var listener: UUID?
@@ -49,7 +52,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
                     let (runtime, stored) = try await client.openSession(
                         stored: request.sessionID, model: request.model, provider: request.provider,
                         reasoningEffort: request.reasoningEffort, folder: request.folder, hidden: request.incognito,
-                        profile: request.profile)
+                        profile: request.profile, requestID: submissionID)
                     let turn = TurnState(runtime: runtime, stored: stored)
                     state = turn
                     continuation.yield(.sessionID(stored))
@@ -105,7 +108,9 @@ nonisolated struct HermesServeTransport: HermesTransport {
                         params["surface"] = .string("voice-live")
                         params["voice_context"] = .string(LiveVoiceNote.voiceContext(live.context))
                     }
+                    params = HermesServeWire.submit(params, canonical: client.usesSessionAuthority, submissionID: submissionID)
                     let submit = try await client.call("prompt.submit", params: .object(params))
+                    turn.admissionID = submit["admission_id"]?.string
                     if submit["status"]?.string == "queued" { continuation.yield(.status(String(localized: "queued behind a running turn…", comment: "Status under a reply"))) }
 
                     for await outcome in finished.stream {
@@ -121,7 +126,9 @@ nonisolated struct HermesServeTransport: HermesTransport {
                 } catch is CancellationError {
                     // Stopped, the agent is told to stop. Left for another conversation, it goes on
                     // with the turn; the reply is there, or the turn is joined, when it is opened again.
-                    if let state, request.departure?.hasLeft != true { client.interrupt(runtimeSession: state.runtime) }
+                    if let state, request.departure?.hasLeft != true {
+                        client.interrupt(runtimeSession: state.runtime, admissionID: state.admissionID)
+                    }
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
@@ -351,7 +358,9 @@ nonisolated struct HermesServeTransport: HermesTransport {
         }
         continuation.onTermination = { _ in task.cancel() }
         return RejoinedTurn(question: info["inflight"]?["user"]?.string ?? "", events: events,
-                            stop: { Task { @MainActor in client.interrupt(runtimeSession: turn.runtime) } },
+                            stop: { Task { @MainActor in
+                                client.interrupt(runtimeSession: turn.runtime, executionGeneration: info["execution_generation"]?.int)
+                            } },
                             transcript: { Conversation.messages(fromServeRows: try await client.history(stored: stored)) })
     }
 

@@ -11,7 +11,8 @@ extension HermesServeClient {
     /// `profile`: a fresh session on that profile rather than the selected one; every later call
     /// about it names it.
     func openSession(stored: String?, model: String? = nil, provider: String? = nil, reasoningEffort: String? = nil,
-                     folder: String? = nil, hidden: Bool = false, profile: String? = nil) async throws -> (runtime: String, stored: String) {
+                     folder: String? = nil, hidden: Bool = false, profile: String? = nil,
+                     requestID: String? = nil) async throws -> (runtime: String, stored: String) {
         if let stored {
             let runtime: String
             if let cached = runtimeIDs[stored] {
@@ -46,6 +47,7 @@ extension HermesServeClient {
         if let folder, !folder.isEmpty { params["cwd"] = .string(folder) }
         if hidden { params["hidden"] = .bool(true) }
         if let profile { params["profile"] = .string(profile) }
+        params = HermesServeWire.create(params, canonical: usesSessionAuthority, requestID: requestID ?? UUID().uuidString)
         let result = try await call("session.create", params: .object(params))
         guard let runtime = result["session_id"]?.string else { throw TransportError.malformed("create: no session id") }
         let storedID = result["stored_session_id"]?.string ?? runtime
@@ -377,7 +379,15 @@ extension HermesServeClient {
         return result["found"]?.bool ?? false
     }
 
-    func interrupt(runtimeSession: String) {
-        Task { try? await call("session.interrupt", params: .object(["session_id": .string(runtimeSession)])) }
+    func interrupt(runtimeSession: String, admissionID: String? = nil, executionGeneration: Int? = nil) {
+        guard let stop = HermesServeWire.stop(sessionID: runtimeSession, canonical: usesSessionAuthority,
+                                             admissionID: admissionID, generation: executionGeneration) else {
+            log.warning("Stop withheld: no acknowledged admission or observed execution generation; reconcile the session first")
+            return
+        }
+        Task {
+            do { _ = try await call(stop.method, params: .object(stop.params)) }
+            catch { log.error("Stop request failed: \(error.localizedDescription)") }
+        }
     }
 }

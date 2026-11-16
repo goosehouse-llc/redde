@@ -12,6 +12,7 @@ jobs:
         run: |
           set -euo pipefail
           swift --version
+          swiftc -frontend -parse Echo/Services/Transport/HermesServeClient.swift Echo/Services/Transport/HermesServeClient+Sessions.swift Echo/Services/Transport/HermesServeTransport.swift
           package="$RUNNER_TEMP/canonical-wire"
           mkdir -p "$package/Sources/Echo" "$package/Tests/EchoTests"
           cp Echo/Services/Transport/{JSONValue,HermesServeWire}.swift "$package/Sources/Echo/"

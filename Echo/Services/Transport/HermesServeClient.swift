@@ -137,6 +137,8 @@ final class HermesServeClient {
     var listeners: [UUID: (Event) -> Void] = [:]
     /// stored session id → runtime session id, valid for this connection.
     var runtimeIDs: [String: String] = [:]
+    /// Advertised by this socket, independently of the server's version number.
+    var usesSessionAuthority = false
     /// Questions the Dashboard has put to this client and is waiting on: frame id → what was
     /// asked. See `prompt(method:id:params:)`.
     var openRequests: [String: (id: JSONValue, method: String)] = [:]
@@ -311,6 +313,7 @@ final class HermesServeClient {
         pingTask?.cancel(); pingTask = nil
         socket?.cancel(with: .normalClosure, reason: nil); socket = nil
         runtimeIDs = [:]
+        usesSessionAuthority = false
         pinnedEfforts = [:]
         openRequests = [:]   // the host sends the ones still waiting again when a session is resumed
         // The request left the socket; whether the host acted on it is unknown, so this is a
@@ -330,6 +333,7 @@ final class HermesServeClient {
         receiveTask?.cancel(); pingTask?.cancel()
         socket?.cancel(with: .goingAway, reason: nil)
         socket = task
+        usesSessionAuthority = false
         // Wait for gateway.ready (or the first frame) so callers know the link is live; a host
         // that completes the handshake and then goes quiet must not hang ensureConnected() forever.
         let first = try await withThrowingTaskGroup(of: URLSessionWebSocketTask.Message.self) { group in
@@ -403,6 +407,9 @@ final class HermesServeClient {
         }
         if json["method"]?.string == "event", let params = json["params"] {
             var event: Event = (params["type"]?.string ?? "", params["session_id"]?.string, params["payload"] ?? .null)
+            if event.type == "gateway.ready" {
+                usesSessionAuthority = HermesServeWire.sessionAuthority(event.payload)
+            }
             // A question the host has stopped waiting on (answered elsewhere, timed out, the turn
             // was stopped): the card goes, as with the older `<kind>.expire` notification.
             if event.type == "request.cancel", let key = Self.key(event.payload["id"]), let open = openRequests.removeValue(forKey: key) {
@@ -454,7 +461,9 @@ final class HermesServeClient {
     /// Adds the selected profile to a profile-scoped call; the default profile sends nothing. A
     /// call about a bot's chat names the bot's profile instead (`sessionProfiles`).
     func withProfile(_ params: JSONValue, for method: String) -> JSONValue {
-        guard Self.profileScopedMethods.contains(method), case .object(var fields) = params, fields["profile"] == nil,
+        let canonicalSessionMethod = usesSessionAuthority && ["prompt.submit", "prompt.cancel", "session.interrupt"].contains(method)
+        guard Self.profileScopedMethods.contains(method) || canonicalSessionMethod,
+              case .object(var fields) = params, fields["profile"] == nil,
               let profile = sessionProfile(in: fields) ?? settings.profileName else { return params }
         fields["profile"] = .string(profile)
         return .object(fields)

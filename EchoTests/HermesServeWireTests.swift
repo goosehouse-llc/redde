@@ -45,4 +45,25 @@ struct HermesServeWireTests {
         let params: [String: JSONValue] = ["session_id": .string("existing-session"), "text": .string("Hello")]
         #expect(HermesServeWire.submit(params, canonical: false, submissionID: "unused") == params)
     }
+
+    @Test func stopCancelsTheAcknowledgedAdmissionInsteadOfAnotherTurn() {
+        let stop = HermesServeWire.stop(sessionID: "existing-session", canonical: true, admissionID: "admission-1", generation: 8)
+        #expect(stop?.method == "prompt.cancel")
+        #expect(stop?.params == ["session_id": .string("existing-session"), "admission_id": .string("admission-1")])
+        #expect(HermesServeWire.stop(sessionID: "existing-session", canonical: true, admissionID: nil, generation: nil) == nil)
+    }
+
+    @Test func rejoinedStopRetainsTheObservedGenerationFence() {
+        let stop = HermesServeWire.stop(sessionID: "existing-session", canonical: true, admissionID: nil, generation: 7)
+        #expect(stop?.method == "session.interrupt")
+        #expect(stop?.params["execution_generation"] == .number(7))
+        // Even if a newer turn is now generation8, this request still names7 and the host refuses it.
+        #expect(stop?.params["session_id"] == .string("existing-session"))
+    }
+
+    @Test func legacyStopKeepsItsExistingShape() {
+        let stop = HermesServeWire.stop(sessionID: "existing-session", canonical: false, admissionID: nil, generation: nil)
+        #expect(stop?.method == "session.interrupt")
+        #expect(stop?.params == ["session_id": .string("existing-session")])
+    }
 }
