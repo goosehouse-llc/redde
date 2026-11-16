@@ -573,16 +573,23 @@ extension HermesServeClient {
 
     /// Makes the bot's chat: hidden, titled at once. Another app's made meanwhile wins.
     private func makeBotChat(_ bot: HermesBot) async throws -> (stored: String, isNew: Bool) {
-        let made = try await call("session.create", params: .object([
-            "profile": .string(bot.name), "title": .string(BotChat.title), "hidden": .bool(true),
-            // The chat runs on the bot's own model and settings as they are now, not as they were
-            // when it began (Hermes Desktop's PR 97008; older releases ignore it).
-            "follow_profile_config": .bool(true),
-            "source": .string("desktop"), "close_on_disconnect": .bool(false)]))
+        var params = CanonicalRequests.create(model: nil, provider: nil, reasoningEffort: nil, folder: nil,
+                                              hidden: true, profile: bot.name, canonical: sessionAuthority)
+        // On the canonical session owner the title comes with the rename after, which is where a
+        // title another app's bot chat has already taken is refused.
+        if !sessionAuthority { params["title"] = .string(BotChat.title) }
+        // The chat runs on the bot's own model and settings as they are now, not as they were
+        // when it began (Hermes Desktop's PR 97008; older releases ignore it).
+        params["follow_profile_config"] = .bool(true)
+        let made = try await call("session.create", params: .object(params))
         guard let runtime = made["session_id"]?.string else { throw TransportError.malformed("create: no session id") }
         let stored = made["stored_session_id"]?.string ?? runtime
         do {
-            try await call("session.title", params: .object(["session_id": .string(runtime), "title": .string(BotChat.title)]))
+            if sessionAuthority {
+                try await mutate(stored: stored, "rename", ["title": .string(BotChat.title)], profile: bot.name)
+            } else {
+                try await call("session.title", params: .object(["session_id": .string(runtime), "title": .string(BotChat.title)]))
+            }
         } catch let error as RPCError where error.message.localizedCaseInsensitiveContains("already in use") {
             // Another app made the bot's chat meanwhile: that one is it.
             guard let winner = try await findBotChat(bot) else { throw error }
@@ -635,7 +642,11 @@ extension HermesServeClient {
               let root = row["id"]?.string else { return nil }
         noteProfile(bot.name, forStored: root)
         do {
-            try await call("session.archive", params: .object(["session_id": .string(root), "profile": .string(bot.name), "archived": .bool(true)]))
+            if sessionAuthority {
+                try await mutate(stored: root, "archive", ["archived": .bool(true)], profile: bot.name)
+            } else {
+                try await call("session.archive", params: .object(["session_id": .string(root), "profile": .string(bot.name), "archived": .bool(true)]))
+            }
         } catch let error as RPCError where error.code == -32601 {
             throw BotChat.Problem.cantStartFresh
         }

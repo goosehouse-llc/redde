@@ -105,8 +105,10 @@ nonisolated struct HermesServeTransport: HermesTransport {
                         params["surface"] = .string("voice-live")
                         params["voice_context"] = .string(LiveVoiceNote.voiceContext(live.context))
                     }
+                    // The canonical session owner names the message once and for all (issue 81).
+                    params = CanonicalRequests.submit(params, key: request.turnKey, canonical: client.sessionAuthority)
                     let submit = try await client.call("prompt.submit", params: .object(params))
-                    if submit["status"]?.string == "queued" { continuation.yield(.status(String(localized: "queued behind a running turn…", comment: "Status under a reply"))) }
+                    if CanonicalRequests.waitsBehindATurn(submit, canonical: client.sessionAuthority) { continuation.yield(.status(String(localized: "queued behind a running turn…", comment: "Status under a reply"))) }
 
                     for await outcome in finished.stream {
                         if case let .failure(error) = outcome { throw error }
@@ -350,7 +352,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
             }
         }
         continuation.onTermination = { _ in task.cancel() }
-        return RejoinedTurn(question: info["inflight"]?["user"]?.string ?? "", events: events,
+        return RejoinedTurn(question: info["inflight"]?["user"]?.string ?? CanonicalRequests.answering(info) ?? "", events: events,
                             stop: { Task { @MainActor in client.interrupt(runtimeSession: turn.runtime) } },
                             transcript: { Conversation.messages(fromServeRows: try await client.history(stored: stored)) })
     }
@@ -366,7 +368,7 @@ nonisolated struct HermesServeTransport: HermesTransport {
     }
 
     nonisolated static func parseClarify(_ p: JSONValue) -> ClarifyRequest {
-        let id = p["request_id"]?.string ?? ""
+        let id = p["request_id"]?.string ?? p["prompt_id"]?.string ?? ""
         if let batch = p["questions"]?.array, !batch.isEmpty {
             return ClarifyRequest(id: id, questions: batch.map {
                 ClarifyQuestion(id: $0["qid"]?.string ?? "", question: $0["question"]?.string ?? "",

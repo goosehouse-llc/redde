@@ -39,13 +39,9 @@ extension HermesServeClient {
         // fetches via resolveServeMedia. (Desktop-only tools like terminal.read fail gracefully:
         // an unanswered server→client request returns empty.) Existing sessions keep their
         // stored source; only new conversations pick this up.
-        var params: [String: JSONValue] = ["source": .string("desktop"), "close_on_disconnect": .bool(false)]
-        if let model, !model.isEmpty { params["model"] = .string(model) }
-        if let provider, !provider.isEmpty { params["provider"] = .string(provider) }
-        if let reasoningEffort, !reasoningEffort.isEmpty { params["reasoning_effort"] = .string(reasoningEffort) }
-        if let folder, !folder.isEmpty { params["cwd"] = .string(folder) }
-        if hidden { params["hidden"] = .bool(true) }
-        if let profile { params["profile"] = .string(profile) }
+        // (The canonical session owner calls the same surface "gui": `CanonicalRequests.create`.)
+        let params = CanonicalRequests.create(model: model, provider: provider, reasoningEffort: reasoningEffort, folder: folder,
+                                              hidden: hidden, profile: profile, canonical: sessionAuthority)
         let result = try await call("session.create", params: .object(params))
         guard let runtime = result["session_id"]?.string else { throw TransportError.malformed("create: no session id") }
         let storedID = result["stored_session_id"]?.string ?? runtime
@@ -215,6 +211,14 @@ extension HermesServeClient {
     /// Switch a live session's model (`config.set key=model`); the swap is deferred if a turn is
     /// streaming. The value is a `/model` line, so the provider goes along as `--provider`.
     func setSessionModel(runtimeSession: String, model: String, provider: String? = nil) async throws {
+        if sessionAuthority {
+            // A model pick is a fenced edit there ("use_session_mutation_model" to config.set).
+            var payload: [String: JSONValue] = ["model": .string(model)]
+            if let provider, !provider.isEmpty { payload["provider"] = .string(provider) }
+            let stored = runtimeIDs.first { $0.value == runtimeSession }?.key ?? runtimeSession
+            try await mutate(stored: stored, "model", payload)
+            return
+        }
         let result = try await call("config.set", params: .object([
             "session_id": .string(runtimeSession), "key": .string("model"),
             "value": .string(Self.modelSwitchValue(model: model, provider: provider))]))
@@ -327,6 +331,12 @@ extension HermesServeClient {
     /// Deletes a stored session, closing it first (`deleteClosingFirst`).
     func deleteSession(stored: String) async throws {
         try await ensureConnected()
+        if sessionAuthority {
+            // The canonical session owner deletes a live session itself (and has no close).
+            do { try await mutate(stored: stored, "delete") } catch let error as RPCError where error.message == "not_found" {}
+            runtimeIDs[stored] = nil
+            return
+        }
         let known = runtimeIDs.removeValue(forKey: stored)
         if let known { pinnedEfforts[known] = nil }
         try await Self.deleteClosingFirst(stored: stored, known: known) { method, params in
@@ -361,6 +371,11 @@ extension HermesServeClient {
     }
 
     func branchSession(stored: String, title: String?) async throws -> String? {
+        if sessionAuthority {
+            var payload: [String: JSONValue] = [:]
+            if let title, !title.isEmpty { payload["title"] = .string(title) }
+            return try await mutate(stored: stored, "branch", payload)["branched_session_id"]?.string
+        }
         let (runtime, _) = try await openSession(stored: stored)
         var params: [String: JSONValue] = ["session_id": .string(runtime)]
         if let title, !title.isEmpty { params["name"] = .string(title) }
@@ -369,10 +384,16 @@ extension HermesServeClient {
     }
 
     /// `session.steer` → queued (true) or rejected (false). 4010 = this agent can't be steered.
+    /// The canonical session owner steers the run it is told of (`currentTurn`).
     func steer(stored: String, text: String) async throws -> Bool {
         guard let runtime = runtimeIDs[stored] else { throw TransportError.malformed("session isn't open on this connection") }
         do {
-            let result = try await call("session.steer", params: .object(["session_id": .string(runtime), "text": .string(text)]))
+            var params: [String: JSONValue] = ["session_id": .string(runtime), "text": .string(text)]
+            if sessionAuthority {
+                params["execution_generation"] = .number(Double(try await currentTurn(stored).generation))
+                params = onItsProfile(params, stored: stored)
+            }
+            let result = try await call("session.steer", params: .object(params))
             return result["status"]?.string == "queued"
         } catch let error as RPCError where error.code == 4010 {
             return false
@@ -383,8 +404,7 @@ extension HermesServeClient {
     /// running child's activity onto this runtime id as ordinary stream events.
     func resumeLazy(stored: String) async throws -> (runtime: String, running: Bool, messages: [JSONValue]) {
         try await ensureConnected()
-        let result = try await call("session.resume", params: .object([
-            "session_id": .string(stored), "lazy": .bool(true), "omit_messages": .bool(false)]))
+        let result = try await call("session.resume", params: .object(CanonicalRequests.resumeToWatch(stored: stored, canonical: sessionAuthority)))
         guard let runtime = result["session_id"]?.string else { throw TransportError.malformed("no session id") }
         return (runtime, result["running"]?.bool ?? false, result["messages"]?.array ?? [])
     }
@@ -400,6 +420,36 @@ extension HermesServeClient {
     }
 
     func interrupt(runtimeSession: String) {
-        Task { try? await call("session.interrupt", params: .object(["session_id": .string(runtimeSession)])) }
+        guard sessionAuthority else {
+            Task { try? await call("session.interrupt", params: .object(["session_id": .string(runtimeSession)])) }
+            return
+        }
+        // The canonical session owner stops the run it is told of. Stop pressed as the message
+        // was sent finds no run yet, only the message waiting to start one: asked again a moment
+        // later, until a run has started (and is stopped) or nothing waits.
+        let stored = runtimeIDs.first { $0.value == runtimeSession }?.key ?? runtimeSession
+        Task {
+            for attempt in 0 ..< 8 {
+                if attempt > 0 { try? await Task.sleep(for: .milliseconds(250)) }
+                guard let turn = try? await currentTurn(stored) else { return }
+                if turn.running {
+                    _ = try? await call("session.interrupt", params: .object(onItsProfile([
+                        "session_id": .string(runtimeSession), "execution_generation": .number(Double(turn.generation))], stored: stored)))
+                    return
+                }
+                if !turn.waiting { return }
+            }
+        }
+    }
+
+    /// Where a session's turns stand on the canonical session owner, from a resume of it (the
+    /// connection's own, so nothing new is attached): the current run, which stopping and steering
+    /// have to name.
+    func currentTurn(_ stored: String) async throws -> CanonicalRequests.Turn {
+        var params: [String: JSONValue] = ["session_id": .string(stored), "omit_messages": .bool(true)]
+        if let profile = sessionProfiles[stored], !profile.isEmpty { params["profile"] = .string(profile) }   // a bot's chat
+        let snapshot = try await call("session.resume", params: .object(params))
+        if let runtime = snapshot["session_id"]?.string { runtimeIDs[stored] = runtime }
+        return CanonicalRequests.turn(snapshot)
     }
 }

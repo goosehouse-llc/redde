@@ -100,6 +100,17 @@ up() {
   # (@LAB@ in a scenario is this folder: a voice that runs one of the lab's scripts.)
   sed "s#@LAB@#$HERE#g" "$HERE/scenarios/$scenario.yaml" > "$HERMES_HOME/config.yaml"
   print -l "API_SERVER_ENABLED=true" "API_SERVER_KEY=labkey-labkey-labkey" "API_SERVER_PORT=18642" "API_SERVER_HOST=127.0.0.1" > "$HERMES_HOME/.env"
+  # LAB_WEBAPP=1 (0.23 and later): the gateway serves the Dashboard itself, on :19120, and its
+  # WebSocket goes to Hermes's canonical session owner (`gateway.ready` says `session_authority`),
+  # which takes other request shapes than `hermes serve` on :19119 (GitHub issue 81).
+  # With a scenario that has a login, the Webapp has a public address too, so it asks for that login
+  # (the gateway's listener never puts its token in the page, so a phone signs in).
+  if [[ -n "${LAB_WEBAPP:-}" ]]; then
+    print -l "webapp:" "  enabled: true" "  host: 127.0.0.1" "  port: 19120" >> "$HERMES_HOME/config.yaml"
+    # (LAB_WEBAPP=open: no public address, so no login, whatever the scenario: its token, kept in
+    # .hermes/webapp/session-token, lets a script in.)
+    [[ "$LAB_WEBAPP" != open && "$scenario" == (approval|admin|push|speech|speech-whole|butler) ]] && print "  public_url: http://redde-lab.test:19120" >> "$HERMES_HOME/config.yaml"
+  fi
   # The Dashboard's login, for the scenarios that turn it on.
   [[ "$scenario" == (approval|admin|push|speech|speech-whole|butler) ]] && print -l "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=lab" "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=labpass-labpass" \
     "HERMES_DASHBOARD_BASIC_AUTH_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef" >> "$HERMES_HOME/.env"

@@ -682,7 +682,8 @@ nonisolated extension ApprovalRequest {
             if p["allow_permanent"]?.bool ?? true { choices.append("always") }
             choices.append("deny")
         }
-        self.init(id: p["request_id"]?.string ?? "", command: p["command"]?.string ?? "",
+        // (The canonical session owner names it `prompt_id`, issue 81.)
+        self.init(id: p["request_id"]?.string ?? p["prompt_id"]?.string ?? "", command: p["command"]?.string ?? "",
                   description: p["description"]?.string, choices: choices)
     }
 

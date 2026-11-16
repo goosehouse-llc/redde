@@ -200,9 +200,14 @@ extension Conversation {
             do {
                 let client = dashboard
                 try await client.ensureConnected()
-                let (runtime, _) = try await client.openSession(stored: stored)
-                for _ in 0 ..< removedTurns {
-                    _ = try await client.call("session.undo", params: .object(["session_id": .string(runtime)]))
+                if client.sessionAuthority {
+                    // One rewind there to the first message taken back (issue 81).
+                    try await client.rewind(stored: stored, turns: removedTurns)
+                } else {
+                    let (runtime, _) = try await client.openSession(stored: stored)
+                    for _ in 0 ..< removedTurns {
+                        _ = try await client.call("session.undo", params: .object(["session_id": .string(runtime)]))
+                    }
                 }
             } catch {
                 lastError = String(localized: "Couldn't rewind the gateway session: \(error.localizedDescription)")

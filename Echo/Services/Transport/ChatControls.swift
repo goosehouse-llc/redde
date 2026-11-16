@@ -32,7 +32,8 @@ nonisolated struct ChatControls: Equatable, Sendable {
 
     /// Why Hermes turned fast mode down, in the screen's words; its own otherwise.
     static func fastRefusal(_ message: String) -> String {
-        message.localizedCaseInsensitiveContains("not available for this model") ? String(localized: "This model has no fast mode.")
+        // (The canonical session owner says only its reason, issue 81.)
+        message.localizedCaseInsensitiveContains("not available for this model") || message.contains("fast_unavailable") ? String(localized: "This model has no fast mode.")
             : message.localizedCaseInsensitiveContains("without a selected model") ? String(localized: "Pick a model first: fast mode belongs to a model.")
             : message
     }
@@ -134,6 +135,17 @@ extension HermesServeClient: ChatControlling {
     /// "Move to project" does). The folder has to exist on the server.
     func moveSession(stored: String, toFolder path: String) async throws {
         try await ensureConnected()
+        if sessionAuthority {
+            do {
+                try await mutate(stored: stored, "workspace", ["cwd": .string(path)])
+            } catch let error as RPCError where error.message == "invalid_params" {
+                // The canonical session owner gives no words for it, only "invalid_params"; a
+                // folder of a well-formed path that isn't there is what it refuses.
+                throw RPCError(code: error.code, message: String(localized: "The folder \(path) does not exist on the server.",
+                                                                 comment: "Moving a chat to a project's folder that the server doesn't have"))
+            }
+            return
+        }
         _ = try await call("session.workspace.move", params: .object(["session_key": .string(stored), "cwd": .string(path)]))
     }
 }

@@ -137,6 +137,14 @@ final class HermesServeClient {
     var listeners: [UUID: (Event) -> Void] = [:]
     /// stored session id → runtime session id, valid for this connection.
     var runtimeIDs: [String: String] = [:]
+    /// The host's sessions are kept by Hermes's canonical session owner (`gateway.ready` says
+    /// `session_authority`: 0.23 and later, a Dashboard the gateway serves itself, as its Webapp
+    /// does). That owner takes its own shapes for creating a session, sending a message, stopping
+    /// and steering a turn (`CanonicalRequests`, GitHub issue 81). Said again on each connection.
+    var sessionAuthority = false
+    /// The prompts (approvals, questions) the canonical session owner has put to this
+    /// connection, by `prompt_id`: they come as events there, not requests (`replayOpenRequests`).
+    var heardPrompts: Set<String> = []
     /// Questions the Dashboard has put to this client and is waiting on: frame id → what was
     /// asked. See `prompt(method:id:params:)`.
     var openRequests: [String: (id: JSONValue, method: String)] = [:]
@@ -312,6 +320,8 @@ final class HermesServeClient {
         socket?.cancel(with: .normalClosure, reason: nil); socket = nil
         runtimeIDs = [:]
         pinnedEfforts = [:]
+        sessionAuthority = false   // the next connection's gateway.ready says it again
+        heardPrompts = []
         openRequests = [:]   // the host sends the ones still waiting again when a session is resumed
         // The request left the socket; whether the host acted on it is unknown, so this is a
         // lost stream, not a malformed reply (the conversation must not report it as one).
@@ -403,6 +413,8 @@ final class HermesServeClient {
         }
         if json["method"]?.string == "event", let params = json["params"] {
             var event: Event = (params["type"]?.string ?? "", params["session_id"]?.string, params["payload"] ?? .null)
+            if event.type == "gateway.ready" { sessionAuthority = event.payload["session_authority"]?.bool == true }
+            if event.type.hasSuffix(".request"), let prompt = event.payload["prompt_id"]?.string { heardPrompts.insert(prompt) }
             // A question the host has stopped waiting on (answered elsewhere, timed out, the turn
             // was stopped): the card goes, as with the older `<kind>.expire` notification.
             if event.type == "request.cancel", let key = Self.key(event.payload["id"]), let open = openRequests.removeValue(forKey: key) {

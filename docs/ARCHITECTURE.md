@@ -904,6 +904,35 @@ drops, a `gateway.ping` goes unanswered for 10 s, or the app returns to the fore
 is mid-stream waits up to 90 s for the reconnect, re-attaches with `session.resume`, and either keeps
 streaming or backfills the missing tail of the reply from history.
 
+### A Dashboard the gateway serves itself (canonical sessions)
+
+From Hermes 0.23 the gateway can serve the Dashboard on its own listener (`webapp.enabled`, port
+9120 by default). That socket goes to Hermes's canonical session owner, and `gateway.ready` says
+`session_authority: true`; plain `hermes serve` doesn't. The owner refuses any key it doesn't know
+(`invalid_params`, 4001), so the client notes the flag (`HermesServeClient.sessionAuthority`) and
+builds the requests that differ for it (`CanonicalRequests`, GitHub issue 81):
+
+- `session.create` with `source: "gui"` (the same desktop hint in the agent's prompt), no
+  `close_on_disconnect`, and `reasoning` for the level; `prompt.submit` names each message once
+  and for all (`submission_id`, the message's `turnKey`), and its `queued` receipt means nothing
+  there (every message is admitted that way).
+- Stop, steering and answers name the current run (`execution_generation`), read from a resume:
+  Stop pressed as the message is sent asks again until the run has started. Approvals and
+  questions come as events with a `prompt_id` and are answered by `approval.respond` /
+  `clarify.respond` with it; a resume lists those still waiting as `prompts`, which a joined turn
+  and a notification's answer read.
+- Every edit of a session is `session.mutate`, fenced by the session's revision (and run): delete,
+  branch, a picked model, a move to a folder, and Regenerate/Edit's rewind to the first message
+  taken back (`rewind`, by the row's `row_id`). `session.title`, `.archive`, `.branch`, `.close`,
+  `.delete`, `.undo` and `.workspace.move` are unknown methods there. The Dashboard's REST routes
+  (rename, archive, pin) work on either owner.
+- The owner doesn't say the server's own approval mode, so a conversation's switch can't tell
+  that the server never asks.
+
+`LAB_WEBAPP=1 scripts/hermes-lab/lab.sh up v0.23.1 approval` brings one up (on :19120, with the
+lab's login); `EchoTests/HermesLabCanonicalTests` and, with `TEST_RUNNER_REDDE_LAB_DASHBOARD=
+http://127.0.0.1:19120`, the approval, queued, switch, controls and status lab tests run against it.
+
 ### Gateway facts that shaped the client
 
 - The sessions stream is `event:`/`data:` frames ending on `done`; reasoning arrives as

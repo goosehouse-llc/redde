@@ -45,6 +45,17 @@ extension HermesServeClient {
     @discardableResult
     func replayOpenRequests(in resumed: JSONValue, includingKnown: Bool = false) -> Int {
         let session = resumed["session_id"]?.string
+        // The canonical session owner lists what it waits on as `prompts`, each put as the event
+        // it came as live (issue 81).
+        if sessionAuthority {
+            let prompts = (resumed["prompts"]?.array ?? []).filter { ["approval", "clarify"].contains($0["kind"]?.string ?? "") }
+            for prompt in prompts {
+                guard let id = prompt["prompt_id"]?.string, includingKnown || !heardPrompts.contains(id) else { continue }
+                heardPrompts.insert(id)
+                for l in listeners.values { l(("\(prompt["kind"]?.string ?? "").request", session, prompt)) }
+            }
+            return prompts.count
+        }
         let open = resumed["open_requests"]?.array ?? []
         for request in open {
             guard let id = request["id"], let key = Self.key(id), includingKnown || openRequests[key] == nil, let method = request["method"]?.string,
@@ -79,6 +90,14 @@ extension HermesServeClient {
         guard let runtime = resumed["session_id"]?.string else { throw TransportError.malformed("resume gave no session id") }
         runtimeIDs[stored] = runtime
         func choice(_ request: ApprovalRequest) -> String { (approve ? request.yesNo?.approve : request.yesNo?.deny) ?? (approve ? "once" : "deny") }
+        // The canonical session owner lists what it waits on as `prompts` (issue 81).
+        if sessionAuthority {
+            guard let waiting = resumed["prompts"]?.array?.first(where: { $0["kind"]?.string == "approval" }) else { return .nothingWaiting }
+            let request = HermesServeTransport.parseApproval(waiting)
+            guard PushNote.digest(of: request.command) == digest else { return .anotherCommand }
+            try await call("approval.respond", params: .object(CanonicalRequests.promptAnswer(runtime: runtime, prompt: waiting, ["choice": .string(choice(request))])))
+            return .answered
+        }
         if let waiting = resumed["open_requests"]?.array?.first(where: { $0["method"]?.string == "approval" }), let id = waiting["id"] {
             let request = HermesServeTransport.parseApproval(waiting["params"] ?? .null)
             guard PushNote.digest(of: request.command) == digest else { return .anotherCommand }
@@ -117,6 +136,12 @@ extension HermesServeClient {
         let resumed = try await call("session.resume", params: .object(["session_id": .string(stored), "omit_messages": .bool(true)]))
         guard let runtime = resumed["session_id"]?.string else { throw TransportError.malformed("resume gave no session id") }
         runtimeIDs[stored] = runtime
+        if sessionAuthority {
+            guard let waiting = resumed["prompts"]?.array?.first(where: { $0["kind"]?.string == "clarify" }) else { return .nothingWaiting }
+            guard PushNote.digest(of: waiting["question"]?.string ?? "") == digest else { return .anotherQuestion }
+            try await call("clarify.respond", params: .object(CanonicalRequests.promptAnswer(runtime: runtime, prompt: waiting, ["answer": .string(answer)])))
+            return .answered
+        }
         guard let waiting = resumed["open_requests"]?.array?.first(where: { $0["method"]?.string == "clarify" }),
               let id = waiting["id"], let key = Self.key(id) else { return .nothingWaiting }
         let request = HermesServeTransport.parseClarify(waiting["params"] ?? .null)
@@ -138,6 +163,10 @@ extension HermesServeClient {
 
     func respondApproval(runtimeSession: String, requestID: String, choice: String) async throws {
         if answer(requestID, ["choice": .string(choice)]) { return }
+        if sessionAuthority {
+            try await answerPrompt("approval.respond", runtimeSession: runtimeSession, promptID: requestID, ["choice": .string(choice)])
+            return
+        }
         try await call("approval.respond", params: .object(["session_id": .string(runtimeSession),
                                                              "request_id": .string(requestID), "choice": .string(choice)]))
     }
@@ -153,6 +182,10 @@ extension HermesServeClient {
             let result = try await call("clarify.lock", params: .object(["request_id": .string(requestID),
                                                                          "question_id": .string(questionID), "answer": .string(text)]))
             if result["remaining"]?.array?.isEmpty ?? true { openRequests[requestID] = nil }
+            return
+        }
+        if sessionAuthority {
+            try await answerPrompt("clarify.respond", runtimeSession: runtimeSession, promptID: requestID, ["answer": .string(text)])
             return
         }
         var params: [String: JSONValue] = ["session_id": .string(runtimeSession), "request_id": .string(requestID), "answer": .string(text)]

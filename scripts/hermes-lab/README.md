@@ -96,6 +96,18 @@ WebSocket's ticket, a token the Dashboard refuses has to be refreshed and the ca
 refresh token it no longer takes has to end in "sign in again". The lab's login is a password, so
 what a real identity provider adds (its own pages, in the browser) is not covered.
 
+## The gateway's own Dashboard (canonical sessions)
+
+`LAB_WEBAPP=1 lab.sh up v0.23.1 approval` also turns on Hermes 0.23's Webapp (`webapp.enabled`):
+the gateway serves the Dashboard itself on :19120, and that socket goes to Hermes's canonical
+session owner (`gateway.ready` says `session_authority`), which takes other request shapes than
+`hermes serve` on :19119 (GitHub issue 81). With the `approval` scenario it has a public address
+too, so it asks for the lab's login, as a phone signs in; `LAB_WEBAPP=open` leaves the login off,
+and a script gets in with the token in `.hermes/webapp/session-token`. The lab installs no web
+build, so its page says "The Webapp is not built"; the API and the socket work.
+`EchoTests/HermesLabCanonicalTests` runs against it, and so do the approval, queued, switch,
+controls and status tests given `TEST_RUNNER_REDDE_LAB_DASHBOARD=http://127.0.0.1:19120`.
+
 ## No sign-in
 
 `open` (0.22.2 by default) runs the `named` scenario, whose Dashboard is on 127.0.0.1 with no

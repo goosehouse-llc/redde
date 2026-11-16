@@ -138,7 +138,10 @@ struct HermesLabTests {
 /// different way, and from 0.21.5 only a client that says it can answer; a personal Hermes on an
 /// older release hid that the app was never asked. Skips when that lab isn't up.
 struct HermesLabApprovalTests {
-    private static let dashboard = URL(string: "http://127.0.0.1:19119")!
+    /// The lab's `hermes serve`, or another of its Dashboards: REDDE_LAB_DASHBOARD (passed as
+    /// TEST_RUNNER_REDDE_LAB_DASHBOARD to xcodebuild), e.g. the gateway's own on :19120, whose
+    /// sessions are the canonical owner's (`LAB_WEBAPP=1`, GitHub issue 81).
+    static let dashboard = URL(string: ProcessInfo.processInfo.environment["REDDE_LAB_DASHBOARD"] ?? "http://127.0.0.1:19119")!
 
     private struct Outcome {
         var asked: ApprovalRequest?
@@ -181,11 +184,13 @@ struct HermesLabApprovalTests {
     }
 
     /// A client signed in to the lab's Dashboard; nil, with the reason printed, when that lab isn't up.
-    static func client() async -> HermesServeClient? {
+    /// `at`: another Dashboard of the lab's, the gateway's own on :19120 (`LAB_WEBAPP=1`).
+    static func client(at address: URL? = nil) async -> HermesServeClient? {
+        let dashboard = address ?? dashboard
         var probe = URLRequest(url: dashboard.appending(path: "api/status"))
         probe.timeoutInterval = 2
         guard (try? await URLSession.shared.data(for: probe)) != nil else {
-            print("LAB SKIP: no Hermes lab on 127.0.0.1:19119 (scripts/hermes-lab/lab.sh up <tag> approval, or push)")
+            print("LAB SKIP: no Hermes lab on \(dashboard.host() ?? ""):\(dashboard.port ?? 0) (scripts/hermes-lab/lab.sh up <tag> approval, or push)")
             return nil
         }
         let settings = Settings(defaults: UserDefaults(suiteName: "lab-approval-\(UUID().uuidString)")!)
@@ -283,7 +288,8 @@ struct HermesLabApprovalTests {
     private static func leaveATurnWaiting(saying text: String = "Do the danger thing.") async throws -> String? {
         guard let first = await client() else { return nil }
         let (runtime, stored) = try await first.openSession(stored: nil)
-        try await first.call("prompt.submit", params: .object(["session_id": .string(runtime), "text": .string(text)]))
+        try await first.call("prompt.submit", params: .object(CanonicalRequests.submit(["session_id": .string(runtime), "text": .string(text)],
+                                                                                    key: nil, canonical: first.sessionAuthority)))
         first.disconnect()
         try await Task.sleep(for: .seconds(4))
         return stored
@@ -469,7 +475,9 @@ struct HermesLabApprovalTests {
             var ok = false
             do {
                 let waiting = try await client.resume(stored: stored, withMessages: false)
-                let command = waiting["pending_approval"]?["command"]?.string ?? ""
+                // (The canonical session owner lists it with whatever else it waits on, issue 81.)
+                let command = waiting["pending_approval"]?["command"]?.string
+                    ?? waiting["prompts"]?.array?.first { $0["kind"]?.string == "approval" }?["command"]?.string ?? ""
                 let other = try await client.answerWaitingApproval(stored: stored, digest: PushNote.digest(of: "some other command"), approve: true)
                 let answered = try await client.answerWaitingApproval(stored: stored, digest: PushNote.digest(of: command), approve: approve)
                 let reply = try await Self.recordedReply(client, stored: stored)
@@ -1190,7 +1198,8 @@ struct HermesLabChatControlsTests {
         }
 
         let read = try? await client.chatControls(stored: stored)
-        report(read == ChatControls(autoApprove: false, approvalMode: "manual", fast: false), "the server says how the conversation runs",
+        // (The canonical session owner doesn't say the server's own approval mode, issue 81.)
+        report(read == ChatControls(autoApprove: false, approvalMode: client.sessionAuthority ? "" : "manual", fast: false), "the server says how the conversation runs",
                "\(String(describing: read))")
 
         // Run commands without asking: on, and it runs; off, and it asks again.
@@ -1243,7 +1252,8 @@ struct HermesLabChatControlsTests {
                        "and the list says which folder it is in now", row?.cwd ?? "")
             }
             let after = try? await client.chatControls(stored: stored)
-            report(after?.approvalMode == "manual", "its switches are still readable after the move", "\(String(describing: after))")
+            report(after?.approvalMode == (client.sessionAuthority ? "" : "manual") && after?.autoApprove == false,
+                   "its switches are still readable after the move", "\(String(describing: after))")
         } catch {
             report(false, "a conversation moved to a folder is in that project", String(error.localizedDescription.prefix(160)))
         }
