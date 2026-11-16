@@ -88,7 +88,10 @@ one that came out of a folder of a repository.) What each version changed is in
   this machine each half minute for it (`routines.py`). From 1.21.1 a schedule that answers in
   the bot's chat says what the bot said there, read from the bot's `state.db` (read-only), once
   it has (up to ten minutes; then the run's output), and a briefing says which session its run
-  was in, which each run's turn writes down in `cron-runs.json`.
+  was in, which each run's turn writes down in `cron-runs.json`. A run that *failed* is not one
+  of these: it has no answer to read, and it belongs to an agent rather than to the phone, so the
+  phone is told of it only where the job's own failure lane asks — `failure_deliver` where the
+  job carries one, else `deliver`, and `local` is silence (1.31.1).
 
 All of them only for conversations your phone has taken part in: over the Dashboard the app tells
 the plugin which those are, and over the Hermes API every turn counts. A session at the terminal

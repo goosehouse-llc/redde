@@ -148,6 +148,20 @@ def settle(words: str) -> tuple[str, bool, bool]:
     return "\n\n".join(paragraphs), False, False
 
 
+def tells_failures(job: dict) -> bool:
+    """Whether a *failed* run of this job should reach the phone. Hermes routes a run that failed
+    by the job's failure lane — `failure_deliver` where the job carries one, else `deliver` — and
+    `local` is its structural silence (`cron/scheduler_delivery.py`: "absent, failures follow
+    `deliver`"). The phone reads that same lane, so a job that asked not to be told of its
+    failures isn't told by the plugin either. A run that never finished has no answer to read, and
+    its failure is the agent rung's to take up: Hermes records it and the sweep cards it
+    (2026-11-12: the gateway's update fence failed six relay-visible jobs and every one arrived as
+    a note reading "It didn't finish: …").
+    """
+    lane = str(job.get("failure_deliver") or job.get("deliver") or "").strip()
+    return bool(lane) and lane.lower() != "local"
+
+
 def cron_note(home, store_in, platform: str = "") -> str | None:
     """For `pre_llm_call`: a scheduled run, where a phone is paired (`CRON_NOTE`)."""
     if platform != "cron":
@@ -616,6 +630,11 @@ class Routines:
                     if told and remind.what(job) and remind.told_lately(self.store, key, clock):
                         continue
                     failed = job.get("last_status") == "error"
+                    # A run that never finished has no answer for the person to read, and its
+                    # failure is the agent rung's to take up (Hermes records it; the sweep cards
+                    # it). Only a job whose own failure lane says otherwise is told on the phone.
+                    if failed and not tells_failures(job):
+                        continue
                     words = (f"It didn't finish: {job.get('last_error') or 'an error'}" if failed
                              else self.stores.output(home, str(job["id"])))
                     # A run Hermes recorded as saying nothing (a quiet record, an empty answer) sends

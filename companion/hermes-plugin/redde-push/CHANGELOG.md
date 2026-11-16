@@ -3,6 +3,22 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.31.1 (2026-11-15)
+
+- A schedule whose run *failed* no longer becomes a note on the phone. A run that never finished
+  has no answer to read: the note was the error itself, "It didn't finish: GatewayUnavailableError:
+  Gateway draining: update_paused". A failure belongs to the agent, not the person — Hermes records
+  the failed run, and the sweep over the cron stores turns it into a card an agent works. Six
+  relay-visible jobs failed during a gateway update on 2026-11-12 and all six arrived on both
+  paired phones.
+- A job that does want a failed run told still gets it. The phone reads the job's own failure lane —
+  `failure_deliver` where the job carries one, else `deliver` — and `local` is silence, the rule
+  Hermes routes its own failure notices by. So a watch or a bot's schedule that delivers into a
+  bot's chat (`deliver: bot-chat:<profile>`) still says why a run failed, and `failure_deliver:
+  local` silences it.
+- An answer that *finished* and opened with `[CRON_FAILURE]` is unchanged: the reason in it is the
+  run's own words, and they arrive as before.
+
 ## 1.31.0 (2026-11-14)
 
 - More piles in the Inbox. Mail sorts into seven piles now: Important, Needs Reply, FYI,

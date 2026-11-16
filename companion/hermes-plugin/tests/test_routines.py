@@ -33,10 +33,13 @@ class RoutinesTests(unittest.TestCase):
         self.sent.append(([d["id"] for d in devices], made))
         return len(devices)
 
-    def job(self, profile, last=None, deliver="bot-chat:scout", status="ok", error=None, name="[bot:scout] What to wear"):
+    def job(self, profile, last=None, deliver="bot-chat:scout", status="ok", error=None, name="[bot:scout] What to wear",
+            failure_deliver=None):
         home = self.root if profile == "default" else self.root / "profiles" / profile
         (home / "cron").mkdir(parents=True, exist_ok=True)
         job = {"id": "job1", "name": name, "deliver": deliver, "last_run_at": last, "last_status": status, "last_error": error}
+        if failure_deliver is not None:
+            job["failure_deliver"] = failure_deliver
         (home / "cron" / "jobs.json").write_text(json.dumps({"jobs": [job]}))
         return home
 
@@ -119,7 +122,8 @@ class RoutinesTests(unittest.TestCase):
         self.assertEqual(self.sent, [])
         self.assertEqual(self.watch.look(), 0, "and isn't looked at again")
 
-    def test_a_run_that_failed_says_why(self):
+    def test_a_run_that_failed_says_why_where_the_job_asked_to_be_told(self):
+        """Its lane is a bot's chat, not `local`: the job asked to hear about its failures."""
         self.job("scout", last="2026-10-20T07:00:00")
         self.watch.look()
         self.job("scout", last="2026-10-21T07:00:00", status="error", error="No LLM provider configured")
@@ -127,6 +131,38 @@ class RoutinesTests(unittest.TestCase):
         made = self.sent[0][1]
         self.assertEqual(made["w"], "failed")
         self.assertIn("No LLM provider configured", made["b"])
+
+    def test_a_failure_deliver_of_local_silences_a_bots_chat_failure(self):
+        """`deliver: bot-chat:scout` with `failure_deliver: local` (the scout job): Hermes sends
+        that failure nowhere, so the phone hears nothing of it either."""
+        self.job("scout", last="2026-10-20T07:00:00")
+        self.watch.look()
+        self.job("scout", last="2026-10-21T07:00:00", status="error", error="No LLM provider configured",
+                 failure_deliver="local")
+        self.assertEqual(self.watch.look(), 0)
+        self.assertEqual(self.sent, [])
+
+    def test_a_failed_run_no_one_asked_to_hear_about_says_nothing(self):
+        """2026-11-12: the gateway's update fence failed six relay-visible jobs, and each one
+        arrived on both paired phones as "It didn't finish: GatewayUnavailableError…". A run that
+        never started has no answer to read; its failure is the agent rung's."""
+        self.job("default", last="2026-10-30T21:00:00", deliver="local", name="[redde-notify] Backups")
+        self.watch.look()
+        self.job("default", last="2026-10-31T21:00:00", deliver="local", status="error", name="[redde-notify] Backups",
+                 error="GatewayUnavailableError: Gateway draining: update_paused")
+        self.assertEqual(self.watch.look(), 0, "no phone note for a run that never started")
+        self.assertEqual(self.sent, [])
+        self.assertEqual(self.watch.look(), 0, "and it isn't looked at again")
+
+    def test_the_jobs_failure_lane_is_the_one_hermes_reads(self):
+        """`failure_deliver` where the job carries one, else `deliver`; `local` (or neither) is
+        silence — the same words Hermes routes its own failure notices by."""
+        self.assertTrue(routines.tells_failures({"deliver": "bot-chat:scout"}))
+        self.assertTrue(routines.tells_failures({"deliver": "local", "failure_deliver": "signal"}))
+        self.assertFalse(routines.tells_failures({"deliver": "bot-chat:scout", "failure_deliver": "local"}))
+        self.assertFalse(routines.tells_failures({"deliver": "local"}))
+        self.assertFalse(routines.tells_failures({}))
+        self.assertFalse(routines.tells_failures({"failure_deliver": "  "}))
 
     def test_other_jobs_are_left_alone_and_a_muted_bot_says_nothing(self):
         self.job("default", last="2026-10-20T07:00:00", deliver="local", name="Backups")
@@ -214,15 +250,23 @@ class RoutinesTests(unittest.TestCase):
         self.morning("2026-10-29T07:30:00", "IDEA: Book the vet | Due Friday | Book the vet")
         self.assertEqual(self.watch.look(), 0)
 
-    def test_morning_ideas_with_no_cards_says_what_it_said_or_why_it_failed(self):
+    def test_morning_ideas_with_no_cards_says_what_it_said(self):
         self.morning("2026-10-27T07:30:00")
         self.watch.look()
         self.morning("2026-10-28T07:30:00", "Your day looks clear; I'd suggest checking the board later.")
-        self.morning("2026-10-29T07:30:00", status="error", error="tool_search failed")
-        self.watch.look()
+        self.assertEqual(self.watch.look(), 1)
         made = self.sent[0][1]
-        self.assertEqual((made["k"], made["x"], made["t"], made["w"]), ("routine", "brief", "Morning ideas", "failed"))
-        self.assertIn("tool_search failed", made["b"])
+        self.assertEqual((made["k"], made["x"], made["t"]), ("routine", "brief", "Morning ideas"))
+        self.assertIn("checking the board later", made["b"])
+
+    def test_morning_ideas_that_failed_says_nothing(self):
+        """Its deliver lane is `local`, so nobody asked to be told of a failure — and a run that
+        never finished has no answer to read (2026-11-12; t_4ce893ca)."""
+        self.morning("2026-10-28T07:30:00")
+        self.watch.look()
+        self.morning("2026-10-29T07:30:00", status="error", error="tool_search failed")
+        self.assertEqual(self.watch.look(), 0)
+        self.assertEqual(self.sent, [])
 
     def test_morning_ideas_that_found_nothing_say_nothing(self):
         self.morning("2026-10-28T07:30:00")

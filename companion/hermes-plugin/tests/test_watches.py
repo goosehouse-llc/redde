@@ -14,8 +14,9 @@ ASKED = "[redde-watch:w1] Watch: the price of the blue kettle on example.com. Ch
 class WatchTests(RoutinesTests):
     """On the same stand-in store as a bot's schedules."""
 
-    def watch_job(self, last=None, status="ok", error=None):
-        return self.job("default", last=last, deliver="local", status=status, error=error, name="[redde-watch:w1] Blue kettle price")
+    def watch_job(self, last=None, status="ok", error=None, deliver="local", failure_deliver=None):
+        return self.job("default", last=last, deliver=deliver, status=status, error=error,
+                        name="[redde-watch:w1] Blue kettle price", failure_deliver=failure_deliver)
 
     def test_a_change_is_sent_and_nothing_new_is_not(self):
         home = self.watch_job(last="2026-10-28T07:00:00")
@@ -29,12 +30,23 @@ class WatchTests(RoutinesTests):
         made = self.sent[0][1]
         self.assertEqual((made["k"], made["t"], made["i"], made["b"]), ("watch", "Blue kettle price", "w1", "It dropped to $39 (was $49)."))
 
-    def test_a_watch_that_couldnt_look_says_why(self):
+    def test_a_watch_that_couldnt_look_says_why_where_the_job_asked_to_be_told(self):
+        # Redde's watches deliver into the bot's chat (`bot-chat:<profile>`), so this is the lane
+        # a watch made by the app has.
+        self.watch_job(last="2026-10-28T07:00:00", deliver="bot-chat:default")
+        self.watch.look()
+        self.watch_job(last="2026-10-28T08:00:00", deliver="bot-chat:default", status="error", error="The page didn't load")
+        self.watch.look()
+        self.assertEqual(self.sent[0][1]["w"], "failed")
+
+    def test_a_watch_that_couldnt_look_says_nothing_where_its_lane_is_local(self):
+        """A watch whose failure lane is `local` isn't paged for a failed run: the agent rung takes
+        that up (2026-11-12; t_4ce893ca)."""
         self.watch_job(last="2026-10-28T07:00:00")
         self.watch.look()
         self.watch_job(last="2026-10-28T08:00:00", status="error", error="The page didn't load")
-        self.watch.look()
-        self.assertEqual(self.sent[0][1]["w"], "failed")
+        self.assertEqual(self.watch.look(), 0, "no phone note for a watch that couldn't look")
+        self.assertEqual(self.sent, [])
 
     def test_each_look_is_told_what_it_said_last_time(self):
         home = self.watch_job(last="2026-10-28T07:00:00")
