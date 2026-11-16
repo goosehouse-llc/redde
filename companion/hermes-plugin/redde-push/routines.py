@@ -373,6 +373,19 @@ ARRIVAL_WAIT = 90
 ARRIVAL_SLACK = 120
 
 
+def failure_told(job: dict) -> bool:
+    """Whether a failed run of `job` is anyone's to hear about. Hermes routes its own notice of a
+    failed run by the job's `failure_deliver` where it carries one, else by `deliver`, and `local`
+    (or nothing) is silence (`cron/scheduler_delivery.py`, 0.23.1); the phone hears no more than
+    that. The failed run is still on the schedule's page in the app, with its error (issue 79)."""
+    lane = job.get("failure_deliver")
+    if lane is None or not str(lane).strip():
+        lane = job.get("deliver")
+    if isinstance(lane, (list, tuple)):
+        lane = ",".join(str(part).strip() for part in lane if str(part).strip())
+    return bool(lane) and str(lane).strip() != "local"
+
+
 def untagged(name: str) -> str:
     """A job's name less Hermes Desktop's tag for a bot's ("[bot:scout] What to wear"), or Redde's
     for one whose answers go to the phone."""
@@ -616,7 +629,10 @@ class Routines:
                     if told and remind.what(job) and remind.told_lately(self.store, key, clock):
                         continue
                     failed = job.get("last_status") == "error"
-                    words = (f"It didn't finish: {job.get('last_error') or 'an error'}" if failed
+                    # A run that failed where the job keeps its failures to itself: nothing to read.
+                    if failed and not failure_told(job):
+                        continue
+                    words =(f"It didn't finish: {job.get('last_error') or 'an error'}" if failed
                              else self.stores.output(home, str(job["id"])))
                     # A run Hermes recorded as saying nothing (a quiet record, an empty answer) sends
                     # nothing (issue 55).

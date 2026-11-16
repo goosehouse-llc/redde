@@ -14,8 +14,9 @@ ASKED = "[redde-watch:w1] Watch: the price of the blue kettle on example.com. Ch
 class WatchTests(RoutinesTests):
     """On the same stand-in store as a bot's schedules."""
 
-    def watch_job(self, last=None, status="ok", error=None):
-        return self.job("default", last=last, deliver="local", status=status, error=error, name="[redde-watch:w1] Blue kettle price")
+    def watch_job(self, last=None, status="ok", error=None, failure_deliver=None):
+        return self.job("default", last=last, deliver="local", status=status, error=error, name="[redde-watch:w1] Blue kettle price",
+                        failure_deliver=failure_deliver)
 
     def test_a_change_is_sent_and_nothing_new_is_not(self):
         home = self.watch_job(last="2026-10-28T07:00:00")
@@ -29,10 +30,13 @@ class WatchTests(RoutinesTests):
         made = self.sent[0][1]
         self.assertEqual((made["k"], made["t"], made["i"], made["b"]), ("watch", "Blue kettle price", "w1", "It dropped to $39 (was $49)."))
 
-    def test_a_watch_that_couldnt_look_says_why(self):
+    def test_a_watch_that_couldnt_look_says_why_where_it_asks_to(self):
         self.watch_job(last="2026-10-28T07:00:00")
         self.watch.look()
+        # Delivered "local", as Redde makes them: kept to itself, like Hermes's own notice (issue 79).
         self.watch_job(last="2026-10-28T08:00:00", status="error", error="The page didn't load")
+        self.assertEqual(self.watch.look(), 0)
+        self.watch_job(last="2026-10-28T09:00:00", status="error", error="The page didn't load", failure_deliver="origin")
         self.watch.look()
         self.assertEqual(self.sent[0][1]["w"], "failed")
 

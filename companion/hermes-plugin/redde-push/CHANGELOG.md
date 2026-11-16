@@ -3,6 +3,15 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.31.1 (2026-11-16)
+
+- A schedule whose run failed no longer sends its error to your phone, unless the schedule asks
+  for its failures to be told. It follows Hermes's own rule for failure notices: the job's
+  `failure_deliver` where it has one, else its `deliver`, and `local` (how Redde makes briefings,
+  watches and goals) keeps the failure to itself. The failed run and its error are still on the
+  schedule's page in Redde. On 2026-11-12 a gateway update failed six briefings at once, and each
+  arrived as a note on every device (GitHub issue 79).
+
 ## 1.31.0 (2026-11-14)
 
 - More piles in the Inbox. Mail sorts into seven piles now: Important, Needs Reply, FYI,

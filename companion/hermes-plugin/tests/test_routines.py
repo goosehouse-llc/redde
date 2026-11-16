@@ -33,10 +33,12 @@ class RoutinesTests(unittest.TestCase):
         self.sent.append(([d["id"] for d in devices], made))
         return len(devices)
 
-    def job(self, profile, last=None, deliver="bot-chat:scout", status="ok", error=None, name="[bot:scout] What to wear"):
+    def job(self, profile, last=None, deliver="bot-chat:scout", status="ok", error=None, name="[bot:scout] What to wear", failure_deliver=None):
         home = self.root if profile == "default" else self.root / "profiles" / profile
         (home / "cron").mkdir(parents=True, exist_ok=True)
         job = {"id": "job1", "name": name, "deliver": deliver, "last_run_at": last, "last_status": status, "last_error": error}
+        if failure_deliver is not None:
+            job["failure_deliver"] = failure_deliver
         (home / "cron" / "jobs.json").write_text(json.dumps({"jobs": [job]}))
         return home
 
@@ -128,6 +130,38 @@ class RoutinesTests(unittest.TestCase):
         self.assertEqual(made["w"], "failed")
         self.assertIn("No LLM provider configured", made["b"])
 
+    def test_a_failed_run_is_told_only_where_the_job_tells_its_failures(self):
+        """Issue 79: Hermes's own failure lane, `failure_deliver` else `deliver`, `local` silent."""
+        days = iter(range(1, 20, 2))
+        def failed_run(**lane):
+            day = next(days)
+            self.job("scout", last=f"2026-10-{day:02}T07:00:00", **lane)
+            self.watch.look()
+            self.sent.clear()
+            self.job("scout", last=f"2026-10-{day + 1:02}T07:00:00", status="error", error="Gateway draining: update_paused", **lane)
+            self.watch.look()
+            return [made for _, made in self.sent]
+        self.assertEqual(failed_run(failure_deliver="local"), [], "a bot's schedule that keeps its failures")
+        self.assertEqual(len(failed_run(deliver="local", failure_deliver="origin", name="[redde-notify] Evening wrap-up")), 1,
+                         "a briefing that asks")
+        self.assertEqual(len(failed_run(failure_deliver="  ")), 1, "an empty failure lane follows deliver")
+        for job, told in (({"deliver": "local"}, False), ({}, False), ({"deliver": ""}, False), ({"deliver": ["local"]}, False),
+                          ({"deliver": "bot-chat:scout"}, True), ({"deliver": ["telegram", "local"]}, True),
+                          ({"deliver": "telegram", "failure_deliver": "local"}, False), ({"deliver": "local", "failure_deliver": "origin"}, True)):
+            self.assertEqual(routines.failure_told(job), told, job)
+
+    def test_a_briefing_that_failed_on_its_own_says_nothing_and_isnt_told_later(self):
+        """2026-11-12: six briefings failed in a gateway update, and six notes came, on both devices."""
+        home = self.job("default", last="2026-10-30T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
+        self.watch.look()
+        self.job("default", last="2026-10-31T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up",
+                 status="error", error="GatewayUnavailableError: Gateway draining: update_paused")
+        self.assertEqual(self.watch.look(), 0)
+        self.assertEqual(self.watch.look(), 0, "and not later")
+        self.output(home, "# Cron Job\n\n## Response\n\nA quiet evening.")
+        self.job("default", last="2026-11-01T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
+        self.assertEqual(self.watch.look(), 1, "the next run that finishes is told as before")
+
     def test_other_jobs_are_left_alone_and_a_muted_bot_says_nothing(self):
         self.job("default", last="2026-10-20T07:00:00", deliver="local", name="Backups")
         self.job("scout", last="2026-10-20T07:00:00")
@@ -218,7 +252,16 @@ class RoutinesTests(unittest.TestCase):
         self.morning("2026-10-27T07:30:00")
         self.watch.look()
         self.morning("2026-10-28T07:30:00", "Your day looks clear; I'd suggest checking the board later.")
+        self.watch.look()
+        made = self.sent[0][1]
+        self.assertEqual((made["k"], made["x"], made["t"]), ("routine", "brief", "Morning ideas"))
+        self.assertIn("Your day looks clear", made["b"])
+        # A failed run, delivered "local", is kept to itself (issue 79); one that asks says why.
+        self.sent.clear()
         self.morning("2026-10-29T07:30:00", status="error", error="tool_search failed")
+        self.assertEqual(self.watch.look(), 0)
+        self.job("default", last="2026-10-30T07:30:00", deliver="local", name="[redde] Morning ideas",
+                 status="error", error="tool_search failed", failure_deliver="origin")
         self.watch.look()
         made = self.sent[0][1]
         self.assertEqual((made["k"], made["x"], made["t"], made["w"]), ("routine", "brief", "Morning ideas", "failed"))
