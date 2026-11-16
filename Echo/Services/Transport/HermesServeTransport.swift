@@ -109,8 +109,15 @@ nonisolated struct HermesServeTransport: HermesTransport {
                         params["voice_context"] = .string(LiveVoiceNote.voiceContext(live.context))
                     }
                     params = HermesServeWire.submit(params, canonical: client.usesSessionAuthority, submissionID: submissionID)
-                    let submit = try await client.call("prompt.submit", params: .object(params))
+                    try Task.checkCancellation()
+                    let submitParams = JSONValue.object(params)
+                    // Keep the acknowledgement alive if Stop lands while submit is in flight:
+                    // it supplies the admission id needed to cancel this turn rather than another.
+                    let submit = try await Task { @MainActor in
+                        try await client.call("prompt.submit", params: submitParams)
+                    }.value
                     turn.admissionID = submit["admission_id"]?.string
+                    try Task.checkCancellation()
                     if submit["status"]?.string == "queued" { continuation.yield(.status(String(localized: "queued behind a running turn…", comment: "Status under a reply"))) }
 
                     for await outcome in finished.stream {
