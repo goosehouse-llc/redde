@@ -95,37 +95,34 @@ nonisolated enum ComposerContext {
         }
     }
 
-    /// Today's and tomorrow's events, for the start screen's card. Empty without access; this
-    /// never asks.
-    static func eventsTodayAndTomorrow(now: Date = .now) -> [StartCards.Event] {
+    /// Today's and tomorrow's events, for the start screen's card, read off the main actor
+    /// (`CalendarReader`). Empty without access; this never asks.
+    static func eventsTodayAndTomorrow(now: Date = .now) async -> [StartCards.Event] {
         guard calendarAccess == .granted else { return [] }
-        let calendar = Calendar.current, store = EKEventStore()
+        let calendar = Calendar.current
         let start = calendar.startOfDay(for: now)
         guard let end = calendar.date(byAdding: .day, value: 2, to: start) else { return [] }
-        return store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil)).map {
-            StartCards.Event(title: $0.title ?? String(localized: "(untitled)", comment: "A calendar event with no title"), start: $0.startDate, end: $0.endDate, allDay: $0.isAllDay)
+        return await CalendarReader.shared.read { store in
+            store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil)).map {
+                StartCards.Event(title: $0.title ?? String(localized: "(untitled)", comment: "A calendar event with no title"), start: $0.startDate, end: $0.endDate, allDay: $0.isAllDay)
+            }
         }
     }
 
     /// That day's events as a text attachment, asking for calendar access the first time.
     /// Nil when access is refused.
     static func calendarAttachment(for day: Date) async -> Attachment? {
-        let store = EKEventStore()
-        let allowed: Bool
-        switch EKEventStore.authorizationStatus(for: .event) {
-        case .fullAccess: allowed = true
-        case .notDetermined: allowed = (try? await store.requestFullAccessToEvents()) ?? false
-        default: allowed = false
-        }
-        guard allowed else { return nil }
+        guard await CalendarReader.shared.allowed(.event) else { return nil }
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: day)
         let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
-        // Only the calendars chosen in Settings → Agent → Calendars (`CalendarChoice`).
-        let calendars = DeviceCalendar.shared(in: store)
-        let events = (calendars?.isEmpty == true ? [] : store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars)))
-            .sorted { $0.startDate < $1.startDate }
-        let text = describe(events: events, day: start)
+        let text = await CalendarReader.shared.read { store in
+            // Only the calendars chosen in Settings → Agent → Calendars (`CalendarChoice`).
+            let calendars = DeviceCalendar.shared(in: store)
+            let events = (calendars?.isEmpty == true ? [] : store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars)))
+                .sorted { $0.startDate < $1.startDate }
+            return describe(events: events, day: start)
+        }
         return Attachment(kind: .text, filename: "calendar-" + start.formatted(.iso8601.year().month().day()) + ".txt",
                           mimeType: "text/plain", data: Data(text.utf8))
     }

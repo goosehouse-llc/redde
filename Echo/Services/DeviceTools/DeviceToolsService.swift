@@ -235,7 +235,7 @@ final class DeviceToolsService {
             // A photo on its way to the agent is put in the conversation too: the person sees
             // which picture left the phone, and "show me my latest photo" shows it.
             if request.tool == DeviceTool.photosGet.rawValue, let file = result["file"],
-               let data = file["base64"]?.string.flatMap({ Data(base64Encoded: $0) }) {
+               let base64 = file["base64"]?.string, let data = await Self.decoded(base64) {
                 show?(Attachment(kind: .image, filename: file["name"]?.string ?? "photo.jpg", mimeType: "image/jpeg", data: data))
             }
             envelope = .object(["ok": .bool(true), "result": result])
@@ -244,9 +244,9 @@ final class DeviceToolsService {
         } catch {
             envelope = .object(["ok": .bool(false), "error": .string(error.localizedDescription)])
         }
-        guard let data = try? JSONEncoder().encode(envelope) else { return }
+        guard let payload = try? await Self.base64JSON(envelope) else { return }
         do {
-            _ = try await command("device done \(request.id) \(data.base64EncodedString())")
+            _ = try await command("device done \(request.id) \(payload)")
         } catch {
             logger.error("a phone tool's answer didn't reach the server: \(error.localizedDescription)")
         }
@@ -496,8 +496,8 @@ final class DeviceToolsService {
 
     /// One copy over the plugin's command, as base64 JSON — the same envelope `done` uses.
     private func syncCopy(_ kind: String, _ payload: [String: JSONValue]) async throws {
-        let data = try JSONEncoder().encode(JSONValue.object(payload))
-        let reply = try await command("device sync \(kind) \(data.base64EncodedString())")
+        let encoded = try await Self.base64JSON(.object(payload))
+        let reply = try await command("device sync \(kind) \(encoded)")
         // A plugin older than 1.15.0 doesn't know the command: say so, not "sent".
         guard reply.hasPrefix("redde-push device sync") else {
             throw DeviceToolError(reply.hasPrefix("redde-push device refused")
@@ -523,6 +523,15 @@ final class DeviceToolsService {
     }
 
     func clearLog() { log = [] }
+
+    /// JSON as the plugin takes it, in base64, made off the main actor: a photo's answer is about
+    /// a megabyte of it, a copy of the calendar up to 500 events.
+    @concurrent nonisolated static func base64JSON(_ value: JSONValue) async throws -> String {
+        try JSONEncoder().encode(value).base64EncodedString()
+    }
+
+    /// A photo's bytes from the base64 its answer carries, off the main actor.
+    @concurrent nonisolated static func decoded(_ base64: String) async -> Data? { Data(base64Encoded: base64) }
 
     /// The JSON after `prefix` in a reply from the plugin, which sends it as base64.
     nonisolated static func payload(of reply: String, after prefix: String) -> JSONValue? {

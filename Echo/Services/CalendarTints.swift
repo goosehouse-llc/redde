@@ -14,7 +14,6 @@ final class CalendarTints {
     var tints: [String: Color] = [:]
     @ObservationIgnored private var loaded: Bool
     @ObservationIgnored private var changes: NSObjectProtocol?
-    @ObservationIgnored private var store: EKEventStore?
 
     /// `reads`: false for a test's own colours, never replaced by the device's calendars.
     init(reads: Bool = true) { loaded = !reads }
@@ -26,21 +25,25 @@ final class CalendarTints {
         return tints[calendar.lowercased()]
     }
 
-    /// Reads the colours when Redde may see the calendars; otherwise waits to be asked again.
+    /// Reads the colours when Redde may see the calendars, off the main actor (`CalendarReader`):
+    /// `tints` follows a moment later. Otherwise waits to be asked again.
     func load() {
         guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return }
         loaded = true
-        let store = store ?? EKEventStore()
-        self.store = store
-        var found: [String: Color] = [:]
-        for calendar in store.calendars(for: .event) where found[calendar.title.lowercased()] == nil {
-            found[calendar.title.lowercased()] = Color(cgColor: calendar.cgColor)
-        }
-        if found != tints { tints = found }
         if changes == nil {
-            changes = NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: store, queue: .main) { _ in
+            changes = NotificationCenter.default.addObserver(forName: CalendarReader.changed, object: nil, queue: .main) { _ in
                 MainActor.assumeIsolated { CalendarTints.shared.load() }
             }
+        }
+        Task {
+            let found = await CalendarReader.shared.read { store in
+                var found: [String: Color] = [:]
+                for calendar in store.calendars(for: .event) where found[calendar.title.lowercased()] == nil {
+                    found[calendar.title.lowercased()] = Color(cgColor: calendar.cgColor)
+                }
+                return found
+            }
+            if found != tints { tints = found }
         }
     }
 }

@@ -121,17 +121,24 @@ final class FrameMonitor: NSObject {
     /// (`-echo.autoType`).
     func report(_ label: String, _ action: () async -> Void) async {
         let began = Date.now, cpu = Self.cpuSeconds()
+        Self.counts = [:]
         let measured = await measure(seconds: 0.5, action)
         let elapsed = Date.now.timeIntervalSince(began)
         let used = (Self.cpuSeconds() - cpu) * 1000
+        let counted = Self.counts.isEmpty ? "" : " [" + Self.counts.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }.joined(separator: ", ") + "]"
         let line = String(format: "%@: %d late, %.0f ms late (worst %.0f), cpu %.0f ms (%.0f%% of a core) over %.1f s from %.3f",
-                          label, measured.late, measured.lateMS, measured.worst, used, used / elapsed / 10, elapsed, began.timeIntervalSince1970)
+                          label, measured.late, measured.lateMS, measured.worst, used, used / elapsed / 10, elapsed, began.timeIntervalSince1970) + counted
         log.notice("\(line, privacy: .public)")
         lines.append("# " + line)
         write()
     }
 
     private var window: (late: Int, lateMS: Double, worst: Double)?
+
+    /// Counts by name during the step being measured (`report`), written at the end of its line as
+    /// "[list body 12, …]": how often a view's body ran, say, or how long something took.
+    private static var counts: [String: Int] = [:]
+    static func count(_ name: String, by n: Int = 1) { counts[name, default: 0] += n }
 
     // MARK: Scrolling by itself
 
@@ -241,6 +248,7 @@ final class FrameMonitor: NSObject {
 
     func start() {}
     func autoScroll(for seconds: Double) {}
+    static func count(_ name: String, by n: Int = 1) {}
 
     func report(_ label: String, _ action: () async -> Void) async {
         let began = Date.now

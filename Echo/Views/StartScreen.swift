@@ -117,8 +117,9 @@ struct StartScreen: View {
         // Read again when the room changes: the window can change under it (an iPhone Duo opened
         // or closed, an iPad window drawn taller).
         .onGeometryChange(for: CGSize.self) { $0.size } action: { _ in windowHeight = Self.currentWindowHeight }
+        // The day's events, read off the main actor while the pieces arrive.
+        .task { upcoming = StartCards.upcoming(await ComposerContext.eventsTodayAndTomorrow(), now: .now) }
         .task {
-            upcoming = StartCards.upcoming(ComposerContext.eventsTodayAndTomorrow(), now: .now)
             // One piece every 90 ms; all at once under Reduce Motion.
             for count in 1 ... 6 {
                 if !reduceMotion { try? await Task.sleep(for: .milliseconds(count == 1 ? 60 : 90)) }

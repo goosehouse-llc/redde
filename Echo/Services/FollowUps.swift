@@ -53,8 +53,11 @@ nonisolated enum FollowUps {
     private static let yesNoStarts: Set<String> = ["want", "would", "should", "shall", "do", "does", "did", "can", "could",
                                                    "is", "are", "will", "may", "ok", "okay", "need", "anything"]
 
-    static func kind(of reply: String) -> Kind {
-        guard let asked = endingQuestion(reply) else { return .next }
+    static func kind(of reply: String) -> Kind { kind(asked: endingQuestion(reply)) }
+
+    /// What a reply calls for, from the question it ends with (`endingQuestion`), if any.
+    private static func kind(asked: String?) -> Kind {
+        guard let asked else { return .next }
         let first = asked.lowercased().split(whereSeparator: { !$0.isLetter }).first.map(String.init) ?? ""
         return yesNoStarts.contains(first) ? .yesNo(asked) : .ask(asked)
     }
@@ -63,13 +66,42 @@ nonisolated enum FollowUps {
     /// nothing ("Done, the lights are off."), where every suggestion tried was noise ("Are the
     /// lights dimmed?", 2026-11-14).
     static func worthSuggesting(_ reply: String) -> Bool {
-        kind(of: reply) != .next || PlainText.display(reply).count > 60
+        let shown = PlainText.display(reply)
+        return worthSuggesting(kind: kind(asked: endingQuestion(shown: shown)), shown: shown)
     }
+
+    private static func worthSuggesting(kind: Kind, shown: String) -> Bool { kind != .next || shown.count > 60 }
+
+    /// What to do once a reply has finished (`Conversation.suggestFollowUps`): show the options
+    /// it lists, have a model write suggestions for what it calls for, or nothing. The same as
+    /// asking `listedOptions`, then `worthSuggesting` and `kind`, with the reply made plain text
+    /// once: asked in turn they made it four times, some eighty regular-expression passes over a
+    /// long reply on the main actor as it ended (2026-11-15).
+    enum Decision: Equatable, Sendable {
+        case options([String])
+        case suggest(Kind)
+        case nothing
+    }
+
+    static func decide(_ reply: String) -> Decision {
+        let shown = PlainText.display(reply)
+        let asked = endingQuestion(shown: shown)
+        let kind = kind(asked: asked)
+        let options = listedOptions(reply, asked: asked, kind: kind)
+        if !options.isEmpty { return .options(options) }
+        return worthSuggesting(kind: kind, shown: shown) ? .suggest(kind) : .nothing
+    }
+
+    /// `decide`, off the main actor.
+    @concurrent static func deciding(_ reply: String) async -> Decision { decide(reply) }
 
     /// What the reply asks the person at its end, if it does: its last sentence, when that ends
     /// with a question mark.
-    static func endingQuestion(_ reply: String) -> String? {
-        let text = PlainText.display(reply).trimmingCharacters(in: .whitespacesAndNewlines)
+    static func endingQuestion(_ reply: String) -> String? { endingQuestion(shown: PlainText.display(reply)) }
+
+    /// `endingQuestion`, of a reply already made plain text (`PlainText.display`).
+    private static func endingQuestion(shown: String) -> String? {
+        let text = shown.trimmingCharacters(in: .whitespacesAndNewlines)
         guard text.hasSuffix("?") || text.hasSuffix("？") else { return nil }
         let body = text.dropLast()
         let start = body.lastIndex(where: { ".!?。！？\n¿".contains($0) }).map { body.index(after: $0) } ?? body.startIndex
@@ -82,8 +114,14 @@ nonisolated enum FollowUps {
     /// $142"); none when any is too long to be a chip, or the question is a yes or no that isn't
     /// about picking one ("Here's what changed: … Should I commit?").
     static func listedOptions(_ reply: String) -> [String] {
-        guard let asked = endingQuestion(reply) else { return [] }
-        if case .yesNo = kind(of: reply) {
+        let asked = endingQuestion(reply)
+        return listedOptions(reply, asked: asked, kind: kind(asked: asked))
+    }
+
+    /// `listedOptions`, given the reply's ending question and what it calls for.
+    private static func listedOptions(_ reply: String, asked: String?, kind: Kind) -> [String] {
+        guard let asked else { return [] }
+        if case .yesNo = kind {
             let words = asked.lowercased()
             guard words.contains("which") || words.contains(" one") || words.contains(" or ") else { return [] }
         }
@@ -179,13 +217,14 @@ nonisolated enum FollowUps {
 
     /// The suggestions of Apple's on-device model, or none: it isn't available, its guardrails
     /// turned the chat down, or nothing usable came back.
-    @concurrent static func suggestOnDevice(question: String, reply: String) async -> [String] {
+    /// `kind`: what the reply calls for, when already known (`decide`).
+    @concurrent static func suggestOnDevice(question: String, reply: String, kind: Kind? = nil) async -> [String] {
         #if canImport(FoundationModels)
         guard onDeviceAvailable else { return [] }
         let session = LanguageModelSession(instructions: instructions)
         let chat = chat(question: question, reply: reply, limit: (600, 2000)) + "\n\n"
         let options = GenerationOptions(temperature: 0.4, maximumResponseTokens: 90)
-        let kind = kind(of: reply)
+        let kind = kind ?? self.kind(of: reply)
         do {
             if kind == .next {
                 let next = try await session.respond(to: chat + request(for: kind), generating: Next.self, options: options).content
@@ -222,8 +261,9 @@ nonisolated enum FollowUps {
     // MARK: On the fast lane
 
     /// The fast lane model's suggestions, or none: it isn't set up, didn't answer in time, or
-    /// wrote nothing usable.
-    static func suggest(question: String, reply: String, baseURL: URL, apiKey: String?, model: String) async -> [String] {
+    /// wrote nothing usable. `kind`: what the reply calls for, when already known (`decide`).
+    /// Off the main actor: the prompt, the request and the answer are all the reply's size.
+    @concurrent static func suggest(question: String, reply: String, baseURL: URL, apiKey: String?, model: String, kind: Kind? = nil) async -> [String] {
         struct Msg: Encodable { var role: String; var content: String }
         struct Body: Encodable {
             var model: String
@@ -237,7 +277,7 @@ nonisolated enum FollowUps {
             struct Choice: Decodable { struct Message: Decodable { var content: String? }; var message: Message? }
             var choices: [Choice]?
         }
-        let prompt = chat(question: question, reply: reply, limit: (1200, 2400)) + "\n\n" + request(for: kind(of: reply)) + """
+        let prompt = chat(question: question, reply: reply, limit: (1200, 2400)) + "\n\n" + request(for: kind ?? self.kind(of: reply)) + """
 
 
             Write exactly \(count), one per line, with no numbering, bullets, quotes or other text.

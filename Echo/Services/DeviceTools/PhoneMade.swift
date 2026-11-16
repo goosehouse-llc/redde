@@ -94,25 +94,27 @@ nonisolated enum PhoneMade {
     /// given (Planned never asks).
     @concurrent static func read(now: Date, within: TimeInterval) async -> [ComingUp.Item] {
         let records = load()
-        var live: [String: Now] = [:]
-        let store = EKEventStore()
         let reminders = EKEventStore.authorizationStatus(for: .reminder) == .fullAccess
         let events = EKEventStore.authorizationStatus(for: .event) == .fullAccess
-        for record in records {
-            switch record.kind {
-            case .reminder:
-                guard reminders else { live[record.id] = Now(title: record.title, at: record.at); continue }
-                if let reminder = store.calendarItem(withIdentifier: record.id) as? EKReminder {
-                    live[record.id] = Now(title: reminder.title ?? record.title,
-                                          at: reminder.dueDateComponents.flatMap { Calendar.current.date(from: $0) },
-                                          completed: reminder.isCompleted)
-                }
-            case .event:
-                guard events else { live[record.id] = Now(title: record.title, at: record.at); continue }
-                if let event = store.event(withIdentifier: record.id) {
-                    live[record.id] = Now(title: event.title ?? record.title, at: event.startDate)
+        let live = await CalendarReader.shared.read { store in
+            var live: [String: Now] = [:]
+            for record in records {
+                switch record.kind {
+                case .reminder:
+                    guard reminders else { live[record.id] = Now(title: record.title, at: record.at); continue }
+                    if let reminder = store.calendarItem(withIdentifier: record.id) as? EKReminder {
+                        live[record.id] = Now(title: reminder.title ?? record.title,
+                                              at: reminder.dueDateComponents.flatMap { Calendar.current.date(from: $0) },
+                                              completed: reminder.isCompleted)
+                    }
+                case .event:
+                    guard events else { live[record.id] = Now(title: record.title, at: record.at); continue }
+                    if let event = store.event(withIdentifier: record.id) {
+                        live[record.id] = Now(title: event.title ?? record.title, at: event.startDate)
+                    }
                 }
             }
+            return live
         }
         var alarms: [Alarm] = []
         #if os(iOS)

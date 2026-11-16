@@ -87,28 +87,29 @@ enum ChecklistExport {
         guard await DeviceCalendar.allowed(.reminder) else {
             return String(localized: "Redde isn't allowed into Reminders. Turn it on in Settings → Apps → Redde.")
         }
-        let store = EKEventStore()
-        guard let source = store.defaultCalendarForNewReminders()?.source else {
-            return String(localized: "This iPhone has no reminders account to add a list to.")
-        }
-        let list = EKCalendar(for: .reminder, eventStore: store)
-        list.title = card.title
-        list.source = source
-        do {
-            try store.saveCalendar(list, commit: false)
-            for (index, item) in card.items.enumerated() {
-                let reminder = EKReminder(eventStore: store)
-                reminder.calendar = list
-                reminder.title = item.text
-                reminder.notes = item.section
-                reminder.isCompleted = done.contains(index)
-                try store.save(reminder, commit: false)
+        return await CalendarReader.shared.read { store in
+            guard let source = store.defaultCalendarForNewReminders()?.source else {
+                return String(localized: "This iPhone has no reminders account to add a list to.")
             }
-            try store.commit()
-            return String(localized: "Added to Reminders as the list “\(card.title)”.")
-        } catch {
-            store.reset()
-            return String(localized: "It couldn't be added to Reminders: \(error.localizedDescription)")
+            let list = EKCalendar(for: .reminder, eventStore: store)
+            list.title = card.title
+            list.source = source
+            do {
+                try store.saveCalendar(list, commit: false)
+                for (index, item) in card.items.enumerated() {
+                    let reminder = EKReminder(eventStore: store)
+                    reminder.calendar = list
+                    reminder.title = item.text
+                    reminder.notes = item.section
+                    reminder.isCompleted = done.contains(index)
+                    try store.save(reminder, commit: false)
+                }
+                try store.commit()
+                return String(localized: "Added to Reminders as the list “\(card.title)”.")
+            } catch {
+                store.reset()
+                return String(localized: "It couldn't be added to Reminders: \(error.localizedDescription)")
+            }
         }
     }
     #endif

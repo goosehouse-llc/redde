@@ -308,15 +308,13 @@ final class ChatActivity {
         live = found
     }
 
-    /// A step of the open chat's reply under way that is messaging this bot right now.
+    /// A step of the open chat's reply under way that is messaging this bot right now. From
+    /// `messagingTargets`, never `messages`: a row reading the reply re-rendered on every update.
     private func messaging(_ bot: HermesBot, in conversation: Conversation) -> Bool {
-        guard conversation.isStreaming, let tools = conversation.messages.last?.tools else { return false }
-        let names = Set([bot.name, bot.handle, bot.title ?? ""].map { $0.lowercased() }).subtracting([""])
-        return tools.contains { tool in
-            guard tool.name == "message_agent", tool.status == .running,
-                  let target = tool.args?.firstMatch(of: /(?m)^target: @?([^\s]+)/)?.output.1 else { return false }
-            return names.contains(String(target).lowercased())
-        }
+        guard conversation.isStreaming else { return false }
+        let targets = conversation.messagingTargets
+        guard !targets.isEmpty else { return false }
+        return [bot.name, bot.handle, bot.title ?? ""].contains { !$0.isEmpty && targets.contains($0.lowercased()) }
     }
 
     /// What a bot's row shows of it: Hermes running a turn in its chat (the gateway's own list,

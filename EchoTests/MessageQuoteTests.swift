@@ -92,6 +92,44 @@ struct SuggestedReplyTests {
         #expect(FollowUps.worthSuggesting("Mix 1 part coarse-ground coffee with 4 parts cold water and steep it for 12 to 18 hours."))
     }
 
+    /// The end of a reply is read once (`FollowUps.decide`), off the main actor; what it decides
+    /// is what asking `listedOptions`, `worthSuggesting` and `kind` in turn gives, long replies
+    /// included (a code block, a table and a list above the question, ~12,000 characters).
+    @Test func theDecisionAtAReplysEndIsTheOneTheQuestionsGive() async {
+        func asked(_ reply: String) -> FollowUps.Decision {
+            let options = FollowUps.listedOptions(reply)
+            if !options.isEmpty { return .options(options) }
+            return FollowUps.worthSuggesting(reply) ? .suggest(FollowUps.kind(of: reply)) : .nothing
+        }
+        let prose = String(repeating: "The trail climbs through the trees and opens onto the ridge, where the wind picks up. ", count: 120)
+        let code = "```swift\nlet kit = [\"water\", \"layers\"]\n// Which one? Not this.\n```\n"
+        let table = "| Trail | Miles |\n|---|---|\n| Bear Ridge | 6 |\n| Falls Loop | 4 |\n"
+        let long = "## The plan\n\n" + prose + "\n\n" + code + "\n" + table + "\n" + prose
+        let replies = [
+            long + "\n\nI found three trailheads:\n1. **Bear Ridge** — 6 miles\n2. Falls Loop: shortest\n3. [Cedar Notch](https://example.com)\n\nWhich one should I map?",
+            long + "\n\nWant me to add it to your calendar?",
+            long + "\n\nWhen do you want to leave?",
+            long + "\n\nHave a good hike.",
+            long + "\n\n" + code,
+            code,
+            "Done — the office lights are off.",
+            "Sure. When should I remind you?",
+            "Two jackets fit:\n- Navy: lighter\n- Green: has a hood\nWant the navy or the green one?",
+            "Here's what changed:\n- Fixed the crash\n- Faster launch\nShould I commit it?",
+            "",
+        ]
+        for reply in replies {
+            #expect(FollowUps.decide(reply) == asked(reply), "\(reply.suffix(80))")
+            #expect(await FollowUps.deciding(reply) == asked(reply))
+        }
+        #expect(FollowUps.decide(replies[0]) == .options(["Bear Ridge", "Falls Loop", "Cedar Notch"]))
+        #expect(FollowUps.decide(replies[1]) == .suggest(.yesNo("Want me to add it to your calendar?")))
+        #expect(FollowUps.decide(replies[2]) == .suggest(.ask("When do you want to leave?")))
+        #expect(FollowUps.decide(replies[3]) == .suggest(.next))
+        #expect(FollowUps.decide(code) == .nothing, "a code block alone is \"[code]\": too short to suggest after")
+        #expect(FollowUps.decide("Done — the office lights are off.") == .nothing)
+    }
+
     @Test func theFastLanePicksFromWhatsThere() {
         #expect(FollowUps.source(fastLaneSet: false, preferFastLane: true) == (FollowUps.onDeviceAvailable ? .onDevice : .none))
         #expect(FollowUps.source(fastLaneSet: true, preferFastLane: true) == .fastLane)

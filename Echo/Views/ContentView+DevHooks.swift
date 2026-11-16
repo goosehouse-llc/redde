@@ -29,6 +29,7 @@ extension ContentView {
         // launch names (settings synced from elsewhere can have put another there), and before
         // the long thread, a Hermes session, is opened.
         let mode = DevHooks.value("-echo.tour")
+        if mode == "calendar" { await runCalendarTour(open: { await open(long) }); return }
         let sends = mode != "device"
         if sends, let lane = DevHooks.value("-fastLaneURL") { settings.fastLaneURL = lane; settings.transport = .chatCompletions }
         await monitor.report("tour: new conversation") { conversation.reset(); await wait(1) }
@@ -85,6 +86,38 @@ extension ContentView {
             for made in store.summaries where !DevHooks.conversationsAtLaunch.contains(made.id) { conversation.delete(id: made.id) }
             if !DevHooks.conversationsAtLaunch.contains(conversation.id) { conversation.reset() }
         }
+    }
+
+    /// `-echo.tour calendar`: what the phone's calendar costs the screen, with access to it given
+    /// (`simctl privacy <sim> grant calendar com.goosehouse.echo`, reminders too) and events on it
+    /// (`-echo.demoCalendarEvents n`): a new conversation from a chat, three times (the start
+    /// screen reads the day's events), then Keep a Copy's refresh three times, which reads two
+    /// months of events and the reminders to hand them to the server ("copy ms": how long each
+    /// took). Settings changed: phone tools on with the calendar and reminders, and Keep a Copy.
+    private func runCalendarTour(open long: () async -> Void) async {
+        let monitor = FrameMonitor.shared
+        func wait(_ seconds: Double) async { try? await Task.sleep(for: .seconds(seconds)) }
+        var tools = settings.phoneTools
+        tools.on = true
+        tools.copy = true
+        tools.set(.calendar, .allow)
+        tools.set(.reminders, .allow)
+        settings.phoneTools = tools
+        await wait(1)
+        for _ in 0 ..< 3 {
+            await long()
+            await wait(1.5)
+            await monitor.report("tour: calendar: new conversation") { conversation.reset(); await wait(1.5) }
+        }
+        for _ in 0 ..< 3 {
+            await monitor.report("tour: calendar: keep a copy") {
+                let began = ContinuousClock.now
+                await DeviceToolsService.shared.refreshCopies()
+                FrameMonitor.count("copy ms", by: Int((ContinuousClock.now - began) / .milliseconds(1)))
+                await wait(0.5)
+            }
+        }
+        await monitor.report("tour: done") {}
     }
 
     func applyDevHooks() {

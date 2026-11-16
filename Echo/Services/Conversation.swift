@@ -255,6 +255,12 @@ final class Conversation {
     /// The name this conversation was given: by Rename, or on the gateway (a session renamed in
     /// the Dashboard, or titled by Hermes). Without one the title is the first question.
     var name: String? { didSet { refreshHeader() } }
+    /// The bots a step of the last reply is messaging right now (a `message_agent` call still
+    /// running), by the name on its `target:` line, lowercased, without the "@": what a bot's row
+    /// in the chat list reads while a reply streams (`ChatActivity.kind`). Held apart from
+    /// `messages` like the title: read from the array there, every streamed update re-rendered
+    /// the whole chat list, kept built while the panel is closed, once for each bot (2026-11-15).
+    private(set) var messagingTargets: Set<String> = []
 
     private func refreshHeader() {
         let first = (messages.first { $0.role == .user && !$0.isSteer } ?? outbox.first?.message).map { $0.text.isEmpty ? String(localized: "\($0.attachments.count) attachments") : $0.text } ?? String(localized: "New conversation")
@@ -265,7 +271,19 @@ final class Conversation {
         // The newest reply that knows; nearly always the last message or the one before it.
         let context = messages.reversed().lazy.compactMap { $0.metrics?.context }.first
         if context != contextUsage { contextUsage = context }
+        let targets = Self.messagingTargets(in: messages.last?.tools ?? [])
+        if targets != messagingTargets { messagingTargets = targets }
     }
+
+    /// The bots the running `message_agent` calls among `tools` are messaging (`messagingTargets`).
+    nonisolated static func messagingTargets(in tools: [ToolActivity]) -> Set<String> {
+        var found: Set<String> = []
+        for tool in tools where tool.name == "message_agent" && tool.status == .running {
+            if let target = tool.args?.firstMatch(of: targetLine)?.output.1 { found.insert(String(target).lowercased()) }
+        }
+        return found
+    }
+    nonisolated(unsafe) private static let targetLine = /(?m)^target: @?([^\s]+)/
 
     // MARK: - A turn already under way
 

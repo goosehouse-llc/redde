@@ -169,6 +169,31 @@ struct ChatActivityTests {
         #expect(s.activity.kind(of: home(old), open: s.conversation, settings: s.settings) == nil, "quiet for a minute: done")
     }
 
+    /// The open chat's reply messaging a bot (message_agent, running) marks the bot at work, by
+    /// its name or title, "@" or not, until the call ends; read from `messagingTargets`, which
+    /// changes only when such a call starts or stops, not on every streamed update.
+    @Test func aBotTheOpenReplyIsMessagingIsAtWork() {
+        let s = setup(.hermesServe)
+        let scout = HermesBot(name: "scout", title: "Scout"), home = HermesBot(name: "ops", title: "Home")
+        var reply = Message(role: .assistant, text: "Asking")
+        reply.tools = [ToolActivity(name: "message_agent", status: .running, args: "message: Which trailhead?\ntarget: @Scout"),
+                       ToolActivity(name: "message_agent", status: .completed, args: "message: Lights?\ntarget: home")]
+        s.conversation.mutateMessagesForDemo { $0 = [Message(role: .user, text: "Plan it"), reply] }
+        #expect(s.conversation.messagingTargets == ["scout"])
+        #expect(s.activity.kind(of: scout, open: s.conversation, settings: s.settings) == nil, "only while the reply streams")
+        s.conversation.setStreamingForDemo(true)
+        #expect(s.activity.kind(of: scout, open: s.conversation, settings: s.settings) == .working)
+        #expect(s.activity.kind(of: home, open: s.conversation, settings: s.settings) == nil, "its call has ended")
+        s.conversation.mutateMessagesForDemo { $0[1].text += " more words" }
+        #expect(s.conversation.messagingTargets == ["scout"])
+        s.conversation.mutateMessagesForDemo { $0[1].tools[0].status = .completed }
+        #expect(s.conversation.messagingTargets.isEmpty)
+        #expect(s.activity.kind(of: scout, open: s.conversation, settings: s.settings) == nil)
+        s.conversation.mutateMessagesForDemo { $0[1].tools.append(ToolActivity(name: "message_agent", status: .running, args: "target: Home")) }
+        #expect(s.activity.kind(of: home, open: s.conversation, settings: s.settings) == .working, "by its title")
+        s.conversation.setStreamingForDemo(false)
+    }
+
     @Test func theEndOfATurnTheListKnewIsNotABotAtWork() {
         let s = setup(.hermesServe)
         s.activity.showDemo(["home-chat": .working], settings: s.settings)
