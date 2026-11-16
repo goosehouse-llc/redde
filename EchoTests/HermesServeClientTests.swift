@@ -64,6 +64,88 @@ struct HermesServeClientTests {
         return ended
     }
 
+    /// A Hermes that refuses, as 0.23.1 does, to delete a session some connection has open, and
+    /// keeps it open until it is closed by its runtime id.
+    private final class LiveSessions: @unchecked Sendable {
+        var open: [String: String]          // runtime id → stored id
+        var sent: [String] = []
+        var stillWriting = 0                // refusals left after the close, for a reply's last rows
+        init(open: [String: String] = [:]) { self.open = open }
+
+        func rpc(_ method: String, _ params: [String: JSONValue]) throws -> JSONValue {
+            let id = params["session_id"]?.string ?? ""
+            sent.append("\(method) \(id)")
+            switch method {
+            case "session.resume":
+                let runtime = open.first { $0.value == id }?.key ?? "rt-\(id)"
+                open[runtime] = id
+                return .object(["session_id": .string(runtime)])
+            case "session.close":
+                open[id] = nil
+                return .object(["closed": .bool(true)])
+            case "session.delete":
+                if open.values.contains(id) { throw HermesServeClient.RPCError(code: 4023, message: "cannot delete an active session") }
+                if stillWriting > 0 { stillWriting -= 1; throw HermesServeClient.RPCError(code: 4023, message: "cannot delete an active session") }
+                return .object(["deleted": .string(id)])
+            default:
+                return .null
+            }
+        }
+
+        func delete(_ stored: String, known: String?, attempts: Int = 4) async throws {
+            try await HermesServeClient.deleteClosingFirst(stored: stored, known: known, attempts: attempts, pause: { _ in }) { try self.rpc($0, $1) }
+        }
+    }
+
+    /// Issue 78: a chat this connection opened is closed before it is deleted, and goes.
+    @Test func aChatOpenHereIsClosedBeforeItIsDeleted() async throws {
+        let hermes = LiveSessions(open: ["rt-1": "chat"])
+        try await hermes.delete("chat", known: "rt-1")
+        #expect(hermes.sent == ["session.close rt-1", "session.delete chat"])
+        #expect(hermes.open.isEmpty)
+    }
+
+    /// One opened before a reconnect is still live on the host, with no runtime id here: it is
+    /// attached to, closed, and deleted.
+    @Test func aChatStillOpenFromAnEarlierConnectionIsTakenOverAndClosed() async throws {
+        let hermes = LiveSessions(open: ["rt-old": "chat"])
+        try await hermes.delete("chat", known: nil)
+        #expect(hermes.sent == ["session.delete chat", "session.resume chat", "session.close rt-old", "session.delete chat"])
+        #expect(hermes.open.isEmpty)
+    }
+
+    /// A chat nobody has open is deleted with the one call, as before.
+    @Test func aChatNobodyHasOpenIsDeletedAtOnce() async throws {
+        let hermes = LiveSessions()
+        try await hermes.delete("chat", known: nil)
+        #expect(hermes.sent == ["session.delete chat"])
+    }
+
+    /// A reply still writing its last rows refuses for a moment after the close: tried again.
+    @Test func aRefusalWhileTheLastRowsAreWrittenIsTriedAgain() async throws {
+        let hermes = LiveSessions(open: ["rt-1": "chat"])
+        hermes.stillWriting = 2
+        try await hermes.delete("chat", known: "rt-1")
+        #expect(hermes.sent.filter { $0.hasPrefix("session.delete") }.count == 3)
+    }
+
+    /// One that never lets go says so, after the last try, and other errors aren't retried.
+    @Test func aSessionThatStaysActiveSaysSoAndOtherErrorsAreNotRetried() async throws {
+        let stuck = LiveSessions()
+        stuck.stillWriting = 10
+        await #expect(throws: HermesServeClient.RPCError.self) { try await stuck.delete("chat", known: nil, attempts: 3) }
+        #expect(stuck.sent.filter { $0.hasPrefix("session.delete") }.count == 3)
+
+        nonisolated(unsafe) var sent: [String] = []
+        await #expect(throws: HermesServeClient.RPCError.self) {
+            try await HermesServeClient.deleteClosingFirst(stored: "chat", known: nil, pause: { _ in }) { method, _ in
+                sent.append(method)
+                throw HermesServeClient.RPCError(code: 4007, message: "session not found")
+            }
+        }
+        #expect(sent == ["session.delete"])
+    }
+
     @Test func aSessionThatIsNotRunningEndsOnlyATurnThatStarted() async {
         let idle: JSONValue = .object(["running": .bool(false)])
         // Hermes 0.21.3 and 0.21.5 say once more where the session stands a moment after a

@@ -53,7 +53,7 @@ extension Incognito {
             do {
                 switch entry.transport {
                 case .hermesServe:
-                    try await dashboard.closeAndDeleteSession(stored: entry.session)
+                    try await dashboard.deleteSession(stored: entry.session)
                 case .hermesSessions:
                     guard let api else { return false }
                     try await api.deleteSession(id: entry.session)

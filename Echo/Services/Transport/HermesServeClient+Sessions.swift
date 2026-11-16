@@ -324,18 +324,40 @@ extension HermesServeClient {
     }
 
     /// Branch a session (`session.branch`). Needs the session open on this connection.
+    /// Deletes a stored session, closing it first (`deleteClosingFirst`).
     func deleteSession(stored: String) async throws {
-        try await call("session.delete", params: .object(["session_id": .string(stored)]))
+        try await ensureConnected()
+        let known = runtimeIDs.removeValue(forKey: stored)
+        if let known { pinnedEfforts[known] = nil }
+        try await Self.deleteClosingFirst(stored: stored, known: known) { method, params in
+            try await self.call(method, params: .object(params))
+        }
+        runtimeIDs[stored] = nil   // a resume on the way re-noted it
     }
 
-    /// Deletes a session this connection may still have live (an incognito chat): closed here
-    /// first, as Hermes refuses to delete a live one.
-    func closeAndDeleteSession(stored: String) async throws {
-        try await ensureConnected()
-        if let runtime = runtimeIDs.removeValue(forKey: stored) {
-            _ = try? await call("session.close", params: .object(["session_id": .string(runtime)]))
+    /// Hermes refuses to delete a session that is live in its process ("cannot delete an active
+    /// session", 4023), and a session stays live after its reply has finished, for as long as a
+    /// connection has it open: this one, or one from before a reconnect, since Redde opens
+    /// sessions to outlast the socket (`close_on_disconnect` off) and forgets their runtime ids
+    /// when it reconnects. So the one this connection knows is closed first; if Hermes refuses
+    /// anyway, the session is attached to and what that returns is closed, and the delete tried
+    /// again, a moment later each time for a reply still writing its last rows (GitHub issue 78).
+    nonisolated static func deleteClosingFirst(stored: String, known: String?, attempts: Int = 4,
+                                               pause: @Sendable (Int) async throws -> Void = { try await Task.sleep(for: .milliseconds(400 * $0)) },
+                                               rpc: (String, [String: JSONValue]) async throws -> JSONValue) async throws {
+        func close(_ runtime: String) async { _ = try? await rpc("session.close", ["session_id": .string(runtime)]) }
+        if let known { await close(known) }
+        for attempt in 1 ... attempts {
+            do {
+                _ = try await rpc("session.delete", ["session_id": .string(stored)])
+                return
+            } catch let error as RPCError where error.code == 4023 && attempt < attempts {
+                if attempt > 1 { try await pause(attempt - 1) }
+                if let runtime = try? await rpc("session.resume", ["session_id": .string(stored), "omit_messages": .bool(true)])["session_id"]?.string {
+                    await close(runtime)
+                }
+            }
         }
-        try await call("session.delete", params: .object(["session_id": .string(stored)]))
     }
 
     func branchSession(stored: String, title: String?) async throws -> String? {
