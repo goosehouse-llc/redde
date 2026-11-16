@@ -53,6 +53,8 @@ struct ComposerView: View {
     /// A scan being made into a PDF or pictures; a long one takes a moment.
     @State private var preparingScan = false
     @State private var attachmentError: String?
+    /// Text just moved into the field from a pasted-text chip, so the Mac doesn't take it out again.
+    @State private var keptInField: String?
     /// What the draft mentions that can be attached (`ComposerContext`), minus what was
     /// dismissed or already attached for this draft.
     @State private var contextSuggestions: [ComposerContext.Suggestion] = []
@@ -121,7 +123,7 @@ struct ComposerView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             if !stripAttachments.isEmpty {
-                AttachmentStrip(attachments: stripAttachments, markUp: markUpAction) { id in
+                AttachmentStrip(attachments: stripAttachments, markUp: markUpAction, putInMessage: putInMessage) { id in
                     pendingAttachments.removeAll { $0.id == id }
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -150,12 +152,21 @@ struct ComposerView: View {
     /// Keeping the field's context, layout and animations up to date as it changes.
     private func composerWork(_ content: some View) -> some View {
         content
-        .onChange(of: draft) { _, new in refreshContext(new) }
-        // A picture on the clipboard pastes into the field as an attachment (`ComposerPaste`).
+        .onChange(of: draft) { old, new in
+            #if os(macOS)
+            if takeBackLongPaste(old: old, new: new) { return }
+            #endif
+            refreshContext(new)
+        }
+        // A picture on the clipboard pastes into the field as an attachment, and long text as a
+        // text file (`ComposerPaste`).
         .onChange(of: focused, initial: true) { _, isFocused in
             ComposerPaste.shared.deliver = !isFocused ? nil : { attachments, problems in
                 pendingAttachments += attachments
                 if let problem = problems.first { attachmentError = problem }
+            }
+            ComposerPaste.shared.deliverText = !isFocused ? nil : { text in
+                pendingAttachments.append(.pastedText(text, alongside: pendingAttachments))
             }
             guard isFocused else { return }
             Task {
@@ -691,7 +702,31 @@ struct ComposerView: View {
         conversation.steer(text)
     }
 
+    /// A text file's words moved into the message, after what's typed: a long paste the person
+    /// wants to edit after all.
+    private func putInMessage(_ attachment: Attachment) {
+        guard let text = attachment.inlineText else { return }
+        pendingAttachments.removeAll { $0.id == attachment.id }
+        let typed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        keptInField = text
+        draft = typed.isEmpty ? text : typed + "\n\n" + text
+        focused = true
+    }
+
     #if os(macOS)
+    /// A long paste the Mac's field took in itself, taken back out as a text file. True when
+    /// it was; not for text just moved in from a chip (`putInMessage`).
+    private func takeBackLongPaste(old: String, new: String) -> Bool {
+        let kept = keptInField
+        keptInField = nil
+        // The clipboard is read only after a jump no typing makes, never on a keystroke.
+        guard focused, ComposerPaste.grewByLongPaste(old: old, new: new), let pasted = UIPasteboard.general.string, pasted != kept,
+              ComposerPaste.isLongPaste(pasted), ComposerPaste.isPaste(old: old, new: new, pasted: pasted) else { return false }
+        pendingAttachments.append(.pastedText(pasted, alongside: pendingAttachments))
+        draft = old
+        return true
+    }
+
     private func pastePictures() {
         let providers = UIPasteboard.general.itemProviders.filter {
             ComposerPaste.isPicture(types: $0.registeredContentTypes, readsAsText: $0.canLoadObject(ofClass: NSString.self))

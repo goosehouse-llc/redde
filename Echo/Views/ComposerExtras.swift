@@ -50,8 +50,9 @@ struct ComposerEditor: View {
 /// composer's is given a subclass of its class, made at run time, that overrides two methods and
 /// passes everything else through, the way key-value observing does. While the composer has
 /// the focus and the clipboard holds a picture and no text, it says yes to Paste and takes it:
-/// the picture becomes an attachment and nothing goes into the text. In every other case the
-/// original answers. If the field is ever backed by something that isn't a text view, nothing
+/// the picture becomes an attachment and nothing goes into the text. Long text on the clipboard
+/// is taken the same way, as a text file (`isLongPaste`). In every other case the original
+/// answers. If the field is ever backed by something that isn't a text view, nothing
 /// is changed, and pasting is what it was.
 final class ComposerPaste {
     static let shared = ComposerPaste()
@@ -60,9 +61,62 @@ final class ComposerPaste {
     /// Set while the composer's field has the focus, nil otherwise.
     var deliver: (([Attachment], [String]) -> Void)?
 
+    /// Where a long paste goes, as a text file beside the message (`Attachment.pastedText`).
+    /// Set and cleared with `deliver`.
+    var deliverText: ((String) -> Void)?
+
     /// Paste means a picture just now: the composer is listening, and the clipboard has one and
     /// no text. (Asking whether it has either doesn't read it, and brings up no "Allow Paste".)
     var takesPictures: Bool { deliver != nil && UIPasteboard.general.hasImages && !UIPasteboard.general.hasStrings }
+
+    /// Text this long goes beside the message as a file, not into the field: a log, a page of
+    /// code, an email thread. In the field it pushed the chat off the screen and was hard to
+    /// edit around (Conduit's "long paste as an attachment", build list 2026-11-13).
+    nonisolated static let longPasteCharacters = 1500
+    nonisolated static let longPasteLines = 25
+
+    nonisolated static func isLongPaste(_ text: String) -> Bool {
+        if text.count >= longPasteCharacters { return true }
+        var lines = 1
+        for character in text where character.isNewline {
+            lines += 1
+            if lines >= longPasteLines { return true }
+        }
+        return false
+    }
+
+    /// Paste with long text on the clipboard: it's handed over as a file and the field is left
+    /// as it was. False when the composer isn't listening or the text is short, for the field
+    /// to paste it itself. Read only from the person's own Paste, which asks no "Allow Paste".
+    func pasteLongText() -> Bool {
+        guard let deliverText, UIPasteboard.general.hasStrings, !UIPasteboard.general.hasImages,
+              let text = UIPasteboard.general.string, Self.isLongPaste(text) else { return false }
+        deliverText(text)
+        return true
+    }
+
+    /// Whether `new` is longer than `old` by as much as a long paste: that many characters, or
+    /// that many more lines.
+    nonisolated static func grewByLongPaste(old: String, new: String) -> Bool {
+        let grew = new.count - old.count
+        if grew >= longPasteCharacters { return true }
+        guard grew >= longPasteLines - 1 else { return false }
+        let lines = { (text: String) in text.reduce(0) { $1.isNewline ? $0 + 1 : $0 } }
+        return lines(new) - lines(old) >= longPasteLines - 1
+    }
+
+    /// Whether the change from `old` to `new` is `pasted` going in at one place (over a
+    /// selection or not), and nothing else. A Mac's field pastes on its own, so a long paste is
+    /// taken back out of it after the fact, and only a change that is exactly the clipboard's
+    /// text is: the field then goes back to `old`, selection and all, as on the iPhone, where
+    /// the paste never reaches it.
+    nonisolated static func isPaste(old: String, new: String, pasted: String) -> Bool {
+        guard !pasted.isEmpty, new.count >= pasted.count else { return false }
+        let prefix = zip(old, new).prefix { $0 == $1 }.count
+        let tailRoom = min(old.count, new.count) - prefix
+        let suffix = zip(old.reversed(), new.reversed()).prefix(tailRoom).prefix { $0 == $1 }.count
+        return new.dropFirst(prefix).dropLast(suffix) == Substring(pasted)
+    }
 
     func pastePictures() {
         guard let deliver else { return }
@@ -123,7 +177,7 @@ nonisolated enum PicturePasting {
         let newPaste: @convention(block) (AnyObject, AnyObject?) -> Void = { field, sender in
             if MainActor.assumeIsolated({ ComposerPaste.shared.takesPictures }) {
                 MainActor.assumeIsolated { ComposerPaste.shared.pastePictures() }
-            } else {
+            } else if !MainActor.assumeIsolated({ ComposerPaste.shared.pasteLongText() }) {
                 originalPaste(field, paste, sender)
             }
         }

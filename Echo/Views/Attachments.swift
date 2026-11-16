@@ -11,6 +11,8 @@ struct AttachmentStrip: View {
     let attachments: [Attachment]
     /// Draw over a pending photo (iPhone and iPad), from its tile's menu (touch and hold).
     var markUp: ((Attachment) -> Void)? = nil
+    /// Moves a text file's words into the message (a long paste, `ComposerPaste`).
+    var putInMessage: ((Attachment) -> Void)? = nil
     let remove: (UUID) -> Void
 
     var body: some View {
@@ -22,6 +24,10 @@ struct AttachmentStrip: View {
                             .contextMenu {
                                 if let markUp, att.kind == .image {
                                     Button("Mark Up", systemImage: "pencil.tip.crop.circle") { markUp(att) }
+                                }
+                                if let putInMessage, att.kind == .text {
+                                    Button(String(localized: "Put in the Message", comment: "A text file waiting to be sent (a long paste), touch and hold: moves its words into the message box to edit"),
+                                           systemImage: "text.insert") { putInMessage(att) }
                                 }
                                 Button("Remove", systemImage: "trash", role: .destructive) { remove(att.id) }
                             }

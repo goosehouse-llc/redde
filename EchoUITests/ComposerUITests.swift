@@ -202,4 +202,38 @@ final class ComposerUITests: XCTestCase {
         keep("a pasted picture")
         remove.tap()
     }
+
+    func testALongPasteBecomesATextFileAndCanBePutBack() {
+        continueAfterFailure = false
+        let log = (1 ... 40).map { "12:00:\(String(format: "%02d", $0)) INFO step \($0) finished" }.joined(separator: "\n")
+        UIPasteboard.general.string = log
+        let app = launch(["-echo.fresh"])
+        let composer = field(app)
+        clear(composer)
+        focus(composer, in: app)
+        sleep(1)
+        composer.press(forDuration: 1.2)
+        let paste = app.menuItems["Paste"]
+        XCTAssertTrue(paste.waitForExistence(timeout: 5), "The field offers no Paste")
+        paste.tap()
+        for label in ["Allow Paste", "Allow"] where springboard.alerts.buttons[label].waitForExistence(timeout: 3) { springboard.alerts.buttons[label].tap() }
+        let remove = app.buttons["Remove Pasted text.txt"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "The long paste isn't a file beside the message")
+        let left = composer.value as? String ?? ""
+        XCTAssertTrue(left.isEmpty || left == composer.placeholderValue, "The long paste went into the field too: \(left.prefix(80))")
+        keep("a long paste as a file")
+
+        // Held, it goes into the message after all.
+        let chip = app.staticTexts["Pasted text.txt"].firstMatch
+        XCTAssertTrue(chip.exists)
+        chip.press(forDuration: 1.2)
+        let putBack = app.buttons["Put in the Message"]
+        XCTAssertTrue(putBack.waitForExistence(timeout: 5), "No Put in the Message on the chip")
+        putBack.tap()
+        XCTAssertTrue(remove.waitForNonExistence(timeout: 5), "The file stayed after its words moved into the message")
+        let moved = composer.value as? String ?? ""
+        XCTAssertTrue(moved.contains("step 40 finished"), "The words didn't reach the field: \(moved.prefix(80))")
+        keep("put back in the message")
+        clear(composer)
+    }
 }

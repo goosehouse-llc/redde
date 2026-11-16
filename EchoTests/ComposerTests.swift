@@ -102,6 +102,44 @@ struct ComposerLogicTests {
         #expect(!ComposerPaste.isPicture(types: [.pdf], readsAsText: false))
     }
 
+    @Test func aLongPasteIsALotOfTextOrManyLines() {
+        #expect(!ComposerPaste.isLongPaste("Could you look at this?"))
+        #expect(!ComposerPaste.isLongPaste(String(repeating: "a", count: ComposerPaste.longPasteCharacters - 1)))
+        #expect(ComposerPaste.isLongPaste(String(repeating: "a", count: ComposerPaste.longPasteCharacters)))
+        let lines = { (n: Int) in (1 ... n).map { "line \($0)" }.joined(separator: "\n") }
+        #expect(!ComposerPaste.isLongPaste(lines(ComposerPaste.longPasteLines - 1)))
+        #expect(ComposerPaste.isLongPaste(lines(ComposerPaste.longPasteLines)), "a short log of many lines")
+    }
+
+    @Test func onlyAJumpNoTypingMakesLooksLikeALongPaste() {
+        #expect(!ComposerPaste.grewByLongPaste(old: "Hello", new: "Hello!"))
+        #expect(!ComposerPaste.grewByLongPaste(old: "", new: String(repeating: "a", count: 200)))
+        #expect(ComposerPaste.grewByLongPaste(old: "See: ", new: "See: " + String(repeating: "a", count: 1500)))
+        let log = String(repeating: "ok\n", count: 24)
+        #expect(ComposerPaste.grewByLongPaste(old: "", new: log))
+        #expect(!ComposerPaste.grewByLongPaste(old: log, new: log + "x"), "lines already there don't count again")
+    }
+
+    @Test func aPasteIsTheClipboardsTextGoingInAtOnePlace() {
+        let pasted = "line one\nline two"
+        #expect(ComposerPaste.isPaste(old: "", new: pasted, pasted: pasted))
+        #expect(ComposerPaste.isPaste(old: "Look: ", new: "Look: " + pasted, pasted: pasted))
+        #expect(ComposerPaste.isPaste(old: "Before after", new: "Before " + pasted + "after", pasted: pasted))
+        #expect(ComposerPaste.isPaste(old: "Fix THIS now", new: "Fix " + pasted + " now", pasted: pasted), "over a selection")
+        #expect(!ComposerPaste.isPaste(old: "", new: pasted + "!", pasted: pasted), "and something else besides")
+        #expect(!ComposerPaste.isPaste(old: "", new: "other words entirely", pasted: pasted))
+    }
+
+    @Test func aLongPasteIsATextFileNamedApartFromAnyBesideIt() {
+        let first = Echo.Attachment.pastedText("one")
+        #expect(first.kind == .text && first.mimeType == "text/plain" && first.filename == "Pasted text.txt")
+        #expect(first.inlineText == "one")
+        let second = Echo.Attachment.pastedText("two", alongside: [first])
+        #expect(second.filename == "Pasted text 2.txt")
+        #expect(Echo.Attachment.pastedText("three", alongside: [first, second]).filename == "Pasted text 3.txt")
+        #expect(second.promptAddendum == "--- Pasted text 2.txt ---\ntwo", "what an agent without files reads")
+    }
+
     @Test func aFileStagedOnTheDashboardIsNamedInTheMessage() {
         let prompt = HermesServeTransport.prompt
         #expect(prompt("Summarise this.", []) == "Summarise this.")

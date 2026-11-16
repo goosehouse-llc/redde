@@ -176,6 +176,21 @@ nonisolated struct Attachment: Identifiable, Codable, Equatable, Sendable {
         ] as CFDictionary)
     }
 
+    /// A long paste, carried as a text file rather than typed into the message ("Pasted text.txt",
+    /// then "Pasted text 2.txt" beside one already there). Every connection takes it: the
+    /// Dashboard as a file, the others with its words in the prompt under its name.
+    static func pastedText(_ text: String, alongside others: [Attachment] = []) -> Attachment {
+        let stem = String(localized: "Pasted text", comment: "The name of the file a long paste becomes (\"Pasted text.txt\"), shown on its chip and given to the agent")
+        let taken = Set(others.map { $0.filename.lowercased() })
+        var number = 1
+        var name = "\(stem).txt"
+        while taken.contains(name.lowercased()) {
+            number += 1
+            name = "\(stem) \(number).txt"
+        }
+        return Attachment(kind: .text, filename: name, mimeType: "text/plain", data: Data(text.utf8))
+    }
+
     static func file(url: URL) throws -> Attachment {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }

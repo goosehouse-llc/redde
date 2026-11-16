@@ -1259,6 +1259,15 @@ the same hand-over Siri's "draft a message" uses (`LaunchRouter.requestDraft`).
   focused and a picture and no text on the clipboard, Paste attaches the picture. If the field
   is ever backed by something else, nothing is changed and pasting is what it was;
   `EchoUITests/ComposerUITests` pastes one on every run.
+- **A long paste** (`ComposerPaste.isLongPaste`: 1,500 characters or 25 lines) goes beside the
+  message as a text file, `Attachment.pastedText` ("Pasted text.txt", then "Pasted text 2.txt"),
+  through the same `paste` override, so the field is left as it was. The person's own Paste
+  reads the clipboard with no "Allow Paste". Every connection takes it: the Dashboard as a
+  file, the Hermes API, ACP and direct models with its words in the prompt under its name.
+  Touch and hold the chip for Put in the Message to edit it in the field after all. A Mac's
+  field pastes on its own, so there the paste is taken back out after the fact. The clipboard
+  is read only after a jump no typing makes (`grewByLongPaste`), and only a change that is
+  exactly the clipboard's text counts (`isPaste`).
 
 ### Reading
 
