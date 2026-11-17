@@ -5,6 +5,8 @@ import WatchKit
 struct AskView: View {
     @Environment(WatchStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
+    /// The live call on screen (`WatchCall`).
+    @State private var call: WatchCall?
 
     var body: some View {
         NavigationStack {
@@ -18,6 +20,7 @@ struct AskView: View {
                 }
             }
             .navigationTitle(store.agentName)
+            .navigationDestination(item: $call) { call in WatchCallView(call: call) }
             .toolbar {
                 if store.connection != nil {
                     // The server's conversations, to carry one on, where they can be listed; and the bots.
@@ -41,6 +44,11 @@ struct AskView: View {
         // The Ask Redde intent (Action button, Siri) asks for dictation before the app is on
         // screen; the sheet goes up once it is, and only then.
         .onChange(of: store.dictationRequested) { takeRequestedDictation() }
+        .onChange(of: store.callRequested) {
+            guard store.callRequested else { return }
+            store.callRequested = false
+            startCall()
+        }
         .onChange(of: scenePhase) { takeRequestedDictation() }
     }
 
@@ -48,11 +56,13 @@ struct AskView: View {
 
     /// Nothing asked yet: the microphone is the screen.
     private var hero: some View {
-        VStack(spacing: 12) {
+        // Smaller beside a Call button, so both fit under the clock.
+        let mic: CGFloat = canCall ? 62 : 84
+        return VStack(spacing: canCall ? 6 : 12) {
             Button(action: dictate) {
                 Image(systemName: "mic.fill")
-                    .font(.system(size: 34, weight: .semibold))
-                    .frame(width: 84, height: 84)
+                    .font(.system(size: canCall ? 26 : 34, weight: .semibold))
+                    .frame(width: mic, height: mic)
                     .background(.tint, in: Circle())
                     .foregroundStyle(.white)
             }
@@ -67,8 +77,22 @@ struct AskView: View {
                 .foregroundStyle(.tertiary)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
+            // A live call from the wrist, where the phone handed over a voice service the watch
+            // can call (`WatchCall`).
+            if canCall {
+                Button("Call", systemImage: "phone.fill", action: startCall)
+                    .buttonStyle(.bordered)
+                    .tint(.green)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var canCall: Bool { store.connection?.live.map { WatchLive.engines.contains($0.engine) && !$0.key.isEmpty } ?? false }
+
+    private func startCall() {
+        guard let live = store.connection?.live else { return }
+        call = WatchCall(live: live, agentName: store.agentName, store: store)
     }
 
     private var connectionLabel: String {

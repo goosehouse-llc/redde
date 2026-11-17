@@ -63,6 +63,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
             connection.kokoroModel = settings.speechModelOrDefault
             connection.voiceSpeed = settings.voiceSpeed
         }
+        connection.live = watchLive(settings)
         // The bots, which the phone talks to for the watch over the Dashboard, whichever road the
         // watch's own questions take: only with the Dashboard reachable and Bots on.
         if viaPhone != nil, settings.showBots {
@@ -70,6 +71,18 @@ final class WatchLink: NSObject, WCSessionDelegate {
             if !offered.isEmpty { connection.bots = offered }
         }
         return connection
+    }
+
+    /// The live call the watch can make by itself: the service voice mode uses, where the watch
+    /// can call it and the phone has its key; else the first the watch can call that has one.
+    static func watchLive(_ settings: Settings, key: (LiveEngine) -> String? = { $0.keyItem.flatMap(Keychain.read) }) -> WatchLive? {
+        let callable = WatchLive.engines.compactMap(LiveEngine.init(rawValue:))
+        let picked = settings.liveEngine(for: nil).flatMap { callable.contains($0) ? $0 : nil }
+        for engine in ([picked].compactMap { $0 } + callable) {
+            guard let secret = key(engine), !secret.isEmpty else { continue }
+            return WatchLive(engine: engine.rawValue, key: secret, voice: settings.appLiveVoice(engine))
+        }
+        return nil
     }
 
     /// The server's bots as the watch lists them: not the main agent (the watch asks it anyway),

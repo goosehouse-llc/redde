@@ -25,6 +25,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Redde listens during a live call you start on your watch, and sends your voice to the voice service you chose.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

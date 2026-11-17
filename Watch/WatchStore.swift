@@ -31,6 +31,8 @@ final class WatchStore {
     private static let headersAccount = "watch-access-headers"
     /// The person's own headers for a server behind a reverse proxy: as secret as the key.
     private static let customHeadersAccount = "watch-custom-headers"
+    /// The live call's key (`WatchLive`): kept like the server's.
+    private static let liveKeyAccount = "watch-live-key"
 
     private(set) var connection: WatchConnection?
     private(set) var question = ""
@@ -40,6 +42,8 @@ final class WatchStore {
     private(set) var history: [Message] = []
     /// Set by the Ask Redde intent; the screen takes dictation once it is up and clears it.
     var dictationRequested = false
+    /// A live call asked for before the screen could start it (`-echo.call`).
+    var callRequested = false
     /// The Hermes API session the watch's questions go into: its own, made on the first
     /// question, or a conversation picked from the list.
     var sessionID: String? {
@@ -80,10 +84,12 @@ final class WatchStore {
                 defaults.removeObject(forKey: Self.connectionKey)
                 _ = Keychain.delete(account: Self.keyAccount)
                 _ = Keychain.delete(account: Self.customHeadersAccount)
+                _ = Keychain.delete(account: Self.liveKeyAccount)
             } else {
                 saved.apiKey = Keychain.read(account: Self.keyAccount) ?? ""
                 saved.headers = Keychain.read(account: Self.customHeadersAccount)
                     .flatMap { try? JSONDecoder().decode([String: String].self, from: Data($0.utf8)) }
+                saved.live?.key = Keychain.read(account: Self.liveKeyAccount) ?? ""
                 connection = saved
             }
         }
@@ -121,15 +127,18 @@ final class WatchStore {
             var stored = new
             stored.apiKey = ""
             stored.headers = nil
+            stored.live?.key = ""
             defaults.set(try? JSONEncoder().encode(stored), forKey: Self.connectionKey)
             _ = Keychain.write(account: Self.keyAccount, value: new.apiKey)
             // (Writing an empty value removes the entry.)
             let headers = new.headers.flatMap { $0.isEmpty ? nil : try? JSONEncoder().encode($0) }
             _ = Keychain.write(account: Self.customHeadersAccount, value: headers.map { String(decoding: $0, as: UTF8.self) } ?? "")
+            _ = Keychain.write(account: Self.liveKeyAccount, value: new.live?.key ?? "")
         } else {
             defaults.removeObject(forKey: Self.connectionKey)
             _ = Keychain.delete(account: Self.keyAccount)
             _ = Keychain.delete(account: Self.customHeadersAccount)
+            _ = Keychain.delete(account: Self.liveKeyAccount)
         }
         log.info("connection: \(new.map { "\($0.kind.rawValue) \($0.url)" } ?? "none", privacy: .public)")
     }
@@ -214,6 +223,28 @@ final class WatchStore {
         let asker = WatchAsker(connection: connection, store: self)
         self.asker = asker
         asker.ask(trimmed)
+    }
+
+    /// A live call's request (`WatchCall`): asked as a question is, on the same road, its
+    /// approvals and questions on the wrist as usual; the answer comes back to the call, whose
+    /// voice says it, and isn't spoken here.
+    func answerForCall(_ text: String) async throws -> String {
+        guard let connection else { throw TransportError.badURL }
+        asker?.cancel()
+        speaker.stop()
+        question = text
+        reply = ""
+        status = .thinking
+        let asker = WatchAsker(connection: connection, store: self)
+        self.asker = asker
+        defer { if status == .thinking || isWaitingOnWrist { status = .idle } }
+        try await asker.answer(text)
+        if connection.kind == .fastLane {
+            history.append(Message(role: .user, text: text))
+            history.append(Message(role: .assistant, text: reply))
+            history = Array(history.suffix(12))
+        }
+        return reply
     }
 
     func repeatReply() {

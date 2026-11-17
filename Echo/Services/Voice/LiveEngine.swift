@@ -54,7 +54,12 @@ nonisolated enum LiveEngine: String, CaseIterable, Codable, Sendable {
         case .gemini: GeminiLiveDialect()
         case .grok: GrokVoiceDialect()
         case .elevenLabs: ElevenLabsDialect()
+        #if os(watchOS)
+        // The watch has no local call (no transcriber of its own): the phone never hands it one.
+        case .local: preconditionFailure("no local call on the watch")
+        #else
         case .local: LocalDialect()
+        #endif
         }
     }
 
@@ -123,7 +128,9 @@ nonisolated struct LivePlan: Sendable, Equatable {
     /// A voice preview: no agent to hand anything to.
     var preview = false
     /// What a local call speaks with (`LocalCall`); nil for the others, whose service has the voice.
+    #if !os(watchOS)
     var speech: LocalSpeech?
+    #endif
 }
 
 /// A preview's line, and the language to say it in (the voice's group's).
@@ -335,3 +342,126 @@ nonisolated struct GPTLiveDialect: LiveDialect {
                  "content": .array([.object(["type": .string(line.fromPerson ? "input_text" : "output_text"), "text": .string(line.text)])])])
     }
 }
+
+/// A piece of the spoken exchange as the service transcribes it.
+nonisolated struct LiveFragment: Equatable, Sendable {
+    enum Speaker: Equatable, Sendable { case person, voice }
+    var speaker: Speaker
+    var text: String
+    var startMs: Int
+    var endMs: Int
+
+    /// The most one append may carry: the service takes 500 tokens; about four characters each, with room.
+    static let appendLimit = 1_400
+
+    /// What a handed-over request is: the person's last words (what the chat shows they said),
+    /// and the exchange before them, newest last, for the agent alone.
+    static func delegation(from fragments: [LiveFragment]) -> (prompt: String, context: String) {
+        var turns: [(speaker: Speaker, text: String)] = []
+        for fragment in fragments {
+            if let last = turns.last, last.speaker == fragment.speaker {
+                turns[turns.count - 1].text += fragment.text
+            } else {
+                turns.append((fragment.speaker, fragment.text))
+            }
+        }
+        func clean(_ text: String) -> String {
+            text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        }
+        let prompt = clean(turns.last { $0.speaker == .person }?.text ?? "")
+        // What the voice said after the person's last words is its reaction to this very request:
+        // "let me check", or a guess at the answer. Given to the agent, "the Christmas tree is off"
+        // was taken for a fact and confirmed with no tool called (Home, 2026-10-25). The exchange
+        // goes up to the request.
+        if let asked = turns.lastIndex(where: { $0.speaker == .person }) { turns.removeSubrange((asked + 1)...) }
+        let context = turns.compactMap { turn -> String? in
+            let text = clean(turn.text)
+            return text.isEmpty ? nil : "\(turn.speaker == .person ? "User" : "Voice assistant"): \(text)"
+        }.joined(separator: "\n")
+        return (prompt.isEmpty ? String(context.suffix(400)) : prompt, context)
+    }
+
+    /// What the person said, a turn at a time (the voice's words between them dividing them), tidied.
+    static func personTurns(_ fragments: [LiveFragment]) -> [String] {
+        var turns: [String] = []
+        var current = ""
+        for fragment in fragments {
+            if fragment.speaker == .person {
+                current += fragment.text
+            } else if !current.isEmpty {
+                turns.append(current)
+                current = ""
+            }
+        }
+        if !current.isEmpty { turns.append(current) }
+        return turns.map { $0.split(whereSeparator: \.isWhitespace).joined(separator: " ") }.filter { !$0.isEmpty }
+    }
+
+    /// Text in pieces the service takes: whole sentences where they fit.
+    static func appendable(_ text: String, limit: Int = appendLimit) -> [String] {
+        let clean = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard clean.count > limit else { return clean.isEmpty ? [] : [clean] }
+        var parts: [String] = []
+        var current = ""
+        var sentences: [String] = []
+        var rest = Substring(clean)
+        while let end = rest.firstMatch(of: /[.!?]\s+/) {
+            sentences.append(String(rest[...end.range.lowerBound]))
+            rest = rest[end.range.upperBound...]
+        }
+        if !rest.isEmpty { sentences.append(String(rest)) }
+        for sentence in sentences {
+            if sentence.count > limit {
+                if !current.isEmpty { parts.append(current); current = "" }
+                var rest = Substring(sentence)
+                while !rest.isEmpty { parts.append(String(rest.prefix(limit))); rest = rest.dropFirst(limit) }
+                continue
+            }
+            let joined = current.isEmpty ? sentence : current + " " + sentence
+            if joined.count > limit { parts.append(current); current = sentence } else { current = joined }
+        }
+        if !current.isEmpty { parts.append(current) }
+        return parts
+    }
+}
+
+/// Why a call couldn't be had, in words.
+nonisolated struct LiveFailure: LocalizedError {
+    let message: String
+    init(_ message: String) { self.message = message }
+    var errorDescription: String? { message }
+
+    /// A machine reason from the service, as a sentence where Redde knows it.
+    static func readable(_ reason: String, engine: LiveEngine = .gptLive) -> String {
+        switch reason {
+        case "connection_lost": String(localized: "The connection to \(engine.name) dropped.")
+        case "max_duration", "session_expired", "go_away": String(localized: "The \(engine.name) call reached its time limit.")
+        default: reason.contains(" ") ? reason : String(localized: "\(engine.name) ended the call (\(reason)).")
+        }
+    }
+}
+
+#if DEBUG
+/// With `-echo.liveMeasure`: Library/Caches/live-measure.log, a line at a time, read off the
+/// phone after a call (`devicectl device copy from`).
+enum LiveMeasure {
+    /// Every call in a development build, not only those started with `-echo.liveMeasure` (the
+    /// costs every ten seconds stay with it): what went on in a call the person made is there to
+    /// read afterwards. Started afresh past a megabyte. `name`: another file in Caches, for another
+    /// part of voice (wake.log, `WakeListener`).
+    static func write(_ line: String, to name: String = "live-measure.log") {
+        let file = URL.cachesDirectory.appending(path: name)
+        if let size = try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int, size > 1_000_000 {
+            try? FileManager.default.removeItem(at: file)
+        }
+        let text = Date.now.formatted(.iso8601.time(includingFractionalSeconds: true)) + " " + line + "\n"
+        if let handle = try? FileHandle(forWritingTo: file) {
+            handle.seekToEndOfFile()
+            handle.write(Data(text.utf8))
+            try? handle.close()
+        } else {
+            try? text.write(to: file, atomically: true, encoding: .utf8)
+        }
+    }
+}
+#endif

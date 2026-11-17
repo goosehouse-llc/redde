@@ -46,6 +46,9 @@ nonisolated struct WatchConnection: Codable, Equatable, Sendable {
     /// The bots the phone can talk to for the watch (Hermes's Bot Mode, on the Dashboard): absent
     /// when it can't (no Dashboard sign-in, Bots off) or there are none.
     var bots: [WatchBot]?
+    /// A live call the watch can make by itself (`WatchCall`): the voice service, its key and the
+    /// voice. Absent when the phone has no key for a service the watch can call.
+    var live: WatchLive?
 
     /// The application-context key the connection travels under.
     static let contextKey = "connection"
@@ -93,4 +96,18 @@ nonisolated struct WatchBot: Codable, Equatable, Sendable, Identifiable {
     var voiceSpeed: Double?
 
     var id: String { profile }
+}
+
+/// A live call on the watch: who holds it (a `LiveEngine`'s raw value: GPT-Live, Gemini Live or
+/// Grok Voice, the services the watch reaches straight over a WebSocket), with the key the phone
+/// keeps for it and the voice picked there.
+nonisolated struct WatchLive: Codable, Equatable, Sendable {
+    var engine: String
+    var key: String
+    var voice: String
+
+    /// The services a watch can call: each a WebSocket with a key. Not ElevenLabs, whose answers
+    /// the phone reads in its own reading voice, nor a local call, which needs the phone's
+    /// transcriber.
+    static let engines = ["gptLive", "gemini", "grok"]
 }

@@ -250,6 +250,19 @@ targets:
       - path: Echo/Services/Transport/ChatCompletionsTransport.swift
       - path: Echo/Services/Transport/SSEParser.swift
       - path: Echo/Services/Transport/JSONValue.swift
+      # A live call on the watch by itself (WatchCall): the phone's socket and audio, and each
+      # engine's wire.
+      - path: Echo/Services/Voice/LiveEngine.swift
+      - path: Echo/Services/Voice/LiveSetup+Persona.swift
+      - path: Echo/Services/Voice/LiveCall.swift
+      - path: Echo/Services/Voice/GeminiLiveDialect.swift
+      - path: Echo/Services/Voice/GrokVoiceDialect.swift
+      - path: Echo/Services/Voice/ElevenLabsDialect.swift
+      - path: Echo/Services/Voice/BargeInDetector.swift
+      - path: Echo/Services/Voice/VoiceWords.swift
+      - path: Echo/Services/Voice/StopPhrase.swift
+      - path: Echo/Services/Voice/SpokenLanguage.swift
+      - path: Echo/Services/Voice/SpokenRequest.swift
     info:
       path: Watch/Info.plist
       properties:
@@ -260,6 +273,8 @@ targets:
         WKCompanionAppBundleIdentifier: com.goosehouse.echo
         # Setup comes from the phone once; after that the watch asks Hermes on its own.
         WKRunsIndependentlyOfCompanionApp: true
+        # A live call from the wrist (WatchCall) records the person for the voice service.
+        NSMicrophoneUsageDescription: Redde listens during a live call you start on your watch, and sends your voice to the voice service you chose.
         # A spoken reply keeps playing after the wrist goes down (Speaker). UIBackgroundModes, as
         # on iOS: WKBackgroundModes is for workout and extended runtime sessions, and App Store
         # Connect rejects a bundle that lists `audio` there.

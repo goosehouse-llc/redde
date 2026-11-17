@@ -88,7 +88,7 @@ final class LiveCall: LiveCalling {
         self.listener = listener
         self.dialect = dialect
         #if DEBUG
-        let measuring = DevHooks.has("-echo.liveMeasure")
+        let measuring = ProcessInfo.processInfo.arguments.contains("-echo.liveMeasure")
         #else
         let measuring = false
         #endif
@@ -96,8 +96,14 @@ final class LiveCall: LiveCalling {
         // On the phone's speaker, whatever it says, not with any but GPT-Live, which keeps the
         // voice's echo out itself: theirs came back through the echo cancelling as loud as the
         // person, and talking over them there never worked (Marta, 2026-10-25).
+        #if os(watchOS)
+        // The watch's speaker is a hand's width from its microphone: the person is heard only
+        // while the voice is quiet, except with GPT-Live, which keeps its own echo out.
+        let halfDuplex: LiveCallAudio.HalfDuplex = dialect.engine == .gptLive ? .never : .always
+        #else
         let halfDuplex: LiveCallAudio.HalfDuplex = Settings.shared.talkOver == .off ? .always
             : dialect.engine == .gptLive ? .never : .onSpeaker
+        #endif
         audio = LiveCallAudio(inputRate: dialect.inputRate, outputRate: dialect.outputRate, gain: dialect.outputGain, halfDuplex: halfDuplex,
                               measuring: measuring, message: dialect.audio)
         audio.onSpeaking = Self.speakingRelay(self)

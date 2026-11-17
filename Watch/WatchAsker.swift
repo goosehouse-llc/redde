@@ -38,6 +38,9 @@ final class WatchAsker {
         }
     }
 
+    /// The same trip, awaited: a live call's request (`WatchStore.answerForCall`).
+    func answer(_ text: String) async throws { try await run(text) }
+
     func cancel() {
         task?.cancel()
         task = nil

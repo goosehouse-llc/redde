@@ -49,14 +49,26 @@ struct EchoWatchApp: App {
                 // <idle|thinking|speaking|waiting|approval|question|failed>` shows an exchange in that state;
                 // `-echo.chatList` shows the list of conversations in place of the app, and
                 // `-echo.openChat <n>` opens the nth of them, as picking it from the list does;
+                // `-echo.live` and `-echo.call` (WatchCall) set up and start a live call;
                 // `-echo.complications` shows the complication's sizes, and `-echo.link <url>` opens a
                 // link as a tap on the complication does.
                 .task {
                     let args = CommandLine.arguments
                     if let p = args.firstIndex(of: "-echo.preview") { return store.preview(p + 1 < args.count ? args[p + 1] : "") }
                     if let c = args.firstIndex(of: "-echo.connection"), c + 3 < args.count, let kind = WatchConnection.Kind(rawValue: args[c + 1]) {
-                        store.apply(WatchConnection(kind: kind, url: args[c + 2], apiKey: args[c + 3], model: "", provider: "",
-                                                    reasoningEffort: "", replyLanguage: "", agentName: "Redde"))
+                        var connection = WatchConnection(kind: kind, url: args[c + 2], apiKey: args[c + 3], model: "", provider: "",
+                                                         reasoningEffort: "", replyLanguage: "", agentName: "Redde")
+                        // `-echo.live <gptLive|gemini|grok> <key>`: the voice service the phone would hand over.
+                        if let v = args.firstIndex(of: "-echo.live"), v + 2 < args.count {
+                            connection.live = WatchLive(engine: args[v + 1], key: args[v + 2], voice: "")
+                        }
+                        store.apply(connection)
+                    }
+                    // `-echo.call`: the live call starts at launch, as the Call button starts it.
+                    if args.contains("-echo.call") {
+                        try? await Task.sleep(for: .seconds(1))
+                        store.callRequested = true
+                        return
                     }
                     if let l = args.firstIndex(of: "-echo.link"), l + 1 < args.count, let url = URL(string: args[l + 1]) {
                         try? await Task.sleep(for: .seconds(1))
