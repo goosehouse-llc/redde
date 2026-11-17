@@ -194,6 +194,7 @@ extension ContentView {
             }
     }
 
+    #if DEBUG
     /// A page for `-echo.screen` (screenshots and checks). Type-erased page by page: as one
     /// switch of 30 views the sheet's generic tree grew so deep that SwiftUI copied the wrong
     /// case's storage (Skills Hub drew Agent Activity, then crashed in MailAccountSetup's copy).
@@ -231,4 +232,5 @@ extension ContentView {
         default: AnyView(TriggersView())
         }
     }
+    #endif
 }
