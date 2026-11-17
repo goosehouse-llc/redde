@@ -47,6 +47,8 @@ nonisolated struct HermesBot: Identifiable, Equatable, Sendable {
     /// (`ui_meta['hermes-bots'].sectionId` / `.sectionName`; `BotSection`).
     var sectionID: String?
     var sectionName: String?
+    /// Not one of the open Hermes's: an agent on a saved bridge, or another server's bot (`TagRoster`).
+    var elsewhere: BotElsewhere?
 
     var id: String { name }
 

@@ -133,6 +133,9 @@ nonisolated struct Delivered: Codable, Equatable, Sendable {
     /// An aside the main agent has been told of (`AsideNote`), with the person's next message to it;
     /// a task's notice the agent answered (`BotMessages.foldAnsweredTasks`).
     var noted: Bool?
+    /// An answer to another agent's tag (`BotAsides.relayed`): what it was asked, with no row of
+    /// its own (the asking reply is that).
+    var asked: String?
 }
 
 nonisolated extension Message {

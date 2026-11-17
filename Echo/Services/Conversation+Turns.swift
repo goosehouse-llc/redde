@@ -18,9 +18,11 @@ extension Conversation {
             lastError = String(localized: "This is a Kanban worker's run. To go on with it, retry or unblock its card on the board.")
             return Self.finishedStream()
         }
-        // A normal chat's message that tags bots goes to them (`BotAsides`).
-        if bot == nil, attachments.isEmpty, !isIncognito, connection.isHermes, BotDirectory.available(settings, dashboard: dashboard) {
-            let tagged = BotAsides.tagged(in: trimmed, roster: BotDirectory.shared.bots(for: settings.connectionKey), speaking: speakingProfile)
+        relayHops = 0   // the person has written: the agents may ask each other again
+        // A normal chat's message that tags bots goes to them (`BotAsides`): the open Hermes's, an
+        // agent on a saved bridge, another server's (`TagRoster`).
+        if attachments.isEmpty, case let roster = tagRoster, !roster.isEmpty {
+            let tagged = BotAsides.tagged(in: trimmed, roster: roster, speaking: tagSpeaker)
             if !tagged.isEmpty {
                 ask(trimmed, of: tagged)
                 return Self.finishedStream()
@@ -66,9 +68,10 @@ extension Conversation {
 
     /// Runs one turn for a user message that isn't in the transcript yet. `heldSince` is when a
     /// message coming out of the outbox was first queued, so holding it again keeps its age.
+    /// `unseen`: Redde's, not the person's (the answers to the agent's own tags, `relayTags`), not shown.
     @discardableResult
     func startTurn(_ outgoing: Message, heldSince: Date? = nil, brief: Bool = false, live: LiveTurn? = nil,
-                           fromPage: PageTurn? = nil) -> AsyncStream<TurnEvent> {
+                           fromPage: PageTurn? = nil, unseen: Bool = false) -> AsyncStream<TurnEvent> {
         let (mirror, mirrorContinuation) = AsyncStream.makeStream(of: TurnEvent.self)
         lastSendWasHeld = false
         lastError = nil
@@ -80,9 +83,11 @@ extension Conversation {
         let trimmed = userMessage.text
         let attachments = userMessage.attachments
         let userID = userMessage.id
-        if fromPage == nil { messages.append(userMessage) }
+        // The person's own message: shown, and the notes Redde owes the agent go with it.
+        let shown = fromPage == nil && !unseen
+        if shown { messages.append(userMessage) }
         var reply = Message(role: .assistant, text: "")
-        reply.beginsAssistantTurn = fromPage != nil
+        reply.beginsAssistantTurn = !shown
         reply.metrics = TurnMetrics(sentAt: .now)
         messages.append(reply)
         let replyID = reply.id
@@ -119,18 +124,21 @@ extension Conversation {
         // A place question with Current Location on: the place kept goes with it as it is (never
         // waited for), and a fresh fix is asked for if that one is a few minutes old.
         if CurrentLocation.isOn, CurrentLocation.asksPlace(trimmed) { CurrentLocationService.shared.refresh() }
+        // Who it can ask by @name, when this chat hasn't been told (`RosterNote`); before the asides'
+        // note, which is read back from the end.
+        if shown, let note = rosterNote() { request.userText += note }
         // Asides to tagged bots since the agent last heard: told with this message, kept with it on the host.
-        if bot == nil, connection.isHermes, fromPage == nil, let note = AsideNote.note(for: AsideNote.pending(in: messages)) {
+        if bot == nil, connection.isHermes || connection == .acp, shown, let note = AsideNote.note(for: AsideNote.pending(in: messages)) {
             request.userText += note
             for i in messages.indices where messages[i].isAside { messages[i].delivered?.noted = true }
         }
         // Reactions since the person last wrote (`Reactions`): told with this message, once.
-        if fromPage == nil, let note = ReactionNote.note(unsaidReactions()) {
+        if shown, let note = ReactionNote.note(unsaidReactions()) {
             request.userText += note
             for i in messages.indices where messages[i].reaction != nil { messages[i].reactionSaid = true }
         }
         // On this message alone, last: "Make This a Routine"'s, or a card's answer.
-        if let note = pendingNote, fromPage == nil {
+        if let note = pendingNote, shown {
             request.userText += note
             pendingNote = nil
         }
@@ -248,7 +256,7 @@ extension Conversation {
                 }
                 let replyText = messages.last { $0.id == replyID }?.text ?? ""
                 TurnActivity.shared.finish(reply: isIncognito ? IncognitoNote.replied : replyText)
-                if !replyText.isEmpty, !settings.requireBiometrics, !isIncognito {   // a locked app shouldn't print replies on the Home Screen
+                if !replyText.isEmpty, shown, !settings.requireBiometrics, !isIncognito {   // a locked app shouldn't print replies on the Home Screen
                     WidgetSnapshot.save(question: trimmed, reply: replyText)
                     WidgetCenter.shared.reloadTimelines(ofKind: "com.goosehouse.echo.lastreply")
                 }
@@ -259,7 +267,7 @@ extension Conversation {
                 persist()
                 outcome = .completed
                 noteSeen(onlyOnScreen: true)
-                suggestFollowUps(question: trimmed, replyID: replyID, reply: replyText)
+                suggestFollowUps(question: unseen ? asked(before: replyID) ?? trimmed : trimmed, replyID: replyID, reply: replyText)
             } catch is CancellationError {
                 windowTask.cancel()
                 flushDeltas()
@@ -272,7 +280,7 @@ extension Conversation {
                     // never through fail(), which resets isStreaming/lastError and would let
                     // the UI start a second turn while the live one still streams.
                     update(replyID) { $0.error = error.localizedDescription }
-                } else if fromPage == nil, NetworkFailure.isConnectivity(error), replyIsBlank(replyID) {
+                } else if shown, NetworkFailure.isConnectivity(error), replyIsBlank(replyID) {
                     // Never reached the server: hold the message instead of reporting a failure.
                     hold(userID: userID, replyID: replyID, queuedAt: heldSince ?? .now)
                     outcome = .held
@@ -296,7 +304,11 @@ extension Conversation {
                 publishContext()
                 BackgroundTurn.shared.end(success: outcome == .completed)
                 switch outcome {
-                case .completed: retryAttempt = 0; retryOutbox()
+                case .completed:
+                    retryAttempt = 0
+                    retryOutbox()
+                    // Other agents it asked by @name: asked, and their answers given back to it.
+                    if fromPage == nil, !isStreaming, outbox.isEmpty { relayTags(from: replyID) }
                 case .held: scheduleRetry()
                 case .cancelled, .failed: pauseQueue()
                 }

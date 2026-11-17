@@ -38,6 +38,7 @@ extension ContentView {
             // screen below must not wait on it. (It sat inside the DEBUG block from 2026-09-11,
             // so release builds skipped it.)
             Task { await warmSpeechAssets() }
+            TagRoster.shared.refreshIfStale(settings)   // who a tag can reach on the other servers
             if Settings.shared.openToVoiceScreen, router.pendingVoice == nil, !showVoice { openVoice(fromOutside: true) }
             // "When Redde opens: Conversations": the iPhone's panel starts out, on its last tab. (On
             // iPad the list is always beside the chat.) A Siri or control request still wins.
@@ -153,6 +154,7 @@ extension ContentView {
             conversation.deleteLeftIncognitoChats()   // ones the app couldn't delete as they were left
             consumeSharedItems()
             handleCallScreen()
+            TagRoster.shared.refreshIfStale(settings)   // who a tag can reach on the other servers
             // (On an agent's call, voice mode is the call's: nothing new is started over it.)
             #if os(iOS)
             guard AgentCalls.shared.current == nil else { return }

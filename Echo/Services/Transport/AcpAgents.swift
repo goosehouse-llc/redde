@@ -35,7 +35,7 @@ enum AcpAgents {
         remember(agents, address: settings.acpURL)
     }
 
-    private static func remember(_ agents: [AcpEndpoint.Agent], address: String) {
+    static func remember(_ agents: [AcpEndpoint.Agent], address: String) {
         guard let key = key(address), let data = try? JSONEncoder().encode(agents) else { return }
         UserDefaults.standard.set(data, forKey: key)
     }

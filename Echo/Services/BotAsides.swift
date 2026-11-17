@@ -15,8 +15,47 @@ nonisolated enum BotAsides {
     }
 
     /// What goes to the tagged bot with the person's words. Words to the model: English.
-    static func note(from chat: String) -> String {
-        "\n\n[Redde: the user tagged you in their chat with \(chat), not here; your answer is shown to them there. Answer them directly.]"
+    static func note(from chat: String) -> String { TaggedNote.note(from: chat) }
+
+    /// At most this many agents asked from one reply.
+    static let mostRelayed = 3
+
+    /// The agents a reply of the chat's agent asks (2.7): a line outside code that begins with
+    /// their @names, asked that line and the ones after it up to a blank line or the next such line.
+    /// A tag in passing ("as @pi said") asks nobody. One tagged twice is asked both, together.
+    static func relayed(in reply: String, roster: [HermesBot], speaking: String) -> [(bot: HermesBot, text: String)] {
+        guard reply.contains("@"), !roster.isEmpty else { return [] }
+        var asks: [(bot: HermesBot, text: String)] = []
+        var open: (bots: [HermesBot], lines: [String])?
+        func close() {
+            guard let done = open else { return }
+            open = nil
+            let text = done.lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            for bot in done.bots {
+                if let i = asks.firstIndex(where: { $0.bot.name == bot.name }) { asks[i].text += "\n\n" + text }
+                else if asks.count < mostRelayed { asks.append((bot, text)) }
+            }
+        }
+        var inCode = false
+        for line in reply.components(separatedBy: "\n") {
+            let bare = line.trimmingCharacters(in: .whitespaces)
+            if bare.hasPrefix("```") { close(); inCode.toggle(); continue }
+            if inCode { continue }
+            if bare.isEmpty { close(); continue }
+            // "@pi …", "- @pi …", "**@pi** …": the tags it begins with.
+            let lead = bare.drop { "-*>•_ ".contains($0) }
+            if lead.hasPrefix("@"), let tags = lead.prefixMatch(of: /(?:@[A-Za-z0-9][A-Za-z0-9_-]*[*_,:]*\s*)+/) {
+                let bots = BotMentions.mentioned(in: String(tags.output), roster: roster, to: speaking)
+                if !bots.isEmpty {
+                    close()
+                    open = (bots, [line])
+                    continue
+                }
+            }
+            open?.lines.append(line)
+        }
+        close()
+        return asks
     }
 }
 
@@ -28,7 +67,8 @@ nonisolated enum BotAsides {
 @MainActor
 enum BotTurns {
     static func transport(for bot: HermesBot, mainName: String, settings: Settings = .shared,
-                          dashboard: HermesServeClient = .shared) async throws -> (any HermesTransport, String) {
+                          dashboard: HermesServeClient = .shared) async throws -> (any HermesTransport, String?) {
+        if let place = bot.elsewhere { return try await TagRoster.transport(for: place, settings: settings) }
         if bot.viaAPI {
             let name = bot.label(mainName: mainName)
             guard let endpoint = settings.gatewayEndpoint(profile: bot.name) else { throw APIBotProblem.noKey(name) }
@@ -54,6 +94,7 @@ enum BotTurns {
         var written = ""
         stream: for try await event in transport.stream(request) {
             switch event {
+            case let .sessionID(made) where stored == nil: bot.elsewhere.map { TagRoster.keep(session: made, for: $0) }
             case let .textDelta(delta): written += delta
             case .interim(_, true): written = ""    // working text beside a tool call, not the answer
             case let .textFinal(final): written = final

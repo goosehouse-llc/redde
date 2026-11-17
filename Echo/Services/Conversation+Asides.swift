@@ -52,6 +52,18 @@ extension Conversation {
     /// The profile this chat's agent is: the main one, or another profile's.
     var speakingProfile: String { elsewhere?.profile ?? settings.profileName ?? "default" }
 
+    /// Who this chat's agent is among those a tag can name (`TagRoster`): a bridge's agent, or a
+    /// profile of the open Hermes.
+    var tagSpeaker: String {
+        connection == .acp ? TagRoster.speaker(agent: settings.acpAgent, server: settings.activeServerID) : speakingProfile
+    }
+
+    /// Everyone a message here can tag, the chat's own agent left out by the tag itself.
+    var tagRoster: [HermesBot] {
+        guard bot == nil, !isIncognito, connection.isHermes || connection == .acp else { return [] }
+        return TagRoster.shared.roster(connection: connection, settings, dashboard: dashboard)
+    }
+
     func ask(_ text: String, of bots: [HermesBot]) {
         userSendCount += 1
         lastError = nil
@@ -65,15 +77,68 @@ extension Conversation {
             await before?.value
             for bot in bots {
                 guard let self, self.identity == identity, !Task.isCancelled else { return }
-                await self.runAside(text, to: bot, mainName: mainName, chat: chat)
+                await self.runAside(text, to: bot, mainName: mainName, note: BotAsides.note(from: chat))
             }
         }
     }
 
-    private func runAside(_ text: String, to bot: HermesBot, mainName: String, chat: String) async {
+    /// At most this many rounds of the agent's own tags per message of the person's: agents asking
+    /// each other can't go on by themselves.
+    static let relayLimit = 3
+
+    /// Who this chat's agent can ask, for `RosterNote`: told with the person's message when this
+    /// chat hasn't been told, or was told of others.
+    func rosterNote() -> String? {
+        guard bot == nil, !isIncognito, connection.isHermes || connection == .acp else { return nil }
+        let speaking = tagSpeaker, mainName = settings.headerTitle
+        let entries = tagRoster.filter { $0.name != speaking }.map { bot in
+            let place = bot.elsewhere.map { " on \($0.serverName)" } ?? ""
+            return "@\(BotMentions.tag(for: bot)) (\(bot.label(mainName: mainName))\(place))"
+        }
+        guard let note = RosterNote.note(entries) else { return nil }
+        let key = "rosterTold." + id.uuidString
+        guard UserDefaults.standard.string(forKey: key) != note else { return nil }
+        UserDefaults.standard.set(note, forKey: key)
+        return note
+    }
+
+    /// A reply of the chat's agent that asks other agents by @name (2.7, "Relay and report back"):
+    /// each is asked in its own chat, its answer shows here, and the agent is given the answers in
+    /// a turn of its own, with no message of the person's. At most `relayLimit` rounds; should the
+    /// person write in the meantime, the answers go with their message instead (`AsideNote`).
+    func relayTags(from replyID: UUID) {
+        guard relayHops < Self.relayLimit, bot == nil, !isIncognito, connection.isHermes || connection == .acp,
+              let reply = messages.last(where: { $0.id == replyID }), reply.error == nil else { return }
+        let asks = BotAsides.relayed(in: reply.text, roster: tagRoster, speaking: tagSpeaker)
+        guard !asks.isEmpty else { return }
+        relayHops += 1
+        let mainName = settings.headerTitle, asker = answeringName
+        let sends = userSendCount, identity = identity, before = asideTask
+        asideTask = Task { [weak self] in
+            await before?.value
+            var answered: [UUID] = []
+            for ask in asks {
+                guard let self, self.identity == identity, !Task.isCancelled else { return }
+                answered.append(await self.runAside(ask.text, to: ask.bot, mainName: mainName, note: TaggedNote.note(asker: asker), asked: ask.text))
+            }
+            guard let self, self.identity == identity, !Task.isCancelled,
+                  self.userSendCount == sends, !self.isStreaming, self.outbox.isEmpty else { return }
+            let asides = self.messages.filter { answered.contains($0.id) }.map { row in
+                AsideNote.Aside(agent: row.delivered?.profile ?? "", name: row.delivered?.name ?? "", asked: row.delivered?.asked ?? "",
+                                answer: row.text.isEmpty ? "(no answer: \(row.error ?? "none"))" : row.text)
+            }
+            guard let note = AsideNote.relayNote(for: asides) else { return }
+            for i in self.messages.indices where answered.contains(self.messages[i].id) { self.messages[i].delivered?.noted = true }
+            self.startTurn(Message(role: .user, text: note), unseen: true)
+        }
+    }
+
+    /// Asks `bot` in its own chat, its answer written here as it comes; the answer's row.
+    @discardableResult
+    private func runAside(_ text: String, to bot: HermesBot, mainName: String, note: String, asked: String? = nil) async -> UUID {
         let name = bot.label(mainName: mainName)
         var answer = Message(role: .user, text: "")
-        answer.delivered = Delivered(kind: .answer, profile: bot.name, name: name)
+        answer.delivered = Delivered(kind: .answer, profile: bot.name, name: name, asked: asked)
         answer.metrics = TurnMetrics(sentAt: .now)
         messages.append(answer)
         let id = answer.id
@@ -83,14 +148,20 @@ extension Conversation {
         asideDeparture = departure
         var written = ""
         var shown = Date.distantPast
+        // A bridge agent's chat for Redde's asks that the bridge no longer has: asked again in a new one.
+        var fresh = false
         do {
-            let (transport, stored) = try await asideTransport(for: bot, mainName: mainName)
-            var request = TurnRequest(userText: text + BotAsides.note(from: chat), history: [], sessionID: stored, model: nil, provider: nil,
+          while true {
+            let (transport, found) = try await asideTransport(for: bot, mainName: mainName)
+            let stored = fresh ? nil : found
+            var request = TurnRequest(userText: text + note, history: [], sessionID: stored, model: nil, provider: nil,
                                       reasoningEffort: nil, instructions: nil, attachments: [],
                                       replyLanguage: settings.replyLanguage.nilIfEmpty, brief: false)
             request.departure = departure
+            do {
             stream: for try await event in transport.stream(request) {
                 switch event {
+                case let .sessionID(made) where stored == nil: bot.elsewhere.map { TagRoster.keep(session: made, for: $0) }
                 case let .textDelta(delta): written += delta
                 case let .textFinal(final): written = final
                 case .interrupt:
@@ -106,6 +177,13 @@ extension Conversation {
                     update(id) { $0.text = written }
                 }
             }
+            } catch let error where !fresh && stored != nil && written.isEmpty && bot.elsewhere?.agent != nil && !(error is CancellationError) {
+                bot.elsewhere.map { TagRoster.keep(session: nil, for: $0) }
+                fresh = true
+                continue
+            }
+            break
+          }
             update(id) { message in
                 message.text = written
                 message.metrics?.completedAt = .now
@@ -117,11 +195,12 @@ extension Conversation {
             update(id) { $0.text = written; $0.error = error.localizedDescription; $0.metrics?.completedAt = .now }
         }
         persist()
+        return id
     }
 
     /// Where a bot's turn goes: its Bot Chat, on the Dashboard or (one added for the Hermes API
     /// alone) at /p/<profile>/ with its own key. A test's transport, for a test.
-    private func asideTransport(for bot: HermesBot, mainName: String) async throws -> (any HermesTransport, String) {
+    private func asideTransport(for bot: HermesBot, mainName: String) async throws -> (any HermesTransport, String?) {
         if let transportOverride { return (transportOverride, "aside-" + bot.name) }
         #if DEBUG
         if DemoDay.on { return (DemoDayTransport(), "aside-" + bot.name) }   // the day's video: canned answers

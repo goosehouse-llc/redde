@@ -12,6 +12,8 @@ nonisolated enum AsideNote {
         var name: String
         var asked: String
         var answer: String
+        /// Asked by the chat's agent itself (`relayOpening`), not by the person: never in the JSON.
+        var relayed: Bool? = nil
     }
 
     /// At most this many, the newest, and this long each: enough to go on, short for the prompt.
@@ -27,18 +29,37 @@ nonisolated enum AsideNote {
         return opening + json + "]"
     }
 
+    /// The answers to the agents the chat's agent itself asked (2.7): the turn Redde gives it back
+    /// with them, which has no words of the person's.
+    static let relayOpening = "\n\n[Redde: the agents you asked by @name answered, and the user was shown their answers. Go on with what the user asked. Their answers: "
+
+    static func relayNote(for asides: [Aside]) -> String? {
+        note(for: asides).map { relayOpening + $0.dropFirst(opening.count) }
+    }
+
     /// A message loaded back: its own words, and the asides its note told of.
     static func split(_ text: String) -> (text: String, asides: [Aside]) {
-        guard text.hasSuffix("]"), let range = text.range(of: opening, options: .backwards) else { return (text, []) }
-        let json = text[range.upperBound ..< text.index(before: text.endIndex)]
-        guard let asides = try? JSONDecoder().decode([Aside].self, from: Data(json.utf8)) else { return (text, []) }
-        return (String(text[..<range.lowerBound]), asides)
+        guard text.hasSuffix("]") else { return (text, []) }
+        for (marker, relayed) in [(opening, false), (relayOpening, true)] {
+            guard let range = text.range(of: marker, options: .backwards) else { continue }
+            let json = text[range.upperBound ..< text.index(before: text.endIndex)]
+            guard var asides = try? JSONDecoder().decode([Aside].self, from: Data(json.utf8)) else { continue }
+            if relayed { for i in asides.indices { asides[i].relayed = true } }
+            return (String(text[..<range.lowerBound]), asides)
+        }
+        return (text, [])
     }
 
     static func strip(_ text: String) -> String { split(text).text }
 
     /// The two messages an aside was, as they showed: the question, then the bot's answer.
+    /// One the chat's agent asked: the answer alone, its question being the reply before it.
     static func messages(_ aside: Aside, before at: Date) -> [Message] {
+        if aside.relayed == true {
+            var answer = Message(role: .user, text: aside.answer, createdAt: at.addingTimeInterval(-1))
+            answer.delivered = Delivered(kind: .answer, profile: aside.agent, name: aside.name, noted: true, asked: aside.asked)
+            return [answer]
+        }
         var asked = Message(role: .user, text: aside.asked, createdAt: at.addingTimeInterval(-2))
         asked.delivered = Delivered(kind: .asked, profile: aside.agent, name: aside.name, noted: true)
         var answer = Message(role: .user, text: aside.answer, createdAt: at.addingTimeInterval(-1))
@@ -51,7 +72,7 @@ nonisolated enum AsideNote {
         var out: [Aside] = []
         for (i, message) in messages.enumerated() where message.delivered?.kind == .answer && message.delivered?.noted != true {
             guard message.error == nil, !message.text.isEmpty, let delivered = message.delivered else { continue }
-            let asked = messages[..<i].last { $0.delivered?.kind == .asked }?.text ?? ""
+            let asked = delivered.asked ?? messages[..<i].last { $0.delivered?.kind == .asked }?.text ?? ""
             out.append(Aside(agent: delivered.profile ?? "", name: delivered.name ?? "", asked: asked, answer: message.text))
         }
         return out
@@ -122,5 +143,55 @@ nonisolated enum CardNote {
         let body = rest[..<end]
         guard let colon = body.range(of: ": ") else { return nil }
         return (String(body[..<colon.lowerBound]), String(body[colon.upperBound...]))
+    }
+}
+
+/// What goes to a tagged bot with the person's words (`BotAsides`), and off again when its own chat
+/// is read back (it used to show there as it was sent). Words to the model: English.
+nonisolated enum TaggedNote {
+    static let opening = "\n\n[Redde: the user tagged you in their chat with "
+
+    /// Asked by another agent (2.7): a line of its reply in its chat with the person began with this
+    /// one's @name, and Redde passed it on.
+    static let agentOpening = "\n\n[Redde: another agent asked you this, from its chat with the user: "
+
+    static func note(from chat: String) -> String {
+        opening + "\(chat), not here; your answer is shown to them there. Answer them directly.]"
+    }
+
+    static func note(asker: String) -> String {
+        agentOpening + "\(asker). Your answer goes back to it and is shown to the user too. Answer it directly.]"
+    }
+
+    static func strip(_ text: String) -> String {
+        for marker in [opening, agentOpening] {
+            guard text.hasSuffix("]"), let range = text.range(of: marker, options: .backwards),
+                  !text[range.upperBound...].contains("\n") else { continue }
+            return String(text[..<range.lowerBound])
+        }
+        return text
+    }
+}
+
+/// Who the chat's agent can ask (2.7, "allow all to talk to each other by @mention"): told once
+/// per chat, again when that changes, with the person's message. A line of its reply beginning
+/// with one's @name is passed on (`BotAsides.relayed`). Words to the model: English. Redde hides it.
+nonisolated enum RosterNote {
+    static let opening = "\n\n[Redde: other agents you can ask: "
+    /// At most this many named: the prompt stays short.
+    static let most = 12
+
+    /// `entries`: each "@tag (Name)".
+    static func note(_ entries: [String]) -> String? {
+        let kept = entries.prefix(most).map { $0.filter { $0 != "[" && $0 != "]" } }
+        guard !kept.isEmpty else { return nil }
+        return opening + kept.joined(separator: ", ")
+            + ". When one would help, start a line of your reply with its @name and what you want from it; Redde asks it, shows the user its answer and gives you the answer to go on with. Don't begin a line with an @name otherwise.]"
+    }
+
+    /// Wherever it is among the other notes.
+    static func strip(_ text: String) -> String {
+        guard let start = text.range(of: opening), let end = text[start.upperBound...].firstIndex(of: "]") else { return text }
+        return String(text[..<start.lowerBound] + text[text.index(after: end)...])
     }
 }

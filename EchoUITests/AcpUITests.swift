@@ -423,6 +423,56 @@ final class AcpUITests: XCTestCase {
         }
     }
 
+    /// Every agent asked by @mention (2.7): in Pi's chat on a bridge, "@openclaw …" asks OpenClaw in
+    /// its own chat there, its answer shows here under its name, and Pi hears of it with the next
+    /// message. Skipped unless given a bridge with both (`TEST_RUNNER_REDDE_TAG_BRIDGE`,
+    /// `TEST_RUNNER_REDDE_TAG_TOKEN`; `TEST_RUNNER_REDDE_SHOTS` for screenshots). Uses both for real.
+    func testABridgeAgentAsksAnotherByTag() throws {
+        continueAfterFailure = false
+        let env = ProcessInfo.processInfo.environment
+        guard let bridge = env["REDDE_TAG_BRIDGE"], let token = env["REDDE_TAG_TOKEN"] else {
+            throw XCTSkip("No bridge with Pi and OpenClaw given (TEST_RUNNER_REDDE_TAG_BRIDGE, TEST_RUNNER_REDDE_TAG_TOKEN)")
+        }
+        func shot(_ name: String) {
+            keep(name)
+            if let dir = env["REDDE_SHOTS"] {
+                try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name + ".png"))
+            }
+        }
+        let app = XCUIApplication()
+        let open = XCUIApplication.straightToChat + ["-transport", "acp", "-acpURL", bridge, "-acpAgent", "pi", "-acpFolder", ""]
+        app.launchArguments = open + ["-echo.clearDrafts", "-echo.fresh"]
+        app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
+        app.launch()
+        let composer = app.textFields["composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
+        composer.tap()
+        composer.typeText("@open")
+        // The bridge's other agents are offered as the tag is typed, with where they are.
+        let suggestion = app.descendants(matching: .any)["mention-openclaw"].firstMatch
+        let offered = suggestion.waitForExistence(timeout: 20)
+        if !offered { shot("tag-not-offered") }
+        XCTAssertTrue(offered, "OpenClaw isn't offered for the tag")
+        shot("tag-suggestion")
+        // Sent as the person sends it, once the app is up (`-echo.ask`).
+        app.terminate()
+        app.launchArguments = open + ["-echo.clearDrafts", "-echo.fresh", "-echo.ask", "@openclaw Say hi to Pi in five words. No tools."]
+        app.launch()
+        let named = app.staticTexts["OpenClaw"].firstMatch
+        XCTAssertTrue(named.waitForExistence(timeout: 30), "No answer row for OpenClaw")
+        let answered = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'Pi' AND NOT (label BEGINSWITH '@openclaw')")).firstMatch
+        XCTAssertTrue(answered.waitForExistence(timeout: 240), "OpenClaw didn't answer")
+        sleep(5)
+        shot("tag-openclaw-answered")
+        app.terminate()
+        app.launchArguments = open + ["-echo.ask", "What did OpenClaw just say to you? Quote it. No tools."]
+        app.launch()
+        XCTAssertTrue(app.text(containing: "OpenClaw said").waitForExistence(timeout: 240)
+                      || app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'great to meet'")).count > 1,
+                      "Pi didn't hear what OpenClaw said")
+        shot("tag-pi-heard")
+    }
+
     private func send(_ text: String, in app: XCUIApplication) {
         let composer = app.textFields["composer"]
         for _ in 0 ..< 4 {

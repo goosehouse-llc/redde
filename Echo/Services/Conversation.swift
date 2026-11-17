@@ -342,6 +342,8 @@ final class Conversation {
     var asideTask: Task<Void, Never>?
     var asideDeparture: TurnDeparture?
     var asideAnswer: UUID?
+    /// Rounds of the agent's own tags passed on since the person last wrote (`relayTags`).
+    var relayHops = 0
 
     // MARK: - Delta coalescing
 

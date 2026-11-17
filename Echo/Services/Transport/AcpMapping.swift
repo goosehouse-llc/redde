@@ -276,7 +276,15 @@ nonisolated enum AcpHistory {
         // A reply that is all tools and no words still shows; a user row with no words and no
         // pictures doesn't, nor
         // Claude Code's note of a stop ("[Request interrupted by user for tool use]", after a "No").
-        for i in out.indices where out[i].role == .user { out[i].text = CarBrevity.strip(out[i].text) }
+        // Redde's notes on the person's words come off (as on Hermes), and the asides told with one
+        // (`AsideNote`) come back as they showed, before it.
+        out = out.flatMap { message -> [Message] in
+            guard message.role == .user else { return [message] }
+            var message = message
+            let (text, asides) = AsideNote.split(ReplyLanguage.stripNote(message.text, keepingAsides: true))
+            message.text = text
+            return asides.flatMap { AsideNote.messages($0, before: message.createdAt) } + [message]
+        }
         return out.filter {
             let text = $0.text.trimmingCharacters(in: .whitespacesAndNewlines)
             return $0.role == .assistant || !$0.attachments.isEmpty

@@ -81,17 +81,15 @@ struct ComposerView: View {
     /// message on to; in a normal chat, any but its agent, to ask them here (`BotAsides`).
     private var mentionSuggestions: [HermesBot] {
         guard !draft.contains("\n"), let typed = BotMentions.typing(in: draft) else { return [] }
-        let speaking: String
         if let bot = conversation.bot {
             guard conversation.connection == .hermesServe else { return [] }
-            speaking = bot.profile
-        } else {
-            guard conversation.connection.isHermes, !conversation.isIncognito, BotDirectory.available(settings) else { return [] }
-            speaking = conversation.elsewhere?.profile ?? settings.profileName ?? "default"
+            let roster = BotDirectory.shared.roster?.listed ?? []
+            return Array(BotMentions.suggestions(for: typed, roster: BotDirectory.shared.key == settings.connectionKey ? roster : [],
+                                                 to: bot.profile).prefix(6))
         }
-        let roster = BotDirectory.shared.roster?.listed ?? []
-        return Array(BotMentions.suggestions(for: typed, roster: BotDirectory.shared.key == settings.connectionKey ? roster : [],
-                                             to: speaking).prefix(6))
+        // In a normal chat: anyone, the open Hermes's bots, bridge agents and other servers' bots
+        // alike (`TagRoster`), but the chat's own agent.
+        return Array(BotMentions.suggestions(for: typed, roster: conversation.tagRoster, to: conversation.tagSpeaker).prefix(6))
     }
 
     var body: some View {
@@ -157,6 +155,8 @@ struct ComposerView: View {
             if takeBackLongPaste(old: old, new: new) { return }
             #endif
             refreshContext(new)
+            // A tag begun: the other servers' agents and bots asked again, if not lately.
+            if new.hasSuffix("@"), conversation.bot == nil { TagRoster.shared.refreshIfStale(settings) }
         }
         // A picture on the clipboard pastes into the field as an attachment, and long text as a
         // text file (`ComposerPaste`).
@@ -420,15 +420,20 @@ struct ComposerView: View {
                     focused = true
                 } label: {
                     HStack(spacing: 10) {
-                        BotAvatar(face: faces[bot.name] ?? BotFace(seed: bot.name), name: bot.label(mainName: settings.headerTitle), size: 22)
+                        BotAvatar(face: faces[bot.name] ?? bot.face ?? BotFace(seed: bot.name), name: bot.label(mainName: settings.headerTitle), size: 22)
                         Text("@" + BotMentions.tag(for: bot)).chatFont(.callout, weight: .medium).lineLimit(1)
                         Text(bot.label(mainName: settings.headerTitle)).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        if let place = bot.elsewhere {
+                            // Where it is: the bridge or the other server it's asked on.
+                            Text(place.serverName).chatFont(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                        }
                         Spacer(minLength: 0)
                     }
                     .padding(.horizontal, 12).padding(.vertical, 8)
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("mention-" + BotMentions.tag(for: bot))
                 if bot.id != bots.last?.id { Divider().padding(.leading, 44) }
             }
         }
