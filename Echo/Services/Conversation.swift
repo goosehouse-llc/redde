@@ -347,6 +347,13 @@ final class Conversation {
     /// Told of the agent's reply once the answers it asked for are given back (`relayTags`): voice
     /// mode, while its screen is up, reads it (`VoiceSession.joinFollowOn`).
     @ObservationIgnored var followOn: (@MainActor (UUID) -> Void)?
+    /// The agent's asks waiting on the person's OK (`proposeAsks`), under their request's id.
+    @ObservationIgnored var proposedAsks: (id: String, asks: [(bot: HermesBot, text: String)])?
+    /// Told of asks put to the person once the reply is out: voice mode reads them out
+    /// (`VoiceSession.askAfterReply`).
+    @ObservationIgnored var askAloud: (@MainActor (Interrupt) -> Void)?
+    /// Tags of agents the person said no to asking, told the agent with their next message (`DeclinedNote`).
+    @ObservationIgnored var pendingDeclined: [String] = []
 
     // MARK: - Delta coalescing
 

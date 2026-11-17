@@ -339,6 +339,37 @@ extension VoiceSession {
         }
     }
 
+    /// Puts a request made after the reply (the agent wanting to ask others, `AgentAsks`) to the
+    /// person aloud, once the reply has been said: there's no turn going on to ask it in.
+    func askAfterReply(_ interrupt: Interrupt) {
+        followOnTask?.cancel()
+        followOnTask = Task { [weak self] in
+            for _ in 0 ..< 600 {
+                guard let self, !Task.isCancelled, live == nil, sendsTo == nil, asking == nil, !isMuted else { return }
+                switch phase {
+                case .thinking, .speaking:
+                    try? await Task.sleep(for: .milliseconds(100))
+                    continue
+                case .listening, .idle, .error:
+                    break
+                }
+                // Answered on the screen meanwhile, or not one a voice can answer: the card's.
+                guard conversation.pendingInterrupt?.interrupt.id == interrupt.id, answersAloud(), SpokenRequest(interrupt) != nil else { return }
+                if phase == .listening {
+                    guard liveTranscript.isEmpty, recognizer.transcript.isEmpty else { return }   // the person is speaking
+                    recognizer.cancel()
+                    stopMonitor()
+                    phase = .idle
+                }
+                do { try audio.activateForPlayback() } catch { phase = .error(error.localizedDescription); return }
+                output.speaker = conversation.bot?.profile
+                output.beginReply()
+                _ = ask(interrupt)
+                return
+            }
+        }
+    }
+
     /// The keyboard button (asked 2026-10-28: "it starts but then I click the keyboard… the
     /// message stops"): voice mode stops listening and reading, but the reply goes on, streaming
     /// into the conversation on screen, where it is read instead of heard. On a live call there

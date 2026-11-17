@@ -47,8 +47,9 @@ nonisolated struct SpokenRequest: Equatable, Sendable {
             let what = [request.description, request.command]
                 .compactMap { $0.map { Self.speakable($0, words: words) } }
                 .filter { !$0.isEmpty }
-            prompt = Self.sentences([String(localized: "Approval needed", bundle: said, comment: "Said aloud too, in voice mode, before the command is read out")]
-                + what.prefix(2) + [Self.sayApproveOrDeny(words)])
+            // The agent asking another (`AgentAsks`) says so itself: "Sol wants to ask Claude Code".
+            let lead = AgentAsks.isAsk(request) ? [] : [String(localized: "Approval needed", bundle: said, comment: "Said aloud too, in voice mode, before the command is read out")]
+            prompt = Self.sentences(lead + what.prefix(2) + [Self.sayApproveOrDeny(words)])
         case let .clarify(request):
             guard request.questions.count == 1, let question = request.questions.first, !question.multiSelect,
                   question.choices.count <= Self.numbers.count else { return nil }

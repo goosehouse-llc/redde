@@ -9,6 +9,8 @@ struct InterruptCard: View {
     var body: some View {
         Group {
             switch interrupt {
+            case let .approval(request) where AgentAsks.isAsk(request):
+                AgentAskCard(request: request) { conversation.respond(approval: $0) }
             case let .approval(request):
                 ApprovalCard(request: request) { conversation.respond(approval: $0) }
             case let .clarify(request):

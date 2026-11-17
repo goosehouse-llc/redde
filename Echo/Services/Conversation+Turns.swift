@@ -19,6 +19,7 @@ extension Conversation {
             return Self.finishedStream()
         }
         relayHops = 0   // the person has written: the agents may ask each other again
+        dropProposedAsks()   // and has moved on from what its agent wanted to ask
         // A normal chat's message that tags bots goes to them (`BotAsides`): the open Hermes's, an
         // agent on a saved bridge, another server's (`TagRoster`).
         if attachments.isEmpty, case let roster = tagRoster, !roster.isEmpty {
@@ -132,6 +133,11 @@ extension Conversation {
             request.userText += note
             for i in messages.indices where messages[i].isAside { messages[i].delivered?.noted = true }
         }
+        // Agents the person said no to asking: told, so the agent doesn't wait on them.
+        if shown, let note = DeclinedNote.note(pendingDeclined) {
+            request.userText += note
+            pendingDeclined = []
+        }
         // Reactions since the person last wrote (`Reactions`): told with this message, once.
         if shown, let note = ReactionNote.note(unsaidReactions()) {
             request.userText += note
@@ -147,7 +153,7 @@ extension Conversation {
             request.fast = RunChatControls.shared.isFast(stored)
         }
         // A bot's chat: the other bots the message tags, and the note that says which they are.
-        if connection == .hermesServe, let bot {
+        if connection == .hermesServe, let bot, settings.hermesBotsTalk {
             let mentioned = BotMentions.mentioned(in: trimmed, roster: BotDirectory.shared.bots(for: settings.connectionKey), to: bot.profile)
             request.mentionNote = BotMentions.note(for: mentioned)
         }

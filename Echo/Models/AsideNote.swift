@@ -176,6 +176,24 @@ nonisolated enum TaggedNote {
 /// Who the chat's agent can ask (2.7, "allow all to talk to each other by @mention"): told once
 /// per chat, again when that changes, with the person's message. A line of its reply beginning
 /// with one's @name is passed on (`BotAsides.relayed`). Words to the model: English. Redde hides it.
+/// What the chat's agent is told when the person said no to its asking another agent (or wrote
+/// again before saying either): with their next message, so it doesn't wait on an answer.
+nonisolated enum DeclinedNote {
+    static let opening = "\n\n[Redde: the user chose not to ask "
+
+    static func note(_ tags: [String]) -> String? {
+        let named = tags.map { "@" + $0.filter { $0 != "[" && $0 != "]" } }
+        guard !named.isEmpty else { return nil }
+        return opening + named.joined(separator: ", ") + " for you, so nobody was asked. Go on without their answer.]"
+    }
+
+    /// Wherever it is among the other notes.
+    static func strip(_ text: String) -> String {
+        guard let start = text.range(of: opening), let end = text[start.upperBound...].firstIndex(of: "]") else { return text }
+        return String(text[..<start.lowerBound] + text[text.index(after: end)...])
+    }
+}
+
 nonisolated enum RosterNote {
     static let opening = "\n\n[Redde: other agents you can ask: "
     /// At most this many named: the prompt stays short.
@@ -193,5 +211,27 @@ nonisolated enum RosterNote {
     static func strip(_ text: String) -> String {
         guard let start = text.range(of: opening), let end = text[start.upperBound...].firstIndex(of: "]") else { return text }
         return String(text[..<start.lowerBound] + text[text.index(after: end)...])
+    }
+}
+
+/// An agent's asks of other agents, put to the person before anyone is asked (Settings → Replies
+/// & Writing → Ask Me First, on at first; 11-17, his ask). It is an approval like a command's,
+/// so the card, voice mode's "approve or deny", a nod and "Needs you" all work as they do, but
+/// it is Redde's own: answered here, never sent to a host.
+nonisolated enum AgentAsks {
+    /// Its request's id begins with this.
+    static let prefix = "redde-ask-"
+
+    static func isAsk(_ request: ApprovalRequest) -> Bool { request.id.hasPrefix(prefix) }
+
+    /// `asker` wants to ask each of `asks` (whom, by name, and the line that asks them).
+    static func request(asker: String, asks: [(name: String, text: String)]) -> ApprovalRequest {
+        let names = asks.map(\.name)
+        let whom = names.count == 1 ? names[0] : ListFormatter.localizedString(byJoining: names)
+        return ApprovalRequest(id: prefix + UUID().uuidString,
+                               command: asks.map(\.text).joined(separator: "\n"),
+                               description: String(localized: "\(asker) wants to ask \(whom)",
+                                                   comment: "Ask Me First: the chat's agent wants to ask other agents, named; on the card and said aloud"),
+                               choices: ["once", "deny"])
     }
 }

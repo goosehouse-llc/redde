@@ -193,3 +193,66 @@ struct ApprovalCard: View {
         }
     }
 }
+
+/// The chat's agent wants to ask other agents (Ask Me First, `AgentAsks`): who, and what it
+/// would ask, with Ask and Don't Ask. Nobody is asked until Ask.
+struct AgentAskCard: View {
+    let request: ApprovalRequest
+    let respond: (String) -> Void
+    @Environment(Conversation.self) private var conversation
+
+    private var face: BotFace {
+        let settings = Settings.shared, directory = BotDirectory.shared
+        if let bot = conversation.bot {
+            return (directory.key == settings.connectionKey ? directory.roster?.faces[bot.profile] : nil) ?? BotFace(seed: bot.profile)
+        }
+        return directory.mainFace
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 10) {
+                BotAvatar(face: face, name: conversation.answeringName, size: 28)
+                    .cardEdge()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(request.description ?? "").chatFont(.subheadline, weight: .semibold)
+                    Text(String(localized: "Nobody is asked until you say so", comment: "Ask Me First card: under its headline"))
+                        .chatFont(.caption).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "at").chatFont(.subheadline, weight: .semibold).foregroundStyle(.tint)
+                    .accessibilityHidden(true)
+            }
+            Text(request.command)
+                .chatFont(.callout)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.background, in: .rect(cornerRadius: 10))
+            HStack(spacing: 10) {
+                Button(role: .cancel) { respond("deny") } label: {
+                    Text(String(localized: "Don't Ask", comment: "Ask Me First card: the agent's asks aren't sent"))
+                        .chatFont(.subheadline, weight: .medium).padding(.horizontal, 10).padding(.vertical, 4)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .accessibilityIdentifier("agent-ask-deny")
+                Spacer(minLength: 0)
+                Button { respond("once") } label: {
+                    FilledButtonTitle(title: String(localized: "Ask", comment: "Ask Me First card: send the agent's asks to the agents it named"))
+                        .chatFont(.subheadline, weight: .semibold)
+                        .padding(.horizontal, 14).padding(.vertical, 4)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .accessibilityIdentifier("agent-ask-approve")
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: 560, alignment: .leading)
+        .cardFill()
+        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Color.accentColor.opacity(0.35), lineWidth: 0.75) }
+        .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+    }
+}

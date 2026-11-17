@@ -674,6 +674,53 @@ extension HermesServeClient {
 }
 
 extension HermesServeClient {
+    /// Whether the bots message each other in Hermes itself (`message_agent`, in their Bot Chats):
+    /// each profile's `agent.bot_mode_protocol`, on unless set off. Off when every one of
+    /// `profiles` has it off; nil when none could be read.
+    func botsMessageEachOther(profiles: [String]) async -> Bool? {
+        var read = false
+        for profile in profiles {
+            guard let config = try? await restJSON("GET", Self.naming("api/config?include_defaults=false", profile: Self.configProfile(profile)))
+            else { continue }
+            read = true
+            if config["agent"]?["bot_mode_protocol"]?.bool ?? true { return true }
+        }
+        return read ? false : nil
+    }
+
+    /// Turns the bots' messaging each other on or off in Hermes, profile by profile (11-17, his
+    /// ask). The profile's `agent` section is read and written whole, with only this changed: an
+    /// older Hermes that replaced a section rather than merged it keeps the rest.
+    ///
+    /// Hermes reads it when it builds a bot's agent, and a Bot Chat open on the host keeps the one
+    /// it has (lab `bots` on 0.23.1: resumed, it still had `message_agent`; closed and resumed, not).
+    /// So each bot's chat is closed on the host, to be built again when next used, but not one
+    /// in the middle of a turn: those bots are returned, for the change to reach them after it.
+    @discardableResult
+    func setBotsMessageEachOther(_ on: Bool, bots: [HermesBot]) async throws -> [HermesBot] {
+        for bot in bots {
+            let named = Self.configProfile(bot.name)
+            let config = try await restJSON("GET", Self.naming("api/config?include_defaults=false", profile: named))
+            var agent = config["agent"]?.object ?? [:]
+            guard (agent["bot_mode_protocol"]?.bool ?? true) != on else { continue }
+            agent["bot_mode_protocol"] = .bool(on)
+            _ = try await restJSON("PUT", Self.naming("api/config", profile: named), body: .object(["config": .object(["agent": .object(agent)])]))
+        }
+        var busy: [HermesBot] = []
+        for bot in bots {
+            guard let chat = bot.chatID else { continue }
+            noteProfile(bot.name, forStored: chat)
+            guard let resumed = try? await resume(stored: chat, withMessages: false), let runtime = resumed["session_id"]?.string else { continue }
+            if resumed["running"]?.bool == true { busy.append(bot); continue }
+            _ = try? await call("session.close", params: .object(["session_id": .string(runtime)]))
+            runtimeIDs[chat] = nil
+        }
+        return busy
+    }
+
+    /// The main profile is the dashboard's own: not named.
+    private nonisolated static func configProfile(_ profile: String) -> String? { profile == "default" ? nil : profile }
+
     /// Gives a bot the face picked for it, or (nil) the one its name gives: kept in its profile's
     /// `ui_meta` under "redde", Redde's own entry, which Hermes keeps as it is (0.21.0 to 0.22.2)
     /// and other apps leave alone. The write names the revision it read: changed meanwhile (by

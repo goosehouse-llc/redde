@@ -91,7 +91,7 @@ import WidgetKit
 /// - `-echo.demoBriefings`: the Week Ahead, a heads-up and a wrap-up in Briefings; `-echo.demoBriefings day`
 ///   a made-up daily meeting brief ahead of them (`DayBrief`: its calendar card from its own rows,
 ///   never the phone's calendar). `weather` puts a weather run first. `-echo.openBriefing` opens the first one a moment after launch.
-/// - `-echo.demoApprovalCard <coder|command|push|script|skill>`: an approval waiting, in words (`ApprovalSummary`);
+/// - `-echo.demoApprovalCard <ask|coder|command|push|script|skill>`: an approval waiting, in words (`ApprovalSummary`);
 ///   `skill` is Coder's change put in place by the main agent, under the chat that asked for it (the store screenshot).
 /// - `-echo.demoAsks`: cards answered with a tap: a review of a message, a choice of restaurants;
 ///   with `-echo.demoAsksMore`, a packing checklist and a booking form instead (`-echo.demoAsksListOnly`:

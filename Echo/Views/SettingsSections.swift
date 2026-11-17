@@ -267,13 +267,8 @@ struct ComposerSettings: View {
                 Text(String(localized: "A reply that lists choices and asks which one shows them under it, to tap. For suggestions under every reply, turn on Apple Intelligence or set up an OpenAI-compatible connection.", comment: "Settings › Replies & Writing footer: no model can write suggested replies on this device"))
             }
         }
-        // Agents asking each other by @name (2.7).
-        Section {
-            Toggle(String(localized: "Agents Ask Each Other", comment: "Settings › Replies & Writing: a switch; the chat's agent may ask other agents by starting a line of its reply with their @name"),
-                   isOn: $settings.agentsAskEachOther)
-        } footer: {
-            Text(String(localized: "Your agent can ask your other agents and bots by starting a line of its reply with their @name. Redde asks them, shows you their answers and gives the answers back to it, three rounds at most for each message you send. Off, only your own @mentions ask anyone.", comment: "Settings › Replies & Writing: footer under Agents Ask Each Other"))
-        }
+        // Agents asking each other by @name (2.7; three switches 11-17).
+        AgentsTalkSection()
         // What comes under a reply: cards, maps and their units (on Settings → Agent until 2026-11-15).
         Section {
             Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {
@@ -1429,5 +1424,79 @@ struct QuietHoursSection: View {
             quiet[keyPath: part] = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
             quiet.save()
         })
+    }
+}
+
+/// Settings › Replies & Writing: who may ask whom by @name, and whether the person says so first
+/// (11-17, his ask: "control whether my hermes bots can talk to each other, then also if other
+/// agents can"). Hermes Bots is Hermes's own setting too, written to each bot's profile.
+struct AgentsTalkSection: View {
+    @State private var settings = Settings.shared
+    @State private var problem: String?
+    @State private var saving = false
+
+    @State private var waiting: String?
+
+    /// The open Hermes's bots, when the Dashboard has them: Hermes Bots changes them too.
+    private var hermesBots: [HermesBot] {
+        guard settings.transport == .hermesServe, BotDirectory.available(settings) else { return [] }
+        return BotDirectory.shared.bots(for: settings.connectionKey).filter { !$0.viaAPI }
+    }
+
+    var body: some View {
+        Section {
+            Toggle(String(localized: "Hermes Bots", comment: "Settings › Replies & Writing › Agents Talking to Each Other: a switch; your Hermes's bots may message each other"),
+                   isOn: Binding(get: { settings.hermesBotsTalk }, set: { setHermesBots($0) }))
+                .disabled(saving)
+                .accessibilityIdentifier("hermes-bots-talk")
+            Toggle(String(localized: "Other Agents", comment: "Settings › Replies & Writing › Agents Talking to Each Other: a switch; bridge agents and other servers' bots may ask and be asked by other agents"),
+                   isOn: $settings.agentsAskEachOther)
+                .accessibilityIdentifier("other-agents-talk")
+            Toggle(String(localized: "Ask Me First", comment: "Settings › Replies & Writing › Agents Talking to Each Other: a switch; an agent's @mention of another waits for your OK"),
+                   isOn: $settings.askBeforeAgentsAsk)
+                .disabled(!settings.hermesBotsTalk && !settings.agentsAskEachOther)
+                .accessibilityIdentifier("ask-before-agents-ask")
+            if let problem {
+                Text(problem).font(.footnote).foregroundStyle(.red)
+            } else if let waiting {
+                Text(waiting).font(.footnote).foregroundStyle(.secondary)
+            }
+        } header: {
+            Text(String(localized: "Agents Talking to Each Other", comment: "Settings › Replies & Writing: section header"))
+        } footer: {
+            Text(String(localized: "Hermes Bots: your Hermes's bots messaging each other, in Hermes itself and by @name here. Other Agents: bridge agents like Claude Code and Codex, and other servers' bots. With Ask Me First, when an agent starts a line with another's @name, Redde shows you what it wants to ask and asks only when you say so. Hermes's own messages between its bots don't pass through Redde: to stop those, turn off Hermes Bots. Your own @mentions always ask.", comment: "Settings › Replies & Writing: footer under Agents Talking to Each Other"))
+        }
+        .task(id: settings.connectionKey) { await readHermes() }
+    }
+
+    /// Hermes's own setting, as its bots have it now: someone may have changed it on the server.
+    private func readHermes() async {
+        let profiles = hermesBots.map(\.name)
+        guard !profiles.isEmpty, let on = await HermesServeClient.shared.botsMessageEachOther(profiles: profiles) else { return }
+        if settings.hermesBotsTalk != on { settings.hermesBotsTalk = on }
+    }
+
+    private func setHermesBots(_ on: Bool) {
+        let before = settings.hermesBotsTalk
+        settings.hermesBotsTalk = on
+        problem = nil
+        waiting = nil
+        let bots = hermesBots
+        guard !bots.isEmpty else { return }
+        saving = true
+        Task {
+            defer { saving = false }
+            do {
+                let busy = try await HermesServeClient.shared.setBotsMessageEachOther(on, bots: bots)
+                let names = busy.map { $0.label(mainName: settings.headerTitle) }
+                if !names.isEmpty {
+                    waiting = String(localized: "Changes after the reply they're writing: \(ListFormatter.localizedString(byJoining: names)).",
+                                     comment: "Settings › Agents Talking to Each Other: bots in the middle of a reply when Hermes Bots changed, named")
+                }
+            } catch {
+                settings.hermesBotsTalk = before
+                problem = String(localized: "Hermes didn't take it: \(error.localizedDescription)", comment: "Settings › Agents Talking to Each Other: changing the Hermes bots' messaging failed")
+            }
+        }
     }
 }

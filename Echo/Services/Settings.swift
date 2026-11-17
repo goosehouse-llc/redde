@@ -389,11 +389,25 @@ final class Settings: ServeEndpoint {
     var keepRepliesInBackground: Bool {
         didSet { store(keepRepliesInBackground, forKey: Keys.keepRepliesInBackground) }
     }
-    /// Agents ask each other by @name (2.7): the chat's agent is told who it can ask, and a line of
-    /// its reply that begins with one's @name is passed on (`relayTags`). On at first. Off, only the
-    /// person's tags ask anyone.
+    /// Other agents ask each other by @name (2.7): bridge agents (Claude Code, Codex…) and other
+    /// servers' bots, asked by the chat's agent or asking it. The chat's agent is told who it can
+    /// ask, and a line of its reply that begins with one's @name is passed on (`relayTags`). On at
+    /// first. Off, only the person's tags ask them.
     var agentsAskEachOther: Bool {
         didSet { store(agentsAskEachOther, forKey: Keys.agentsAskEachOther) }
+    }
+    /// The open Hermes's own bots message each other (11-17, his ask): in Hermes itself (each
+    /// profile's `agent.bot_mode_protocol`, `HermesServeClient.setBotsMessageEachOther`) and when
+    /// one's reply here tags another. Off, the person's tags of them are Redde's to ask, in a
+    /// bot's chat too. On at first, as Hermes has it.
+    var hermesBotsTalk: Bool {
+        didSet { store(hermesBotsTalk, forKey: Keys.hermesBotsTalk) }
+    }
+    /// An agent's tag of another waits for the person's OK (11-17, his ask: "ask by default"):
+    /// an approval card in the chat, read aloud in voice mode. On at first. Hermes's own messages
+    /// between its bots don't pass through Redde, and can't wait on it.
+    var askBeforeAgentsAsk: Bool {
+        didSet { store(askBeforeAgentsAsk, forKey: Keys.askBeforeAgentsAsk) }
     }
     /// Three suggested replies under each reply (`FollowUps`): written by Apple's on-device model,
     /// else the OpenAI-compatible one. On at first (2026-11-11): nothing shows where neither can.
@@ -678,6 +692,8 @@ final class Settings: ServeEndpoint {
         keepRepliesInBackground = defaults.object(forKey: Keys.keepRepliesInBackground) as? Bool ?? true
         suggestFollowUps = defaults.object(forKey: Keys.suggestFollowUps) as? Bool ?? true
         agentsAskEachOther = defaults.object(forKey: Keys.agentsAskEachOther) as? Bool ?? true
+        hermesBotsTalk = defaults.object(forKey: Keys.hermesBotsTalk) as? Bool ?? true
+        askBeforeAgentsAsk = defaults.object(forKey: Keys.askBeforeAgentsAsk) as? Bool ?? true
         suggestionsFromFastLane = defaults.bool(forKey: Keys.suggestionsFromFastLane)
         speechLanguage = defaults.string(forKey: Keys.speechLanguage) ?? ""
         matchReplyLanguage = defaults.object(forKey: Keys.matchReplyLanguage) as? Bool ?? true

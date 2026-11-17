@@ -117,6 +117,11 @@ extension Conversation {
     func respond(approval choice: String) {
         guard let pendingInterrupt, case let .approval(request) = pendingInterrupt.interrupt else { return }
         clearInterrupt()
+        // The agent asking another (Ask Me First): Redde's to answer, nobody's waiting on a host.
+        if AgentAsks.isAsk(request) {
+            answerProposedAsks(choice != "deny")
+            return
+        }
         if !isIncognito {
             ApprovalHistory.shared.record(request, choice: choice, agent: bot?.name ?? settings.headerTitle, chat: title)
         }

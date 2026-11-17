@@ -60,13 +60,24 @@ extension Conversation {
     }
 
     /// Everyone a message here can tag, the chat's own agent left out by the tag itself. In a bot's
-    /// chat, only those elsewhere (11-17: Sol's chat is a bot's chat, and offered no bridge agent).
+    /// chat, only those elsewhere (11-17: Sol's chat is a bot's chat, and offered no bridge agent),
+    /// unless its Hermes's bots don't message each other: then they're Redde's to ask too.
     var tagRoster: [HermesBot] {
         guard !isIncognito, connection.isHermes || connection == .acp else { return [] }
         // A bot's chat (Sol's own, on the Drawer): the bots of its Hermes are its to pass a tag to
         // (`MentionNote`); the agents elsewhere are Redde's to ask.
-        if bot != nil { return TagRoster.shared.others(settings) }
+        if bot != nil {
+            let own = !settings.hermesBotsTalk && connection == .hermesServe ? BotDirectory.shared.bots(for: settings.connectionKey) : []
+            return own + TagRoster.shared.others(settings)
+        }
         return TagRoster.shared.roster(connection: connection, settings, dashboard: dashboard)
+    }
+
+    /// Whether this chat's agent may ask `bot` by itself (`relayTags`, `rosterNote`): the open
+    /// Hermes's bots asking each other is one switch, everyone else (a bridge's agents, another
+    /// server's bots, and a bridge agent's chat asking anyone) another.
+    func mayAsk(_ bot: HermesBot) -> Bool {
+        bot.elsewhere == nil && connection.isHermes ? settings.hermesBotsTalk : settings.agentsAskEachOther
     }
 
     func ask(_ text: String, of bots: [HermesBot]) {
@@ -94,9 +105,9 @@ extension Conversation {
     /// Who this chat's agent can ask, for `RosterNote`: told with the person's message when this
     /// chat hasn't been told, or was told of others.
     func rosterNote() -> String? {
-        guard settings.agentsAskEachOther, !isIncognito, connection.isHermes || connection == .acp else { return nil }
+        guard !isIncognito, connection.isHermes || connection == .acp else { return nil }
         let speaking = tagSpeaker, mainName = settings.headerTitle
-        let entries = tagRoster.filter { $0.name != speaking }.map { bot in
+        let entries = tagRoster.filter { $0.name != speaking && mayAsk($0) }.map { bot in
             let place = bot.elsewhere.map { " on \($0.serverName)" } ?? ""
             return "@\(BotMentions.tag(for: bot)) (\(bot.label(mainName: mainName))\(place))"
         }
@@ -111,12 +122,57 @@ extension Conversation {
     /// each is asked in its own chat, its answer shows here, and the agent is given the answers in
     /// a turn of its own, with no message of the person's. At most `relayLimit` rounds; should the
     /// person write in the meantime, the answers go with their message instead (`AsideNote`).
+    /// With Ask Me First (on at first), nobody is asked until the person says so (`proposeAsks`).
     func relayTags(from replyID: UUID) {
-        guard settings.agentsAskEachOther, relayHops < Self.relayLimit, !isIncognito, connection.isHermes || connection == .acp,
+        guard relayHops < Self.relayLimit, !isIncognito, connection.isHermes || connection == .acp,
               let reply = messages.last(where: { $0.id == replyID }), reply.error == nil else { return }
-        let asks = BotAsides.relayed(in: reply.text, roster: tagRoster, speaking: tagSpeaker)
+        let asks = BotAsides.relayed(in: reply.text, roster: tagRoster.filter(mayAsk), speaking: tagSpeaker)
         guard !asks.isEmpty else { return }
         relayHops += 1
+        if settings.askBeforeAgentsAsk {
+            proposeAsks(asks)
+        } else {
+            runRelay(asks)
+        }
+    }
+
+    // MARK: Ask Me First
+
+    /// An agent's asks of others, put to the person as an approval: the card in the chat, read
+    /// aloud in voice mode (`askAloud`), "Needs you" in the chat list. Answered with `respond(approval:)`.
+    private func proposeAsks(_ asks: [(bot: HermesBot, text: String)]) {
+        let mainName = settings.headerTitle
+        let request = AgentAsks.request(asker: answeringName, asks: asks.map { ($0.bot.label(mainName: mainName), $0.text) })
+        proposedAsks = (request.id, asks)
+        pendingInterrupt = (.approval(request), "")
+        askAloud?(.approval(request))
+    }
+
+    /// The person's answer to `proposeAsks`: asked, or the agent told nobody was.
+    func answerProposedAsks(_ approve: Bool) {
+        guard let proposed = proposedAsks else { return }
+        proposedAsks = nil
+        if approve {
+            runRelay(proposed.asks)
+        } else {
+            declineAsks(proposed.asks.map(\.bot))
+        }
+    }
+
+    /// Asks put to the person and not answered when they write again: not asked, and the agent
+    /// told so with what they wrote.
+    func dropProposedAsks() {
+        guard let proposed = proposedAsks else { return }
+        proposedAsks = nil
+        if case let .approval(request)? = pendingInterrupt?.interrupt, AgentAsks.isAsk(request) { pendingInterrupt = nil }
+        declineAsks(proposed.asks.map(\.bot))
+    }
+
+    private func declineAsks(_ bots: [HermesBot]) {
+        pendingDeclined += bots.map { BotMentions.tag(for: $0) }
+    }
+
+    private func runRelay(_ asks: [(bot: HermesBot, text: String)]) {
         let mainName = settings.headerTitle, asker = answeringName
         let sends = userSendCount, identity = identity, before = asideTask
         asideTask = Task { [weak self] in

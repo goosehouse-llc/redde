@@ -230,6 +230,8 @@ extension Settings {
         botPictures = true
         replyCards = true
         agentsAskEachOther = true
+        hermesBotsTalk = true
+        askBeforeAgentsAsk = true
         requireBiometrics = false
         siriAIEnabled = false
         siriDraftsInNewConversation = false

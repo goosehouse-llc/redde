@@ -14979,6 +14979,113 @@
         }
       }
     },
+    "%@ wants to ask %@" : {
+      "comment" : "Ask Me First: the chat's agent wants to ask other agents, named; on the card and said aloud",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vil spørge %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ möchte %@ fragen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ quiere preguntar a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ veut demander à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vuole chiedere a %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@が%@に質問しようとしています"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@이(가) %@에게 질문하려고 합니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vil spørre %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ wil %@ iets vragen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ chce zapytać: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ quer perguntar a %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ хочет спросить: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vill fråga %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@ adlı ajana sormak istiyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ хоче запитати: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@想询问%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@想詢問%@"
+          }
+        }
+      }
+    },
     "%@ wants to change a file" : {
       "comment" : "Approval card's headline: the agent writing one file",
       "localizations" : {
@@ -62962,6 +63069,7 @@
     },
     "Agents Ask Each Other" : {
       "comment" : "Settings › Replies & Writing: a switch; the chat's agent may ask other agents by starting a line of its reply with their @name",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -63063,6 +63171,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "智慧體互相詢問"
+          }
+        }
+      }
+    },
+    "Agents Talking to Each Other" : {
+      "comment" : "Settings › Replies & Writing: section header",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenter imellem"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten untereinander"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentes entre sí"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agents entre eux"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenti tra loro"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェント同士の会話"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트끼리 대화"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenter seg imellom"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agents onderling"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenci między sobą"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentes entre si"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агенты между собой"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenter sinsemellan"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Birbiriyle Konuşması"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агенти між собою"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体互相交流"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智慧代理互相交流"
           }
         }
       }
@@ -80610,7 +80825,7 @@
       }
     },
     "Ask" : {
-      "comment" : "CarPlay: the tab to ask Redde something",
+      "comment" : "Ask Me First card: send the agent's asks to the agents it named",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -82417,6 +82632,7 @@
       }
     },
     "Ask Me First" : {
+      "comment" : "Settings › Replies & Writing › Agents Talking to Each Other: a switch; an agent's @mention of another waits for your OK",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -109082,6 +109298,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更改技能、修補程式或文件中的 %lld 個檔案，手機會先再次詢問"
+          }
+        }
+      }
+    },
+    "Changes after the reply they're writing: %@." : {
+      "comment" : "Settings › Agents Talking to Each Other: bots in the middle of a reply when Hermes Bots changed, named",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ændres efter det svar, de skriver: %@."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ändert sich nach der Antwort, die gerade geschrieben wird: %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiará tras la respuesta que está escribiendo: %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changera après la réponse en cours : %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambierà dopo la risposta in corso: %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "書いている返信のあとに変わります：%@。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "작성 중인 답장 후에 바뀝니다: %@."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endres etter svaret de skriver nå: %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verandert na het antwoord dat nu wordt geschreven: %@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmieni się po odpowiedzi, którą teraz piszą: %@."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muda depois da resposta que está escrevendo: %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменится после ответа, который сейчас пишется: %@."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ändras efter svaret de skriver nu: %@."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yazdıkları yanıttan sonra değişecek: %@."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зміниться після відповіді, яку зараз пишуть: %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将在正在撰写的回复之后更改：%@。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將在正在撰寫的回覆之後變更：%@。"
           }
         }
       }
@@ -148678,6 +149001,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "不允許"
+          }
+        }
+      }
+    },
+    "Don't Ask" : {
+      "comment" : "Ask Me First card: the agent's asks aren't sent",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spørg ikke"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht fragen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No preguntar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne pas demander"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non chiedere"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "質問しない"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "질문 안 함"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikke spør"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet vragen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie pytaj"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não perguntar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не спрашивать"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fråga inte"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorma"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не питати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不询问"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不詢問"
           }
         }
       }
@@ -197359,6 +197789,220 @@
         }
       }
     },
+    "Hermes Bots" : {
+      "comment" : "Settings › Replies & Writing › Agents Talking to Each Other: a switch; your Hermes's bots may message each other",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-bots"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-Bots"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bots de Hermes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bots Hermes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bot di Hermes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesのボット"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 봇"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-boter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-bots"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boty Hermesa"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bots do Hermes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Боты Hermes"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-bottar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Botları"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Боти Hermes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 机器人"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 機器人"
+          }
+        }
+      }
+    },
+    "Hermes Bots: your Hermes's bots messaging each other, in Hermes itself and by @name here. Other Agents: bridge agents like Claude Code and Codex, and other servers' bots. With Ask Me First, when an agent starts a line with another's @name, Redde shows you what it wants to ask and asks only when you say so. Hermes's own messages between its bots don't pass through Redde: to stop those, turn off Hermes Bots. Your own @mentions always ask." : {
+      "comment" : "Settings › Replies & Writing: footer under Agents Talking to Each Other",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-bots: din Hermes’ bots skriver til hinanden, i selve Hermes og her med @navn. Andre agenter: bro-agenter som Claude Code og Codex samt andre serveres bots. Med Spørg mig først viser Redde dig, hvad en agent vil spørge om, når den starter en linje med en andens @navn, og spørger først, når du siger til. Hermes’ egne beskeder mellem dens bots går ikke gennem Redde: Slå Hermes-bots fra for at stoppe dem. Dine egne @omtaler spørger altid."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-Bots: Die Bots deines Hermes schreiben einander, in Hermes selbst und hier per @Name. Andere Agenten: Bridge-Agenten wie Claude Code und Codex sowie die Bots anderer Server. Mit „Erst fragen“ zeigt dir Redde, wenn ein Agent eine Zeile mit dem @Namen eines anderen beginnt, was er fragen möchte, und fragt erst, wenn du es sagst. Die eigenen Nachrichten von Hermes zwischen seinen Bots laufen nicht über Redde: Um sie zu stoppen, schalte Hermes-Bots aus. Deine eigenen @Erwähnungen fragen immer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bots de Hermes: los bots de tu Hermes se escriben entre sí, en el propio Hermes y aquí con @nombre. Otros agentes: agentes de un puente como Claude Code y Codex, y los bots de otros servidores. Con «Preguntarme primero», cuando un agente empieza una línea con el @nombre de otro, Redde te muestra lo que quiere preguntar y solo pregunta cuando tú lo dices. Los mensajes propios de Hermes entre sus bots no pasan por Redde: para detenerlos, desactiva Bots de Hermes. Tus propias @menciones siempre preguntan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bots Hermes : les bots de votre Hermes s’écrivent entre eux, dans Hermes même et ici par @nom. Autres agents : les agents d’un pont comme Claude Code et Codex, et les bots d’autres serveurs. Avec « Me demander d’abord », quand un agent commence une ligne par le @nom d’un autre, Redde vous montre ce qu’il veut demander et ne demande que si vous le dites. Les messages qu’Hermes échange lui-même entre ses bots ne passent pas par Redde : pour les arrêter, désactivez Bots Hermes. Vos propres @mentions demandent toujours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bot di Hermes: i bot del tuo Hermes si scrivono tra loro, in Hermes stesso e qui con @nome. Altri agenti: gli agenti di un bridge come Claude Code e Codex, e i bot di altri server. Con «Chiedimi prima», quando un agente inizia una riga con il @nome di un altro, Redde ti mostra cosa vuole chiedere e chiede solo quando lo dici tu. I messaggi che Hermes si scambia tra i suoi bot non passano da Redde: per fermarli, disattiva Bot di Hermes. Le tue @menzioni chiedono sempre."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesのボット：Hermesのボット同士が、Hermes内でも、ここでの@名前でもメッセージをやり取りします。その他のエージェント：Claude CodeやCodexなどのブリッジのエージェントと、ほかのサーバのボット。「先に確認する」をオンにすると、エージェントがほかのエージェントの@名前で始まる行を書いたとき、Reddeは何を質問したいかを表示し、あなたが許可したときだけ質問します。Hermes自身がボット間で送るメッセージはReddeを通りません。止めるには「Hermesのボット」をオフにしてください。あなた自身の@メンションは常に質問します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 봇: Hermes의 봇끼리 Hermes 안에서, 그리고 여기서 @이름으로 메시지를 주고받습니다. 기타 에이전트: Claude Code, Codex 같은 브리지 에이전트와 다른 서버의 봇입니다. ‘먼저 묻기’를 켜면 에이전트가 다른 에이전트의 @이름으로 줄을 시작할 때 Redde가 무엇을 묻고 싶은지 보여 주고, 허락할 때만 묻습니다. Hermes가 자기 봇끼리 보내는 메시지는 Redde를 거치지 않으므로, 이를 막으려면 Hermes 봇을 끄세요. 직접 쓴 @멘션은 항상 질문합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-boter: botene i Hermes sender meldinger til hverandre, i selve Hermes og her med @navn. Andre agenter: bro-agenter som Claude Code og Codex, og boter på andre servere. Med Spør meg først viser Redde deg hva en agent vil spørre om når den starter en linje med en annens @navn, og spør først når du sier det. Hermes’ egne meldinger mellom botene går ikke via Redde: Slå av Hermes-boter for å stoppe dem. Dine egne @omtaler spør alltid."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-bots: de bots van je Hermes sturen elkaar berichten, in Hermes zelf en hier via @naam. Andere agents: bridge-agents zoals Claude Code en Codex, en bots van andere servers. Met ‘Vraag het me eerst’ laat Redde je zien wat een agent wil vragen wanneer die een regel begint met de @naam van een ander, en vraagt het pas als jij dat zegt. Berichten die Hermes zelf tussen zijn bots stuurt, gaan niet via Redde: zet Hermes-bots uit om die te stoppen. Je eigen @vermeldingen vragen altijd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boty Hermesa: boty Twojego Hermesa piszą do siebie nawzajem, w samym Hermesie i tutaj przez @nazwę. Inni agenci: agenci mostu, tacy jak Claude Code i Codex, oraz boty innych serwerów. Z opcją Najpierw zapytaj, gdy agent zaczyna wiersz od @nazwy innego, Redde pokazuje, o co chce zapytać, i pyta dopiero, gdy na to pozwolisz. Własne wiadomości Hermesa między jego botami nie przechodzą przez Redde: aby je zatrzymać, wyłącz Boty Hermesa. Twoje własne @wzmianki zawsze pytają."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bots do Hermes: os bots do seu Hermes trocam mensagens entre si, no próprio Hermes e aqui por @nome. Outros agentes: agentes de uma ponte, como Claude Code e Codex, e bots de outros servidores. Com “Perguntar Primeiro”, quando um agente começa uma linha com o @nome de outro, o Redde mostra o que ele quer perguntar e só pergunta quando você mandar. As mensagens do próprio Hermes entre os bots dele não passam pelo Redde: para pará-las, desative Bots do Hermes. Suas próprias @menções sempre perguntam."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Боты Hermes: боты вашего Hermes пишут друг другу — в самом Hermes и здесь по @имени. Другие агенты: агенты моста, такие как Claude Code и Codex, и боты других серверов. С параметром «Сначала спросить», когда агент начинает строку с @имени другого, Redde показывает, что он хочет спросить, и спрашивает, только когда вы скажете. Собственные сообщения Hermes между его ботами не проходят через Redde: чтобы остановить их, выключите «Боты Hermes». Ваши собственные @упоминания спрашивают всегда."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-bottar: bottarna i din Hermes skriver till varandra, i själva Hermes och här med @namn. Andra agenter: bryggagenter som Claude Code och Codex samt bottar på andra servrar. Med Fråga mig först visar Redde vad en agent vill fråga när den börjar en rad med en annans @namn, och frågar först när du säger till. Hermes egna meddelanden mellan sina bottar går inte via Redde: stäng av Hermes-bottar för att stoppa dem. Dina egna @omnämnanden frågar alltid."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Botları: Hermes’inizin botları birbirine mesaj atar; hem Hermes’in kendisinde hem burada @adla. Diğer ajanlar: Claude Code ve Codex gibi köprü ajanları ile diğer sunucuların botları. Önce Bana Sor açıkken bir ajan satıra başka birinin @adıyla başladığında Redde neyi sormak istediğini gösterir ve yalnızca siz derseniz sorar. Hermes’in kendi botları arasındaki mesajlar Redde’den geçmez: bunları durdurmak için Hermes Botları’nı kapatın. Kendi @anmalarınız her zaman sorar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Боти Hermes: боти вашого Hermes пишуть одне одному — у самому Hermes і тут за @іменем. Інші агенти: агенти мосту, як-от Claude Code і Codex, та боти інших серверів. З параметром «Спершу запитати», коли агент починає рядок з @імені іншого, Redde показує, що він хоче запитати, і питає, лише коли ви скажете. Власні повідомлення Hermes між його ботами не проходять через Redde: щоб зупинити їх, вимкніть «Боти Hermes». Ваші власні @згадки питають завжди."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 机器人：你的 Hermes 机器人之间互相发消息，在 Hermes 内部以及在这里通过 @名称。其他智能体：Claude Code、Codex 等桥接智能体，以及其他服务器的机器人。开启“先问我”后，当某个智能体以另一个智能体的 @名称开头写一行时，Redde 会先给你看它想问什么，只有你同意后才会询问。Hermes 自己在其机器人之间发送的消息不经过 Redde：若要阻止，请关闭“Hermes 机器人”。你自己的 @提及始终会询问。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 機器人：你的 Hermes 機器人之間互相傳訊息，在 Hermes 內部以及在這裡透過 @名稱。其他代理：Claude Code、Codex 等橋接代理，以及其他伺服器的機器人。開啟「先問我」後，當某個代理以另一個代理的 @名稱開頭寫一行時，Redde 會先讓你看它想問什麼，只有你同意後才會詢問。Hermes 自己在其機器人之間傳送的訊息不經過 Redde：若要阻止，請關閉「Hermes 機器人」。你自己的 @提及一律會詢問。"
+          }
+        }
+      }
+    },
     "Hermes couldn't be reached for half an hour; the reply will be there when it can." : {
       "localizations" : {
         "da" : {
@@ -200454,6 +201098,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hermes 未開始更新。"
+          }
+        }
+      }
+    },
+    "Hermes didn't take it: %@" : {
+      "comment" : "Settings › Agents Talking to Each Other: changing the Hermes bots' messaging failed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes tog ikke imod det: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes hat es nicht übernommen: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes no lo aceptó: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes ne l’a pas pris en compte : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes non l’ha accettato: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesが変更を受け付けませんでした：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes가 변경을 받아들이지 않았습니다: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes tok det ikke imot: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes nam het niet over: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes tego nie przyjął: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Hermes não aceitou: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes не принял изменение: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes tog inte emot det: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes bunu kabul etmedi: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes не прийняв зміну: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 未接受更改：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 未接受變更：%@"
           }
         }
       }
@@ -286873,6 +287624,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有工作流"
+          }
+        }
+      }
+    },
+    "Nobody is asked until you say so" : {
+      "comment" : "Ask Me First card: under its headline",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen bliver spurgt, før du siger til"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niemand wird gefragt, bis du es sagst"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pregunta a nadie hasta que tú lo digas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne n’est sollicité tant que vous ne l’avez pas dit"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno viene interpellato finché non lo dici tu"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたが許可するまで誰にも質問しません"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "허락할 때까지 아무에게도 묻지 않습니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen blir spurt før du sier det"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niemand wordt gevraagd tot jij het zegt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nikt nie zostanie zapytany, dopóki nie powiesz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguém é perguntado até você dizer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Никого не спросят, пока вы не скажете"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen tillfrågas förrän du säger till"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siz söyleyene kadar kimseye sorulmaz"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нікого не запитають, доки ви не скажете"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在你同意之前不会询问任何人"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在你同意之前不會詢問任何人"
           }
         }
       }
@@ -520008,6 +520866,7 @@
     },
     "Your agent can ask your other agents and bots by starting a line of its reply with their @name. Redde asks them, shows you their answers and gives the answers back to it, three rounds at most for each message you send. Off, only your own @mentions ask anyone." : {
       "comment" : "Settings › Replies & Writing: footer under Agents Ask Each Other",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {

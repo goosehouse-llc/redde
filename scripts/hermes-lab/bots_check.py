@@ -13,6 +13,10 @@
                `ui_meta` has a "hermes-bots" entry (`profiles.configure`), a turn in a Bot Chat
                carries the teammate protocol and the tool, and an ordinary conversation still
                doesn't.
+  messaging    Settings' Hermes Bots switch (`setBotsMessageEachOther`): each profile's
+               `agent.bot_mode_protocol` read and written whole through `/api/config?profile=`; a bot's
+               chat then has no `message_agent` (and none of the protocol), and has it back once on,
+               the profile's other settings kept.
 
 Mirrors HermesServeClient's bot calls (Echo/Services/Transport/ServerBots.swift).
 Run against a lab that is up with the approval scenario.
@@ -107,6 +111,61 @@ async def comes_back(dash):
     report(now == new and found is not None and found.get("id") == new,
            "Start Fresh with the new chat made at once: the roster and the lookup name the new one, the old stays aside",
            f"roster {now!r}, lookup {(found or {}).get('id')!r}, new {new!r}, old {old!r}, title {json.dumps(titled)[:80]}")
+
+
+def set_messaging(opener, on, profiles):
+    """What `HermesServeClient.setBotsMessageEachOther` sends: the `agent` section whole."""
+    for profile in profiles:
+        where = "" if profile == "default" else f"?profile={profile}"
+        config = rest(opener, "GET", "/api/config?include_defaults=false" + ("" if not where else "&profile=" + profile))
+        agent = dict(config.get("agent") or {})
+        if agent.get("bot_mode_protocol", True) == on:
+            continue
+        agent["bot_mode_protocol"] = on
+        rest(opener, "PUT", "/api/config" + where, {"config": {"agent": agent}})
+
+
+def messaging_of(opener, profile):
+    where = "" if profile == "default" else "&profile=" + profile
+    return rest(opener, "GET", "/api/config?include_defaults=false" + where)
+
+
+async def messaging_switch(opener, writer_chat):
+    before = messaging_of(opener, "writer")
+    set_messaging(opener, False, ["default", BOT, "writer"])
+    after = messaging_of(opener, "writer")
+    kept = {k: v for k, v in after.items() if k != "agent"} == {k: v for k, v in before.items() if k != "agent"} and \
+        {k: v for k, v in (after.get("agent") or {}).items() if k != "bot_mode_protocol"} == \
+        {k: v for k, v in (before.get("agent") or {}).items() if k != "bot_mode_protocol"}
+    report((after.get("agent") or {}).get("bot_mode_protocol") is False and kept,
+           "Hermes Bots off: written to the profile, its other settings kept", json.dumps(after.get("agent"))[:200])
+    report((messaging_of(opener, "default").get("agent") or {}).get("bot_mode_protocol") is False, "and to the main profile")
+    # A bot's chat still open on the host keeps the agent it was built with: a new connection's
+    # resume alone finds it as it was.
+    off = await Dashboard.connect()
+    resumed = await off.call("session.resume", {"session_id": writer_chat, "profile": "writer", "omit_messages": True})
+    await turn(off, resumed.get("session_id"), "@scout can you help?")
+    first = hits()[:1]
+    print(f"  info  resumed while still open: message_agent {bool(first and first[0].get('message_agent'))}")
+    # Closed (`session.close`) and resumed, as the app does on the switch (`setBotsMessageEachOther`
+    # closes each bot's chat that isn't mid-turn): built again, off.
+    await off.call("session.close", {"session_id": resumed.get("session_id")})
+    resumed = await off.call("session.resume", {"session_id": writer_chat, "profile": "writer", "omit_messages": True})
+    reply = await turn(off, resumed.get("session_id"), "@scout can you help now?")
+    first = hits()[:1]
+    report(bool(first) and not first[0].get("message_agent"),
+           "with it off, closed and resumed, the bot's chat has no message_agent", f"{reply} {json.dumps(first)}")
+    print(f"  info  and the protocol in its prompt: {bool(first and first[0].get('bots'))}")
+    await off.call("session.close", {"session_id": resumed.get("session_id")})
+    await off.ws.close()
+    set_messaging(opener, True, ["default", BOT, "writer"])
+    on = await Dashboard.connect()
+    resumed = await on.call("session.resume", {"session_id": writer_chat, "profile": "writer", "omit_messages": True})
+    print(f"  info  resume after close: {json.dumps(resumed)[:160]}")
+    reply = await turn(on, resumed.get("session_id"), "@scout and now?")
+    first = hits()[:1]
+    report(bool(first) and first[0].get("message_agent"), "on again: message_agent is back", f"{reply} {json.dumps(first)}")
+    await on.ws.close()
 
 
 async def earlier_chats(dash, opener, old):
@@ -238,6 +297,8 @@ async def main():
     first = hits()[:1]
     report(bool(first) and not first[0].get("bots") and not first[0].get("message_agent"),
            "an ordinary conversation on the same profile has neither", json.dumps(first))
+
+    await messaging_switch(opener, made.get("stored_session_id") or made.get("session_id"))
 
     await earlier_chats(fresh, opener, stored)
     await comes_back(fresh)

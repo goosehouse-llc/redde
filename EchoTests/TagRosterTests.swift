@@ -237,9 +237,120 @@ struct TagRosterTests {
         #expect(transport.requests.last?.sessionID?.hasPrefix("aside-") == true, "the person's own tag still asks")
     }
 
-    private func relayChat(_ answer: @escaping @Sendable (TurnRequest) -> String) throws -> (Conversation, ScriptedTransport, String) {
+    /// `askFirst`: Ask Me First, on at first; the tests of what's asked turn it off.
+    // MARK: Ask Me First
+
+    private func asides(_ transport: ScriptedTransport) -> Int { transport.requests.filter { $0.sessionID?.hasPrefix("aside-") == true }.count }
+
+    /// Ask Me First (on at first): Sol's tag of Pi waits on the person's OK, as an approval card,
+    /// and Pi is asked, and Sol given its answer, only once it's given.
+    @Test func anAgentsTagWaitsForThePersonsOK() async throws {
+        #expect(Settings(defaults: UserDefaults(suiteName: "tags-\(UUID().uuidString)")!).askBeforeAgentsAsk, "on at first")
+        let (conversation, transport, _) = try relayChat(askFirst: true) { request in
+            if request.sessionID?.hasPrefix("aside-") == true { return "Four files." }
+            if request.userText.contains(AsideNote.relayOpening) { return "Pi says there are four." }
+            return "Let me ask.\n@pi how many files are there?"
+        }
+        _ = try await ask(conversation, transport, "How many files?")
+        try await settle(conversation, transport)
+        #expect(asides(transport) == 0, "nobody asked yet")
+        guard case let .approval(request)? = conversation.pendingInterrupt?.interrupt else { Issue.record("no card"); return }
+        #expect(AgentAsks.isAsk(request) && request.command == "@pi how many files are there?")
+        #expect(request.description?.contains("Pi") == true && request.yesNo?.approve == "once")
+        #expect(SpokenRequest(.approval(request))?.prompt.contains("Approval needed") == false, "said as the ask it is")
+
+        conversation.respond(approval: "once")
+        try await settle(conversation, transport)
+        #expect(conversation.pendingInterrupt == nil && asides(transport) == 1)
+        #expect(conversation.messages.last?.text == "Pi says there are four.")
+    }
+
+    /// Said no: nobody is asked, and Sol hears so with the person's next message.
+    @Test func aDeclinedAskAsksNobodyAndTheAgentIsTold() async throws {
+        let (conversation, transport, _) = try relayChat(askFirst: true) { request in
+            request.userText.hasPrefix("How many") ? "@pi how many?" : "Fine."
+        }
+        _ = try await ask(conversation, transport, "How many files?")
+        try await settle(conversation, transport)
+        conversation.respond(approval: "deny")
+        try await settle(conversation, transport)
+        #expect(asides(transport) == 0 && conversation.pendingInterrupt == nil && transport.requests.count == 1)
+        let next = try await ask(conversation, transport, "Count them yourself.")
+        #expect(next.userText.contains(DeclinedNote.opening + "@pi"))
+        #expect(ReplyLanguage.stripNote(next.userText) == "Count them yourself.", "the note never shows")
+        let after = try await ask(conversation, transport, "Thanks.")
+        #expect(!after.userText.contains(DeclinedNote.opening), "told once")
+    }
+
+    /// The person wrote again without answering: their message goes, and the ask doesn't.
+    @Test func writingAgainLeavesTheAskUnasked() async throws {
+        let (conversation, transport, _) = try relayChat(askFirst: true) { request in
+            request.userText.hasPrefix("How many") ? "@pi how many?" : "Fine."
+        }
+        _ = try await ask(conversation, transport, "How many files?")
+        try await settle(conversation, transport)
+        #expect(conversation.pendingInterrupt != nil)
+        let next = try await ask(conversation, transport, "Never mind.")
+        try await settle(conversation, transport)
+        #expect(asides(transport) == 0 && conversation.pendingInterrupt == nil)
+        #expect(next.userText.contains(DeclinedNote.opening))
+    }
+
+    /// Hermes Bots off: Sol neither hears of its Hermes's bots nor asks them by a tag here, while a
+    /// bridge's agents it still asks (Other Agents); in a bot's chat, the person's tags of them are
+    /// Redde's to ask, with no note for Hermes to pass on. All at once: the bot directory is shared.
+    @Test func hermesBotsAndOtherAgentsAreSwitchedApart() throws {
+        let (conversation, _, _) = try relayChat(askFirst: true) { _ in "" }
+        let settings = conversation.settings
+        let roster = BotRoster(try JSONDecoder().decode(JSONValue.self, from: Data("""
+            {"profiles": [{"name": "default", "is_default": true, "ui_meta_revisions": {}},
+                          {"name": "scout", "is_default": false, "ui_meta_revisions": {"hermes-bots": 1}, "ui_meta": {"hermes-bots": {}}}],
+             "bot_mode_protocol": true}
+            """.utf8)))
+        BotDirectory.shared.set(roster, key: settings.connectionKey)
+        defer { BotDirectory.shared.set(nil, key: "") }
+        settings.showBots = true
+
+        func proposed(_ reply: String) -> String? {
+            conversation.pendingInterrupt = nil
+            conversation.relayHops = 0
+            var message = Message(role: .assistant, text: reply)
+            message.metrics = TurnMetrics(sentAt: .now)
+            conversation.messages.append(message)
+            conversation.relayTags(from: message.id)
+            guard case let .approval(request)? = conversation.pendingInterrupt?.interrupt else { return nil }
+            return request.command
+        }
+        UserDefaults.standard.removeObject(forKey: "rosterTold." + conversation.id.uuidString)
+        #expect(conversation.rosterNote()?.contains("@scout") == true)
+        #expect(proposed("@scout look it up\n@pi count") == "@scout look it up\n@pi count")
+
+        settings.hermesBotsTalk = false
+        UserDefaults.standard.removeObject(forKey: "rosterTold." + conversation.id.uuidString)
+        let note = conversation.rosterNote()
+        #expect(note?.contains("@scout") == false && note?.contains("@pi") == true)
+        #expect(proposed("@scout look it up\n@pi count") == "@pi count", "only the bridge's agent")
+
+        settings.hermesBotsTalk = true
+        settings.agentsAskEachOther = false
+        #expect(proposed("@scout look it up\n@pi count") == "@scout look it up\n@pi count", "Scout's ask, the line that isn't one going with it")
+        #expect(proposed("@pi count") == nil, "Pi not asked")
+        settings.hermesBotsTalk = false
+        #expect(proposed("@scout look it up\n@pi count") == nil && conversation.rosterNote() == nil, "both off: nobody")
+
+        // Sol's own chat: its Hermes's bots are Hermes's to reach while it lets them talk, Redde's when not.
+        conversation.load(ConversationRecord(id: UUID(), title: "Sol", createdAt: .now, updatedAt: .now, transport: .hermesServe,
+                                             serverSessionID: "s-sol", messages: [], name: "Sol", bot: BotRef(profile: "default", name: "Sol")))
+        settings.hermesBotsTalk = true
+        #expect(!conversation.tagRoster.contains { $0.name == "scout" })
+        settings.hermesBotsTalk = false
+        #expect(conversation.tagRoster.contains { $0.name == "scout" })
+    }
+
+    private func relayChat(askFirst: Bool = false, _ answer: @escaping @Sendable (TurnRequest) -> String) throws -> (Conversation, ScriptedTransport, String) {
         let settings = Settings(defaults: UserDefaults(suiteName: "tags-\(UUID().uuidString)")!)
         settings.transport = .hermesServe
+        settings.askBeforeAgentsAsk = askFirst
         let address = "ws://tags-\(UUID().uuidString.prefix(6)).test:8767"
         var paloma = bridge(address)
         paloma.id = settings.addServer(name: "Paloma bridge")

@@ -1180,12 +1180,15 @@ extension Conversation {
         replaceForDemo(messages: messages)
     }
 
-    /// `-echo.demoApprovalCard <coder|command|push|script|skill>`: an approval waiting, as Hermes sends
+    /// `-echo.demoApprovalCard <ask|coder|command|push|script|skill>`: an approval waiting, as Hermes sends
     /// one: Coder's change to Hermes's settings (the approval hook's words), a delete Hermes's own
     /// rule caught, a push the hook asks about, the agent's own script.
     func seedApprovalDemo(_ kind: String) {
         reset()
         let (asked, said, request): (String, String, ApprovalRequest) = switch kind {
+        case "ask":   // Ask Me First: the agent wants to ask a bridge's agent (`AgentAsks`)
+            ("Is the release branch ready to tag?", "Claude Code has the repo open; I'll ask it.\n@claude-code are the tests on the release branch passing, and is anything left uncommitted?",
+             AgentAsks.request(asker: settings.headerTitle, asks: [("Claude Code", "@claude-code are the tests on the release branch passing, and is anything left uncommitted?")]))
         case "command": ("Clear out the old build folders.", "On it.", ApprovalRequest(
             id: "demo", command: "rm -rf ~/builds/2025-* && mkdir -p ~/builds/archive", description: "recursive delete",
             choices: ["once", "session", "always", "deny"]))
