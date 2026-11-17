@@ -944,7 +944,11 @@ final class GroupFeed {
             } catch let error as HermesServeClient.RPCError where error.code == 5119 || error.code == 5118 {
                 await look()
             } catch {
-                failed(error)
+                // From 0.23 `hermes serve` hands a room's answers to the gateway, and its refusal
+                // comes back as "request_failed" (4001): read again, the room says whether that
+                // one still waits. Answered already, there is nothing to say.
+                await look()
+                if state.approvals.contains(where: { $0.id == id }) || state.retries.contains(where: { $0.id == id }) { failed(error) }
             }
             answering.remove(id)
         }

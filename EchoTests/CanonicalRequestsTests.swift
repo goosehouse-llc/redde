@@ -90,6 +90,18 @@ struct CanonicalRequestsTests {
         #expect(HermesServeTransport.parseClarify(.object(["prompt_id": .string("q1"), "question": .string("Which?")])).id == "q1")
     }
 
+    @Test func aHermesAPIApprovalFrom023NamesThePromptAndItsRun() {
+        let waiting: JSONValue = .object(["status": .string("waiting_for_approval"), "execution_generation": .number(2), "pending_controls": .array([
+            .object(["kind": .string("clarify"), "prompt_id": .string("q1"), "execution_generation": .number(2)]),
+            .object(["kind": .string("approval"), "prompt_id": .string("p1"), "execution_generation": .number(2)])])])
+        let answer: [String: JSONValue] = ["request_id": .string("p1"), "execution_generation": .number(2), "choice": .string("deny")]
+        #expect(HermesSessionsAPI.approvalAnswer(run: waiting, requestID: "p1", choice: "deny") == answer)
+        // The card's id not given: the approval that waits.
+        #expect(HermesSessionsAPI.approvalAnswer(run: waiting, requestID: nil, choice: "deny") == answer)
+        // An older Hermes says no run of the agent: its own answer.
+        #expect(HermesSessionsAPI.approvalAnswer(run: .object(["status": .string("waiting_for_approval")]), requestID: "r1", choice: "once") == nil)
+    }
+
     @Test func fastModeRefusedThereIsSaidPlainly() {
         #expect(ChatControls.fastRefusal("fast_unavailable (4001)") == "This model has no fast mode.")
     }

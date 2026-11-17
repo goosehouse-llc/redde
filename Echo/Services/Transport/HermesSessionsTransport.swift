@@ -577,9 +577,27 @@ nonisolated struct HermesSessionsAPI: Sendable {
 
     /// Answer a pending tool approval on a run. `choice` is once | session | always | deny.
     func respondApproval(runID: String, requestID: String?, choice: String) async throws {
+        // From 0.23 a run's session owner wants the prompt and the run it was asked in, and no
+        // other key (`invalid_params` otherwise): both are in the run's waiting prompts.
+        if let run = try? await requestJSON("GET", "v1/runs/\(runID)"),
+           let body = Self.approvalAnswer(run: run, requestID: requestID, choice: choice) {
+            _ = try await requestJSON("POST", "v1/runs/\(runID)/approval", body: .object(body))
+            return
+        }
         var body: [String: JSONValue] = ["choice": .string(choice)]
         if let requestID, !requestID.isEmpty { body["request_id"] = .string(requestID) }
         _ = try await requestJSON("POST", "v1/runs/\(runID)/approval", body: .object(body))
+    }
+
+    /// The answer to a run's approval where its session owner keeps the run (0.23, whose run
+    /// says its `execution_generation`): `request_id` is the waiting prompt's `prompt_id`. Nil on
+    /// an older Hermes, which takes `choice` and the `request_id` it sent.
+    nonisolated static func approvalAnswer(run: JSONValue, requestID: String?, choice: String) -> [String: JSONValue]? {
+        guard let generation = run["execution_generation"]?.int else { return nil }
+        let waiting = (run["pending_controls"]?.array ?? []).filter { ($0["kind"]?.string ?? "approval") == "approval" }
+        let prompt = waiting.first { $0["prompt_id"]?.string == requestID } ?? (requestID?.isEmpty != false ? waiting.first : nil)
+        return ["request_id": .string(prompt?["prompt_id"]?.string ?? requestID ?? ""),
+                "execution_generation": .number(Double(prompt?["execution_generation"]?.int ?? generation)), "choice": .string(choice)]
     }
 
     /// Rename / pin / archive / mark read or unread. Only the given fields are sent.

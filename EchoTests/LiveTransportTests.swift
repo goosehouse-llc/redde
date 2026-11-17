@@ -1814,7 +1814,8 @@ struct HermesLabStatusTests {
 
         let left = Self.conversation(settings, HermesSessionsTransport(baseURL: Self.api, apiKey: Self.key))
         _ = left.send(Self.slow)
-        try await Task.sleep(for: .seconds(2))
+        // Until its run has started: a first turn on a Hermes just up takes a while to.
+        for _ in 0 ..< 20 where left.currentRunID == nil { try await Task.sleep(for: .milliseconds(250)) }
         guard let stored = left.serverSessionID, let run = left.currentRunID else {
             report(false, "a conversation left mid-turn", "session \(String(describing: left.serverSessionID)), run \(String(describing: left.currentRunID))")
             return
@@ -2891,8 +2892,15 @@ struct HermesLabGroupsTests {
             if feed.events.dropFirst(beforeDrip).contains(where: { $0.kind == "message.member" }) { break }
             try? await Task.sleep(for: .milliseconds(500))
         }
-        HermesLabApprovalTests.report(written.contains("word2") && whose == "scout", "a bot's reply in the room shows as it is written, under its name",
-                                      "\(whose ?? "nobody"): \(written.prefix(60))")
+        let version = (try? await client.restJSON("GET", "api/status"))?["version"]?.string ?? ""
+        if written.isEmpty, !version.split(separator: ".").compactMap({ Int($0) }).lexicographicallyPrecedes([0, 23]) {
+            // From 0.23 a room's bots run in the gateway, and `hermes serve` lists and replays only
+            // its own sessions: the reply shows once it is written.
+            print("  ----  Hermes \(version): a room's bots run in the gateway, so a reply can't be read as it is written over hermes serve")
+        } else {
+            HermesLabApprovalTests.report(written.contains("word2") && whose == "scout", "a bot's reply in the room shows as it is written, under its name",
+                                          "\(whose ?? "nobody"): \(written.prefix(60))")
+        }
         await Self.until(feed) { !feed.discussing }
         await feed.lookAtDrafts()
         HermesLabApprovalTests.report(feed.drafts.isEmpty, "once the room has the reply, the one being written goes", "\(feed.drafts.map(\.text))")

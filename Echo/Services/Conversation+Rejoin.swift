@@ -240,12 +240,14 @@ extension Conversation {
     func follow(_ joined: RejoinedTurn, stored: String) {
         lastError = nil
         clearFollowUps()
-        // A turn asked on another device: its question, which isn't here yet, over the reply.
-        let asked = joined.question.trimmingCharacters(in: .whitespacesAndNewlines)
+        // A turn asked on another device: its question, which isn't here yet, over the reply. The
+        // host's copy carries the notes Redde wrote after it ("(Use US units.)"), as the
+        // transcript's own question doesn't: compared, and shown, without them.
+        let asked = WatchConnection.withoutHint(ReplyLanguage.stripNote(joined.question)).trimmingCharacters(in: .whitespacesAndNewlines)
         if !asked.isEmpty, let lastAsked = messages.last(where: { $0.role == .user && !$0.isAside }),
            lastAsked.text.trimmingCharacters(in: .whitespacesAndNewlines) != asked,
            messages.last?.role != .user || messages.last?.text.trimmingCharacters(in: .whitespacesAndNewlines) != asked {
-            messages.append(Message(role: .user, text: joined.question))
+            messages.append(Message(role: .user, text: asked))
         }
         // A turn under way may have put some of itself in the host's transcript already (a tool
         // call waiting on an approval): the reply goes on from it instead of beside it.
