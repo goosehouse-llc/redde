@@ -8,9 +8,9 @@ Redde: Every AI agent, one app
 From 2.6 (his pick 2026-11-15: the release where Redde talks to other agents too). 2.6 was pulled from review to rename it "Redde: AI Agents, Voice & Chat", then he switched name and subtitle around in App Store Connect while it waited for review (name and subtitle can be edited then). Before: "Redde Agent" (2.5), "Hermes Redde" until 2.5 (2.5 went in as "Redde: AI Agent Voice & Chat" for an hour, then "Redde Agent", his pick 2026-11-11). The name and subtitle are set in App Store Connect → App Information (the store script doesn't send them). Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
 
 ## Subtitle (30)
-Voice Chat, Coding & CarPlay
+Voice Chat & Coding Agents
 
-No other company's product names here or in the keywords (Claude Code, Codex, Hermes): Apple rejects them in metadata.
+No other company's product names here or in the keywords (Claude Code, Codex, Hermes): Apple rejects them in metadata. Nor Apple's own: 2.6 (295) was rejected 2026-11-17 under 5.2.5 for "Voice Chat, Coding & CarPlay" (CarPlay in the subtitle); this subtitle went in that day and the same build was resubmitted. CarPlay named as a feature in the description passed.
 
 ## Promotional text (170, editable without a new build)
 New in 2.6: Claude Code, Codex and other agents through the free Redde bridge, a new drawer that starts with what needs you, Maps for your agent, and smarter replies.
