@@ -3382,3 +3382,40 @@ struct HermesLabModelsTests {
         try await steps(APIModelSetup(profile: "default", settings: settings), "Hermes API")
     }
 }
+
+/// Hermes's skills hub over the Dashboard (`SkillsHubView`): the official catalog read, one of
+/// its skills looked at and scanned, installed, listed among the skills, and removed again, as
+/// Skills → Find Skills does. The official catalog ships with Hermes: no network needed.
+@MainActor
+struct HermesLabSkillsHubTests {
+    @Test func anOfficialSkillIsScannedInstalledAndRemoved() async throws {
+        guard let client = await HermesLabApprovalTests.client() else { return }
+        defer { client.disconnect() }
+        let official = try await client.hubOfficial(profile: nil)
+        HermesLabApprovalTests.report(official.skills.count > 20 && official.skills.allSatisfy { $0.category != nil },
+                                      "the official catalog is read, in groups", "\(official.skills.count) skills")
+        let overview = try await client.hubOverview(profile: nil)
+        HermesLabApprovalTests.report(overview.sources.contains { $0.id == "official" }, "the hub's sources are read",
+                                      "\(overview.sources.map(\.id)), featured \(overview.featured.count)")
+        guard let skill = official.skills.sorted(by: { $0.identifier < $1.identifier }).first(where: { official.installed[$0.identifier] != true }) else {
+            HermesLabApprovalTests.report(false, "an official skill not yet installed", "none")
+            return
+        }
+        let preview = try await client.hubPreview(skill.identifier, profile: nil)
+        HermesLabApprovalTests.report(preview.skillMarkdown.contains("---") && preview.files.contains("SKILL.md"),
+                                      "its SKILL.md is read before installing", "\(skill.identifier): \(preview.files)")
+        let scan = try await client.hubScan(skill.identifier, profile: nil)
+        HermesLabApprovalTests.report(scan.installs, "Hermes's scan allows an official skill", "\(scan.verdict) \(scan.policy) \(scan.findings.count) findings")
+
+        let done = try await client.hubFinish(try await client.hubInstall(skill.identifier, profile: nil))
+        let after = try await client.hubOfficial(profile: nil)
+        let listed = try await client.dashboardSkills(profile: nil).contains { $0.name == skill.name }
+        HermesLabApprovalTests.report(after.installed[skill.identifier] == true && listed, "installed, and listed among the skills",
+                                      "exit \(String(describing: done.exitCode)); \(done.lines.suffix(2))")
+        let name = HubOverview(try await client.restJSON("GET", "api/skills/hub/sources")).installed[skill.identifier] ?? skill.name
+        let gone = try await client.hubFinish(try await client.hubUninstall(name: name, profile: nil))
+        let end = try await client.hubOfficial(profile: nil)
+        HermesLabApprovalTests.report(end.installed[skill.identifier] != true, "removed again",
+                                      "exit \(String(describing: gone.exitCode)); \(gone.lines.suffix(2))")
+    }
+}

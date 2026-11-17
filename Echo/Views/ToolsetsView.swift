@@ -144,6 +144,16 @@ struct SkillsView: View {
                           systemImage: canWrite ? "sparkles" : "pencil.slash")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
+                // More from Hermes's skills hub (2026-11-16).
+                if canWrite {
+                    Section {
+                        NavigationLink {
+                            SkillsHubView(profile: nil, owner: String(localized: "Your agent")) { Task { await load() } }
+                        } label: {
+                            Label("Find Skills", systemImage: "magnifyingglass")
+                        }
+                    }
+                }
                 if skills.isEmpty {
                     ContentUnavailableView("No skills", systemImage: "sparkles", description: Text("The gateway reports no skills."))
                         .listRowSeparator(.hidden)

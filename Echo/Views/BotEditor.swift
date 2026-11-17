@@ -791,6 +791,14 @@ struct BotSkillsList: View {
                     .font(.footnote).foregroundStyle(.orange)
             }
             Section {
+                // More from Hermes's skills hub, for this bot alone (2026-11-16).
+                NavigationLink {
+                    SkillsHubView(profile: bot.name, owner: name) {
+                        Task { if let read = try? await HermesServeClient.shared.dashboardSkills(profile: bot.name) { skills = read } }
+                    }
+                } label: {
+                    Label("Find Skills", systemImage: "magnifyingglass")
+                }
             } footer: {
                 Text("On, \(name) sees a skill listed and reads it only when it needs it. Off, it doesn't see it at all. Pinned (\(Image(systemName: "pin.fill"))), it reads the skill in full at the start of every message: keep that to the few it needs every time, as each makes every message slower to start. A pin takes effect in new chats, and in \(name)'s ongoing chat once that starts fresh or is condensed.")
             }

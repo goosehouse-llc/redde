@@ -67,39 +67,7 @@ extension ContentView {
         .fullScreenCover(isPresented: $showRoleFaces) { RoleFaces() }
         .sheet(isPresented: $showDemoPatch) { PatchView(title: "Lab change one", patch: PatchView.demo, notes: PatchView.demoNotes, notesTitle: "Steps left with it") }
         .sheet(isPresented: Binding(get: { demoDayPage != nil }, set: { if !$0 { demoDayPage = nil } })) {
-            NavigationStack {
-                switch demoDayPage {
-                case "activity": AgentActivityView(tab: .done)
-                case "models": ModelsProvidersView(profile: settings.profileName ?? "default", owner: settings.headerTitle)
-                case "comingUp": AgentActivityView(tab: .comingUp)   // with -echo.demoComingUp for its made-up day
-                case "pluginUpdates": PluginUpdatesView(agents: DemoDay.on ? DemoDay.pluginAgents : PluginUpdatesView.everyAgent())
-                case "calendars": CalendarsSettingsView()
-                case "headsUps": DailyJobView(daily: HeadsUps.job)
-                case "wrapUp": DailyJobView(daily: EveningWrapUp.job)
-                case "watches": WatchesView()
-                case "goal": GoalView(goalID: "g10k")   // with -echo.demoGoals
-                case "goals": GoalsListView()
-                case "phoneTools": PhoneToolsSettingsView()
-                case "health": HealthShareView()
-                case "usage": UsageView(model: .demo)   // -echo.demoUsage's made-up month
-                case "memory": MemoryView()   // with -echo.demoMemory
-                case "memoryImport": MemoryImportView(profile: nil, model: AgentMemoryModel(demo: true))
-                case "memoryManifest": MemoryImportView(profile: nil, model: AgentMemoryModel(demo: true), showingManifest: true)
-                case "inbox": InboxView()   // with -echo.demoInbox
-                case "mailSetup": MailSettingsView()
-                case "mailAdd": MailAccountSetup(done: {})
-                case "mailRules": MailRulesView()
-                case "mailPiles": MailPilesView()   // with -echo.demoInbox
-                case "mailLabels": MailTaggingView(accountID: "main")   // with -echo.demoInbox
-                case "mailReader": MailReaderView(thread: MailDemo.readerThread)
-                case "inboxCard": ScrollView { ReplyCardsView(cards: MailDemo.cards).padding() }
-                case "mailBrief": List { InboxSection(open: {}); BriefingsSection() }   // the deck's email page
-                case "dailyJobs": DailyJobsView()
-                case "location": LocationSettingsView()
-                case "chatListCards": ChatListCardsSettingsView()
-                default: TriggersView()
-                }
-            }
+            NavigationStack { demoDayPageView(demoDayPage) }
         }
         .sheet(isPresented: $showAheadOfYourDay) { AheadOfYourDayView() }
         #endif
@@ -224,5 +192,43 @@ extension ContentView {
             } message: {
                 Text(renameError ?? "")
             }
+    }
+
+    /// A page for `-echo.screen` (screenshots and checks). Type-erased page by page: as one
+    /// switch of 30 views the sheet's generic tree grew so deep that SwiftUI copied the wrong
+    /// case's storage (Skills Hub drew Agent Activity, then crashed in MailAccountSetup's copy).
+    func demoDayPageView(_ page: String?) -> AnyView {
+        switch page {
+        case "skillsHub": AnyView(SkillsHubView(profile: nil, owner: settings.headerTitle))
+        case "activity": AnyView(AgentActivityView(tab: .done))
+        case "models": AnyView(ModelsProvidersView(profile: settings.profileName ?? "default", owner: settings.headerTitle))
+        case "comingUp": AnyView(AgentActivityView(tab: .comingUp))   // with -echo.demoComingUp for its made-up day
+        case "pluginUpdates": AnyView(PluginUpdatesView(agents: DemoDay.on ? DemoDay.pluginAgents : PluginUpdatesView.everyAgent()))
+        case "calendars": AnyView(CalendarsSettingsView())
+        case "headsUps": AnyView(DailyJobView(daily: HeadsUps.job))
+        case "wrapUp": AnyView(DailyJobView(daily: EveningWrapUp.job))
+        case "watches": AnyView(WatchesView())
+        case "goal": AnyView(GoalView(goalID: "g10k"))   // with -echo.demoGoals
+        case "goals": AnyView(GoalsListView())
+        case "phoneTools": AnyView(PhoneToolsSettingsView())
+        case "health": AnyView(HealthShareView())
+        case "usage": AnyView(UsageView(model: .demo))   // -echo.demoUsage's made-up month
+        case "memory": AnyView(MemoryView())   // with -echo.demoMemory
+        case "memoryImport": AnyView(MemoryImportView(profile: nil, model: AgentMemoryModel(demo: true)))
+        case "memoryManifest": AnyView(MemoryImportView(profile: nil, model: AgentMemoryModel(demo: true), showingManifest: true))
+        case "inbox": AnyView(InboxView())   // with -echo.demoInbox
+        case "mailSetup": AnyView(MailSettingsView())
+        case "mailAdd": AnyView(MailAccountSetup(done: {}))
+        case "mailRules": AnyView(MailRulesView())
+        case "mailPiles": AnyView(MailPilesView())   // with -echo.demoInbox
+        case "mailLabels": AnyView(MailTaggingView(accountID: "main"))   // with -echo.demoInbox
+        case "mailReader": AnyView(MailReaderView(thread: MailDemo.readerThread))
+        case "inboxCard": AnyView(ScrollView { ReplyCardsView(cards: MailDemo.cards).padding() })
+        case "mailBrief": AnyView(List { InboxSection(open: {}); BriefingsSection() })   // the deck's email page
+        case "dailyJobs": AnyView(DailyJobsView())
+        case "location": AnyView(LocationSettingsView())
+        case "chatListCards": AnyView(ChatListCardsSettingsView())
+        default: AnyView(TriggersView())
+        }
     }
 }
