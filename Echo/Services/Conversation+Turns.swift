@@ -128,7 +128,7 @@ extension Conversation {
         // note, which is read back from the end.
         if shown, let note = rosterNote() { request.userText += note }
         // Asides to tagged bots since the agent last heard: told with this message, kept with it on the host.
-        if bot == nil, connection.isHermes || connection == .acp, shown, let note = AsideNote.note(for: AsideNote.pending(in: messages)) {
+        if connection.isHermes || connection == .acp, shown, let note = AsideNote.note(for: AsideNote.pending(in: messages)) {
             request.userText += note
             for i in messages.indices where messages[i].isAside { messages[i].delivered?.noted = true }
         }

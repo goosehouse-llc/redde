@@ -55,12 +55,17 @@ extension Conversation {
     /// Who this chat's agent is among those a tag can name (`TagRoster`): a bridge's agent, or a
     /// profile of the open Hermes.
     var tagSpeaker: String {
-        connection == .acp ? TagRoster.speaker(agent: settings.acpAgent, server: settings.activeServerID) : speakingProfile
+        if let bot { return bot.profile }
+        return connection == .acp ? TagRoster.speaker(agent: settings.acpAgent, server: settings.activeServerID) : speakingProfile
     }
 
-    /// Everyone a message here can tag, the chat's own agent left out by the tag itself.
+    /// Everyone a message here can tag, the chat's own agent left out by the tag itself. In a bot's
+    /// chat, only those elsewhere (11-17: Sol's chat is a bot's chat, and offered no bridge agent).
     var tagRoster: [HermesBot] {
-        guard bot == nil, !isIncognito, connection.isHermes || connection == .acp else { return [] }
+        guard !isIncognito, connection.isHermes || connection == .acp else { return [] }
+        // A bot's chat (Sol's own, on the Drawer): the bots of its Hermes are its to pass a tag to
+        // (`MentionNote`); the agents elsewhere are Redde's to ask.
+        if bot != nil { return TagRoster.shared.others(settings) }
         return TagRoster.shared.roster(connection: connection, settings, dashboard: dashboard)
     }
 
@@ -89,7 +94,7 @@ extension Conversation {
     /// Who this chat's agent can ask, for `RosterNote`: told with the person's message when this
     /// chat hasn't been told, or was told of others.
     func rosterNote() -> String? {
-        guard settings.agentsAskEachOther, bot == nil, !isIncognito, connection.isHermes || connection == .acp else { return nil }
+        guard settings.agentsAskEachOther, !isIncognito, connection.isHermes || connection == .acp else { return nil }
         let speaking = tagSpeaker, mainName = settings.headerTitle
         let entries = tagRoster.filter { $0.name != speaking }.map { bot in
             let place = bot.elsewhere.map { " on \($0.serverName)" } ?? ""
@@ -107,7 +112,7 @@ extension Conversation {
     /// a turn of its own, with no message of the person's. At most `relayLimit` rounds; should the
     /// person write in the meantime, the answers go with their message instead (`AsideNote`).
     func relayTags(from replyID: UUID) {
-        guard settings.agentsAskEachOther, relayHops < Self.relayLimit, bot == nil, !isIncognito, connection.isHermes || connection == .acp,
+        guard settings.agentsAskEachOther, relayHops < Self.relayLimit, !isIncognito, connection.isHermes || connection == .acp,
               let reply = messages.last(where: { $0.id == replyID }), reply.error == nil else { return }
         let asks = BotAsides.relayed(in: reply.text, roster: tagRoster, speaking: tagSpeaker)
         guard !asks.isEmpty else { return }

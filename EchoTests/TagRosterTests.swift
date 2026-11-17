@@ -22,13 +22,14 @@ struct TagRosterTests {
         let other = HermesServer(id: UUID(), name: "Lab")
         let paloma = bridge("ws://paloma.test:8767")
         let same = bridge("ws://PALOMA.test:8767 ")   // a second server on the same bridge
+        let bare = bridge("paloma.test:8767")          // and a third, written without ws:// (Marta, 11-17)
         let chat = HermesServer(id: UUID(), name: "Fast", transport: .chatCompletions)
         let hermes: [UUID: [HermesBot]] = [
             home.id: [HermesBot(name: "default", isDefault: true)],
             other.id: [HermesBot(name: "default", isDefault: true), HermesBot(name: "scout", title: "Scout"),
                        HermesBot(name: "hidden", isHidden: true)],
         ]
-        let found = TagRoster.others(servers: [home, other, paloma, same, chat], active: home.id,
+        let found = TagRoster.others(servers: [home, other, paloma, same, bare, chat], active: home.id,
                                      agents: { $0.lowercased().contains("paloma") ? agents : [] }, hermes: hermes)
         #expect(found.map { $0.label() } == ["Lab", "Scout", "Claude Code", "Pi", "OpenClaw"],
                 "the open server's bots are BotDirectory's; a hidden one, and a chat-completions server, have none")
@@ -37,8 +38,8 @@ struct TagRosterTests {
         #expect(found[0].elsewhere?.profile == "default" && found[1].elsewhere?.profile == "scout")
 
         // A bridge that hasn't listed its agents yet: the one it's set to.
-        let bare = TagRoster.others(servers: [home, bridge("ws://new.test", agent: "codex")], active: home.id, agents: { _ in [] }, hermes: [:])
-        #expect(bare.map { $0.label() } == ["codex"])
+        let unlisted = TagRoster.others(servers: [home, bridge("ws://new.test", agent: "codex")], active: home.id, agents: { _ in [] }, hermes: [:])
+        #expect(unlisted.map { $0.label() } == ["codex"])
     }
 
     @Test func aTagFindsABridgeAgentByItsIdOrName() {
@@ -81,6 +82,31 @@ struct TagRosterTests {
 
         let next = try await ask(conversation, transport, "Thanks.")
         #expect(AsideNote.split(next.userText).asides.map(\.name) == ["Pi"], "the chat's agent hears of it")
+    }
+
+    /// Sol's own chat is a bot's chat (the Drawer's): the agents elsewhere are offered and asked
+    /// there too, while its Hermes's bots stay Hermes's to pass a tag to (11-17, on Marta).
+    @Test func aBotsChatAsksABridgeAgentAndLeavesItsOwnBotsToHermes() async throws {
+        let settings = Settings(defaults: UserDefaults(suiteName: "tags-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let address = "ws://tags-\(UUID().uuidString.prefix(6)).test:8767"
+        var paloma = bridge(address)
+        paloma.id = settings.addServer(name: "Paloma bridge")
+        settings.servers = settings.servers.map { $0.id == paloma.id ? paloma : $0 }
+        AcpAgents.remember(agents, address: address)
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "tags-\(UUID().uuidString)"))
+        let transport = BotsTests.RecordingTransport()
+        let conversation = Conversation(settings: settings, store: store, transportOverride: transport)
+        conversation.load(ConversationRecord(id: UUID(), title: "Sol", createdAt: .now, updatedAt: .now, transport: .hermesServe,
+                                             serverSessionID: "s-sol", messages: [], name: "Sol", bot: BotRef(profile: "default", name: "Sol")))
+        #expect(conversation.tagRoster.map { $0.label() } == ["Claude Code", "Pi", "OpenClaw"], "only those elsewhere")
+
+        let asked = try await ask(conversation, transport, "@pi how many files?")
+        #expect(asked.sessionID == "aside-" + TagRoster.name("pi", paloma.id), "asked in Pi's own chat, not Sol's")
+        for _ in 0 ..< 200 where conversation.messages.last?.metrics?.completedAt == nil { try await Task.sleep(for: .milliseconds(10)) }
+        let next = try await ask(conversation, transport, "@scout and you?")
+        #expect(next.sessionID == "s-sol", "its own bot's tag goes to Sol, as before")
+        #expect(AsideNote.split(RosterNote.strip(next.userText)).asides.map(\.name) == ["Pi"], "and Sol hears what Pi said")
     }
 
     /// From a bridge chat: Claude Code's chat asks Pi (and never itself), and the note reaches the

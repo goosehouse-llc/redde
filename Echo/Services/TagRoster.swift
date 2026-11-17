@@ -112,8 +112,11 @@ final class TagRoster {
     /// The name a chat with a bridge's agent speaks as, for the tags to leave it out.
     nonisolated static func speaker(agent: String, server: UUID) -> String { name(agent, server) }
 
+    /// One bridge however its address is written ("host:8767", "ws://host:8767"): 11-17 Marta's
+    /// two servers on Paloma listed every agent twice, and a tag two answer to asks nobody.
     private nonisolated static func bridgeKey(_ address: String, _ agent: String) -> String {
-        address.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() + "|" + agent
+        let place = AcpEndpoint.make(address: address, agent: "", token: nil, folder: nil)?.agentsURL?.absoluteString ?? address
+        return place.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() + "|" + agent
     }
 
     // MARK: Asking the other servers

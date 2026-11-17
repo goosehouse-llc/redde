@@ -24,6 +24,8 @@ struct ComposerView: View {
     @Environment(\.theme) private var theme
     @Environment(\.wideLayout) private var wide
     @State private var settings = Settings.shared
+    /// One row of the @ menu, for its height when it scrolls.
+    @ScaledMetric(relativeTo: .callout) private var mentionRowHeight: CGFloat = 41
     /// The microphone in the field: speech into the draft, nothing sent.
     @State private var dictation = Dictation()
     /// The draft as it stood when dictation began; what is heard is added to this.
@@ -82,14 +84,14 @@ struct ComposerView: View {
     private var mentionSuggestions: [HermesBot] {
         guard !draft.contains("\n"), let typed = BotMentions.typing(in: draft) else { return [] }
         if let bot = conversation.bot {
-            guard conversation.connection == .hermesServe else { return [] }
-            let roster = BotDirectory.shared.roster?.listed ?? []
-            return Array(BotMentions.suggestions(for: typed, roster: BotDirectory.shared.key == settings.connectionKey ? roster : [],
-                                                 to: bot.profile).prefix(6))
+            // Its Hermes's bots (on the Dashboard), and the agents elsewhere (`TagRoster`).
+            let listed = BotDirectory.shared.roster?.listed ?? []
+            let own = conversation.connection == .hermesServe && BotDirectory.shared.key == settings.connectionKey ? listed : []
+            return Array(BotMentions.suggestions(for: typed, roster: own + conversation.tagRoster, to: bot.profile).prefix(Self.mostMentions))
         }
         // In a normal chat: anyone, the open Hermes's bots, bridge agents and other servers' bots
         // alike (`TagRoster`), but the chat's own agent.
-        return Array(BotMentions.suggestions(for: typed, roster: conversation.tagRoster, to: conversation.tagSpeaker).prefix(6))
+        return Array(BotMentions.suggestions(for: typed, roster: conversation.tagRoster, to: conversation.tagSpeaker).prefix(Self.mostMentions))
     }
 
     var body: some View {
@@ -156,7 +158,7 @@ struct ComposerView: View {
             #endif
             refreshContext(new)
             // A tag begun: the other servers' agents and bots asked again, if not lately.
-            if new.hasSuffix("@"), conversation.bot == nil { TagRoster.shared.refreshIfStale(settings) }
+            if new.hasSuffix("@") { TagRoster.shared.refreshIfStale(settings) }
         }
         // A picture on the clipboard pastes into the field as an attachment, and long text as a
         // text file (`ComposerPaste`).
@@ -411,7 +413,28 @@ struct ComposerView: View {
     }
 
     /// Bots to tag in a bot's chat: tap one to finish the tag. The bot it is sent to asks that one.
+    /// At most this many offered, the menu scrolling past `mentionRows` of them.
+    static let mostMentions = 12
+    static let mentionRows = 6
+
     private func mentionMenu(_ bots: [HermesBot]) -> some View {
+        Group {
+            if bots.count > Self.mentionRows {
+                // Half a row more than fits shows there are more.
+                ScrollView { mentionRows(bots) }
+                    .frame(height: mentionRowHeight * (CGFloat(Self.mentionRows) - 0.5))
+            } else {
+                mentionRows(bots)
+            }
+        }
+        .background(theme.surfaceColor, in: .rect(cornerRadius: 14))
+        .clipShape(.rect(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.quaternary))
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .accessibilityLabel("Bots to mention")
+    }
+
+    private func mentionRows(_ bots: [HermesBot]) -> some View {
         let faces = BotDirectory.shared.roster?.faces ?? [:]
         return VStack(alignment: .leading, spacing: 0) {
             ForEach(bots) { bot in
@@ -437,10 +460,6 @@ struct ComposerView: View {
                 if bot.id != bots.last?.id { Divider().padding(.leading, 44) }
             }
         }
-        .background(theme.surfaceColor, in: .rect(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.quaternary))
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-        .accessibilityLabel("Bots to mention")
     }
 
     private func applySlash(_ item: HermesServeClient.SlashCompletion) {
