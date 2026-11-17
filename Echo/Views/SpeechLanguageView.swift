@@ -74,7 +74,7 @@ struct SpeechLanguageView: View {
 
     private func load() async {
         let supported = await SpeechRecognizer.supportedLocales
-        installed = Set(await SpeechRecognizer.installedLocales.map { $0.identifier(.bcp47) })
+        installed = Set(await SpeechRecognizer.readyLocales.map { $0.identifier(.bcp47) })
         locales = supported.sorted { Self.name($0.identifier(.bcp47)) < Self.name($1.identifier(.bcp47)) }
     }
 
@@ -84,7 +84,7 @@ struct SpeechLanguageView: View {
             try await SpeechRecognizer.prepareAssets(for: chosen)
             guard !Task.isCancelled else { return }
             status = .idle
-            installed = Set(await SpeechRecognizer.installedLocales.map { $0.identifier(.bcp47) })
+            installed = Set(await SpeechRecognizer.readyLocales.map { $0.identifier(.bcp47) })
         } catch {
             guard !Task.isCancelled else { return }
             status = .failed(error.localizedDescription)

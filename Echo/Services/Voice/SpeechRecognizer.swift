@@ -13,12 +13,15 @@ import os
 final class SpeechRecognizer {
     /// `holding`: the microphone is open and nothing is transcribed yet (see `startHeld`).
     enum State: Equatable { case idle, preparing, holding, listening, finalizing }
-    enum Failure: LocalizedError {
+    enum Failure: LocalizedError, Equatable {
         case permissionDenied
         case localeUnsupported
         /// The device has no on-device transcription in any language.
         case unavailable
         case assetsUnavailable
+        /// iOS didn't install the model for this language (issue 83: Swedish and Norwegian on an
+        /// iPhone, "asset unavailable after attempted download, final state: Not installing").
+        case modelNotInstalled(language: String)
         case audioFormat
         /// The route has no microphone just now (AirPods between their modes, a headset going away).
         case noMicrophone
@@ -31,6 +34,7 @@ final class SpeechRecognizer {
             case .localeUnsupported: String(localized: "On-device transcription isn't available for this language. Pick another under Settings → Voice → Listening language.")
             case .unavailable: String(localized: "On-device transcription isn't available on this device, so Redde can't listen here. Typing works as usual.")
             case .assetsUnavailable: String(localized: "The on-device speech model isn't installed yet.")
+            case let .modelNotInstalled(language): String(localized: "iOS didn't install its speech model for \(language) on this device, so Redde can't listen in it yet. Try again on Wi-Fi with some free space, or pick another language under Settings → Voice → Listening language.", comment: "The listening language's on-device model couldn't be installed; the language's name")
             case .audioFormat: String(localized: "Couldn't set up the microphone audio format.")
             case .noMicrophone: String(localized: "No microphone is ready just now. Tap the orb to try again.")
             }
@@ -107,8 +111,12 @@ final class SpeechRecognizer {
         let kind = await kind.serving(chosen)
         let locale = try await Self.locale(for: chosen, kind)
         let probe = try await Self.makeTranscriber(for: chosen, with: kind)
-        let installed = await kind.installedLocales
-        if !installed.contains(where: { $0.identifier(.bcp47) == locale.identifier(.bcp47) }) {
+        // Ready is a model that gives an audio format. Neither of iOS's own answers says so: the
+        // installed list named Swedish and Norwegian on an iPhone whose model wasn't there (issue
+        // 83, so the download was never asked for), and the module's status reads "supported"
+        // even for a language that listens. Without a format, the download is always asked for.
+        guard await !isReady(probe) else { return }
+        do {
             // The module must stay attached to an analyzer while AssetInventory is asked about it;
             // referencing `analyzer` after the awaits keeps it alive through them.
             let analyzer = SpeechAnalyzer(modules: [probe.module])
@@ -118,11 +126,41 @@ final class SpeechRecognizer {
                 Self.log.info("speech assets installed")
             }
             withExtendedLifetime(analyzer) {}
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            Self.log.error("speech assets for \(locale.identifier) not installed: \(error.localizedDescription)")
+            throw Failure.modelNotInstalled(language: languageName(locale))
         }
         // Installed is not yet able to listen: the simulator calls the dictation model installed
         // and then has no audio format to give it.
-        guard await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [probe.module]) != nil else {
-            throw Failure.assetsUnavailable
+        guard await isReady(probe) else {
+            Self.log.error("speech assets for \(locale.identifier) installed, but no audio format")
+            throw Failure.modelNotInstalled(language: languageName(locale))
+        }
+    }
+
+    /// The model listens: it can say what audio it takes.
+    private static func isReady(_ transcriber: Transcriber) async -> Bool {
+        await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber.module]) != nil
+    }
+
+    /// "Swedish", in the device's own language.
+    static func languageName(_ locale: Locale) -> String {
+        Locale.current.localizedString(forLanguageCode: locale.language.languageCode?.identifier ?? locale.identifier)
+            ?? locale.identifier
+    }
+
+    /// The languages whose model is on this device and listens, for the "Downloaded" mark in
+    /// Settings: of those iOS lists as installed, the ones that give an audio format (issue 83).
+    static var readyLocales: [Locale] {
+        get async {
+            var ready: [Locale] = []
+            for locale in await installedLocales {
+                let kind = await Transcriber.Kind.onThisDevice.serving(locale)
+                if await isReady(Transcriber(kind, locale: locale)) { ready.append(locale) }
+            }
+            return ready
         }
     }
 
@@ -168,7 +206,14 @@ final class SpeechRecognizer {
                 if await AssetInventory.release(reservedLocale: old) { held -= 1 }
                 else { log.warning("couldn't release speech locale \(old.identifier)") }
             }
-            _ = try await AssetInventory.reserve(locale: locale)
+            do {
+                if try await !AssetInventory.reserve(locale: locale) {
+                    log.error("speech locale \(locale.identifier) not reserved")
+                }
+            } catch {
+                log.error("speech locale \(locale.identifier) not reserved: \(error.localizedDescription)")
+                throw Failure.modelNotInstalled(language: languageName(locale))
+            }
         }
         return Transcriber(kind, locale: locale)
     }
@@ -345,7 +390,15 @@ final class SpeechRecognizer {
         let transcriber: Transcriber
         do { transcriber = try await Self.makeTranscriber(with: kind) } catch { abandon(); throw error }
         try stillPreparing()
-        guard let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber.module]) else {
+        var format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber.module])
+        if format == nil {
+            // Its model isn't there (a language picked on another device, or removed by iOS since):
+            // fetched now, once, rather than an error that sends the person to Settings to do it.
+            do { try await Self.prepareAssets(with: kind) } catch { abandon(); throw error }
+            try stillPreparing()
+            format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber.module])
+        }
+        guard let analyzerFormat = format else {
             abandon(); throw Failure.assetsUnavailable
         }
         try stillPreparing()

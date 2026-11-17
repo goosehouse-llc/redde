@@ -134,3 +134,20 @@ import Testing
         #expect(ObjCExceptions.catching { mixer.installTap(onBus: 0, bufferSize: 512, format: nil) { _, _ in } } != nil)
     }
 }
+
+/// A listening language iOS won't install the model for (issue 83: Swedish, Norwegian) is named
+/// in the error, in the device's own language, not "the model isn't installed yet".
+struct SpeechModelFailureTests {
+    @Test func theLanguageIsNamed() {
+        let name = SpeechRecognizer.languageName(Locale(identifier: "sv-SE"))
+        #expect(name == Locale.current.localizedString(forLanguageCode: "sv"))
+        #expect(!name.isEmpty && name != "sv-SE")
+        let message = SpeechRecognizer.Failure.modelNotInstalled(language: name).localizedDescription
+        #expect(message.contains(name))
+        #expect(message != SpeechRecognizer.Failure.assetsUnavailable.localizedDescription)
+    }
+
+    @Test func norwegianToo() {
+        #expect(SpeechRecognizer.languageName(Locale(identifier: "nb-NO")) == Locale.current.localizedString(forLanguageCode: "nb"))
+    }
+}

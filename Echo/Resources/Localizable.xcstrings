@@ -222787,6 +222787,113 @@
         }
       }
     },
+    "iOS didn't install its speech model for %@ on this device, so Redde can't listen in it yet. Try again on Wi-Fi with some free space, or pick another language under Settings → Voice → Listening language." : {
+      "comment" : "The listening language's on-device model couldn't be installed; the language's name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS installerede ikke sin talemodel for %@ på denne enhed, så Redde kan ikke lytte på det sprog endnu. Prøv igen på Wi-Fi med lidt ledig plads, eller vælg et andet sprog under Indstillinger → Stemme → Lyttesprog."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS hat sein Sprachmodell für %@ auf diesem Gerät nicht installiert, daher kann Redde in dieser Sprache noch nicht zuhören. Versuch es noch einmal im WLAN mit etwas freiem Speicher, oder wähle eine andere Sprache unter Einstellungen → Stimme → Erkennungssprache."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS no instaló su modelo de voz para %@ en este dispositivo, así que Redde aún no puede escuchar en ese idioma. Vuelve a intentarlo con wifi y algo de espacio libre, o elige otro idioma en Ajustes → Voz → Idioma de escucha."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS n’a pas installé son modèle vocal pour %@ sur cet appareil : Redde ne peut pas encore écouter dans cette langue. Réessayez en Wi-Fi avec un peu d’espace libre, ou choisissez une autre langue dans Réglages → Voix → Langue d’écoute."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS non ha installato il suo modello vocale per %@ su questo dispositivo, quindi Redde non può ancora ascoltare in questa lingua. Riprova in Wi-Fi con un po' di spazio libero, oppure scegli un'altra lingua in Impostazioni → Voce → Lingua di ascolto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOSがこのデバイスに%@の音声モデルをインストールしなかったため、Reddeはまだこの言語で聞き取れません。Wi-Fi接続で空き容量を確保してもう一度試すか、設定 → 音声 → 聞き取り言語で別の言語を選んでください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS가 이 기기에 %@ 음성 모델을 설치하지 않아 Redde가 아직 이 언어로 들을 수 없습니다. 여유 공간을 확보하고 Wi-Fi에서 다시 시도하거나, 설정 → 음성 → 듣기 언어에서 다른 언어를 선택하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS installerte ikke talemodellen for %@ på denne enheten, så Redde kan ikke lytte på det språket ennå. Prøv igjen på Wi-Fi med litt ledig plass, eller velg et annet språk under Innstillinger → Stemme → Lyttespråk."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS heeft zijn spraakmodel voor %@ niet op dit apparaat geïnstalleerd, dus Redde kan nog niet in die taal luisteren. Probeer het opnieuw via wifi met wat vrije ruimte, of kies een andere taal onder Instellingen → Stem → Luistertaal."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS nie zainstalował modelu mowy dla języka %@ na tym urządzeniu, więc Redde nie może jeszcze słuchać w tym języku. Spróbuj ponownie przez Wi-Fi, mając trochę wolnego miejsca, lub wybierz inny język w Ustawienia → Głos → Język słuchania."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O iOS não instalou o modelo de fala para %@ neste dispositivo, então o Redde ainda não consegue ouvir nesse idioma. Tente de novo no Wi-Fi com algum espaço livre ou escolha outro idioma em Ajustes → Voz → Idioma de escuta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS не установила речевую модель для языка «%@» на этом устройстве, поэтому Redde пока не может слушать на нём. Попробуйте ещё раз по Wi-Fi, освободив немного места, или выберите другой язык в «Настройки» → «Голос» → «Язык распознавания»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS installerade inte sin talmodell för %@ på den här enheten, så Redde kan inte lyssna på det språket än. Försök igen på Wi-Fi med lite ledigt utrymme, eller välj ett annat språk under Inställningar → Röst → Lyssningsspråk."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS, %@ için konuşma modelini bu aygıta yüklemedi, bu yüzden Redde henüz bu dilde dinleyemiyor. Biraz boş alanla Wi-Fi üzerinden yeniden deneyin ya da Ayarlar → Ses → Dinleme dili bölümünden başka bir dil seçin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS не встановила мовну модель для «%@» на цьому пристрої, тож Redde поки не може слухати цією мовою. Спробуйте ще раз через Wi-Fi, звільнивши трохи місця, або виберіть іншу мову в Параметри → Голос → Мова розпізнавання."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS 未在此设备上安装%@的语音模型，因此 Redde 暂时无法用这种语言聆听。请在 Wi-Fi 下并留出一些可用空间后重试，或在设置 → 语音 → 聆听语言中选择其他语言。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS 未在此裝置上安裝%@的語音模型，因此 Redde 暫時無法以這種語言聆聽。請在 Wi-Fi 下並保留一些可用空間後再試一次，或在「設定」→「語音」→「聆聽語言」中選擇其他語言。"
+          }
+        }
+      }
+    },
     "iOS doesn't allow Redde this. Open Settings…" : {
       "localizations" : {
         "da" : {
