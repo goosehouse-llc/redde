@@ -344,6 +344,9 @@ final class Conversation {
     var asideAnswer: UUID?
     /// Rounds of the agent's own tags passed on since the person last wrote (`relayTags`).
     var relayHops = 0
+    /// Told of the agent's reply once the answers it asked for are given back (`relayTags`): voice
+    /// mode, while its screen is up, reads it (`VoiceSession.joinFollowOn`).
+    @ObservationIgnored var followOn: (@MainActor (UUID) -> Void)?
 
     // MARK: - Delta coalescing
 

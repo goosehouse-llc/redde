@@ -62960,6 +62960,113 @@
         }
       }
     },
+    "Agents Ask Each Other" : {
+      "comment" : "Settings › Replies & Writing: a switch; the chat's agent may ask other agents by starting a line of its reply with their @name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenter spørger hinanden"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten fragen einander"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los agentes se consultan entre sí"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les agents se consultent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli agenti si consultano"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェント同士で質問"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트끼리 묻기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenter spør hverandre"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agents vragen elkaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenci pytają się nawzajem"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentes perguntam entre si"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агенты спрашивают друг друга"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenter frågar varandra"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanlar Birbirine Sorar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агенти питають одне одного"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体相互询问"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智慧體互相詢問"
+          }
+        }
+      }
+    },
     "Ahead of your day" : {
       "localizations" : {
         "da" : {
@@ -519895,6 +520002,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的代理會向此%@上的 Redde 要求各種東西。每個項目在你選擇前都是關閉的，新增、更改或刪除前都會先問你，但「Apple 家庭」由你自行選擇。它無法進入其他 App；iOS 不允許任何 App 這麼做。"
+          }
+        }
+      }
+    },
+    "Your agent can ask your other agents and bots by starting a line of its reply with their @name. Redde asks them, shows you their answers and gives the answers back to it, three rounds at most for each message you send. Off, only your own @mentions ask anyone." : {
+      "comment" : "Settings › Replies & Writing: footer under Agents Ask Each Other",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent kan spørge dine andre agenter og bots ved at begynde en linje i sit svar med deres @navn. Redde spørger dem, viser dig deres svar og giver svarene tilbage til den, højst tre runder for hver besked, du sender. Slået fra er det kun dine egne @omtaler, der spørger nogen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent kann deine anderen Agenten und Bots fragen, indem er eine Zeile seiner Antwort mit ihrem @Namen beginnt. Redde fragt sie, zeigt dir ihre Antworten und gibt die Antworten an ihn zurück, höchstens drei Runden pro Nachricht, die du sendest. Aus fragen nur deine eigenen @Erwähnungen jemanden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente puede consultar a tus otros agentes y bots empezando una línea de su respuesta con su @nombre. Redde les pregunta, te muestra sus respuestas y se las devuelve, con un máximo de tres rondas por cada mensaje que envíes. Desactivado, solo tus propias @menciones preguntan a alguien."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent peut interroger vos autres agents et bots en commençant une ligne de sa réponse par leur @nom. Redde les interroge, vous montre leurs réponses et les lui transmet, trois tours au plus pour chaque message que vous envoyez. Désactivé, seules vos propres @mentions interrogent quelqu’un."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente può chiedere agli altri tuoi agenti e bot iniziando una riga della sua risposta con il loro @nome. Redde lo chiede a loro, ti mostra le loro risposte e gliele restituisce, al massimo tre giri per ogni messaggio che invii. Se disattivato, solo le tue @menzioni chiedono a qualcuno."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントは、返信の行を相手の @名前 で始めることで、ほかのエージェントやボットに質問できます。Redde が質問し、その答えをあなたに表示して、エージェントに返します。送信するメッセージ 1 件につき最大 3 往復までです。オフにすると、あなた自身の @メンションだけが質問になります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 답장의 한 줄을 상대의 @이름으로 시작하면 다른 에이전트와 봇에게 물어볼 수 있습니다. Redde가 대신 묻고, 답을 보여 주며, 그 답을 에이전트에게 돌려줍니다. 보내는 메시지 하나당 최대 세 번까지입니다. 끄면 직접 쓴 @멘션만 다른 에이전트에게 묻습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din kan spørre de andre agentene og botene dine ved å begynne en linje i svaret sitt med @navnet deres. Redde spør dem, viser deg svarene og gir svarene tilbake til agenten, høyst tre runder for hver melding du sender. Av: bare dine egne @omtaler spør noen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent kan je andere agents en bots iets vragen door een regel van zijn antwoord met hun @naam te beginnen. Redde vraagt het hun, toont je hun antwoorden en geeft die terug aan je agent, hooguit drie rondes per bericht dat je stuurt. Uit vragen alleen je eigen @vermeldingen iemand iets."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój agent może zapytać Twoich innych agentów i boty, zaczynając wiersz odpowiedzi od ich @nazwy. Redde zadaje im pytanie, pokazuje Ci ich odpowiedzi i przekazuje je agentowi, maksymalnie trzy rundy na każdą wysłaną przez Ciebie wiadomość. Po wyłączeniu pytają tylko Twoje własne @wzmianki."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu agente pode perguntar aos seus outros agentes e bots começando uma linha da resposta com o @nome deles. O Redde pergunta, mostra as respostas para você e as devolve ao agente, no máximo três rodadas para cada mensagem que você envia. Desativado, só as suas próprias @menções perguntam a alguém."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент может спросить других ваших агентов и ботов, начав строку ответа с их @имени. Redde задаёт им вопрос, показывает вам их ответы и передаёт ответы агенту — не больше трёх раундов на каждое ваше сообщение. Если выключено, спрашивают только ваши собственные @упоминания."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent kan fråga dina andra agenter och bottar genom att börja en rad i sitt svar med deras @namn. Redde frågar dem, visar dig deras svar och ger svaren tillbaka till agenten, högst tre rundor för varje meddelande du skickar. Av: bara dina egna @omnämnanden frågar någon."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız, yanıtının bir satırını diğer ajanlarınızın ve botlarınızın @adıyla başlatarak onlara soru sorabilir. Redde onlara sorar, yanıtlarını size gösterir ve yanıtları ajanınıza geri verir; gönderdiğiniz her mesaj için en fazla üç tur. Kapalıyken yalnızca sizin @anmalarınız birine soru sorar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш агент може запитати інших ваших агентів і ботів, почавши рядок відповіді з їхнього @імені. Redde ставить їм запитання, показує вам їхні відповіді й передає відповіді агентові — не більше трьох раундів на кожне ваше повідомлення. Якщо вимкнено, запитують лише ваші власні @згадки."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体在回复中以某个 @名称 开头写一行，就能询问你的其他智能体和机器人。Redde 会替它询问，把回答显示给你，并把回答交还给它；你每发一条消息最多三轮。关闭后，只有你自己的 @提及 才会询问别人。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智慧體在回覆中以某個 @名稱 開頭寫一行，就能詢問你的其他智慧體和機器人。Redde 會代為詢問，把回答顯示給你，並把回答交還給它；你每傳一則訊息最多三輪。關閉後，只有你自己的 @提及 才會詢問別人。"
           }
         }
       }

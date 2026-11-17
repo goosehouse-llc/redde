@@ -89,7 +89,7 @@ extension Conversation {
     /// Who this chat's agent can ask, for `RosterNote`: told with the person's message when this
     /// chat hasn't been told, or was told of others.
     func rosterNote() -> String? {
-        guard bot == nil, !isIncognito, connection.isHermes || connection == .acp else { return nil }
+        guard settings.agentsAskEachOther, bot == nil, !isIncognito, connection.isHermes || connection == .acp else { return nil }
         let speaking = tagSpeaker, mainName = settings.headerTitle
         let entries = tagRoster.filter { $0.name != speaking }.map { bot in
             let place = bot.elsewhere.map { " on \($0.serverName)" } ?? ""
@@ -107,7 +107,7 @@ extension Conversation {
     /// a turn of its own, with no message of the person's. At most `relayLimit` rounds; should the
     /// person write in the meantime, the answers go with their message instead (`AsideNote`).
     func relayTags(from replyID: UUID) {
-        guard relayHops < Self.relayLimit, bot == nil, !isIncognito, connection.isHermes || connection == .acp,
+        guard settings.agentsAskEachOther, relayHops < Self.relayLimit, bot == nil, !isIncognito, connection.isHermes || connection == .acp,
               let reply = messages.last(where: { $0.id == replyID }), reply.error == nil else { return }
         let asks = BotAsides.relayed(in: reply.text, roster: tagRoster, speaking: tagSpeaker)
         guard !asks.isEmpty else { return }
@@ -130,6 +130,7 @@ extension Conversation {
             guard let note = AsideNote.relayNote(for: asides) else { return }
             for i in self.messages.indices where answered.contains(self.messages[i].id) { self.messages[i].delivered?.noted = true }
             self.startTurn(Message(role: .user, text: note), unseen: true)
+            if let reply = self.messages.last?.id { self.followOn?(reply) }
         }
     }
 

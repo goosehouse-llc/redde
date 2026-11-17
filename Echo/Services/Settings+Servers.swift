@@ -229,6 +229,7 @@ extension Settings {
         botFaces = true
         botPictures = true
         replyCards = true
+        agentsAskEachOther = true
         requireBiometrics = false
         siriAIEnabled = false
         siriDraftsInNewConversation = false

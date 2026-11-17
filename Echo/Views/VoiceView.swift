@@ -110,11 +110,14 @@ struct VoiceView: View {
         .foregroundStyle(theme.textColor)
         .onAppear {
             session.leaveBar()   // back from the bar over the chat (`CallBar`): the call is this screen's again
+            // The agent going on after the agents it asked answered: read here too (2.7).
+            conversation.followOn = { reply in session.joinFollowOn(reply: reply) }   // cleared on disappear
             session.attachHeadsetControls()
             // GPT-Live: its framework loaded and the Dashboard asked now, not when the orb is tapped.
             if Settings.shared.usesLiveCall(for: conversation.bot?.profile), group == nil { LiveSetup.prepare(conversation, .shared) }
         }
         .onDisappear {
+            conversation.followOn = nil
             // Put away with the call left going (`putAway`): it is the bar's now, headset presses and all.
             if session.inBar { return }
             session.detachHeadsetControls(); session.cancel(); session.setLooking(false)

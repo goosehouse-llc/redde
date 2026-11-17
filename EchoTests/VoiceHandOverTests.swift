@@ -65,6 +65,42 @@ struct VoiceHandOverTests {
         #expect(h.speaker.spoken.joined() == "Pack a fleece, it gets cold at night.", "each word once")
     }
 
+    /// 2.7: the agents the agent asked by @name answered, and it goes on by itself. Hands-free,
+    /// with the mic open behind the reply before and nothing said, that is read too, then the
+    /// mic opens again.
+    @Test func theAgentGoingOnAfterTheAgentsItAskedIsReadInVoiceMode() async throws {
+        let transport = HeldTransport()
+        let h = VoiceSessionTests.Harness(transport: transport)
+        h.session.continuous = true
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.conversation.startTurn(Message(role: .user, text: "[Redde: the agents you asked answered]"), unseen: true)
+        let reply = try #require(h.conversation.messages.last?.id)
+        h.session.joinFollowOn(reply: reply)
+        try await waitUntil("what's there is read") { h.speaker.spoken.joined().contains("fleece") }
+        #expect(h.recognizer.cancels >= 1, "the mic set aside for it")
+        transport.open()
+        try await waitUntil("and the rest") { h.speaker.spoken.joined().contains("cold at night") }
+        try await waitUntil("the reading ended") { h.speaker.ends >= 1 }
+        h.speaker.finishSpeaking()
+        try await waitUntil("listening again") { h.recognizer.starts == 2 }
+        #expect(h.conversation.messages.map(\.role) == [.assistant], "no message of the person's shown")
+    }
+
+    @Test func theAgentGoingOnIsNotReadOverThePerson() async throws {
+        let transport = HeldTransport()
+        let h = VoiceSessionTests.Harness(transport: transport)
+        h.session.continuous = true
+        h.session.beginListening()
+        try await waitUntil("listening") { h.recognizer.starts == 1 }
+        h.recognizer.hear("Wait, also")
+        h.conversation.startTurn(Message(role: .user, text: "[Redde: the agents you asked answered]"), unseen: true)
+        h.session.joinFollowOn(reply: try #require(h.conversation.messages.last?.id))
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(h.session.phase == .listening && h.speaker.spoken.isEmpty && h.recognizer.cancels == 0)
+        transport.open()
+    }
+
     @Test func withNoReplyComingVoiceModeListens() async throws {
         let h = VoiceSessionTests.Harness(transport: HeldTransport())
         h.session.joinReply()

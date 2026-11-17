@@ -267,6 +267,13 @@ struct ComposerSettings: View {
                 Text(String(localized: "A reply that lists choices and asks which one shows them under it, to tap. For suggestions under every reply, turn on Apple Intelligence or set up an OpenAI-compatible connection.", comment: "Settings › Replies & Writing footer: no model can write suggested replies on this device"))
             }
         }
+        // Agents asking each other by @name (2.7).
+        Section {
+            Toggle(String(localized: "Agents Ask Each Other", comment: "Settings › Replies & Writing: a switch; the chat's agent may ask other agents by starting a line of its reply with their @name"),
+                   isOn: $settings.agentsAskEachOther)
+        } footer: {
+            Text(String(localized: "Your agent can ask your other agents and bots by starting a line of its reply with their @name. Redde asks them, shows you their answers and gives the answers back to it, three rounds at most for each message you send. Off, only your own @mentions ask anyone.", comment: "Settings › Replies & Writing: footer under Agents Ask Each Other"))
+        }
         // What comes under a reply: cards, maps and their units (on Settings → Agent until 2026-11-15).
         Section {
             Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {

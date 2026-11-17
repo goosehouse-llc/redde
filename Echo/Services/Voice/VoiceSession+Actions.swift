@@ -303,6 +303,42 @@ extension VoiceSession {
         }
     }
 
+    /// The agent going on by itself (2.7): the agents it asked by @name answered, and its reply to
+    /// what they said is coming in (`Conversation.relayTags`). Read as `joinReply` reads a typed
+    /// reply, once Redde is quiet: after the reply being said, with the mic set aside if it was
+    /// open behind it and nothing had been said, and listening again after, hands-free. Never over
+    /// the person: once they have begun to speak it stays on the screen. Not on a live call, a
+    /// group chat's voice, muted, or with a request being asked.
+    func joinFollowOn(reply id: UUID) {
+        followOnTask?.cancel()
+        followOnTask = Task { [weak self] in
+            // A minute at most for the reply before it to finish being said.
+            for _ in 0 ..< 600 {
+                guard let self, !Task.isCancelled, live == nil, sendsTo == nil, asking == nil, !isMuted else { return }
+                switch phase {
+                case .thinking, .speaking:
+                    try? await Task.sleep(for: .milliseconds(100))
+                    continue
+                case .listening:
+                    guard liveTranscript.isEmpty, recognizer.transcript.isEmpty else { return }   // the person is speaking
+                    recognizer.cancel()
+                    stopMonitor()
+                    phase = .idle
+                case .idle, .error:
+                    break
+                }
+                if conversation.isStreaming, conversation.messages.last?.id == id {
+                    joinReply()
+                } else if let text = conversation.messages.last(where: { $0.id == id })?.text, !text.isEmpty {
+                    readAloud(text, resumeHandsFree: true, speaker: conversation.bot?.profile)
+                } else if continuous {
+                    beginListening()
+                }
+                return
+            }
+        }
+    }
+
     /// The keyboard button (asked 2026-10-28: "it starts but then I click the keyboard… the
     /// message stops"): voice mode stops listening and reading, but the reply goes on, streaming
     /// into the conversation on screen, where it is read instead of heard. On a live call there
@@ -330,6 +366,8 @@ extension VoiceSession {
         defer { endCall() }
         joinTask?.cancel()
         joinTask = nil
+        followOnTask?.cancel()
+        followOnTask = nil
         replaying = false
         isMuted = false
         isCapturing = false

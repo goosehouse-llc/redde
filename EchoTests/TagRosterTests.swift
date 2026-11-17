@@ -198,6 +198,19 @@ struct TagRosterTests {
                 "the person wrote: three more")
     }
 
+    @Test func withAgentsAskingEachOtherOffOnlyThePersonsTagsAsk() async throws {
+        let (conversation, transport, _) = try relayChat { request in
+            request.sessionID?.hasPrefix("aside-") == true ? "Four." : "@pi how many?"
+        }
+        conversation.settings.agentsAskEachOther = false
+        let first = try await ask(conversation, transport, "How many files?")
+        try await settle(conversation, transport)
+        #expect(!first.userText.contains(RosterNote.opening) && transport.requests.count == 1, "not told, not passed on")
+        _ = try await ask(conversation, transport, "@pi how many?")
+        try await settle(conversation, transport)
+        #expect(transport.requests.last?.sessionID?.hasPrefix("aside-") == true, "the person's own tag still asks")
+    }
+
     private func relayChat(_ answer: @escaping @Sendable (TurnRequest) -> String) throws -> (Conversation, ScriptedTransport, String) {
         let settings = Settings(defaults: UserDefaults(suiteName: "tags-\(UUID().uuidString)")!)
         settings.transport = .hermesServe

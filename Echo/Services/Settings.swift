@@ -389,6 +389,12 @@ final class Settings: ServeEndpoint {
     var keepRepliesInBackground: Bool {
         didSet { store(keepRepliesInBackground, forKey: Keys.keepRepliesInBackground) }
     }
+    /// Agents ask each other by @name (2.7): the chat's agent is told who it can ask, and a line of
+    /// its reply that begins with one's @name is passed on (`relayTags`). On at first. Off, only the
+    /// person's tags ask anyone.
+    var agentsAskEachOther: Bool {
+        didSet { store(agentsAskEachOther, forKey: Keys.agentsAskEachOther) }
+    }
     /// Three suggested replies under each reply (`FollowUps`): written by Apple's on-device model,
     /// else the OpenAI-compatible one. On at first (2026-11-11): nothing shows where neither can.
     var suggestFollowUps: Bool {
@@ -671,6 +677,7 @@ final class Settings: ServeEndpoint {
         showLiveActivity = defaults.object(forKey: Keys.showLiveActivity) as? Bool ?? true
         keepRepliesInBackground = defaults.object(forKey: Keys.keepRepliesInBackground) as? Bool ?? true
         suggestFollowUps = defaults.object(forKey: Keys.suggestFollowUps) as? Bool ?? true
+        agentsAskEachOther = defaults.object(forKey: Keys.agentsAskEachOther) as? Bool ?? true
         suggestionsFromFastLane = defaults.bool(forKey: Keys.suggestionsFromFastLane)
         speechLanguage = defaults.string(forKey: Keys.speechLanguage) ?? ""
         matchReplyLanguage = defaults.object(forKey: Keys.matchReplyLanguage) as? Bool ?? true

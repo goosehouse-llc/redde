@@ -526,6 +526,8 @@ final class VoiceSession {
 
     /// Following a typed reply (`joinReply`).
     var joinTask: Task<Void, Never>?
+    /// Waiting to read the agent's follow-on (`joinFollowOn`).
+    var followOnTask: Task<Void, Never>?
 
     // Stored here for VoiceSession+Turns.swift.
 
