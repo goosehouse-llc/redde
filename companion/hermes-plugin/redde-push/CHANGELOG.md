@@ -3,6 +3,16 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.32.0 (2026-11-17)
+
+- Ask Me First for bots handing work to each other. When one of your bots hands work to another
+  with Hermes's `message_agent`, it now waits for you first: Hermes asks you as it asks about a
+  risky command, and Redde shows it as "Sol wants to ask Code" with what it would ask, to answer
+  with Ask or Don't Ask (aloud in voice mode, or with a nod). Said no, nothing is passed on and
+  the bot is told so. Where nobody could say yes (a scheduled run, a bot asking another in a turn
+  you're not in), Hermes refuses it. Turn Ask Me First off in Redde's Settings › Replies & Writing
+  to let hand-offs go without asking, as before. Withdrawing a request is never held.
+
 ## 1.31.1 (2026-11-16)
 
 - A schedule whose run failed no longer sends its error to your phone, unless the schedule asks

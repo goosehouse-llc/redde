@@ -38,7 +38,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import calls, cards, core, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, waiting, watches, wire, work, work_runs
+from . import asks, calls, cards, core, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, waiting, watches, wire, work, work_runs
 from . import models as model_settings   # (the Models & Providers route, 1.26.0)
 from . import tasks as task_reports   # (reports of handed-off tasks, 1.27.0)
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
@@ -207,6 +207,8 @@ def _on_approval(command: str = "", description: str = "", session_id: str = "",
             return
         if _work_waits(session, command, description):   # a workstream's: needs you (work.py)
             return
+        if command.startswith("<" + asks.TOOL + ">"):   # a hand-off held for the person (asks.py): said as what it asks
+            command, description = description, ""
         _state()[1].submit("approval", session, _platforms.get(session, ""), body=command, detail=description)
     except Exception:
         log.debug("redde-push: approval hook failed", exc_info=True)
@@ -634,6 +636,9 @@ def _slash(raw_args: str = "") -> str:
     if words and words[0] == "tasks":
         # The task reports the phone was told of in a chat (tasks.py), kept in the main home.
         return task_reports.slash(calls.caller(_home())[1], words[1:])
+    if words[:1] == ["asks"]:
+        # Ask Me First for bots handing work to each other (asks.py), kept in the main home.
+        return asks.slash(calls.caller(_home())[1], words[1:])
     if words[:1] == ["cards"]:
         # Cards in replies (cards.py): on unless the phone turned them off.
         return cards.slash(_home(), words[1:])
@@ -955,6 +960,8 @@ def register(ctx) -> None:
     lists.register(ctx, _home)
     # Email (mail.py): redde_mail while an account is set up, and one way to send.
     mail.register(ctx, _home)
+    # Ask Me First (asks.py): a bot handing work to another asks the person first.
+    asks.register(ctx, _home)
     # Workstreams (work.py): a job handed to a hidden chat of the agent's own.
     work.register(ctx, _home, lambda home: calls.caller(home)[0], lambda session: _platforms.get(session, ""))
     # The app's way to these commands over the Hermes API, with no Dashboard (work_runs.py, 1.23.0).

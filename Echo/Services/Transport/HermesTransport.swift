@@ -662,6 +662,9 @@ nonisolated struct ApprovalRequest: Identifiable, Equatable, Sendable, Codable {
     var command: String
     var description: String?
     var choices: [String]     // once | session | always | deny
+    /// One agent asking another, as Redde shows it (`AgentAsks.dressed`): a Hermes bot's hand-off
+    /// held by Redde's plugin, its words put in names. Nil for every other request.
+    var agentAsk: Bool? = nil
 }
 
 nonisolated extension ApprovalRequest {

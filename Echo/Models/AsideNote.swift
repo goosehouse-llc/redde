@@ -222,16 +222,50 @@ nonisolated enum AgentAsks {
     /// Its request's id begins with this.
     static let prefix = "redde-ask-"
 
-    static func isAsk(_ request: ApprovalRequest) -> Bool { request.id.hasPrefix(prefix) }
+    /// One agent asking another, shown as such: Redde's own (`isLocal`) or a Hermes hand-off dressed.
+    static func isAsk(_ request: ApprovalRequest) -> Bool { isLocal(request) || request.agentAsk == true }
+
+    /// Redde's own (an agent's tag in a chat here): answered in the app, never on a host.
+    static func isLocal(_ request: ApprovalRequest) -> Bool { request.id.hasPrefix(prefix) }
 
     /// `asker` wants to ask each of `asks` (whom, by name, and the line that asks them).
     static func request(asker: String, asks: [(name: String, text: String)]) -> ApprovalRequest {
-        let names = asks.map(\.name)
+        ApprovalRequest(id: prefix + UUID().uuidString, command: asks.map(\.text).joined(separator: "\n"),
+                        description: headline(asker: asker, names: asks.map(\.name)), choices: ["once", "deny"])
+    }
+
+    static func headline(asker: String, names: [String]) -> String {
         let whom = names.count == 1 ? names[0] : ListFormatter.localizedString(byJoining: names)
-        return ApprovalRequest(id: prefix + UUID().uuidString,
-                               command: asks.map(\.text).joined(separator: "\n"),
-                               description: String(localized: "\(asker) wants to ask \(whom)",
-                                                   comment: "Ask Me First: the chat's agent wants to ask other agents, named; on the card and said aloud"),
-                               choices: ["once", "deny"])
+        return String(localized: "\(asker) wants to ask \(whom)",
+                      comment: "Ask Me First: the chat's agent wants to ask other agents, named; on the card and said aloud")
+    }
+
+    // MARK: Hermes's own hand-offs
+
+    /// The tool Redde's plugin holds for the person (asks.py, plugin 1.32.0).
+    static let heldTool = "<message_agent>"
+
+    /// A Hermes bot's hand-off, held by the plugin: whom (their handles) and what it would ask.
+    /// Its description is "Ask @code, @scout: <the message>".
+    static func hermesAsk(_ request: ApprovalRequest) -> (handles: [String], text: String)? {
+        guard request.agentAsk != true, request.command.hasPrefix(heldTool),
+              let said = request.description, said.hasPrefix("Ask @") else { return nil }
+        let rest = said.dropFirst("Ask ".count)
+        let split = rest.range(of: ": ")
+        let whom = split.map { rest[..<$0.lowerBound] } ?? rest
+        let handles = whom.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { $0.hasPrefix("@") }.map { String($0.dropFirst()) }
+        guard !handles.isEmpty else { return nil }
+        return (handles, split.map { String(rest[$0.upperBound...]) } ?? "")
+    }
+
+    /// A request as the person is shown it: a held hand-off in names ("Sol wants to ask Code", and
+    /// what), the rest as they are. `name` gives a handle's name.
+    static func dressed(_ interrupt: Interrupt, asker: String, name: (String) -> String) -> Interrupt {
+        guard case var .approval(request) = interrupt, let ask = hermesAsk(request) else { return interrupt }
+        request.description = headline(asker: asker, names: ask.handles.map(name))
+        request.command = ask.text
+        request.agentAsk = true
+        return .approval(request)
     }
 }

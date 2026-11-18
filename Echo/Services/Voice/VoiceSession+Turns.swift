@@ -207,7 +207,7 @@ extension VoiceSession {
                 case let .interrupt(interrupt, _):
                     // Conversation holds the request; the voice screen shows the card. Asked
                     // aloud too if Settings says so and it is one a voice can answer.
-                    if !ask(interrupt) { activeTool = "waiting for you" }
+                    if !ask(conversation.dressed(interrupt)) { activeTool = "waiting for you" }
                 case .interruptExpired:
                     activeTool = nil
                 case .status, .sessionID, .runID, .subagent, .prefill, .todos, .title, .picture:

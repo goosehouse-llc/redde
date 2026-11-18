@@ -1464,7 +1464,7 @@ struct AgentsTalkSection: View {
         } header: {
             Text(String(localized: "Agents Talking to Each Other", comment: "Settings › Replies & Writing: section header"))
         } footer: {
-            Text(String(localized: "Hermes Bots: your Hermes's bots messaging each other, in Hermes itself and by @name here. Other Agents: bridge agents like Claude Code and Codex, and other servers' bots. With Ask Me First, when an agent starts a line with another's @name, Redde shows you what it wants to ask and asks only when you say so. Hermes's own messages between its bots don't pass through Redde: to stop those, turn off Hermes Bots. Your own @mentions always ask.", comment: "Settings › Replies & Writing: footer under Agents Talking to Each Other"))
+            Text(String(localized: "Hermes Bots: your Hermes's bots messaging each other, in Hermes itself and by @name here. Other Agents: bridge agents like Claude Code and Codex, and other servers' bots. With Ask Me First, an agent that wants to ask another, by @name here or a Hermes bot handing it work, waits for you: Redde shows you what it would ask, and nothing is asked until you say so. For Hermes's bots this needs Redde's plugin 1.32 or later. Your own @mentions always ask.", comment: "Settings › Replies & Writing: footer under Agents Talking to Each Other"))
         }
         .task(id: settings.connectionKey) { await readHermes() }
     }

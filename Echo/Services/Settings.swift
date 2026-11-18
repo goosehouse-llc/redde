@@ -407,7 +407,10 @@ final class Settings: ServeEndpoint {
     /// an approval card in the chat, read aloud in voice mode. On at first. Hermes's own messages
     /// between its bots don't pass through Redde, and can't wait on it.
     var askBeforeAgentsAsk: Bool {
-        didSet { store(askBeforeAgentsAsk, forKey: Keys.askBeforeAgentsAsk) }
+        didSet {
+            store(askBeforeAgentsAsk, forKey: Keys.askBeforeAgentsAsk)
+            if self === Settings.shared, oldValue != askBeforeAgentsAsk { Task { await AgentAsksSwitch.publish() } }
+        }
     }
     /// Three suggested replies under each reply (`FollowUps`): written by Apple's on-device model,
     /// else the OpenAI-compatible one. On at first (2026-11-11): nothing shows where neither can.

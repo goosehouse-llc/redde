@@ -118,7 +118,7 @@ extension Conversation {
         guard let pendingInterrupt, case let .approval(request) = pendingInterrupt.interrupt else { return }
         clearInterrupt()
         // The agent asking another (Ask Me First): Redde's to answer, nobody's waiting on a host.
-        if AgentAsks.isAsk(request) {
+        if AgentAsks.isLocal(request) {
             answerProposedAsks(choice != "deny")
             return
         }

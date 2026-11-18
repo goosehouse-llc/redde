@@ -492,7 +492,7 @@ extension Conversation {
             }
         case let .interrupt(interrupt, runtime):
             flushDeltas()
-            pendingInterrupt = (interrupt, runtime)
+            pendingInterrupt = (dressed(interrupt), runtime)
             statusLine = String(localized: "waiting for you", comment: "Status under a reply: the agent waits for an answer")
             noteWaiting(interrupt)
             if case let .approval(request) = interrupt {

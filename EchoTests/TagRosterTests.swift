@@ -296,6 +296,24 @@ struct TagRosterTests {
         #expect(next.userText.contains(DeclinedNote.opening))
     }
 
+    /// A Hermes bot's hand-off held by Redde's plugin (asks.py) is shown as the Ask card: in names,
+    /// said aloud as the ask it is, and answered on the host like any approval.
+    @Test func aHeldHermesHandOffIsShownAsTheAsk() {
+        let held = ApprovalRequest(id: "srq-1", command: "<message_agent> (plugin approval rule)",
+                                   description: "Ask @code, @scout: Count the Swift files in Echo/Views.", choices: ["once", "session", "always", "deny"])
+        #expect(AgentAsks.hermesAsk(held)?.handles == ["code", "scout"])
+        guard case let .approval(shown) = AgentAsks.dressed(.approval(held), asker: "Sol", name: { $0.capitalized }) else { Issue.record(); return }
+        #expect(AgentAsks.isAsk(shown) && !AgentAsks.isLocal(shown), "the host's to answer")
+        #expect(shown.id == "srq-1" && shown.yesNo?.approve == "once")
+        #expect(shown.description == "Sol wants to ask Code and Scout" && shown.command == "Count the Swift files in Echo/Views.")
+        let spoken = SpokenRequest(.approval(shown))?.prompt ?? ""
+        #expect(spoken.hasPrefix("Sol wants to ask Code and Scout") && !spoken.contains("Approval needed") && !spoken.contains("message_agent"))
+        // Anything else is left as it came.
+        let command = ApprovalRequest(id: "c", command: "rm -rf build", description: "recursive delete", choices: ["once", "deny"])
+        #expect(AgentAsks.dressed(.approval(command), asker: "Sol", name: { $0 }) == .approval(command))
+        #expect(AgentAsks.hermesAsk(ApprovalRequest(id: "x", command: "<message_agent> (plugin approval rule)", description: "something else", choices: [])) == nil)
+    }
+
     /// Hermes Bots off: Sol neither hears of its Hermes's bots nor asks them by a tag here, while a
     /// bridge's agents it still asks (Other Agents); in a bot's chat, the person's tags of them are
     /// Redde's to ask, with no note for Hermes to pass on. All at once: the bot directory is shared.

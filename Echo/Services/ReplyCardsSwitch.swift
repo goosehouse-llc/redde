@@ -17,3 +17,15 @@ enum ReplyCardsSwitch {
         on ? "cards on tz=\(zone.identifier) units=\(units)" : "cards off"
     }
 }
+
+/// Tells Redde's Hermes plugin whether a bot handing work to another asks the person first
+/// (`asks.py`, plugin 1.32.0): Settings › Replies & Writing › Ask Me First. Said over the
+/// Dashboard when the switch changes and each time the app comes forward; a plugin not told
+/// asks. Best effort, as the cards' switch.
+@MainActor
+enum AgentAsksSwitch {
+    static func publish(settings: Settings = .shared, dashboard: HermesServeClient = .shared) async {
+        guard await dashboard.canUse() else { return }
+        _ = try? await PushService.command(over: dashboard)(settings.askBeforeAgentsAsk ? "asks on" : "asks off")
+    }
+}

@@ -197896,8 +197896,116 @@
         }
       }
     },
+    "Hermes Bots: your Hermes's bots messaging each other, in Hermes itself and by @name here. Other Agents: bridge agents like Claude Code and Codex, and other servers' bots. With Ask Me First, an agent that wants to ask another, by @name here or a Hermes bot handing it work, waits for you: Redde shows you what it would ask, and nothing is asked until you say so. For Hermes's bots this needs Redde's plugin 1.32 or later. Your own @mentions always ask." : {
+      "comment" : "Settings › Replies & Writing: footer under Agents Talking to Each Other",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-bots: din Hermes’ bots skriver til hinanden, i selve Hermes og her med @navn. Andre agenter: bro-agenter som Claude Code og Codex samt andre serveres bots. Med Spørg mig først venter en agent, der vil spørge en anden, med @navn her eller som Hermes-bot, der giver den arbejde, på dig: Redde viser dig, hvad den ville spørge om, og intet bliver spurgt, før du siger til. For Hermes’ bots kræver det Reddes plugin 1.32 eller nyere. Dine egne @omtaler spørger altid."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-Bots: Die Bots deines Hermes schreiben einander, in Hermes selbst und hier per @Name. Andere Agenten: Bridge-Agenten wie Claude Code und Codex sowie die Bots anderer Server. Mit „Erst fragen“ wartet ein Agent, der einen anderen fragen will – per @Name hier oder als Hermes-Bot, der ihm Arbeit übergibt – auf dich: Redde zeigt dir, was er fragen würde, und gefragt wird erst, wenn du es sagst. Für die Bots von Hermes braucht das Reddes Plugin 1.32 oder neuer. Deine eigenen @Erwähnungen fragen immer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bots de Hermes: los bots de tu Hermes se escriben entre sí, en el propio Hermes y aquí con @nombre. Otros agentes: agentes de un puente como Claude Code y Codex, y los bots de otros servidores. Con «Preguntarme primero», un agente que quiere preguntar a otro, con @nombre aquí o un bot de Hermes que le pasa trabajo, te espera: Redde te muestra lo que preguntaría y no se pregunta nada hasta que tú lo digas. Para los bots de Hermes hace falta el plugin de Redde 1.32 o posterior. Tus propias @menciones siempre preguntan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bots Hermes : les bots de votre Hermes s’écrivent entre eux, dans Hermes même et ici par @nom. Autres agents : les agents d’un pont comme Claude Code et Codex, et les bots d’autres serveurs. Avec « Me demander d’abord », un agent qui veut en solliciter un autre, par @nom ici ou un bot Hermes qui lui confie un travail, vous attend : Redde vous montre ce qu’il demanderait, et rien n’est demandé tant que vous ne l’avez pas dit. Pour les bots d’Hermes, il faut le plugin Redde 1.32 ou plus récent. Vos propres @mentions demandent toujours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bot di Hermes: i bot del tuo Hermes si scrivono tra loro, in Hermes stesso e qui con @nome. Altri agenti: gli agenti di un bridge come Claude Code e Codex, e i bot di altri server. Con «Chiedimi prima», un agente che vuole chiedere a un altro, con @nome qui o un bot di Hermes che gli passa del lavoro, ti aspetta: Redde ti mostra cosa chiederebbe e non si chiede nulla finché non lo dici tu. Per i bot di Hermes serve il plugin di Redde 1.32 o successivo. Le tue @menzioni chiedono sempre."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesのボット：Hermesのボット同士が、Hermes内でも、ここでの@名前でもメッセージをやり取りします。その他のエージェント：Claude CodeやCodexなどのブリッジのエージェントと、ほかのサーバのボット。「先に確認する」をオンにすると、ほかのエージェントに質問しようとするエージェント（ここでの@名前や、仕事を渡そうとするHermesのボット）はあなたを待ちます。Reddeが何を質問するかを表示し、あなたが許可するまで何も質問されません。Hermesのボットには、Reddeのプラグイン1.32以降が必要です。あなた自身の@メンションは常に質問します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 봇: Hermes의 봇끼리 Hermes 안에서, 그리고 여기서 @이름으로 메시지를 주고받습니다. 기타 에이전트: Claude Code, Codex 같은 브리지 에이전트와 다른 서버의 봇입니다. ‘먼저 묻기’를 켜면 다른 에이전트에게 물으려는 에이전트(여기서 @이름으로, 또는 일을 넘기려는 Hermes 봇)는 사용자를 기다립니다. Redde가 무엇을 물을지 보여 주고, 허락할 때까지 아무것도 묻지 않습니다. Hermes 봇에는 Redde 플러그인 1.32 이상이 필요합니다. 직접 쓴 @멘션은 항상 질문합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-boter: botene i Hermes sender meldinger til hverandre, i selve Hermes og her med @navn. Andre agenter: bro-agenter som Claude Code og Codex, og boter på andre servere. Med Spør meg først venter en agent som vil spørre en annen, med @navn her eller som Hermes-bot som gir den arbeid, på deg: Redde viser deg hva den ville spørre om, og ingenting blir spurt før du sier det. For Hermes’ boter krever dette Reddes plugin 1.32 eller nyere. Dine egne @omtaler spør alltid."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-bots: de bots van je Hermes sturen elkaar berichten, in Hermes zelf en hier via @naam. Andere agents: bridge-agents zoals Claude Code en Codex, en bots van andere servers. Met ‘Vraag het me eerst’ wacht een agent die een ander iets wil vragen, via @naam hier of als Hermes-bot die werk doorgeeft, op jou: Redde laat zien wat hij zou vragen, en er wordt niets gevraagd tot jij het zegt. Voor de bots van Hermes is de Redde-plug-in 1.32 of nieuwer nodig. Je eigen @vermeldingen vragen altijd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boty Hermesa: boty Twojego Hermesa piszą do siebie nawzajem, w samym Hermesie i tutaj przez @nazwę. Inni agenci: agenci mostu, tacy jak Claude Code i Codex, oraz boty innych serwerów. Z opcją Najpierw zapytaj agent, który chce zapytać innego – przez @nazwę tutaj albo bot Hermesa przekazujący mu pracę – czeka na Ciebie: Redde pokazuje, o co by zapytał, i nic nie zostanie zapytane, dopóki nie powiesz. Dla botów Hermesa wymaga to wtyczki Redde 1.32 lub nowszej. Twoje własne @wzmianki zawsze pytają."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bots do Hermes: os bots do seu Hermes trocam mensagens entre si, no próprio Hermes e aqui por @nome. Outros agentes: agentes de uma ponte, como Claude Code e Codex, e bots de outros servidores. Com “Perguntar Primeiro”, um agente que quer perguntar a outro, por @nome aqui ou um bot do Hermes passando trabalho a ele, espera por você: o Redde mostra o que ele perguntaria, e nada é perguntado até você mandar. Para os bots do Hermes, é preciso o plugin do Redde 1.32 ou mais recente. Suas próprias @menções sempre perguntam."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Боты Hermes: боты вашего Hermes пишут друг другу — в самом Hermes и здесь по @имени. Другие агенты: агенты моста, такие как Claude Code и Codex, и боты других серверов. С параметром «Сначала спросить» агент, который хочет спросить другого — по @имени здесь или бот Hermes, передающий ему работу, — ждёт вас: Redde показывает, что он спросил бы, и ничего не спрашивается, пока вы не скажете. Для ботов Hermes нужен плагин Redde 1.32 или новее. Ваши собственные @упоминания спрашивают всегда."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-bottar: bottarna i din Hermes skriver till varandra, i själva Hermes och här med @namn. Andra agenter: bryggagenter som Claude Code och Codex samt bottar på andra servrar. Med Fråga mig först väntar en agent som vill fråga en annan, med @namn här eller som Hermes-bott som lämnar över arbete, på dig: Redde visar vad den skulle fråga, och inget frågas förrän du säger till. För Hermes bottar krävs Reddes plugin 1.32 eller senare. Dina egna @omnämnanden frågar alltid."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Botları: Hermes’inizin botları birbirine mesaj atar; hem Hermes’in kendisinde hem burada @adla. Diğer ajanlar: Claude Code ve Codex gibi köprü ajanları ile diğer sunucuların botları. Önce Bana Sor açıkken başka birine sormak isteyen bir ajan (burada @adla ya da ona iş devreden bir Hermes botu) sizi bekler: Redde ne soracağını gösterir ve siz demedikçe hiçbir şey sorulmaz. Hermes’in botları için Redde eklentisi 1.32 veya üstü gerekir. Kendi @anmalarınız her zaman sorar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Боти Hermes: боти вашого Hermes пишуть одне одному — у самому Hermes і тут за @іменем. Інші агенти: агенти мосту, як-от Claude Code і Codex, та боти інших серверів. З параметром «Спершу запитати» агент, який хоче запитати іншого — за @іменем тут або бот Hermes, що передає йому роботу, — чекає на вас: Redde показує, що він запитав би, і нічого не питається, доки ви не скажете. Для ботів Hermes потрібен плагін Redde 1.32 або новіший. Ваші власні @згадки питають завжди."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 机器人：你的 Hermes 机器人之间互相发消息，在 Hermes 内部以及在这里通过 @名称。其他智能体：Claude Code、Codex 等桥接智能体，以及其他服务器的机器人。开启“先问我”后，想要询问其他智能体的智能体（在这里通过 @名称，或把工作交给另一个机器人的 Hermes 机器人）会等你：Redde 会给你看它要问什么，在你同意之前不会询问任何人。Hermes 机器人需要 Redde 插件 1.32 或更高版本。你自己的 @提及始终会询问。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 機器人：你的 Hermes 機器人之間互相傳訊息，在 Hermes 內部以及在這裡透過 @名稱。其他代理：Claude Code、Codex 等橋接代理，以及其他伺服器的機器人。開啟「先問我」後，想要詢問其他代理的代理（在這裡透過 @名稱，或把工作交給另一個機器人的 Hermes 機器人）會等你：Redde 會讓你看它要問什麼，在你同意之前不會詢問任何人。Hermes 機器人需要 Redde 外掛 1.32 或更新版本。你自己的 @提及一律會詢問。"
+          }
+        }
+      }
+    },
     "Hermes Bots: your Hermes's bots messaging each other, in Hermes itself and by @name here. Other Agents: bridge agents like Claude Code and Codex, and other servers' bots. With Ask Me First, when an agent starts a line with another's @name, Redde shows you what it wants to ask and asks only when you say so. Hermes's own messages between its bots don't pass through Redde: to stop those, turn off Hermes Bots. Your own @mentions always ask." : {
       "comment" : "Settings › Replies & Writing: footer under Agents Talking to Each Other",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {

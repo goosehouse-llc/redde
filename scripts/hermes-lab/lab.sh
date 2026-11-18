@@ -31,6 +31,7 @@
 #   scripts/hermes-lab/lab.sh pictures [tag ...]   pictures sent from the app kept where other clients find them, on both connections (issue 18)
 #   scripts/hermes-lab/lab.sh status [tag ...]     the chat list's marks: working, waiting on a person, unread, on both connections
 #   scripts/hermes-lab/lab.sh bots [tag ...]       bots: each profile's own chat, hidden from the list, and bots messaging bots
+#   scripts/hermes-lab/lab.sh asks [tag ...]       Ask Me First: a bot's message_agent held for the person, denied, allowed, let through
 #   scripts/hermes-lab/lab.sh groups [tag ...]     group chats: a room of bots made, talked to, a bot tagged, stopped, renamed, disbanded
 #   scripts/hermes-lab/lab.sh runs [tag ...]       Hermes API turns as runs: left, taken up again, stopped, sent twice (app check)
 #   scripts/hermes-lab/lab.sh apibots [tag ...]    a bot on the Hermes API alone: a profile with its own key at /p/<name>/ (app check)
@@ -764,6 +765,20 @@ lists() {
   echo "\nAll checks passed."
 }
 
+# Ask Me First for bots handing work to each other (asks_check.py, plugin 1.32.0): a bot's
+# message_agent held as an approval, denied, allowed, and let through with the app's `asks off`.
+asks() {
+  local tags=("${@:-v0.23.1}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / asks"
+    if ! LAB_OWN_HOME=1 up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" asks_check.py) || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Workstreams (work_check.py, plugin 1.22.0): a turn's redde_work starts a hidden chat that works by
 # itself in the Dashboard, is listed for the app, ends, and reports to the chat that started it.
 work() {
@@ -990,6 +1005,7 @@ case "${1:-}" in
   cards) shift; cards "$@" ;;
   projects) shift; projects "$@" ;;
   bots) shift; bots "$@" ;;
+  asks) shift; asks "$@" ;;
   longbot) shift; longbot "$@" ;;
   runs) shift; runs "$@" ;;
   butler) shift; butler "$@" ;;

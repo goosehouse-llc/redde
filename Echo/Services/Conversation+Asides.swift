@@ -73,6 +73,15 @@ extension Conversation {
         return TagRoster.shared.roster(connection: connection, settings, dashboard: dashboard)
     }
 
+    /// A request as the person is shown it (`AgentAsks.dressed`): a Hermes bot's hand-off in names.
+    func dressed(_ interrupt: Interrupt) -> Interrupt {
+        let mainName = settings.headerTitle
+        let roster = BotDirectory.shared.bots(for: settings.connectionKey)
+        return AgentAsks.dressed(interrupt, asker: answeringName) { handle in
+            roster.first { $0.handle == handle || $0.name == handle }?.label(mainName: mainName) ?? handle.capitalized
+        }
+    }
+
     /// Whether this chat's agent may ask `bot` by itself (`relayTags`, `rosterNote`): the open
     /// Hermes's bots asking each other is one switch, everyone else (a bridge's agents, another
     /// server's bots, and a bridge agent's chat asking anyone) another.
@@ -164,7 +173,7 @@ extension Conversation {
     func dropProposedAsks() {
         guard let proposed = proposedAsks else { return }
         proposedAsks = nil
-        if case let .approval(request)? = pendingInterrupt?.interrupt, AgentAsks.isAsk(request) { pendingInterrupt = nil }
+        if case let .approval(request)? = pendingInterrupt?.interrupt, AgentAsks.isLocal(request) { pendingInterrupt = nil }
         declineAsks(proposed.asks.map(\.bot))
     }
 
