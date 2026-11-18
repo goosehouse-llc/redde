@@ -166,7 +166,8 @@ async def dashboard():
     await dash.call("prompt.submit", {"session_id": runtime, "text": SLOW})
     await asyncio.sleep(2)
     during = await status(dash, stored)
-    report(during == "working", "working while its turn runs", f"status {during!r}")
+    # 0.23.2 says "starting" a while longer before the model answers; the app takes both as working.
+    report(during in ("working", "starting"), "working while its turn runs", f"status {during!r}")
     done = await until(dash, runtime, {"message.complete"}, 25)
     await asyncio.sleep(1)
     after = await status(dash, stored)
