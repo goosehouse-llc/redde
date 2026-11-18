@@ -14,6 +14,18 @@ extension XCUIApplication {
     }
 }
 
+extension XCUIElement {
+    /// There and inside the window, asked without `isHittable`: a row of a long list scrolled far
+    /// away is still in the tree with no place on screen, and asking it `isHittable` fails the
+    /// test ("Activation point invalid") instead of answering false (2026-11-18).
+    func isOnScreen(in app: XCUIApplication) -> Bool {
+        guard exists else { return false }
+        let frame = self.frame, window = app.windows.firstMatch.frame
+        guard !frame.isEmpty, window.contains(CGPoint(x: frame.midX, y: frame.midY)) else { return false }
+        return isHittable
+    }
+}
+
 extension XCUIElementQuery {
     /// The first match that can be tapped, once there is one. A conversation's title is also the
     /// header of the open conversation, pushed off screen behind the iPhone's list, and a row's

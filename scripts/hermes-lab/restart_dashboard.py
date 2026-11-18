@@ -15,6 +15,7 @@ usage: restart_dashboard.py <port> <hermes> <run folder>
 """
 import json
 import os
+import secrets
 import signal
 import subprocess
 import sys
@@ -71,7 +72,9 @@ def restart(kind):
     elif kind == "gated":
         env.update(HERMES_DASHBOARD_PUBLIC_URL="http://redde-lab.test:19119", HERMES_DASHBOARD_BASIC_AUTH_USERNAME="lab",
                    HERMES_DASHBOARD_BASIC_AUTH_PASSWORD="labpass-labpass",
-                   HERMES_DASHBOARD_BASIC_AUTH_SECRET="0123456789abcdef0123456789abcdef0123456789abcdef")
+                   # A secret of its own each time: a login cookie from an earlier check (signed with the
+                   # lab's usual secret, kept in the simulator) must not let the phone in here.
+                   HERMES_DASHBOARD_BASIC_AUTH_SECRET=secrets.token_hex(24))
     log = open(os.path.join(RUN, f"{kind}.log"), "a")
     process = subprocess.Popen(command, cwd=RUN, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     with open(PIDS, "a") as pids:

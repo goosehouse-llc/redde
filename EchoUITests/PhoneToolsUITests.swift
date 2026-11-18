@@ -13,8 +13,8 @@ final class PhoneToolsUITests: XCTestCase {
     }
 
     private func reach(_ element: XCUIElement, in app: XCUIApplication, _ what: String) {
-        for _ in 0 ..< 14 where !(element.exists && element.isHittable) { app.swipeUp() }
-        XCTAssertTrue(element.exists && element.isHittable, "\(what) isn't on the screen")
+        for _ in 0 ..< 14 where !element.isOnScreen(in: app) { app.swipeUp() }
+        XCTAssertTrue(element.isOnScreen(in: app), "\(what) isn't on the screen")
     }
 
     private func flip(_ row: XCUIElement) {
@@ -46,7 +46,7 @@ final class PhoneToolsUITests: XCTestCase {
         for area in ["Reminders", "Contacts", "Photos", "Files", "Alarms", "Widget", "Calls and Messages"] {
             reach(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", area)).firstMatch, in: app, "\(area)")
         }
-        for _ in 0 ..< 8 where !master.isHittable { app.swipeDown() }
+        for _ in 0 ..< 8 where !master.isOnScreen(in: app) { app.swipeDown() }
         // Under Photos: where the pictures are looked at, and what of them leaves the phone.
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'keeps what it finds here' AND label CONTAINS 'to your Hermes and nowhere else'")).firstMatch.exists,
                       "The note under Photos isn't there")
@@ -67,7 +67,7 @@ final class PhoneToolsUITests: XCTestCase {
         let plugin = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'The plugin' AND label CONTAINS 'is on this Hermes'")).firstMatch
         reach(plugin, in: app, "The plugin on the server")
         shot("phone tools plugin")
-        for _ in 0 ..< 6 where !master.isHittable { app.swipeDown() }
+        for _ in 0 ..< 6 where !master.isOnScreen(in: app) { app.swipeDown() }
 
         // Off again, for whatever runs next: the area, then the whole thing.
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Calendar'")).firstMatch.tap()
@@ -101,7 +101,7 @@ final class PhoneToolsUITests: XCTestCase {
         if refused.waitForExistence(timeout: 3) {
             // Refused, the area goes back to Off and says where to allow it: that much is right.
             shot("alarms refused")
-            for _ in 0 ..< 6 where !master.isHittable { app.swipeDown() }
+            for _ in 0 ..< 6 where !master.isOnScreen(in: app) { app.swipeDown() }
             flip(master)
             throw XCTSkip("iOS refused the alarms permission here without being allowed to ask (the iOS 27.0 simulator does)")
         }
@@ -111,7 +111,7 @@ final class PhoneToolsUITests: XCTestCase {
 
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Alarms'")).firstMatch.tap()
         app.buttons["Off"].tap()
-        for _ in 0 ..< 6 where !master.isHittable { app.swipeDown() }
+        for _ in 0 ..< 6 where !master.isOnScreen(in: app) { app.swipeDown() }
         flip(master)
     }
 }

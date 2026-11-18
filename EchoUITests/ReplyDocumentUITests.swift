@@ -39,7 +39,7 @@ final class ReplyDocumentUITests: XCTestCase {
         let chip = app.buttons["week-ahead.md"]
         XCTAssertTrue(chip.waitForExistence(timeout: 5), "No chip for the named file")
         chip.tap()
-        XCTAssertTrue(app.text(containing: "Settings → Connection details").waitForExistence(timeout: 5), "It doesn't say why it can't open")
+        XCTAssertTrue(app.text(containing: "Settings → Connection → Connection details").waitForExistence(timeout: 5), "It doesn't say why it can't open")
     }
 
     /// A file the reply only names by its path opens from it; with no Dashboard login, the tap

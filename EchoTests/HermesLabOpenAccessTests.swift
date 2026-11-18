@@ -134,11 +134,11 @@ struct HermesLabOpenAccessTests {
         }
 
         // The sign-in turned on: said as that, not as a missing password.
-        _ = await Self.restart("gated")
+        let gatedRestart = await Self.restart("gated")
         var gatedSaid: Error?
         do { _ = try await client.listSessions(limit: 1) } catch { gatedSaid = error }
         Self.report((gatedSaid as? DashboardSignInChange) == .nowAsksForLogin, "a Dashboard that now asks for a login is said to",
-                    gatedSaid?.localizedDescription ?? "it let the phone in")
+                    gatedSaid?.localizedDescription ?? "it let the phone in (\(gatedRestart ?? .null))")
 
         // And the other way: a login saved for a Dashboard that has none.
         _ = await Self.restart("serve")

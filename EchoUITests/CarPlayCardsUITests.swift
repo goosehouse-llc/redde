@@ -12,15 +12,15 @@ final class CarPlayCardsUITests: XCTestCase {
     }
 
     private func reach(_ element: XCUIElement, in app: XCUIApplication, _ what: String) {
-        for _ in 0 ..< 14 where !(element.exists && element.isHittable) { app.swipeUp() }
-        XCTAssertTrue(element.exists && element.isHittable, "\(what) isn't on the screen")
+        for _ in 0 ..< 14 where !element.isOnScreen(in: app) { app.swipeUp() }
+        XCTAssertTrue(element.isOnScreen(in: app), "\(what) isn't on the screen")
     }
 
     /// Back up the page to it: a row scrolled away isn't kept, and the Appearance section has grown
     /// (Link previews), so a fixed number of swipes fell short.
     private func reachBack(_ element: XCUIElement, in app: XCUIApplication, _ what: String) {
-        for _ in 0 ..< 14 where !(element.exists && element.isHittable) { app.swipeDown() }
-        XCTAssertTrue(element.exists && element.isHittable, "\(what) isn't on the screen")
+        for _ in 0 ..< 14 where !element.isOnScreen(in: app) { app.swipeDown() }
+        XCTAssertTrue(element.isOnScreen(in: app), "\(what) isn't on the screen")
         // Let the list come to rest: a tap on one still gliding only stops it. (The picked look's
         // pictures move all the while, so the app never reads as idle and nothing waits for it.)
         Thread.sleep(forTimeInterval: 0.8)
@@ -49,7 +49,7 @@ final class CarPlayCardsUITests: XCTestCase {
         XCTAssertTrue(color.exists, "The looks aren't listed")
         // Further down, each one scrolled to (a row below the screen isn't made until it's near).
         for name in ["Orb", "Gold", "Graphite", "Marks"] { reach(look(name), in: app, "\(name)") }
-        for _ in 0 ..< 8 where !glow.isHittable { app.swipeDown() }
+        reachBack(glow, in: app, "Glow")
         glow.tap()
         XCTAssertTrue(glow.isSelected, "Glow wasn't picked")
         XCTAssertFalse(color.isSelected)

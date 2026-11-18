@@ -20,6 +20,8 @@ for arg in "$@"; do
     esac
 done
 TOUR_RUNS=${TOUR_RUNS:-3}; LAUNCH_RUNS=${LAUNCH_RUNS:-5}
+# The simulator started (and waited for): every step below talks to a running one.
+xcrun simctl bootstatus "$SIM" -b > /dev/null 2>&1 || { echo "simulator $SIM won't start"; exit 1; }
 OUT=tmp/perf; mkdir -p "$OUT"; : > "$OUT/results.txt"
 DD=DerivedData-perf
 DEBUG_APP=$DD/Build/Products/Debug-iphonesimulator/Echo.app
