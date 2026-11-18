@@ -32,17 +32,108 @@ struct NotifierTests {
         }
     }
 
+    /// What a `NoteClears` said to the plugin, and what the plugin answers.
+    final class Plugin {
+        var said: [String] = []
+        var answer: (String) throws -> String = { _ in "redde-push cleared 1 1" }
+    }
+
     struct Harness {
         let notifier: Notifier
         let center = FakeCenter()
         let settings: Settings
+        let plugin = Plugin()
+        let clears: NoteClears
 
         init(enabled: Bool = true, appActive: Bool = false) {
             let suite = UserDefaults(suiteName: "notifier-\(UUID().uuidString)")!
             settings = Settings(defaults: suite)
             settings.notifyInBackground = enabled
-            notifier = Notifier(center: center, settings: settings, isAppActive: { appActive })
+            settings.transport = .hermesServe
+            let plugin = plugin
+            clears = NoteClears(defaults: suite, settings: settings,
+                                command: { words in plugin.said.append(words); return try plugin.answer(words) },
+                                ownIDs: { ["thisphone"] })
+            notifier = Notifier(center: center, settings: settings, clears: clears, isAppActive: { appActive })
         }
+    }
+
+    // MARK: Notifications in sync on the person's devices (NoteClears)
+
+    @Test func aChatOpenedHereClearsItsNotesOnTheOtherDevices() async throws {
+        let h = Harness()
+        let server = h.settings.activeServerID.uuidString
+        h.center.deliveredList = [
+            .init(id: "a", isRelayPush: true, date: .now, session: "s1", note: "0123456789ab", server: server),
+            .init(id: "b", isRelayPush: true, date: .now, session: "s1"),   // from before notes had ids
+            .init(id: "c", isRelayPush: true, date: .now, session: "s2", note: "ba9876543210", server: server),
+        ]
+        h.notifier.clearDelivered(session: "s1", conversation: UUID().uuidString, room: nil)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(h.clears.pending[server] == ["0123456789ab"], "only the chat's, and only one with an id")
+        await h.clears.flushSoon()
+        #expect(h.plugin.said == ["cleared thisphone 0123456789ab"])
+        #expect(h.clears.pending.isEmpty, "said once")
+    }
+
+    @Test func severalSwipedTogetherAreSaidOnceAndAnotherServersWait() async {
+        let h = Harness()
+        let server = h.settings.activeServerID.uuidString
+        h.clears.cleared(["aaaaaaaaaaaa"], server: server)
+        h.clears.cleared(["bbbbbbbbbbbb", "aaaaaaaaaaaa", "NOT-AN-ID"], server: nil)
+        h.clears.cleared(["cccccccccccc"], server: "another-server")
+        await h.clears.flushSoon()
+        #expect(h.plugin.said == ["cleared thisphone aaaaaaaaaaaa,bbbbbbbbbbbb"])
+        #expect(h.clears.pending == ["another-server": ["cccccccccccc"]], "said when that server is the open one")
+    }
+
+    @Test func notReachedTheyWaitAndAnOldPluginDropsThem() async {
+        let h = Harness()
+        let server = h.settings.activeServerID.uuidString
+        h.plugin.answer = { _ in throw URLError(.notConnectedToInternet) }
+        h.clears.cleared(["aaaaaaaaaaaa"], server: server)
+        await h.clears.flushSoon()
+        #expect(h.clears.pending[server] == ["aaaaaaaaaaaa"], "kept for later")
+        h.plugin.answer = { _ in throw PushError.noPlugin }
+        await h.clears.flushSoon()
+        #expect(h.clears.pending.isEmpty, "a Hermes without the plugin never will")
+    }
+
+    @Test func aBridgeConnectionSaysNothing() async {
+        let h = Harness()
+        h.settings.transport = .acp
+        h.clears.cleared(["aaaaaaaaaaaa"], server: nil)
+        await h.clears.flushSoon()
+        await h.clears.catchUp()
+        #expect(h.plugin.said.isEmpty)
+    }
+
+    @Test func backInFrontItAsksWhatWasClearedSinceLastAsked() async {
+        let h = Harness()
+        h.plugin.answer = { _ in "redde-push cleared-since 1000 aaaaaaaaaaaa,bbbbbbbbbbbb" }
+        await h.clears.catchUp()
+        h.plugin.answer = { _ in "redde-push cleared-since 1100 -" }
+        await h.clears.catchUp()
+        #expect(h.plugin.said == ["cleared since 0", "cleared since 995"])
+        #expect(NoteClears.clearedSince("redde-push cleared-since 7 aaaaaaaaaaaa,xyz")?.ids == ["aaaaaaaaaaaa"])
+        #expect(NoteClears.clearedSince("redde-push: this command is for the Redde app. In a terminal: hermes redde-push pair") == nil)
+    }
+
+    @Test func aNoteKeepsItsIdAndAClearNamesItsNotes() throws {
+        let note = try JSONDecoder().decode(PushNote.self, from: Data(#"{"v":1,"k":"reply","s":"s1","b":"Done.","m":"0123456789ab"}"#.utf8))
+        #expect(note.m == "0123456789ab")
+        #expect(note.clearedIDs.isEmpty, "a reply clears nothing")
+        let clear = try JSONDecoder().decode(PushNote.self, from: Data(#"{"v":1,"k":"clear","b":"0123456789ab,NOPE,ba9876543210"}"#.utf8))
+        #expect(clear.kind == .clear && clear.clearedIDs == ["0123456789ab", "ba9876543210"])
+        #expect(!PushNote.isNoteID("0123456789AB") && !PushNote.isNoteID("0123456789a"))
+    }
+
+    @Test func everyPushedCategoryHearsASwipe() {
+        let h = Harness()
+        h.notifier.registerCategories()
+        let pushed = h.center.categories.filter { $0.identifier.hasSuffix(".push") || $0.identifier == LeaveBy.mapsCategory }
+        #expect(pushed.contains { $0.identifier == PushNote.noteCategory })
+        #expect(pushed.count >= 7 && pushed.allSatisfy { $0.options.contains(.customDismissAction) })
     }
 
     // MARK: Approval banners

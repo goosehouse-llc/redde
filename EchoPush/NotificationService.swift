@@ -36,6 +36,13 @@ final class NotificationService: UNNotificationServiceExtension {
            note.fill(content) {
             PushVault.confirm(pairing, host: note.n)
             if let server = pairing.server, !server.isEmpty { content.userInfo[PushNote.serverKey] = server }
+            // Its own id, the same on the person's other devices, for clearing it there too; and a
+            // category, if it has none, so a swipe is heard (`NoteClears`).
+            if let id = note.m, PushNote.isNoteID(id) { content.userInfo[PushNote.noteKey] = id }
+            if content.categoryIdentifier.isEmpty, note.kind != .clear { content.categoryIdentifier = PushNote.noteCategory }
+            // Cleared on another device and sent the way an older relay sends everything, as an alert.
+            let cleared = note.clearedIDs
+            if !cleared.isEmpty { ClearedNotes.remove(cleared) }
             // A request the agent stopped for goes on the "Needs you" widget, and comes off it
             // when a later note says the turn went on: this is how the widget hears of either
             // while Redde is closed.

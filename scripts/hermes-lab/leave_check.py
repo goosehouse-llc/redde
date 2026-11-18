@@ -60,7 +60,7 @@ async def main():
     said = await say(f"leave set {phone.id} {wakes((dentist, 'Dentist', now + 5), (lunch, 'Lunch', now + 3600))}")
     report(said == "redde-push leave 1 2", "the plugin keeps a device's wakes", said)
     found = await asyncio.to_thread(wait_for_leave, phone, dentist, 75)
-    report(len(found) == 1 and found[0].get("t") == "Dentist" and set(found[0]) <= {"v", "k", "at", "n", "i", "t"},
+    report(len(found) == 1 and found[0].get("t") == "Dentist" and set(found[0]) <= {"v", "k", "at", "n", "i", "t", "m"},   # m: the note's random id, for clearing it on every device (1.33)
            "at its time the device is sent a sealed leave note: the id and the title, nothing else", found)
     report(not leave_notes(other), "and no other paired device", leave_notes(other))
 

@@ -144,6 +144,7 @@ struct EchoApp: App {
                     // it), said again in case this server hasn't heard.
                     Task { await ReplyCardsSwitch.publish() }
                     Task { await AgentAsksSwitch.publish() }   // a bot's hand-off asks first, or not
+                    Task { await NoteClears.shared.cameForward() }   // notifications cleared elsewhere, cleared here
                     Task { await AgentAutonomy.publish() }   // how much each agent may do unasked
                     // A timed mute may have run out meanwhile, or one been set on another device.
                     Mutes.publish()

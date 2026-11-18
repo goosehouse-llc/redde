@@ -716,6 +716,25 @@ def _slash(raw_args: str = "") -> str:
     if len(words) == 3 and words[0] == "here" and words[2].isdigit():
         # Where the person is: these devices are in use until then (0: no longer).
         return f"redde-push here {len(store.set_here([w for w in words[1].split(',') if w], int(words[2])))}"
+    if len(words) == 3 and words[0] == "cleared" and words[1] == "since":
+        # A device back after a while: the notes cleared elsewhere since then, to take out of its
+        # Notification Center too, and the time to ask from next (this machine's clock).
+        try:
+            since = float(words[2])
+        except ValueError:
+            since = 0.0
+        found = store.cleared_since(since)
+        return f"redde-push cleared-since {int(time.time())} {','.join(found) or '-'}"
+    if len(words) == 3 and words[0] == "cleared":
+        # Notes cleared on a device (`words[1]`, its ids, "-" for none): the person's other
+        # devices are told to clear them too.
+        sender = {w for w in words[1].split(",") if w}
+        notes = [w for w in words[2].split(",") if core.NOTE_ID.match(w)][:64]
+        new = store.add_cleared(notes)
+        others = [d for d in store.devices if d.get("id") not in sender]
+        if new and others:
+            threading.Thread(target=pusher.send, args=(others, core.clear_note(new)), name="redde-push-cleared", daemon=True).start()
+        return f"redde-push cleared {len(new)} {len(others) if new else 0}"
     if words == ["status"]:
         return f"redde-push status {len(store.devices)}"
     if words == ["offer"]:

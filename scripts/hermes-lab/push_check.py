@@ -266,6 +266,26 @@ async def dashboard(phone):
     report(accepted.startswith("redde-push paired ") and bool(made), "Dashboard: an app pairs in one step, and its first note arrives", f"{accepted!r} {made}")
     again = (await dash.call("command.dispatch", {"name": "redde-push", "arg": f"accept {words[2]} {tapped.pub} {tapped.box}"})).get("output", "")
     report(again.startswith("redde-push refused"), "Dashboard: an offer is answered once", again)
+
+    # Notifications in sync on two devices (1.33): one note, one id on both; cleared on one, the
+    # other is sent a silent push naming it; a device back later asks what was cleared.
+    await asyncio.to_thread(hermes, "test")
+    on_phone = await asyncio.to_thread(phone.wait_for, "test", None, 15)
+    on_tapped = await asyncio.to_thread(tapped.wait_for, "test", None, 15)
+    note_id = (on_phone or {}).get("m")
+    report(bool(note_id) and core.NOTE_ID.match(note_id) and note_id == (on_tapped or {}).get("m"),
+           "two devices: a note has one id on both", f"{on_phone} {on_tapped}")
+    cleared = (await dash.call("command.dispatch", {"name": "redde-push", "arg": f"cleared {phone.id} {note_id}"})).get("output", "")
+    told = await asyncio.to_thread(tapped.wait_for, "clear", None, 15)
+    silent = [json.loads(line) for line in open(APNS)]
+    silent = [r for r in silent if r["token"] == tapped.token and r["type"] == "background"]
+    report(cleared == "redde-push cleared 1 1" and bool(told) and told.get("b") == note_id
+           and bool(silent) and silent[-1]["body"]["aps"] == {"content-available": 1} and silent[-1]["collapse"] is None,
+           "two devices: cleared on one, the other gets a silent push naming it", f"{cleared!r} {told} {silent[-1:] or ''}")
+    report(phone.wait_for("clear", None, 2) is None, "two devices: the one it was cleared on isn't told")
+    since = (await dash.call("command.dispatch", {"name": "redde-push", "arg": "cleared since 0"})).get("output", "")
+    report(since.split()[:2] == ["redde-push", "cleared-since"] and since.split()[-1] == note_id,
+           "two devices: a device back later asks what was cleared, and is told", since)
     await dash.ws.close()
 
 
@@ -327,7 +347,8 @@ def main():
 
     records = [json.loads(line) for line in open(APNS)]
     plain = json.dumps(records)
-    report(all(set(r["body"]) == {"aps", "e"} and r["body"]["aps"]["alert"]["body"] == "Open Redde to see what's new." for r in records)
+    report(all(set(r["body"]) == {"aps", "e"} and (r["body"]["aps"] == {"content-available": 1} if r.get("type") == "background"
+                                                   else r["body"]["aps"]["alert"]["body"] == "Open Redde to see what's new.") for r in records)
            and not any(word in plain for word in ("alpha", "rm -rf", "push lab", "Which branch", "lab token", "API key")),
            "what Apple and the relay carry is sealed: no reply, command, question, error or title in it")
     for session, since in recovered:

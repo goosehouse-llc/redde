@@ -219,6 +219,25 @@ test("a phone with a PushKit token is rung as a call, the blob alone, on the voi
   }
 });
 
+test("a clear goes as a silent push that wakes the app, shows nothing, and isn't collapsed", async () => {
+  const r = relay();
+  try {
+    const made = await r.call("POST", "/v1/devices", { token: TOKEN, env: "dev", auth: auth(SECRET) });
+    const id = made.body.id;
+    const sent = await r.call("POST", `/v1/devices/${id}/push`, { payload: "Y2xlYXI", kind: "clear", ttl: 21600, collapse: "abcdef0123456789" }, bearer());
+    assert.equal(sent.status, 202);
+    const apple = r.sent[0];
+    assert.equal(apple.url, `http://apple.test/3/device/${TOKEN}`);
+    assert.equal(apple.headers["apns-topic"], "com.example.app");
+    assert.equal(apple.headers["apns-push-type"], "background");
+    assert.equal(apple.headers["apns-priority"], "5");
+    assert.equal(apple.headers["apns-collapse-id"], undefined);
+    assert.deepEqual(apple.body, { aps: { "content-available": 1 }, e: "Y2xlYXI" });
+  } finally {
+    r.restore();
+  }
+});
+
 test("without a PushKit token a call is refused, and one given later or forgotten counts", async () => {
   const VOIP = "ef".repeat(32);
   const r = relay();

@@ -83,6 +83,10 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
         /// own chat, which a tap opens (`Workstreams`); `r` "api" for one run by the Hermes API's
         /// gateway (1.23), whose chat is opened there.
         case work
+        /// Notes the person cleared on another of their devices (Redde's plugin 1.33): `b` their
+        /// ids (`m`), by commas, to take out of this one's Notification Center (`NoteClears`). A
+        /// silent push; it shows only through a relay too old to send it so.
+        case clear
     }
 
     var v = 1
@@ -129,6 +133,9 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     /// On a briefing's (Redde's plugin 1.26.0): the place its weather is for, from the run's
     /// `WEATHER:` line ("here" for where the person is), for the forecast card.
     var e: String?
+    /// The note's own id, the same on every device it went to (Redde's plugin 1.33), so one
+    /// cleared on one device is cleared on the others (`NoteClears`). Twelve hex digits.
+    var m: String?
 
     nonisolated struct Idea: Codable, Equatable, Sendable {
         var t: String?
@@ -425,6 +432,22 @@ nonisolated extension PushNote {
     static let viaAPIKey = "api"
     /// The sealed note, as the relay hands it to Apple. Gone once the note has been opened.
     static let sealedKey = "e"
+    /// The note's own id (`m`), kept on its notification for `NoteClears`.
+    static let noteKey = "note"
+    /// The category of a note with no buttons of its own: there so iOS tells the app when it is
+    /// swiped away (`customDismissAction`), which `NoteClears` passes on to the other devices.
+    static let noteCategory = "redde.note.push"
+
+    /// A note id as the plugin makes them; anything else is never matched or passed on.
+    static func isNoteID(_ text: String) -> Bool {
+        text.count == 12 && text.allSatisfy { $0.isHexDigit && !$0.isUppercase }
+    }
+
+    /// The ids a clear names.
+    var clearedIDs: [String] {
+        guard kind == .clear else { return [] }
+        return (b ?? "").split(separator: ",").map(String.init).filter(Self.isNoteID)
+    }
 
     /// Writes the note into the notification that will be shown in place of the relay's words.
     /// False for a note this build doesn't know: the relay's words stay.
@@ -561,6 +584,15 @@ nonisolated extension PushNote {
                 content.body = String(PlainText.display(b ?? "").prefix(300))
             }
             content.threadIdentifier = "redde.work.\(p ?? "")"
+        case .clear:
+            // Shown only when a relay too old for silent pushes sent it as an alert: what it did,
+            // quietly, in the list. (The extension takes the notes it names away first.)
+            content.title = "Redde"
+            content.body = String(localized: "Cleared notifications you'd already seen on another device.",
+                                  comment: "Notification, shown quietly: notifications cleared on the person's other device were taken away here too")
+            content.sound = nil
+            content.interruptionLevel = .passive
+            content.threadIdentifier = "redde.clear"
         case .groupWait:
             let who = d.flatMap { $0.isEmpty ? nil : $0 }
             if let t, !t.isEmpty { content.subtitle = t }
@@ -616,7 +648,7 @@ nonisolated extension PushNote {
             UNNotificationAction(identifier: Self.replyAction + "." + $0, title: $0, options: [.authenticationRequired])
         }
         return UNNotificationCategory(identifier: Self.questionCategory + "." + Self.digest(of: choices.joined(separator: "\u{1F}")),
-                                      actions: buttons + [Self.replyField], intentIdentifiers: [])
+                                      actions: buttons + [Self.replyField], intentIdentifiers: [], options: [.customDismissAction])
     }
 
     /// The Reply field on a question's notification, the same with choices beside it or without:
@@ -631,5 +663,23 @@ nonisolated extension PushNote {
     /// `core.digest` is the same.
     static func digest(of command: String) -> String {
         PushSeal.hex(SHA256.hash(data: Data(command.utf8)).prefix(8))
+    }
+}
+
+/// Notifications the person cleared on another of their devices, taken out of this one's
+/// Notification Center: by the note id each carries (`PushNote.noteKey`), so a banner Redde posted
+/// itself, or one from before notes had ids, is never touched. Used by the app (`NoteClears`) and
+/// by the notification extension, for a clear an older relay sent as an alert.
+nonisolated enum ClearedNotes {
+    static func remove(_ ids: [String], done: (@Sendable (Int) -> Void)? = nil) {
+        let wanted = Set(ids.filter(PushNote.isNoteID))
+        guard !wanted.isEmpty else { done?(0); return }
+        UNUserNotificationCenter.current().getDeliveredNotifications { delivered in
+            let gone = delivered.filter { note in
+                (note.request.content.userInfo[PushNote.noteKey] as? String).map(wanted.contains) ?? false
+            }.map(\.request.identifier)
+            if !gone.isEmpty { UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: gone) }
+            done?(gone.count)
+        }
     }
 }

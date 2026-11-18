@@ -39,7 +39,9 @@ extension UNUserNotificationCenter: NotificationCentering {
                                             session: info[PushNote.sessionKey] as? String,
                                             conversation: info[Notifier.conversationKey] as? String,
                                             room: info[PushNote.roomKey] as? String,
-                                            category: $0.request.content.categoryIdentifier)
+                                            category: $0.request.content.categoryIdentifier,
+                                            note: info[PushNote.noteKey] as? String,
+                                            server: info[PushNote.serverKey] as? String)
         }
     }
     func removeDelivered(ids: [String]) { removeDeliveredNotifications(withIdentifiers: ids) }
@@ -54,11 +56,16 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     /// Foreground check, injectable: in front, the UI already shows everything.
     private let isAppActive: () -> Bool
 
+    /// Where notes gone here are told, for the person's other devices (`NoteClears`).
+    private let clears: NoteClears
+
     init(center: any NotificationCentering = UNUserNotificationCenter.current(),
          settings: Settings = .shared,
+         clears: NoteClears? = nil,
          isAppActive: @escaping () -> Bool = { UIApplication.shared.applicationState == .active }) {
         self.center = center
         self.settings = settings
+        self.clears = clears ?? .shared
         self.isAppActive = isAppActive
     }
 
@@ -74,6 +81,9 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         var conversation: String?
         var room: String?
         var category: String = ""
+        /// The pushed note's own id (`PushNote.m`), and the server it came from.
+        var note: String?
+        var server: String?
 
         /// One of the app's own banners for a turn (`notify`): a reply, a failure, an approval or
         /// a question. Without a conversation they are the open one's (`Notifier.conversation`).
@@ -134,25 +144,30 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         // for it, and can't read its saved passwords while the phone is locked.
         let pushedFollowUp = UNTextInputNotificationAction(identifier: Self.followUpAction, title: String(localized: "Reply", comment: "Notification button: answers by typing"), options: [.authenticationRequired],
                                                            textInputButtonTitle: String(localized: "Send", comment: "Notification text field's button"), textInputPlaceholder: String(localized: "Message", comment: "Placeholder of a notification's reply field"))
-        let pushed = UNNotificationCategory(identifier: PushNote.repliedCategory, actions: [pushedFollowUp], intentIdentifiers: [])
+        // Every category a pushed note may have tells the app when it is swiped away, so it is
+        // cleared on the person's other devices too (`NoteClears`); a note with no buttons gets
+        // one of its own for that (`PushNote.noteCategory`).
+        let swiped: UNNotificationCategoryOptions = [.customDismissAction]
+        let pushedNote = UNNotificationCategory(identifier: PushNote.noteCategory, actions: [], intentIdentifiers: [], options: swiped)
+        let pushed = UNNotificationCategory(identifier: PushNote.repliedCategory, actions: [pushedFollowUp], intentIdentifiers: [], options: swiped)
         // An approval a paired Hermes announced. Deny waits for an unlock too: either answer may
         // have to sign in to the Dashboard first.
         let pushedApprove = UNNotificationAction(identifier: Self.approveAction, title: String(localized: "Approve", comment: "Notification button: approves the command once"), options: [.authenticationRequired])
         let pushedDeny = UNNotificationAction(identifier: Self.denyAction, title: String(localized: "Deny", comment: "Notification button: turns the command down"), options: [.destructive, .authenticationRequired])
-        let pushedApproval = UNNotificationCategory(identifier: PushNote.approvalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [])
+        let pushedApproval = UNNotificationCategory(identifier: PushNote.approvalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [], options: swiped)
         // A question a paired Hermes announced, answered in words. One with choices arrives
         // under a category of its own that the notification extension registers on the spot
         // (`PushNote.choiceCategory`); this one is what it falls back on.
-        let pushedQuestion = UNNotificationCategory(identifier: PushNote.questionCategory, actions: [PushNote.replyField], intentIdentifiers: [])
+        let pushedQuestion = UNNotificationCategory(identifier: PushNote.questionCategory, actions: [PushNote.replyField], intentIdentifiers: [], options: swiped)
         // A group chat's, from a paired Hermes: Reply to the room, a bot's command, a turn to retry.
-        let groupReplied = UNNotificationCategory(identifier: PushNote.groupRepliedCategory, actions: [pushedFollowUp], intentIdentifiers: [])
-        let groupApproval = UNNotificationCategory(identifier: PushNote.groupApprovalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [])
+        let groupReplied = UNNotificationCategory(identifier: PushNote.groupRepliedCategory, actions: [pushedFollowUp], intentIdentifiers: [], options: swiped)
+        let groupApproval = UNNotificationCategory(identifier: PushNote.groupApprovalCategory, actions: [pushedApprove, pushedDeny], intentIdentifiers: [], options: swiped)
         let retry = UNNotificationAction(identifier: PushNote.retryAction, title: String(localized: "Retry", comment: "Notification button: asks the agent for the reply again"), options: [.authenticationRequired])
-        let groupRetry = UNNotificationCategory(identifier: PushNote.groupRetryCategory, actions: [retry], intentIdentifiers: [])
+        let groupRetry = UNNotificationCategory(identifier: PushNote.groupRetryCategory, actions: [retry], intentIdentifiers: [], options: swiped)
         // A Leave-By Alert: the way there in Apple Maps (`LeaveBy`).
         let maps = UNNotificationAction(identifier: LeaveBy.mapsAction, title: String(localized: "Open in Maps"), options: [.foreground])
-        let leave = UNNotificationCategory(identifier: LeaveBy.mapsCategory, actions: [maps], intentIdentifiers: [])
-        fixedCategories = [category, clarifyText, replied, pushed, pushedApproval, pushedQuestion, groupReplied, groupApproval, groupRetry, leave]
+        let leave = UNNotificationCategory(identifier: LeaveBy.mapsCategory, actions: [maps], intentIdentifiers: [], options: swiped)
+        fixedCategories = [category, clarifyText, replied, pushed, pushedApproval, pushedQuestion, groupReplied, groupApproval, groupRetry, leave, pushedNote]
         center.setNotificationCategories(fixedCategories)
     }
 
@@ -229,8 +244,17 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let leaveTitle = info[LeaveTime.eventTitleKey] as? String
         let leaveAt = (info[LeaveBy.latitudeKey] as? Double).flatMap { lat in (info[LeaveBy.longitudeKey] as? Double).map { (lat, $0) } }
         let leaveMode = info[LeaveBy.modeKey] as? String
+        let noteID = info[PushNote.noteKey] as? String
         nonisolated(unsafe) let handled = completionHandler   // iOS's own; only ever called below
         Task { @MainActor in
+            // Tapped, answered or swiped away here: gone on the person's other devices too.
+            if let noteID { self.clears.cleared([noteID], server: server) }
+            // Swiped away is all a swipe says: nothing to open or answer.
+            if action == UNNotificationDismissActionIdentifier {
+                await self.clears.flushSoon()
+                handled()
+                return
+            }
             // The server a pushed chat is on, for its tap to open it there (said for every tap
             // about a session, so one from before doesn't linger).
             if sessionID != nil { LaunchRouter.shared.requestServer(server) }
@@ -791,6 +815,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                 return (banner.conversation ?? open) == conversation
             }
             if !about.isEmpty { self.center.removeDelivered(ids: about.map(\.id)) }
+            // Its chat opened here: those notes are seen, on the other devices too.
+            for banner in about { if let note = banner.note { self.clears.cleared([note], server: banner.server) } }
             let gone = Set(about.map(\.id))
             let left = Set(delivered.filter { !gone.contains($0.id) }.map(\.category))
             let stale = self.adHocCategories.keys.filter { !left.contains($0) }
@@ -799,6 +825,130 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                 self.center.setNotificationCategories(self.fixedCategories.union(self.adHocCategories.values))
             }
         }
+    }
+}
+
+/// Notifications in sync on the person's devices (asked 2026-11-17: the iPad still showed an
+/// evening wrap-up already cleared on the phone). A pushed note goes to each device on its own,
+/// so clearing it on one left the others. Now each carries one id everywhere (`PushNote.m`, from
+/// Redde's plugin 1.33), and a note tapped, answered, swiped away or seen in its chat here is told
+/// to the plugin (`/redde-push cleared`), which sends the other devices a silent push that takes
+/// it out of their Notification Center (`ClearedNotes`). A device that missed that push (Redde
+/// force-quit, or offline) asks what was cleared when it comes forward (`cleared since`).
+/// Notes from a server that isn't the open one wait here until it is.
+@MainActor
+final class NoteClears {
+    static let shared = NoteClears()
+
+    private let defaults: UserDefaults
+    /// Says a plugin command to the open server's plugin, Dashboard or Hermes API.
+    private let command: @MainActor (String) async throws -> String
+    private let settings: Settings
+    /// This device's own ids, as the plugin knows them, so it isn't told of its own clears.
+    private let ownIDs: @MainActor () -> [String]
+    private var flushing: Task<Void, Never>?
+
+    private static let pendingKey = "noteClears.pending"
+    private static let sinceKey = "noteClears.since"
+    /// At most so many of a server's waiting clears are kept, and said in one command.
+    static let most = 64
+
+    init(defaults: UserDefaults = .standard, settings: Settings = .shared,
+         command: (@MainActor (String) async throws -> String)? = nil,
+         ownIDs: (@MainActor () -> [String])? = nil) {
+        self.defaults = defaults
+        self.settings = settings
+        self.command = command ?? { arguments in try await PushService.command(over: settings)(arguments) }
+        self.ownIDs = ownIDs ?? { PushService.shared.pairings.filter(\.isPaired).map(\.id) }
+    }
+
+    /// The servers' clears not yet said, by server (`Settings.activeServerID`).
+    var pending: [String: [String]] {
+        get { (defaults.dictionary(forKey: Self.pendingKey) as? [String: [String]]) ?? [:] }
+        set { defaults.set(newValue, forKey: Self.pendingKey) }
+    }
+
+    private var openServer: String { settings.activeServerID.uuidString }
+
+    /// Notes gone here: said to their server's plugin shortly (several swiped together go as one).
+    func cleared(_ ids: [String], server: String?) {
+        let ids = ids.filter(PushNote.isNoteID)
+        guard !ids.isEmpty else { return }
+        let key = server.flatMap { $0.isEmpty ? nil : $0 } ?? openServer
+        var all = pending
+        all[key] = Array(((all[key] ?? []) + ids).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }.suffix(Self.most))
+        pending = all
+        flushing?.cancel()
+        flushing = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            await self?.flush()
+        }
+    }
+
+    /// Says what waits now: for a swipe, which iOS gives the app only a moment for.
+    func flushSoon() async {
+        flushing?.cancel()
+        flushing = nil
+        await flush()
+    }
+
+    /// Says the open server's waiting clears to its plugin. Kept for later when it can't be
+    /// reached; dropped when its plugin is too old to know the command (it would never).
+    func flush() async {
+        guard settings.transport.isHermes, let ids = pending[openServer], !ids.isEmpty else { return }
+        let me = ownIDs()
+        do {
+            let reply = try await command("cleared \(me.isEmpty ? "-" : me.joined(separator: ",")) \(ids.joined(separator: ","))")
+            // Said, or a plugin that doesn't know the command: either way not said again.
+            _ = reply
+            var all = pending
+            all[openServer] = (all[openServer] ?? []).filter { !ids.contains($0) }
+            if all[openServer]?.isEmpty == true { all[openServer] = nil }
+            pending = all
+        } catch PushError.noPlugin {
+            var all = pending
+            all[openServer] = nil
+            pending = all
+        } catch {
+            // Not reached now: said when Redde next comes forward.
+        }
+    }
+
+    /// Back in front: what waits is said, and what was cleared elsewhere meanwhile is cleared here.
+    func cameForward() async {
+        await flush()
+        await catchUp()
+    }
+
+    /// Asks the open server's plugin which notes were cleared elsewhere since last asked, and
+    /// takes them out of Notification Center here.
+    func catchUp() async {
+        guard settings.transport.isHermes else { return }
+        let key = "\(Self.sinceKey).\(openServer)"
+        // The first time, the last two days (all the plugin keeps).
+        let since = defaults.object(forKey: key) as? Int ?? 0
+        guard let reply = try? await command("cleared since \(since)") else { return }
+        guard let found = Self.clearedSince(reply) else { return }
+        defaults.set(found.now - 5, forKey: key)   // a little back, for a clear said as this was asked
+        if !found.ids.isEmpty { ClearedNotes.remove(found.ids) }
+    }
+
+    /// The plugin's answer to `cleared since`: its clock now, and the notes cleared since.
+    /// Nil for any other answer (a plugin older than 1.33).
+    nonisolated static func clearedSince(_ reply: String) -> (now: Int, ids: [String])? {
+        let words = reply.split(separator: " ").map(String.init)
+        guard words.count == 4, words[0] == "redde-push", words[1] == "cleared-since", let now = Int(words[2]) else { return nil }
+        return (now, words[3] == "-" ? [] : words[3].split(separator: ",").map(String.init).filter(PushNote.isNoteID))
+    }
+
+    /// A silent push from the plugin: the notes cleared on another device, cleared here.
+    /// True when it was one.
+    nonisolated static func take(remote userInfo: [AnyHashable: Any], done: @escaping @Sendable (Bool) -> Void) {
+        guard let payload = userInfo[PushNote.sealedKey] as? String,
+              let (note, _) = PushSeal.note(from: payload, pairings: PushVault.load()),
+              note.kind == .clear else { done(false); return }
+        ClearedNotes.remove(note.clearedIDs) { _ in done(true) }
     }
 }
 
@@ -830,6 +980,14 @@ final class PushDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in PushService.shared.received(token: deviceToken) }
     }
 
+    /// A silent push: notes the person cleared on another device (`NoteClears`). The completion
+    /// form, called once: the async one is called off the main thread.
+    nonisolated func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+                                 fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        nonisolated(unsafe) let finish = completionHandler
+        NoteClears.take(remote: userInfo) { cleared in finish(cleared ? .newData : .noData) }
+    }
+
     /// Keys stored before 2.2 are moved to being readable while the iPhone is locked
     /// (`Keychain.moveToAfterFirstUnlock`) as it is unlocked, if the car started Redde while it
     /// was locked and launch couldn't.
@@ -854,6 +1012,11 @@ final class MacPushDelegate: NSObject, NSApplicationDelegate {
 
     nonisolated func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         Task { @MainActor in PushService.shared.received(token: deviceToken) }
+    }
+
+    /// A silent push, while Redde runs: notes cleared on another device (`NoteClears`).
+    nonisolated func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
+        NoteClears.take(remote: userInfo) { _ in }
     }
 
     nonisolated func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {

@@ -326,6 +326,9 @@ async function pushToDevice(request, env, id) {
   if (!body || typeof body.payload !== "string" || !BLOB.test(body.payload)) return json(400, { error: "bad payload" });
   if (body.payload.length > MAX_PAYLOAD) return json(413, { error: "too large" });
   const call = body.kind === "call";
+  // A note cleared on another of the person's devices (Redde's plugin 1.33): a silent push that
+  // wakes the app to take it out of Notification Center; nothing is shown.
+  const clear = body.kind === "clear";
   if (call && !device.voip) return json(409, { error: "no voip token" });
   const jwt = await apnsJWT(env);
   if (!jwt) {
@@ -339,13 +342,15 @@ async function pushToDevice(request, env, id) {
     headers: {
       authorization: `bearer ${jwt}`,
       "apns-topic": call ? `${device.topic || env.APNS_TOPIC}.voip` : device.topic || env.APNS_TOPIC,
-      "apns-push-type": call ? "voip" : "alert",
-      "apns-priority": "10",
+      "apns-push-type": call ? "voip" : clear ? "background" : "alert",
+      // (Apple takes a background push only at the lower priority.)
+      "apns-priority": clear ? "5" : "10",
       "apns-expiration": String(Math.floor(Date.now() / 1000) + ttl),
-      ...(!call && typeof body.collapse === "string" && ID.test(body.collapse) ? { "apns-collapse-id": body.collapse } : {}),
+      ...(!call && !clear && typeof body.collapse === "string" && ID.test(body.collapse) ? { "apns-collapse-id": body.collapse } : {}),
     },
-    // A call is the blob alone: PushKit hands it to the app, which rings.
-    body: JSON.stringify(call ? { e: body.payload } : sealedNotification(body.payload)),
+    // A call is the blob alone: PushKit hands it to the app, which rings. A clear is the blob
+    // and the flag that wakes the app, with nothing to show.
+    body: JSON.stringify(call ? { e: body.payload } : clear ? { aps: { "content-available": 1 }, e: body.payload } : sealedNotification(body.payload)),
   });
   if (res.ok) return json(202, { apns: res.status });
   const reason = (await res.json().catch(() => ({})))?.reason || "";

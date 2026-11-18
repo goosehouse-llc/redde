@@ -28,6 +28,7 @@ import logging
 import os
 import queue
 import re
+import secrets
 import socket
 import threading
 import time
@@ -472,7 +473,7 @@ class Store:
 
     #: Notes that go to the devices they name whatever is in use: the widget's data, a wake for
     #: Leave-By's re-check, a pairing's first note, a test, a call.
-    EVERYWHERE = frozenset({"widget", "leave", "paired", "test", "call"})
+    EVERYWHERE = frozenset({"widget", "leave", "paired", "test", "call", "clear"})
     #: The longest a device is taken to be in use without saying so again.
     HERE_AT_MOST = 600
 
@@ -511,6 +512,36 @@ class Store:
         if not here:
             return devices
         return [d for d in devices if d.get("id") in here]
+
+    # ---- Notifications gone on one device, gone on the others (1.33) ----
+
+    #: How long a note's being cleared is kept, for a device that comes back to ask
+    #: (`cleared_since`), and how many are kept at most.
+    CLEARED_FOR = 2 * 24 * 3600
+    CLEARED_AT_MOST = 500
+
+    def add_cleared(self, note_ids: list[str], now: float | None = None) -> list[str]:
+        """These notes were cleared on a device (tapped, swiped away, answered, their chat
+        opened). Returns those not already known to be."""
+        now = time.time() if now is None else now
+        with self._lock:
+            kept = {i: float(at) for i, at in (self._read("cleared.json").get("notes") or {}).items()
+                    if float(at) > now - self.CLEARED_FOR}
+            new = [i for i in dict.fromkeys(note_ids) if i not in kept]
+            for note_id in new:
+                kept[note_id] = now
+            if len(kept) > self.CLEARED_AT_MOST:
+                kept = dict(sorted(kept.items(), key=lambda item: item[1])[-self.CLEARED_AT_MOST:])
+            self._write("cleared.json", {"notes": kept})
+            return new
+
+    def cleared_since(self, since: float, now: float | None = None) -> list[str]:
+        """The notes cleared on some device after `since`, oldest first."""
+        now = time.time() if now is None else now
+        with self._lock:
+            notes = (self._read("cleared.json").get("notes") or {}).items()
+            return [i for i, at in sorted(notes, key=lambda item: float(item[1]))
+                    if float(at) > since and float(at) > now - self.CLEARED_FOR]
 
     def muted(self, device_id: str, key: str, now: float | None = None) -> bool:
         """Whether this phone has this chat muted now."""
@@ -565,7 +596,17 @@ PASSWORD = "su" + "do"
 #: How long Apple keeps trying a phone that is off. What is on the widget is good for longer than
 #: a notification about a turn: half a day.
 TTL = {"approval": 600, "question": 600, "secret": 300, PASSWORD: 180, "widget": 43200, "group_wait": 600, "routine": 21600,
-       "ideas": 43200, "leave": 900}
+       "ideas": 43200, "leave": 900, "clear": 21600}
+
+#: A note's own id (`m`): the same on every device it goes to, so clearing it on one clears it
+#: on the others (`clear_note`). Twelve hex digits.
+NOTE_ID = re.compile(r"^[0-9a-f]{12}$")
+
+
+def clear_note(note_ids: list[str]) -> dict:
+    """What tells a device that these notes were cleared on another: it takes them out of its
+    Notification Center. The relay sends it to Apple as a silent push (1.33 and later)."""
+    return {"v": 1, "k": "clear", "at": int(time.time()), "b": ",".join(note_ids)}
 
 
 def note(kind: str, session: str = "", body: str = "", title: str = "", detail: str = "", answerable: bool = False,
@@ -835,9 +876,14 @@ def push(device: dict, made: dict, ttl: int = 3600, call: bool = False) -> None:
     """Sends one note to one phone. Raises Gone when the phone is no longer registered. `call`:
     rings it instead (`calls.py`), which the relay sends to Apple as a VoIP push; raises NoCalls
     when it has nowhere to send that."""
+    # One id for the note wherever it goes: the first device's push gives it, the rest reuse it.
+    if not call and made.get("k") != "clear":
+        made.setdefault("m", secrets.token_hex(6))
     body = {"payload": sealed(device, made), "ttl": ttl}
     if call:
         body["kind"] = "call"
+    elif made.get("k") == "clear":
+        body["kind"] = "clear"   # silent: nothing to show, only to take away
     else:
         body["collapse"] = collapse_id(device, made)
     try:

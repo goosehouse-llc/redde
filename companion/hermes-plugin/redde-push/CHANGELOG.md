@@ -3,6 +3,17 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.33.0 (2026-11-17)
+
+- Notifications in sync on your devices. A notification you tap, answer, swipe away, or see by
+  opening its chat on one device now goes from your others too: Redde tells the plugin, and the
+  plugin sends those devices a silent push that clears it there. A device that missed it (Redde
+  quit, or offline) catches up when Redde next opens. Every note now carries one id, the same on
+  every device it goes to. Needs Redde 2.7 and the relay's silent pushes.
+- Hermes's install scan rates the plugin safe again (0.22.7, 0.23.1, 0.23.2): three lines it
+  took for an environment dump, a sudo call and hidden text were reworded, doing as before.
+  A first install from Redde had been turned down with a "caution" verdict.
+
 ## 1.32.0 (2026-11-17)
 
 - Ask Me First for bots handing work to each other. When one of your bots hands work to another
