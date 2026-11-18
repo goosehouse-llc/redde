@@ -1038,7 +1038,7 @@ _ASKS_STOCK = re.compile(
     r"\bstocks?\b|\bshare price\b|\bshares? (?:of|in)\b|\b(?:nasdaq|nyse|dow jones|s&p ?500|ftse|nikkei|dax)\b|\bticker\b|\bmarket cap\b"
     r"|\btrading at\b|\bhow(?:'s|’s| is| did| are)\b[^.?!]*\b(?:the market|the markets|my portfolio)\b|\b(?:beat|missed?) earnings\b"
     # A ticker in capitals ("$NVDA"), not a shell's variable ("echo $HOME").
-    r"|\bearnings (?:report|call|date)\b|(?-i:\$(?!(?:HOME|PATH|USER|PWD|SHELL|TERM|LANG|TMP|IFS|UID|HOST|VAR|ENV|KEY|FOO|BAR)\b)[A-Z]{1,5}\b)",
+    r"|\bearnings (?:report|call|date)\b|(?-i:\$(?!(?:HOME|PATH|USER|PWD|SHELL|TERM|LANG|TMP|IFS|UID|HOST|VAR|KEY|FOO|BAR|ENV)\b)[A-Z]{1,5}\b)",
     re.IGNORECASE)
 #: From 1.14.5 (2026-11-02: "How is nvda today" got a table): a ticker or a company asked about
 #: by itself. Only tickers and names that aren't everyday words ("Apple", "Meta" and "Target" need

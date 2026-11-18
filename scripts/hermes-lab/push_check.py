@@ -270,14 +270,22 @@ async def dashboard(phone):
 
 
 def scan():
-    """Hermes scans a plugin before installing it, and refuses one from GitHub that it finds
-    anything in: an address written as numbers, a path that climbs out of the folder."""
+    """Hermes scans a plugin before installing it, and refuses one from GitHub with a caution or
+    dangerous verdict unless forced (a first install from the app isn't). 0.22.3 and later scan
+    with tools/plugin_guard; older ones with the skills scanner, where any finding counts.
+    Returns (verdict, blocking findings)."""
     try:
-        from tools.skills_guard import scan_skill
-    except Exception as error:
-        return f"no scanner in this Hermes ({error})", []
-    result = scan_skill(PLUGIN, source="community")
-    return result.verdict, [f"{f.category} {f.file}:{f.line}" for f in result.findings]
+        from tools.plugin_guard import scan_plugin
+        result = scan_plugin(PLUGIN)
+        blocking = [] if result.verdict == "safe" else result.findings
+    except ImportError:
+        try:
+            from tools.skills_guard import scan_skill
+        except Exception as error:
+            return f"no scanner in this Hermes ({error})", []
+        result = scan_skill(PLUGIN, source="community")
+        blocking = result.findings
+    return result.verdict, [f"{f.severity} {f.category} {f.file}:{f.line}" for f in blocking]
 
 
 def main():

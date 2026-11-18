@@ -747,7 +747,7 @@ def log_entry(state: State, by: str, action: str, account: str, ids: list[str], 
 
 # ---- text: the sender's words as data -----------------------------------------------------------
 
-_INVISIBLE = re.compile("[​-‏‪-‮⁠-⁤⁦-⁯﻿­]")
+_INVISIBLE = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u206f\ufeff\xad]")
 _TAGS = re.compile(r"<(script|style|head)\b.*?</\1>|<!--.*?-->", re.S | re.I)
 _BREAKS = re.compile(r"<\s*(br|/p|/div|/li|/tr|/h[1-6])\b[^>]*>", re.I)
 _ANCHOR = re.compile(r"<a\b[^>]*href=[\"']?([^\"' >]+)[^>]*>(.*?)</a>", re.S | re.I)
