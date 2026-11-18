@@ -24,7 +24,7 @@ final class NewConversationEntryUITests: XCTestCase {
             let app = XCUIApplication()
             app.launchArguments = ["-echo.clearDrafts", "-echo.forget", "About kanban card"] + XCUIApplication.straightToChat
             app.launch()
-            _ = app.textFields.firstMatch.waitForExistence(timeout: 10)
+            _ = app.composerField.waitForExistence(timeout: 10)
             sleep(1)
             app.terminate()
         }
@@ -42,7 +42,7 @@ final class NewConversationEntryUITests: XCTestCase {
 
     /// What the message field holds, once it holds `fragment`.
     private func composerHolds(_ fragment: String, in app: XCUIApplication) -> Bool {
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         guard field.waitForExistence(timeout: 20) else { return false }
         let deadline = Date().addingTimeInterval(10)
         while Date() < deadline {
@@ -103,7 +103,7 @@ final class NewConversationEntryUITests: XCTestCase {
         XCTAssertTrue(back.waitForExistence(timeout: 10), "No way back to the conversation it left")
         back.tap()
         XCTAssertTrue(question(app).waitForExistence(timeout: 10), "The demo conversation didn't open")
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         XCTAssertTrue(field.waitForExistence(timeout: 10), "No message field")
         XCTAssertFalse((field.value as? String)?.contains("Shared from Safari") == true, "The share stayed behind in the old conversation too")
     }

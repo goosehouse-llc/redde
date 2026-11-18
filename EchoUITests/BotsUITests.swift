@@ -32,7 +32,7 @@ final class BotsUITests: XCTestCase {
         let close = app.otherElements["Close conversations"].firstMatch
         if close.exists { close.tap() } else { app.buttons["Close conversations"].firstMatch.tap() }
 
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap()
         field.typeText("Ask @")
@@ -354,7 +354,7 @@ final class BotsUITests: XCTestCase {
             let app = XCUIApplication()
             app.launchArguments = ["-echo.clearDrafts", "-echo.forget", "Can you tighten"] + XCUIApplication.straightToChat
             app.launch()
-            _ = app.textFields.firstMatch.waitForExistence(timeout: 10)
+            _ = app.composerField.waitForExistence(timeout: 10)
             sleep(1)
             app.terminate()
         }

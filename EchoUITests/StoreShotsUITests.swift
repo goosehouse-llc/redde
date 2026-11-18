@@ -40,7 +40,7 @@ final class StoreShotsUITests: XCTestCase {
             + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "demo", "-acpAgent", "", "-acpFolder", "", "-acpAllAgents", "NO",
                "-theme", "claudeCode", "-appearance", "dark"]
         app.launch()
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         XCTAssertTrue(composer.waitForExistence(timeout: 30), "No message field")
         app.buttons["New conversation"].firstMatch.tap()
         composer.tap()

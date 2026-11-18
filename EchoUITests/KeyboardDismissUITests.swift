@@ -15,7 +15,7 @@ final class KeyboardDismissUITests: XCTestCase {
     }
 
     private func keyboardUp(_ app: XCUIApplication) throws {
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         XCTAssertTrue(field.waitForExistence(timeout: 20), "No message field")
         for _ in 0 ..< 4 where !app.keyboards.firstMatch.waitForExistence(timeout: 2) { field.tap() }
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "No keyboard came up (is a hardware keyboard attached?)")
@@ -52,7 +52,7 @@ final class KeyboardDismissUITests: XCTestCase {
     func testSwipingTheMessageBoxDownPutsTheKeyboardAway() throws {
         let app = launch(["-echo.demo"])
         try keyboardUp(app)
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
             .press(forDuration: 0.05, thenDragTo: field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 3)), withVelocity: .fast, thenHoldForDuration: 0)
         keep("message box swiped down")

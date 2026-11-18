@@ -8,6 +8,14 @@ extension XCUIApplication {
     static let straightToChat = ["-setupDone", "YES", "-openToVoiceScreen", "NO", "-listenOnOpen", "NO", "-requireBiometrics", "NO",
                                  "-whatsNewSeenVersion", "999"]
 
+    /// The message field: a text view on the iPhone and iPad (`ComposerField`), a text field on
+    /// the Mac and with `-echo.swiftUIField`.
+    var composerField: XCUIElement {
+        descendants(matching: .any).matching(NSPredicate(format: "identifier == 'composer' AND (elementType == %d OR elementType == %d)",
+                                                         XCUIElement.ElementType.textView.rawValue,
+                                                         XCUIElement.ElementType.textField.rawValue)).firstMatch
+    }
+
     /// The first text on screen that contains `fragment`.
     func text(containing fragment: String) -> XCUIElement {
         staticTexts.containing(NSPredicate(format: "label CONTAINS %@", fragment)).firstMatch

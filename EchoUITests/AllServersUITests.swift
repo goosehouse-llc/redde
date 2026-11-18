@@ -10,7 +10,7 @@ final class AllServersUITests: XCTestCase {
         app.launchArguments = ["-echo.demoProjects", "-echo.demoAllServers", "-echo.clearDrafts", "-displayName", "Redde"]
             + XCUIApplication.straightToChat
         app.launch()
-        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20))
         if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
 
         let list = app.collectionViews.firstMatch
@@ -37,7 +37,7 @@ final class AllServersUITests: XCTestCase {
         app.launchArguments = ["-echo.demoAwayBots", "-transport", "acp", "-acpURL", "demo", "-acpAgent", "", "-acpAllAgents", "NO",
                                "-sessions.allServers", "YES", "-echo.clearDrafts"] + XCUIApplication.straightToChat
         app.launch()
-        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20))
         if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
         let scout = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Scout'")).firstMatch
         XCTAssertTrue(scout.waitForExistence(timeout: 10), "The Hermes server's bots aren't in the list on the bridge")
@@ -65,7 +65,7 @@ final class AllServersUITests: XCTestCase {
         app.launchArguments = ["-echo.demoAwayBots", "-transport", "acp", "-acpURL", "demo", "-acpAgent", "", "-acpAllAgents", "NO",
                                "-sessions.allServers", "NO", "-echo.clearDrafts"] + XCUIApplication.straightToChat
         app.launch()
-        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20))
         if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
         func holdNewChat() {
             let button = app.buttons.matching(NSPredicate(format: "label == 'New conversation'")).allElementsBoundByIndex.first { $0.isHittable }
@@ -80,7 +80,7 @@ final class AllServersUITests: XCTestCase {
         shot.lifetime = .keepAlways
         add(shot)
         home.tap()
-        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 10))
         // On Home now: held again, New Chat offers the bridge and not Home.
         if app.windows.firstMatch.frame.width < 600 { app.buttons["Conversations"].firstMatch.tap() }
         holdNewChat()
@@ -89,6 +89,6 @@ final class AllServersUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Chat with Home"].exists, "The app didn't move to Home")
         // Back on the bridge, so the next test's launch finds it as it was.
         bridge.tap()
-        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 10))
     }
 }

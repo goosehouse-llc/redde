@@ -139,7 +139,8 @@ final class ComposerPaste {
     /// The composer's field has just taken the focus: teach the text view behind it.
     func teachFocusedField() {
         #if os(iOS)
-        guard deliver != nil, let field = UIResponder.currentFirstResponder, field is UITextView || field is UITextField else { return }
+        guard deliver != nil, let field = UIResponder.currentFirstResponder, field is UITextView || field is UITextField,
+              !(field is FieldTextView) else { return }   // ComposerField pastes this way itself
         PicturePasting.teach(field)
         #endif
     }

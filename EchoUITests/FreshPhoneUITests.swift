@@ -28,7 +28,7 @@ final class FreshPhoneUITests: XCTestCase {
         let pad = app.windows.firstMatch.frame.width > 600
 
         // A chat with the demo agent: its tour asks before a command, then finishes.
-        let composer = app.textFields["composer"].exists ? app.textFields["composer"] : app.textViews["composer"]
+        let composer = app.composerField
         XCTAssertTrue(composer.waitForExistence(timeout: 30), "\(look): no chat to type in")
         keep("\(look) 1 chat")
         composer.tap()

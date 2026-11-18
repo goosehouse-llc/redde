@@ -56,7 +56,7 @@ final class MoreCardsUITests: XCTestCase {
         app.buttons["More for Send the weekly report"].firstMatch.tap()
         XCTAssertTrue(app.buttons["Change Time…"].waitForExistence(timeout: 5), "The menu has no Change Time…")
         app.buttons["Other Change…"].firstMatch.tap()
-        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 5), "Other Change… has no field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 5), "Other Change… has no field")
         shot(app, "reminder-change")
     }
 

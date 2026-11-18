@@ -589,7 +589,12 @@ struct ComposerView: View {
         #if os(macOS)
         TextField(prompt, text: $draft, selection: $selection, axis: .vertical)
         #else
-        TextField(prompt, text: $draft, axis: .vertical)
+        if ComposerField.swiftUIFieldForComparison {
+            TextField(prompt, text: $draft, axis: .vertical)
+        } else {
+            // A UITextView that tells SwiftUI its height only when its lines change (ComposerField).
+            ComposerField(text: $draft, placeholder: prompt, focused: $focused, returnSends: settings.returnSends, accent: theme.accent)
+        }
         #endif
     }
 
@@ -647,7 +652,11 @@ struct ComposerView: View {
                         #endif
                     }
                 if draftIsLong {
-                    Button("Open the editor", systemImage: "arrow.up.left.and.arrow.down.right") { showEditor = true }
+                    Button("Open the editor", systemImage: "arrow.up.left.and.arrow.down.right") {
+                        // The field lets the keyboard go first: the editor page takes it.
+                        focused = false
+                        showEditor = true
+                    }
                         .chatFont(.footnote, weight: .semibold)
                         .foregroundStyle(.secondary)
                         .frame(width: 30, height: 38)

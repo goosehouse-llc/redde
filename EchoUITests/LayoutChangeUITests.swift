@@ -85,13 +85,13 @@ final class LayoutChangeUITests: XCTestCase {
     /// Half a message typed: it is still there, with the keyboard up, to go on typing.
     func testTypingCarriesOn() {
         let app = launch(["-echo.demo", "-echo.demoShort"])
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         XCTAssertTrue(field.waitForExistence(timeout: 20), "No message field")
         field.tap()
         field.typeText("half a thought")
         for side in ["the other layout", "back"] {
             flip()
-            let now = app.textFields.firstMatch
+            let now = app.composerField
             XCTAssertEqual(now.value as? String, "half a thought", "In \(side), the draft went")
             XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3), "In \(side), the keyboard went")
             now.typeText(" more")
@@ -122,7 +122,7 @@ final class LayoutChangeUITests: XCTestCase {
         let app = launch(["-echo.demoProjects", "-echo.demoBots", "-echo.openGroup", "-displayName", "Redde"])
         // `-echo.openGroup` opens the group chat from the conversation list, which the wide layout
         // has on screen: there first.
-        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 20), "Redde didn't open")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "Redde didn't open")
         flip()
         func field() -> XCUIElement { app.textFields["group-composer"] }
         XCTAssertTrue(field().waitForExistence(timeout: 20), "No message field in the group chat")

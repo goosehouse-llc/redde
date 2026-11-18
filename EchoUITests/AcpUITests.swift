@@ -72,7 +72,7 @@ final class AcpUITests: XCTestCase {
         XCTAssertTrue(app.text(containing: "Connected to Demo Agent").waitForExistence(timeout: 20), "The demo agent didn't connect")
         keep("Demo agent in Setup")
         app.navigationBars["Set up Redde"].buttons["Done"].tap()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "Setup didn't finish into a chat")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "Setup didn't finish into a chat")
         let new = app.buttons["New conversation"].firstMatch
         if new.waitForExistence(timeout: 5) { new.tap() }
 
@@ -128,7 +128,7 @@ final class AcpUITests: XCTestCase {
                       "The connection test didn't reach the agent")
         keep("ACP connection tested")
         app.navigationBars["Set up Redde"].buttons["Done"].tap()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "Setup didn't finish into a chat")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "Setup didn't finish into a chat")
     }
 
     func testAChatWithTheAgent() throws {
@@ -140,7 +140,7 @@ final class AcpUITests: XCTestCase {
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = "labtoken"
         app.launch()
 
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
         // A new chat, whatever the simulator had open.
         let new = app.buttons["New conversation"].firstMatch
@@ -197,7 +197,7 @@ final class AcpUITests: XCTestCase {
             + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "No message field")
         let new = app.buttons["New conversation"].firstMatch
         if new.waitForExistence(timeout: 5) { new.tap() }
         send("Create notes.txt with three lines: one, two, three. Then edit it so the middle line says TWO. Use the Write and Edit tools, no shell. Reply in one short sentence.", in: app)
@@ -245,7 +245,7 @@ final class AcpUITests: XCTestCase {
                "-acpPicks.ws://127.0.0.1:8767/acp/claude", "{ mode = plan; }"]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "No message field")
         let new = app.buttons["New conversation"].firstMatch
         if new.waitForExistence(timeout: 5) { new.tap() }
         send("Plan how you'd add a fourth line 'four' to notes.txt. Keep the plan to three short bullet points.", in: app)
@@ -259,7 +259,7 @@ final class AcpUITests: XCTestCase {
         let other = app.textViews["Something else…"].exists ? app.textViews["Something else…"] : app.textFields["Something else…"]
         other.tap()
         other.typeText("Write it as FOUR, in capitals.")
-        let arrow = app.buttons.matching(identifier: "Send").allElementsBoundByIndex.first { $0.isHittable && $0.frame.maxY < app.textFields["composer"].frame.minY }
+        let arrow = app.buttons.matching(identifier: "Send").allElementsBoundByIndex.first { $0.isHittable && $0.frame.maxY < app.composerField.frame.minY }
         XCTAssertNotNil(arrow, "No send arrow by the typed words")
         arrow?.tap()
         XCTAssertTrue(app.text(containing: "No, keep planning").waitForExistence(timeout: 20), "Typed words didn't stand for No")
@@ -293,13 +293,13 @@ final class AcpUITests: XCTestCase {
                "-acpPicks.ws://127.0.0.1:8767/acp/claude", "{ mode = bypassPermissions; }"]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "No message field")
         let new = app.buttons["New conversation"].firstMatch
         if new.waitForExistence(timeout: 5) { new.tap() }
         send("Write the numbers from 1 to 400 as words, one per line, with nothing else. No tools.", in: app)
 
         let steer = app.buttons["Steer this reply"]
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         XCTAssertTrue(app.buttons["Stop"].waitForExistence(timeout: 60), "The reply didn't start")
         XCTAssertTrue(app.text(containing: "three").waitForExistence(timeout: 60), "The reply didn't start writing")
         composer.tap()
@@ -333,7 +333,7 @@ final class AcpUITests: XCTestCase {
             + ["-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "No message field")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         let row = app.staticTexts.matching(NSPredicate(format: "label == 'Steering test'")).firstMatch
         _ = row.waitForExistence(timeout: 30)
@@ -370,7 +370,7 @@ final class AcpUITests: XCTestCase {
             + ["-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", ""]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "No message field")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         let name = URL(fileURLWithPath: folder).lastPathComponent
         let project = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
@@ -401,7 +401,7 @@ final class AcpUITests: XCTestCase {
             + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "127.0.0.1:8767", "-acpAgent", "claude", "-acpFolder", folder]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "No message field")
         let new = app.buttons["New conversation"].firstMatch
         if new.waitForExistence(timeout: 5) { new.tap() }
         send("Reply with just the word PELICAN, nothing else, and use no tools.", in: app)
@@ -444,7 +444,7 @@ final class AcpUITests: XCTestCase {
         app.launchArguments = open + ["-echo.clearDrafts", "-echo.fresh"]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
         composer.tap()
         composer.typeText("@open")
@@ -474,7 +474,7 @@ final class AcpUITests: XCTestCase {
     }
 
     private func send(_ text: String, in app: XCUIApplication) {
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         for _ in 0 ..< 4 {
             composer.tap()
             if (composer.value(forKey: "hasKeyboardFocus") as? Bool) == true || app.keyboards.firstMatch.exists { break }
@@ -503,7 +503,7 @@ final class AcpUITests: XCTestCase {
                "-acpAllAgents", "YES"]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 20), "No message field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20), "No message field")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         // Both agents' chats, each with its agent's name on the row.
         func marked(_ agent: String) -> XCUIElement {
@@ -527,7 +527,7 @@ final class AcpUITests: XCTestCase {
         XCTAssertTrue(marked("Claude Code").exists, "No chat of Claude Code's in the list")
         // A chat of Codex's opens on Codex, though the app was on Claude Code.
         marked("Codex").tap()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 30), "No message field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 30), "No message field")
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "placeholderValue CONTAINS 'Codex' OR label CONTAINS 'Ask Codex'")).firstMatch
             .waitForExistence(timeout: 30), "Codex's chat isn't on Codex")
         sleep(2)
@@ -542,7 +542,7 @@ final class AcpUITests: XCTestCase {
         XCTAssertTrue(app.buttons["new-chat-agent-codex"].exists, "Codex isn't offered")
         shot("acp-all-new")
         claude.tap()
-        XCTAssertTrue(app.textFields["composer"].waitForExistence(timeout: 10), "No message field")
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 10), "No message field")
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "placeholderValue CONTAINS 'Claude Code' OR label CONTAINS 'Ask Claude Code'")).firstMatch
             .waitForExistence(timeout: 30), "The new chat isn't Claude Code's")
         sleep(2)
@@ -563,7 +563,7 @@ final class AcpUITests: XCTestCase {
                "-acpAllAgents", "NO"]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
         app.buttons["New conversation"].firstMatch.tap()
         composer.tap()
@@ -587,7 +587,7 @@ final class AcpUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat
             + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "demo", "-acpAgent", "", "-acpFolder", "", "-acpAllAgents", "NO"]
         app.launch()
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
         app.buttons["New conversation"].firstMatch.tap()
         composer.tap()
@@ -621,7 +621,7 @@ final class AcpUITests: XCTestCase {
             + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", address, "-acpAgent", "fake", "-acpFolder", "", "-acpAllAgents", "NO"]
         app.launchEnvironment["ECHO_TEST_ACP_TOKEN"] = token
         app.launch()
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
         app.buttons["New conversation"].firstMatch.tap()
         composer.tap()
@@ -640,7 +640,7 @@ final class AcpUITests: XCTestCase {
         app.launchArguments = XCUIApplication.straightToChat
             + ["-echo.clearDrafts", "-transport", "acp", "-acpURL", "demo", "-acpAgent", "", "-acpFolder", "", "-acpAllAgents", "NO"]
         app.launch()
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         XCTAssertTrue(composer.waitForExistence(timeout: 20), "No message field")
         app.buttons["New conversation"].firstMatch.tap()
         let words = "Rename test \(Int.random(in: 1000 ... 9999))"

@@ -63,7 +63,7 @@ final class PromoVideoUITests: XCTestCase {
     func testBotsMention() throws {
         let app = try bots(["-echo.demoMarks"])
         XCTAssertTrue(app.text(containing: "Lost Lake").waitForExistence(timeout: 20))
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         mark("start")
         hold(1.0)
@@ -601,7 +601,7 @@ final class PromoVideoUITests: XCTestCase {
     /// here under its face.
     func testDayAside() throws {
         let app = try day("aside", ["-echo.fresh"])
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         XCTAssertTrue(field.waitForExistence(timeout: 20))
         hold(1.5)
         mark("start")
@@ -626,7 +626,7 @@ final class PromoVideoUITests: XCTestCase {
 
     /// A question typed to Sol and sent; the reply's own words, once they show.
     private func ask(_ app: XCUIApplication, _ question: String) {
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         XCTAssertTrue(field.waitForExistence(timeout: 20))
         hold(1.5)
         mark("start")
@@ -875,7 +875,7 @@ final class PromoVideoUITests: XCTestCase {
     func testDayHome() throws {
         let app = try day("home", ["-echo.demoDayAt", "7"])
         allowNotifications()
-        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 20))
         hold(0.8)
         XCUIDevice.shared.press(.home)
         mark("home")
@@ -1104,7 +1104,7 @@ final class PromoVideoUITests: XCTestCase {
     /// Quill's chat opened from there.
     func testAgentsChat() throws {
         let app = try agents()
-        let field = app.textFields.firstMatch
+        let field = app.composerField
         XCTAssertTrue(field.waitForExistence(timeout: 20))
         XCTAssertTrue(app.text(containing: "call the vet").waitForExistence(timeout: 10), "not Sol's chat")
         hold(1.5)
@@ -1219,7 +1219,7 @@ final class PromoVideoUITests: XCTestCase {
         let new = app.buttons.matching(NSPredicate(format: "label == 'New conversation'")).allElementsBoundByIndex.first { $0.isHittable }
         XCTAssertNotNil(new, "no New Chat")
         new?.tap()
-        let composer = app.textFields["composer"]
+        let composer = app.composerField
         XCTAssertTrue(composer.waitForExistence(timeout: 20), "no message field")
         hold(1.0)
         composer.tap()
@@ -1274,7 +1274,7 @@ final class PromoVideoUITests: XCTestCase {
             if hide.exists { hide.tap() } else { app.swipeDown() }
         }
         func ask(_ words: String) {
-            let composer = app.textFields["composer"].exists ? app.textFields["composer"] : app.textFields.firstMatch
+            let composer = app.composerField
             XCTAssertTrue(composer.waitForExistence(timeout: 20), "no message field")
             composer.tap()
             hold(0.5)

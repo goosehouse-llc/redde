@@ -19,7 +19,7 @@ final class ComposerUITests: XCTestCase {
 
     /// The message field (on an iPad the sidebar's search field comes first).
     private func field(_ app: XCUIApplication) -> XCUIElement {
-        let field = app.textFields["composer"]
+        let field = app.composerField
         XCTAssertTrue(field.waitForExistence(timeout: 20), "No message field")
         return field
     }
