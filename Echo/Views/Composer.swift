@@ -395,6 +395,15 @@ struct ReturnSends: ViewModifier {
 
     private func lineBreak() {
         lineBreakMeant = true
+        #if os(iOS)
+        // Where the cursor is, put in by the field itself as the keyboard would: the iPhone's and
+        // iPad's field has no selection binding (kept on every letter, it cost a second update of
+        // the composer per letter; 2026-11-18).
+        if let field = UIResponder.currentFirstResponder as? UITextView {
+            field.insertText("\n")
+            return
+        }
+        #endif
         Self.insertLineBreak(into: &draft, at: &selection)
     }
 

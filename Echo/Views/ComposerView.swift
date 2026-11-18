@@ -13,7 +13,12 @@ struct ComposerView: View {
     @Binding var editing: Message?
     @FocusState.Binding var focused: Bool
     /// The field's cursor (Shift-Return's line break goes there).
+    /// The cursor, on the Mac only: kept on every letter, it was a second update of the whole
+    /// composer per letter on the iPhone (2026-11-18), where Shift-Return asks the field itself.
     @State private var selection: TextSelection?
+    /// What the composer's own layout needs to know of the draft (`DraftFacts`), kept by
+    /// `DraftWatcher`: a letter that changes none of it doesn't run this view again.
+    @State private var facts = DraftFacts()
     /// The round button beside the field when there's nothing to send: voice mode, listening at
     /// once, hands-free if Settings → Voice says so.
     let openHandsFree: () -> Void
@@ -76,13 +81,13 @@ struct ComposerView: View {
 
     /// The "/" menu is a hermes serve feature; other backends get the text as typed.
     private var slashMenuActive: Bool {
-        (conversation.connection == .hermesServe || conversation.connection == .acp) && draft.hasPrefix("/") && !draft.contains("\n") && !conversation.isStreaming
+        (conversation.connection == .hermesServe || conversation.connection == .acp) && facts.slash != nil && !conversation.isStreaming
     }
 
     /// The bots a tag being typed ("@sc") could be: in a bot's chat, the others, for it to pass the
     /// message on to; in a normal chat, any but its agent, to ask them here (`BotAsides`).
     private var mentionSuggestions: [HermesBot] {
-        guard !draft.contains("\n"), let typed = BotMentions.typing(in: draft) else { return [] }
+        guard let typed = facts.mention else { return [] }
         if let bot = conversation.bot {
             // Its Hermes's bots (on the Dashboard), and the agents elsewhere (`TagRoster`).
             let listed = BotDirectory.shared.roster?.listed ?? []
@@ -152,13 +157,14 @@ struct ComposerView: View {
     /// Keeping the field's context, layout and animations up to date as it changes.
     private func composerWork(_ content: some View) -> some View {
         content
-        .onChange(of: draft) { old, new in
-            #if os(macOS)
-            if takeBackLongPaste(old: old, new: new) { return }
-            #endif
-            refreshContext(new)
-            // A tag begun: the other servers' agents and bots asked again, if not lately.
-            if new.hasSuffix("@") { TagRoster.shared.refreshIfStale(settings) }
+        .background {
+            DraftWatcher(draft: $draft, facts: $facts) { old, new in
+                #if os(macOS)
+                _ = takeBackLongPaste(old: old, new: new)
+                #endif
+                // A tag begun: the other servers' agents and bots asked again, if not lately.
+                if new.hasSuffix("@") { TagRoster.shared.refreshIfStale(settings) }
+            } settled: { refreshContext($0) }
         }
         // A picture on the clipboard pastes into the field as an attachment, and long text as a
         // text file (`ComposerPaste`).
@@ -220,10 +226,10 @@ struct ComposerView: View {
         .background {
             // ⌘↩ sends from anywhere; lives here because send() does.
             Button("Send") { send() }.keyboardShortcut(.return, modifiers: .command)
-                .disabled(conversation.isStreaming || (draft.trimmingCharacters(in: .whitespaces).isEmpty && pendingAttachments.isEmpty))
+                .disabled(conversation.isStreaming || !hasDraft)
                 .frame(width: 0, height: 0).opacity(0).accessibilityHidden(true)
         }
-        .task(id: slashMenuActive ? draft : "") {
+        .task(id: slashMenuActive ? facts.slash ?? "" : "") {
             guard slashMenuActive else { slashItems = []; return }
             if conversation.connection == .acp {
                 // The agent said its commands up front: matched here, no round trip.
@@ -380,7 +386,7 @@ struct ComposerView: View {
     }
 
     /// Long enough that a page of its own helps.
-    private var draftIsLong: Bool { draft.count > 160 || draft.filter { $0 == "\n" }.count >= 3 }
+    private var draftIsLong: Bool { facts.isLong }
 
     /// Commands, skills and bundles the gateway offers for the draft. Tap one to fill it in;
     /// commands that take an argument end with a space so you keep typing.
@@ -468,7 +474,7 @@ struct ComposerView: View {
         focused = true
     }
 
-    private var hasDraft: Bool { !draft.trimmingCharacters(in: .whitespaces).isEmpty || !pendingAttachments.isEmpty }
+    private var hasDraft: Bool { facts.hasText || !pendingAttachments.isEmpty }
 
     // MARK: Context chips
 
@@ -575,6 +581,18 @@ struct ComposerView: View {
 
     /// One rounded field (attach and the text) and one round button beside it whose job
     /// follows what you're doing: hands-free voice, send, or stop.
+    /// The message field. On the iPhone and iPad without a selection binding: the field said
+    /// where its cursor went after every letter, and the whole composer was updated again for it
+    /// (2026-11-18). Shift-Return puts its line break in through the field itself (`ReturnSends`).
+    @ViewBuilder
+    private func messageField(_ prompt: String) -> some View {
+        #if os(macOS)
+        TextField(prompt, text: $draft, selection: $selection, axis: .vertical)
+        #else
+        TextField(prompt, text: $draft, axis: .vertical)
+        #endif
+    }
+
     private var composerRow: some View {
         HStack(alignment: .bottom, spacing: 10) {
             VStack(alignment: .leading, spacing: 0) {
@@ -611,10 +629,9 @@ struct ComposerView: View {
                 }
                 .accessibilityLabel("Add")
                 .accessibilityHint("Add a photo or file to your message")
-                TextField(dictation.isActive ? String(localized: "Listening…")
+                messageField(dictation.isActive ? String(localized: "Listening…")
                           : conversation.canSteer ? String(localized: "Steer the reply…")
-                          : String(localized: "Ask \(conversation.bot?.name ?? ProfileCatalog.agentName(conversation.elsewhere?.profile ?? settings.profileName, settings: settings))", comment: "The message field's placeholder: ask the agent, by its name"),
-                          text: $draft, selection: $selection, axis: .vertical)
+                          : String(localized: "Ask \(conversation.bot?.name ?? ProfileCatalog.agentName(conversation.elsewhere?.profile ?? settings.profileName, settings: settings))", comment: "The message field's placeholder: ask the agent, by its name"))
                     .lineLimit(1 ... 5)
                     .textFieldStyle(.plain)
                     .padding(.vertical, 9)
@@ -625,7 +642,9 @@ struct ComposerView: View {
                     // A field built again over a half-typed draft (the iPhone Duo opened or closed)
                     // took up the old cursor, and typing went in after the first letter.
                     .onAppear {
+                        #if os(macOS)
                         if !draft.isEmpty { selection = TextSelection(insertionPoint: draft.endIndex) }
+                        #endif
                     }
                 if draftIsLong {
                     Button("Open the editor", systemImage: "arrow.up.left.and.arrow.down.right") { showEditor = true }
@@ -672,7 +691,7 @@ struct ComposerView: View {
     private var trailingState: String {
         if conversation.isStreaming {
             guard hasDraft else { return "stop" }
-            return conversation.canSteer && !draft.trimmingCharacters(in: .whitespaces).isEmpty ? "steer+queue" : "queue"
+            return conversation.canSteer && facts.hasText ? "steer+queue" : "queue"
         }
         return hasDraft ? "send" : "talk"
     }
@@ -683,7 +702,7 @@ struct ComposerView: View {
             if conversation.isStreaming {
                 if hasDraft {
                     // Typing during a reply: steer this answer, or queue the next question behind it.
-                    if conversation.canSteer, !draft.trimmingCharacters(in: .whitespaces).isEmpty {
+                    if conversation.canSteer, facts.hasText {
                         ComposerButton(symbol: "arrow.turn.down.right", label: String(localized: "Steer this reply"), tint: .orange, size: buttonSize) {
                             steer()
                         }
@@ -807,5 +826,57 @@ struct ComposerView: View {
         editing = nil
         draft = ""
         pendingAttachments = []
+    }
+}
+
+/// What the composer's layout needs to know of the draft. A letter changes it only when it
+/// changes one of these: whether there is anything to send, whether the draft is long (Open the
+/// editor), the "/" command being typed, the @tag being typed.
+nonisolated struct DraftFacts: Equatable {
+    var hasText = false
+    var isLong = false
+    /// The draft, while it is a one-line "/" command (the menu follows it letter by letter).
+    var slash: String?
+    /// The tag being typed ("sc" for "@sc"), on one line.
+    var mention: String?
+
+    init() {}
+
+    init(_ draft: String) {
+        hasText = !draft.trimmingCharacters(in: .whitespaces).isEmpty
+        let lines = draft.utf8.count { $0 == 10 }
+        isLong = draft.count > 160 || lines >= 3
+        slash = lines == 0 && draft.hasPrefix("/") ? draft : nil
+        mention = lines == 0 && draft.contains("@") ? BotMentions.typing(in: draft) : nil
+    }
+}
+
+/// Watches the draft for the composer, so that typing runs this (and the field) for each letter
+/// rather than the whole composer: keeps `facts`, hands each change to `changed`, and the draft to
+/// `settled` once typing pauses (the context chips: a day or a file it mentions), or at once when
+/// it is emptied (2026-11-18, typing measured on Marta and in the simulator).
+private struct DraftWatcher: View {
+    @Binding var draft: String
+    @Binding var facts: DraftFacts
+    let changed: (String, String) -> Void
+    let settled: (String) -> Void
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+            .onChange(of: draft, initial: true) { old, new in
+                let now = DraftFacts(new)
+                if now != facts { facts = now }
+                if old != new { changed(old, new) }
+            }
+            .task(id: draft) {
+                let text = draft
+                if !text.isEmpty {
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
+                }
+                settled(text)
+            }
     }
 }
