@@ -149,6 +149,7 @@ extension ContentView {
                 ToolbarItem(placement: .topBarLeading) {
                     if showListButton {
                         Button("Conversations", systemImage: "list.bullet") { setDrawer(open: true) }
+                            .accessibilityIdentifier("chat.conversations")
                             .keyboardShortcut("k", modifiers: .command)
                     }
                 }

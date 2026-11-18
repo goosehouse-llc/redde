@@ -704,6 +704,7 @@ struct ComposerView: View {
                 ComposerButton(symbol: "arrow.up", label: String(localized: "Send"), tint: theme.actionTint, size: buttonSize, glyph: theme.actionGlyph) {
                     send()
                 }
+                .accessibilityIdentifier("composer.send")   // the same in every language (FreshPhoneUITests)
                 .transition(Self.buttonSwap)
             } else {
                 ComposerButton(symbol: "waveform", label: settings.handsFreeByDefault ? String(localized: "Talk hands-free") : String(localized: "Talk"),

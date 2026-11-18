@@ -92,7 +92,7 @@ struct TurnNotesTests {
         #expect(row.displayTitle == "coffee near me", "an untitled chat is named by its first line")
         row.preview = "(Reply in Dutch (Nederlands).)"
         #expect(row.shownPreview == nil)
-        #expect(row.displayTitle == "s1")
+        #expect(row.displayTitle == String(localized: "Untitled chat"), "never its id")
         row.title = "Coffee"
         #expect(row.displayTitle == "Coffee")
     }

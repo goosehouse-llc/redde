@@ -179,6 +179,7 @@ struct ApprovalCard: View {
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
                 .tint(risky ? .red : nil)
+                .accessibilityIdentifier("approval.once")   // the same in every language (FreshPhoneUITests)
             }
         }
     }

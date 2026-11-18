@@ -599,7 +599,9 @@ struct DrawerStatChip: View {
                 .tracking(0.8)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                // "BRIEFINGAR" whole in the iPad's narrow sidebar, not "BRIEFING…" (0.8 wasn't enough).
+                .allowsTightening(true)
+                .minimumScaleFactor(0.65)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12).padding(.vertical, 9)

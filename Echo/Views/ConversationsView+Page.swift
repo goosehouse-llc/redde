@@ -308,6 +308,7 @@ extension ConversationsList {
                     #if os(iOS)
                     Button("Settings", systemImage: "gearshape") { openSettings() }
                         .keyboardShortcut(",", modifiers: .command)
+                        .accessibilityIdentifier("list.settings")
                     #endif
                 }
             }

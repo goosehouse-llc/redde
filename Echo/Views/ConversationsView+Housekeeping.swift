@@ -159,6 +159,17 @@ extension ConversationsList {
         for id in [old, new].compactMap(\.self) {
             if let i = ledger.firstIndex(where: { $0.id == id }), ledger[i].unread == true { ledger[i].unread = false }
         }
+        // A chat the list doesn't have yet (just started here) goes into it now, and again a
+        // moment later with the name its agent gave it. The iPad's sidebar is always up, so the
+        // list's own reload on opening never came, and an agent's chat (no live list to watch)
+        // stayed out of it: "No conversations yet" beside the chat.
+        if let new, usesLedger, isShowing, !ledger.contains(where: { $0.id == new }) {
+            Task {
+                await refresh()
+                try? await Task.sleep(for: .seconds(4))
+                await refresh()
+            }
+        }
     }
 
     /// Mark as Read / Mark as Unread. A row the host marks (the Dashboard's) changes at once.

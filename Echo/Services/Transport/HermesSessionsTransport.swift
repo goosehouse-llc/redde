@@ -404,7 +404,8 @@ nonisolated struct HermesSessionsAPI: Sendable {
         var displayTitle: String {
             if let title, !title.isEmpty { return title }
             if let shownPreview { return String(shownPreview.prefix(80)) }
-            return id
+            // Not its id ("demo-01b39abc-5276-…"), which an agent's chat with no title had shown.
+            return String(localized: "Untitled chat")
         }
         /// The preview as it is shown: the start of the chat's first message, without the notes
         /// Redde wrote after it for the agent (`TurnNotes.preview`); nil when nothing is left.
