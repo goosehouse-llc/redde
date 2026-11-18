@@ -651,6 +651,8 @@ extension ConversationsList {
             }
             .listStyle(.plain)
             .themedPage(settings.theme.listPage)
+            // Pulled down: every tile asked again (the inbox, the lists, the calendar, briefings).
+            .refreshable { await TodayStrip.refresh() }
             .navigationTitle(NewDrawer.Page.today.title)
         case .planned:
             ComingUpList(planned: true, isShowing: isShowing).id(settings.connectionKey)

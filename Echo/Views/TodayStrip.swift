@@ -115,6 +115,17 @@ struct TodayStrip: View {
         }
     }
 
+    /// Pull to refresh on the Today page: each tile's source asked again at once, the inbox's
+    /// counts and the lists from the server, the calendar and the kept briefings and goals here.
+    static func refresh() async {
+        CalendarUpNext.shared.refresh()
+        BriefingsInbox.shared.reload()
+        GoalsInbox.shared.reload()
+        async let lists: Void = TodayLists.shared.refresh()
+        if MailCenter.shared.isSetUp { await MailCenter.shared.refreshStatus() }
+        await lists
+    }
+
     /// `keys` in the person's order: those they placed as they placed them, then the rest as the
     /// strip has them.
     static func arranged(_ keys: [String], order: [String]) -> [String] {
