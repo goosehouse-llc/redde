@@ -1,0 +1,14 @@
+{
+  "body": {
+    "replayed": false,
+    "run_id": "run_cf1e2aee623148aaa62d04e48022922a",
+    "status": "started"
+  },
+  "kind": "api",
+  "request": "POST /v1/runs",
+  "sent": {
+    "input": "Hello from the replay recorder",
+    "session_id": "api_1795016127_68cc11fb"
+  },
+  "status": 202
+}

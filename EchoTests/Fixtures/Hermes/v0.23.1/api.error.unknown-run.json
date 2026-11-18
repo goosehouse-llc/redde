@@ -1,0 +1,13 @@
+{
+  "body": {
+    "error": {
+      "code": "run_not_found",
+      "message": "Run not found: run_nosuch000000",
+      "param": null,
+      "type": "invalid_request_error"
+    }
+  },
+  "kind": "api",
+  "request": "GET /v1/runs/run_nosuch000000",
+  "status": 404
+}

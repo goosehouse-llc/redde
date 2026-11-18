@@ -1,0 +1,11 @@
+{
+  "body": {
+    "detail": "Unauthorized",
+    "error": "unauthenticated",
+    "login_url": "/login",
+    "reason": "no_cookie"
+  },
+  "kind": "rest",
+  "request": "GET /api/sessions?limit=1",
+  "status": 401
+}

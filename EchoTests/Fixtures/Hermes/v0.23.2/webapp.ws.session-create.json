@@ -1,0 +1,226 @@
+{
+  "kind": "ws",
+  "method": "session.create",
+  "params": {
+    "source": "gui"
+  },
+  "result": {
+    "authority_epoch": 1,
+    "execution_generation": 0,
+    "info": {
+      "api_mode": null,
+      "archived": false,
+      "branch": "",
+      "credential_hint": null,
+      "cwd": "~",
+      "desktop_protocol": "hermes-gateway-v1",
+      "enabled_toolsets": [
+        "browser",
+        "catalog",
+        "clarify",
+        "code_execution",
+        "computer_use",
+        "connections",
+        "cronjob",
+        "delegation",
+        "desktop_ui",
+        "file",
+        "image_gen",
+        "memory",
+        "project",
+        "session_search",
+        "skills",
+        "terminal",
+        "todo",
+        "tts",
+        "vision",
+        "web"
+      ],
+      "fast": false,
+      "last_active_at": 1795016233.439499,
+      "launch_request": {
+        "source": "gui"
+      },
+      "lazy": true,
+      "mcp_servers": [],
+      "model": "alpha",
+      "profile_id": "<run>/.hermes",
+      "profile_name": "default",
+      "project": null,
+      "provider": "custom:my-local",
+      "reasoning_effort": "",
+      "reasoning_effort_wire": "",
+      "release_date": "2026.9.24",
+      "service_tier": "",
+      "skills": {
+        "apple": [
+          "apple-notes",
+          "apple-reminders",
+          "findmy",
+          "imessage"
+        ],
+        "autonomous-ai-agents": [
+          "claude-code",
+          "codex",
+          "computer-use",
+          "hermes-agent"
+        ],
+        "creative": [
+          "architecture-diagram",
+          "ascii-video",
+          "baoyu-infographic",
+          "claude-design",
+          "humanizer",
+          "manim-video",
+          "p5js",
+          "popular-web-designs",
+          "songwriting-and-ai-music"
+        ],
+        "email": [
+          "email-inbox-triage",
+          "himalaya"
+        ],
+        "general": [
+          "lab-hello",
+          "lab-secret"
+        ],
+        "media": [
+          "youtube-content"
+        ],
+        "note-taking": [
+          "obsidian"
+        ],
+        "productivity": [
+          "document-to-action-items",
+          "google-workspace",
+          "maps",
+          "meeting-action-items",
+          "microsoft-office",
+          "pdf",
+          "product-price-monitor",
+          "teams-meeting-pipeline",
+          "weekly-review-planning"
+        ],
+        "research": [
+          "arxiv",
+          "competitor-news-monitor",
+          "grounded-citations"
+        ],
+        "social-media": [
+          "xurl"
+        ],
+        "software-development": [
+          "codebase-inspection",
+          "dogfood",
+          "github",
+          "requesting-code-review",
+          "simplify-code",
+          "spike",
+          "systematic-debugging",
+          "test-driven-development"
+        ],
+        "web": [
+          "blocked-page-recovery"
+        ]
+      },
+      "source": "gui",
+      "started_at": 1795016233.439499,
+      "title": null,
+      "tool_availability": {
+        "disabled_tools": [],
+        "lazy_tools": [
+          "computer_use",
+          "image_generate"
+        ],
+        "unavailable_toolsets": [
+          {
+            "env_vars": [],
+            "name": "computer_use",
+            "tools": [
+              "computer_use"
+            ]
+          },
+          {
+            "env_vars": [],
+            "name": "image_gen",
+            "tools": [
+              "image_generate"
+            ]
+          }
+        ]
+      },
+      "tool_count": 19,
+      "tools": {
+        "browser-use": [
+          "browser_exec"
+        ],
+        "clarify": [
+          "clarify"
+        ],
+        "code_execution": [
+          "execute_code"
+        ],
+        "delegation": [
+          "delegate_task"
+        ],
+        "file": [
+          "patch",
+          "read_file",
+          "search_files",
+          "write_file"
+        ],
+        "memory": [
+          "memory"
+        ],
+        "other": [
+          "tool_search",
+          "tool_describe",
+          "tool_call"
+        ],
+        "skills": [
+          "skill_manage",
+          "skill_view",
+          "skills_list"
+        ],
+        "terminal": [
+          "terminal"
+        ],
+        "vision": [
+          "vision_analyze"
+        ],
+        "web": [
+          "web_extract",
+          "web_search"
+        ]
+      },
+      "update_behind": 0,
+      "update_command": "hermes update",
+      "usage": {
+        "calls": 0,
+        "completion": 0,
+        "input": 0,
+        "model": "alpha",
+        "output": 0,
+        "prompt": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "version": "0.23.2",
+      "yolo": false
+    },
+    "last_sequence": 0,
+    "message_count": 0,
+    "messages": [],
+    "open_requests": [],
+    "pending": [],
+    "pending_connection": null,
+    "prompts": [],
+    "replay_epoch": "6be7d7bc9af64c788ebe471284fde475",
+    "revision": 0,
+    "running": false,
+    "session_id": "local-006af763d26fff709416a1d0a678d245daf68b966a802eac003e3ab5a114d8ee",
+    "stored_session_id": "local-006af763d26fff709416a1d0a678d245daf68b966a802eac003e3ab5a114d8ee",
+    "subscription_id": "92a63c5f45294c26be842bfd74ba6d6f",
+    "todo_state": null
+  }
+}

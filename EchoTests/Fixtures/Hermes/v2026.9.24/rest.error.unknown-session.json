@@ -1,0 +1,8 @@
+{
+  "body": {
+    "detail": "Session not found"
+  },
+  "kind": "rest",
+  "request": "GET /api/sessions/20260101_000000_nosuch",
+  "status": 404
+}

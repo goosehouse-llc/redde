@@ -1,0 +1,127 @@
+{
+  "body": {
+    "model": "alpha",
+    "provider": "custom:my-local",
+    "providers": [
+      {
+        "authenticated": true,
+        "capabilities": {
+          "claude-fable-5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-fable-5.1": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-haiku-4-5-20251001": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-20250514": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-5-20251101": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-6": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-7": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-8": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-opus-5": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-opus-5-5": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-sonnet-4-20250514": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-4-5-20250929": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-4-6": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-5": {
+            "fast": false,
+            "reasoning": true
+          }
+        },
+        "featured_models": [],
+        "is_current": false,
+        "is_user_defined": false,
+        "models": [
+          "claude-fable-5.1",
+          "claude-fable-5",
+          "claude-opus-5-5",
+          "claude-opus-5",
+          "claude-sonnet-5",
+          "claude-opus-4-8",
+          "claude-opus-4-7",
+          "claude-opus-4-6",
+          "claude-sonnet-4-6",
+          "claude-opus-4-5-20251101",
+          "claude-sonnet-4-5-20250929",
+          "claude-opus-4-20250514",
+          "claude-sonnet-4-20250514",
+          "claude-haiku-4-5-20251001"
+        ],
+        "name": "Anthropic",
+        "slug": "anthropic",
+        "source": "hermes",
+        "total_models": 14
+      },
+      {
+        "aliases": [
+          "custom:custom:my-local",
+          "custom:my-local",
+          "my local",
+          "my-local"
+        ],
+        "api_url": "http://127.0.0.1:18801/v1",
+        "authenticated": true,
+        "capabilities": {
+          "alpha": {
+            "fast": false,
+            "reasoning": true
+          },
+          "beta": {
+            "fast": false,
+            "reasoning": true
+          }
+        },
+        "featured_models": [],
+        "is_current": true,
+        "is_user_defined": true,
+        "models": [
+          "alpha",
+          "beta"
+        ],
+        "name": "My Local",
+        "native_catalog_empty": false,
+        "slug": "custom:my-local",
+        "source": "user-config",
+        "total_models": 2
+      }
+    ]
+  },
+  "kind": "rest",
+  "request": "GET /api/model/options",
+  "status": 200
+}

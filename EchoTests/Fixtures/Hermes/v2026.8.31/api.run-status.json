@@ -1,0 +1,21 @@
+{
+  "body": {
+    "created_at": 1795015908.97416,
+    "last_event": "run.completed",
+    "model": "hermes-agent",
+    "object": "hermes.run",
+    "output": "[A:alpha]",
+    "run_id": "run_2afc149bd3bd4e8cac78124435f50647",
+    "session_id": "api_1795015908_d17f0f20",
+    "status": "completed",
+    "updated_at": 1795015911.7438269,
+    "usage": {
+      "input_tokens": 10,
+      "output_tokens": 3,
+      "total_tokens": 13
+    }
+  },
+  "kind": "api",
+  "request": "GET /v1/runs/run_2afc149bd3bd4e8cac78124435f50647",
+  "status": 200
+}

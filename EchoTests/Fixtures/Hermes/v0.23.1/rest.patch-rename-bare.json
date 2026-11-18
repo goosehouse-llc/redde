@@ -1,0 +1,11 @@
+{
+  "body": {
+    "detail": "client_upgrade_required: this app is out of sync (different versions) with the Hermes backend; update the app to edit sessions"
+  },
+  "kind": "rest",
+  "request": "PATCH /api/sessions/20261118_103613_fe912b",
+  "sent": {
+    "title": "Replay rename, bare"
+  },
+  "status": 409
+}

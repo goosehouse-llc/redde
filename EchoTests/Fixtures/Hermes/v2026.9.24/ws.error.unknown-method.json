@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": -32601,
+    "message": "unknown method: redde.no_such_method — the client and the Hermes backend are out of sync (different versions); run `hermes update` and restart both"
+  },
+  "kind": "ws",
+  "method": "redde.no_such_method",
+  "params": {}
+}

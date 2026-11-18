@@ -1,0 +1,34 @@
+{
+  "kind": "ws",
+  "method": "profiles.list",
+  "params": {},
+  "result": {
+    "bot_mode_protocol": true,
+    "profiles": [
+      {
+        "canonical_session": null,
+        "description": "",
+        "display_name": "",
+        "has_avatar": false,
+        "is_default": true,
+        "last_session": {
+          "id": "20261118_103436_750667",
+          "last_active": 1795016079.424611,
+          "message_count": 6,
+          "preview": "[kept]",
+          "started_at": 1795016076.8464231,
+          "title": "Replay rename, bare"
+        },
+        "model": "alpha",
+        "name": "default",
+        "path": "<run>/.hermes",
+        "previous_names": [],
+        "provider": "custom:my-local",
+        "role": null,
+        "skill_count": 60,
+        "ui_meta_revisions": {},
+        "worker_session": null
+      }
+    ]
+  }
+}

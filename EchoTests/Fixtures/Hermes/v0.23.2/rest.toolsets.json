@@ -1,0 +1,371 @@
+{
+  "body": [
+    {
+      "available": true,
+      "configured": true,
+      "description": "web_search, web_extract",
+      "enabled": true,
+      "label": "Web Search & Scraping",
+      "name": "web",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "web_extract",
+        "web_search"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "navigate, click, type, scroll",
+      "enabled": true,
+      "label": "Browser Automation",
+      "name": "browser",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "browser_cdp",
+        "browser_dialog",
+        "browser_exec",
+        "browser_vault"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "terminal, process",
+      "enabled": true,
+      "label": "Terminal & Processes",
+      "name": "terminal",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "process_manage",
+        "terminal"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "read, write, patch, search",
+      "enabled": true,
+      "label": "File Operations",
+      "name": "file",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "patch",
+        "read_file",
+        "search_files",
+        "write_file"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "execute_code",
+      "enabled": true,
+      "label": "Code Execution",
+      "name": "code_execution",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "execute_code"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "vision_analyze",
+      "enabled": true,
+      "label": "Vision / Image Analysis",
+      "name": "vision",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "vision_analyze"
+      ]
+    },
+    {
+      "available": false,
+      "configured": true,
+      "description": "video_analyze (requires video-capable model)",
+      "enabled": false,
+      "label": "Video Analysis",
+      "name": "video",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "video_analyze"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "image_generate",
+      "enabled": true,
+      "label": "Image Generation",
+      "name": "image_gen",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "image_generate"
+      ]
+    },
+    {
+      "available": false,
+      "configured": true,
+      "description": "video_generate (text/image/reference)",
+      "enabled": false,
+      "label": "Video Generation",
+      "name": "video_gen",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "video_generate",
+        "xai_video_edit",
+        "xai_video_extend"
+      ]
+    },
+    {
+      "available": false,
+      "configured": true,
+      "description": "x_search (requires xAI OAuth or XAI_API_KEY)",
+      "enabled": false,
+      "label": "X (Twitter) Search",
+      "name": "x_search",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "x_search"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "text_to_speech",
+      "enabled": true,
+      "label": "Text-to-Speech",
+      "name": "tts",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "text_to_speech"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "voice transcription (gateway voice messages + voice mode)",
+      "enabled": true,
+      "label": "Speech-to-Text",
+      "name": "stt",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": []
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "list, view, manage",
+      "enabled": true,
+      "label": "Skills",
+      "name": "skills",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "skill_manage",
+        "skill_view",
+        "skills_list"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "todo_list",
+      "enabled": true,
+      "label": "Task Planning",
+      "name": "todo",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "todo_list"
+      ]
+    },
+    {
+      "available": false,
+      "configured": true,
+      "description": "opt-in task board tools for this platform",
+      "enabled": false,
+      "label": "Kanban",
+      "name": "kanban",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "kanban_attach",
+        "kanban_attach_url",
+        "kanban_attachments",
+        "kanban_block",
+        "kanban_comment",
+        "kanban_complete",
+        "kanban_create",
+        "kanban_heartbeat",
+        "kanban_link",
+        "kanban_list",
+        "kanban_request_changes",
+        "kanban_request_review",
+        "kanban_schedule",
+        "kanban_show",
+        "kanban_unblock"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "persistent memory across sessions",
+      "enabled": true,
+      "label": "Memory",
+      "name": "memory",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "memory"
+      ]
+    },
+    {
+      "available": false,
+      "configured": true,
+      "description": "runtime tools from the active context engine",
+      "enabled": false,
+      "label": "Context Engine",
+      "name": "context_engine",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": []
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "search past conversations",
+      "enabled": true,
+      "label": "Session Search",
+      "name": "session_search",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "session_search"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "remote connector tools and account authorization",
+      "enabled": true,
+      "label": "Connections",
+      "name": "connections",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "manage_connections"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "clarify",
+      "enabled": true,
+      "label": "Clarifying Questions",
+      "name": "clarify",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "clarify"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "delegate_task",
+      "enabled": true,
+      "label": "Task Delegation",
+      "name": "delegation",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "delegate_task"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "create/list/update/pause/resume/run, with optional attached skills",
+      "enabled": true,
+      "label": "Cron Jobs",
+      "name": "cronjob",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "cronjob_manage"
+      ]
+    },
+    {
+      "available": false,
+      "configured": true,
+      "description": "fetch messages, search members, create thread",
+      "enabled": false,
+      "label": "Discord (read/participate)",
+      "name": "discord",
+      "platform": "discord",
+      "platform_label": "Discord",
+      "tools": [
+        "discord"
+      ]
+    },
+    {
+      "available": false,
+      "configured": true,
+      "description": "list channels/roles, pin, assign roles",
+      "enabled": false,
+      "label": "Discord Server Admin",
+      "name": "discord_admin",
+      "platform": "discord",
+      "platform_label": "Discord",
+      "tools": [
+        "discord_admin"
+      ]
+    },
+    {
+      "available": true,
+      "configured": true,
+      "description": "background desktop control via cua-driver",
+      "enabled": true,
+      "label": "Computer Use (macOS/Windows/Linux)",
+      "name": "computer_use",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "computer_use"
+      ]
+    },
+    {
+      "available": false,
+      "configured": true,
+      "description": "A2A (Agent-to-Agent) protocol v1.0 support for Hermes Agent — both directions of the open Linux Foundation standard for inter-agent communication.\nOUTBOUND (client tools): a2a_discover, a2a_call, a2a_list, a2a_history, and a2a_orchestrate let the agent fetch another agent's Agent Card and send it tasks over JSON-RPC — works with any A2A-compliant peer (Hermes, LangChain, CrewAI, Google ADK, OpenClaw, ...).\nINBOUND (platform adapter): exposes Hermes as an A2A-discoverable agent. An Agent Card is served at /.well-known/agent-card.json (v1.0 canonical path; legacy agent.json also answers) and incoming tasks are routed into the agent's live gateway session like any other platform — so the agent that replies is the same one talking to its user, with full memory and context, not a throwaway clone.\nSecurity is on by default: no bearer token configured => localhost-only bind. Inbound task text passes through prompt-injection filters; outbound text is scrubbed of credential-shaped strings; every exchange is audit-logged and persisted to disk outside the context-compaction pipeline so conversations survive compaction and restarts.\nPure stdlib transport (http.server + urllib) — no a2a-sdk dependency required.\n",
+      "enabled": false,
+      "label": "A2A",
+      "name": "a2a",
+      "platform": "cli",
+      "platform_label": "CLI",
+      "tools": [
+        "a2a_call",
+        "a2a_discover",
+        "a2a_history",
+        "a2a_list",
+        "a2a_orchestrate"
+      ]
+    }
+  ],
+  "kind": "rest",
+  "request": "GET /api/tools/toolsets",
+  "status": 200
+}

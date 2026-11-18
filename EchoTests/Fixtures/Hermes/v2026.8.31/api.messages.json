@@ -1,0 +1,47 @@
+{
+  "body": {
+    "data": [
+      {
+        "content": "Hello from the replay recorder",
+        "display_kind": null,
+        "finish_reason": null,
+        "id": 8,
+        "reasoning": null,
+        "reasoning_content": null,
+        "role": "user",
+        "session_id": "api_1795015908_d17f0f20",
+        "timestamp": 1795015909.1883688,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_calls": null,
+        "tool_name": null
+      },
+      {
+        "content": "[A:alpha]",
+        "display_kind": null,
+        "finish_reason": "stop",
+        "id": 9,
+        "reasoning": null,
+        "reasoning_content": null,
+        "role": "assistant",
+        "session_id": "api_1795015908_d17f0f20",
+        "timestamp": 1795015911.738934,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_calls": null,
+        "tool_name": null
+      }
+    ],
+    "object": "list",
+    "pagination": {
+      "limit": 500,
+      "offset": 0,
+      "order": "latest",
+      "returned": 2
+    },
+    "session_id": "api_1795015908_d17f0f20"
+  },
+  "kind": "api",
+  "request": "GET /api/sessions/api_1795015908_d17f0f20/messages?order=latest&limit=500",
+  "status": 200
+}

@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": -32601,
+    "message": "unknown method: redde.no_such_method — not available on this Hermes backend"
+  },
+  "kind": "ws",
+  "method": "redde.no_such_method",
+  "params": {}
+}

@@ -1,0 +1,294 @@
+{
+  "events": [
+    {
+      "payload": {
+        "approval_mode": "manual",
+        "branch": "",
+        "cwd": "<run>",
+        "desktop_contract": 6,
+        "fast": false,
+        "mcp_servers": [],
+        "model": "alpha",
+        "personality": "",
+        "profile_name": "default",
+        "project": null,
+        "provider": "custom",
+        "reasoning_effort": "",
+        "release_date": "2026.8.31",
+        "running": true,
+        "service_tier": "",
+        "skills": {
+          "apple": [
+            "apple-notes",
+            "apple-reminders",
+            "findmy",
+            "imessage"
+          ],
+          "autonomous-ai-agents": [
+            "claude-code",
+            "codex",
+            "computer-use",
+            "hermes-agent",
+            "opencode"
+          ],
+          "creative": [
+            "architecture-diagram",
+            "ascii-video",
+            "baoyu-infographic",
+            "claude-design",
+            "design-md",
+            "humanizer",
+            "manim-video",
+            "p5js",
+            "popular-web-designs",
+            "songwriting-and-ai-music"
+          ],
+          "email": [
+            "email-inbox-triage",
+            "himalaya"
+          ],
+          "general": [
+            "lab-hello",
+            "lab-secret"
+          ],
+          "media": [
+            "gif-search",
+            "songsee",
+            "youtube-content"
+          ],
+          "note-taking": [
+            "obsidian"
+          ],
+          "productivity": [
+            "airtable",
+            "box",
+            "document-to-action-items",
+            "docx",
+            "google-workspace",
+            "maps",
+            "meeting-action-items",
+            "notion",
+            "pdf",
+            "powerpoint",
+            "product-price-monitor",
+            "teams-meeting-pipeline",
+            "weekly-review-planning",
+            "xlsx"
+          ],
+          "research": [
+            "arxiv",
+            "competitor-news-monitor",
+            "grounded-citations",
+            "llm-wiki"
+          ],
+          "social-media": [
+            "xurl"
+          ],
+          "software-development": [
+            "codebase-inspection",
+            "dogfood",
+            "github",
+            "hermes-agent-skill-authoring",
+            "inspecting-hermes-desktop-dom",
+            "node-inspect-debugger",
+            "python-debugpy",
+            "requesting-code-review",
+            "simplify-code",
+            "spike",
+            "systematic-debugging",
+            "test-driven-development"
+          ],
+          "web": [
+            "blocked-page-recovery"
+          ]
+        },
+        "stored_session_id": "20261118_103129_f0f393",
+        "system_prompt": "",
+        "terminal_backend": "local",
+        "title": "",
+        "tools": {
+          "browser-use": [
+            "browser_exec"
+          ],
+          "clarify": [
+            "clarify"
+          ],
+          "code_execution": [
+            "execute_code"
+          ],
+          "cronjob": [
+            "cronjob"
+          ],
+          "delegation": [
+            "delegate_task"
+          ],
+          "desktop_ui": [
+            "annotate_preview",
+            "apply_layout",
+            "close_terminal",
+            "desktop_preview",
+            "drive_preview",
+            "focus_pane",
+            "read_terminal",
+            "read_window_below",
+            "setup_mcp",
+            "tip",
+            "tour"
+          ],
+          "file": [
+            "patch",
+            "read_file",
+            "search_files",
+            "write_file"
+          ],
+          "memory": [
+            "memory"
+          ],
+          "project": [
+            "desktop_project"
+          ],
+          "session_search": [
+            "session_search"
+          ],
+          "skills": [
+            "skill_manage",
+            "skill_view",
+            "skills_list"
+          ],
+          "terminal": [
+            "process",
+            "terminal"
+          ],
+          "todo": [
+            "todo"
+          ],
+          "tts": [
+            "text_to_speech"
+          ],
+          "vision": [
+            "vision_analyze"
+          ],
+          "web": [
+            "web_extract",
+            "web_search"
+          ]
+        },
+        "turn_started_at": 1795015890.049767,
+        "update_behind": null,
+        "update_command": "hermes update",
+        "usage": {
+          "active_subagents": 0,
+          "calls": 0,
+          "completion": 0,
+          "compressions": 0,
+          "input": 0,
+          "model": "alpha",
+          "output": 0,
+          "prompt": 0,
+          "reasoning": 0,
+          "total": 0
+        },
+        "version": "0.21.0",
+        "yolo": false
+      },
+      "seq": 1,
+      "session_id": "99472c50",
+      "type": "session.info"
+    },
+    {
+      "seq": 2,
+      "session_id": "99472c50",
+      "type": "message.start"
+    },
+    {
+      "payload": {},
+      "session_id": "",
+      "type": "sessions.changed"
+    },
+    {
+      "payload": {
+        "session_id": "20261118_103129_f0f393",
+        "title": "Hello from the replay recorder"
+      },
+      "seq": 3,
+      "session_id": "99472c50",
+      "type": "session.title"
+    },
+    {
+      "payload": {
+        "text": "(¬_¬) reflecting..."
+      },
+      "seq": 4,
+      "session_id": "99472c50",
+      "type": "thinking.delta"
+    },
+    {
+      "payload": {
+        "text": ""
+      },
+      "seq": 5,
+      "session_id": "99472c50",
+      "type": "thinking.delta"
+    },
+    {
+      "payload": {
+        "text": "[A:alpha]"
+      },
+      "seq": 6,
+      "session_id": "99472c50",
+      "type": "message.delta"
+    },
+    {
+      "payload": {
+        "session_id": "20261118_103129_f0f393",
+        "title": "[A:alpha]"
+      },
+      "seq": 7,
+      "session_id": "99472c50",
+      "type": "session.title"
+    },
+    {
+      "payload": {
+        "text": ""
+      },
+      "seq": 8,
+      "session_id": "99472c50",
+      "type": "thinking.delta"
+    },
+    {
+      "payload": {
+        "text": "[A:alpha]"
+      },
+      "seq": 9,
+      "session_id": "99472c50",
+      "type": "reasoning.available"
+    },
+    {
+      "payload": {
+        "status": "complete",
+        "text": "[A:alpha]",
+        "usage": {
+          "active_subagents": 0,
+          "avg_latency_s": 0.4,
+          "avg_tps": 7.7,
+          "calls": 1,
+          "completion": 3,
+          "compressions": 0,
+          "context_max": 256000,
+          "context_percent": 0,
+          "context_used": 10,
+          "input": 10,
+          "model": "alpha",
+          "output": 3,
+          "prompt": 10,
+          "reasoning": 0,
+          "total": 13
+        }
+      },
+      "seq": 10,
+      "session_id": "99472c50",
+      "type": "message.complete"
+    }
+  ],
+  "kind": "ws-events"
+}

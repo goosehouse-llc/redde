@@ -1,0 +1,14 @@
+{
+  "error": {
+    "code": -32601,
+    "data": {
+      "reason": "unknown_method"
+    },
+    "message": "unknown method: session.delete — not available on this Hermes backend"
+  },
+  "kind": "ws",
+  "method": "session.delete",
+  "params": {
+    "session_id": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582"
+  }
+}

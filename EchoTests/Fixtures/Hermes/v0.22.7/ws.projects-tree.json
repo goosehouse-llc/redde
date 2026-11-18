@@ -1,0 +1,78 @@
+{
+  "kind": "ws",
+  "method": "projects.tree",
+  "params": {
+    "preview_limit": 0
+  },
+  "result": {
+    "active_id": null,
+    "projects": [
+      {
+        "color": null,
+        "icon": null,
+        "id": "__no_project__",
+        "isAuto": false,
+        "isNoProject": true,
+        "label": "Home",
+        "lastActive": 1795016147.2212732,
+        "path": null,
+        "previewSessions": [
+          {
+            "_branched_from": null,
+            "_lineage_ids": null,
+            "_lineage_root_id": null,
+            "_reset_from": null,
+            "actual_cost_usd": null,
+            "archived": false,
+            "cwd": null,
+            "ended_at": null,
+            "estimated_cost_usd": 0.0,
+            "git_branch": null,
+            "git_repo_root": null,
+            "id": "20261118_103542_cd7264",
+            "input_tokens": 30,
+            "is_active": false,
+            "last_active": 1795016147.2212732,
+            "message_count": 6,
+            "model": "alpha",
+            "output_tokens": 9,
+            "parent_session_id": null,
+            "preview": "Hello from the replay recorder",
+            "profile": "default",
+            "source": "desktop",
+            "started_at": 1795016142.730141,
+            "title": "Replay rename",
+            "tool_call_count": 1
+          }
+        ],
+        "repos": [
+          {
+            "groups": [
+              {
+                "id": "__no_project__",
+                "isKanban": false,
+                "isMain": false,
+                "label": "Home",
+                "path": null,
+                "sessions": []
+              }
+            ],
+            "id": "__no_project__",
+            "label": "Home",
+            "path": null,
+            "sessionCount": 1
+          }
+        ],
+        "sessionCount": 1,
+        "sessionIds": [
+          "20261118_103542_cd7264"
+        ],
+        "totalCostUsd": 0.0,
+        "totalTokens": 39
+      }
+    ],
+    "scoped_session_ids": [
+      "20261118_103542_cd7264"
+    ]
+  }
+}

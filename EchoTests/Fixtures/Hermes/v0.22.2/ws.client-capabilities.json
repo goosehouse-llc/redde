@@ -1,0 +1,28 @@
+{
+  "kind": "ws",
+  "method": "client.capabilities",
+  "params": {
+    "server_requests": true
+  },
+  "result": {
+    "declines_not_shown": true,
+    "server_requests": [
+      "approval",
+      "clarify",
+      "display.install.sudo",
+      "preview.act",
+      "preview.read",
+      "secret",
+      "setup_beat",
+      "sudo",
+      "terminal.read",
+      "theme.apply",
+      "theme.pick",
+      "tour",
+      "vault.code",
+      "vault.save_login",
+      "vault.unlock_prompt",
+      "window.read"
+    ]
+  }
+}

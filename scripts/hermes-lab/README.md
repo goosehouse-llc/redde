@@ -108,6 +108,18 @@ build, so its page says "The Webapp is not built"; the API and the socket work.
 `EchoTests/HermesLabCanonicalTests` runs against it, and so do the approval, queued, switch,
 controls and status tests given `TEST_RUNNER_REDDE_LAB_DASHBOARD=http://127.0.0.1:19120`.
 
+## Replay fixtures
+
+`lab.sh fixtures [tag ...]` (default: every release already installed here; it installs nothing)
+brings each release up with the `approval` scenario, has one short conversation on each connection,
+and saves what Hermes answered to the routes the app parses under
+`EchoTests/Fixtures/Hermes/<tag>/` (`record_fixtures.py`): the Dashboard's REST and WebSocket
+calls, the Hermes API's, the errors (an unknown session or run, a wrong key, a delete while a turn
+runs) and, on 0.23 and later, the gateway's own Dashboard (`webapp.*`). The lab's folders, key and
+password are taken out. `EchoTests/HermesReplayTests` feeds each to the app's own parser for that
+route, and changed copies of each (a key left out, one added, a number as text), with no Hermes
+running: run it before a release, and record again when a new Hermes comes out.
+
 ## No sign-in
 
 `open` (0.22.2 by default) runs the `named` scenario, whose Dashboard is on 127.0.0.1 with no

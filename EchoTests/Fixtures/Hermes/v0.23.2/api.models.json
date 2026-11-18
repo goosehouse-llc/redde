@@ -1,0 +1,19 @@
+{
+  "body": {
+    "data": [
+      {
+        "created": 1795016224,
+        "id": "hermes-agent",
+        "object": "model",
+        "owned_by": "hermes",
+        "parent": null,
+        "permission": [],
+        "root": "hermes-agent"
+      }
+    ],
+    "object": "list"
+  },
+  "kind": "api",
+  "request": "GET /v1/models",
+  "status": 200
+}

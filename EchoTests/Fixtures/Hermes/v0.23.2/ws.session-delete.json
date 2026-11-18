@@ -1,0 +1,10 @@
+{
+  "kind": "ws",
+  "method": "session.delete",
+  "params": {
+    "session_id": "20261118_103701_d5313a"
+  },
+  "result": {
+    "deleted": "20261118_103701_d5313a"
+  }
+}

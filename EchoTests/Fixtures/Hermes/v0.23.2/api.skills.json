@@ -1,0 +1,13 @@
+{
+  "body": {
+    "error": {
+      "code": null,
+      "message": "Failed to enumerate skills",
+      "param": null,
+      "type": "server_error"
+    }
+  },
+  "kind": "api",
+  "request": "GET /v1/skills",
+  "status": 500
+}

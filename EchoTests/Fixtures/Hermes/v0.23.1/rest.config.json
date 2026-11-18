@@ -1,0 +1,39 @@
+{
+  "body": {
+    "approvals": {
+      "mode": "manual"
+    },
+    "custom_providers": [
+      {
+        "api_key": "<redacted>",
+        "api_mode": "chat_completions",
+        "base_url": "http://127.0.0.1:18801/v1",
+        "model": "alpha",
+        "models": {
+          "alpha": {},
+          "beta": {}
+        },
+        "name": "My Local"
+      }
+    ],
+    "dashboard": {
+      "public_url": "http://redde-lab.test:19119"
+    },
+    "model": "alpha",
+    "model_context_length": 0,
+    "onboarding": {
+      "seen": {
+        "profile_build_offered": true
+      }
+    },
+    "webapp": {
+      "enabled": true,
+      "host": "127.0.0.1",
+      "port": 19120,
+      "public_url": "http://redde-lab.test:19120"
+    }
+  },
+  "kind": "rest",
+  "request": "GET /api/config?include_defaults=false",
+  "status": 200
+}

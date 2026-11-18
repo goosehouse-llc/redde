@@ -1,0 +1,395 @@
+{
+  "kind": "ws",
+  "method": "profiles.describe",
+  "params": {
+    "name": "default"
+  },
+  "result": {
+    "description": "",
+    "mcp_servers": [],
+    "model": {
+      "default": "alpha",
+      "provider": "custom:my-local"
+    },
+    "name": "default",
+    "skills": [
+      {
+        "enabled": true,
+        "name": "apple-notes"
+      },
+      {
+        "enabled": true,
+        "name": "apple-reminders"
+      },
+      {
+        "enabled": true,
+        "name": "findmy"
+      },
+      {
+        "enabled": true,
+        "name": "imessage"
+      },
+      {
+        "enabled": true,
+        "name": "claude-code"
+      },
+      {
+        "enabled": true,
+        "name": "codex"
+      },
+      {
+        "enabled": true,
+        "name": "computer-use"
+      },
+      {
+        "enabled": true,
+        "name": "hermes-agent"
+      },
+      {
+        "enabled": true,
+        "name": "opencode"
+      },
+      {
+        "enabled": true,
+        "name": "architecture-diagram"
+      },
+      {
+        "enabled": true,
+        "name": "ascii-video"
+      },
+      {
+        "enabled": true,
+        "name": "baoyu-infographic"
+      },
+      {
+        "enabled": true,
+        "name": "claude-design"
+      },
+      {
+        "enabled": true,
+        "name": "design-md"
+      },
+      {
+        "enabled": true,
+        "name": "humanizer"
+      },
+      {
+        "enabled": true,
+        "name": "manim-video"
+      },
+      {
+        "enabled": true,
+        "name": "p5js"
+      },
+      {
+        "enabled": true,
+        "name": "popular-web-designs"
+      },
+      {
+        "enabled": true,
+        "name": "songwriting-and-ai-music"
+      },
+      {
+        "enabled": true,
+        "name": "sdlc-review"
+      },
+      {
+        "enabled": true,
+        "name": "email-inbox-triage"
+      },
+      {
+        "enabled": true,
+        "name": "himalaya"
+      },
+      {
+        "enabled": true,
+        "name": "lab-hello"
+      },
+      {
+        "enabled": true,
+        "name": "lab-secret"
+      },
+      {
+        "enabled": true,
+        "name": "gif-search"
+      },
+      {
+        "enabled": true,
+        "name": "songsee"
+      },
+      {
+        "enabled": true,
+        "name": "youtube-content"
+      },
+      {
+        "enabled": true,
+        "name": "obsidian"
+      },
+      {
+        "enabled": true,
+        "name": "airtable"
+      },
+      {
+        "enabled": true,
+        "name": "box"
+      },
+      {
+        "enabled": true,
+        "name": "document-to-action-items"
+      },
+      {
+        "enabled": true,
+        "name": "docx"
+      },
+      {
+        "enabled": true,
+        "name": "google-workspace"
+      },
+      {
+        "enabled": true,
+        "name": "maps"
+      },
+      {
+        "enabled": true,
+        "name": "meeting-action-items"
+      },
+      {
+        "enabled": true,
+        "name": "notion"
+      },
+      {
+        "enabled": true,
+        "name": "pdf"
+      },
+      {
+        "enabled": true,
+        "name": "powerpoint"
+      },
+      {
+        "enabled": true,
+        "name": "product-price-monitor"
+      },
+      {
+        "enabled": true,
+        "name": "teams-meeting-pipeline"
+      },
+      {
+        "enabled": true,
+        "name": "weekly-review-planning"
+      },
+      {
+        "enabled": true,
+        "name": "xlsx"
+      },
+      {
+        "enabled": true,
+        "name": "arxiv"
+      },
+      {
+        "enabled": true,
+        "name": "competitor-news-monitor"
+      },
+      {
+        "enabled": true,
+        "name": "grounded-citations"
+      },
+      {
+        "enabled": true,
+        "name": "llm-wiki"
+      },
+      {
+        "enabled": true,
+        "name": "xurl"
+      },
+      {
+        "enabled": true,
+        "name": "codebase-inspection"
+      },
+      {
+        "enabled": true,
+        "name": "dogfood"
+      },
+      {
+        "enabled": true,
+        "name": "github"
+      },
+      {
+        "enabled": true,
+        "name": "hermes-agent-skill-authoring"
+      },
+      {
+        "enabled": true,
+        "name": "inspecting-hermes-desktop-dom"
+      },
+      {
+        "enabled": true,
+        "name": "node-inspect-debugger"
+      },
+      {
+        "enabled": true,
+        "name": "python-debugpy"
+      },
+      {
+        "enabled": true,
+        "name": "requesting-code-review"
+      },
+      {
+        "enabled": true,
+        "name": "simplify-code"
+      },
+      {
+        "enabled": true,
+        "name": "spike"
+      },
+      {
+        "enabled": true,
+        "name": "systematic-debugging"
+      },
+      {
+        "enabled": true,
+        "name": "test-driven-development"
+      },
+      {
+        "enabled": true,
+        "name": "blocked-page-recovery"
+      }
+    ],
+    "soul": "You are Hermes Agent, built by Nous Research. Be direct: match the length of your reply to the weight of the ask — a one-line question gets a one-line answer, and finished work gets a short report of what changed, what's verified, and what's left, never a replay of the process. No filler (\"Great question,\" \"I'd be happy to\"), no restating the request back, no re-summarizing what you already said, no narrating tool calls the user can see. Plain claims over adjectives; when unsure, say so plainly. Agree because it's right, not because the user said it. Depth is earned — give it when the user asks for detail, teaches, or the stakes demand it, not by default.",
+    "toolsets": [
+      {
+        "description": "web_search, web_extract",
+        "enabled": true,
+        "label": "🔍 Web Search & Scraping",
+        "name": "web",
+        "tool_count": 2
+      },
+      {
+        "description": "navigate, click, type, scroll",
+        "enabled": true,
+        "label": "🌐 Browser Automation",
+        "name": "browser",
+        "tool_count": 18
+      },
+      {
+        "description": "terminal, process",
+        "enabled": true,
+        "label": "💻 Terminal & Processes",
+        "name": "terminal",
+        "tool_count": 2
+      },
+      {
+        "description": "read, write, patch, search",
+        "enabled": true,
+        "label": "📁 File Operations",
+        "name": "file",
+        "tool_count": 4
+      },
+      {
+        "description": "execute_code",
+        "enabled": true,
+        "label": "⚡ Code Execution",
+        "name": "code_execution",
+        "tool_count": 1
+      },
+      {
+        "description": "vision_analyze",
+        "enabled": true,
+        "label": "👁️  Vision / Image Analysis",
+        "name": "vision",
+        "tool_count": 1
+      },
+      {
+        "description": "image_generate",
+        "enabled": true,
+        "label": "🎨 Image Generation",
+        "name": "image_gen",
+        "tool_count": 1
+      },
+      {
+        "description": "text_to_speech",
+        "enabled": true,
+        "label": "🔊 Text-to-Speech",
+        "name": "tts",
+        "tool_count": 1
+      },
+      {
+        "description": "voice transcription (gateway voice messages + voice mode)",
+        "enabled": false,
+        "label": "🎙️ Speech-to-Text",
+        "name": "stt",
+        "tool_count": 0
+      },
+      {
+        "description": "list, view, manage",
+        "enabled": true,
+        "label": "📚 Skills",
+        "name": "skills",
+        "tool_count": 3
+      },
+      {
+        "description": "todo_list",
+        "enabled": true,
+        "label": "📋 Task Planning",
+        "name": "todo",
+        "tool_count": 1
+      },
+      {
+        "description": "persistent memory across sessions",
+        "enabled": true,
+        "label": "💾 Memory",
+        "name": "memory",
+        "tool_count": 1
+      },
+      {
+        "description": "runtime tools from the active context engine",
+        "enabled": false,
+        "label": "🧩 Context Engine",
+        "name": "context_engine",
+        "tool_count": 0
+      },
+      {
+        "description": "search past conversations",
+        "enabled": true,
+        "label": "🔎 Session Search",
+        "name": "session_search",
+        "tool_count": 1
+      },
+      {
+        "description": "remote connector tools and account authorization",
+        "enabled": true,
+        "label": "🔌 Connections",
+        "name": "connections",
+        "tool_count": 1
+      },
+      {
+        "description": "clarify",
+        "enabled": true,
+        "label": "❓ Clarifying Questions",
+        "name": "clarify",
+        "tool_count": 1
+      },
+      {
+        "description": "delegate_task",
+        "enabled": true,
+        "label": "👥 Task Delegation",
+        "name": "delegation",
+        "tool_count": 1
+      },
+      {
+        "description": "create/list/update/pause/resume/run, with optional attached skills",
+        "enabled": true,
+        "label": "⏰ Cron Jobs",
+        "name": "cronjob",
+        "tool_count": 1
+      },
+      {
+        "description": "background desktop control via cua-driver",
+        "enabled": true,
+        "label": "🖱️  Computer Use (macOS/Windows/Linux)",
+        "name": "computer_use",
+        "tool_count": 1
+      }
+    ],
+    "toolsets_pinned": false
+  }
+}

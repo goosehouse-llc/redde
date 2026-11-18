@@ -1,0 +1,19 @@
+{
+  "kind": "ws",
+  "method": "session.list",
+  "params": {
+    "limit": 50
+  },
+  "result": {
+    "sessions": [
+      {
+        "id": "20261118_103129_f0f393",
+        "message_count": 6,
+        "preview": "Hello from the replay recorder",
+        "source": "desktop",
+        "started_at": 1795015890.050022,
+        "title": "Replay rename, bare"
+      }
+    ]
+  }
+}

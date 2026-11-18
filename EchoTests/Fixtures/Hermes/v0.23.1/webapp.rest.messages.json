@@ -1,0 +1,78 @@
+{
+  "body": {
+    "messages": [
+      {
+        "absorbed_message_uids": null,
+        "active": 1,
+        "api_content": null,
+        "codex_message_items": null,
+        "codex_reasoning_items": null,
+        "compacted": 0,
+        "content": "Hello from the replay recorder",
+        "display_kind": null,
+        "display_metadata": {
+          "gateway_input_owner": "a9d84e70-e88b-546a-895b-49cb95a2dfec",
+          "submission_id": "00000000-0000-4000-8000-000000000002"
+        },
+        "effect_disposition": null,
+        "finish_reason": null,
+        "id": 19,
+        "message_uid": "f11f8ada7a7a4955ac307791606399c7",
+        "observed": 0,
+        "platform_message_id": "ec1c0511c00342af8cf422a7cf0bb672",
+        "reasoning": null,
+        "reasoning_content": null,
+        "reasoning_details": null,
+        "role": "user",
+        "session_id": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582",
+        "timestamp": 1795016196.23618,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_call_uid": null,
+        "tool_call_uids": null,
+        "tool_calls": null,
+        "tool_name": null
+      },
+      {
+        "absorbed_message_uids": null,
+        "active": 1,
+        "api_content": null,
+        "codex_message_items": null,
+        "codex_reasoning_items": null,
+        "compacted": 0,
+        "content": "[A:alpha]",
+        "display_kind": null,
+        "display_metadata": null,
+        "effect_disposition": null,
+        "finish_reason": "stop",
+        "id": 20,
+        "message_uid": "f31c95e4743d40b59032e3745b8a50d7",
+        "observed": 0,
+        "platform_message_id": null,
+        "reasoning": null,
+        "reasoning_content": null,
+        "reasoning_details": null,
+        "role": "assistant",
+        "session_id": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582",
+        "timestamp": 1795016196.435638,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_call_uid": null,
+        "tool_call_uids": null,
+        "tool_calls": null,
+        "tool_name": null
+      }
+    ],
+    "pagination": {
+      "limit": 500,
+      "offset": 0,
+      "order": "latest",
+      "returned": 2
+    },
+    "profile": "default",
+    "session_id": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582"
+  },
+  "kind": "rest",
+  "request": "GET /api/sessions/local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582/messages?order=latest&limit=500",
+  "status": 200
+}

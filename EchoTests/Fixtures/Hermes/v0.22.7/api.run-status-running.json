@@ -1,0 +1,18 @@
+{
+  "body": {
+    "admission_id": "ad5d9cd9be4a4c84b535175ad330ad8f",
+    "created_at": 1795016161.4029582,
+    "execution_generation": 1,
+    "model": "hermes-agent",
+    "object": "hermes.run",
+    "output": "",
+    "pending_controls": [],
+    "run_id": "run_c9dd43fb58d94926b75e2e441c779a82",
+    "session_id": "api_1795016161_02514a0f",
+    "status": "running",
+    "usage": {}
+  },
+  "kind": "api",
+  "request": "GET /v1/runs/run_c9dd43fb58d94926b75e2e441c779a82",
+  "status": 200
+}

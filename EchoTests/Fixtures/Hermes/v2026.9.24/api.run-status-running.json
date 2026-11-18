@@ -1,0 +1,14 @@
+{
+  "body": {
+    "created_at": 1795016095.420886,
+    "model": "hermes-agent",
+    "object": "hermes.run",
+    "run_id": "run_788514e473be4c18a2c10b9751d9dec4",
+    "session_id": "api_1795016095_f053811d",
+    "status": "running",
+    "updated_at": 1795016095.423197
+  },
+  "kind": "api",
+  "request": "GET /v1/runs/run_788514e473be4c18a2c10b9751d9dec4",
+  "status": 200
+}

@@ -592,7 +592,7 @@ extension HermesServeClient {
             } else {
                 try await call("session.title", params: .object(["session_id": .string(runtime), "title": .string(BotChat.title)]))
             }
-        } catch let error as RPCError where error.message.localizedCaseInsensitiveContains("already in use") {
+        } catch let error as RPCError where Self.isTitleTaken(error, canonical: sessionAuthority) {
             // Another app made the bot's chat meanwhile: that one is it.
             guard let winner = try await findBotChat(bot) else { throw error }
             noteProfile(bot.name, forStored: winner)

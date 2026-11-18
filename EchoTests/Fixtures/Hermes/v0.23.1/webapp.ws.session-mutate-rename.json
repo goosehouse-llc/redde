@@ -1,0 +1,20 @@
+{
+  "kind": "ws",
+  "method": "session.mutate",
+  "params": {
+    "expected_revision": 1,
+    "operation": "rename",
+    "payload": {
+      "title": "Replay rename on the Webapp"
+    },
+    "request_id": "00000000-0000-4000-8000-000000000003",
+    "session_id": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582"
+  },
+  "result": {
+    "execution_generation": 1,
+    "operation": "rename",
+    "revision": 2,
+    "session_id": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582",
+    "title": "Replay rename on the Webapp"
+  }
+}

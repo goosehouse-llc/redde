@@ -404,8 +404,7 @@ final class HermesServeClient {
             let key = id.string ?? id.int.map(String.init) ?? ""
             guard let cont = pending.removeValue(forKey: key) else { return }
             if let error = json["error"] {
-                let code = error["code"]?.int ?? 0
-                cont.resume(throwing: RPCError(code: code, message: error["message"]?.string ?? "rpc error"))
+                cont.resume(throwing: RPCError(error))
             } else {
                 cont.resume(returning: json["result"] ?? .null)
             }
@@ -413,7 +412,7 @@ final class HermesServeClient {
         }
         if json["method"]?.string == "event", let params = json["params"] {
             var event: Event = (params["type"]?.string ?? "", params["session_id"]?.string, params["payload"] ?? .null)
-            if event.type == "gateway.ready" { sessionAuthority = event.payload["session_authority"]?.bool == true }
+            if event.type == "gateway.ready" { sessionAuthority = Self.claimsSessionAuthority(ready: event.payload) }
             if event.type.hasSuffix(".request"), let prompt = event.payload["prompt_id"]?.string { heardPrompts.insert(prompt) }
             // A question the host has stopped waiting on (answered elsewhere, timed out, the turn
             // was stopped): the card goes, as with the older `<kind>.expire` notification.
@@ -444,6 +443,18 @@ final class HermesServeClient {
         var code: Int
         var message: String
         var errorDescription: String? { "\(message) (\(code))" }
+
+        init(code: Int, message: String) { self.code = code; self.message = message }
+
+        /// From a reply's `error` object, as the socket hands it over.
+        init(_ error: JSONValue) {
+            self.init(code: error["code"]?.int ?? 0, message: error["message"]?.string ?? "rpc error")
+        }
+    }
+
+    /// Whether `gateway.ready` says the host's sessions are the canonical owner's (`sessionAuthority`).
+    nonisolated static func claimsSessionAuthority(ready payload: JSONValue) -> Bool {
+        payload["session_authority"]?.bool == true
     }
 
     static let encoder = JSONEncoder()

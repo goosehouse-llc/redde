@@ -1,0 +1,92 @@
+{
+  "kind": "ws",
+  "method": "groups.capabilities",
+  "params": {},
+  "result": {
+    "authority_gateway_id": "install:113e00385c2d4d4cb9cd6affcf24105b",
+    "driver": true,
+    "features": [
+      "authority_epoch",
+      "coordinator_fencing",
+      "room_identity",
+      "monotonic_log",
+      "idempotent_send",
+      "replayable_disband",
+      "typed_events",
+      "actor_identity",
+      "log_replication",
+      "authority_takeover"
+    ],
+    "max_log_limit": 500,
+    "methods": [
+      "groups.capabilities",
+      "groups.list",
+      "groups.create",
+      "groups.state",
+      "groups.send",
+      "groups.rename",
+      "groups.log",
+      "groups.disband",
+      "groups.replicate",
+      "groups.replica_state",
+      "groups.promote",
+      "groups.demote",
+      "groups.stop",
+      "groups.retry",
+      "groups.approve",
+      "groups.peer.invite",
+      "groups.peer.revoke",
+      "groups.peer.register"
+    ],
+    "persistent_process": true,
+    "protocol_version": 2,
+    "room_link": {
+      "catalog": {
+        "attachments": false,
+        "catalog_digest": "42605adc977b785fb3c6885c34e3d4c3a8b254595bdbf9804c2f3eb0087598f9",
+        "endpoint": {
+          "available": false,
+          "reason": "not_configured"
+        },
+        "execution_policy": {
+          "approval_mode": "manual",
+          "enabled_toolsets": [
+            "bot_room",
+            "browser",
+            "code_execution",
+            "cronjob",
+            "delegation",
+            "file",
+            "image_gen",
+            "memory",
+            "session_search",
+            "skills",
+            "terminal",
+            "todo",
+            "vision",
+            "web"
+          ],
+          "max_iterations": 9007199254740991,
+          "policy_digest": "cfb4d30f26a2e20e0106e7a8abfaea28a2928a8486f62770683bf7e1b6fcd09f",
+          "target_profile": "default",
+          "version": 1
+        },
+        "installation_id": "install:113e00385c2d4d4cb9cd6affcf24105b",
+        "link_modes": [
+          "direct"
+        ],
+        "persistent_process": true,
+        "protocol_versions": [
+          2
+        ],
+        "text": true
+      },
+      "enabled": true,
+      "endpoint": {
+        "available": false,
+        "reason": "not_configured"
+      },
+      "profile": "default"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "body": {
+    "error": {
+      "code": "gateway_auth_failed",
+      "message": "Invalid gateway API key (API_SERVER_KEY)",
+      "type": "gateway_auth_error"
+    }
+  },
+  "kind": "api",
+  "request": "GET /v1/models",
+  "status": 401
+}

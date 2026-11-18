@@ -1,0 +1,17 @@
+{
+  "error": {
+    "code": -32603,
+    "message": "internal error"
+  },
+  "kind": "ws",
+  "method": "session.mutate",
+  "params": {
+    "expected_revision": 2,
+    "operation": "rename",
+    "payload": {
+      "title": "Replay rename"
+    },
+    "request_id": "00000000-0000-4000-8000-000000000006",
+    "session_id": "local-006af763d26fff709416a1d0a678d245daf68b966a802eac003e3ab5a114d8ee"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "body": {
+    "profiles": [
+      {
+        "bot_title": "",
+        "description": "",
+        "description_auto": false,
+        "display_name": "",
+        "distribution_name": null,
+        "distribution_source": null,
+        "distribution_version": null,
+        "gateway_running": true,
+        "has_alias": false,
+        "has_env": true,
+        "is_default": true,
+        "model": "alpha",
+        "name": "default",
+        "path": "<run>/.hermes",
+        "provider": "custom:my-local",
+        "skill_count": 0
+      }
+    ]
+  },
+  "kind": "rest",
+  "request": "GET /api/profiles",
+  "status": 200
+}

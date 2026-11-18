@@ -1,0 +1,13 @@
+{
+  "body": {
+    "error": {
+      "code": "session_not_found",
+      "message": "Session not found: api_1795016479_89ed0e51",
+      "param": null,
+      "type": "invalid_request_error"
+    }
+  },
+  "kind": "api",
+  "request": "DELETE /api/sessions/api_1795016479_89ed0e51",
+  "status": 404
+}

@@ -1,0 +1,684 @@
+{
+  "kind": "ws",
+  "method": "complete.slash",
+  "params": {
+    "text": "/"
+  },
+  "result": {
+    "items": [
+      {
+        "display": "/new",
+        "kind": "command",
+        "meta": "Start a new session (fresh session ID + history) (usage: /new [name])",
+        "text": "new"
+      },
+      {
+        "display": "/reset",
+        "kind": "command",
+        "meta": "Start a new session (fresh session ID + history) (alias for /new)",
+        "text": "reset"
+      },
+      {
+        "display": "/save",
+        "kind": "command",
+        "meta": "Export the current conversation (bare /save shows usage) (usage: /save <json|md|html> [filename] [redact])",
+        "text": "save"
+      },
+      {
+        "display": "/retry",
+        "kind": "command",
+        "meta": "Retry the last message (resend to agent)",
+        "text": "retry"
+      },
+      {
+        "display": "/undo",
+        "kind": "command",
+        "meta": "Back up N user turns and re-prompt (default 1) (usage: /undo [N])",
+        "text": "undo"
+      },
+      {
+        "display": "/title",
+        "kind": "command",
+        "meta": "Set a title for the current session (usage: /title [name])",
+        "text": "title"
+      },
+      {
+        "display": "/branch",
+        "kind": "command",
+        "meta": "Branch the current session (new thread on Discord/Telegram/Slack/Matrix; --here stays here) (usage: /branch [--here] [name])",
+        "text": "branch"
+      },
+      {
+        "display": "/fork",
+        "kind": "command",
+        "meta": "Branch the current session (new thread on Discord/Telegram/Slack/Matrix; --here stays here) (alias for /branch)",
+        "text": "fork"
+      },
+      {
+        "display": "/compress",
+        "kind": "command",
+        "meta": "Compress conversation context (add 'here [N]' to keep recent N turns; --preview shows what would happen) (usage: /compress [here [N] | focus topic | --preview|--dry-run])",
+        "text": "compress"
+      },
+      {
+        "display": "/compact",
+        "kind": "command",
+        "meta": "Compress conversation context (add 'here [N]' to keep recent N turns; --preview shows what would happen) (alias for /compress)",
+        "text": "compact"
+      },
+      {
+        "display": "/rollback",
+        "kind": "command",
+        "meta": "List or restore filesystem checkpoints (restores keep your hand-edits; --all overrides) (usage: /rollback [number] [--all])",
+        "text": "rollback"
+      },
+      {
+        "display": "/stop",
+        "kind": "command",
+        "meta": "Kill all running background processes",
+        "text": "stop"
+      },
+      {
+        "display": "/bg",
+        "kind": "command",
+        "meta": "Run a prompt in a separate background session (usage: /bg <prompt>)",
+        "text": "bg"
+      },
+      {
+        "display": "/btw",
+        "kind": "command",
+        "meta": "Ask a side question about the current conversation without interrupting it (usage: /btw <question>)",
+        "text": "btw"
+      },
+      {
+        "display": "/agents",
+        "kind": "command",
+        "meta": "Show active agents and running tasks",
+        "text": "agents"
+      },
+      {
+        "display": "/tasks",
+        "kind": "command",
+        "meta": "Show active agents and running tasks (alias for /agents)",
+        "text": "tasks"
+      },
+      {
+        "display": "/queue",
+        "kind": "command",
+        "meta": "Queue a prompt for the next turn, or list/edit/rm/move/clear queued prompts (usage: /queue [<prompt>|list|edit N <prompt>|rm N|move A B|clear])",
+        "text": "queue"
+      },
+      {
+        "display": "/q",
+        "kind": "command",
+        "meta": "Queue a prompt for the next turn, or list/edit/rm/move/clear queued prompts (alias for /queue)",
+        "text": "q"
+      },
+      {
+        "display": "/steer",
+        "kind": "command",
+        "meta": "Inject a message after the next tool call without interrupting (usage: /steer <prompt>)",
+        "text": "steer"
+      },
+      {
+        "display": "/s",
+        "kind": "command",
+        "meta": "Inject a message after the next tool call without interrupting (alias for /steer)",
+        "text": "s"
+      },
+      {
+        "display": "/goal",
+        "kind": "command",
+        "meta": "Set a standing goal Hermes works on across turns until achieved (usage: /goal [text | -- <text> | draft <text> | show | gate add <cmd> | pause | resume | clear | status | wait <pid> | unwait])",
+        "text": "goal"
+      },
+      {
+        "display": "/heartbeat",
+        "kind": "command",
+        "meta": "Set a recurring prompt that re-enters this session when idle (usage: /heartbeat [every <interval> <prompt> | status | pause | resume | clear])",
+        "text": "heartbeat"
+      },
+      {
+        "display": "/hb",
+        "kind": "command",
+        "meta": "Set a recurring prompt that re-enters this session when idle (alias for /heartbeat)",
+        "text": "hb"
+      },
+      {
+        "display": "/refine",
+        "kind": "command",
+        "meta": "Review this conversation now and save lessons to memory/skills (usage: /refine [focus instructions])",
+        "text": "refine"
+      },
+      {
+        "display": "/review",
+        "kind": "command",
+        "meta": "Spawn an independent subagent to review the work just discussed (PR, code, docs) (usage: /review [review instructions])",
+        "text": "review"
+      },
+      {
+        "display": "/loop",
+        "kind": "command",
+        "meta": "Re-run a prompt on a recurring interval in this session (usage: /loop [interval] <prompt> [--times N] [--until <condition>] | status | pause | resume | stop)",
+        "text": "loop"
+      },
+      {
+        "display": "/proactive",
+        "kind": "command",
+        "meta": "Re-run a prompt on a recurring interval in this session (alias for /loop)",
+        "text": "proactive"
+      },
+      {
+        "display": "/plan",
+        "kind": "command",
+        "meta": "Write a markdown implementation plan to .hermes/plans/ without executing anything (usage: /plan [task])",
+        "text": "plan"
+      },
+      {
+        "display": "/moa",
+        "kind": "command",
+        "meta": "Run one prompt through the default Mixture of Agents preset, then restore your model (usage: /moa <prompt>)",
+        "text": "moa"
+      },
+      {
+        "display": "/subgoal",
+        "kind": "command",
+        "meta": "Add or manage extra criteria on the active goal (usage: /subgoal [text | remove N | clear])",
+        "text": "subgoal"
+      },
+      {
+        "display": "/status",
+        "kind": "command",
+        "meta": "Show session, model, token, and context info",
+        "text": "status"
+      },
+      {
+        "display": "/egress",
+        "kind": "command",
+        "meta": "Show Docker egress proxy status (usage: /egress [status])",
+        "text": "egress"
+      },
+      {
+        "display": "/context",
+        "kind": "command",
+        "meta": "Show detailed context window view with usage gauge, category breakdown, compression stats, and throughput (usage: /context [all])",
+        "text": "context"
+      },
+      {
+        "display": "/ctx",
+        "kind": "command",
+        "meta": "Show detailed context window view with usage gauge, category breakdown, compression stats, and throughput (alias for /context)",
+        "text": "ctx"
+      },
+      {
+        "display": "/resume",
+        "kind": "command",
+        "meta": "Resume a previously-named session (usage: /resume [name])",
+        "text": "resume"
+      },
+      {
+        "display": "/sessions",
+        "kind": "command",
+        "meta": "Browse and resume previous sessions",
+        "text": "sessions"
+      },
+      {
+        "display": "/model",
+        "kind": "command",
+        "meta": "Switch model (session-scoped; --global to persist) (usage: /model [model|reset] [--provider name] [--reasoning level] [--global|--session] [--refresh])",
+        "text": "model"
+      },
+      {
+        "display": "/codex-runtime",
+        "kind": "command",
+        "meta": "Toggle codex app-server runtime for OpenAI/Codex models (usage: /codex-runtime [auto|codex_app_server])",
+        "text": "codex-runtime"
+      },
+      {
+        "display": "/codex_runtime",
+        "kind": "command",
+        "meta": "Toggle codex app-server runtime for OpenAI/Codex models (alias for /codex-runtime)",
+        "text": "codex_runtime"
+      },
+      {
+        "display": "/personality",
+        "kind": "command",
+        "meta": "Set a predefined personality (usage: /personality [name])",
+        "text": "personality"
+      },
+      {
+        "display": "/verbose",
+        "kind": "command",
+        "meta": "Cycle tool progress display: off -> new -> all -> verbose",
+        "text": "verbose"
+      },
+      {
+        "display": "/footer",
+        "kind": "command",
+        "meta": "Toggle gateway runtime-metadata footer on final replies (usage: /footer [on|off|status])",
+        "text": "footer"
+      },
+      {
+        "display": "/yolo",
+        "kind": "command",
+        "meta": "Toggle YOLO mode (skip all dangerous command approvals)",
+        "text": "yolo"
+      },
+      {
+        "display": "/approvals",
+        "kind": "command",
+        "meta": "Show or set the persistent dangerous-command approval mode (usage: /approvals [manual|smart|off])",
+        "text": "approvals"
+      },
+      {
+        "display": "/reasoning",
+        "kind": "command",
+        "meta": "Manage reasoning effort and display (usage: /reasoning [level|show|hide|full|clamp] [--global])",
+        "text": "reasoning"
+      },
+      {
+        "display": "/fast",
+        "kind": "command",
+        "meta": "Fast mode — OpenAI Priority Processing / Anthropic Fast Mode (normal/fast/auto/cold/ultrafast) (usage: /fast [normal|fast|auto|cold|ultrafast|status] [--global])",
+        "text": "fast"
+      },
+      {
+        "display": "/voice",
+        "kind": "command",
+        "meta": "Toggle voice mode (usage: /voice [on|off|tts|status])",
+        "text": "voice"
+      },
+      {
+        "display": "/busy",
+        "kind": "command",
+        "meta": "Control how messages behave while Hermes is working (usage: /busy [queue|steer|interrupt|status])",
+        "text": "busy"
+      },
+      {
+        "display": "/autoprune",
+        "kind": "command",
+        "meta": "Turn automatic pruning of old sessions on or off (usage: /autoprune [on|off|later|status])",
+        "text": "autoprune"
+      },
+      {
+        "display": "/whoami",
+        "kind": "command",
+        "meta": "Show your slash command access (admin / user)",
+        "text": "whoami"
+      },
+      {
+        "display": "/profile",
+        "kind": "command",
+        "meta": "Show active profile name and home directory",
+        "text": "profile"
+      },
+      {
+        "display": "/diff",
+        "kind": "command",
+        "meta": "Show git changes in the working directory (usage: /diff [staged|all|session] [--stat] [path...])",
+        "text": "diff"
+      },
+      {
+        "display": "/help",
+        "kind": "command",
+        "meta": "Show available commands (/help skills lists skill commands, /help <text> filters) (usage: /help [skills|<filter>])",
+        "text": "help"
+      },
+      {
+        "display": "/usage",
+        "kind": "command",
+        "meta": "Show token usage and rate limits; `reset` redeems a banked Codex limit reset (usage: /usage [reset [--force]])",
+        "text": "usage"
+      },
+      {
+        "display": "/login",
+        "kind": "command",
+        "meta": "Sign in with a Nous account (keeps your connectors)",
+        "text": "login"
+      },
+      {
+        "display": "/topup",
+        "kind": "command",
+        "meta": "Show your Nous balance and manage billing on the portal",
+        "text": "topup"
+      },
+      {
+        "display": "/insights",
+        "kind": "command",
+        "meta": "Show usage insights and analytics (usage: /insights [days])",
+        "text": "insights"
+      },
+      {
+        "display": "/update",
+        "kind": "command",
+        "meta": "Update Hermes Agent to the latest version",
+        "text": "update"
+      },
+      {
+        "display": "/version",
+        "kind": "command",
+        "meta": "Show Hermes Agent version",
+        "text": "version"
+      },
+      {
+        "display": "/v",
+        "kind": "command",
+        "meta": "Show Hermes Agent version (alias for /version)",
+        "text": "v"
+      },
+      {
+        "display": "/debug",
+        "kind": "command",
+        "meta": "Upload debug report (system info + logs) and get shareable links (usage: /debug [nous|local])",
+        "text": "debug"
+      },
+      {
+        "display": "/skills",
+        "kind": "command",
+        "meta": "Search, install, inspect, or manage skills",
+        "text": "skills"
+      },
+      {
+        "display": "/memory",
+        "kind": "command",
+        "meta": "Review pending memory writes / toggle the approval gate (usage: /memory [pending|approve|reject|approval] [id|on|off])",
+        "text": "memory"
+      },
+      {
+        "display": "/bundles",
+        "kind": "command",
+        "meta": "List skill bundles (aliases /<name> for multiple skills)",
+        "text": "bundles"
+      },
+      {
+        "display": "/learn",
+        "kind": "command",
+        "meta": "Learn a reusable skill from anything you describe (dirs, URLs, this chat, notes) (usage: /learn <what to learn from>)",
+        "text": "learn"
+      },
+      {
+        "display": "/init",
+        "kind": "command",
+        "meta": "Generate or update AGENTS.md project instructions from a repo scan (usage: /init [notes])",
+        "text": "init"
+      },
+      {
+        "display": "/suggestions",
+        "kind": "command",
+        "meta": "Review suggested automations (accept/dismiss) (usage: /suggestions [accept|dismiss N | catalog])",
+        "text": "suggestions"
+      },
+      {
+        "display": "/suggest",
+        "kind": "command",
+        "meta": "Review suggested automations (accept/dismiss) (alias for /suggestions)",
+        "text": "suggest"
+      },
+      {
+        "display": "/blueprint",
+        "kind": "command",
+        "meta": "Set up an automation from a blueprint template (usage: /blueprint [name] [slot=value ...])",
+        "text": "blueprint"
+      },
+      {
+        "display": "/bp",
+        "kind": "command",
+        "meta": "Set up an automation from a blueprint template (alias for /blueprint)",
+        "text": "bp"
+      },
+      {
+        "display": "/curator",
+        "kind": "command",
+        "meta": "Background skill maintenance (status, run, pin, archive, list-archived) (usage: /curator [subcommand])",
+        "text": "curator"
+      },
+      {
+        "display": "/kanban",
+        "kind": "command",
+        "meta": "Multi-profile collaboration board (tasks, links, comments) (usage: /kanban [subcommand])",
+        "text": "kanban"
+      },
+      {
+        "display": "/reload-mcp",
+        "kind": "command",
+        "meta": "Reload MCP servers from config",
+        "text": "reload-mcp"
+      },
+      {
+        "display": "/reload_mcp",
+        "kind": "command",
+        "meta": "Reload MCP servers from config (alias for /reload-mcp)",
+        "text": "reload_mcp"
+      },
+      {
+        "display": "/reload-skills",
+        "kind": "command",
+        "meta": "Re-scan ~/.hermes/skills/ for newly installed or removed skills",
+        "text": "reload-skills"
+      },
+      {
+        "display": "/reload_skills",
+        "kind": "command",
+        "meta": "Re-scan ~/.hermes/skills/ for newly installed or removed skills (alias for /reload-skills)",
+        "text": "reload_skills"
+      },
+      {
+        "display": "/clear",
+        "kind": "command",
+        "meta": "Clear screen and start a new session",
+        "text": "clear"
+      },
+      {
+        "display": "/redraw",
+        "kind": "command",
+        "meta": "Force a full UI repaint (recovers from terminal drift)",
+        "text": "redraw"
+      },
+      {
+        "display": "/history",
+        "kind": "command",
+        "meta": "Show conversation history",
+        "text": "history"
+      },
+      {
+        "display": "/prompt",
+        "kind": "command",
+        "meta": "Compose your next prompt in $EDITOR (markdown), then send it (usage: /prompt [initial text])",
+        "text": "prompt"
+      },
+      {
+        "display": "/compose",
+        "kind": "command",
+        "meta": "Compose your next prompt in $EDITOR (markdown), then send it (alias for /prompt)",
+        "text": "compose"
+      },
+      {
+        "display": "/rewind",
+        "kind": "command",
+        "meta": "Rewind to an earlier prompt to edit & resend it, or fork from there (Esc Esc) (usage: /rewind [N | fork N])",
+        "text": "rewind"
+      },
+      {
+        "display": "/handoff",
+        "kind": "command",
+        "meta": "Hand off this session to a messaging platform (Telegram, Discord, etc.) (usage: /handoff <platform>)",
+        "text": "handoff"
+      },
+      {
+        "display": "/worktree",
+        "kind": "command",
+        "meta": "Show, list, create, or prune isolated git worktrees (usage: /worktree [new [name]|list|prune [--dry-run]])",
+        "text": "worktree"
+      },
+      {
+        "display": "/snapshot",
+        "kind": "command",
+        "meta": "Create or restore state snapshots of Hermes config/state (usage: /snapshot [create|restore <id>|prune])",
+        "text": "snapshot"
+      },
+      {
+        "display": "/snap",
+        "kind": "command",
+        "meta": "Create or restore state snapshots of Hermes config/state (alias for /snapshot)",
+        "text": "snap"
+      },
+      {
+        "display": "/journey",
+        "kind": "command",
+        "meta": "Open the learning journey timeline (usage: /journey [list|delete <id>|edit <id>])",
+        "text": "journey"
+      },
+      {
+        "display": "/learning",
+        "kind": "command",
+        "meta": "Open the learning journey timeline (alias for /journey)",
+        "text": "learning"
+      },
+      {
+        "display": "/memory-graph",
+        "kind": "command",
+        "meta": "Open the learning journey timeline (alias for /journey)",
+        "text": "memory-graph"
+      },
+      {
+        "display": "/export",
+        "kind": "command",
+        "meta": "Export a profile (config, skills, theme) to a shareable archive (usage: /export [profile] [-o output.tar.gz])",
+        "text": "export"
+      },
+      {
+        "display": "/import",
+        "kind": "command",
+        "meta": "Import a shared profile archive as a new profile (usage: /import <archive.tar.gz> [--name <name>])",
+        "text": "import"
+      },
+      {
+        "display": "/config",
+        "kind": "command",
+        "meta": "Show current configuration",
+        "text": "config"
+      },
+      {
+        "display": "/statusbar",
+        "kind": "command",
+        "meta": "Toggle the context/model status bar",
+        "text": "statusbar"
+      },
+      {
+        "display": "/sb",
+        "kind": "command",
+        "meta": "Toggle the context/model status bar (alias for /statusbar)",
+        "text": "sb"
+      },
+      {
+        "display": "/battery",
+        "kind": "command",
+        "meta": "Toggle a color-coded battery indicator in the status bar (usage: /battery [on|off|status])",
+        "text": "battery"
+      },
+      {
+        "display": "/timestamps",
+        "kind": "command",
+        "meta": "Toggle [HH:MM] timestamps on messages and /history (usage: /timestamps [on|off|status])",
+        "text": "timestamps"
+      },
+      {
+        "display": "/ts",
+        "kind": "command",
+        "meta": "Toggle [HH:MM] timestamps on messages and /history (alias for /timestamps)",
+        "text": "ts"
+      },
+      {
+        "display": "/focus",
+        "kind": "command",
+        "meta": "Toggle focus view — show only your prompt and the final response (usage: /focus [on|off|status])",
+        "text": "focus"
+      },
+      {
+        "display": "/skin",
+        "kind": "command",
+        "meta": "Show or change the display skin/theme (usage: /skin [name])",
+        "text": "skin"
+      },
+      {
+        "display": "/indicator",
+        "kind": "command",
+        "meta": "Pick the TUI busy-indicator style (usage: /indicator [ascii|emoji|kaomoji|unicode])",
+        "text": "indicator"
+      },
+      {
+        "display": "/wake",
+        "kind": "command",
+        "meta": "Toggle the 'Hey Hermes' wake word listener (usage: /wake [on|off|status])",
+        "text": "wake"
+      },
+      {
+        "display": "/palette",
+        "kind": "command",
+        "meta": "Open the fuzzy command palette (also Ctrl+P)",
+        "text": "palette"
+      },
+      {
+        "display": "/subscription",
+        "kind": "command",
+        "meta": "View your Nous plan and change it in the browser",
+        "text": "subscription"
+      },
+      {
+        "display": "/upgrade",
+        "kind": "command",
+        "meta": "View your Nous plan and change it in the browser (alias for /subscription)",
+        "text": "upgrade"
+      },
+      {
+        "display": "/platforms",
+        "kind": "command",
+        "meta": "Show gateway/messaging platform status",
+        "text": "platforms"
+      },
+      {
+        "display": "/gateway",
+        "kind": "command",
+        "meta": "Show gateway/messaging platform status (alias for /platforms)",
+        "text": "gateway"
+      },
+      {
+        "display": "/lab-hello",
+        "kind": "skill",
+        "meta": "⚡ Lab only. A plain skill.",
+        "text": "lab-hello"
+      },
+      {
+        "display": "/lab-secret",
+        "kind": "skill",
+        "meta": "⚡ Lab only. A skill that needs a secret.",
+        "text": "lab-secret"
+      },
+      {
+        "display": "/density",
+        "kind": "command",
+        "meta": "Toggle compact display mode",
+        "text": "/density"
+      },
+      {
+        "display": "/details",
+        "kind": "command",
+        "meta": "Control agent detail visibility",
+        "text": "/details"
+      },
+      {
+        "display": "/logs",
+        "kind": "command",
+        "meta": "Show recent gateway log lines",
+        "text": "/logs"
+      },
+      {
+        "display": "/mouse",
+        "kind": "command",
+        "meta": "Set mouse tracking preset [on|off|toggle|wheel|buttons|all]",
+        "text": "/mouse"
+      }
+    ],
+    "replace_from": 1
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "body": {
+    "object": "hermes.session",
+    "session": {
+      "actual_cost_usd": null,
+      "api_call_count": 0,
+      "archived": false,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "end_reason": null,
+      "ended_at": null,
+      "estimated_cost_usd": null,
+      "has_model_config": false,
+      "has_system_prompt": false,
+      "hidden": false,
+      "id": "api_1795016127_68cc11fb",
+      "input_tokens": 0,
+      "is_internal_child": false,
+      "message_count": 0,
+      "model": null,
+      "output_tokens": 0,
+      "parent_session_id": null,
+      "pinned": false,
+      "reasoning_tokens": 0,
+      "source": "api_server",
+      "started_at": 1795016127.6855721,
+      "title": "Replay API chat",
+      "tool_call_count": 0,
+      "user_id": null
+    }
+  },
+  "kind": "api",
+  "request": "POST /api/sessions",
+  "sent": {
+    "title": "Replay API chat"
+  },
+  "status": 201
+}

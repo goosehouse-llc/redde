@@ -1,0 +1,25 @@
+{
+  "kind": "ws",
+  "method": "session.create",
+  "params": {
+    "close_on_disconnect": false,
+    "source": "desktop"
+  },
+  "result": {
+    "info": {
+      "branch": "",
+      "cwd": "<run>",
+      "desktop_contract": 6,
+      "lazy": true,
+      "model": "alpha",
+      "profile_name": "default",
+      "project": null,
+      "skills": {},
+      "tools": {}
+    },
+    "message_count": 0,
+    "messages": [],
+    "session_id": "99472c50",
+    "stored_session_id": "20261118_103129_f0f393"
+  }
+}

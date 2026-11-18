@@ -1,0 +1,8 @@
+{
+  "body": {
+    "servers": []
+  },
+  "kind": "rest",
+  "request": "GET /api/mcp/servers",
+  "status": 200
+}

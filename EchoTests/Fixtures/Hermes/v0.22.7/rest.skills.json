@@ -1,0 +1,412 @@
+{
+  "body": [
+    {
+      "category": "apple",
+      "description": "Manage Apple Notes via memo CLI: create, search, edit.",
+      "enabled": true,
+      "locked": false,
+      "name": "apple-notes",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "apple",
+      "description": "Apple Reminders via remindctl: add, list, complete.",
+      "enabled": true,
+      "locked": false,
+      "name": "apple-reminders",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "apple",
+      "description": "Track Apple devices/AirTags via FindMy.app on macOS.",
+      "enabled": true,
+      "locked": false,
+      "name": "findmy",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "apple",
+      "description": "Send and receive iMessages/SMS via the imsg CLI on macOS.",
+      "enabled": true,
+      "locked": false,
+      "name": "imessage",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "autonomous-ai-agents",
+      "description": "Delegate coding to Claude Code CLI (features, PRs).",
+      "enabled": true,
+      "locked": false,
+      "name": "claude-code",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "autonomous-ai-agents",
+      "description": "Delegate coding to OpenAI Codex CLI (features, PRs).",
+      "enabled": true,
+      "locked": false,
+      "name": "codex",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "autonomous-ai-agents",
+      "description": "Drive the desktop background-first; escalate on signal.",
+      "enabled": true,
+      "locked": false,
+      "name": "computer-use",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "autonomous-ai-agents",
+      "description": "Use, configure, theme, extend, and orchestrate Hermes Agent.",
+      "enabled": true,
+      "locked": false,
+      "name": "hermes-agent",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "creative",
+      "description": "Dark-themed SVG architecture/cloud/infra diagrams as HTML.",
+      "enabled": true,
+      "locked": false,
+      "name": "architecture-diagram",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "creative",
+      "description": "ASCII video: convert video/audio to colored ASCII MP4/GIF.",
+      "enabled": true,
+      "locked": false,
+      "name": "ascii-video",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "creative",
+      "description": "Infographics: 21 layouts x 21 styles (信息图, 可视化).",
+      "enabled": true,
+      "locked": false,
+      "name": "baoyu-infographic",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "creative",
+      "description": "Design one-off HTML artifacts (landing, deck, prototype).",
+      "enabled": true,
+      "locked": false,
+      "name": "claude-design",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "creative",
+      "description": "Humanize text: strip AI-isms and add real voice.",
+      "enabled": true,
+      "locked": false,
+      "name": "humanizer",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "creative",
+      "description": "Manim CE animations: 3Blue1Brown math/algo videos.",
+      "enabled": true,
+      "locked": false,
+      "name": "manim-video",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "creative",
+      "description": "p5.js sketches: gen art, shaders, interactive, 3D.",
+      "enabled": true,
+      "locked": false,
+      "name": "p5js",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "creative",
+      "description": "54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.",
+      "enabled": true,
+      "locked": false,
+      "name": "popular-web-designs",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "creative",
+      "description": "Songwriting craft and Suno AI music prompts.",
+      "enabled": true,
+      "locked": false,
+      "name": "songwriting-and-ai-music",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "email",
+      "description": "Triage an inbox: prioritize threads, draft replies safely.",
+      "enabled": true,
+      "locked": false,
+      "name": "email-inbox-triage",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "email",
+      "description": "Himalaya CLI: IMAP/SMTP email from terminal.",
+      "enabled": true,
+      "locked": false,
+      "name": "himalaya",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": null,
+      "description": "Lab only. A plain skill.",
+      "enabled": true,
+      "locked": false,
+      "name": "lab-hello",
+      "provenance": "agent",
+      "usage": 0
+    },
+    {
+      "category": null,
+      "description": "Lab only. A skill that needs a secret.",
+      "enabled": true,
+      "locked": false,
+      "name": "lab-secret",
+      "provenance": "agent",
+      "usage": 0
+    },
+    {
+      "category": "media",
+      "description": "YouTube transcripts to summaries, threads, blogs.",
+      "enabled": true,
+      "locked": false,
+      "name": "youtube-content",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "note-taking",
+      "description": "Read, search, create, and edit notes in the Obsidian vault.",
+      "enabled": true,
+      "locked": false,
+      "name": "obsidian",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "productivity",
+      "description": "Extract cited obligations, deadlines, tasks from documents.",
+      "enabled": true,
+      "locked": false,
+      "name": "document-to-action-items",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "productivity",
+      "description": "Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.",
+      "enabled": true,
+      "locked": false,
+      "name": "google-workspace",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "productivity",
+      "description": "Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.",
+      "enabled": true,
+      "locked": false,
+      "name": "maps",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "productivity",
+      "description": "Turn meeting notes into cited decisions, owners, tickets.",
+      "enabled": true,
+      "locked": false,
+      "name": "meeting-action-items",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "productivity",
+      "description": "Create, read, and edit Word, PowerPoint, and Excel files.",
+      "enabled": true,
+      "locked": false,
+      "name": "microsoft-office",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "productivity",
+      "description": "PDF files: create, read, merge, fill, OCR, edit text.",
+      "enabled": true,
+      "locked": false,
+      "name": "pdf",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "productivity",
+      "description": "Watch product, flight, or listing prices; alert on target.",
+      "enabled": true,
+      "locked": false,
+      "name": "product-price-monitor",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "productivity",
+      "description": "Teams meeting summaries, job replay, Graph subscriptions.",
+      "enabled": true,
+      "locked": false,
+      "name": "teams-meeting-pipeline",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "productivity",
+      "description": "Weekly reset: commitments, stalled work, next-week plan.",
+      "enabled": true,
+      "locked": false,
+      "name": "weekly-review-planning",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "research",
+      "description": "Search arXiv papers by keyword, author, category, or ID.",
+      "enabled": true,
+      "locked": false,
+      "name": "arxiv",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "research",
+      "description": "Watch named companies for material news; cited digests.",
+      "enabled": true,
+      "locked": false,
+      "name": "competitor-news-monitor",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "research",
+      "description": "Ground answers and documents in cited, verifiable sources.",
+      "enabled": true,
+      "locked": false,
+      "name": "grounded-citations",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "social-media",
+      "description": "X/Twitter via xurl CLI: raw post search, posting, DM, media.",
+      "enabled": true,
+      "locked": false,
+      "name": "xurl",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "software-development",
+      "description": "Inspect codebases w/ pygount: LOC, languages, ratios.",
+      "enabled": true,
+      "locked": false,
+      "name": "codebase-inspection",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "software-development",
+      "description": "Exploratory QA of web apps: find bugs, evidence, reports.",
+      "enabled": true,
+      "locked": false,
+      "name": "dogfood",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "software-development",
+      "description": "GitHub via gh CLI: PRs, issues, reviews, repos, auth.",
+      "enabled": true,
+      "locked": false,
+      "name": "github",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "software-development",
+      "description": "Pre-commit review: security scan, quality gates, auto-fix.",
+      "enabled": true,
+      "locked": false,
+      "name": "requesting-code-review",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "software-development",
+      "description": "Parallel 4-agent cleanup of recent code changes.",
+      "enabled": true,
+      "locked": false,
+      "name": "simplify-code",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "software-development",
+      "description": "Throwaway experiments to validate an idea before build.",
+      "enabled": true,
+      "locked": false,
+      "name": "spike",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "software-development",
+      "description": "4-phase root cause debugging: understand bugs before fixing.",
+      "enabled": true,
+      "locked": false,
+      "name": "systematic-debugging",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "software-development",
+      "description": "TDD: enforce RED-GREEN-REFACTOR, tests before code.",
+      "enabled": true,
+      "locked": false,
+      "name": "test-driven-development",
+      "provenance": "bundled",
+      "usage": 0
+    },
+    {
+      "category": "web",
+      "description": "Use when a fetch fails: 403/429, paywall, WAF, bot wall.",
+      "enabled": true,
+      "locked": false,
+      "name": "blocked-page-recovery",
+      "provenance": "bundled",
+      "usage": 0
+    }
+  ],
+  "kind": "rest",
+  "request": "GET /api/skills",
+  "status": 200
+}

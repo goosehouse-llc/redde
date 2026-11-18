@@ -1,0 +1,11 @@
+{
+  "body": {
+    "admission_id": "ad5d9cd9be4a4c84b535175ad330ad8f",
+    "run_id": "run_c9dd43fb58d94926b75e2e441c779a82",
+    "status": "stopping"
+  },
+  "kind": "api",
+  "request": "POST /v1/runs/run_c9dd43fb58d94926b75e2e441c779a82/stop",
+  "sent": {},
+  "status": 200
+}

@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": 4001,
+    "data": {
+      "reason": "session_busy"
+    },
+    "message": "session_busy"
+  },
+  "kind": "ws",
+  "method": "session.mutate",
+  "params": {
+    "expected_generation": 1,
+    "expected_revision": 0,
+    "operation": "delete",
+    "payload": {},
+    "request_id": "00000000-0000-4000-8000-000000000005",
+    "session_id": "local-058f565a85254566464aa7baaf65aefef6bbc60aefaadcb89b5542a267e34c0d"
+  }
+}

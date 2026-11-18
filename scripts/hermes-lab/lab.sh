@@ -39,6 +39,8 @@
 #                                                  runs on another machine over SSH, the patch comes back and is applied
 #                                                  after asking; --app: the app's open conversation gets that question
 #   scripts/hermes-lab/lab.sh open [tag ...]      a Dashboard with no sign-in: the app reads its token off the page, survives restarts
+#   scripts/hermes-lab/lab.sh fixtures [tag ...]   the raw answers the app parses, saved for EchoTests/HermesReplayTests
+#                                                  (default: every release already installed here; nothing is installed)
 #   scripts/hermes-lab/lab.sh up <tag> <scenario>  leave one lab running (API :18642, Dashboard :19119)
 #   scripts/hermes-lab/lab.sh down
 #
@@ -987,8 +989,37 @@ open_access() {
 }
 
 mkdir -p "$LAB_HOME"
+# The replay tests' fixtures (record_fixtures.py): what each release answers to the routes the app
+# parses, saved under EchoTests/Fixtures/Hermes/<tag>/ for EchoTests/HermesReplayTests. Only releases
+# already installed here (never one cloned or installed for this; the owner's hermes-sam-* builds
+# are left out); 0.23 and later with their Webapp too, whose sessions are the canonical owner's.
+fixtures() {
+  local tags=("$@") failed=() skipped=() tag dir
+  if (( ! ${#tags} )); then
+    tags=($LAB_HOME/hermes-v*(N/:t))
+    tags=(${tags#hermes-})
+  fi
+  for tag in $tags; do
+    dir="$LAB_HOME/hermes-$tag"
+    if [[ ! -x "$dir/.venv/bin/hermes" ]] || ! "$dir/.venv/bin/python" -c "import websockets" 2>/dev/null; then
+      skipped+=("$tag (not installed here, or no websockets)"); continue
+    fi
+    echo "===== Hermes $tag / approval (fixtures)"
+    if [[ "$tag" == v0.2[3-9]* ]]; then export LAB_WEBAPP=1; else unset LAB_WEBAPP 2>/dev/null || true; fi
+    # A gateway before it can still hold the API's port a while (a busy Mac): once more after it.
+    if ! up "$tag" approval && ! { down; sleep 5; up "$tag" approval; }; then failed+=("$tag (lab)"); continue; fi
+    "$dir/.venv/bin/python" "$HERE/record_fixtures.py" "$REPO/EchoTests/Fixtures/Hermes/$tag" || failed+=("$tag")
+  done
+  unset LAB_WEBAPP 2>/dev/null || true
+  down
+  (( ${#skipped} )) && echo "\nSkipped: $skipped"
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nFixtures recorded."
+}
+
 case "${1:-}" in
   open) shift; open_access "$@" ;;
+  fixtures) shift; fixtures "$@" ;;
   run) shift; run "$@" ;;
   approvals) shift; approvals "$@" ;;
   signin) shift; signin "$@" ;;

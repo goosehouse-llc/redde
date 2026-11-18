@@ -1,0 +1,38 @@
+{
+  "body": {
+    "object": "hermes.session",
+    "session": {
+      "actual_cost_usd": null,
+      "api_call_count": 3,
+      "archived": false,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "end_reason": null,
+      "ended_at": null,
+      "estimated_cost_usd": 0.0,
+      "has_model_config": true,
+      "has_system_prompt": true,
+      "hidden": false,
+      "id": "api_1795016159_17de3017",
+      "input_tokens": 30,
+      "is_internal_child": false,
+      "message_count": 7,
+      "model": "alpha",
+      "output_tokens": 9,
+      "parent_session_id": null,
+      "pinned": false,
+      "reasoning_tokens": 0,
+      "source": "api_server",
+      "started_at": 1795016159.076309,
+      "title": "Replay API rename",
+      "tool_call_count": 1,
+      "user_id": "api"
+    }
+  },
+  "kind": "api",
+  "request": "PATCH /api/sessions/api_1795016159_17de3017",
+  "sent": {
+    "title": "Replay API rename"
+  },
+  "status": 200
+}

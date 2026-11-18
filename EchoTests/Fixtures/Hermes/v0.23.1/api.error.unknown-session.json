@@ -1,0 +1,13 @@
+{
+  "body": {
+    "error": {
+      "code": "session_not_found",
+      "message": "Session not found: 20260101_000000_nosuch",
+      "param": null,
+      "type": "invalid_request_error"
+    }
+  },
+  "kind": "api",
+  "request": "GET /api/sessions/20260101_000000_nosuch",
+  "status": 404
+}

@@ -333,7 +333,10 @@ extension HermesServeClient {
         try await ensureConnected()
         if sessionAuthority {
             // The canonical session owner deletes a live session itself (and has no close).
-            do { try await mutate(stored: stored, "delete") } catch let error as RPCError where error.message == "not_found" {}
+            do { try await mutate(stored: stored, "delete") } catch let error as RPCError where error.message == "not_found" {
+            } catch let error as RPCError where Self.isBusy(error) {
+                throw ChatBusyError()
+            }
             runtimeIDs[stored] = nil
             return
         }
@@ -368,6 +371,15 @@ extension HermesServeClient {
                 }
             }
         }
+    }
+
+    /// The canonical owner's "a reply is being written in it" (4001 `session_busy`, 0.23).
+    nonisolated static func isBusy(_ error: RPCError) -> Bool { error.code == 4001 || error.message.contains("session_busy") }
+
+    /// A title another session has: "already in use", or on the canonical owner (0.23), which
+    /// says no more than "internal error" (-32603) for it.
+    nonisolated static func isTitleTaken(_ error: RPCError, canonical: Bool) -> Bool {
+        error.message.localizedCaseInsensitiveContains("already in use") || (canonical && error.code == -32603)
     }
 
     func branchSession(stored: String, title: String?) async throws -> String? {

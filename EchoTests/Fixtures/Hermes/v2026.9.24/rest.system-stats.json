@@ -1,0 +1,43 @@
+{
+  "body": {
+    "arch": "arm64",
+    "cpu_count": 10,
+    "cpu_percent": 20.2,
+    "disk": {
+      "free": 47801516032,
+      "percent": 94.9,
+      "total": 994662584320,
+      "used": 897909579776
+    },
+    "hermes_version": "0.21.5",
+    "hostname": "<host>",
+    "load_avg": [
+      100.6201171875,
+      76.5595703125,
+      50.67138671875
+    ],
+    "memory": {
+      "available": 25609961472,
+      "percent": 62.7,
+      "total": 68719476736,
+      "used": 30852169728
+    },
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "os_version": "Darwin Kernel Version 27.0.0: Tue Aug 11 21:22:49 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T6000",
+    "platform": "macOS-27.0-arm64-arm-64bit",
+    "process": {
+      "create_time": 1795016071,
+      "num_threads": 16,
+      "pid": 12631,
+      "rss": 341884928
+    },
+    "psutil": true,
+    "python_impl": "CPython",
+    "python_version": "3.12.16",
+    "uptime_seconds": 234198
+  },
+  "kind": "rest",
+  "request": "GET /api/system/stats",
+  "status": 200
+}

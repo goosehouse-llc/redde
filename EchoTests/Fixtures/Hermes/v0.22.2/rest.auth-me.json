@@ -1,0 +1,13 @@
+{
+  "body": {
+    "display_name": "lab",
+    "email": "",
+    "expires_at": 1795059307,
+    "org_id": "",
+    "provider": "basic",
+    "user_id": "lab"
+  },
+  "kind": "rest",
+  "request": "GET /api/auth/me",
+  "status": 200
+}

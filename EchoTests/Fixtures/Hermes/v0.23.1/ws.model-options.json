@@ -1,0 +1,166 @@
+{
+  "kind": "ws",
+  "method": "model.options",
+  "params": {
+    "explicit_only": true,
+    "refresh": false
+  },
+  "result": {
+    "model": "alpha",
+    "provider": "custom:my-local",
+    "providers": [
+      {
+        "authenticated": true,
+        "capabilities": {
+          "claude-fable-5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-fable-5-1": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-fable-5-2": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-fable-5.1": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-haiku-4-5-20251001": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-haiku-5-5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-20250514": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-5-20251101": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-6": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-7": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-8": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-opus-5": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-opus-5-5": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-sonnet-4-20250514": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-4-5-20250929": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-4-6": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-5-5": {
+            "fast": false,
+            "reasoning": true
+          }
+        },
+        "featured_models": [],
+        "is_current": false,
+        "is_user_defined": false,
+        "models": [
+          "claude-fable-5-2",
+          "claude-fable-5.1",
+          "claude-fable-5",
+          "claude-opus-5-5",
+          "claude-opus-5",
+          "claude-sonnet-5",
+          "claude-opus-4-8",
+          "claude-opus-4-7",
+          "claude-opus-4-6",
+          "claude-sonnet-4-6",
+          "claude-opus-4-5-20251101",
+          "claude-sonnet-4-5-20250929",
+          "claude-opus-4-20250514",
+          "claude-sonnet-4-20250514",
+          "claude-haiku-4-5-20251001",
+          "claude-sonnet-5-5",
+          "claude-haiku-5-5",
+          "claude-fable-5-1"
+        ],
+        "name": "Anthropic",
+        "slug": "anthropic",
+        "source": "hermes",
+        "total_models": 18,
+        "usage": {
+          "windows": [
+            {
+              "label": "Current session",
+              "resets_at": "2026-11-18T18:19:59.591234+00:00",
+              "scope": "account",
+              "used_percent": 6.0
+            },
+            {
+              "label": "Current week",
+              "resets_at": "2026-11-18T19:59:59.591252+00:00",
+              "scope": "account",
+              "used_percent": 49.0
+            }
+          ]
+        }
+      },
+      {
+        "aliases": [
+          "custom:custom:my-local",
+          "custom:my-local",
+          "my local",
+          "my-local"
+        ],
+        "api_url": "http://127.0.0.1:18801/v1",
+        "authenticated": true,
+        "capabilities": {
+          "alpha": {
+            "fast": false,
+            "reasoning": true
+          },
+          "beta": {
+            "fast": false,
+            "reasoning": true
+          }
+        },
+        "featured_models": [],
+        "is_current": true,
+        "is_user_defined": true,
+        "models": [
+          "alpha",
+          "beta"
+        ],
+        "name": "My Local",
+        "native_catalog_empty": false,
+        "slug": "custom:my-local",
+        "source": "user-config",
+        "total_models": 2
+      }
+    ]
+  }
+}

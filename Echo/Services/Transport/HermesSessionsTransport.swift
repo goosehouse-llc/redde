@@ -349,7 +349,7 @@ nonisolated struct HermesSessionsAPI: Sendable {
         var message_count: Int?
         var started_at: Double?
         var last_active: Double?
-        var pinned: Bool?
+        @LooseBool var pinned: Bool? = nil   // 0/1 from a SQLite-backed host must not fail the whole list
         var tool_call_count: Int?
         var input_tokens: Int?
         var output_tokens: Int?
@@ -364,7 +364,7 @@ nonisolated struct HermesSessionsAPI: Sendable {
         var cwd: String?
         /// A reply here since it was last marked read (`PATCH … {"unread": false}`), as Hermes
         /// keeps it for every app. Only the Dashboard's list says; the Hermes API's leaves it out.
-        var unread: Bool?
+        @LooseBool var unread: Bool? = nil
         /// The profile it belongs to, where the list says (the Dashboard's does).
         var profile: String?
         /// Put aside, and kept out of every app's list (a bot's chat is born hidden), where the
@@ -496,8 +496,9 @@ nonisolated struct HermesSessionsAPI: Sendable {
         var id: String { name }
     }
 
-    private struct ListEnvelope<T: Decodable & Sendable>: Decodable, Sendable { var data: [T]; var has_more: Bool? }
-    private struct SessionEnvelope: Decodable, Sendable { var session: SessionSummary }
+    /// The Hermes API's list and session answers (internal for the replay tests, HermesReplayTests).
+    struct ListEnvelope<T: Decodable & Sendable>: Decodable, Sendable { var data: [T]; var has_more: Bool? }
+    struct SessionEnvelope: Decodable, Sendable { var session: SessionSummary }
     private static let encoder = JSONEncoder()
     private static let decoder = JSONDecoder()
 
@@ -626,7 +627,7 @@ nonisolated struct HermesSessionsAPI: Sendable {
     }
 
     func deleteSession(id: String) async throws {
-        _ = try await send("DELETE", "api/sessions/\(id)")
+        do { _ = try await send("DELETE", "api/sessions/\(id)") } catch where ChatBusyError.isBusy(error) { throw ChatBusyError() }
     }
 
     /// Models the gateway can route to, grouped by provider (`/api/model/options`). `refresh`: each

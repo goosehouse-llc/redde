@@ -1,0 +1,10 @@
+{
+  "body": {
+    "run_id": "run_6bc5238eb83749a8a6ec276237f2e1fc",
+    "status": "stopping"
+  },
+  "kind": "api",
+  "request": "POST /v1/runs/run_6bc5238eb83749a8a6ec276237f2e1fc/stop",
+  "sent": {},
+  "status": 200
+}

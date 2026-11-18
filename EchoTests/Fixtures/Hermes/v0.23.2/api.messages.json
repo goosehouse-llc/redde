@@ -1,0 +1,133 @@
+{
+  "body": {
+    "data": [
+      {
+        "content": "Hello from the replay recorder",
+        "display_kind": "internal_notification",
+        "finish_reason": null,
+        "id": 9,
+        "reasoning": null,
+        "reasoning_content": null,
+        "role": "user",
+        "session_id": "api_1795016226_f9f80d75",
+        "timestamp": 1795016226.595615,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_calls": null,
+        "tool_name": null
+      },
+      {
+        "content": "[A:alpha]",
+        "display_kind": null,
+        "finish_reason": "stop",
+        "id": 10,
+        "reasoning": null,
+        "reasoning_content": null,
+        "role": "assistant",
+        "session_id": "api_1795016226_f9f80d75",
+        "timestamp": 1795016227.5865479,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_calls": null,
+        "tool_name": null
+      },
+      {
+        "content": null,
+        "display_kind": null,
+        "finish_reason": null,
+        "id": 11,
+        "reasoning": null,
+        "reasoning_content": null,
+        "role": "session_meta",
+        "session_id": "api_1795016226_f9f80d75",
+        "timestamp": 1795016227.641684,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_calls": null,
+        "tool_name": null
+      },
+      {
+        "content": "lab:todo",
+        "display_kind": "internal_notification",
+        "finish_reason": null,
+        "id": 12,
+        "reasoning": null,
+        "reasoning_content": null,
+        "role": "user",
+        "session_id": "api_1795016226_f9f80d75",
+        "timestamp": 1795016227.666858,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_calls": null,
+        "tool_name": null
+      },
+      {
+        "content": "",
+        "display_kind": null,
+        "finish_reason": "tool_calls",
+        "id": 13,
+        "reasoning": null,
+        "reasoning_content": null,
+        "role": "assistant",
+        "session_id": "api_1795016226_f9f80d75",
+        "timestamp": 1795016227.760405,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_calls": [
+          {
+            "call_id": "call_1795016227756",
+            "function": {
+              "arguments": "{\"calls\": [{\"name\": \"todo_list\", \"arguments\": {\"todos\": [{\"id\": \"1\", \"content\": \"Export the posts\", \"status\": \"in_progress\"}, {\"id\": \"2\", \"content\": \"Import them\", \"status\": \"pending\"}, {\"id\": \"3\", \"content\": \"Check the feed\", \"status\": \"pending\"}]}}]}",
+              "name": "tool_call"
+            },
+            "id": "call_1795016227756",
+            "response_item_id": "fc_1795016227756",
+            "type": "function"
+          }
+        ],
+        "tool_name": null
+      },
+      {
+        "content": "{\"todos\": [{\"id\": \"1\", \"content\": \"Export the posts\", \"status\": \"in_progress\"}, {\"id\": \"2\", \"content\": \"Import them\", \"status\": \"pending\"}, {\"id\": \"3\", \"content\": \"Check the feed\", \"status\": \"pending\"}], \"revision\": 1, \"summary\": {\"total\": 3, \"pending\": 2, \"in_progress\": 1, \"completed\": 0, \"cancelled\": 0}}",
+        "display_kind": null,
+        "finish_reason": null,
+        "id": 14,
+        "reasoning": null,
+        "reasoning_content": null,
+        "role": "tool",
+        "session_id": "api_1795016226_f9f80d75",
+        "timestamp": 1795016227.8254342,
+        "token_count": null,
+        "tool_call_id": "call_1795016227756",
+        "tool_calls": null,
+        "tool_name": "todo_list"
+      },
+      {
+        "content": "[kept]",
+        "display_kind": null,
+        "finish_reason": "stop",
+        "id": 15,
+        "reasoning": null,
+        "reasoning_content": null,
+        "role": "assistant",
+        "session_id": "api_1795016226_f9f80d75",
+        "timestamp": 1795016227.839007,
+        "token_count": null,
+        "tool_call_id": null,
+        "tool_calls": null,
+        "tool_name": null
+      }
+    ],
+    "object": "list",
+    "pagination": {
+      "limit": 500,
+      "offset": 0,
+      "order": "latest",
+      "returned": 7
+    },
+    "session_id": "api_1795016226_f9f80d75"
+  },
+  "kind": "api",
+  "request": "GET /api/sessions/api_1795016226_f9f80d75/messages?order=latest&limit=500",
+  "status": 200
+}

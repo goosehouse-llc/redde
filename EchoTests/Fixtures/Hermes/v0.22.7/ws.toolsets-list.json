@@ -1,0 +1,381 @@
+{
+  "kind": "ws",
+  "method": "toolsets.list",
+  "params": {},
+  "result": {
+    "toolsets": [
+      {
+        "description": "Plugin toolset: a2a",
+        "enabled": false,
+        "name": "a2a",
+        "tool_count": 5
+      },
+      {
+        "description": "Verified text-only Group Chat turn capabilities",
+        "enabled": false,
+        "name": "bot_room",
+        "tool_count": 0
+      },
+      {
+        "description": "Browser automation: drive a real browser with Python over CDP (navigate, click, type, extract, screenshots), raw CDP, dialogs and vault logins",
+        "enabled": true,
+        "name": "browser",
+        "tool_count": 4
+      },
+      {
+        "description": "Plugin toolset: browser-cdp",
+        "enabled": false,
+        "name": "browser-cdp",
+        "tool_count": 2
+      },
+      {
+        "description": "Plugin toolset: browser-use",
+        "enabled": false,
+        "name": "browser-use",
+        "tool_count": 1
+      },
+      {
+        "description": "Desktop catalog plugin/skill install requests through the approval card (GUI sessions only)",
+        "enabled": false,
+        "name": "catalog",
+        "tool_count": 1
+      },
+      {
+        "description": "Ask the user clarifying questions (multiple-choice or open-ended)",
+        "enabled": true,
+        "name": "clarify",
+        "tool_count": 1
+      },
+      {
+        "description": "Run Python scripts that call tools programmatically (reduces LLM round trips)",
+        "enabled": true,
+        "name": "code_execution",
+        "tool_count": 1
+      },
+      {
+        "description": "Coding-focused toolset: files, terminal, search, web docs, skills, todo, delegate, vision, browser",
+        "enabled": false,
+        "name": "coding",
+        "tool_count": 23
+      },
+      {
+        "description": "Background desktop control via cua-driver (macOS/Windows/Linux) — screenshots, mouse, keyboard, scroll, drag. Does NOT steal the user's cursor or keyboard focus. Works with any tool-capable model.",
+        "enabled": true,
+        "name": "computer_use",
+        "tool_count": 1
+      },
+      {
+        "description": "Remote connector discovery, execution, and account authorization",
+        "enabled": true,
+        "name": "connections",
+        "tool_count": 1
+      },
+      {
+        "description": "Runtime tools exposed by the active context engine",
+        "enabled": false,
+        "name": "context_engine",
+        "tool_count": 0
+      },
+      {
+        "description": "Cronjob management tool - create, list, update, pause, resume, remove, and trigger scheduled tasks",
+        "enabled": true,
+        "name": "cronjob",
+        "tool_count": 1
+      },
+      {
+        "description": "Debugging and troubleshooting toolkit",
+        "enabled": false,
+        "name": "debugging",
+        "tool_count": 8
+      },
+      {
+        "description": "Spawn subagents with isolated context for complex subtasks",
+        "enabled": true,
+        "name": "delegation",
+        "tool_count": 1
+      },
+      {
+        "description": "Desktop GUI affordances — in-app terminal/browser panes, pane focus, reactions, appearance (GUI sessions only)",
+        "enabled": false,
+        "name": "desktop_ui",
+        "tool_count": 11
+      },
+      {
+        "description": "Discord read and participate tools (fetch messages, search members, create threads)",
+        "enabled": false,
+        "name": "discord",
+        "tool_count": 1
+      },
+      {
+        "description": "Discord server management (list channels/roles, pin messages, assign roles)",
+        "enabled": false,
+        "name": "discord_admin",
+        "tool_count": 1
+      },
+      {
+        "description": "Read Feishu/Lark document content",
+        "enabled": false,
+        "name": "feishu_doc",
+        "tool_count": 1
+      },
+      {
+        "description": "Feishu/Lark document comment operations (list, reply, add)",
+        "enabled": false,
+        "name": "feishu_drive",
+        "tool_count": 4
+      },
+      {
+        "description": "File manipulation tools: read, write, patch (with fuzzy matching), and search (content + files)",
+        "enabled": true,
+        "name": "file",
+        "tool_count": 4
+      },
+      {
+        "description": "Editor integration (VS Code, Zed, JetBrains) — coding-focused tools without messaging, audio, or clarify UI",
+        "enabled": false,
+        "name": "hermes-acp",
+        "tool_count": 22
+      },
+      {
+        "description": "OpenAI-compatible API server — full agent tools accessible via HTTP (no interactive UI tools like clarify or send_message)",
+        "enabled": false,
+        "name": "hermes-api-server",
+        "tool_count": 24
+      },
+      {
+        "description": "BlueBubbles iMessage bot toolset - Apple iMessage via local BlueBubbles server",
+        "enabled": false,
+        "name": "hermes-bluebubbles",
+        "tool_count": 41
+      },
+      {
+        "description": "Full interactive CLI toolset - all default tools plus cronjob management",
+        "enabled": false,
+        "name": "hermes-cli",
+        "tool_count": 41
+      },
+      {
+        "description": "Default cron toolset - same core tools as hermes-cli; gated by `hermes tools`",
+        "enabled": false,
+        "name": "hermes-cron",
+        "tool_count": 41
+      },
+      {
+        "description": "DingTalk bot toolset - enterprise messaging platform (full access)",
+        "enabled": false,
+        "name": "hermes-dingtalk",
+        "tool_count": 41
+      },
+      {
+        "description": "Discord bot toolset - full access (terminal has safety checks via dangerous command approval)",
+        "enabled": false,
+        "name": "hermes-discord",
+        "tool_count": 43
+      },
+      {
+        "description": "Email bot toolset - interact with Hermes via email (IMAP/SMTP)",
+        "enabled": false,
+        "name": "hermes-email",
+        "tool_count": 41
+      },
+      {
+        "description": "Feishu/Lark bot toolset - enterprise messaging via Feishu/Lark (full access)",
+        "enabled": false,
+        "name": "hermes-feishu",
+        "tool_count": 46
+      },
+      {
+        "description": "Gateway toolset - union of all messaging platform tools",
+        "enabled": false,
+        "name": "hermes-gateway",
+        "tool_count": 53
+      },
+      {
+        "description": "Matrix bot toolset - decentralized encrypted messaging (full access)",
+        "enabled": false,
+        "name": "hermes-matrix",
+        "tool_count": 41
+      },
+      {
+        "description": "Mattermost bot toolset - self-hosted team messaging (full access)",
+        "enabled": false,
+        "name": "hermes-mattermost",
+        "tool_count": 41
+      },
+      {
+        "description": "QQBot toolset - QQ messaging via Official Bot API v2 (full access)",
+        "enabled": false,
+        "name": "hermes-qqbot",
+        "tool_count": 41
+      },
+      {
+        "description": "Signal bot toolset - encrypted messaging platform (full access)",
+        "enabled": false,
+        "name": "hermes-signal",
+        "tool_count": 41
+      },
+      {
+        "description": "Slack bot toolset - full access for workspace use (terminal has safety checks)",
+        "enabled": false,
+        "name": "hermes-slack",
+        "tool_count": 41
+      },
+      {
+        "description": "SMS bot toolset - interact with Hermes via SMS (Twilio)",
+        "enabled": false,
+        "name": "hermes-sms",
+        "tool_count": 41
+      },
+      {
+        "description": "Telegram bot toolset - full access for personal use (terminal has safety checks)",
+        "enabled": false,
+        "name": "hermes-telegram",
+        "tool_count": 41
+      },
+      {
+        "description": "Webhook toolset - receive and process external webhook events",
+        "enabled": false,
+        "name": "hermes-webhook",
+        "tool_count": 4
+      },
+      {
+        "description": "WeCom bot toolset - enterprise WeChat messaging (full access)",
+        "enabled": false,
+        "name": "hermes-wecom",
+        "tool_count": 41
+      },
+      {
+        "description": "WeCom callback toolset - enterprise self-built app messaging (full access)",
+        "enabled": false,
+        "name": "hermes-wecom-callback",
+        "tool_count": 41
+      },
+      {
+        "description": "Weixin bot toolset - personal WeChat messaging via iLink (full access)",
+        "enabled": false,
+        "name": "hermes-weixin",
+        "tool_count": 41
+      },
+      {
+        "description": "WhatsApp bot toolset - similar to Telegram (personal messaging, more trusted)",
+        "enabled": false,
+        "name": "hermes-whatsapp",
+        "tool_count": 41
+      },
+      {
+        "description": "Yuanbao Bot 元宝消息平台工具集 - 群信息、成员查询、私聊、贴纸表情",
+        "enabled": false,
+        "name": "hermes-yuanbao",
+        "tool_count": 46
+      },
+      {
+        "description": "Creative generation tools (images)",
+        "enabled": true,
+        "name": "image_gen",
+        "tool_count": 1
+      },
+      {
+        "description": "Kanban multi-agent coordination — only active when the agent is spawned by the kanban dispatcher (HERMES_KANBAN_TASK env set). The dispatcher runs inside the gateway by default; see `kanban.dispatch_in_gateway` in config.yaml. Lets workers mark tasks done with structured handoffs, enter first-class review (request_review — not a block), return review changes, block for human input, heartbeat during long ops, comment on threads, attach files, and (for orchestrators) list, unblock, and fan out tasks.",
+        "enabled": false,
+        "name": "kanban",
+        "tool_count": 15
+      },
+      {
+        "description": "Persistent memory across sessions (personal notes + user profile)",
+        "enabled": true,
+        "name": "memory",
+        "tool_count": 1
+      },
+      {
+        "description": "First-run onboarding cards; folded in only for the onboarding chat (tui_gateway/methods_onboarding.py)",
+        "enabled": false,
+        "name": "onboarding",
+        "tool_count": 1
+      },
+      {
+        "description": "Desktop Projects — create/switch named workspaces (GUI sessions only)",
+        "enabled": true,
+        "name": "project",
+        "tool_count": 1
+      },
+      {
+        "description": "Safe toolkit without terminal access",
+        "enabled": false,
+        "name": "safe",
+        "tool_count": 4
+      },
+      {
+        "description": "Web search only (no content extraction/scraping)",
+        "enabled": false,
+        "name": "search",
+        "tool_count": 1
+      },
+      {
+        "description": "Search and recall past conversations with summarization",
+        "enabled": true,
+        "name": "session_search",
+        "tool_count": 1
+      },
+      {
+        "description": "Access, create, edit, and manage skill documents with specialized instructions and knowledge",
+        "enabled": true,
+        "name": "skills",
+        "tool_count": 3
+      },
+      {
+        "description": "Terminal/command execution and process management tools",
+        "enabled": true,
+        "name": "terminal",
+        "tool_count": 2
+      },
+      {
+        "description": "Task planning and tracking for multi-step work",
+        "enabled": true,
+        "name": "todo",
+        "tool_count": 1
+      },
+      {
+        "description": "Text-to-speech: convert text to audio with Edge TTS (free), ElevenLabs, OpenAI, or xAI",
+        "enabled": true,
+        "name": "tts",
+        "tool_count": 1
+      },
+      {
+        "description": "Video analysis and understanding tools (opt-in, not in default toolset)",
+        "enabled": false,
+        "name": "video",
+        "tool_count": 1
+      },
+      {
+        "description": "Video generation tools. Single ``video_generate`` tool covers text-to-video (prompt only) and image-to-video (prompt + image_url), plus reference-to-video. Provider-specific edit/extend workflows may appear as separate tools. Configure via ``hermes tools`` → Video Generation.",
+        "enabled": false,
+        "name": "video_gen",
+        "tool_count": 3
+      },
+      {
+        "description": "Image analysis and vision tools",
+        "enabled": true,
+        "name": "vision",
+        "tool_count": 1
+      },
+      {
+        "description": "Web research and content extraction tools",
+        "enabled": true,
+        "name": "web",
+        "tool_count": 2
+      },
+      {
+        "description": "Search X (Twitter) posts and threads via xAI's built-in x_search Responses tool. Read-only public X discovery; use the xurl skill for authenticated X API reads and account actions. Available when xAI credentials are configured (SuperGrok OAuth or XAI_API_KEY). Off by default; enable in `hermes tools` → X (Twitter) Search.",
+        "enabled": false,
+        "name": "x_search",
+        "tool_count": 1
+      },
+      {
+        "description": "Yuanbao platform tools - group info, member queries, DM, stickers",
+        "enabled": false,
+        "name": "yuanbao",
+        "tool_count": 5
+      }
+    ]
+  }
+}

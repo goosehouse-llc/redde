@@ -17464,6 +17464,113 @@
         }
       }
     },
+    "This chat is still working on a reply. Stop it, then delete it." : {
+      "comment" : "Deleting a chat Hermes is still answering in",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne chat arbejder stadig på et svar. Stop den, og slet den derefter."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Chat arbeitet noch an einer Antwort. Stoppe ihn und lösche ihn dann."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este chat todavía está trabajando en una respuesta. Detenlo y luego elimínalo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette discussion travaille encore sur une réponse. Arrêtez-la, puis supprimez-la."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa chat sta ancora lavorando a una risposta. Interrompila, poi eliminala."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このチャットはまだ返信を作成中です。停止してから削除してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 채팅은 아직 답장을 작성 중입니다. 멈춘 다음 삭제하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne chatten jobber fortsatt med et svar. Stopp den, og slett den så."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze chat werkt nog aan een antwoord. Stop hem en verwijder hem daarna."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten czat wciąż pracuje nad odpowiedzią. Zatrzymaj go, a potem usuń."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este chat ainda está trabalhando em uma resposta. Pare-o e depois apague."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот чат ещё пишет ответ. Остановите его, а затем удалите."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här chatten arbetar fortfarande på ett svar. Stoppa den och radera den sedan."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu sohbet hâlâ bir yanıt üzerinde çalışıyor. Önce durdur, sonra sil."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей чат ще пише відповідь. Зупиніть його, а потім видаліть."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这个聊天仍在撰写回复。请先停止，再删除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個聊天仍在撰寫回覆。請先停止，再刪除。"
+          }
+        }
+      }
+    },
     "This Hermes gateway doesn't serve the selected profile. Turn on gateway.multiplex_profiles in its config, or pick Default under Settings → Profile." : {
       "localizations" : {
         "da" : {

@@ -1,0 +1,6 @@
+{
+  "kind": "api",
+  "request": "GET /v1/runs/run_7fe011194acb454eb09cabbabc9491e5/events",
+  "status": 200,
+  "text": "data: {\"event\": \"message.delta\", \"run_id\": \"run_7fe011194acb454eb09cabbabc9491e5\", \"timestamp\": 1795016094.0125608, \"delta\": \"[A:alpha]\"}\n\ndata: {\"event\": \"reasoning.available\", \"run_id\": \"run_7fe011194acb454eb09cabbabc9491e5\", \"timestamp\": 1795016094.016484, \"text\": \"[A:alpha]\"}\n\ndata: {\"event\": \"run.completed\", \"run_id\": \"run_7fe011194acb454eb09cabbabc9491e5\", \"timestamp\": 1795016094.02368, \"output\": \"[A:alpha]\", \"usage\": {\"input_tokens\": 10, \"output_tokens\": 3, \"total_tokens\": 13, \"cache_read_tokens\": 0, \"cache_write_tokens\": 0}, \"runtime\": {\"provider\": \"custom\", \"model\": \"alpha\", \"route_source\": \"global\"}, \"completed\": true, \"partial\": false, \"interrupted\": false}\n\n: stream closed\n\n"
+}

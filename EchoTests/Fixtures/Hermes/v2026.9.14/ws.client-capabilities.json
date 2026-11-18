@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": -32601,
+    "message": "unknown method: client.capabilities"
+  },
+  "kind": "ws",
+  "method": "client.capabilities",
+  "params": {
+    "server_requests": true
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "body": {
+    "auth_flows": [
+      "cookie",
+      "native_pkce"
+    ],
+    "auth_providers": [
+      "basic"
+    ],
+    "auth_required": true,
+    "components": {
+      "dashboard": {
+        "last_error_at": null,
+        "recent_unhandled_errors": 0,
+        "selftest": "unknown",
+        "status": "ok"
+      },
+      "gateway": {
+        "state": "running",
+        "status": "ok"
+      },
+      "platforms": {
+        "configured": 1,
+        "connected": 1,
+        "status": "ok"
+      },
+      "storage": {
+        "status": "ok"
+      }
+    },
+    "gateway_running": true,
+    "gateway_state": "running",
+    "overall": "ok",
+    "release_date": "2026.9.24",
+    "version": "0.23.1"
+  },
+  "kind": "rest",
+  "request": "GET /api/status",
+  "status": 200
+}

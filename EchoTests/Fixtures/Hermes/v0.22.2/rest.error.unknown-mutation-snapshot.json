@@ -1,0 +1,8 @@
+{
+  "body": {
+    "error": "Headless backend (hermes serve): web UI disabled — use `hermes dashboard` for the browser UI."
+  },
+  "kind": "rest",
+  "request": "GET /api/sessions/20260101_000000_nosuch/mutation-snapshot",
+  "status": 404
+}

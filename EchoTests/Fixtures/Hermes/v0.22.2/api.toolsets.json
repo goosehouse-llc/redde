@@ -1,0 +1,321 @@
+{
+  "body": {
+    "data": [
+      {
+        "configured": true,
+        "description": "web_search, web_extract",
+        "enabled": true,
+        "label": "🔍 Web Search & Scraping",
+        "name": "web",
+        "tools": [
+          "web_extract",
+          "web_search"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "navigate, click, type, scroll",
+        "enabled": true,
+        "label": "🌐 Browser Automation",
+        "name": "browser",
+        "tools": [
+          "browser_back",
+          "browser_cdp",
+          "browser_click",
+          "browser_console",
+          "browser_dialog",
+          "browser_exec",
+          "browser_get_images",
+          "browser_navigate",
+          "browser_press",
+          "browser_scroll",
+          "browser_snapshot",
+          "browser_type",
+          "browser_vault",
+          "browser_vision"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "terminal, process",
+        "enabled": true,
+        "label": "💻 Terminal & Processes",
+        "name": "terminal",
+        "tools": [
+          "process_manage",
+          "terminal"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "read, write, patch, search",
+        "enabled": true,
+        "label": "📁 File Operations",
+        "name": "file",
+        "tools": [
+          "patch",
+          "read_file",
+          "search_files",
+          "write_file"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "execute_code",
+        "enabled": true,
+        "label": "⚡ Code Execution",
+        "name": "code_execution",
+        "tools": [
+          "execute_code"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "vision_analyze",
+        "enabled": true,
+        "label": "👁️  Vision / Image Analysis",
+        "name": "vision",
+        "tools": [
+          "vision_analyze"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "video_analyze (requires video-capable model)",
+        "enabled": false,
+        "label": "🎬 Video Analysis",
+        "name": "video",
+        "tools": [
+          "video_analyze"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "image_generate",
+        "enabled": true,
+        "label": "🎨 Image Generation",
+        "name": "image_gen",
+        "tools": [
+          "image_generate"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "video_generate (text/image/reference)",
+        "enabled": false,
+        "label": "🎬 Video Generation",
+        "name": "video_gen",
+        "tools": [
+          "video_generate",
+          "xai_video_edit",
+          "xai_video_extend"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "x_search (requires xAI OAuth or XAI_API_KEY)",
+        "enabled": false,
+        "label": "🐦 X (Twitter) Search",
+        "name": "x_search",
+        "tools": [
+          "x_search"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "text_to_speech",
+        "enabled": false,
+        "label": "🔊 Text-to-Speech",
+        "name": "tts",
+        "tools": [
+          "text_to_speech"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "voice transcription (gateway voice messages + voice mode)",
+        "enabled": false,
+        "label": "🎙️ Speech-to-Text",
+        "name": "stt",
+        "tools": []
+      },
+      {
+        "configured": true,
+        "description": "list, view, manage",
+        "enabled": true,
+        "label": "📚 Skills",
+        "name": "skills",
+        "tools": [
+          "skill_manage",
+          "skill_view",
+          "skills_list"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "todo_list",
+        "enabled": true,
+        "label": "📋 Task Planning",
+        "name": "todo",
+        "tools": [
+          "todo_list"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "opt-in task board tools for this platform",
+        "enabled": false,
+        "label": "📌 Kanban",
+        "name": "kanban",
+        "tools": [
+          "kanban_attach",
+          "kanban_attach_url",
+          "kanban_attachments",
+          "kanban_block",
+          "kanban_comment",
+          "kanban_complete",
+          "kanban_create",
+          "kanban_heartbeat",
+          "kanban_link",
+          "kanban_list",
+          "kanban_request_changes",
+          "kanban_request_review",
+          "kanban_schedule",
+          "kanban_show",
+          "kanban_unblock"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "persistent memory across sessions",
+        "enabled": true,
+        "label": "💾 Memory",
+        "name": "memory",
+        "tools": [
+          "memory"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "runtime tools from the active context engine",
+        "enabled": false,
+        "label": "🧩 Context Engine",
+        "name": "context_engine",
+        "tools": []
+      },
+      {
+        "configured": true,
+        "description": "search past conversations",
+        "enabled": true,
+        "label": "🔎 Session Search",
+        "name": "session_search",
+        "tools": [
+          "session_search"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "remote connector tools and account authorization",
+        "enabled": true,
+        "label": "🔌 Connections",
+        "name": "connections",
+        "tools": [
+          "manage_connections"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "clarify",
+        "enabled": false,
+        "label": "❓ Clarifying Questions",
+        "name": "clarify",
+        "tools": [
+          "clarify"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "delegate_task",
+        "enabled": true,
+        "label": "👥 Task Delegation",
+        "name": "delegation",
+        "tools": [
+          "delegate_task"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "create/list/update/pause/resume/run, with optional attached skills",
+        "enabled": true,
+        "label": "⏰ Cron Jobs",
+        "name": "cronjob",
+        "tools": [
+          "cronjob_manage"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "fetch messages, search members, create thread",
+        "enabled": false,
+        "label": "💬 Discord (read/participate)",
+        "name": "discord",
+        "tools": [
+          "discord"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "list channels/roles, pin, assign roles",
+        "enabled": false,
+        "label": "🛡️  Discord Server Admin",
+        "name": "discord_admin",
+        "tools": [
+          "discord_admin"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "group info, member queries, DM",
+        "enabled": false,
+        "label": "🤖 Yuanbao",
+        "name": "yuanbao",
+        "tools": [
+          "yb_query_group_info",
+          "yb_query_group_members",
+          "yb_search_sticker",
+          "yb_send_dm",
+          "yb_send_sticker"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "background desktop control via cua-driver",
+        "enabled": false,
+        "label": "🖱️  Computer Use (macOS/Windows/Linux)",
+        "name": "computer_use",
+        "tools": [
+          "computer_use"
+        ]
+      },
+      {
+        "configured": true,
+        "description": "A2A (Agent-to-Agent) protocol v1.0 support for Hermes Agent — both directions of the open Linux Foundation standard for inter-agent communication.\nOUTBOUND (client tools): a2a_discover, a2a_call, a2a_list, a2a_history, and a2a_orchestrate let the agent fetch another agent's Agent Card and send it tasks over JSON-RPC — works with any A2A-compliant peer (Hermes, LangChain, CrewAI, Google ADK, OpenClaw, ...).\nINBOUND (platform adapter): exposes Hermes as an A2A-discoverable agent. An Agent Card is served at /.well-known/agent-card.json (v1.0 canonical path; legacy agent.json also answers) and incoming tasks are routed into the agent's live gateway session like any other platform — so the agent that replies is the same one talking to its user, with full memory and context, not a throwaway clone.\nSecurity is on by default: no bearer token configured => localhost-only bind. Inbound task text passes through prompt-injection filters; outbound text is scrubbed of credential-shaped strings; every exchange is audit-logged and persisted to disk outside the context-compaction pipeline so conversations survive compaction and restarts.\nPure stdlib transport (http.server + urllib) — no a2a-sdk dependency required.\n",
+        "enabled": false,
+        "label": "🔌 A2A",
+        "name": "a2a",
+        "tools": [
+          "a2a_call",
+          "a2a_discover",
+          "a2a_history",
+          "a2a_list",
+          "a2a_orchestrate"
+        ]
+      }
+    ],
+    "object": "list",
+    "platform": "api_server"
+  },
+  "kind": "api",
+  "request": "GET /v1/toolsets",
+  "status": 200
+}

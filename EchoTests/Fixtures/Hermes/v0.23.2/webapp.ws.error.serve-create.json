@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": 4001,
+    "data": {
+      "fields": [
+        "source",
+        "close_on_disconnect"
+      ],
+      "reason": "invalid_params"
+    },
+    "message": "invalid_params"
+  },
+  "kind": "ws",
+  "method": "session.create",
+  "params": {
+    "close_on_disconnect": false,
+    "source": "desktop"
+  }
+}

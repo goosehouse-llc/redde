@@ -1,0 +1,331 @@
+{
+  "body": {
+    "model": "alpha",
+    "provider": "custom:my-local",
+    "providers": [
+      {
+        "auth_type": "virtual",
+        "authenticated": true,
+        "capabilities": {
+          "default": {
+            "fast": false,
+            "reasoning": true
+          }
+        },
+        "featured_models": [],
+        "is_current": false,
+        "is_user_defined": false,
+        "models": [
+          "default"
+        ],
+        "name": "Mixture of Agents",
+        "slug": "moa",
+        "source": "virtual",
+        "total_models": 1,
+        "warning": "Aggregator acts as the selected model; references provide analysis before each call."
+      },
+      {
+        "authenticated": true,
+        "capabilities": {
+          "claude-fable-5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-fable-5-1": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-fable-5-2": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-fable-5.1": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-haiku-4-5-20251001": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-haiku-5-5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-20250514": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-5-20251101": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-6": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-7": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-opus-4-8": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-opus-5": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-opus-5-5": {
+            "fast": true,
+            "reasoning": true
+          },
+          "claude-sonnet-4-20250514": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-4-5-20250929": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-4-6": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-5-5": {
+            "fast": false,
+            "reasoning": true
+          }
+        },
+        "featured_models": [],
+        "is_current": false,
+        "is_user_defined": false,
+        "models": [
+          "claude-fable-5.1",
+          "claude-fable-5",
+          "claude-opus-5",
+          "claude-sonnet-5",
+          "claude-opus-4-8",
+          "claude-opus-4-7",
+          "claude-opus-4-6",
+          "claude-sonnet-4-6",
+          "claude-opus-4-5-20251101",
+          "claude-sonnet-4-5-20250929",
+          "claude-opus-4-20250514",
+          "claude-sonnet-4-20250514",
+          "claude-haiku-4-5-20251001",
+          "claude-opus-5-5",
+          "claude-sonnet-5-5",
+          "claude-haiku-5-5",
+          "claude-fable-5-1",
+          "claude-fable-5-2"
+        ],
+        "name": "Anthropic",
+        "slug": "anthropic",
+        "source": "hermes",
+        "total_models": 18
+      },
+      {
+        "authenticated": true,
+        "capabilities": {
+          "claude-haiku-4.5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-4": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-4.5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-4.6": {
+            "fast": false,
+            "reasoning": true
+          },
+          "claude-sonnet-5": {
+            "fast": false,
+            "reasoning": true
+          },
+          "gemini-2.5-pro": {
+            "fast": false,
+            "reasoning": true
+          },
+          "gemini-3-flash-preview": {
+            "fast": false,
+            "reasoning": true
+          },
+          "gemini-3-pro-preview": {
+            "fast": false,
+            "reasoning": true
+          },
+          "gemini-3.1-pro-preview": {
+            "fast": false,
+            "reasoning": true
+          },
+          "gpt-4.1": {
+            "fast": true,
+            "reasoning": true
+          },
+          "gpt-4o": {
+            "fast": true,
+            "reasoning": true
+          },
+          "gpt-4o-mini": {
+            "fast": true,
+            "reasoning": true
+          },
+          "gpt-5-mini": {
+            "fast": true,
+            "reasoning": true
+          },
+          "gpt-5.2-codex": {
+            "fast": false,
+            "reasoning": true
+          },
+          "gpt-5.3-codex": {
+            "fast": false,
+            "reasoning": true
+          },
+          "gpt-5.4": {
+            "fast": true,
+            "reasoning": true
+          },
+          "gpt-5.4-mini": {
+            "fast": true,
+            "reasoning": true
+          }
+        },
+        "featured_models": [],
+        "is_current": false,
+        "is_user_defined": false,
+        "models": [
+          "gpt-5.4",
+          "gpt-5.4-mini",
+          "gpt-5-mini",
+          "gpt-5.3-codex",
+          "gpt-5.2-codex",
+          "gpt-4.1",
+          "gpt-4o",
+          "gpt-4o-mini",
+          "claude-sonnet-4.6",
+          "claude-sonnet-5",
+          "claude-sonnet-4",
+          "claude-sonnet-4.5",
+          "claude-haiku-4.5",
+          "gemini-3.1-pro-preview",
+          "gemini-3-pro-preview",
+          "gemini-3-flash-preview",
+          "gemini-2.5-pro"
+        ],
+        "name": "GitHub Copilot",
+        "slug": "copilot",
+        "source": "built-in",
+        "total_models": 17
+      },
+      {
+        "authenticated": true,
+        "capabilities": {
+          "beam-free": {
+            "fast": false,
+            "reasoning": true
+          },
+          "deepseek-v4.1-flash-free": {
+            "fast": false,
+            "reasoning": true
+          },
+          "flint-40b-free": {
+            "fast": false,
+            "reasoning": true
+          },
+          "hy4-flash-free": {
+            "fast": false,
+            "reasoning": true
+          },
+          "iceman-free": {
+            "fast": false,
+            "reasoning": true
+          },
+          "inkling-2-small-free": {
+            "fast": false,
+            "reasoning": true
+          },
+          "longcat-2.5-free": {
+            "fast": false,
+            "reasoning": true
+          },
+          "mimo-v2.6-flash-free": {
+            "fast": false,
+            "reasoning": true
+          },
+          "nemotron-3.5-lightning-free": {
+            "fast": false,
+            "reasoning": true
+          },
+          "nemotron-3.5-super-vl-free": {
+            "fast": false,
+            "reasoning": true
+          }
+        },
+        "featured_models": [],
+        "is_current": false,
+        "is_user_defined": false,
+        "models": [
+          "mimo-v2.6-flash-free",
+          "deepseek-v4.1-flash-free",
+          "longcat-2.5-free",
+          "iceman-free",
+          "inkling-2-small-free",
+          "beam-free",
+          "flint-40b-free",
+          "nemotron-3.5-super-vl-free",
+          "nemotron-3.5-lightning-free",
+          "hy4-flash-free"
+        ],
+        "name": "OpenCode Free",
+        "slug": "opencode-free",
+        "source": "hermes",
+        "total_models": 10
+      },
+      {
+        "aliases": [
+          "custom:custom:my-local",
+          "custom:my-local",
+          "my local",
+          "my-local"
+        ],
+        "api_url": "http://127.0.0.1:18801/v1",
+        "authenticated": true,
+        "capabilities": {
+          "alpha": {
+            "fast": false,
+            "reasoning": true
+          },
+          "beta": {
+            "fast": false,
+            "reasoning": true
+          }
+        },
+        "featured_models": [],
+        "is_current": true,
+        "is_user_defined": true,
+        "models": [
+          "alpha",
+          "beta"
+        ],
+        "name": "My Local",
+        "native_catalog_empty": false,
+        "slug": "custom:my-local",
+        "source": "user-config",
+        "total_models": 2
+      }
+    ]
+  },
+  "kind": "rest",
+  "request": "GET /api/model/options",
+  "status": 200
+}

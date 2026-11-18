@@ -1,0 +1,19 @@
+{
+  "body": {
+    "execution_generation": 0,
+    "ok": true,
+    "operation": "sidebar",
+    "revision": 1,
+    "session_id": "20261118_103542_cd7264",
+    "title": "Replay rename"
+  },
+  "kind": "rest",
+  "request": "PATCH /api/sessions/20261118_103542_cd7264",
+  "sent": {
+    "expected_generation": 0,
+    "expected_revision": 0,
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "title": "Replay rename"
+  },
+  "status": 200
+}

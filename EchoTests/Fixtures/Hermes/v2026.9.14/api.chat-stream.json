@@ -1,0 +1,9 @@
+{
+  "kind": "api",
+  "request": "POST /api/sessions/api_1795016477_eee046b4/chat/stream",
+  "sent": {
+    "input": "lab:todo"
+  },
+  "status": 200,
+  "text": "event: run.started\ndata: {\"user_message\": {\"role\": \"user\", \"content\": \"lab:todo\"}, \"runtime\": {\"provider\": \"\", \"model\": \"\", \"route_source\": \"global\", \"requested\": {\"provider\": \"\", \"model\": \"\"}}, \"session_id\": \"api_1795016477_eee046b4\", \"run_id\": \"run_387dc53bb73a4bd8ac2135ca8877cfef\", \"seq\": 1, \"ts\": 1795016477.7399292}\n\nevent: message.started\ndata: {\"message\": {\"id\": \"msg_eea67eecbfe84584b906c3d1f36ff661\", \"role\": \"assistant\"}, \"session_id\": \"api_1795016477_eee046b4\", \"run_id\": \"run_387dc53bb73a4bd8ac2135ca8877cfef\", \"seq\": 2, \"ts\": 1795016477.739936}\n\nevent: error\ndata: {\"message\": \"No LLM provider configured. Run `hermes model` to select a provider, or run `hermes setup` for first-time configuration.\", \"session_id\": \"api_1795016477_eee046b4\", \"run_id\": \"run_387dc53bb73a4bd8ac2135ca8877cfef\", \"seq\": 3, \"ts\": 1795016477.979171}\n\nevent: done\ndata: {\"session_id\": \"api_1795016477_eee046b4\", \"run_id\": \"run_387dc53bb73a4bd8ac2135ca8877cfef\", \"seq\": 4, \"ts\": 1795016477.979181}\n\n"
+}

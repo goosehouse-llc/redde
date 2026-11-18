@@ -1,0 +1,33 @@
+{
+  "kind": "ws",
+  "method": "session.active_list",
+  "params": {},
+  "result": {
+    "sessions": [
+      {
+        "current": false,
+        "id": "99472c50",
+        "last_active": 1795015901.50832,
+        "message_count": 6,
+        "model": "alpha",
+        "preview": "[kept]",
+        "session_key": "20261118_103129_f0f393",
+        "started_at": 1795015889.917621,
+        "status": "idle",
+        "title": "Replay rename, bare"
+      },
+      {
+        "current": false,
+        "id": "3d5b200f",
+        "last_active": 1795015903.173307,
+        "message_count": 0,
+        "model": "alpha",
+        "preview": "lab:slow, please",
+        "session_key": "20261118_103143_70d0b0",
+        "started_at": 1795015903.0630882,
+        "status": "working",
+        "title": "lab:slow, please"
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "body": {
+    "exists": true,
+    "runtime_generation": 0,
+    "runtime_revision": 0,
+    "session_id": "20261118_103542_cd7264"
+  },
+  "kind": "rest",
+  "request": "GET /api/sessions/20261118_103542_cd7264/mutation-snapshot",
+  "status": 200
+}

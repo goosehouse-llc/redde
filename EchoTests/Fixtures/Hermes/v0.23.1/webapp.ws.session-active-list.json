@@ -1,0 +1,35 @@
+{
+  "kind": "ws",
+  "method": "session.active_list",
+  "params": {},
+  "result": {
+    "sessions": [
+      {
+        "current": false,
+        "id": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582",
+        "last_active": 1795016195.984803,
+        "message_count": 2,
+        "model": "alpha",
+        "preview": "",
+        "session_key": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582",
+        "source": "local",
+        "started_at": 1795016195.984803,
+        "status": "idle",
+        "title": "Replay rename on the Webapp"
+      },
+      {
+        "current": false,
+        "id": "local-9eeb0d8669363da2a65beb9595e20260aec22b2f4da8d48be70dbb6d6144a737",
+        "last_active": 1795016198.399113,
+        "message_count": 1,
+        "model": "alpha",
+        "preview": "",
+        "session_key": "local-9eeb0d8669363da2a65beb9595e20260aec22b2f4da8d48be70dbb6d6144a737",
+        "source": "gui",
+        "started_at": 1795016198.399113,
+        "status": "working",
+        "title": "lab:slow, please"
+      }
+    ]
+  }
+}

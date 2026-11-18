@@ -225,7 +225,14 @@ struct SkillsView: View {
                     HermesSessionsAPI.Skill(name: $0.name, description: $0.description, category: $0.category, enabled: $0.enabled ?? true)
                 }
             } else if let api = conversation.ledgerAPI() {
-                skills = try await api.skills()
+                do { skills = try await api.skills() } catch TransportError.http(500, _) {
+                    // Hermes 0.21.3 to 0.23.2 can't list skills over its API (a keyword its own
+                    // call doesn't take); its Dashboard can (found by HermesReplayTests).
+                    self.error = String(localized: "This Hermes can't list its skills over its API alone. Save its Dashboard login in Settings → Connection → Connection details to see and change them.",
+                                   comment: "Skills: the Hermes API answered 500, a Hermes bug")
+                    loading = false
+                    return
+                }
             } else {
                 error = SessionBackend.notConfiguredMessage
                 loading = false

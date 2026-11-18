@@ -1,0 +1,6 @@
+{
+  "kind": "api",
+  "request": "GET /v1/runs/run_cf1e2aee623148aaa62d04e48022922a/events",
+  "status": 200,
+  "text": ": open\n\nid: 0\ndata: {\"event\": \"message.delta\", \"run_id\": \"run_cf1e2aee623148aaa62d04e48022922a\", \"timestamp\": 1795016128.328346, \"delta\": \"[A:alpha]\", \"seq\": 0}\n\nid: 1\ndata: {\"event\": \"reasoning.available\", \"run_id\": \"run_cf1e2aee623148aaa62d04e48022922a\", \"timestamp\": 1795016128.333685, \"text\": \"[A:alpha]\", \"seq\": 1}\n\nid: 2\ndata: {\"event\": \"run.completed\", \"run_id\": \"run_cf1e2aee623148aaa62d04e48022922a\", \"timestamp\": 1795016128.352633, \"output\": \"[A:alpha]\", \"usage\": {\"input_tokens\": 10, \"output_tokens\": 3, \"total_tokens\": 13, \"cache_read_tokens\": 0, \"cache_write_tokens\": 0}, \"runtime\": {\"provider\": \"custom\", \"model\": \"alpha\", \"route_source\": \"global\"}, \"completed\": true, \"partial\": false, \"interrupted\": false, \"seq\": 2}\n\n: stream closed\n\n"
+}

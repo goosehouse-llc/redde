@@ -1,0 +1,6 @@
+{
+  "body": [],
+  "kind": "rest",
+  "request": "GET /api/cron/jobs",
+  "status": 200
+}

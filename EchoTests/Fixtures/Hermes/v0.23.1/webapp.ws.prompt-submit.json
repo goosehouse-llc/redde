@@ -1,0 +1,21 @@
+{
+  "kind": "ws",
+  "method": "prompt.submit",
+  "params": {
+    "session_id": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582",
+    "submission_id": "00000000-0000-4000-8000-000000000002",
+    "text": "Hello from the replay recorder"
+  },
+  "result": {
+    "admission_id": "ec1c0511c00342af8cf422a7cf0bb672",
+    "authority_epoch": 1,
+    "execution_generation": null,
+    "outcome": null,
+    "ref": {
+      "profile_id": "<run>/.hermes",
+      "session_id": "local-df86c7c5521b4ae2ec4374f092f784a22288ee1d51d695ac70167f1a7b9f7582"
+    },
+    "sequence": 4,
+    "status": "queued"
+  }
+}

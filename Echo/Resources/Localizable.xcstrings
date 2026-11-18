@@ -459325,6 +459325,113 @@
         }
       }
     },
+    "This chat is still working on a reply. Stop it, then delete it." : {
+      "comment" : "Deleting a chat Hermes is still answering in",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne chat arbejder stadig på et svar. Stop den, og slet den derefter."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Chat arbeitet noch an einer Antwort. Stoppe ihn und lösche ihn dann."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este chat todavía está trabajando en una respuesta. Detenlo y luego elimínalo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette discussion travaille encore sur une réponse. Arrêtez-la, puis supprimez-la."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa chat sta ancora lavorando a una risposta. Interrompila, poi eliminala."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このチャットはまだ返信を作成中です。停止してから削除してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 채팅은 아직 답장을 작성 중입니다. 멈춘 다음 삭제하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne chatten jobber fortsatt med et svar. Stopp den, og slett den så."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze chat werkt nog aan een antwoord. Stop hem en verwijder hem daarna."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten czat wciąż pracuje nad odpowiedzią. Zatrzymaj go, a potem usuń."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este chat ainda está trabalhando em uma resposta. Pare-o e depois apague."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот чат ещё пишет ответ. Остановите его, а затем удалите."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här chatten arbetar fortfarande på ett svar. Stoppa den och radera den sedan."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu sohbet hâlâ bir yanıt üzerinde çalışıyor. Önce durdur, sonra sil."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей чат ще пише відповідь. Зупиніть його, а потім видаліть."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这个聊天仍在撰写回复。请先停止，再删除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個聊天仍在撰寫回覆。請先停止，再刪除。"
+          }
+        }
+      }
+    },
     "This chat's routine runs when you ask for it by name: a schedule for it needs the Hermes Dashboard." : {
       "localizations" : {
         "da" : {
@@ -461448,6 +461555,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "此群組聊天已在 Hermes Desktop 中結束。"
+          }
+        }
+      }
+    },
+    "This Hermes can't list its skills over its API alone. Save its Dashboard login in Settings → Connection → Connection details to see and change them." : {
+      "comment" : "Skills: the Hermes API answered 500, a Hermes bug",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne Hermes kan ikke vise sine færdigheder via sin API alene. Gem login til dens Dashboard under Indstillinger → Forbindelse → Forbindelsesdetaljer for at se og ændre dem."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Hermes kann seine Skills nicht allein über seine API auflisten. Speichere die Dashboard-Anmeldung unter Einstellungen → Verbindung → Verbindungsdetails, um sie zu sehen und zu ändern."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes no puede mostrar sus habilidades solo con su API. Guarda el inicio de sesión de su Dashboard en Ajustes → Conexión → Detalles de la conexión para verlas y cambiarlas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce Hermes ne peut pas lister ses compétences par sa seule API. Enregistrez la connexion à son Dashboard dans Réglages → Connexion → Détails de la connexion pour les voir et les modifier."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo Hermes non può elencare le sue abilità solo tramite la sua API. Salva l’accesso alla sua Dashboard in Impostazioni → Connessione → Dettagli connessione per vederle e modificarle."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このHermesはAPIだけではスキルを一覧表示できません。設定 → 接続 → 接続の詳細でダッシュボードのログインを保存すると、表示と変更ができます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Hermes는 API만으로는 스킬 목록을 보여 줄 수 없습니다. 설정 → 연결 → 연결 세부 정보에서 대시보드 로그인을 저장하면 보고 변경할 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne Hermes kan ikke liste ferdighetene sine bare via API-et. Lagre påloggingen til Dashboardet i Innstillinger → Tilkobling → Tilkoblingsdetaljer for å se og endre dem."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze Hermes kan zijn vaardigheden niet alleen via zijn API tonen. Bewaar de login van zijn Dashboard in Instellingen → Verbinding → Verbindingsgegevens om ze te zien en te wijzigen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten Hermes nie może wyświetlić swoich umiejętności przez samo API. Zapisz logowanie do jego Dashboardu w Ustawienia → Połączenie → Szczegóły połączenia, aby je zobaczyć i zmienić."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este Hermes não consegue listar suas habilidades só pela API. Salve o login do Dashboard dele em Ajustes → Conexão → Detalhes da conexão para vê-las e alterá-las."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот Hermes не может показать свои навыки только через API. Сохраните вход в его Dashboard в разделе Настройки → Подключение → Сведения о подключении, чтобы видеть и менять их."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här Hermes kan inte lista sina färdigheter enbart via sitt API. Spara inloggningen till dess Dashboard under Inställningar → Anslutning → Anslutningsdetaljer för att se och ändra dem."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Hermes becerilerini yalnızca API üzerinden listeleyemiyor. Görmek ve değiştirmek için Dashboard girişini Ayarlar → Bağlantı → Bağlantı ayrıntıları'na kaydet."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей Hermes не може показати свої навички лише через API. Збережіть вхід до його Dashboard у Налаштування → Підключення → Відомості про підключення, щоб бачити й змінювати їх."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这个 Hermes 无法仅通过其 API 列出技能。在“设置 → 连接 → 连接详情”中保存其仪表板登录，即可查看和更改。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個 Hermes 無法只透過其 API 列出技能。在「設定 → 連線 → 連線詳細資料」中儲存其儀表板登入，即可檢視和更改。"
           }
         }
       }

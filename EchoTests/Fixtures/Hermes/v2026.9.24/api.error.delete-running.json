@@ -1,0 +1,10 @@
+{
+  "body": {
+    "deleted": true,
+    "id": "api_1795016095_f053811d",
+    "object": "hermes.session.deleted"
+  },
+  "kind": "api",
+  "request": "DELETE /api/sessions/api_1795016095_f053811d",
+  "status": 200
+}

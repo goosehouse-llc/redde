@@ -1,0 +1,12 @@
+{
+  "body": {
+    "ok": true,
+    "title": "Replay rename"
+  },
+  "kind": "rest",
+  "request": "PATCH /api/sessions/20261118_104043_5d5cf1",
+  "sent": {
+    "title": "Replay rename"
+  },
+  "status": 200
+}

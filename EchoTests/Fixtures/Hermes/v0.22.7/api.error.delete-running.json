@@ -1,0 +1,13 @@
+{
+  "body": {
+    "error": {
+      "code": "session_active_turn",
+      "message": "session 'api_1795016161_02514a0f' (or a delegate child) has an active turn lease or compression lock",
+      "param": null,
+      "type": "invalid_request_error"
+    }
+  },
+  "kind": "api",
+  "request": "DELETE /api/sessions/api_1795016161_02514a0f",
+  "status": 409
+}

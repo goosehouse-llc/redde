@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": 4023,
+    "message": "cannot delete an active session"
+  },
+  "kind": "ws",
+  "method": "session.delete",
+  "params": {
+    "session_id": "20261118_103553_0e1e8b"
+  }
+}

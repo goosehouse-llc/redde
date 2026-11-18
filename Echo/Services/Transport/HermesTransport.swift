@@ -354,6 +354,21 @@ nonisolated struct ModelPrice: Hashable, Sendable, Codable {
     }
 }
 
+/// A chat Hermes won't delete while a reply is being written in it: the 0.23 gateway's Dashboard
+/// (`session_busy`, 4001) and the Hermes API from 0.22.2 (409 `session_active_turn`). Said as
+/// what to do, not as Hermes words it (found by the replay tests, HermesReplayTests).
+nonisolated struct ChatBusyError: LocalizedError, Equatable {
+    var errorDescription: String? {
+        String(localized: "This chat is still working on a reply. Stop it, then delete it.", comment: "Deleting a chat Hermes is still answering in")
+    }
+
+    /// Hermes API: a 409 whose body names the turn under way.
+    static func isBusy(_ error: any Error) -> Bool {
+        if case .http(409, let body)? = error as? TransportError { return body.contains("session_active_turn") || body.contains("active turn") }
+        return false
+    }
+}
+
 nonisolated enum TransportError: LocalizedError {
     /// No key to send: none is stored, or the Keychain couldn't be read.
     static var noAPIKey: TransportError { Keychain.isShut ? .keychainShut : .missingAPIKey }

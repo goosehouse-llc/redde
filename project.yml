@@ -610,6 +610,13 @@ targets:
     platform: iOS
     sources:
       - path: EchoTests
+        excludes:
+          - "Fixtures/Hermes/**"
+      # What each Hermes release answered, recorded by scripts/hermes-lab/lab.sh fixtures: a folder
+      # in the bundle (Hermes/<release>/<name>.json), so the same name in two releases doesn't clash.
+      - path: EchoTests/Fixtures/Hermes
+        type: folder
+        buildPhase: resources
       # The status widgets' views and timelines, compiled in so the tests can draw them
       # (the file imports the app when WIDGET_VIEWS_IN_TESTS is set).
       - path: EchoControls/StatusWidgets.swift

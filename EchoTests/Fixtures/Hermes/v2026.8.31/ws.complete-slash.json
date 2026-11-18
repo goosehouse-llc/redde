@@ -1,0 +1,228 @@
+{
+  "kind": "ws",
+  "method": "complete.slash",
+  "params": {
+    "text": "/"
+  },
+  "result": {
+    "items": [
+      {
+        "display": "/new",
+        "kind": "command",
+        "meta": "Start a new session (fresh session ID + history) (usage: /new [name])",
+        "text": "new"
+      },
+      {
+        "display": "/reset",
+        "kind": "command",
+        "meta": "Start a new session (fresh session ID + history) (alias for /new)",
+        "text": "reset"
+      },
+      {
+        "display": "/clear",
+        "kind": "command",
+        "meta": "Clear screen and start a new session",
+        "text": "clear"
+      },
+      {
+        "display": "/redraw",
+        "kind": "command",
+        "meta": "Force a full UI repaint (recovers from terminal drift)",
+        "text": "redraw"
+      },
+      {
+        "display": "/history",
+        "kind": "command",
+        "meta": "Show conversation history",
+        "text": "history"
+      },
+      {
+        "display": "/save",
+        "kind": "command",
+        "meta": "Export the current conversation (bare /save shows usage) (usage: /save <json|md|html> [filename] [redact])",
+        "text": "save"
+      },
+      {
+        "display": "/retry",
+        "kind": "command",
+        "meta": "Retry the last message (resend to agent)",
+        "text": "retry"
+      },
+      {
+        "display": "/prompt",
+        "kind": "command",
+        "meta": "Compose your next prompt in $EDITOR (markdown), then send it (usage: /prompt [initial text])",
+        "text": "prompt"
+      },
+      {
+        "display": "/compose",
+        "kind": "command",
+        "meta": "Compose your next prompt in $EDITOR (markdown), then send it (alias for /prompt)",
+        "text": "compose"
+      },
+      {
+        "display": "/undo",
+        "kind": "command",
+        "meta": "Back up N user turns and re-prompt (default 1) (usage: /undo [N])",
+        "text": "undo"
+      },
+      {
+        "display": "/title",
+        "kind": "command",
+        "meta": "Set a title for the current session (usage: /title [name])",
+        "text": "title"
+      },
+      {
+        "display": "/handoff",
+        "kind": "command",
+        "meta": "Hand off this session to a messaging platform (Telegram, Discord, etc.) (usage: /handoff <platform>)",
+        "text": "handoff"
+      },
+      {
+        "display": "/branch",
+        "kind": "command",
+        "meta": "Branch the current session (explore a different path) (usage: /branch [name])",
+        "text": "branch"
+      },
+      {
+        "display": "/fork",
+        "kind": "command",
+        "meta": "Branch the current session (explore a different path) (alias for /branch)",
+        "text": "fork"
+      },
+      {
+        "display": "/worktree",
+        "kind": "command",
+        "meta": "Show, list, create, or prune isolated git worktrees (usage: /worktree [new [name]|list|prune [--dry-run]])",
+        "text": "worktree"
+      },
+      {
+        "display": "/compress",
+        "kind": "command",
+        "meta": "Compress conversation context (add 'here [N]' to keep recent N turns; --preview shows what would happen) (usage: /compress [here [N] | focus topic | --preview|--dry-run])",
+        "text": "compress"
+      },
+      {
+        "display": "/compact",
+        "kind": "command",
+        "meta": "Compress conversation context (add 'here [N]' to keep recent N turns; --preview shows what would happen) (alias for /compress)",
+        "text": "compact"
+      },
+      {
+        "display": "/rollback",
+        "kind": "command",
+        "meta": "List or restore filesystem checkpoints (restores keep your hand-edits; --all overrides) (usage: /rollback [number] [--all])",
+        "text": "rollback"
+      },
+      {
+        "display": "/snapshot",
+        "kind": "command",
+        "meta": "Create or restore state snapshots of Hermes config/state (usage: /snapshot [create|restore <id>|prune])",
+        "text": "snapshot"
+      },
+      {
+        "display": "/snap",
+        "kind": "command",
+        "meta": "Create or restore state snapshots of Hermes config/state (alias for /snapshot)",
+        "text": "snap"
+      },
+      {
+        "display": "/export",
+        "kind": "command",
+        "meta": "Export a profile (config, skills, theme) to a shareable archive (usage: /export [profile] [-o output.tar.gz])",
+        "text": "export"
+      },
+      {
+        "display": "/import",
+        "kind": "command",
+        "meta": "Import a shared profile archive as a new profile (usage: /import <archive.tar.gz> [--name <name>])",
+        "text": "import"
+      },
+      {
+        "display": "/stop",
+        "kind": "command",
+        "meta": "Kill all running background processes",
+        "text": "stop"
+      },
+      {
+        "display": "/bg",
+        "kind": "command",
+        "meta": "Run a prompt in a separate background session (usage: /bg <prompt>)",
+        "text": "bg"
+      },
+      {
+        "display": "/btw",
+        "kind": "command",
+        "meta": "Ask a side question about the current conversation without interrupting it (usage: /btw <question>)",
+        "text": "btw"
+      },
+      {
+        "display": "/agents",
+        "kind": "command",
+        "meta": "Show active agents and running tasks",
+        "text": "agents"
+      },
+      {
+        "display": "/tasks",
+        "kind": "command",
+        "meta": "Show active agents and running tasks (alias for /agents)",
+        "text": "tasks"
+      },
+      {
+        "display": "/journey",
+        "kind": "command",
+        "meta": "Open the learning journey timeline (usage: /journey [list|delete <id>|edit <id>])",
+        "text": "journey"
+      },
+      {
+        "display": "/learning",
+        "kind": "command",
+        "meta": "Open the learning journey timeline (alias for /journey)",
+        "text": "learning"
+      },
+      {
+        "display": "/memory-graph",
+        "kind": "command",
+        "meta": "Open the learning journey timeline (alias for /journey)",
+        "text": "memory-graph"
+      },
+      {
+        "display": "/lab-hello",
+        "kind": "skill",
+        "meta": "⚡ Lab only. A plain skill.",
+        "text": "lab-hello"
+      },
+      {
+        "display": "/lab-secret",
+        "kind": "skill",
+        "meta": "⚡ Lab only. A skill that needs a secret.",
+        "text": "lab-secret"
+      },
+      {
+        "display": "/density",
+        "kind": "command",
+        "meta": "Toggle compact display mode",
+        "text": "/density"
+      },
+      {
+        "display": "/details",
+        "kind": "command",
+        "meta": "Control agent detail visibility",
+        "text": "/details"
+      },
+      {
+        "display": "/logs",
+        "kind": "command",
+        "meta": "Show recent gateway log lines",
+        "text": "/logs"
+      },
+      {
+        "display": "/mouse",
+        "kind": "command",
+        "meta": "Set mouse tracking preset [on|off|toggle|wheel|buttons|all]",
+        "text": "/mouse"
+      }
+    ],
+    "replace_from": 1
+  }
+}

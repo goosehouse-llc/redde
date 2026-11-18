@@ -1,0 +1,20 @@
+{
+  "kind": "ws",
+  "method": "session.list",
+  "params": {
+    "limit": 50
+  },
+  "result": {
+    "sessions": [
+      {
+        "_lineage_root_id": null,
+        "id": "20261118_103649_9e0562",
+        "message_count": 6,
+        "preview": "Hello from the replay recorder",
+        "source": "desktop",
+        "started_at": 1795016209.447485,
+        "title": "Replay rename"
+      }
+    ]
+  }
+}

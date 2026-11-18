@@ -1,0 +1,88 @@
+{
+  "body": {
+    "active_agents": 0,
+    "active_sessions": 0,
+    "auth_flows": [
+      "cookie",
+      "native_pkce"
+    ],
+    "auth_providers": [
+      "basic"
+    ],
+    "auth_required": true,
+    "can_update_hermes": true,
+    "components": {
+      "dashboard": {
+        "last_error_at": null,
+        "recent_unhandled_errors": 0,
+        "selftest": "unknown",
+        "status": "ok"
+      },
+      "gateway": {
+        "state": "running",
+        "status": "ok"
+      },
+      "platforms": {
+        "configured": 1,
+        "connected": 1,
+        "status": "ok"
+      },
+      "storage": {
+        "status": "ok"
+      }
+    },
+    "config_version": 0,
+    "disk": {
+      "free_mb": 45738,
+      "pressure": "ok",
+      "total_mb": 948584,
+      "used_percent": 95.2
+    },
+    "gateway_busy": false,
+    "gateway_drainable": true,
+    "gateway_exit_reason": null,
+    "gateway_heartbeat_stale_s": null,
+    "gateway_mode": "single",
+    "gateway_platforms": {
+      "api_server": {
+        "needs_attention": false,
+        "state": "connected",
+        "updated_at": "2026-11-18T15:36:47.984719+00:00"
+      }
+    },
+    "gateway_running": true,
+    "gateway_shared_with": [],
+    "gateway_state": "running",
+    "gateway_updated_at": "2026-11-18T15:36:48.001379+00:00",
+    "import_keep_host": 1,
+    "install_id": "6cefca29c72f4aa59527d1e5df2a3aed",
+    "isolated_profile": null,
+    "latest_config_version": 53,
+    "memory": {
+      "boot_id": "2026-11-18T15:36:47.594965+00:00",
+      "gateway_rss_mb": null,
+      "last_boot_suspected_oom": false,
+      "last_boot_unclean": false,
+      "pressure": "unknown",
+      "sampled_at": null,
+      "swap_used_mb": null,
+      "system_available_mb": null,
+      "system_total_mb": null
+    },
+    "multiplex_standalone_reason": null,
+    "nous_session_valid": "unknown",
+    "overall": "ok",
+    "parked_profiles": [],
+    "peer_access": 0,
+    "profiles": [
+      "default"
+    ],
+    "release_date": "2026.9.24",
+    "restart_drain_timeout": 0.0,
+    "shared_profile_warning": false,
+    "version": "0.23.2"
+  },
+  "kind": "rest",
+  "request": "GET /api/status",
+  "status": 200
+}

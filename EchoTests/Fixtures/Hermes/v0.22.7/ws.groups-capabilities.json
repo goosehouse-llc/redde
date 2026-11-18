@@ -1,0 +1,41 @@
+{
+  "kind": "ws",
+  "method": "groups.capabilities",
+  "params": {},
+  "result": {
+    "authority_gateway_id": "install:9031e4ed54a047b096f3791fba9b8508",
+    "driver": true,
+    "features": [
+      "room_identity",
+      "monotonic_log",
+      "replayable_disband"
+    ],
+    "max_log_limit": 500,
+    "methods": [
+      "groups.capabilities",
+      "groups.list",
+      "groups.state",
+      "groups.log",
+      "groups.create",
+      "groups.rename",
+      "groups.context",
+      "groups.disband",
+      "groups.send",
+      "groups.attachment.upload",
+      "groups.attachment.download",
+      "groups.stop",
+      "groups.retry",
+      "groups.discard",
+      "groups.approve"
+    ],
+    "persistent_process": true,
+    "protocol_version": 2,
+    "room_link": {
+      "enabled": false,
+      "reason": "canonical_driver_required"
+    },
+    "seatable_profiles": [
+      "default"
+    ]
+  }
+}

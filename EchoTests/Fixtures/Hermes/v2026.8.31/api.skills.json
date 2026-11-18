@@ -1,0 +1,305 @@
+{
+  "body": {
+    "data": [
+      {
+        "category": null,
+        "description": "Lab only. A plain skill.",
+        "name": "lab-hello"
+      },
+      {
+        "category": null,
+        "description": "Lab only. A skill that needs a secret.",
+        "name": "lab-secret"
+      },
+      {
+        "category": "apple",
+        "description": "Manage Apple Notes via memo CLI: create, search, edit.",
+        "name": "apple-notes"
+      },
+      {
+        "category": "apple",
+        "description": "Apple Reminders via remindctl: add, list, complete.",
+        "name": "apple-reminders"
+      },
+      {
+        "category": "apple",
+        "description": "Track Apple devices/AirTags via FindMy.app on macOS.",
+        "name": "findmy"
+      },
+      {
+        "category": "apple",
+        "description": "Send and receive iMessages/SMS via the imsg CLI on macOS.",
+        "name": "imessage"
+      },
+      {
+        "category": "autonomous-ai-agents",
+        "description": "Delegate coding to Claude Code CLI (features, PRs).",
+        "name": "claude-code"
+      },
+      {
+        "category": "autonomous-ai-agents",
+        "description": "Delegate coding to OpenAI Codex CLI (features, PRs).",
+        "name": "codex"
+      },
+      {
+        "category": "autonomous-ai-agents",
+        "description": "Drive the desktop background-first; escalate on signal.",
+        "name": "computer-use"
+      },
+      {
+        "category": "autonomous-ai-agents",
+        "description": "Use, configure, theme, extend, and orchestrate Hermes Agent.",
+        "name": "hermes-agent"
+      },
+      {
+        "category": "autonomous-ai-agents",
+        "description": "Delegate coding to OpenCode CLI (features, PR review).",
+        "name": "opencode"
+      },
+      {
+        "category": "creative",
+        "description": "Dark-themed SVG architecture/cloud/infra diagrams as HTML.",
+        "name": "architecture-diagram"
+      },
+      {
+        "category": "creative",
+        "description": "ASCII video: convert video/audio to colored ASCII MP4/GIF.",
+        "name": "ascii-video"
+      },
+      {
+        "category": "creative",
+        "description": "Infographics: 21 layouts x 21 styles (信息图, 可视化).",
+        "name": "baoyu-infographic"
+      },
+      {
+        "category": "creative",
+        "description": "Design one-off HTML artifacts (landing, deck, prototype).",
+        "name": "claude-design"
+      },
+      {
+        "category": "creative",
+        "description": "Author/validate/export Google's DESIGN.md token spec files.",
+        "name": "design-md"
+      },
+      {
+        "category": "creative",
+        "description": "Humanize text: strip AI-isms and add real voice.",
+        "name": "humanizer"
+      },
+      {
+        "category": "creative",
+        "description": "Manim CE animations: 3Blue1Brown math/algo videos.",
+        "name": "manim-video"
+      },
+      {
+        "category": "creative",
+        "description": "p5.js sketches: gen art, shaders, interactive, 3D.",
+        "name": "p5js"
+      },
+      {
+        "category": "creative",
+        "description": "54 real design systems (Stripe, Linear, Vercel) as HTML/CSS.",
+        "name": "popular-web-designs"
+      },
+      {
+        "category": "creative",
+        "description": "Songwriting craft and Suno AI music prompts.",
+        "name": "songwriting-and-ai-music"
+      },
+      {
+        "category": "email",
+        "description": "Triage an inbox: prioritize threads, draft replies safely.",
+        "name": "email-inbox-triage"
+      },
+      {
+        "category": "email",
+        "description": "Himalaya CLI: IMAP/SMTP email from terminal.",
+        "name": "himalaya"
+      },
+      {
+        "category": "media",
+        "description": "Search/download GIFs from Tenor via curl + jq.",
+        "name": "gif-search"
+      },
+      {
+        "category": "media",
+        "description": "Audio spectrograms/features (mel, chroma, MFCC) via CLI.",
+        "name": "songsee"
+      },
+      {
+        "category": "media",
+        "description": "YouTube transcripts to summaries, threads, blogs.",
+        "name": "youtube-content"
+      },
+      {
+        "category": "note-taking",
+        "description": "Read, search, create, and edit notes in the Obsidian vault.",
+        "name": "obsidian"
+      },
+      {
+        "category": "productivity",
+        "description": "Airtable REST API via curl. Records CRUD, filters, upserts.",
+        "name": "airtable"
+      },
+      {
+        "category": "productivity",
+        "description": "Box manages cloud files, sharing, search, and metadata.",
+        "name": "box"
+      },
+      {
+        "category": "productivity",
+        "description": "Extract cited obligations, deadlines, tasks from documents.",
+        "name": "document-to-action-items"
+      },
+      {
+        "category": "productivity",
+        "description": "Create, read, edit, template, and review Word .docx files.",
+        "name": "docx"
+      },
+      {
+        "category": "productivity",
+        "description": "Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python.",
+        "name": "google-workspace"
+      },
+      {
+        "category": "productivity",
+        "description": "Geocode, POIs, routes, timezones via OpenStreetMap/OSRM.",
+        "name": "maps"
+      },
+      {
+        "category": "productivity",
+        "description": "Turn meeting notes into cited decisions, owners, tickets.",
+        "name": "meeting-action-items"
+      },
+      {
+        "category": "productivity",
+        "description": "Notion API + ntn CLI: pages, databases, markdown, Workers.",
+        "name": "notion"
+      },
+      {
+        "category": "productivity",
+        "description": "PDF files: create, read, merge, fill, OCR, edit text.",
+        "name": "pdf"
+      },
+      {
+        "category": "productivity",
+        "description": "Create, read, edit .pptx decks with python-pptx.",
+        "name": "powerpoint"
+      },
+      {
+        "category": "productivity",
+        "description": "Watch product, flight, or listing prices; alert on target.",
+        "name": "product-price-monitor"
+      },
+      {
+        "category": "productivity",
+        "description": "Teams meeting summaries, job replay, Graph subscriptions.",
+        "name": "teams-meeting-pipeline"
+      },
+      {
+        "category": "productivity",
+        "description": "Weekly reset: commitments, stalled work, next-week plan.",
+        "name": "weekly-review-planning"
+      },
+      {
+        "category": "productivity",
+        "description": "Create, read, edit Excel .xlsx workbooks and CSVs.",
+        "name": "xlsx"
+      },
+      {
+        "category": "research",
+        "description": "Search arXiv papers by keyword, author, category, or ID.",
+        "name": "arxiv"
+      },
+      {
+        "category": "research",
+        "description": "Watch named companies for material news; cited digests.",
+        "name": "competitor-news-monitor"
+      },
+      {
+        "category": "research",
+        "description": "Ground answers and documents in cited, verifiable sources.",
+        "name": "grounded-citations"
+      },
+      {
+        "category": "research",
+        "description": "Karpathy's LLM Wiki: build/query interlinked markdown KB.",
+        "name": "llm-wiki"
+      },
+      {
+        "category": "social-media",
+        "description": "X/Twitter via xurl CLI: raw post search, posting, DM, media.",
+        "name": "xurl"
+      },
+      {
+        "category": "software-development",
+        "description": "Inspect codebases w/ pygount: LOC, languages, ratios.",
+        "name": "codebase-inspection"
+      },
+      {
+        "category": "software-development",
+        "description": "Exploratory QA of web apps: find bugs, evidence, reports.",
+        "name": "dogfood"
+      },
+      {
+        "category": "software-development",
+        "description": "GitHub via gh CLI: PRs, issues, reviews, repos, auth.",
+        "name": "github"
+      },
+      {
+        "category": "software-development",
+        "description": "Author in-repo SKILL.md files: frontmatter and structure.",
+        "name": "hermes-agent-skill-authoring"
+      },
+      {
+        "category": "software-development",
+        "description": "Read the live Hermes desktop DOM/CSS over CDP.",
+        "name": "inspecting-hermes-desktop-dom"
+      },
+      {
+        "category": "software-development",
+        "description": "Debug Node.js via --inspect + Chrome DevTools Protocol CLI.",
+        "name": "node-inspect-debugger"
+      },
+      {
+        "category": "software-development",
+        "description": "Debug Python: pdb REPL + debugpy remote (DAP).",
+        "name": "python-debugpy"
+      },
+      {
+        "category": "software-development",
+        "description": "Pre-commit review: security scan, quality gates, auto-fix.",
+        "name": "requesting-code-review"
+      },
+      {
+        "category": "software-development",
+        "description": "Parallel 4-agent cleanup of recent code changes.",
+        "name": "simplify-code"
+      },
+      {
+        "category": "software-development",
+        "description": "Throwaway experiments to validate an idea before build.",
+        "name": "spike"
+      },
+      {
+        "category": "software-development",
+        "description": "4-phase root cause debugging: understand bugs before fixing.",
+        "name": "systematic-debugging"
+      },
+      {
+        "category": "software-development",
+        "description": "TDD: enforce RED-GREEN-REFACTOR, tests before code.",
+        "name": "test-driven-development"
+      },
+      {
+        "category": "web",
+        "description": "Use when a fetch fails: 403/429, paywall, WAF, bot wall.",
+        "name": "blocked-page-recovery"
+      }
+    ],
+    "object": "list"
+  },
+  "kind": "api",
+  "request": "GET /v1/skills",
+  "status": 200
+}

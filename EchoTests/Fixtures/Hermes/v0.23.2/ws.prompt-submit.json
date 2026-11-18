@@ -1,0 +1,12 @@
+{
+  "kind": "ws",
+  "method": "prompt.submit",
+  "params": {
+    "session_id": "2049a574",
+    "text": "Hello from the replay recorder"
+  },
+  "result": {
+    "status": "streaming",
+    "user_row_id": 1
+  }
+}
