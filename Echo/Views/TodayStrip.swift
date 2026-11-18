@@ -606,19 +606,31 @@ private struct TodayBigNumber: View {
     let design: Font.Design
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            if count > 0 {
-                Text(verbatim: "\(count)")
-                    .font(.system(size: 44, weight: .heavy, design: design))
-                    .monospacedDigit()
-                    .tileAccent(tint)
-            } else {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 34, weight: .bold))
-                    .tileAccent(tint)
-            }
-            Text(label).font(.system(.subheadline, design: design, weight: .semibold)).foregroundStyle(.secondary).lineLimit(1)
+        // The word beside the count when both fit, under it when not (107 and "Unread" in a narrow
+        // tile); the count itself never breaks, shrinking a little before it would.
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) { number; word }
+            VStack(alignment: .leading, spacing: 0) { number; word }
         }
+    }
+
+    @ViewBuilder private var number: some View {
+        if count > 0 {
+            Text(verbatim: "\(count)")
+                .font(.system(size: 44, weight: .heavy, design: design))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .tileAccent(tint)
+        } else {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 34, weight: .bold))
+                .tileAccent(tint)
+        }
+    }
+
+    private var word: some View {
+        Text(label).font(.system(.subheadline, design: design, weight: .semibold)).foregroundStyle(.secondary).lineLimit(1)
     }
 }
 
