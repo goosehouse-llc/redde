@@ -261,6 +261,13 @@ extension HermesServeClient {
     /// `about`: the stored session the call is about, when there is one: a bot's chat is in the
     /// bot's profile.
     func rest(_ method: String, _ path: String, body: Data?, timeout: TimeInterval = 30, about stored: String? = nil) async throws -> Data {
+        do { return try await restNow(method, path, body: body, timeout: timeout, about: stored) } catch {
+            FailureLog.shared.record(via: "dashboard rest", what: "\(method) \(path)", error: error)
+            throw error
+        }
+    }
+
+    private func restNow(_ method: String, _ path: String, body: Data?, timeout: TimeInterval, about stored: String?) async throws -> Data {
         guard let baseURL else { throw TransportError.badURL }
         try await login(baseURL: baseURL)
         let profile = stored.flatMap { sessionProfiles[$0] } ?? settings.profileName

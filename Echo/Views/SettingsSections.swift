@@ -1301,6 +1301,8 @@ struct AboutSettings: View {
                 NavigationLink("What's New in Redde") { WhatsNewView(release: release) }
             }
             NavigationLink("Acknowledgements") { AcknowledgementsView() }
+            NavigationLink { DiagnosticsView() } label: { Label("Report a Problem", systemImage: "ladybug") }
+                .accessibilityIdentifier("about.report")
             Button {
                 UIPasteboard.general.string = SettingsView.versionLine
                 copiedVersion = true

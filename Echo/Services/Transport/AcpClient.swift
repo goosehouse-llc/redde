@@ -433,6 +433,13 @@ final class AcpClient {
 
     @discardableResult
     func call(_ method: String, _ params: [String: JSONValue], timeout: TimeInterval? = 60) async throws -> JSONValue {
+        do { return try await callNow(method, params, timeout: timeout) } catch {
+            FailureLog.shared.record(via: "agent", what: method, error: error)   // for a bug report (Diagnostics.swift)
+            throw error
+        }
+    }
+
+    private func callNow(_ method: String, _ params: [String: JSONValue], timeout: TimeInterval?) async throws -> JSONValue {
         try Task.checkCancellation()
         guard let socket else { throw TransportError.unreachable(String(localized: "not connected to the agent", comment: "ACP")) }
         let id = "redde-\(nextID)"

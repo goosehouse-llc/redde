@@ -703,6 +703,13 @@ nonisolated struct HermesSessionsAPI: Sendable {
     /// The one bearer-authenticated request every call above goes through.
     private func send(_ method: String, _ path: String, query: [URLQueryItem] = [], body: Data? = nil,
                       timeout: TimeInterval = 20) async throws -> Data {
+        do { return try await sendNow(method, path, query: query, body: body, timeout: timeout) } catch {
+            FailureLog.shared.record(via: "api", what: "\(method) \(path)", error: error)   // for a bug report (Diagnostics.swift)
+            throw error
+        }
+    }
+
+    private func sendNow(_ method: String, _ path: String, query: [URLQueryItem], body: Data?, timeout: TimeInterval) async throws -> Data {
         guard var comps = URLComponents(url: baseURL.appending(path: path), resolvingAgainstBaseURL: false) else { throw TransportError.badURL }
         if !query.isEmpty { comps.queryItems = query }
         guard let url = comps.url else { throw TransportError.badURL }

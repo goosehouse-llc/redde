@@ -1,0 +1,30 @@
+name: Bug report
+description: Something in Redde doesn't work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what Redde did instead. A screenshot helps.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen again
+      placeholder: |
+        1. Open a chat with …
+        2. Tap …
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: >
+        In Redde: Settings → About → Report a Problem → Copy Report, and paste it here (or use
+        Report on GitHub there, which fills this in). It holds your device, Redde's version and
+        connection, the Hermes and plugin versions, and the last requests that failed: no
+        messages, keys, passwords or server addresses.
+      render: text
+    validations:
+      required: true

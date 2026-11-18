@@ -493,6 +493,13 @@ final class HermesServeClient {
 
     @discardableResult
     func call(_ method: String, params: JSONValue, timeout: TimeInterval = 60) async throws -> JSONValue {
+        do { return try await callNow(method, params: params, timeout: timeout) } catch {
+            FailureLog.shared.record(via: "dashboard", what: method, error: error)   // for a bug report (Diagnostics.swift)
+            throw error
+        }
+    }
+
+    private func callNow(_ method: String, params: JSONValue, timeout: TimeInterval) async throws -> JSONValue {
         try Task.checkCancellation()
         // No socket means the request never left the phone: safe for the caller to send again.
         guard socket != nil else { throw TransportError.unreachable(String(localized: "not connected to Hermes Dashboard")) }

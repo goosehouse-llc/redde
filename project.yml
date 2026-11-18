@@ -250,6 +250,7 @@ targets:
       - path: Echo/Models/Reactions.swift
       - path: Echo/Services/Transport/HermesTransport.swift
       - path: Echo/Services/Transport/HermesSessionsTransport.swift
+      - path: Echo/Services/FailureLog.swift
       - path: Echo/Services/Transport/ChatCompletionsTransport.swift
       - path: Echo/Services/Transport/SSEParser.swift
       - path: Echo/Services/Transport/JSONValue.swift
