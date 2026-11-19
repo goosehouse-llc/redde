@@ -74,6 +74,32 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
+## What's New in 2.7 (4000)
+Your agents talk to each other, with you in the loop. Skills from the hub, pictures in agent chats, and smoother typing.
+
+• Every agent can ask every other by @mention: your Hermes bots, the agents on your Redde bridge (Claude Code, Codex and the rest) and the bots on your other servers. Tag one in your message, or let your agent ask one itself: the answer shows in your chat and your agent carries on with it. In voice mode the answers are read aloud too.
+• Ask Me First, on from the start: before an agent asks another, or a Hermes bot hands its work to another, Redde asks you, with Ask or Don't on a card, in the chat or out loud. Settings → Replies & Writing → Agents Talking to Each Other has the switches.
+• Skills from Hermes's skills hub: Find Skills, see what one does and install it, checked by Hermes's scanner before it goes on.
+• Pictures in agent chats: what Claude Code or Codex sends or reads shows in the chat, and a file a reply names opens on your phone.
+• A long paste goes beside your message as a text file, instead of filling the field.
+• Clear a notification on one device and it's cleared on the others.
+• Report a Problem, in Settings → About: a report of your setup with nothing private in it, to copy or open as a GitHub issue.
+• Pull down on Today to refresh it.
+• Settings in three groups: Connection, Your Agent and The App.
+• Smoother typing, and faster phone tools and calendar reads.
+• Hermes 0.23 supported.
+• Fixes: deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A three-digit Inbox count stays on one line. A new chat shows in the iPad sidebar at once. A map shows for an address in "today at 200 East Robinson St, …".
+
+Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 1.32 on your Hermes, and cleared notifications 1.33: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
+
+## Before submitting 2.7
+- In-app What's New: no 2.7 entry yet. Suggested items, to translate into the 17 languages: @mentions between every agent; Ask Me First; skills hub; pictures in agent chats; Report a Problem.
+- Version: bump to 2.7 in project.yml; the build after 295.
+- The Watch-only live call (53365bf) is left out: it has run only in the simulator. Try it on a real watch first (its socket rules differ), then add a line.
+- The relay must be deployed for cleared notifications (an old relay shows a clear as a quiet alert). Plugin 1.33.0 and bridge 0.11 must be on main (they are).
+- Run the unit tests and the whole UI suite, then put Release on an iPhone and an iPad and launch-check both.
+- App Privacy: nothing new collected. Report a Problem copies a report or opens GitHub in the browser; nothing is sent by Redde. The skills hub is asked by the person's own Hermes. Recheck the privacy policy for the skills hub and Report a Problem lines.
+
 ## What's New in 2.6 (4000)
 Claude Code, Codex and other agents, a new drawer, and better suggested replies.
 
