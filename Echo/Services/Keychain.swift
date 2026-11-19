@@ -133,8 +133,8 @@ nonisolated enum Keychain {
     /// the app tries at launch and again each time it is unlocked, until every one has moved.
     /// True once they all have.
     @discardableResult
-    static func moveToAfterFirstUnlock() -> Bool {
-        guard !UserDefaults.standard.bool(forKey: movedKey) else { return true }
+    static func moveToAfterFirstUnlock(_ defaults: UserDefaults = .standard) -> Bool {
+        guard !defaults.bool(forKey: movedKey) else { return true }
         var moved = true
         for synced in [false, true] {
             guard let accounts = listed(synced: synced) else { moved = false; continue }
@@ -145,7 +145,7 @@ nonisolated enum Keychain {
                 }
             }
         }
-        if moved { UserDefaults.standard.set(true, forKey: movedKey) }
+        if moved { defaults.set(true, forKey: movedKey) }
         return moved
     }
 

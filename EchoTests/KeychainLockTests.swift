@@ -46,13 +46,15 @@ struct KeychainLockTests {
         #expect(TransportError.noAPIKey.errorDescription == TransportError.missingAPIKey.errorDescription, "an open Keychain with no key has none")
     }
 
-    @Test func aKeyStoredBeforeIsMovedOnce() {
+    @Test func aKeyStoredBeforeIsMovedOnce() throws {
         let account = "gateway-api-key@lock-test-\(UUID().uuidString)"
-        let defaults = UserDefaults.standard
-        let wasMoved = defaults.object(forKey: Keychain.movedKey)
+        // A set of defaults of its own: the app's flag stays as it was. (On the iOS 27 simulator the
+        // app's own flag, removed, still read as set, and nothing was moved; 2026-11-19.)
+        let suite = "keychain-lock-test-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
         defer {
             Keychain.delete(account: account)
-            defaults.set(wasMoved, forKey: Keychain.movedKey)
+            defaults.removePersistentDomain(forName: suite)
         }
         // As 2.1 stored it.
         let old: [String: Any] = [
@@ -66,8 +68,7 @@ struct KeychainLockTests {
         #expect(SecItemAdd(old as CFDictionary, nil) == errSecSuccess)
         #expect(Self.accessible(account) == kSecAttrAccessibleWhenUnlockedThisDeviceOnly as String)
 
-        defaults.removeObject(forKey: Keychain.movedKey)
-        #expect(Keychain.moveToAfterFirstUnlock())
+        #expect(Keychain.moveToAfterFirstUnlock(defaults))
         #expect(Self.accessible(account) == kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String)
         #expect(Keychain.read(account: account) == "sk-old", "the key itself is untouched")
         #expect(defaults.bool(forKey: Keychain.movedKey), "and it isn't done again")

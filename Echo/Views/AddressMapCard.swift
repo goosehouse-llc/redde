@@ -50,8 +50,13 @@ enum AddressMaps {
         guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.address.rawValue) else { return nil }
         let range = NSRange(plain.startIndex..., in: plain)
         for match in detector.matches(in: plain, range: range) {
-            guard let span = Range(match.range, in: plain) else { continue }
-            let parts = match.addressComponents ?? [:]
+            guard var span = Range(match.range, in: plain) else { continue }
+            var parts = match.addressComponents ?? [:]
+            // iOS 27 reads "today at 200 East Robinson St, Orlando, FL" as a time and finds only
+            // "Orlando, FL 32801": the street just before it is asked about again with it.
+            if parts[.street] == nil, let longer = streetBefore(span, in: plain, detector: detector) {
+                (span, parts) = longer
+            }
             // A street with a number, not a city or a state alone ("in Winter Park, FL").
             guard let street = parts[.street], street.contains(where: \.isNumber) else { continue }
             let written = plain[span].split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }
@@ -59,6 +64,19 @@ enum AddressMaps {
             return Found(name: parts[.name] ?? street, address: written)
         }
         return nil
+    }
+
+    /// A street written just before a town the detector found alone ("200 East Robinson St, "
+    /// before "Orlando, FL 32801"): the two together, if the detector then finds the street.
+    private nonisolated static func streetBefore(_ town: Range<String.Index>, in text: String,
+                                                 detector: NSDataDetector) -> (Range<String.Index>, [NSTextCheckingKey: String])? {
+        let before = text[..<town.lowerBound]
+        guard let street = before.firstMatch(of: /(\d+[A-Za-z]?\s+[^,.\n\d]{2,60}),\s*$/) else { return nil }
+        let start = street.range.lowerBound
+        let candidate = String(text[start ..< town.upperBound])
+        guard let match = detector.firstMatch(in: candidate, range: NSRange(candidate.startIndex..., in: candidate)),
+              let parts = match.addressComponents, parts[.street] != nil else { return nil }
+        return (start ..< town.upperBound, parts)
     }
 
     /// Directions in Apple Maps from where the phone is, by the way the person gets about.

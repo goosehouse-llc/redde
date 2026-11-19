@@ -42,6 +42,14 @@ import Testing
         // one like it: then a transcriber is made, as it would be anywhere English is known.)
         let english = Locale(identifier: "en-US")
         guard await Transcriber.Kind.speech.supportedLocale(equivalentTo: english) == nil else { return }
+        // Where dictation knows it (the iOS 27 simulator does), the speech kind listens with
+        // dictation instead (`Kind.serving`); only where neither does is the device the trouble.
+        if await Transcriber.Kind.dictation.supportedLocale(equivalentTo: english) != nil {
+            #expect(await Transcriber.Kind.speech.serving(english) == .dictation)
+            let made = try? await SpeechRecognizer.makeTranscriber(for: english, with: .speech)
+            if case .dictation? = made {} else { Issue.record("not the dictation transcriber: \(String(describing: made))") }
+            return
+        }
         await #expect(throws: SpeechRecognizer.Failure.unavailable) {
             _ = try await SpeechRecognizer.makeTranscriber(for: english, with: .speech)
         }
