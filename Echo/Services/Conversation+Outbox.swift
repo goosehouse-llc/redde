@@ -45,6 +45,7 @@ extension Conversation {
         retryTask?.cancel()
         outbox.removeFirst()
         startTurn(head.message, heldSince: head.queuedAt)
+        turnFromOutbox = true
     }
 
     func scheduleRetry() {

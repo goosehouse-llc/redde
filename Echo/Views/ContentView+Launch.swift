@@ -110,7 +110,9 @@ extension ContentView {
                 handlePushRequests()   // a tap that waited for this reply (fast lane)
             }
             // A reply started (Ask Redde about a card, Siri, a share): show the chat it lands in.
-            if now, !was {
+            // Not for one the outbox sent by itself: a waiting message's retries shut the list
+            // the person had open (2026-11-19).
+            if now, !was, !conversation.turnFromOutbox {
                 if sizeClass != .regular, showConversations { setDrawer(open: false) }
             }
         }

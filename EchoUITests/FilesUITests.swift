@@ -50,7 +50,8 @@ final class FilesUITests: XCTestCase {
         // A text file is read, changed and saved.
         row("notes.md", in: app).tap()
         XCTAssertTrue(app.navigationBars["notes.md"].waitForExistence(timeout: 10))
-        let editor = app.textViews.firstMatch
+        // Not the message field, a text view too since 2026-11-18, under the sheet.
+        let editor = app.textViews.matching(NSPredicate(format: "identifier != 'composer'")).firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 10))
         XCTAssertTrue((editor.value as? String)?.contains("Renew the domain") == true, "The file's text isn't shown")
         let save = app.buttons["Save"]

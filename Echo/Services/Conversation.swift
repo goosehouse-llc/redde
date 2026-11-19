@@ -123,6 +123,10 @@ final class Conversation {
     /// The last `send` didn't go out now (queued or held offline). The voice loop reads this to
     /// say so instead of waiting for a reply that isn't coming.
     var lastSendWasHeld = false
+    /// The turn in flight went out from the outbox (a retry, the network back, the app back, a
+    /// message queued behind a reply), not from something the person just did: the open chat list
+    /// stays open for it (2026-11-19: each retry of a waiting message shut the list).
+    var turnFromOutbox = false
     /// Follow-up questions for the last reply (`FollowUps`), when the setting is on and the
     /// fast lane answered; cleared by the next send.
     var followUps: [String] = []

@@ -75,6 +75,7 @@ extension Conversation {
                            fromPage: PageTurn? = nil, unseen: Bool = false) -> AsyncStream<TurnEvent> {
         let (mirror, mirrorContinuation) = AsyncStream.makeStream(of: TurnEvent.self)
         lastSendWasHeld = false
+        turnFromOutbox = false
         lastError = nil
         clearFollowUps()
         // Only the fast lane sends history; the ledger transports keep theirs on the server.

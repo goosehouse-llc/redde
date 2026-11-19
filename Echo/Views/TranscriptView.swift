@@ -209,9 +209,10 @@ struct TranscriptView: View {
                     if conversation.messages.last?.role == .assistant { startAtReply(proxy) } else { scrollToBottom(proxy, force: true) }
                     return
                 }
-                for wait in [60, 200, 500] {
+                for wait in [60, 200, 500, 1000] {
                     try? await Task.sleep(for: .milliseconds(wait))
-                    guard scrollPhase == .idle else { return }
+                    if readerMoved { return }
+                    guard scrollPhase == .idle else { continue }
                     following = false
                     proxy.scrollTo(target, anchor: .top)
                 }
@@ -223,14 +224,20 @@ struct TranscriptView: View {
         page.reveal(position, in: conversation.messages)
         following = false
         Task {
-            for wait in [60, 200, 500] {
+            for wait in [60, 200, 500, 1000] {
                 try? await Task.sleep(for: .milliseconds(wait))
-                guard scrollPhase == .idle, conversation.messages.last?.id == id else { return }
+                guard !readerMoved, conversation.messages.last?.id == id else { return }
+                guard scrollPhase == .idle else { continue }
                 following = false
                 proxy.scrollTo(id, anchor: .top)
             }
         }
     }
+
+    /// A finger on the transcript: the reader has taken over. The list still settling by itself
+    /// (at its end, as a chat opens) isn't that: the jump to a reply waits for it instead of
+    /// giving up, as it did when the chat had more to load (2026-11-19, the UI suite).
+    private var readerMoved: Bool { scrollPhase == .interacting || scrollPhase == .tracking }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy, force: Bool = false) {
         guard force || following else { return }
