@@ -23,10 +23,21 @@ nonisolated enum AsideNote {
 
     static func note(for asides: [Aside]) -> String? {
         let kept = asides.suffix(most).map {
-            Aside(agent: $0.agent, name: $0.name, asked: String($0.asked.prefix(askedLength)), answer: String($0.answer.prefix(answerLength)))
+            Aside(agent: shownAgent($0), name: $0.name, asked: String($0.asked.prefix(askedLength)), answer: String($0.answer.prefix(answerLength)))
         }
         guard !kept.isEmpty, let data = try? JSONEncoder().encode(Array(kept)), let json = String(data: data, encoding: .utf8) else { return nil }
         return opening + json + "]"
+    }
+
+    /// Who answered, as the chat's agent may tag them: a profile of its own Hermes as it is
+    /// ("scout"), an agent elsewhere by its @tag ("@claude-code"). Its name here was Redde's own
+    /// ("claude@6caf3bd5", `TagRoster.name`), and Sol said it back to the person (2026-11-17).
+    static func shownAgent(_ aside: Aside) -> String {
+        guard aside.agent.contains("@"), !aside.agent.hasPrefix("@") else { return aside.agent }
+        // BotMentions.nameForms' first form, which this file's other targets don't have.
+        let slug = aside.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            .replacing(/[^a-z0-9_-]+/, with: "-").trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        return slug.isEmpty ? aside.agent : "@" + slug
     }
 
     /// The answers to the agents the chat's agent itself asked (2.7): the turn Redde gives it back

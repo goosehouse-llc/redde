@@ -1084,6 +1084,9 @@ struct DeliveredMessage: View {
 
     private var face: BotFace {
         guard let profile = delivered.profile else { return BotFace(seed: "bot") }
+        // An agent elsewhere ("claude@6caf3bd5" here, "@claude-code" read back from its note): by
+        // its name, the same face before and after the chat is loaded again.
+        if profile.contains("@") { return BotFace(seed: delivered.name ?? profile) }
         return (directory.key == settings.connectionKey ? directory.roster?.faces[profile] : nil) ?? (profile == "default" ? .main : BotFace(seed: profile))
     }
 

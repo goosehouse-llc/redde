@@ -428,3 +428,26 @@ struct TagRosterTests {
         return try #require(transport.requests.last)
     }
 }
+
+/// The note on Sol's next message names an agent elsewhere by the @tag Sol can use, not by
+/// Redde's own id for it ("claude@6caf3bd5", which Sol said back to the person; 2026-11-17).
+struct AsideNoteNamesTests {
+    @Test func anAgentElsewhereIsNamedByItsTag() throws {
+        let server = HermesServer(id: UUID(), name: "Paloma bridge", transport: .acp)
+        let claude = TagRoster.bridgeAgent(AcpEndpoint.Agent(id: "claude", name: "Claude Code"), on: server)
+        let asides = [AsideNote.Aside(agent: claude.name, name: claude.label(), asked: "How many files?", answer: "41."),
+                      AsideNote.Aside(agent: "scout", name: "Scout", asked: "And you?", answer: "Same.")]
+        let note = try #require(AsideNote.note(for: asides))
+        #expect(!note.contains(claude.name), "Redde's own id for the agent reached the model")
+        #expect(note.contains(#""agent":"@claude-code""#))
+        #expect(note.contains(#""agent":"scout""#), "a profile of the chat's own Hermes is named as it is")
+        #expect("@" + BotMentions.tag(for: claude) == "@claude-code", "the tag in the note is the one the roster offers")
+
+        // Read back: the same two asides, the agent elsewhere under its tag.
+        let read = AsideNote.split("Thanks" + note)
+        #expect(read.text == "Thanks")
+        #expect(read.asides.map(\.agent) == ["@claude-code", "scout"])
+        let again = try #require(AsideNote.note(for: read.asides))
+        #expect(AsideNote.split(again).asides == read.asides, "a note read back is written the same again")
+    }
+}
