@@ -414,6 +414,7 @@ extension Conversation {
                 EarlierBotChats.remember(old, profile: ref.profile, server: server)
             }
             let fresh = try await APIBotChat.make(api)
+            dropUntoldAsides()
             return try await loadLedgerSession(fresh, bot: ref)
         }
         let client = dashboard
@@ -424,8 +425,20 @@ extension Conversation {
         // the new one is opened as it is, and the roster read after, for the list.
         let (aside, new) = try await client.startFresh(current)
         if let aside { EarlierBotChats.remember(aside, profile: ref.profile, server: server) }
+        dropUntoldAsides()
         try await loadServeSession(HermesSessionsAPI.SessionSummary(id: new), bot: ref, isNew: true)
         Task { _ = try? await BotDirectory.shared.refresh() }
+    }
+
+    /// The bot's chat here is put aside for another (Start Fresh, an earlier chat brought back):
+    /// the answers other agents gave in it, which its agent hadn't heard of yet, go with it. One
+    /// local record holds a bot's chat, and opening the next put them back into it (`adopt`
+    /// keeps a record's untold asides, for a chat Hermes compressed into a new session): 11-19
+    /// Claude Code's answer stood alone in Sol's fresh Bot Chat.
+    func dropUntoldAsides() {
+        let before = messages.count
+        messages.removeAll { $0.isAside && $0.delivered?.noted != true }
+        if messages.count != before { persist() }
     }
 
     /// A bot's earlier chats (`EarlierBotChats`), newest first: on the Dashboard every one the
@@ -462,11 +475,13 @@ extension Conversation {
             }
             try await api.updateSession(id: earlier.id, title: BotChat.title, archived: false, hidden: true)
             EarlierBotChats.forget(earlier.id, profile: bot.name, server: server)
+            dropUntoldAsides()
             return try await loadLedgerSession(earlier, bot: ref)
         }
         let aside = try await dashboard.bringBack(earlier.id, for: bot)
         if let aside { EarlierBotChats.remember(aside, profile: bot.name, server: server) }
         EarlierBotChats.forget(earlier.id, profile: bot.name, server: server)
+        dropUntoldAsides()
         // As after Start Fresh: the roster read again until it names the chat brought back.
         for attempt in 0 ..< 5 {
             let roster = try await BotDirectory.shared.refresh()

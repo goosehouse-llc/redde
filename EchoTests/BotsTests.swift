@@ -943,6 +943,27 @@ struct BotsTests {
         told.delivered?.noted = true
         #expect(Conversation.keepingAsides(of: [told], in: host).count == 3, "one the agent was told of comes back from the host")
     }
+
+    /// 11-19 Marta: after Start Fresh in Sol's Bot Chat, Claude Code's answer was all the new chat
+    /// had. The old chat's untold asides go with it; a fresh host transcript gets none back.
+    @Test func aFreshBotChatTakesNoAsidesFromTheOldOne() throws {
+        let settings = Settings(defaults: UserDefaults(suiteName: "fresh-\(UUID().uuidString)")!)
+        settings.transport = .hermesServe
+        let store = ConversationStore(directory: FileManager.default.temporaryDirectory.appending(path: "fresh-\(UUID().uuidString)"))
+        let conversation = Conversation(settings: settings, store: store, transportOverride: RecordingTransport())
+        conversation.reset()
+        var asked = Message(role: .user, text: "@claude-code hi", createdAt: Date(timeIntervalSince1970: 100))
+        asked.delivered = Delivered(kind: .asked, profile: "claude@6caf3bd5", name: "Claude Code")
+        var answer = Message(role: .user, text: "Hi Sol!", createdAt: Date(timeIntervalSince1970: 101))
+        answer.delivered = Delivered(kind: .answer, profile: "claude@6caf3bd5", name: "Claude Code")
+        conversation.messages = [Message(role: .user, text: "Hi", createdAt: Date(timeIntervalSince1970: 50)),
+                                 Message(role: .assistant, text: "Hey", createdAt: Date(timeIntervalSince1970: 60)), asked, answer]
+        conversation.persist()
+        conversation.dropUntoldAsides()
+        #expect(conversation.messages.map(\.text) == ["Hi", "Hey"])
+        let kept = try #require(store.cachedRecord(id: conversation.id)).restoredMessages
+        #expect(Conversation.keepingAsides(of: kept, in: []).isEmpty, "the new chat starts with nothing")
+    }
 }
 
 /// A photo picked on the phone for a bot's picture (2026-11-10).
