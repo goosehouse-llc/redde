@@ -36,7 +36,8 @@ final class TagRoster {
 
     /// Everyone but the open Hermes's own bots, which `BotDirectory` has.
     func others(_ settings: Settings = .shared) -> [HermesBot] {
-        Self.others(servers: Self.servers(settings), active: settings.activeServerID, agents: { AcpAgents.known(address: $0) }, hermes: hermes)
+        Self.others(servers: Self.servers(settings), active: settings.activeServerID, agents: { AcpAgents.known(address: $0) }, hermes: hermes,
+                    mainName: settings.displayName)
     }
 
     /// The saved servers, the open one as the app is on it now (its record can lag a moment behind).
@@ -62,11 +63,15 @@ final class TagRoster {
 
     /// The bridge agents and other servers' bots, from the saved servers as they are: one entry per
     /// agent of a bridge (two servers on one bridge list it once, the open server's first), and
-    /// the other Hermes servers' bots as last asked.
+    /// the other Hermes servers' bots as last asked. `mainName` is what the person calls their Hermes
+    /// agent (Settings › Name, "Sol"): with one Hermes saved, its main agent goes by it here too.
     nonisolated static func others(servers: [HermesServer], active: UUID, agents: (String) -> [AcpEndpoint.Agent],
-                                   hermes: [UUID: [HermesBot]]) -> [HermesBot] {
+                                   hermes: [UUID: [HermesBot]], mainName: String = "") -> [HermesBot] {
         var found: [HermesBot] = []
         var seen = Set<String>()
+        // The name is one for all of them, so with two Hermes servers saved it names neither.
+        let hermesServers = servers.filter { $0.transport == .hermesServe || $0.transport == .hermesSessions }
+        let main = hermesServers.count == 1 ? mainName.trimmingCharacters(in: .whitespacesAndNewlines) : ""
         for server in servers.sorted(by: { a, _ in a.id == active }) {
             switch server.transport {
             case .acp:
@@ -78,7 +83,7 @@ final class TagRoster {
             case .hermesServe, .hermesSessions:
                 guard server.id != active else { continue }   // the open one's are BotDirectory's
                 for bot in hermes[server.id] ?? [] where !bot.isHidden {
-                    found.append(hermesBot(bot, on: server))
+                    found.append(hermesBot(bot, on: server, mainName: main))
                 }
             case .chatCompletions:
                 continue
@@ -95,9 +100,13 @@ final class TagRoster {
         return bot
     }
 
-    /// Another server's bot, under its own name; that server's main agent by the server's name.
-    nonisolated static func hermesBot(_ bot: HermesBot, on server: HermesServer) -> HermesBot {
-        var other = HermesBot(name: name(bot.name, server.id), title: bot.label(mainName: server.title), description: server.title,
+    /// Another server's bot, under its own name; that server's main agent by `mainName` and by the
+    /// server's name (11-19 Marta: in Claude Code's chat "@sol" found nobody: the main agent went
+    /// only by its server's name, "Hermes", a word no tag may be, so it couldn't be tagged at all).
+    nonisolated static func hermesBot(_ bot: HermesBot, on server: HermesServer, mainName: String = "") -> HermesBot {
+        let named = bot.isDefault && bot.title?.nilIfEmpty == nil && bot.displayName?.nilIfEmpty == nil
+        var other = HermesBot(name: name(bot.name, server.id), displayName: named && !mainName.isEmpty ? server.title : nil,
+                              title: bot.label(mainName: mainName.nilIfEmpty ?? server.title), description: server.title,
                               model: bot.model, face: bot.face)
         other.elsewhere = BotElsewhere(server: server.id, serverName: server.title, agent: nil, profile: bot.name)
         return other

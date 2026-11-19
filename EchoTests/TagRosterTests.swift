@@ -42,6 +42,33 @@ struct TagRosterTests {
         #expect(unlisted.map { $0.label() } == ["codex"])
     }
 
+    /// Marta 11-19: in Claude Code's chat "@sol" found nobody. The Hermes server is saved as
+    /// "Hermes", a word no tag may be, and its main agent went by nothing else.
+    @Test func anotherServersMainAgentGoesByTheAgentsName() {
+        let paloma = bridge("paloma.test:8767")
+        let hermes = HermesServer(id: UUID(), name: "Hermes")
+        let bots: [UUID: [HermesBot]] = [hermes.id: [HermesBot(name: "default", isDefault: true), HermesBot(name: "scout", title: "Scout")]]
+        let roster = TagRoster.others(servers: [paloma, hermes], active: paloma.id, agents: { _ in agents }, hermes: bots, mainName: " Sol ")
+        let speaking = TagRoster.speaker(agent: "claude", server: paloma.id)
+        #expect(BotMentions.mentioned(in: "@sol what time is it?", roster: roster, to: speaking).map { $0.label() } == ["Sol"])
+        #expect(BotMentions.suggestions(for: "so", roster: roster, to: speaking).map { $0.label() } == ["Sol"])
+        let sol = roster.first { $0.elsewhere?.profile == "default" }
+        #expect(sol.map(BotMentions.tag(for:)) == "sol")
+        #expect(roster.first { $0.elsewhere?.profile == "scout" }?.label() == "Scout", "a bot keeps its own name")
+
+        // Its server's name finds it too, when that can be a tag.
+        let lab = HermesServer(id: UUID(), name: "Lab")
+        let labRoster = TagRoster.others(servers: [paloma, lab], active: paloma.id, agents: { _ in agents },
+                                         hermes: [lab.id: [HermesBot(name: "default", isDefault: true)]], mainName: "Sol")
+        #expect(BotMentions.mentioned(in: "@lab hi", roster: labRoster, to: speaking).map { $0.label() } == ["Sol"])
+
+        // Two Hermes servers: the one name is neither's, each goes by its server's.
+        let both = TagRoster.others(servers: [paloma, hermes, lab], active: paloma.id, agents: { _ in agents },
+                                    hermes: [hermes.id: [HermesBot(name: "default", isDefault: true)],
+                                             lab.id: [HermesBot(name: "default", isDefault: true)]], mainName: "Sol")
+        #expect(both.filter { $0.elsewhere?.profile == "default" }.map { $0.label() } == ["Hermes", "Lab"])
+    }
+
     @Test func aTagFindsABridgeAgentByItsIdOrName() {
         let paloma = bridge("ws://paloma.test:8767")
         let others = TagRoster.others(servers: [paloma], active: UUID(), agents: { _ in agents }, hermes: [:])
