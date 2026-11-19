@@ -30,6 +30,18 @@ nonisolated enum WhatsNew {
 
     /// Newest first. Keep each to a handful of lines a person reads in ten seconds.
     static let releases: [Release] = [
+        Release(version: "2.7", items: [
+            Item(symbol: "at", title: String(localized: "Agents ask each other", comment: "What's New 2.7: every agent can ask every other by @mention"),
+                 detail: String(localized: "Tag any agent with @: your Hermes bots, Claude Code and Codex on your bridge, and the bots on your other servers. Your agent can ask one too, and carries on with the answer. Settings → Replies & Writing → Agents Talking to Each Other. It takes the Redde plugin 1.32.", comment: "What's New 2.7: agents asking each other")),
+            Item(symbol: "hand.raised", title: String(localized: "Ask Me First", comment: "Settings › Replies & Writing › Agents Talking to Each Other: a switch; an agent's @mention of another waits for your OK"),
+                 detail: String(localized: "Before an agent asks another, or a Hermes bot hands its work to another, Redde asks you first: on a card in the chat, or out loud in voice mode.", comment: "What's New 2.7: Ask Me First")),
+            Item(symbol: "sparkles", title: String(localized: "Skills from the hub", comment: "What's New 2.7: skills found and installed from Hermes's skills hub"),
+                 detail: String(localized: "Find skills on Hermes's skills hub, see what one does and install it, checked by Hermes's scanner first: Settings → Agent → Skills, or Edit Bot for one bot.", comment: "What's New 2.7: the skills hub")),
+            Item(symbol: "photo.on.rectangle", title: String(localized: "Pictures in agent chats", comment: "What's New 2.7: pictures and files in chats with Claude Code, Codex and other bridge agents"),
+                 detail: String(localized: "What Claude Code or Codex sends or reads shows in the chat, and a file a reply names opens on your phone. It takes the Redde bridge 0.11.", comment: "What's New 2.7: pictures in agent chats")),
+            Item(symbol: "ladybug", title: String(localized: "Report a Problem", comment: "Settings → About: a page with a diagnostics report for bug reports"),
+                 detail: String(localized: "Report a Problem, at the bottom of Settings: a report of your setup, with nothing private in it, to paste into a bug report or open on GitHub.", comment: "What's New 2.7: Report a Problem")),
+        ]),
         Release(version: "2.6", items: [
             Item(symbol: "terminal", title: String(localized: "Claude Code, Codex and more", comment: "What's New 2.6: other agents through the Redde bridge"),
                  detail: String(localized: "Chat or talk with Claude Code, Codex, Gemini CLI and other agents through the free Redde bridge on your computer: Settings → Set up connection… → Claude Code, Codex and others (ACP). Add agents from the official registry, see them all in one list, or try the Demo Agent with no computer at all.", comment: "What's New 2.6: other agents")),

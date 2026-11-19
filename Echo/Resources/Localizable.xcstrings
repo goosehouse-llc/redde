@@ -63067,6 +63067,113 @@
         }
       }
     },
+    "Agents ask each other" : {
+      "comment" : "What's New 2.7: every agent can ask every other by @mention",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenter spørger hinanden"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten fragen einander"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los agentes se preguntan entre sí"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les agents se parlent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli agenti si chiedono a vicenda"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェント同士で質問"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트끼리 묻기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenter spør hverandre"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agents vragen elkaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenci pytają się nawzajem"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentes perguntam uns aos outros"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агенты спрашивают друг друга"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenter frågar varandra"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanlar birbirine soruyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агенти питають одне одного"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体互相提问"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理互相提問"
+          }
+        }
+      }
+    },
     "Agents Ask Each Other" : {
       "comment" : "Settings › Replies & Writing: a switch; the chat's agent may ask other agents by starting a line of its reply with their @name",
       "extractionState" : "stale",
@@ -91689,6 +91796,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "行動之前"
+          }
+        }
+      }
+    },
+    "Before an agent asks another, or a Hermes bot hands its work to another, Redde asks you first: on a card in the chat, or out loud in voice mode." : {
+      "comment" : "What's New 2.7: Ask Me First",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Før en agent spørger en anden, eller en Hermes-bot giver sit arbejde videre til en anden, spørger Redde dig først: på et kort i chatten eller højt i stemmetilstand."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevor ein Agent einen anderen fragt oder ein Hermes-Bot seine Arbeit an einen anderen übergibt, fragt Redde zuerst dich: auf einer Karte im Chat oder laut im Sprachmodus."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de que un agente pregunte a otro, o de que un bot de Hermes pase su trabajo a otro, Redde te pregunta primero: en una tarjeta del chat o en voz alta en el modo de voz."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant qu’un agent en interroge un autre, ou qu’un bot Hermes confie son travail à un autre, Redde vous demande d’abord : sur une carte dans la discussion, ou à voix haute en mode vocal."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prima che un agente ne interpelli un altro, o che un bot di Hermes passi il suo lavoro a un altro, Redde lo chiede prima a te: su una scheda nella chat o ad alta voce in modalità vocale."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントがほかのエージェントに尋ねる前や、Hermesのボットが作業をほかのボットに引き継ぐ前に、Reddeがまずあなたに確認します：チャット内のカードで、または音声モードでは声で。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 다른 에이전트에게 묻거나 Hermes 봇이 작업을 다른 봇에게 넘기기 전에 Redde가 먼저 물어봅니다. 채팅의 카드로, 또는 음성 모드에서는 소리 내어."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Før en agent spør en annen, eller en Hermes-bot gir arbeidet sitt videre til en annen, spør Redde deg først: på et kort i chatten eller høyt i stemmemodus."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voordat een agent een andere vraagt, of een Hermes-bot zijn werk aan een andere overdraagt, vraagt Redde het eerst aan jou: op een kaart in de chat, of hardop in de spraakmodus."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zanim agent zapyta innego albo bot Hermesa przekaże swoją pracę innemu, Redde najpierw pyta Ciebie: na karcie w czacie albo na głos w trybie głosowym."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes que um agente pergunte a outro, ou que um bot do Hermes passe seu trabalho para outro, o Redde pergunta a você primeiro: num cartão na conversa ou em voz alta no modo de voz."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прежде чем агент спросит другого или бот Hermes передаст свою работу другому, Redde сначала спросит вас: на карточке в чате или вслух в голосовом режиме."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innan en agent frågar en annan, eller en Hermes-bot lämnar över sitt arbete till en annan, frågar Redde dig först: på ett kort i chatten eller högt i röstläget."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir ajan başka birine sormadan ya da bir Hermes botu işini başka birine devretmeden önce Redde önce size sorar: sohbetteki bir kartta ya da ses modunda sesli olarak."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перш ніж агент спитає іншого або бот Hermes передасть свою роботу іншому, Redde спершу запитає вас: на картці в чаті або вголос у голосовому режимі."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在一个智能体去问另一个，或 Hermes 机器人把工作交给另一个之前，Redde 会先问你：在聊天里的卡片上，或在语音模式中直接说出来。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在一個代理去問另一個，或 Hermes 機器人把工作交給另一個之前，Redde 會先問你：在聊天中的卡片上，或在語音模式中直接說出來。"
           }
         }
       }
@@ -176231,6 +176445,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尋找技能"
+          }
+        }
+      }
+    },
+    "Find skills on Hermes's skills hub, see what one does and install it, checked by Hermes's scanner first: Settings → Agent → Skills, or Edit Bot for one bot." : {
+      "comment" : "What's New 2.7: the skills hub",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find færdigheder i Hermes' færdighedshub, se hvad en gør, og installér den, kontrolleret først af Hermes' scanner: Indstillinger → Agent → Færdigheder, eller Rediger bot for en enkelt bot."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde Skills im Skills-Hub von Hermes, sieh dir an, was einer tut, und installiere ihn, vorher vom Scanner von Hermes geprüft: Einstellungen → Agent → Skills oder Bot bearbeiten für einen einzelnen Bot."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca habilidades en el hub de habilidades de Hermes, mira qué hace cada una e instálala, revisada antes por el analizador de Hermes: Ajustes → Agente → Habilidades, o Editar bot para un solo bot."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouvez des compétences sur le hub de compétences de Hermes, voyez ce que chacune fait et installez-la, vérifiée d’abord par l’analyseur de Hermes : Réglages → Agent → Compétences, ou Modifier le bot pour un seul bot."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova skill nell’hub delle skill di Hermes, guarda cosa fa ciascuna e installala, controllata prima dallo scanner di Hermes: Impostazioni → Agente → Skill, oppure Modifica bot per un solo bot."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesのスキルハブでスキルを探し、内容を確かめてインストールできます。インストール前にHermesのスキャナーがチェックします：設定 → エージェント → スキル、またはボットごとに「ボットを編集」から。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 스킬 허브에서 스킬을 찾아 무엇을 하는지 보고 설치하세요. 설치 전에 Hermes 스캐너가 확인합니다: 설정 → 에이전트 → 스킬, 또는 봇 하나에만은 봇 편집에서."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finn ferdigheter i Hermes' ferdighetshub, se hva en gjør, og installer den, sjekket først av Hermes' skanner: Innstillinger → Agent → Ferdigheter, eller Rediger bot for én bot."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vind skills in de skills-hub van Hermes, zie wat er een doet en installeer hem, eerst gecontroleerd door de scanner van Hermes: Instellingen → Agent → Skills, of Wijzig bot voor één bot."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź umiejętności w hubie umiejętności Hermesa, zobacz, co robi każda z nich, i zainstaluj ją po sprawdzeniu przez skaner Hermesa: Ustawienia → Agent → Umiejętności albo Edytuj bota dla jednego bota."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre habilidades no hub de habilidades do Hermes, veja o que cada uma faz e instale, verificada antes pelo analisador do Hermes: Ajustes → Agente → Habilidades, ou Editar Bot para um só bot."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Находите навыки в хабе навыков Hermes, смотрите, что делает каждый, и устанавливайте его после проверки сканером Hermes: Настройки → Агент → Навыки или «Изменить бота» для одного бота."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta färdigheter i Hermes färdighetshubb, se vad en gör och installera den, granskad först av Hermes skanner: Inställningar → Agent → Färdigheter, eller Redigera bot för en enskild bot."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'in beceri merkezinde beceriler bulun, her birinin ne yaptığını görün ve önce Hermes'in tarayıcısıyla denetlenmiş olarak yükleyin: Ayarlar → Ajan → Beceriler ya da tek bir bot için Botu Düzenle."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Знаходьте навички в хабі навичок Hermes, дивіться, що робить кожна, і встановлюйте її після перевірки сканером Hermes: Параметри → Агент → Навички або «Редагувати бота» для одного бота."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Hermes 的技能中心查找技能，了解它的作用并安装，安装前先经 Hermes 的扫描器检查：设置 → 智能体 → 技能，或为单个机器人在“编辑机器人”中查找。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Hermes 的技能中心尋找技能，了解它的作用並安裝，安裝前先經 Hermes 的掃描器檢查：設定 → 代理 → 技能，或為單一機器人在「編輯機器人」中尋找。"
           }
         }
       }
@@ -329559,6 +329880,113 @@
         }
       }
     },
+    "Pictures in agent chats" : {
+      "comment" : "What's New 2.7: pictures and files in chats with Claude Code, Codex and other bridge agents",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Billeder i agentchats"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilder in Agenten-Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imágenes en los chats con agentes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des images dans les discussions avec les agents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Immagini nelle chat con gli agenti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントとのチャットに画像"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트 채팅의 이미지"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilder i agentchatter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afbeeldingen in agentchats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obrazy w czatach z agentami"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imagens nas conversas com agentes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изображения в чатах с агентами"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilder i agentchattar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajan sohbetlerinde resimler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зображення в чатах з агентами"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体聊天中的图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理聊天中的圖片"
+          }
+        }
+      }
+    },
     "Pictures on every device" : {
       "localizations" : {
         "da" : {
@@ -361842,6 +362270,113 @@
         }
       }
     },
+    "Report a Problem, at the bottom of Settings: a report of your setup, with nothing private in it, to paste into a bug report or open on GitHub." : {
+      "comment" : "What's New 2.7: Report a Problem",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapportér et problem, nederst i Indstillinger: en rapport om din opsætning, uden noget privat, til at indsætte i en fejlrapport eller åbne på GitHub."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problem melden, ganz unten in den Einstellungen: ein Bericht über deine Einrichtung ohne Privates, zum Einfügen in einen Fehlerbericht oder zum Öffnen auf GitHub."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informar de un problema, al final de Ajustes: un informe de tu configuración, sin nada privado, para pegarlo en un informe de error o abrirlo en GitHub."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signaler un problème, en bas des Réglages : un rapport sur votre configuration, sans rien de privé, à coller dans un rapport de bug ou à ouvrir sur GitHub."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segnala un problema, in fondo alle Impostazioni: un resoconto della tua configurazione, senza nulla di privato, da incollare in una segnalazione di bug o aprire su GitHub."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定のいちばん下にある「問題を報告」：個人的な情報を含まない設定のレポートを、バグ報告に貼り付けたり、GitHubで開いたりできます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정 맨 아래의 문제 보고: 개인 정보가 없는 설정 보고서를 버그 보고에 붙여 넣거나 GitHub에서 열 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapporter et problem, nederst i Innstillinger: en rapport om oppsettet ditt, uten noe privat, til å lime inn i en feilrapport eller åpne på GitHub."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probleem melden, onderaan Instellingen: een rapport van je configuratie, zonder iets privés, om in een bugmelding te plakken of op GitHub te openen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zgłoś problem, na dole Ustawień: raport o Twojej konfiguracji, bez niczego prywatnego, do wklejenia w zgłoszenie błędu lub otwarcia na GitHubie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relatar um problema, no fim dos Ajustes: um relatório da sua configuração, sem nada privado, para colar num relato de bug ou abrir no GitHub."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Сообщить о проблеме» внизу настроек: отчет о вашей конфигурации, без личных данных, чтобы вставить его в отчет об ошибке или открыть на GitHub."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapportera ett problem, längst ned i Inställningar: en rapport om din konfiguration, utan något privat, att klistra in i en felrapport eller öppna på GitHub."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayarlar'ın en altında Sorun Bildir: kurulumunuzun özel hiçbir şey içermeyen bir raporu; bir hata bildirimine yapıştırmak ya da GitHub'da açmak için."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Повідомити про проблему» внизу параметрів: звіт про ваше налаштування, без нічого приватного, щоб вставити у звіт про помилку або відкрити на GitHub."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置底部的“报告问题”：一份不含任何隐私内容的配置报告，可粘贴到错误报告中，或在 GitHub 上打开。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定最下方的「回報問題」：一份不含任何隱私內容的設定報告，可貼到錯誤回報中，或在 GitHub 上開啟。"
+          }
+        }
+      }
+    },
     "Report on GitHub" : {
       "comment" : "Report a Problem: opens a new GitHub issue with the report filled in",
       "localizations" : {
@@ -391492,6 +392027,10 @@
         }
       }
     },
+    "Settings → About → Report a Problem: a report of your setup, with nothing private in it, to paste into a bug report or open on GitHub." : {
+      "comment" : "What's New 2.7: Report a Problem",
+      "extractionState" : "stale"
+    },
     "Settings → About → Support Redde: leave a tip, a coffee, a snack or a dinner. It unlocks nothing; it keeps Redde going." : {
       "localizations" : {
         "da" : {
@@ -403049,6 +403588,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "技能透過 Hermes Dashboard 從中心安裝：請在設定中加入它的位址和登入資訊。Hermes API 無法做到。"
+          }
+        }
+      }
+    },
+    "Skills from the hub" : {
+      "comment" : "What's New 2.7: skills found and installed from Hermes's skills hub",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Færdigheder fra hubben"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skills aus dem Hub"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habilidades del hub"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des compétences du hub"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skill dall’hub"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ハブからスキル"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "허브의 스킬"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ferdigheter fra huben"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skills uit de hub"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Umiejętności z huba"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habilidades do hub"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Навыки из хаба"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Färdigheter från hubben"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Merkezden beceriler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Навички з хабу"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来自技能中心的技能"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來自技能中心的技能"
           }
         }
       }
@@ -423745,6 +424391,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "有 %1$lld 欄 %2$lld 列的表格"
+          }
+        }
+      }
+    },
+    "Tag any agent with @: your Hermes bots, Claude Code and Codex on your bridge, and the bots on your other servers. Your agent can ask one too, and carries on with the answer. Settings → Replies & Writing → Agents Talking to Each Other. It takes the Redde plugin 1.32." : {
+      "comment" : "What's New 2.7: agents asking each other",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag en hvilken som helst agent med @: dine Hermes-bots, Claude Code og Codex på din bro og bottene på dine andre servere. Din agent kan også spørge en og fortsætter med svaret. Indstillinger → Svar og skrivning → Agenter imellem. Kræver Redde-pluginet 1.32."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erwähne jeden Agenten mit @: deine Hermes-Bots, Claude Code und Codex auf deiner Bridge und die Bots auf deinen anderen Servern. Auch dein Agent kann einen fragen und macht mit der Antwort weiter. Einstellungen → Antworten und Schreiben → Agenten untereinander. Erfordert das Redde-Plugin 1.32."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menciona a cualquier agente con @: tus bots de Hermes, Claude Code y Codex en tu puente, y los bots de tus otros servidores. Tu agente también puede preguntar a uno, y sigue con la respuesta. Ajustes → Respuestas y escritura → Agentes entre sí. Requiere el plugin de Redde 1.32."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentionnez n’importe quel agent avec @ : vos bots Hermes, Claude Code et Codex sur votre pont, et les bots de vos autres serveurs. Votre agent peut aussi en interroger un, et poursuit avec sa réponse. Réglages → Réponses et écriture → Agents entre eux. Nécessite le plugin Redde 1.32."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tagga qualsiasi agente con @: i tuoi bot di Hermes, Claude Code e Codex sul tuo bridge e i bot sugli altri tuoi server. Anche il tuo agente può chiederlo a uno, e continua con la risposta. Impostazioni → Risposte e scrittura → Agenti tra loro. Richiede il plugin Redde 1.32."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "どのエージェントも @ でタグ付けできます：Hermesのボット、ブリッジ上のClaude CodeとCodex、ほかのサーバーのボット。エージェント自身がほかのエージェントに尋ね、その答えを踏まえて続けることもできます。設定 → 返答と入力 → エージェント同士の会話。Reddeプラグイン1.32が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어떤 에이전트든 @로 태그하세요: Hermes 봇, 브리지의 Claude Code와 Codex, 다른 서버의 봇까지. 에이전트가 직접 다른 에이전트에게 묻고 그 답을 이어서 쓸 수도 있습니다. 설정 → 응답 및 작성 → 에이전트끼리 대화. Redde 플러그인 1.32가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tagg hvilken som helst agent med @: Hermes-botene dine, Claude Code og Codex på broen din og botene på de andre serverne dine. Agenten din kan også spørre en, og fortsetter med svaret. Innstillinger → Svar og skriving → Agenter seg imellom. Krever Redde-tillegget 1.32."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag elke agent met @: je Hermes-bots, Claude Code en Codex op je bridge, en de bots op je andere servers. Je agent kan er ook een vragen en gaat verder met het antwoord. Instellingen → Antwoorden en schrijven → Agents onderling. Vereist de Redde-plug-in 1.32."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oznacz dowolnego agenta przez @: swoje boty Hermesa, Claude Code i Codex na swoim mostku oraz boty na innych serwerach. Twój agent też może zapytać jednego z nich i działa dalej z odpowiedzią. Ustawienia → Odpowiedzi i pisanie → Agenci między sobą. Wymaga wtyczki Redde 1.32."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marque qualquer agente com @: seus bots do Hermes, o Claude Code e o Codex na sua ponte, e os bots dos seus outros servidores. Seu agente também pode perguntar a um e continua com a resposta. Ajustes → Respostas e Escrita → Agentes entre si. Requer o plugin do Redde 1.32."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отметьте любого агента через @: ваших ботов Hermes, Claude Code и Codex на вашем мосте и ботов на других ваших серверах. Ваш агент тоже может спросить одного из них и продолжит с его ответом. Настройки → Ответы и набор текста → Агенты между собой. Нужен плагин Redde 1.32."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tagga vilken agent som helst med @: dina Hermes-bottar, Claude Code och Codex på din brygga och bottarna på dina andra servrar. Din agent kan också fråga en, och fortsätter med svaret. Inställningar → Svar och skrivande → Agenter sinsemellan. Kräver Redde-pluginet 1.32."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herhangi bir ajanı @ ile etiketleyin: Hermes botlarınız, köprünüzdeki Claude Code ve Codex ile diğer sunucularınızdaki botlar. Ajanınız da birine sorabilir ve yanıtla devam eder. Ayarlar → Yanıtlar ve Yazma → Ajanların Birbiriyle Konuşması. Redde eklentisi 1.32 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Позначте будь-якого агента через @: своїх ботів Hermes, Claude Code і Codex на своєму мосту та ботів на інших своїх серверах. Ваш агент теж може спитати одного з них і продовжить із його відповіддю. Параметри → Відповіді та введення → Агенти між собою. Потрібен плагін Redde 1.32."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用 @ 标记任何智能体：你的 Hermes 机器人、桥接上的 Claude Code 和 Codex，以及你其他服务器上的机器人。你的智能体也可以自己去问一个，并带着回答继续。设置 → 回复与写作 → 智能体互相交流。需要 Redde 插件 1.32。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用 @ 標記任何代理：你的 Hermes 機器人、橋接上的 Claude Code 和 Codex，以及你其他伺服器上的機器人。你的代理也能自己去問一個，並帶著回答繼續。設定 → 回覆與撰寫 → 智慧代理互相交流。需要 Redde 外掛 1.32。"
           }
         }
       }
@@ -502537,6 +503290,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "通知內容會在你的 Hermes 上加密，並在這部 iPhone 上解開，所用的金鑰是兩者在配對時協商的。傳送途中會經過 Goosehouse 營運的中繼和 Apple；兩者都無法讀取。中繼會保存這部 iPhone 的通知位址以便傳遞，但從不持有金鑰。移除配對會刪除中繼上的該位址。"
+          }
+        }
+      }
+    },
+    "What Claude Code or Codex sends or reads shows in the chat, and a file a reply names opens on your phone. It takes the Redde bridge 0.11." : {
+      "comment" : "What's New 2.7: pictures in agent chats",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det, Claude Code eller Codex sender eller læser, vises i chatten, og en fil, som et svar nævner, åbnes på din telefon. Kræver Redde-broen 0.11."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was Claude Code oder Codex sendet oder liest, erscheint im Chat, und eine Datei, die eine Antwort nennt, öffnet sich auf deinem Telefon. Erfordert die Redde-Bridge 0.11."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que Claude Code o Codex envía o lee aparece en el chat, y un archivo que nombra una respuesta se abre en tu teléfono. Requiere el puente de Redde 0.11."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que Claude Code ou Codex envoie ou lit s’affiche dans la discussion, et un fichier cité dans une réponse s’ouvre sur votre téléphone. Nécessite le pont Redde 0.11."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciò che Claude Code o Codex invia o legge compare nella chat, e un file citato in una risposta si apre sul telefono. Richiede il bridge Redde 0.11."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude CodeやCodexが送ったり読んだりしたものがチャットに表示され、返答で示されたファイルをiPhoneで開けます。Reddeブリッジ0.11が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code나 Codex가 보내거나 읽은 것이 채팅에 표시되고, 답변이 가리키는 파일이 휴대폰에서 열립니다. Redde 브리지 0.11이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det Claude Code eller Codex sender eller leser, vises i chatten, og en fil som et svar nevner, åpnes på telefonen. Krever Redde-broen 0.11."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat Claude Code of Codex stuurt of leest, verschijnt in de chat, en een bestand dat een antwoord noemt, opent op je telefoon. Vereist de Redde-bridge 0.11."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To, co Claude Code lub Codex wysyła lub czyta, pojawia się w czacie, a plik wskazany w odpowiedzi otwiera się na telefonie. Wymaga mostka Redde 0.11."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que o Claude Code ou o Codex envia ou lê aparece na conversa, e um arquivo citado numa resposta abre no seu telefone. Requer a ponte do Redde 0.11."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "То, что Claude Code или Codex отправляет или читает, появляется в чате, а файл, названный в ответе, открывается на телефоне. Нужен мост Redde 0.11."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det Claude Code eller Codex skickar eller läser visas i chatten, och en fil som ett svar nämner öppnas på telefonen. Kräver Redde-bryggan 0.11."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code veya Codex'in gönderdiği ya da okuduğu şeyler sohbette görünür, bir yanıtın adını verdiği dosya telefonunuzda açılır. Redde köprüsü 0.11 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Те, що Claude Code чи Codex надсилає або читає, з’являється в чаті, а файл, названий у відповіді, відкривається на телефоні. Потрібен міст Redde 0.11."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code 或 Codex 发送或读取的内容会显示在聊天中，回复里提到的文件可在手机上打开。需要 Redde 桥接 0.11。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code 或 Codex 傳送或讀取的內容會顯示在聊天中，回覆中提到的檔案可在手機上開啟。需要 Redde 橋接 0.11。"
           }
         }
       }

@@ -83,7 +83,7 @@ Your agents talk to each other, with you in the loop. Skills from the hub, pictu
 • Pictures in agent chats: what Claude Code or Codex sends or reads shows in the chat, and a file a reply names opens on your phone.
 • A long paste goes beside your message as a text file, instead of filling the field.
 • Clear a notification on one device and it's cleared on the others.
-• Report a Problem, in Settings → About: a report of your setup with nothing private in it, to copy or open as a GitHub issue.
+• Report a Problem, at the bottom of Settings: a report of your setup with nothing private in it, to copy or open as a GitHub issue.
 • Pull down on Today to refresh it.
 • Settings in three groups: Connection, Your Agent and The App.
 • Smoother typing, and faster phone tools and calendar reads.
