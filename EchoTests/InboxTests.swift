@@ -126,6 +126,15 @@ struct InboxTests {
         MailPiles.shared.update(newer: false, own: [])
     }
 
+    /// 11-19: with the model's sorting failing, all 13 unread emails were Unsorted: the tile counted
+    /// them, the Inbox had no pile to show them in. Unsorted is offered while mail waits there.
+    @Test func unsortedMailHasAPileWhileItWaits() {
+        MailPiles.shared.update(newer: true, own: [])
+        defer { MailPiles.shared.update(newer: false, own: []) }
+        #expect(MailBucket.offered { $0 == .unsorted ? 11 : 0 }.last == .unsorted)
+        #expect(MailBucket.offered { _ in 0 } == MailBucket.fixed, "no Unsorted once everything is sorted")
+    }
+
     @Test func aRuleCanPutMailInAPile() throws {
         let rule = try #require(MailRule(json: try json(#"{"id":"r1","when":{"from":"airline.com"},"do":"group","arg":"receipts"}"#)))
         #expect(rule.action == .group && rule.arg == "receipts")

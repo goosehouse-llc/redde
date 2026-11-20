@@ -111,7 +111,7 @@ struct InboxView: View {
     /// full), until he picks one himself.
     private func pickPile() {
         guard !picked, let account = center.inbox, account.count(bucket) == 0,
-              let first = MailBucket.shown.first(where: { account.count($0) > 0 }), first != bucket else { return }
+              let first = MailBucket.offered(account.count).first(where: { account.count($0) > 0 }), first != bucket else { return }
         bucket = first
     }
 
@@ -363,7 +363,7 @@ struct PileBar: View {
         ScrollViewReader { scroller in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(MailBucket.shown.filter { $0 == bucket || MailBucket.older.prefix(3).contains($0) || counts($0) > 0 }) { pile in
+                    ForEach(MailBucket.offered(counts).filter { $0 == bucket || MailBucket.older.prefix(3).contains($0) || counts($0) > 0 }) { pile in
                         chip(pile)
                             .id(pile)
                     }

@@ -44,6 +44,13 @@ nonisolated struct MailBucket: RawRepresentable, Hashable, Identifiable, Codable
     /// got to them).
     static var shown: [MailBucket] { MailPiles.shared.shown }
 
+    /// The piles the Inbox's bar offers: `shown`, and Unsorted while mail waits in it (2026-11-19:
+    /// with the model's sorting failing, every unread email sat there, counted on the Inbox's tile
+    /// and nowhere to be seen).
+    static func offered(_ count: (MailBucket) -> Int) -> [MailBucket] {
+        shown + (count(.unsorted) > 0 ? [.unsorted] : [])
+    }
+
     var label: String {
         switch self {
         case .important: String(localized: "Important", comment: "Email inbox pile: what matters")
