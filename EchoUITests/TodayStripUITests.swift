@@ -111,6 +111,26 @@ final class TodayStripUITests: XCTestCase {
         app.buttons["Like the Other Tiles"].tap()
     }
 
+    /// 2026-11-19, asked: a briefing's tile on Today stops its notifications from its hold menu,
+    /// as the deck's Don't Show does, and the tile goes. (The demo's jobs are shown again at the
+    /// next launch.)
+    func testABriefingTileStopsItsNotifications() {
+        let app = openDrawer()
+        let brief = app.buttons.matching(NSPredicate(format: "label MATCHES %@", #"^\d{1,2}:\d{2}\s?[AP]M.*"#)).firstMatch
+        XCTAssertTrue(brief.waitForExistence(timeout: 5), "No briefing tile")
+        let label = brief.label
+        brief.press(forDuration: 1.2)
+        let stop = app.buttons["Stop These Notifications"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 5), "No Stop These Notifications in the tile's menu")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "stop-notifications"
+        shot.lifetime = .keepAlways
+        add(shot)
+        stop.tap()
+        let same = app.buttons.matching(NSPredicate(format: "label == %@", label)).firstMatch
+        XCTAssertTrue(same.waitForNonExistence(timeout: 5), "The tile stayed")
+    }
+
     /// 2026-11-11: holding the second tile (a to-do list after the inbox) brought up the first's
     /// menu: the strip is one row of the list, and a row keeps one hold menu. Each tile has its own.
     func testHoldingTheSecondTileOpensItsOwnMenu() {

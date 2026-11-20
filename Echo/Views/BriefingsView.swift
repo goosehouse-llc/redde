@@ -43,6 +43,8 @@ final class BriefingsInbox {
             }
             // `-echo.demoBriefings wrapup`: the wrap-up first.
             if DevHooks.value("-echo.demoBriefings") == "wrapup" { briefings.insert(briefings.removeLast(), at: 0) }
+            // Each launch starts with them shown: one stopped in an earlier run comes back.
+            for key in Set(briefings.map(\.jobKey)) where JobNotices.choice(for: key) != .notify { JobNotices.set(.notify, for: key, title: "") }
             // `-echo.openBriefing`: the first one open, a moment after launch.
             if DevHooks.has("-echo.openBriefing") {
                 Task { [weak self] in
@@ -105,6 +107,12 @@ final class BriefingsInbox {
         JobNotices.set(choice, for: briefing.jobKey, title: briefing.heading)
         if choice == .hidden { AgentBriefing.markJobRead(briefing.jobKey) }
         Mutes.publish()
+        #if DEBUG
+        // The demo's aren't stored, so `reload` leaves them: a hidden job's go here.
+        if choice == .hidden, DevHooks.has("-echo.demoBriefings") {
+            withAnimation(.snappy) { briefings.removeAll { $0.jobKey == briefing.jobKey } }
+        }
+        #endif
         reload()
     }
 

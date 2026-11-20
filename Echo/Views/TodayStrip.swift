@@ -3,7 +3,7 @@ import SwiftUI
 /// The drawer's Today page (2026-11-13; a row of small tiles at the top of the classic list from
 /// 2026-11-06 until that list was retired): the Inbox, the briefings not read yet and the goals
 /// as tiles two to a row, each showing what it is (the unread count, a list's items, a goal's
-/// ring, the next event). A tap opens what a tile is; a briefing's hold menu has Done and Later.
+/// ring, the next event). A tap opens what a tile is; a briefing's hold menu has Done, Later and Stop These Notifications.
 /// Each kind still follows Settings → Chat List. The person's lists (2026-11-09, `TodayLists`) come right after
 /// the Inbox, one tile each, and stay until a list is deleted. Up Next (2026-11-12, when turned
 /// on) is the next event on the calendar. The tiles go in the order the person arranged them
@@ -232,6 +232,11 @@ struct TodayStrip: View {
                 Button { retiming = briefing } label: {
                     Label { Text("Change Time…", comment: "A briefing's menu: pick when its job runs") } icon: { Image(systemName: "clock.arrow.circlepath") }
                 }
+            }
+            // As the deck's Don't Show (asked 2026-11-19): the job's runs stop coming, here and as
+            // notifications; All Briefings › Hidden Jobs shows it again.
+            Button(role: .destructive) { briefings.setNotice(.hidden, for: briefing) } label: {
+                Label { Text("Stop These Notifications", comment: "A briefing's tile on Today, its hold menu: this job's runs stop coming (All Briefings › Hidden Jobs brings them back)") } icon: { Image(systemName: "bell.slash") }
             }
             TileColorMenu(key: tile.key)
         }
