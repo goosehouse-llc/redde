@@ -195,6 +195,8 @@ struct ComingUpList: View {
     @State private var settings = Settings.shared
     /// A one-off to cancel, or a run too near to skip, waiting on the person's word.
     @State private var asking: ComingUp.Item?
+    /// A job to delete, asked first (2026-11-21: "I see skip and pause, but not a clear way to stop and delete").
+    @State private var deleting: ComingUp.Item?
     /// A job's full details (its sheet), and one being edited from them.
     @State private var details: CronJob?
     @State private var editing: CronJob?
@@ -251,7 +253,7 @@ struct ComingUpList: View {
                 .buttonStyle(DrawerSquish())
                 .plannedRow(top: 16, bottom: 4)
             }
-            Text("Skip passes over one run; Pause stops a job until you resume it. Skipping a run of a repeating job needs the Redde plugin 1.16 on your Hermes. Leave-By Alerts are skipped on this device.",
+            Text("Skip passes over one run; Pause stops a job until you resume it; Delete removes it for good. Skipping a run of a repeating job needs the Redde plugin 1.16 on your Hermes. Leave-By Alerts are skipped on this device.",
                  comment: "Coming Up: the footer")
                 .font(.system(.footnote, design: tone.design)).foregroundStyle(.secondary)
                 .plannedRow(top: 10, bottom: 24)
@@ -287,6 +289,16 @@ struct ComingUpList: View {
         }
         .sheet(item: $editing) { job in CronJobEditor(job: job) { await model.load() } }
         .sheet(item: $retiming) { job in JobTimeSheet(job: job) { Task { await model.load() } } }
+        .confirmationDialog(deleting.map { String(localized: "Delete \($0.title)?", comment: "Coming Up: confirming Delete on a scheduled job, by its title") } ?? "",
+                            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                            titleVisibility: .visible, presenting: deleting) { item in
+            Button(String(localized: "Delete Job", comment: "Coming Up: confirming Delete on a scheduled job"), role: .destructive) {
+                Task { await model.cancel(item) }
+            }
+        } message: { _ in
+            Text("It stops running and is removed from your Hermes. To stop it for a while instead, pause it.",
+                 comment: "Coming Up: confirming Delete on a scheduled job")
+        }
         .confirmationDialog(dialogTitle, isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
                             titleVisibility: .visible, presenting: asking) { item in
             if ComingUp.skipWay(item, now: .now) == .cancel {
@@ -373,6 +385,7 @@ struct ComingUpList: View {
             }
         } else if item.paused {
             Button("Resume", systemImage: "play") { Task { await model.setPaused(item, false) } }.tint(.green)
+            deleteButton(item)
         } else if item.skipped {
             Button(String(localized: "Don't Skip", comment: "Coming Up: takes back a skipped Leave-By Alert"), systemImage: "arrow.uturn.backward") {
                 Task { await model.unskip(item) }
@@ -392,6 +405,15 @@ struct ComingUpList: View {
                 Button("Pause", systemImage: "pause") { Task { await model.setPaused(item, true) } }
                     .tint(.gray)
             }
+            deleteButton(item)
+        }
+    }
+
+    /// Stops a job for good: it's taken off the server, after asking.
+    @ViewBuilder private func deleteButton(_ item: ComingUp.Item) -> some View {
+        if item.job != nil {
+            Button(String(localized: "Delete", comment: "Coming Up: removes a scheduled job for good"), systemImage: "trash") { deleting = item }
+                .tint(.red)
         }
     }
 

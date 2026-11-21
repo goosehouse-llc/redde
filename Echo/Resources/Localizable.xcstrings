@@ -143123,6 +143123,113 @@
         }
       }
     },
+    "Delete Job" : {
+      "comment" : "Coming Up: confirming Delete on a scheduled job",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slet job"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe löschen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar tarea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la tâche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina attività"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ジョブを削除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "작업 삭제"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slett jobb"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taak verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń zadanie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar tarefa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить задачу"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera jobb"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İşi Sil"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видалити завдання"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除任务"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除工作"
+          }
+        }
+      }
+    },
     "Delete List" : {
       "comment" : "A to-do list: delete the whole list",
       "localizations" : {
@@ -229749,6 +229856,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "它中途停止了，Hermes 無法得知進行到哪裡。要再執行一次嗎？"
+          }
+        }
+      }
+    },
+    "It stops running and is removed from your Hermes. To stop it for a while instead, pause it." : {
+      "comment" : "Coming Up: confirming Delete on a scheduled job",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det holder op med at køre og fjernes fra din Hermes. Sæt det på pause i stedet for at stoppe det for en tid."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sie läuft nicht mehr und wird von deinem Hermes entfernt. Um sie nur eine Weile anzuhalten, pausiere sie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deja de ejecutarse y se elimina de tu Hermes. Para detenerla solo un tiempo, ponla en pausa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elle ne s'exécute plus et est retirée de votre Hermes. Pour l'arrêter un temps seulement, mettez-la en pause."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smette di essere eseguita e viene rimossa dal tuo Hermes. Per fermarla solo per un po', mettila in pausa."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "実行されなくなり、Hermesから削除されます。しばらく止めるだけなら一時停止してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "더 이상 실행되지 않고 Hermes에서 제거됩니다. 잠시만 멈추려면 일시 정지하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den slutter å kjøre og fjernes fra Hermes. Sett den på pause for å stoppe den en stund i stedet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hij draait niet meer en wordt van je Hermes verwijderd. Pauzeer hem om hem maar even te stoppen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przestaje działać i zostaje usunięte z twojego Hermesa. Aby zatrzymać je tylko na jakiś czas, wstrzymaj je."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ela para de rodar e é removida do seu Hermes. Para parar só por um tempo, pause-a."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Она перестанет запускаться и будет удалена с вашего Hermes. Чтобы остановить её на время, поставьте на паузу."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det slutar köras och tas bort från din Hermes. Pausa det i stället för att stoppa det en tid."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artık çalışmaz ve Hermes'inden kaldırılır. Bir süreliğine durdurmak için duraklat."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Воно перестане запускатися і буде видалене з вашого Hermes. Щоб зупинити його на певний час, призупиніть."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "它将不再运行，并从你的 Hermes 中移除。若只想暂停一段时间，请将其暂停。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "它將不再執行，並從你的 Hermes 移除。若只想停一陣子，請將其暫停。"
           }
         }
       }
@@ -404553,6 +404767,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "略過"
+          }
+        }
+      }
+    },
+    "Skip passes over one run; Pause stops a job until you resume it; Delete removes it for good. Skipping a run of a repeating job needs the Redde plugin 1.16 on your Hermes. Leave-By Alerts are skipped on this device." : {
+      "comment" : "Coming Up: the footer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spring over springer én kørsel over; Pause stopper et job, til du genoptager det; Slet fjerner det for altid. At springe en kørsel over i et gentaget job kræver Redde-plugin 1.16 på din Hermes. Afrejsepåmindelser springes over på denne enhed."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Überspringen lässt einen Lauf aus; Pause stoppt eine Aufgabe, bis du sie fortsetzt; Löschen entfernt sie für immer. Einen Lauf einer wiederkehrenden Aufgabe zu überspringen, braucht das Redde-Plugin 1.16 auf deinem Hermes. Losfahr-Hinweise werden auf diesem Gerät übersprungen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omitir salta una ejecución; Pausar detiene una tarea hasta que la reanudes; Eliminar la quita para siempre. Omitir una ejecución de una tarea repetitiva requiere el plugin de Redde 1.16 en tu Hermes. Los avisos de salida se omiten en este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignorer saute une exécution ; Pause arrête une tâche jusqu'à ce que vous la repreniez ; Supprimer la retire pour de bon. Ignorer une exécution d'une tâche répétée nécessite le plugin Redde 1.16 sur votre Hermes. Les alertes de départ sont ignorées sur cet appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salta ignora un'esecuzione; Pausa ferma un'attività finché non la riprendi; Elimina la rimuove per sempre. Saltare un'esecuzione di un'attività ripetuta richiede il plugin Redde 1.16 sul tuo Hermes. Gli avvisi di partenza vengono saltati su questo dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スキップは1回の実行を飛ばし、一時停止は再開するまでジョブを止め、削除は完全に取り除きます。繰り返しジョブの1回をスキップするには、HermesにReddeプラグイン1.16が必要です。出発アラートはこのデバイスでスキップされます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "건너뛰기는 한 번의 실행을 건너뛰고, 일시 정지는 재개할 때까지 작업을 멈추며, 삭제는 영구히 제거합니다. 반복 작업의 한 번을 건너뛰려면 Hermes에 Redde 플러그인 1.16이 필요합니다. 출발 알림은 이 기기에서 건너뜁니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hopp over hopper over én kjøring; Pause stopper en jobb til du fortsetter den; Slett fjerner den for godt. Å hoppe over en kjøring av en gjentatt jobb krever Redde-tillegget 1.16 på Hermes. Dra-varsler hoppes over på denne enheten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overslaan slaat één keer over; Pauzeren stopt een taak tot je hem hervat; Verwijderen haalt hem voorgoed weg. Eén keer overslaan van een herhalende taak vraagt de Redde-plug-in 1.16 op je Hermes. Vertrekmeldingen worden op dit apparaat overgeslagen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomiń omija jedno uruchomienie; Wstrzymaj zatrzymuje zadanie do wznowienia; Usuń usuwa je na dobre. Pominięcie uruchomienia powtarzanego zadania wymaga wtyczki Redde 1.16 na twoim Hermesie. Alerty wyjścia są pomijane na tym urządzeniu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pular passa uma execução; Pausar para uma tarefa até você retomá-la; Apagar a remove de vez. Pular uma execução de uma tarefa repetida precisa do plugin do Redde 1.16 no seu Hermes. Os alertas de saída são pulados neste aparelho."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Пропустить» пропускает один запуск; «Пауза» останавливает задачу до возобновления; «Удалить» убирает её навсегда. Чтобы пропустить запуск повторяющейся задачи, нужен плагин Redde 1.16 на вашем Hermes. Напоминания о выходе пропускаются на этом устройстве."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoppa över hoppar över en körning; Pausa stoppar ett jobb tills du återupptar det; Radera tar bort det för gott. Att hoppa över en körning av ett återkommande jobb kräver Redde-tillägget 1.16 på din Hermes. Avresepåminnelser hoppas över på den här enheten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atla bir çalıştırmayı atlar; Duraklat bir işi sen devam ettirene kadar durdurur; Sil onu tamamen kaldırır. Tekrarlanan bir işin bir çalıştırmasını atlamak için Hermes'inde Redde eklentisi 1.16 gerekir. Çıkış Uyarıları bu cihazda atlanır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Пропустити» пропускає один запуск; «Пауза» зупиняє завдання, доки ви його не відновите; «Видалити» прибирає його назавжди. Щоб пропустити запуск повторюваного завдання, потрібен плагін Redde 1.16 на вашому Hermes. Нагадування про вихід пропускаються на цьому пристрої."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“跳过”略过一次运行；“暂停”停止任务直到你恢复；“删除”将其永久移除。跳过重复任务的一次运行需要 Hermes 上的 Redde 插件 1.16。出发提醒在此设备上跳过。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「略過」跳過一次執行；「暫停」停止工作直到你繼續；「刪除」將其永久移除。略過重複工作的一次執行需要 Hermes 上的 Redde 外掛 1.16。出發提醒在此裝置上略過。"
           }
         }
       }

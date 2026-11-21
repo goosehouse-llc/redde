@@ -156,6 +156,28 @@ final class TodayStripUITests: XCTestCase {
         add(shot)
     }
 
+    /// 2026-11-21, "on cron jobs, I see skip and pause, but not a clear way to stop and delete":
+    /// a job's hold menu on Coming Up has Delete, which asks first.
+    func testComingUpDeletesAJob() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.screen", "comingUp", "-echo.demoComingUp"]
+        app.launch()
+        let job = app.staticTexts["The NAS's free space"]
+        XCTAssertTrue(job.waitForExistence(timeout: 20), "No demo job on Coming Up")
+        job.press(forDuration: 1.2)
+        let delete = app.buttons["Delete"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 5), "No Delete in the job's menu")
+        XCTAssertTrue(app.buttons["Pause"].exists, "Pause is still there")
+        delete.tap()
+        let confirm = app.buttons["Delete Job"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "Delete didn't ask first")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "coming-up-delete"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
     /// 2026-11-11: holding the second tile (a to-do list after the inbox) brought up the first's
     /// menu: the strip is one row of the list, and a row keeps one hold menu. Each tile has its own.
     func testHoldingTheSecondTileOpensItsOwnMenu() {
