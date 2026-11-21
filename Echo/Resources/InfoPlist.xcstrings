@@ -1597,6 +1597,120 @@
         }
       }
     },
+    "NSPhotoLibraryAddUsageDescription" : {
+      "comment" : "Privacy - Photo Library Additions Usage Description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde gemmer et billede i Fotos, når du vælger Gem i Fotos på det."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde sichert ein Bild in Fotos, wenn du dafür In Fotos sichern wählst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde saves a picture to Photos when you choose Save to Photos on it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde guarda una imagen en Fotos cuando eliges Guardar en Fotos en ella."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde enregistre une image dans Photos quand vous choisissez Enregistrer dans Photos."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde salva un'immagine in Foto quando scegli Salva in Foto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像で「写真に保存」を選ぶと、Reddeがその画像を写真に保存します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이미지에서 사진에 저장을 선택하면 Redde가 사진 앱에 저장합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde lagrer et bilde i Bilder når du velger Lagre i Bilder på det."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bewaart een afbeelding in Foto's als je er Bewaar in Foto's voor kiest."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde zapisuje obraz w Zdjęciach, gdy wybierzesz dla niego Zapisz w Zdjęciach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde salva uma imagem em Fotos quando você escolhe Salvar em Fotos nela."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde сохраняет изображение в «Фото», когда вы выбираете «Сохранить в Фото»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde sparar en bild i Bilder när du väljer Spara i Bilder på den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir görselde Fotoğraflar'a Kaydet'i seçtiğinde Redde onu Fotoğraflar'a kaydeder."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde зберігає зображення у «Фото», коли ви вибираєте «Зберегти у Фото»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当你在图片上选择“存储到照片”时，Redde 会将其存储到“照片”。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當你在圖片上選擇「儲存到照片」時，Redde 會將其儲存到「照片」。"
+          }
+        }
+      }
+    },
     "NSPhotoLibraryUsageDescription" : {
       "comment" : "Why Redde asks for this permission",
       "extractionState" : "extracted_with_value",

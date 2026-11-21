@@ -45,6 +45,9 @@ struct PhotoViewer: View {
     @Binding var showing: String?
     @Environment(\.dismiss) private var dismiss
     @State private var bare = false
+    /// The picture on screen, loaded, for Save and Share.
+    @State private var current: UIImage?
+    @State private var said: String?
 
     private var place: Int? { photos.firstIndex { $0.id == showing } }
 
@@ -65,6 +68,11 @@ struct PhotoViewer: View {
         .animation(.easeOut(duration: 0.18), value: bare)
         .statusBarHidden(bare)
         .onAppear { if showing == nil { showing = photos.first?.id } }
+        .task(id: showing) {
+            current = nil
+            current = await place.map { photos[$0] }?.load()
+        }
+        .toast($said, bottomPadding: 60)
     }
 
     /// Which picture of how many, and the way out.
@@ -79,6 +87,25 @@ struct PhotoViewer: View {
                     .accessibilityIdentifier("photo-count")
             }
             HStack {
+                // Save and Share for the picture on screen (an App Store review, 2026-11-17: no
+                // way to download a picture an agent made).
+                if let current {
+                    Menu {
+                        Button {
+                            Task { said = await SavedPictures.save(current, data: nil) }
+                        } label: {
+                            Label { Text("Save to Photos", comment: "A picture's menu: saves it to the Photos library") } icon: { Image(systemName: "square.and.arrow.down") }
+                        }
+                        ShareLink(item: Image(uiImage: current), preview: SharePreview(Text("Image", comment: "Sharing a picture: its name in the share sheet"), image: Image(uiImage: current))) {
+                            Label { Text("Share…", comment: "A picture's menu: the share sheet (Save Image, AirDrop, Files)") } icon: { Image(systemName: "square.and.arrow.up") }
+                        }
+                        Button("Copy image", systemImage: "doc.on.doc") { UIPasteboard.general.image = current }
+                    } label: {
+                        Image(systemName: "square.and.arrow.up.circle.fill").font(.title).foregroundStyle(.white.opacity(0.9))
+                    }
+                    .accessibilityLabel(Text("Save or Share", comment: "The picture viewer's button: save, share or copy the picture"))
+                    .accessibilityIdentifier("photo-share")
+                }
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark.circle.fill").font(.title).foregroundStyle(.white.opacity(0.9))

@@ -173,6 +173,7 @@ targets:
         NSAlarmKitUsageDescription: With Phone tools turned on, Redde sets an alarm or a timer when your assistant asks it to, once you have said yes to it.
         NSContactsUsageDescription: With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.
         NSPhotoLibraryUsageDescription: With Phone tools turned on, Redde finds photos, shows one to your assistant, or deletes the ones you confirm, when your assistant asks it to. A photo goes only to the server you connect to.
+        NSPhotoLibraryAddUsageDescription: Redde saves a picture to Photos when you choose Save to Photos on it.
         # Places (Settings → Agent → Places): arriving at or leaving a place the person set tells the bot they chose.
         # Current Location (Settings → Agent → Current Location): roughly where the person is, for the agent.
         NSLocationWhenInUseUsageDescription: With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there. With Maps on in Phone Tools, Apple Maps uses where you are to find places and travel times for your agent, which hears the places and how far they are.
@@ -573,6 +574,7 @@ targets:
         NSRemindersFullAccessUsageDescription: With Phone tools turned on, Redde reads and adds reminders when your assistant asks it to. They go only to the server you connect to.
         NSContactsUsageDescription: With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.
         NSPhotoLibraryUsageDescription: With Phone tools turned on, Redde finds photos, shows one to your assistant, or deletes the ones you confirm, when your assistant asks it to. A photo goes only to the server you connect to.
+        NSPhotoLibraryAddUsageDescription: Redde saves a picture to Photos when you choose Save to Photos on it.
         # Places (Settings → Agent → Places): arriving at or leaving a place the person set tells the bot they chose.
         # Current Location (Settings → Agent → Current Location): roughly where the person is, for the agent.
         NSLocationWhenInUseUsageDescription: With Places on, Redde uses where you are to set a place and to notice when you arrive or leave; only "arrived at Home" goes to your server. With Current Location on, your own agent hears roughly where you are when you ask about places, directions or the weather. With Leave-By Alerts on, Redde works out from where you are when to leave for an event; where you are goes only to Apple Maps, for the way there. With Maps on in Phone Tools, Apple Maps uses where you are to find places and travel times for your agent, which hears the places and how far they are.

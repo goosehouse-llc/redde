@@ -267,7 +267,7 @@ struct PhotoGroup: View {
                         .matchedTransitionSource(id: picture.id.uuidString, in: zoom) { $0.clipShape(.rect(cornerRadius: 4)) }
                         .onTapGesture { show(picture) }
                         .contextMenu {
-                            Button("Copy image", systemImage: "doc.on.doc") { UIPasteboard.general.image = UIImage(data: picture.data) }
+                            ImageActions(image: UIImage(data: picture.data), data: picture.data)
                         }
                         .position(x: frame.midX, y: frame.midY)
                         .accessibilityElement(children: .ignore)
@@ -455,7 +455,7 @@ struct PhotoBubble: View {
                 .clipShape(.rect(cornerRadius: 14))
                 .onTapGesture(perform: open)
                 .contextMenu {
-                    Button("Copy image", systemImage: "doc.on.doc") { UIPasteboard.general.image = UIImage(data: attachment.data) }
+                    ImageActions(image: UIImage(data: attachment.data), data: attachment.data)
                 }
         } placeholder: {
             RoundedRectangle(cornerRadius: 14)

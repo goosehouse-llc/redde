@@ -196,7 +196,7 @@ struct MarkdownImage: View {
             .onTapGesture { if loaded != nil { showViewer = true } }
             .contextMenu {
                 Button("Copy image link", systemImage: "link") { UIPasteboard.general.string = url }
-                if let loaded { Button("Copy image", systemImage: "doc.on.doc") { UIPasteboard.general.image = loaded } }
+                ImageActions(image: loaded)
             }
             .accessibilityLabel(alt.isEmpty ? String(localized: "Image") : alt)
             .accessibilityAddTraits(.isImage)
