@@ -245,7 +245,16 @@ nonisolated struct HermesServeTransport: HermesTransport {
         case "approval.expire", "clarify.expire", "sudo.expire", "secret.expire":
             continuation.yield(.interruptExpired(id: p["request_id"]?.string ?? ""))
         case "status.update":
-            if let t = p["text"]?.string { continuation.yield(.status(t)) }
+            if let t = p["text"]?.string {
+                continuation.yield(.status(t))
+                // Hermes's turn watchdog has stopped a stuck turn (0.23: "Turn aborted by the
+                // liveness watchdog …; lease renewal stopped"). A turn stuck that hard sends no
+                // message.complete after: 11-19 Code's chat said "working" 12 minutes on, under
+                // Hermes's own word that it was over. It ends here, with Retry.
+                if Self.watchdogAborted(t) {
+                    finished.yield(.failure(TransportError.malformed(t.replacingOccurrences(of: "⚠️", with: "").trimmingCharacters(in: .whitespaces))))
+                }
+            }
         case "message.complete":
             // The turn's terminal event: final text (if nothing streamed), the
             // authoritative usage, and the status.
@@ -282,6 +291,12 @@ nonisolated struct HermesServeTransport: HermesTransport {
         default:
             break
         }
+    }
+
+    /// Hermes's word that its watchdog stopped the turn for good (not its earlier "attempting
+    /// recovery", after which the turn may yet go on).
+    nonisolated static func watchdogAborted(_ text: String) -> Bool {
+        text.localizedCaseInsensitiveContains("turn aborted by the liveness watchdog")
     }
 
     /// Joins the turn under way in a stored session: one this run of the app didn't start, or

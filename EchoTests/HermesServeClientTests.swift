@@ -164,6 +164,15 @@ struct HermesServeClientTests {
         #expect(await ends([("message.complete", .object(["text": .string("Done.")]))]))
     }
 
+    /// 11-19: Code's turn wedged; Hermes 0.23's watchdog stopped it and said so, and no last
+    /// message came. That word ends the turn; the earlier "attempting recovery" doesn't.
+    @Test func theWatchdogsAbortEndsATurn() async {
+        let aborted = "⚠️ Turn aborted by the liveness watchdog (614s without activity); lease renewal stopped so the session can be reclaimed. You can retry your message."
+        let trying = "⚠️ This turn stopped making progress (600s without activity); attempting recovery so the session can continue."
+        #expect(await ends([("message.start", .null), ("status.update", .object(["kind": .string("warn"), "text": .string(aborted)]))]))
+        #expect(await ends([("message.start", .null), ("status.update", .object(["kind": .string("warn"), "text": .string(trying)]))]) == false)
+    }
+
     @Test func sessionListAsksForTheProfile() async throws {
         ServeStub.reset()
         nonisolated(unsafe) var urls: [String] = []
