@@ -874,6 +874,8 @@ final class NoteClears {
     func cleared(_ ids: [String], server: String?) {
         let ids = ids.filter(PushNote.isNoteID)
         guard !ids.isEmpty else { return }
+        // A briefing's notification gone here: its tile on Today read, as on the other devices.
+        if AgentBriefing.markRead(notes: Set(ids)) { BriefingsInbox.shared.reload() }
         let key = server.flatMap { $0.isEmpty ? nil : $0 } ?? openServer
         var all = pending
         all[key] = Array(((all[key] ?? []) + ids).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }.suffix(Self.most))
@@ -931,7 +933,7 @@ final class NoteClears {
         guard let reply = try? await command("cleared since \(since)") else { return }
         guard let found = Self.clearedSince(reply) else { return }
         defaults.set(found.now - 5, forKey: key)   // a little back, for a clear said as this was asked
-        if !found.ids.isEmpty { ClearedNotes.remove(found.ids) }
+        if !found.ids.isEmpty { ClearedNotes.remove(found.ids) { _ in Task { @MainActor in BriefingsInbox.shared.reload() } } }
     }
 
     /// The plugin's answer to `cleared since`: its clock now, and the notes cleared since.
@@ -948,7 +950,10 @@ final class NoteClears {
         guard let payload = userInfo[PushNote.sealedKey] as? String,
               let (note, _) = PushSeal.note(from: payload, pairings: PushVault.load()),
               note.kind == .clear else { done(false); return }
-        ClearedNotes.remove(note.clearedIDs) { _ in done(true) }
+        ClearedNotes.remove(note.clearedIDs) { _ in
+            Task { @MainActor in BriefingsInbox.shared.reload() }   // their briefings, read (`ClearedNotes`)
+            done(true)
+        }
     }
 }
 

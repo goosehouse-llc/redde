@@ -104,23 +104,48 @@ final class BriefingsInbox {
     func notice(_ briefing: AgentBriefing) -> JobNotices.Choice { JobNotices.choice(for: briefing.jobKey) }
 
     func setNotice(_ choice: JobNotices.Choice, for briefing: AgentBriefing) {
-        JobNotices.set(choice, for: briefing.jobKey, title: briefing.heading)
-        if choice == .hidden { AgentBriefing.markJobRead(briefing.jobKey) }
-        Mutes.publish()
+        setNotice(choice, jobKey: briefing.jobKey, title: briefing.heading)
         #if DEBUG
         // The demo's aren't stored, so `reload` leaves them: a hidden job's go here.
         if choice == .hidden, DevHooks.has("-echo.demoBriefings") {
             withAnimation(.snappy) { briefings.removeAll { $0.jobKey == briefing.jobKey } }
         }
         #endif
+    }
+
+    /// How a job's runs reach the person, by its key: Settings › Your Day lists jobs whose runs
+    /// may all be gone (a hidden one's are), by the name kept for them.
+    func setNotice(_ choice: JobNotices.Choice, jobKey: String, title: String) {
+        tellingOthers {
+            JobNotices.set(choice, for: jobKey, title: title)
+            if choice == .hidden { AgentBriefing.markJobRead(jobKey) }
+        }
+        JobChoiceSync.shared.said(choice, jobKey: jobKey, title: title)
+        Mutes.publish()
         reload()
     }
 
     /// A hidden job shown again (the list's Hidden Jobs).
     func showAgain(_ jobKey: String) {
         JobNotices.set(.notify, for: jobKey, title: "")
+        JobChoiceSync.shared.said(.notify, jobKey: jobKey, title: "")
         Mutes.publish()
         reload()
+    }
+
+    /// Briefings read or gone here, read on the person's other devices too (asked 2026-11-21:
+    /// "there still doesn't seem to be parity or sync between devices for today notifications"):
+    /// their notes are said as cleared ones are (`NoteClears`), and their notifications here go.
+    private func tellingOthers(_ change: () -> Void) {
+        let unread = Dictionary(AgentBriefing.all().filter { !$0.read }.compactMap { b in b.note.map { (b.id, $0) } },
+                                uniquingKeysWith: { a, _ in a })
+        change()
+        guard !unread.isEmpty else { return }
+        let after = Dictionary(AgentBriefing.all().map { ($0.id, $0.read) }, uniquingKeysWith: { a, _ in a })
+        let done = unread.filter { after[$0.key] != false }.map(\.value)
+        guard !done.isEmpty else { return }
+        NoteClears.shared.cleared(done, server: nil)
+        ClearedNotes.remove(done)
     }
 
     #if DEBUG
@@ -208,15 +233,17 @@ final class BriefingsInbox {
         if DevHooks.has("-echo.demoBriefings") || DemoDay.on { briefings.removeAll { $0.id == briefing.id }; return }
         #endif
         // The job's earlier runs go with it: the card comes back as one.
-        for run in earlier(than: briefing) where !run.read { AgentBriefing.markRead(run.id) }
+        tellingOthers { for run in earlier(than: briefing) where !run.read { AgentBriefing.markRead(run.id) } }
         AgentBriefing.snooze(briefing.id, until: until)
         LaterReminder.briefing(briefing, at: until)
         reload()
     }
 
     func show(_ briefing: AgentBriefing) {
-        AgentBriefing.markRead(briefing.id)
-        AgentBriefing.markJobRead(briefing.jobKey)   // (its earlier runs are in its sheet)
+        tellingOthers {
+            AgentBriefing.markRead(briefing.id)
+            AgentBriefing.markJobRead(briefing.jobKey)   // (its earlier runs are in its sheet)
+        }
         reload()
         open = briefings.first { $0.id == briefing.id } ?? briefing
     }
@@ -231,7 +258,7 @@ final class BriefingsInbox {
     }
 
     func markRead(_ briefing: AgentBriefing) {
-        AgentBriefing.markRead(briefing.id)
+        tellingOthers { AgentBriefing.markRead(briefing.id) }
         reload()
     }
 
@@ -246,15 +273,17 @@ final class BriefingsInbox {
 
     /// Done with a card: every run of its job read.
     func markJobRead(_ briefing: AgentBriefing) {
-        AgentBriefing.markJobRead(briefing.jobKey)
+        tellingOthers { AgentBriefing.markJobRead(briefing.jobKey) }
         reload()
     }
 
     /// Every run of a job, gone (the list's Delete on a job's row).
     func removeJob(_ briefing: AgentBriefing) {
-        for run in AgentBriefing.all() where run.jobKey == briefing.jobKey {
-            AgentBriefing.remove(run.id)
-            LaterReminder.cancel(run.id)
+        tellingOthers {
+            for run in AgentBriefing.all() where run.jobKey == briefing.jobKey {
+                AgentBriefing.remove(run.id)
+                LaterReminder.cancel(run.id)
+            }
         }
         reload()
     }

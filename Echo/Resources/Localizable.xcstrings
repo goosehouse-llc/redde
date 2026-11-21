@@ -139183,7 +139183,7 @@
       }
     },
     "Daily Jobs" : {
-      "comment" : "Settings › Your Day: Morning Ideas, Heads-Ups, the Evening Wrap-up, the Week Ahead and Routine Suggestions",
+      "comment" : "Settings › Your Day › Daily Jobs: title",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -168343,6 +168343,7 @@
     },
     "Every Day" : {
       "comment" : "Settings › Your Day: the section of the daily jobs",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -183832,6 +183833,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "來自你的聊天"
+          }
+        }
+      }
+    },
+    "From Your Other Jobs" : {
+      "comment" : "Settings › Your Day: jobs of the person's own that send briefings, each with how its runs reach them",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fra dine andre jobs"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus deinen anderen Aufgaben"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tus otras tareas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De vos autres tâches"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dalle tue altre attività"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほかのジョブから"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 작업에서"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fra de andre jobbene dine"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Van je andere taken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z twoich innych zadań"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De suas outras tarefas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из других ваших задач"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Från dina andra jobb"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diğer işlerinden"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "З інших ваших завдань"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来自你的其他任务"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來自你的其他工作"
           }
         }
       }
@@ -215961,8 +216069,116 @@
         }
       }
     },
+    "Ideas each morning, a heads-up before events, a wrap-up each evening, the week ahead on Sundays. Each runs on your Hermes and comes as a notification; it also stays at the top of your chats." : {
+      "comment" : "Settings › Your Day › Briefings: footer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idéer hver morgen, en påmindelse før begivenheder, en opsummering hver aften, ugen der kommer om søndagen. Hver kører på din Hermes og kommer som en notifikation; den bliver også øverst i dine chats."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideen jeden Morgen, ein Hinweis vor Terminen, ein Rückblick jeden Abend, die Woche voraus am Sonntag. Jede läuft auf deinem Hermes und kommt als Mitteilung; sie bleibt auch oben in deinen Chats."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideas cada mañana, un aviso antes de los eventos, un resumen cada noche, la semana que viene los domingos. Cada uno se ejecuta en tu Hermes y llega como notificación; también queda arriba en tus chats."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des idées chaque matin, un rappel avant les événements, un bilan chaque soir, la semaine à venir le dimanche. Chacun s'exécute sur votre Hermes et arrive en notification ; il reste aussi en haut de vos discussions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idee ogni mattina, un avviso prima degli eventi, un riepilogo ogni sera, la settimana in arrivo la domenica. Ognuno gira sul tuo Hermes e arriva come notifica; resta anche in cima alle tue chat."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "毎朝のアイデア、予定前のお知らせ、毎晩のまとめ、日曜日の週間予定。それぞれHermesで実行され、通知で届きます。チャットの一番上にも残ります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매일 아침 아이디어, 일정 전 알림, 매일 저녁 정리, 일요일의 다음 주 일정. 각각 Hermes에서 실행되어 알림으로 오며, 채팅 맨 위에도 남습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideer hver morgen, et varsel før hendelser, en oppsummering hver kveld, uken som kommer på søndager. Hver kjører på Hermes og kommer som et varsel; den blir også liggende øverst i chattene dine."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideeën elke ochtend, een seintje voor afspraken, een terugblik elke avond, de week vooruit op zondag. Elk draait op je Hermes en komt als melding; het blijft ook bovenaan je chats staan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomysły każdego ranka, przypomnienie przed wydarzeniami, podsumowanie każdego wieczoru, nadchodzący tydzień w niedziele. Każde działa na twoim Hermesie i przychodzi jako powiadomienie; zostaje też na górze czatów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideias toda manhã, um aviso antes dos eventos, um resumo toda noite, a semana que vem aos domingos. Cada um roda no seu Hermes e chega como notificação; também fica no topo das suas conversas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Идеи каждое утро, напоминание перед событиями, итоги каждый вечер, неделя вперёд по воскресеньям. Каждая работает на вашем Hermes и приходит уведомлением; она также остаётся вверху чатов."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idéer varje morgon, en påminnelse före händelser, en sammanfattning varje kväll, veckan som kommer på söndagar. Var och en körs på din Hermes och kommer som en notis; den stannar också överst i dina chattar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her sabah fikirler, etkinliklerden önce bir hatırlatma, her akşam bir özet, pazar günleri gelecek hafta. Her biri Hermes'inde çalışır ve bildirim olarak gelir; sohbetlerinin en üstünde de kalır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ідеї щоранку, нагадування перед подіями, підсумок щовечора, тиждень наперед щонеділі. Кожне працює на вашому Hermes і надходить сповіщенням; воно також лишається вгорі ваших чатів."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天早上的想法、活动前的提醒、每晚的总结、周日的下周预览。每项都在你的 Hermes 上运行并以通知送达，也会留在聊天列表顶部。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天早上的想法、活動前的提醒、每晚的總結、週日的下週預覽。每項都在你的 Hermes 上執行並以通知送達，也會留在聊天列表頂端。"
+          }
+        }
+      }
+    },
     "Ideas each morning, a heads-up before events, a wrap-up each evening, the week ahead on Sundays. What they send stays in Briefings, at the top of your chats." : {
       "comment" : "Settings › Your Day › Every Day: footer",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -233511,6 +233727,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工作"
+          }
+        }
+      }
+    },
+    "Jobs you or your agents set up that send briefings. Drawer Only keeps them at the top of your chats with no notification; Off stops them coming." : {
+      "comment" : "Settings › Your Day › From Your Other Jobs: footer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jobs, som du eller dine agenter har oprettet, og som sender briefinger. Kun i skuffen holder dem øverst i dine chats uden notifikation; Fra stopper dem."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgaben, die du oder deine Agenten eingerichtet haben und die Briefings senden. Nur in der Schublade hält sie oben in deinen Chats, ohne Mitteilung; Aus stoppt sie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tareas que tú o tus agentes configuraron y que envían resúmenes. Solo en el cajón los mantiene arriba en tus chats sin notificación; Desactivado los detiene."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les tâches que vous ou vos agents avez créées et qui envoient des briefings. Tiroir seulement les garde en haut de vos discussions sans notification ; Désactivé les arrête."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attività create da te o dai tuoi agenti che inviano briefing. Solo nel cassetto li tiene in cima alle chat senza notifica; Disattivato li ferma."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたやエージェントが設定した、ブリーフィングを送るジョブ。「ドロワーのみ」は通知なしでチャットの一番上に残し、「オフ」は届かなくします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "본인이나 에이전트가 설정한, 브리핑을 보내는 작업. 서랍에만은 알림 없이 채팅 맨 위에 두고, 끔은 더 이상 오지 않게 합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jobber du eller agentene dine har satt opp som sender orienteringer. Bare i skuffen holder dem øverst i chattene uten varsel; Av stopper dem."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taken die jij of je agenten hebben ingesteld en die briefings sturen. Alleen in lade houdt ze bovenaan je chats zonder melding; Uit stopt ze."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zadania ustawione przez ciebie lub twoich agentów, które wysyłają briefingi. Tylko w szufladzie trzyma je na górze czatów bez powiadomienia; Wyłączone zatrzymuje je."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarefas que você ou seus agentes criaram e que enviam resumos. Só na gaveta os mantém no topo das conversas sem notificação; Desativado faz com que parem."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задачи, созданные вами или вашими агентами, которые присылают сводки. «Только в панели» оставляет их вверху чатов без уведомления; «Выкл.» прекращает их."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jobb som du eller dina agenter har skapat och som skickar genomgångar. Bara i lådan håller dem överst i chattarna utan notis; Av stoppar dem."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senin ya da ajanlarının kurduğu, brifing gönderen işler. Yalnızca Çekmece onları bildirim olmadan sohbetlerinin en üstünde tutar; Kapalı onları durdurur."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завдання, які створили ви або ваші агенти і які надсилають зведення. «Лише в панелі» лишає їх угорі чатів без сповіщення; «Вимк.» зупиняє їх."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你或你的智能体设置的、会发送简报的任务。“仅抽屉”会把它们留在聊天列表顶部而不通知；“关闭”则不再发送。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你或你的代理設定的、會傳送簡報的工作。「僅抽屜」會把它們留在聊天列表頂端而不通知；「關閉」則不再傳送。"
           }
         }
       }
@@ -324331,6 +324654,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "含密碼"
+          }
+        }
+      }
+    },
+    "Past Briefings" : {
+      "comment" : "Settings › Your Day: the list of every briefing kept, and the hidden jobs",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidligere briefinger"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frühere Briefings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resúmenes anteriores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefings précédents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefing precedenti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "過去のブリーフィング"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지난 브리핑"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidligere orienteringer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eerdere briefings"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wcześniejsze briefingi"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumos anteriores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прошлые сводки"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidigare genomgångar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önceki Brifingler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попередні зведення"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以往简报"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "過往簡報"
           }
         }
       }
@@ -470760,6 +471190,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新開始"
+          }
+        }
+      }
+    },
+    "Times & Options" : {
+      "comment" : "Settings › Your Day: the daily briefings' times, options and Run Now",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tider og valg"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeiten & Optionen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Horas y opciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heures et options"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orari e opzioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時刻とオプション"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시간 및 옵션"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tider og valg"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tijden en opties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Godziny i opcje"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Horários e opções"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Время и параметры"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tider och val"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saatler ve Seçenekler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Час і параметри"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间与选项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間與選項"
           }
         }
       }

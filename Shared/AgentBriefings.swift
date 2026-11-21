@@ -16,6 +16,9 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
     /// It didn't finish, and `text` says why.
     var failed: Bool
     var read = false
+    /// Its note's id, the same on all the person's devices (`PushNote.m`, plugin 1.33): read on
+    /// one, it is read on the others (`NoteClears`, 2026-11-21).
+    var note: String?
     /// A heads-up's event: when it starts and where (Redde's plugin 1.9 sends them), and when to
     /// leave for it, worked out on the phone (`LeaveTime`).
     var eventAt: Date?
@@ -97,6 +100,11 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
         briefing.place = note.r.flatMap { $0.isEmpty ? nil : $0 }
         briefing.profile = note.p
         briefing.job = note.i.flatMap { $0.isEmpty ? nil : $0 }
+        briefing.note = note.m.flatMap { PushNote.isNoteID($0) ? $0 : nil }
+        // Kept to the drawer on another of the person's devices (plugin 1.34): here too.
+        if note.z == "drawer", JobNotices.choice(for: briefing.jobKey, in: defaults) == .notify {
+            JobNotices.set(.drawerOnly, for: briefing.jobKey, title: briefing.heading, in: defaults)
+        }
         briefing.runSession = note.j.flatMap { $0.isEmpty ? nil : $0 }
         briefing.weather = note.e.flatMap { $0.isEmpty ? nil : String($0.prefix(120)) }
         // A job the person said not to show (`JobNotices`): not kept at all.
@@ -148,6 +156,21 @@ nonisolated struct AgentBriefing: Codable, Identifiable, Equatable, Sendable {
         guard let i = kept.firstIndex(where: { $0.id == id }), !kept[i].read else { return }
         kept[i].read = true
         save(kept, in: defaults)
+    }
+
+    /// The briefings of these notes read: their notes were cleared on another of the person's
+    /// devices, or here (`NoteClears`). True when one was unread.
+    @discardableResult
+    static func markRead(notes: Set<String>, in defaults: UserDefaults? = NeedsYou.shared) -> Bool {
+        guard !notes.isEmpty else { return false }
+        var kept = all(in: defaults)
+        var changed = false
+        for i in kept.indices where !kept[i].read && kept[i].note.map(notes.contains) == true {
+            kept[i].read = true
+            changed = true
+        }
+        if changed { save(kept, in: defaults) }
+        return changed
     }
 
     /// Every run of that job read: its card leaves the deck whole.

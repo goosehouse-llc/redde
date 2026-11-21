@@ -543,8 +543,42 @@ class Store:
             return [i for i, at in sorted(notes, key=lambda item: float(item[1]))
                     if float(at) > since and float(at) > now - self.CLEARED_FOR]
 
+    # How each job's briefings reach the person (1.34.0, asked 2026-11-21: "there still doesn't seem
+    # to be parity or sync between devices for today notifications"): Redde's Notify Me, Drawer Only
+    # and Off (Stop These Notifications) were each device's own, so the iPad went on notifying for a
+    # job turned off on the phone. One choice per job now, for all of them: "<profile>|<job id>".
+
+    JOB_CHOICES = ("notify", "drawerOnly", "hidden")
+    JOBS_AT_MOST = 300
+
+    def set_job_choice(self, job: str, choice: str, title: str = "", now: float | None = None) -> bool:
+        """A job's briefings, for every device: notify, drawerOnly or hidden. False for a choice
+        or job not understood."""
+        if choice not in self.JOB_CHOICES or not job or "|" not in job or len(job) > 200:
+            return False
+        now = time.time() if now is None else now
+        with self._lock:
+            jobs = dict(self._read("jobs.json").get("jobs") or {})
+            kept = jobs.get(job) or {}
+            jobs[job] = {"c": choice, "t": (title or kept.get("t") or "")[:80], "at": int(now)}
+            if len(jobs) > self.JOBS_AT_MOST:
+                jobs = dict(sorted(jobs.items(), key=lambda item: int(item[1].get("at") or 0))[-self.JOBS_AT_MOST:])
+            self._write("jobs.json", {"jobs": jobs})
+            return True
+
+    def job_choices(self) -> dict:
+        """Every job's choice: {"<profile>|<job id>": {"c": choice, "t": its name, "at": when}}."""
+        with self._lock:
+            return dict(self._read("jobs.json").get("jobs") or {})
+
+    def job_choice(self, job: str) -> str:
+        return str((self.job_choices().get(job) or {}).get("c") or "notify")
+
     def muted(self, device_id: str, key: str, now: float | None = None) -> bool:
-        """Whether this phone has this chat muted now."""
+        """Whether this phone has this chat muted now. A job turned off (`job_choices`) is, on
+        every device."""
+        if key.startswith("j:") and self.job_choice(key[2:]) == "hidden":
+            return True
         with self._lock:
             until = (self._read("mutes.json").get("devices") or {}).get(device_id, {}).get(key)
             if until is None:

@@ -25,24 +25,18 @@ struct YourDaySettings: View {
                  comment: "Settings › Your Day: under Ahead of Your Day, Goals and Activity")
         }
 
+        BriefingSwitches(canReachGateway: canReachGateway)
+
         Section {
-            NavigationLink { DailyJobsView() } label: {
-                Label { Text("Daily Jobs", comment: "Settings › Your Day: Morning Ideas, Heads-Ups, the Evening Wrap-up, the Week Ahead and Routine Suggestions") } icon: { Image(systemName: "clock") }
+            NavigationLink { BriefingsList() } label: {
+                Label { Text("Past Briefings", comment: "Settings › Your Day: the list of every briefing kept, and the hidden jobs") } icon: { Image(systemName: "doc.text") }
             }
-            .disabled(!canReachGateway)
-            NavigationLink { BriefingsList() } label: { Label("Briefings", systemImage: "doc.text") }
             Toggle(isOn: $settings.briefingTapsOpenRun) {
                 Label { Text("Briefing Taps Open the Run", comment: "Settings › Your Day: a briefing's notification opens the scheduled run's chat, not the briefing") } icon: { Image(systemName: "bubble.left.and.text.bubble.right") }
             }
-        } header: {
-            Text("Every Day", comment: "Settings › Your Day: the section of the daily jobs")
         } footer: {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Ideas each morning, a heads-up before events, a wrap-up each evening, the week ahead on Sundays. What they send stays in Briefings, at the top of your chats.",
-                     comment: "Settings › Your Day › Every Day: footer")
-                Text("With Briefing Taps Open the Run on, a briefing's notification opens the chat its run was in, to ask on there. The main agent's briefings, with Redde's plugin 1.21.1 or later.",
-                     comment: "Settings › Your Day › Every Day: footer, about Briefing Taps Open the Run")
-            }
+            Text("With Briefing Taps Open the Run on, a briefing's notification opens the chat its run was in, to ask on there. The main agent's briefings, with Redde's plugin 1.21.1 or later.",
+                 comment: "Settings › Your Day › Every Day: footer, about Briefing Taps Open the Run")
         }
 
         Section {
@@ -89,7 +83,7 @@ struct DailyJobsView: View {
                 ForEach(Self.jobs, id: \.name) { daily in
                     NavigationLink { DailyJobView(daily: daily) } label: {
                         LabeledContent {
-                            if let found { status(found[daily.name], daily: daily) }
+                            if let found { Self.status(found[daily.name], daily: daily) }
                         } label: {
                             Label { Text(daily.title) } icon: { Image(systemName: daily.symbol) }
                         }
@@ -113,7 +107,7 @@ struct DailyJobsView: View {
     }
 
     /// "7:30 AM", "Sun 6:00 PM", or Off.
-    private func status(_ job: CronJob?, daily: DailyJob) -> Text {
+    static func status(_ job: CronJob?, daily: DailyJob) -> Text {
         guard let job else { return Text("Off") }
         guard let (hour, minute) = DailyJob.time(of: job),
               let at = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: .now) else { return Text("On") }

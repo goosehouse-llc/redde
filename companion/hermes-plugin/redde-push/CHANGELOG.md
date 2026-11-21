@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.34.0 (2026-11-21)
+
+- Briefings the same on all your devices. Notify Me, Drawer Only and Off (Stop These
+  Notifications) were each device's own, so turning a job off on your iPhone left your iPad
+  still notifying. Now there is one choice per job for all of them: a job turned off sends to
+  none, and a Drawer Only job's briefings come quietly everywhere. Redde tells the plugin when
+  you change one, and each device reads them when Redde opens. Needs Redde 2.7.
+
 ## 1.33.1 (2026-11-20)
 
 - A purchase card sent with the wrong fields says which came. When an agent sends products in a

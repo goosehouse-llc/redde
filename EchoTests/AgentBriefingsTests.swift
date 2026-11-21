@@ -194,4 +194,92 @@ struct AgentBriefingsTests {
         let names = Settings.TodayColor.allCases.map(\.rawValue)
         #expect(Set(names).count == names.count, "Plain once")
     }
+
+    // MARK: The same on every device (2026-11-21)
+
+    /// A briefing keeps its note's id (the same on all the person's devices), and is read when
+    /// that note is cleared on another.
+    @Test func aBriefingIsReadWhenItsNoteIsClearedElsewhere() throws {
+        let store = defaults()
+        var json: [String: Any] = ["v": 1, "k": "routine", "at": 1_800_000_000, "p": "default", "d": "Sol", "t": "Evening wrap-up",
+                                   "b": "Green.", "x": "brief", "i": "job1", "m": "a1b2c3d4e5f6"]
+        AgentBriefing.take(try JSONDecoder().decode(PushNote.self, from: JSONSerialization.data(withJSONObject: json)),
+                           now: Date(timeIntervalSince1970: 1_800_000_000), in: store)
+        json["at"] = 1_800_000_100; json["m"] = "ffffffffffff"
+        AgentBriefing.take(try JSONDecoder().decode(PushNote.self, from: JSONSerialization.data(withJSONObject: json)),
+                           now: Date(timeIntervalSince1970: 1_800_000_100), in: store)
+        let now = Date(timeIntervalSince1970: 1_800_000_200)
+        #expect(AgentBriefing.all(in: store, now: now).compactMap(\.note).sorted() == ["a1b2c3d4e5f6", "ffffffffffff"])
+        #expect(AgentBriefing.markRead(notes: ["a1b2c3d4e5f6", "000000000000"], in: store))
+        let kept = AgentBriefing.all(in: store, now: now)
+        #expect(kept.first { $0.note == "a1b2c3d4e5f6" }?.read == true)
+        #expect(kept.first { $0.note == "ffffffffffff" }?.read == false, "another run's note left alone")
+        #expect(!AgentBriefing.markRead(notes: ["a1b2c3d4e5f6"], in: store), "read already: nothing changes")
+    }
+
+    /// A Drawer Only job's note (plugin 1.34 marks it `z` "drawer") keeps the job to the drawer here too.
+    @Test func aDrawerOnlyNoteKeepsItsJobToTheDrawerHere() throws {
+        let store = defaults()
+        let json: [String: Any] = ["v": 1, "k": "routine", "at": 1_800_000_000, "p": "default", "t": "Weather before your day",
+                                   "b": "Rain.", "x": "brief", "i": "wx1", "z": "drawer"]
+        AgentBriefing.take(try JSONDecoder().decode(PushNote.self, from: JSONSerialization.data(withJSONObject: json)), in: store)
+        #expect(JobNotices.choice(for: "default|wx1", in: store) == .drawerOnly)
+        #expect(JobNotices.load(store)["default|wx1"]?.title == "Weather before your day")
+    }
+
+    @MainActor @Test func aJobChoiceIsSaidToThePluginAndReadFromIt() async throws {
+        let store = defaults(), suite = defaults()
+        let settings = Settings(defaults: suite)
+        settings.transport = .hermesServe
+        var said: [String] = []
+        var changes = 0
+        let there = ["default|job1": ["hidden", "Evening wrap-up"], "default|wx1": ["drawerOnly", "Weather"]]
+        let reply = "redde-push jobs " + PushSeal.base64URL(try JSONEncoder().encode(there))
+        let sync = JobChoiceSync(defaults: suite, briefings: store, settings: settings,
+                                 command: { words in said.append(words); return words == "jobs" ? reply : "redde-push job" },
+                                 changedHere: { changes += 1 })
+        // One kept here from before the plugin kept them: said to it once.
+        JobNotices.set(.hidden, for: "scout|old", title: "Old report", in: store)
+        #expect(await sync.cameForward())
+        #expect(JobNotices.choice(for: "default|job1", in: store) == .hidden)
+        #expect(JobNotices.choice(for: "default|wx1", in: store) == .drawerOnly)
+        #expect(changes == 1)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(said.contains("job hidden scout|old Old report"))
+        // Turned back on elsewhere: on here.
+        let on = "redde-push jobs " + PushSeal.base64URL(try JSONEncoder().encode(["default|job1": ["notify", "Evening wrap-up"]]))
+        let again = JobChoiceSync(defaults: suite, briefings: store, settings: settings,
+                                  command: { words in words == "jobs" ? on : "redde-push job" }, changedHere: { changes += 1 })
+        #expect(await again.cameForward())
+        #expect(JobNotices.choice(for: "default|job1", in: store) == .notify)
+    }
+
+    @MainActor @Test func aChoiceThatCouldntBeSaidWaitsAndIsntOverwritten() async throws {
+        let store = defaults(), suite = defaults()
+        let settings = Settings(defaults: suite)
+        settings.transport = .hermesServe
+        /// The plugin: down until `up`, keeping what it is told.
+        final class Line { var up = false; var kept: [String: [String]] = [:] }
+        let line = Line()
+        var said: [String] = []
+        let sync = JobChoiceSync(defaults: suite, briefings: store, settings: settings, command: { words in
+            guard line.up else { throw URLError(.notConnectedToInternet) }
+            said.append(words)
+            let parts = words.split(separator: " ").map(String.init)
+            if parts.count >= 3, parts[0] == "job" { line.kept[parts[2]] = [parts[1], parts.dropFirst(3).joined(separator: " ")] }
+            return words == "jobs" ? "redde-push jobs " + PushSeal.base64URL(try JSONEncoder().encode(line.kept)) : "redde-push job"
+        }, changedHere: {})
+        JobNotices.set(.hidden, for: "default|job1", title: "Evening wrap-up", in: store)
+        sync.said(.hidden, jobKey: "default|job1", title: "Evening wrap-up")
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(sync.pending["default|job1"] == ["hidden", "Evening wrap-up"], "kept until it can be said")
+        #expect(!(await sync.cameForward()))
+        line.up = true
+        #expect(!(await sync.cameForward()))
+        #expect(said.first == "job hidden default|job1 Evening wrap-up")
+        #expect(sync.pending.isEmpty)
+        #expect(JobNotices.choice(for: "default|job1", in: store) == .hidden)
+        #expect(JobChoiceSync.commandLine(.hidden, jobKey: "no bar", title: "") == nil)
+        #expect(JobChoiceSync.choices("redde-push refused: no") == nil)
+    }
 }

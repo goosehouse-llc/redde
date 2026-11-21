@@ -185,6 +185,33 @@ class RoutinesTests(unittest.TestCase):
         self.watch.look()
         self.assertEqual(len(self.sent), 1, "another job's mute leaves this one alone")
 
+    def test_a_job_turned_off_on_any_device_sends_to_none(self):
+        """1.34.0: Off on the phone stopped the phone's only; the iPad went on being told."""
+        self.store.add({"id": "pad-1", "name": "GoosePad"})
+        self.notify_run("Built at 9.")
+        self.assertEqual(sorted(self.sent[-1][0]), ["pad-1", "phone-1"])
+        self.sent.clear()
+        self.assertTrue(self.store.set_job_choice("default|job1", "hidden", "Evening wrap-up"))
+        home = self.job("default", last="2026-11-01T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
+        self.output(home, "# Cron Job\n\n## Response\n\nThe build is green.")
+        self.watch.look()
+        self.assertEqual(self.sent, [], "turned off for every device")
+        self.store.set_job_choice("default|job1", "notify")
+        self.job("default", last="2026-11-02T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
+        self.watch.look()
+        self.assertEqual(sorted(self.sent[-1][0]), ["pad-1", "phone-1"], "turned back on")
+        self.assertNotIn("z", self.sent[-1][1])
+
+    def test_a_drawer_only_job_is_quiet_on_every_device(self):
+        self.notify_run("Built at 9.")
+        self.sent.clear()
+        self.store.set_job_choice("default|job1", "drawerOnly", "Evening wrap-up")
+        home = self.job("default", last="2026-11-01T21:00:00", deliver="local", name="[redde-notify] Evening wrap-up")
+        self.output(home, "# Cron Job\n\n## Response\n\nThe build is green.")
+        self.watch.look()
+        self.assertEqual(len(self.sent), 1, "still sent, for the drawer")
+        self.assertEqual(self.sent[0][1].get("z"), "drawer")
+
     def test_a_run_hermes_recorded_as_quiet_sends_nothing(self):
         """Issue 55: script jobs' and gated jobs' quiet records have no "## Response": the whole file
         came back as the answer, and a note with the job's header went out."""

@@ -153,6 +153,8 @@ struct ReddeMacApp: App {
                     GoalsInbox.shared.reload()   // and goals' check-ins
                     HeldNote.seen()   // what came in quiet hours is here to see: no digest of it later
                     FeedbackFold.cameForward()   // a word on ideas or briefings that didn't reach the jobs yet
+                    Task { await NoteClears.shared.cameForward() }   // notifications cleared elsewhere, cleared here
+                    Task { await JobChoiceSync.shared.cameForward() }   // Notify / Drawer Only / Off, as on the other devices
                     // With Current Location on, where the Mac is, for the next place question; with
                     // Leave-By Alerts on, for when to leave.
                     if CurrentLocation.isOn || LeaveBy.isOn { CurrentLocationService.shared.cameForward() }

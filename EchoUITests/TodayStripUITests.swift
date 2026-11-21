@@ -131,6 +131,31 @@ final class TodayStripUITests: XCTestCase {
         XCTAssertTrue(same.waitForNonExistence(timeout: 5), "The tile stayed")
     }
 
+    /// 2026-11-20, "turning briefings on/off is not clear in Your Day settings": each daily briefing
+    /// is a switch on Your Day with its time under it, and the person's other jobs that send briefings
+    /// are listed with how they arrive (Notify Me, Drawer Only, Off).
+    func testYourDaySwitchesBriefings() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoBriefings", "-echo.screen", "settings", "-echo.settingsAnchor", "day"]
+        app.launch()
+        let wrapUp = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Evening Wrap-up")).firstMatch
+        XCTAssertTrue(wrapUp.waitForExistence(timeout: 20), "No Evening Wrap-up switch on Your Day")
+        XCTAssertEqual(wrapUp.value as? String, "0", "The sample wrap-up should start off")
+        wrapUp.switches.firstMatch.exists ? wrapUp.switches.firstMatch.tap() : wrapUp.tap()
+        XCTAssertTrue(NSPredicate(format: "value == '1'").evaluate(with: wrapUp) || {
+            _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1'"), object: wrapUp)], timeout: 3)
+            return wrapUp.value as? String == "1"
+        }(), "The switch didn't turn the wrap-up on")
+        let others = app.staticTexts["From Your Other Jobs"]
+        for _ in 0 ..< 8 where !others.exists || !app.windows.firstMatch.frame.contains(others.frame) { app.swipeUp() }
+        XCTAssertTrue(others.exists, "No section for the other jobs")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "your-day-briefings"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
     /// 2026-11-11: holding the second tile (a to-do list after the inbox) brought up the first's
     /// menu: the strip is one row of the list, and a row keeps one hold menu. Each tile has its own.
     func testHoldingTheSecondTileOpensItsOwnMenu() {

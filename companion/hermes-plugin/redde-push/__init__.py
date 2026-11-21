@@ -31,6 +31,7 @@ agent is offered none of them until the phone turns some on (`/redde-push device
 from __future__ import annotations
 
 import atexit
+import json
 import logging
 import os
 import sys
@@ -106,6 +107,7 @@ def _remind(profile: str, home: Path, job: dict, text: str) -> int:
     sender = pusher if store is main else core.Pusher(store, title_of=_title)
     title = routines.untagged(remind.plain(str(job.get("name") or "")))
     made = core.routine_note(profile, routines.Stores(root).name(home, profile), title, text, brief=str(job.get("id") or ""))
+    routines.quiet_if_drawer_only(store, profile, made)
     return sender.send(targets, made)
 
 
@@ -735,6 +737,15 @@ def _slash(raw_args: str = "") -> str:
         if new and others:
             threading.Thread(target=pusher.send, args=(others, core.clear_note(new)), name="redde-push-cleared", daemon=True).start()
         return f"redde-push cleared {len(new)} {len(others) if new else 0}"
+    if len(words) >= 3 and words[0] == "job":
+        # How a job's briefings reach the person, on all their devices (1.34.0):
+        # "job <notify|drawerOnly|hidden> <profile>|<job id> [its name]".
+        ok = store.set_job_choice(words[2], words[1], " ".join(words[3:]))
+        return f"redde-push job {words[1]} {words[2]}" if ok else "redde-push refused: no such job choice"
+    if words == ["jobs"]:
+        # Every job's choice, for a device catching up: base64url JSON {job: [choice, name]}.
+        found = {job: [entry.get("c", "notify"), entry.get("t", "")] for job, entry in store.job_choices().items()}
+        return f"redde-push jobs {core.b64u(json.dumps(found, ensure_ascii=False).encode())}"
     if words == ["status"]:
         return f"redde-push status {len(store.devices)}"
     if words == ["offer"]:

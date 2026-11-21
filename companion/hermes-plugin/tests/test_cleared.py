@@ -112,5 +112,46 @@ class ClearedTests(unittest.TestCase):
         self.assertEqual(self.run_slash(f"cleared since {int(now) + 5}")[0].split()[-1], "-", "nothing since")
 
 
+
+class JobChoiceTests(unittest.TestCase):
+    """1.34.0: Notify Me, Drawer Only and Off (Stop These Notifications) are one choice per job for
+    all the person's devices, not each device's own."""
+
+    def setUp(self):
+        self.home = tempfile.TemporaryDirectory()
+        self.store = core.Store(Path(self.home.name))
+        self.store.add({"id": "phone", "name": "Marta"})
+        self.store.add({"id": "pad", "name": "GoosePad", "kind": "ipad"})
+        plugin._store, plugin._pusher = self.store, core.Pusher(self.store)
+
+    def tearDown(self):
+        self.home.cleanup()
+
+    def test_a_choice_said_on_one_device_is_read_on_another(self):
+        self.assertEqual(plugin._slash("job hidden default|abc123 Evening wrap-up"), "redde-push job hidden default|abc123")
+        plugin._slash("job drawerOnly scout|def456 Weather before your day")
+        words = plugin._slash("jobs").split()
+        self.assertEqual(words[:2], ["redde-push", "jobs"])
+        found = json.loads(core.unb64u(words[2]))
+        self.assertEqual(found, {"default|abc123": ["hidden", "Evening wrap-up"], "scout|def456": ["drawerOnly", "Weather before your day"]})
+
+    def test_a_job_turned_off_is_muted_on_every_device(self):
+        plugin._slash("job hidden default|abc123")
+        self.assertEqual(self.store.unmuted(self.store.devices, "j:default|abc123"), [])
+        self.assertEqual(len(self.store.unmuted(self.store.devices, "j:default|other")), 2)
+        plugin._slash("job notify default|abc123")
+        self.assertEqual(len(self.store.unmuted(self.store.devices, "j:default|abc123")), 2)
+
+    def test_a_choice_or_job_not_understood_is_refused(self):
+        self.assertTrue(plugin._slash("job silent default|abc123").startswith("redde-push refused"))
+        self.assertTrue(plugin._slash("job hidden nobar").startswith("redde-push refused"))
+        self.assertEqual(self.store.job_choices(), {})
+
+    def test_its_name_is_kept_when_changed_without_one(self):
+        plugin._slash("job hidden default|abc123 Evening wrap-up")
+        plugin._slash("job notify default|abc123")
+        self.assertEqual(self.store.job_choices()["default|abc123"]["t"], "Evening wrap-up")
+
+
 if __name__ == "__main__":
     unittest.main()

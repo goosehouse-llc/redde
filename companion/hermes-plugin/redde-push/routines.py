@@ -114,6 +114,13 @@ def job_mute(profile: str, job: str) -> str:
     return f"j:{profile}|{job}"
 
 
+def quiet_if_drawer_only(store, profile: str, made: dict) -> None:
+    """A briefing of a job set to Drawer Only (on any device, 1.34.0): `z` "drawer", and Redde
+    keeps it in the drawer with no sound or banner, on each device. An older Redde notifies."""
+    if made.get("i") and store.job_choice(f"{profile}|{made['i']}") == "drawerOnly":
+        made["z"] = "drawer"
+
+
 def _working(paragraph: str) -> bool:
     """A paragraph of the model's working words: every sentence such talk, or its last one announcing
     the report."""
@@ -721,6 +728,7 @@ class Routines:
             if made.get("i") and made.get("x") == "brief":
                 # A job the phone hides (Redde's Don't Show, 2026-11-05): nothing sent for it.
                 targets = self.store.unmuted(targets, job_mute(profile, made["i"]))
+                quiet_if_drawer_only(self.store, profile, made)
             if targets:
                 sent += self.send(targets, made)
         return sent

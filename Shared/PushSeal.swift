@@ -136,6 +136,9 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     /// The note's own id, the same on every device it went to (Redde's plugin 1.33), so one
     /// cleared on one device is cleared on the others (`NoteClears`). Twelve hex digits.
     var m: String?
+    /// A briefing of a job set to Drawer Only on one of the person's devices (Redde's plugin
+    /// 1.34): "drawer". It comes quietly, and the job is kept to the drawer here too.
+    var z: String?
 
     nonisolated struct Idea: Codable, Equatable, Sendable {
         var t: String?
@@ -679,6 +682,8 @@ nonisolated enum ClearedNotes {
                 (note.request.content.userInfo[PushNote.noteKey] as? String).map(wanted.contains) ?? false
             }.map(\.request.identifier)
             if !gone.isEmpty { UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: gone) }
+            // And their briefings on Today, read here as they were there (2026-11-21).
+            AgentBriefing.markRead(notes: wanted)
             done?(gone.count)
         }
     }
