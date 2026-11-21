@@ -418,6 +418,13 @@ def _more(card: dict, kind: str) -> tuple[str, str | None]:
                  for n, i in ((_name(i, "name", "title"), i) for i in listed[:MAX_PRODUCTS])]
         kept = [(n, p) for n, p in names if n]
         if not kept:
+            # 2026-11-19: Sol sent a checklist's {section: "Pick", note: "$356.78…"} five times
+            # over, sure each time it had sent the product's fields: say what came instead.
+            sent = sorted({k for i in listed[:MAX_PRODUCTS] if isinstance(i, dict) for k in i})
+            if sent:
+                needs = (f"each product needs its own 'name' (and 'price', 'retailer', 'url'…); the items came with only "
+                         f"{', '.join(repr(k) for k in sent)}" + (", a checklist's fields" if set(sent) <= {"text", "done", "section", "note"} else "")
+                         + ". " + needs[0].upper() + needs[1:])
             return "", needs
         pick = next((n for n, p in kept if p), None)
         said = f"purchase: {len(kept)} ({', '.join(n + (' (pick)' if n == pick else '') for n, _ in kept[:4])}{'…' if len(kept) > 4 else ''})"

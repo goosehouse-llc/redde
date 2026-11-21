@@ -3,6 +3,13 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.33.1 (2026-11-20)
+
+- A purchase card sent with the wrong fields says which came. When an agent sends products in a
+  checklist's shape ({section, note}, no 'name'), the error now names what it sent before giving
+  the card's whole shape. Sol had sent that shape five times running, sure each time it had sent
+  the products' names and prices.
+
 ## 1.33.0 (2026-11-17)
 
 - Notifications in sync on your devices. A notification you tap, answer, swipe away, or see by

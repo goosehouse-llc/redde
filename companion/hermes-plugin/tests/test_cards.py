@@ -604,6 +604,11 @@ class MoreCardsTests(unittest.TestCase):
         shown, problems = cards.check({"cards": [{"type": "purchase", "items": [{"price": 3}]}]})
         self.assertEqual(shown, [])
         self.assertIn("'items' (up to 6, your pick first), each {name, brand, price", problems[0], "the error gives the whole shape")
+        # 2026-11-19: a checklist's fields sent for products, five times over; the error says so.
+        _, problems = cards.check({"cards": [{"type": "purchase", "title": "Mudi 7", "items": [
+            {"section": "Pick", "note": "$356.78 on Amazon"}, {"section": "Also", "text": "newegg"}]}]})
+        self.assertIn("came with only 'note', 'section', 'text', a checklist's fields", problems[0])
+        self.assertIn("each {name, brand, price", problems[0], "and still the whole shape")
 
     def test_a_reminder_card_without_its_type_is_still_a_reminder(self):
         # 2026-11-09 (the lab, Qwen 3.6): 'kind' given and 'type' left out, refused, sent again.
