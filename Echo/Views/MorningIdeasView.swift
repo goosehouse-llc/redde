@@ -28,12 +28,36 @@ struct DailyJob {
     var heard: Set<AgentFeedback.Topic> = []
     /// Hears how the person slept and moved, when they turned that on (`HealthSummary`).
     var health = false
+    /// Its page offers which calendars it reads (Heads-Ups, asked 2026-11-21: "I'd like a way for
+    /// heads up to be on only certain calendars"); none picked is every one the agent may read.
+    var calendars = false
 
-    /// The prompt as set: the job's, then what the person said of earlier ones, then their day's
-    /// health, if they share it.
-    func fullPrompt(_ option: Int) -> String {
-        let more = [AgentFeedback.note(for: heard), health ? HealthSummary.note() : nil].compactMap(\.self)
+    /// The prompt as set: the job's, then the calendars it reads when only some, then what the
+    /// person said of earlier ones, then their day's health, if they share it.
+    func fullPrompt(_ option: Int, calendars picked: [String] = []) -> String {
+        let only = calendars && !picked.isEmpty ? Self.calendarsLine(picked) : nil
+        let more = [only, AgentFeedback.note(for: heard), health ? HealthSummary.note() : nil].compactMap(\.self)
         return ([prompt(option)] + more).joined(separator: "\n\n")
+    }
+
+    /// The calendars picked on this device, by name (kept here too: a job list may send only the
+    /// prompt's first line, so the job's prompt doesn't always have them).
+    var pickedCalendars: [String] {
+        get { UserDefaults.standard.stringArray(forKey: "dailyJob.calendars." + name) ?? [] }
+        nonmutating set { UserDefaults.standard.set(newValue, forKey: "dailyJob.calendars." + name) }
+    }
+
+    /// How the prompt names the calendars to read: for the agent, and as JSON the page reads back.
+    static func calendarsLine(_ names: [String]) -> String {
+        let list = (try? JSONEncoder().encode(names)).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+        return "Only events in these calendars count: \(list). Give the calendar tool \"calendars\": \(list) so it reads only those."
+    }
+
+    /// The calendars a job's prompt names; nil when it names none (or was cut short of them).
+    static func calendars(in prompt: String) -> [String]? {
+        guard let found = prompt.firstMatch(of: /Only events in these calendars count: (\[[^\]]*\])\./),
+              let names = try? JSONDecoder().decode([String].self, from: Data(found.output.1.utf8)) else { return nil }
+        return names
     }
 
     /// How to read the calendar, for a job that does (2026-10-31: Morning Ideas and Heads-ups guessed
@@ -55,15 +79,18 @@ struct DailyJob {
         return try await backend.list().first { $0.name == name }
     }
 
-    func set(at hour: Int, _ minute: Int, option: Int, replacing job: CronJob?) async throws {
+    /// `calendars`: the ones it reads, for a job that offers them; nil for those it reads now (as
+    /// its prompt says, or as picked on this device), so a job set again elsewhere keeps them.
+    func set(at hour: Int, _ minute: Int, option: Int, calendars picked: [String]? = nil, replacing job: CronJob?) async throws {
+        let prompt = fullPrompt(option, calendars: picked ?? job.flatMap { Self.calendars(in: $0.prompt) } ?? pickedCalendars)
         guard let backend = CronBackend.current() else { throw TransportError.malformed(String(localized: "Scheduled jobs need the Hermes Dashboard or the Hermes API.")) }
         let schedule = "\(minute) \(hour) * * \(days)"
         if let job {
             // (a Run On choice still waiting for the plugin keeps its mark)
             let named = job.askedModel.flatMap { RunOn.marked(name, $0) } ?? name
-            try await backend.update(job.id, name: named, schedule: schedule, prompt: fullPrompt(option), deliver: "local")
+            try await backend.update(job.id, name: named, schedule: schedule, prompt: prompt, deliver: "local")
         } else {
-            try await backend.create(name: name, schedule: schedule, prompt: fullPrompt(option), deliver: "local")
+            try await backend.create(name: name, schedule: schedule, prompt: prompt, deliver: "local")
         }
     }
 
@@ -143,7 +170,8 @@ enum HeadsUps {
         timeLabel: "Plan the Day At",
         footer: "Each morning your agent looks at the day's calendar and, before each event that needs it, sends you a heads-up: where it is, who's coming, what to bring, the weather if it's outdoors. They come as notifications and stay in Briefings. Events added later in the day are picked up the next time it plans. Needs Redde's plugin 1.10 on your Hermes and a calendar your agent can read.",
         symbol: "bell.badge", runNow: "Plan Today Now", asked: "Asked. Heads-ups come before each event.",
-        options: [10, 15, 30, 45, 60], optionLabel: "How Long Before", defaultOption: 45, travel: true, heard: [.headsUp])
+        options: [10, 15, 30, 45, 60], optionLabel: "How Long Before", defaultOption: 45, travel: true, heard: [.headsUp],
+        calendars: true)
 }
 
 /// "Make this a routine?" (asked 2026-10-28, "Proactive"): once a week the main agent looks for
@@ -207,6 +235,10 @@ struct DailyJobView: View {
     @State private var working = false
     @State private var problem: String?
     @State private var sent = false
+    /// The calendars it reads, for a job that offers them; empty for all.
+    @State private var picked: [String] = []
+    /// Saving the calendars picked, a moment after the last tap (one change to the job, not one a tap).
+    @State private var savingCalendars: Task<Void, Never>?
 
     var body: some View {
         Form {
@@ -231,6 +263,23 @@ struct DailyJobView: View {
                 }
             } footer: {
                 Text(daily.footer)
+            }
+            if daily.calendars, on {
+                Section {
+                    NavigationLink {
+                        JobCalendarsView(picked: Binding(get: { picked }, set: { picked = $0; saveCalendarsSoon() }))
+                    } label: {
+                        LabeledContent {
+                            Text(picked.isEmpty ? String(localized: "All", comment: "Heads-Ups: reads every calendar") : picked.joined(separator: ", "))
+                                .lineLimit(1)
+                        } label: {
+                            Label { Text("Calendars", comment: "Heads-Ups: which calendars it reads") } icon: { Image(systemName: "calendar") }
+                        }
+                    }
+                    .disabled(working)
+                } footer: {
+                    Text("Heads-ups come only for events in these calendars.", comment: "Heads-Ups: under Calendars")
+                }
             }
             // Which model it runs on (Run On, 2026-11-03).
             if on, let job {
@@ -289,6 +338,11 @@ struct DailyJobView: View {
                    let at = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: .now) { time = at }
                 if !daily.options.isEmpty { option = daily.option(in: job) }
             }
+            // As the job's prompt names them; one cut short in the list, as picked here.
+            if daily.calendars {
+                picked = job.flatMap { DailyJob.calendars(in: $0.prompt) }
+                    ?? (job.map { $0.prompt.count > 300 } == true ? [] : daily.pickedCalendars)
+            }
             problem = nil
         } catch {
             problem = error.localizedDescription
@@ -305,7 +359,9 @@ struct DailyJobView: View {
         do {
             if on {
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: time)
-                try await daily.set(at: parts.hour ?? daily.hour, parts.minute ?? daily.minute, option: option, replacing: job)
+                if daily.calendars { daily.pickedCalendars = picked }
+                try await daily.set(at: parts.hour ?? daily.hour, parts.minute ?? daily.minute, option: option,
+                                    calendars: daily.calendars ? picked : nil, replacing: job)
             } else if let job {
                 try await CronBackend.current()?.delete(job.id)
             }
@@ -314,6 +370,15 @@ struct DailyJobView: View {
         } catch {
             problem = error.localizedDescription
             on = job != nil
+        }
+    }
+
+    private func saveCalendarsSoon() {
+        savingCalendars?.cancel()
+        savingCalendars = Task {
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            await apply()
         }
     }
 
@@ -328,3 +393,79 @@ struct DailyJobView: View {
         } catch { problem = error.localizedDescription }
     }
 }
+
+/// Settings › Your Day › Heads-Ups › Calendars: the calendars a daily job reads, by name (asked
+/// 2026-11-21). Offered are this device's calendars by account, as Calendar lists them, less those
+/// the agent may not read (Settings › Calendars); none picked is all of them.
+struct JobCalendarsView: View {
+    @Binding var picked: [String]
+    @State private var accounts: [CalendarsSettingsView.Account] = []
+    @State private var allowed = true
+
+    var body: some View {
+        Form {
+            Section {
+                Button { picked = [] } label: {
+                    LabeledContent {
+                        if picked.isEmpty { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                    } label: {
+                        Text("All Calendars", comment: "Heads-Ups › Calendars: every calendar the agent may read")
+                    }
+                }
+                .foregroundStyle(.primary)
+            } footer: {
+                Text("Or pick the ones heads-ups are for: only their events get one.", comment: "Heads-Ups › Calendars: under All Calendars")
+            }
+            ForEach(accounts) { account in
+                Section(account.title) {
+                    ForEach(account.calendars) { calendar in
+                        Button { toggle(calendar.title) } label: {
+                            LabeledContent {
+                                if picked.contains(where: { $0.caseInsensitiveCompare(calendar.title) == .orderedSame }) {
+                                    Image(systemName: "checkmark").foregroundStyle(.tint)
+                                }
+                            } label: {
+                                Label { Text(verbatim: calendar.title) } icon: { Image(systemName: "circle.fill").foregroundStyle(calendar.color) }
+                            }
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                }
+            }
+            if !allowed {
+                Section {
+                    Text("Redde can't see this device's calendars. Allow it in Settings › Calendars.",
+                         comment: "Heads-Ups › Calendars: no calendar access")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .navigationTitle(Text("Calendars", comment: "Heads-Ups › Calendars: title"))
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task { await load() }
+    }
+
+    private func toggle(_ title: String) {
+        if let i = picked.firstIndex(where: { $0.caseInsensitiveCompare(title) == .orderedSame }) {
+            picked.remove(at: i)
+        } else {
+            picked.append(title)
+        }
+    }
+
+    private func load() async {
+        allowed = await CalendarReader.shared.allowed(.event)
+        guard allowed else { return }
+        let chosen = CalendarChoice.chosen
+        accounts = await CalendarReader.shared.read { store in CalendarsSettingsView.deviceAccounts(in: store) }
+            .map { account in
+                var account = account
+                account.calendars = account.calendars.filter { CalendarChoice.shows($0.title, among: chosen) }
+                return account
+            }
+            .filter { !$0.calendars.isEmpty }
+    }
+}
+

@@ -719,6 +719,20 @@ class CopyOfThePhone(unittest.TestCase):
         self.assertEqual([e["title"] for e in answer["events"]], ["Meeting", "Robert's birthday", "Lunch"])
         self.assertEqual(self.phone.waiting(), [])
 
+    def test_only_the_calendars_asked_for(self):
+        """1.34.0: Heads-Ups for some calendars only: the copy answers with those calendars' events,
+        by name in any case; none named is all of them."""
+        now, day = time.time(), 86400
+        events = [{"title": "Standup", "start_ts": now + day, "calendar": "Work"},
+                  {"title": "Dentist", "start_ts": now + 2 * day, "calendar": "Family"},
+                  {"title": "Holiday", "start_ts": now + 3 * day, "calendar": "US Holidays"}]
+        found, more = device._window(events, {"calendars": ["work", " Family "]})
+        self.assertEqual([e["title"] for e in found], ["Standup", "Dentist"])
+        self.assertEqual(more, 0)
+        self.assertEqual(len(device._window(events, {})[0]), 3)
+        self.assertEqual(len(device._window(events, {"calendars": "Work"})[0]), 3, "not a list: all")
+        self.assertIn("calendars", device.TOOLS["phone_calendar_events"][2])
+
     def test_a_scheduled_run_with_no_copy_hears_at_once(self):
         """With no copy, a scheduled run hears at once that the phone can't be reached."""
         self.phone.set_areas(["calendar"])

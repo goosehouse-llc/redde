@@ -22,6 +22,8 @@ nonisolated enum DeviceCalendar {
         return store.calendars(for: .event).filter { CalendarChoice.shows($0.title, among: chosen) }
     }
 
+    /// `calendars`: only these, by name, among those the agent may use (Heads-Ups for the calendars
+    /// the person picks, 2026-11-21).
     /// `start`, `end` (default: now and a week on; a year on for a search), `query` (any of its
     /// words in the title, place or notes), `limit`. `most` is the agent's 200, or Keep a Copy's
     /// larger fetch. A search looked a week ahead for "dad flight" and missed a flight a month
@@ -35,8 +37,14 @@ nonisolated enum DeviceCalendar {
         if let text = args["end"]?.string, DeviceDates.isDayOnly(text) { end = end.addingTimeInterval(86400) }
         guard end > start else { throw DeviceToolError("\"end\" has to be after \"start\".") }
         let limit = args.limit(default: 50, most: most)
+        let named = (args["calendars"]?.array ?? []).compactMap { $0.string?.trimmingCharacters(in: .whitespaces).nilIfEmpty }
         return await CalendarReader.shared.read { [end] store in
-            let calendars = shared(in: store)
+            var calendars = shared(in: store)
+            if !named.isEmpty {
+                calendars = (calendars ?? store.calendars(for: .event)).filter { calendar in
+                    named.contains { $0.caseInsensitiveCompare(calendar.title) == .orderedSame }
+                }
+            }
             // None of the chosen calendars is on this phone: nothing to read (an empty list would be all).
             if calendars?.isEmpty == true { return .object(["events": .array([]), "more": .number(0)]) }
             let found = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars))

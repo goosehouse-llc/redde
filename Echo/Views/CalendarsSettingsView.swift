@@ -193,7 +193,7 @@ struct CalendarsSettingsView: View {
     /// This device's calendars by account, iCloud and the other accounts first, then the ones on
     /// the device alone, subscriptions and birthdays, as Calendar orders them. Never asks. A
     /// calendar EventKit gives no account is listed under no name rather than left out.
-    nonisolated private static func deviceAccounts(in store: EKEventStore) -> [Account] {
+    nonisolated static func deviceAccounts(in store: EKEventStore) -> [Account] {
         func rank(_ type: EKSourceType) -> Int {
             switch type {
             case .calDAV, .exchange, .mobileMe: 0

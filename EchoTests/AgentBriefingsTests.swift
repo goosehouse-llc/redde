@@ -282,4 +282,20 @@ struct AgentBriefingsTests {
         #expect(JobChoiceSync.commandLine(.hidden, jobKey: "no bar", title: "") == nil)
         #expect(JobChoiceSync.choices("redde-push refused: no") == nil)
     }
+
+    // MARK: Heads-Ups for some calendars (2026-11-21)
+
+    @Test func headsUpsNameTheirCalendarsAndReadThemBack() {
+        let prompt = HeadsUps.job.fullPrompt(30, calendars: ["Work", "Family \"Home\""])
+        #expect(prompt.hasPrefix("Heads-ups, 30 minutes before."), "the minutes stay first, for a list's short preview")
+        #expect(prompt.contains(#"Give the calendar tool "calendars": ["Work","Family \"Home\""]"#))
+        #expect(DailyJob.calendars(in: prompt) == ["Work", "Family \"Home\""])
+        #expect(HeadsUps.job.option(in: try! #require(CronJob(.object(["id": .string("h"), "prompt": .string(prompt)])))) == 30)
+        // None picked: every calendar, and nothing said of them.
+        let all = HeadsUps.job.fullPrompt(30, calendars: [])
+        #expect(DailyJob.calendars(in: all) == nil && !all.contains("Only events in these calendars"))
+        // A job that doesn't offer calendars never names them.
+        #expect(!MorningIdeas.job.fullPrompt(0, calendars: ["Work"]).contains("Only events in these calendars"))
+    }
 }
+

@@ -10,6 +10,9 @@ Settings › Redde Plugin, to a Hermes whose plugin is older than the one the ap
   still notifying. Now there is one choice per job for all of them: a job turned off sends to
   none, and a Drawer Only job's briefings come quietly everywhere. Redde tells the plugin when
   you change one, and each device reads them when Redde opens. Needs Redde 2.7.
+- Heads-Ups for the calendars you pick. The phone's calendar tool takes `calendars`, the
+  calendars to read by name, and Redde's copy of your calendar (when Redde is closed) answers
+  the same way. Redde's Heads-Ups page asks for the calendars you choose there.
 
 ## 1.33.1 (2026-11-20)
 

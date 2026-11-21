@@ -123,6 +123,8 @@ TOOLS: dict[str, tuple[str | None, str, dict, list[str]]] = {
         "start": _text("From when. Default: now."), "end": _text("Until when. Default: a week after the start, or a year when searching with query."),
         "query": _text("Find events by any of these words in the title, place or notes (a name, a place, a flight number): with no "
                        "end it searches the coming year, so use it to find when something is rather than reading week by week."),
+        "calendars": {"type": "array", "items": {"type": "string"},
+                      "description": "Only events in these calendars, by name (an event's 'calendar'). Default: all."},
         "limit": _count("At most this many (default 50)."),
         "live": {"type": "boolean", "description": "Ask the phone now, instead of answering from Redde's copy of it, if the phone keeps one."},
     }, []),
@@ -928,6 +930,9 @@ def _window(items, args) -> tuple[list, int]:
     Returns (found[:limit], max(0, len(found) - limit))."""
     start, end = _span(args)
     query = (args.get("query") or "").lower().strip()
+    # Only some calendars, by name (1.34.0: Heads-Ups for the calendars the person picks).
+    named = args.get("calendars") if isinstance(args.get("calendars"), list) else []
+    calendars = {c.strip().casefold() for c in named if isinstance(c, str) and c.strip()}
     found = []
     for item in items:
         s = _start_of(item)
@@ -936,6 +941,8 @@ def _window(items, args) -> tuple[list, int]:
         if not (start <= s < end):
             continue
         if query and not _matches(item, query):
+            continue
+        if calendars and str(item.get("calendar") or "").strip().casefold() not in calendars:
             continue
         found.append(item)
     found.sort(key=lambda item: _start_of(item) or 0)

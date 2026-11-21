@@ -65883,6 +65883,7 @@
       }
     },
     "All Calendars" : {
+      "comment" : "Heads-Ups › Calendars: every calendar the agent may read",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -101098,6 +101099,7 @@
       }
     },
     "Calendars" : {
+      "comment" : "Heads-Ups: which calendars it reads",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -195450,6 +195452,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "行程前提醒"
+          }
+        }
+      }
+    },
+    "Heads-ups come only for events in these calendars." : {
+      "comment" : "Heads-Ups: under Calendars",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påmindelser kommer kun for begivenheder i disse kalendere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinweise gibt es nur für Termine in diesen Kalendern."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los avisos llegan solo para eventos de estos calendarios."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les rappels ne viennent que pour les événements de ces calendriers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli avvisi arrivano solo per gli eventi di questi calendari."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これらのカレンダーの予定だけにお知らせが届きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 캘린더의 일정에만 알림이 옵니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varsler kommer bare for hendelser i disse kalenderne."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seintjes komen alleen voor afspraken in deze agenda's."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przypomnienia przychodzą tylko dla wydarzeń z tych kalendarzy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os avisos vêm só para eventos destes calendários."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напоминания приходят только для событий из этих календарей."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påminnelser kommer bara för händelser i dessa kalendrar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatmalar yalnızca bu takvimlerdeki etkinlikler için gelir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нагадування надходять лише для подій із цих календарів."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只为这些日历中的日程发送提醒。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只為這些行事曆中的活動傳送提醒。"
           }
         }
       }
@@ -318243,6 +318352,113 @@
         }
       }
     },
+    "Or pick the ones heads-ups are for: only their events get one." : {
+      "comment" : "Heads-Ups › Calendars: under All Calendars",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eller vælg dem, påmindelserne gælder: kun deres begivenheder får en."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oder wähle die Kalender für Hinweise: nur ihre Termine bekommen einen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O elige los calendarios de los avisos: solo sus eventos tendrán uno."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ou choisissez ceux des rappels : seuls leurs événements en auront un."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oppure scegli quelli degli avvisi: solo i loro eventi ne avranno uno."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "またはお知らせの対象を選びます：その予定だけにお知らせが届きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "또는 알림을 받을 캘린더를 고르세요: 그 일정에만 알림이 옵니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eller velg kalenderne for varsler: bare hendelsene deres får et."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Of kies de agenda's voor seintjes: alleen hun afspraken krijgen er een."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Albo wybierz kalendarze przypomnień: tylko ich wydarzenia je dostaną."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ou escolha os calendários dos avisos: só os eventos deles terão um."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Или выберите календари для напоминаний: напоминания получат только их события."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eller välj kalendrarna för påminnelser: bara deras händelser får en."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya da hatırlatmaların takvimlerini seç: yalnızca onların etkinlikleri hatırlatma alır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Або виберіть календарі для нагадувань: нагадування отримають лише їхні події."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "或者选择提醒所用的日历：只有其中的日程会收到提醒。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "或選擇提醒所用的行事曆：只有其中的活動會收到提醒。"
+          }
+        }
+      }
+    },
     "Or type something else" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -347091,6 +347307,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Redde 無法排程訊息。請改為要它設定 cron 工作。"
+          }
+        }
+      }
+    },
+    "Redde can't see this device's calendars. Allow it in Settings › Calendars." : {
+      "comment" : "Heads-Ups › Calendars: no calendar access",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan ikke se denne enheds kalendere. Tillad det under Indstillinger › Kalendere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kann die Kalender dieses Geräts nicht sehen. Erlaube es unter Einstellungen › Kalender."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde no puede ver los calendarios de este dispositivo. Permítelo en Ajustes › Calendarios."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde ne peut pas voir les calendriers de cet appareil. Autorisez-le dans Réglages › Calendriers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde non vede i calendari di questo dispositivo. Consentilo in Impostazioni › Calendari."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddeはこのデバイスのカレンダーを見られません。設定 › カレンダーで許可してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 이 기기의 캘린더를 볼 수 없습니다. 설정 › 캘린더에서 허용하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan ikke se kalenderne på denne enheten. Tillat det i Innstillinger › Kalendere."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan de agenda's van dit apparaat niet zien. Sta het toe via Instellingen › Agenda's."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde nie widzi kalendarzy tego urządzenia. Zezwól na to w Ustawienia › Kalendarze."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde não vê os calendários deste aparelho. Permita em Ajustes › Calendários."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde не видит календари этого устройства. Разрешите доступ в Настройки › Календари."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde kan inte se den här enhetens kalendrar. Tillåt det i Inställningar › Kalendrar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde bu cihazın takvimlerini göremiyor. Ayarlar › Takvimler'den izin ver."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde не бачить календарі цього пристрою. Дозвольте доступ у Налаштування › Календарі."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 无法查看此设备的日历。请在“设置 › 日历”中允许。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 無法查看此裝置的行事曆。請在「設定 › 行事曆」中允許。"
           }
         }
       }
