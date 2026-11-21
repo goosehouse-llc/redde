@@ -40,6 +40,9 @@ struct DailyJob {
         return ([prompt(option)] + more).joined(separator: "\n\n")
     }
 
+    /// Posted when Redde has turned a daily job on, off or moved it, for what shows whether it is on.
+    static let changed = Notification.Name("redde.dailyJobChanged")
+
     /// The calendars picked on this device, by name (kept here too: a job list may send only the
     /// prompt's first line, so the job's prompt doesn't always have them).
     var pickedCalendars: [String] {
@@ -371,6 +374,7 @@ struct DailyJobView: View {
             problem = error.localizedDescription
             on = job != nil
         }
+        NotificationCenter.default.post(name: DailyJob.changed, object: nil)
     }
 
     private func saveCalendarsSoon() {

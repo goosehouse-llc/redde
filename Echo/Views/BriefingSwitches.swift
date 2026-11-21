@@ -147,5 +147,6 @@ struct BriefingSwitches: View {
             problem = error.localizedDescription
         }
         await load()
+        NotificationCenter.default.post(name: DailyJob.changed, object: nil)
     }
 }

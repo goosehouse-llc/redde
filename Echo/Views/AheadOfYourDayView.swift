@@ -425,15 +425,21 @@ private struct StatusLine: View {
     }
 }
 
-/// Settings → Your Day's first row: On when what the person picked is on; the sheet.
+/// Settings → Your Day's first row: On when what the person picked is on, Off when none of it is,
+/// and how much of it otherwise ("3 of 5 On": asked 2026-11-21, "why does Ahead of My Day always
+/// show off", when one part, the Evening Wrap-up, was off); the sheet.
 struct AheadOfYourDayRow: View {
-    @State private var on: Bool?
+    @State private var on: (on: Int, of: Int)?
     @State private var open = false
 
     var body: some View {
         Button { open = true } label: {
             LabeledContent {
-                if let on { on ? Text("On") : Text("Off") }
+                if let on {
+                    if on.on == 0 { Text("Off") }
+                    else if on.on >= on.of { Text("On") }
+                    else { Text("\(on.on) of \(on.of) On", comment: "Ahead of Your Day: how many of the parts picked are on, e.g. 3 of 5 On") }
+                }
             } label: {
                 Label { Text("Ahead of Your Day", comment: "The one-step setup of Morning Ideas, Heads-Ups, Leave-By Alerts, the Evening Wrap-up and the Week Ahead") } icon: { Image(systemName: "sunrise") }
             }
@@ -441,12 +447,14 @@ struct AheadOfYourDayRow: View {
         }
         .buttonStyle(.plain)
         .task(id: open) { if !open { on = await Self.isOn() } }
+        // A daily job switched on Your Day, below it.
+        .onReceive(NotificationCenter.default.publisher(for: DailyJob.changed)) { _ in Task { on = await Self.isOn() } }
         .sheet(isPresented: $open) { AheadOfYourDayView() }
     }
 
     /// One look at the server's jobs and this device's Leave-By switch; unknown (no mark) when the
     /// jobs can't be listed.
-    private static func isOn() async -> Bool? {
+    private static func isOn() async -> (on: Int, of: Int)? {
         let picked = AheadOfYourDay.picked()
         var on: Set<AheadOfYourDay.Part> = Settings.shared.leaveByAlerts ? [.leaveBy] : []
         if picked.contains(where: \.isJob) {
@@ -458,6 +466,6 @@ struct AheadOfYourDayRow: View {
                 return false
             })
         }
-        return AheadOfYourDay.isOn(picked: picked, on: on)
+        return picked.isEmpty ? (0, 0) : (picked.intersection(on).count, picked.count)
     }
 }
