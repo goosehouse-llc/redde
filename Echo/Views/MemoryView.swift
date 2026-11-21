@@ -483,7 +483,7 @@ struct MemoryImportView: View {
                          : String(localized: "Add \(chosenFacts.count) Facts to About You"))
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
                 .disabled(chosenFacts.isEmpty || saving)
                 if let store = longTerm.store {
                     Button { saveLongTerm(store) } label: { Text(store.buttonTitle).frame(maxWidth: .infinity) }

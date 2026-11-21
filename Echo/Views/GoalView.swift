@@ -162,7 +162,7 @@ struct GoalView: View {
             if waitsOnPerson(card) {
                 HStack(spacing: 10) {
                     Button { approve([card]) } label: { Text(approveLabel(card)) }
-                        .buttonStyle(.borderedProminent)
+                        .prominentButton()
                     Button { changes = ""; changing = card } label: {
                         Text("Ask for Changes", comment: "A goal's plan card: send it back with what to change")
                     }

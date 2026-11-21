@@ -77,7 +77,7 @@ struct ClarifyCard: View {
                             .chatFont(.subheadline, weight: .semibold)
                             .padding(.horizontal, 18).padding(.vertical, 6)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .prominentButton()
                     .buttonBorderShape(.capsule)
                     .disabled(!allAnswered)
                 }
@@ -288,7 +288,7 @@ struct SudoCard: View {
                 SecureField("Password", text: $password)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(send)
-                Button(action: send) { FilledButtonTitle(title: String(localized: "Send")) }.buttonStyle(.borderedProminent).disabled(password.isEmpty)
+                Button(action: send) { FilledButtonTitle(title: String(localized: "Send")) }.prominentButton().disabled(password.isEmpty)
                 Button("Cancel") { respond("") }.buttonStyle(.bordered)
             }
             .chatFont(.footnote)
@@ -322,7 +322,7 @@ struct SecretCard: View {
                 SecureField("Value", text: $value)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(send)
-                Button(action: send) { FilledButtonTitle(title: String(localized: "Save")) }.buttonStyle(.borderedProminent).disabled(value.isEmpty)
+                Button(action: send) { FilledButtonTitle(title: String(localized: "Save")) }.prominentButton().disabled(value.isEmpty)
                 Button("Skip") { respond("") }.buttonStyle(.bordered)
             }
             .chatFont(.footnote)

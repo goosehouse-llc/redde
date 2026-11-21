@@ -115,7 +115,7 @@ struct BotScreenView: View {
                 } label: {
                     if session.busy { ProgressView() } else { Text("Start the Screen") }
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
                 .disabled(session.busy)
             }
             .padding()
@@ -178,7 +178,7 @@ struct BotScreenView: View {
             } label: {
                 Label("Watch Live", systemImage: "play.fill")
             }
-            .buttonStyle(.borderedProminent)
+            .prominentButton()
         }
     }
 
@@ -209,7 +209,7 @@ struct BotScreenView: View {
                 } label: {
                     Label("Continue", systemImage: "arrow.right.circle.fill")
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
                 .accessibilityHint("Tells the agent to carry on")
             }
             if showKeyboard || (session.isDemo && session.control == .you), session.control == .you { keyboardBar }
@@ -228,8 +228,7 @@ struct BotScreenView: View {
                 } label: {
                     Label("Hand Back", systemImage: "arrow.uturn.backward")
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
+                .prominentButton(tint: .red)
                 Button {
                     showKeyboard.toggle()
                 } label: {
@@ -249,7 +248,7 @@ struct BotScreenView: View {
                 } label: {
                     Label("Take Over", systemImage: "hand.point.up.left")
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
                 .disabled(session.busy || session.viewerID == nil)
                 Text("You're watching. The agent drives.").font(.footnote).foregroundStyle(.secondary)
             case .someoneElse:

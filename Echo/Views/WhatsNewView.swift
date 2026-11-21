@@ -70,7 +70,7 @@ struct WhatsNewView: View {
                 // The theme's text for accent buttons: white on a pale accent is unreadable.
                 Text("Continue").font(.headline).foregroundStyle(theme.userText).frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .prominentButton()
             .tint(theme.accent)
             .controlSize(.large)
             .padding(.horizontal, 28)

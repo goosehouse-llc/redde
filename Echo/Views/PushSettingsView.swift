@@ -257,7 +257,7 @@ struct PushPairingSheet: View {
                 switch stage {
                 case .asking:
                     Button { pair() } label: { Text("Pair").frame(maxWidth: .infinity) }
-                        .buttonStyle(.borderedProminent)
+                        .prominentButton()
                         .controlSize(.large)
                 case .failed:
                     Button { pair() } label: { Text("Try Again").frame(maxWidth: .infinity) }
@@ -265,7 +265,7 @@ struct PushPairingSheet: View {
                         .controlSize(.large)
                 case .done, .quiet:
                     Button { dismiss() } label: { Text("Done").frame(maxWidth: .infinity) }
-                        .buttonStyle(.borderedProminent)
+                        .prominentButton()
                         .controlSize(.large)
                 case .working, .waiting:
                     EmptyView()

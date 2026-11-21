@@ -29,7 +29,7 @@ struct KeyAskCard: View {
             } label: {
                 FilledButtonTitle(title: String(localized: "Add Key…")).frame(minWidth: 90)
             }
-            .buttonStyle(.borderedProminent)
+            .prominentButton()
             .disabled(requests.loading)
         }
         .padding(12)

@@ -164,7 +164,7 @@ struct WorkSheet: View {
                     Button { answer(item, "once") } label: {
                         if stopping == item.id { ProgressView().controlSize(.small) } else { Text("Allow Once", comment: "Approval button: allow it this one time") }
                     }
-                    .buttonStyle(.borderedProminent).controlSize(.small)
+                    .prominentButton().controlSize(.small)
                     .disabled(stopping != nil)
                 } else {
                     if item.isOpen {
@@ -178,7 +178,7 @@ struct WorkSheet: View {
                         Text(item.status == .needsYou ? String(localized: "Answer", comment: "The Work sheet: opens a workstream that waits for approval, to answer it")
                              : String(localized: "Open", comment: "The Work sheet: opens a workstream's own chat"))
                     }
-                    .buttonStyle(.borderedProminent).controlSize(.small)
+                    .prominentButton().controlSize(.small)
                 }
             }
         }

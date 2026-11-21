@@ -258,7 +258,7 @@ struct AheadOfYourDayView: View {
                     }
                     .font(.headline).foregroundStyle(theme.userText).frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
                 .disabled(setup.phase == .loading || setup.picked.isEmpty)
             case .running:
                 HStack(spacing: 10) {
@@ -273,7 +273,7 @@ struct AheadOfYourDayView: View {
                         Text(serverName.map { String(localized: "Pair with \($0)") } ?? String(localized: "Pair with this Hermes"))
                             .font(.headline).foregroundStyle(theme.userText).frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .prominentButton()
                     Button(String(localized: "Done")) { dismiss() }
                         .font(.headline)
                         .buttonStyle(.borderless)
@@ -281,7 +281,7 @@ struct AheadOfYourDayView: View {
                     Button { dismiss() } label: {
                         Text("Done").font(.headline).foregroundStyle(theme.userText).frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .prominentButton()
                 }
             }
         }

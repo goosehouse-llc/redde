@@ -107,7 +107,7 @@ struct ConnectionProblemCard: View {
                         .foregroundStyle(theme.userText)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
                 .controlSize(.large)
             }
             if needsSettings {
@@ -117,7 +117,7 @@ struct ConnectionProblemCard: View {
                         .foregroundStyle(theme.userText)   // readable on every theme's accent
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
                 .controlSize(.large)
             }
             // Side by side when both fit on a line, else one over the other (2026-11-06: "Use the

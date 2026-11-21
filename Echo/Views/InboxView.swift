@@ -634,7 +634,7 @@ struct MailNotSetUp: View {
             Text("Connect your email to your Hermes and Redde sorts your inbox: what's important, what needs a reply, what's just FYI, and the newsletters. Gmail, iCloud, Fastmail, Yahoo or any IMAP account.", comment: "Email not set up: what it does")
         } actions: {
             Button { setUp() } label: { Text("Set Up Email", comment: "Button: start setting up email") }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
         }
     }
 }

@@ -296,7 +296,7 @@ struct ReviewCard: View {
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .frame(minHeight: 32)
             }
-            .buttonStyle(.borderedProminent)
+            .prominentButton()
             .accessibilityHint(Text("Tells the agent to go ahead with exactly this", comment: "VoiceOver hint: a review card's main button (Send, Book)"))
         }
         .chatFont(.subheadline, weight: .semibold)
@@ -392,7 +392,7 @@ struct ChoiceCard: View {
                         FilledButtonTitle(title: String(localized: "Send")).padding(.horizontal, 12).padding(.vertical, 6).frame(minHeight: 32)
                     }
                     .chatFont(.subheadline, weight: .semibold)
-                    .buttonStyle(.borderedProminent)
+                    .prominentButton()
                     .buttonBorderShape(.capsule)
                     .disabled(picked.isEmpty || answerer.busy)
                     .accessibilityHint(Text("Sends what you picked", comment: "VoiceOver hint: the Send of a card where several may be picked"))
@@ -676,7 +676,7 @@ struct ChecklistCard: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6).frame(minHeight: 32)
             }
-            .buttonStyle(.borderedProminent)
+            .prominentButton()
             .buttonBorderShape(.capsule)
             .disabled(answerer.busy)
             .accessibilityHint(Text("Tells the agent what's done", comment: "VoiceOver hint: a checklist card's Send"))
@@ -888,7 +888,7 @@ struct FormCard: View {
                         FilledButtonTitle(title: card.action).padding(.horizontal, 12).padding(.vertical, 6).frame(minHeight: 32)
                     }
                     .chatFont(.subheadline, weight: .semibold)
-                    .buttonStyle(.borderedProminent)
+                    .prominentButton()
                     .buttonBorderShape(.capsule)
                     .disabled(answerer.busy || missing)
                     .accessibilityHint(Text("Sends what you filled in", comment: "VoiceOver hint: a form card's button"))

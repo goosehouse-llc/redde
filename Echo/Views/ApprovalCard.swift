@@ -176,9 +176,8 @@ struct ApprovalCard: View {
                         .chatFont(.subheadline, weight: .semibold)
                         .padding(.horizontal, 14).padding(.vertical, 4)
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton(tint: risky ? .red : nil)
                 .buttonBorderShape(.capsule)
-                .tint(risky ? .red : nil)
                 .accessibilityIdentifier("approval.once")   // the same in every language (FreshPhoneUITests)
             }
         }
@@ -245,7 +244,7 @@ struct AgentAskCard: View {
                         .chatFont(.subheadline, weight: .semibold)
                         .padding(.horizontal, 14).padding(.vertical, 4)
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
                 .buttonBorderShape(.capsule)
                 .accessibilityIdentifier("agent-ask-approve")
             }

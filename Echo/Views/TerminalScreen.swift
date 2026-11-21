@@ -82,7 +82,7 @@ struct TerminalScreen: View {
                         Label(problem.message, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
                         if problem.wantsKey { TerminalKeyCard(user: account.user, host: account.host) }
                         HStack {
-                            Button("Try Again", action: connect).buttonStyle(.borderedProminent)
+                            Button("Try Again", action: connect).prominentButton()
                             Button("Edit Account") { model.phase = .needsAccount }
                         }
                     }
@@ -92,7 +92,7 @@ struct TerminalScreen: View {
                 if let ended = model.ended {
                     VStack(spacing: 10) {
                         Text(ended).font(.footnote).foregroundStyle(.secondary)
-                        Button("Reconnect", action: connect).buttonStyle(.borderedProminent)
+                        Button("Reconnect", action: connect).prominentButton()
                     }
                     .padding()
                     .background(.regularMaterial, in: .rect(cornerRadius: 14))
@@ -158,7 +158,7 @@ struct TerminalAccountForm: View {
                 Button("Connect") {
                     if let missing { field = missing.field } else { onConnect() }
                 }
-                .buttonStyle(.borderedProminent)
+                .prominentButton()
             }
         }
         .padding()

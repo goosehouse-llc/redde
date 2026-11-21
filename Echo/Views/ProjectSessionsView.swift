@@ -36,7 +36,7 @@ struct ProjectSessionsView: View {
                         }
                     }
                 } actions: {
-                    if canStart { Button("New Conversation") { startNew?(project) }.buttonStyle(.borderedProminent) }
+                    if canStart { Button("New Conversation") { startNew?(project) }.prominentButton() }
                 }
                 .listRowSeparator(.hidden)
             }
