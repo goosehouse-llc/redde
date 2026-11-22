@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hermes Agent on iPhone, iPad and Mac | Redde</title>
+<meta name="description" content="Redde is a native iPhone, iPad and Mac app for your self-hosted Hermes Agent: chat and talk to it, approve its commands, run its bots, Kanban and schedules, with notifications even when the app is closed. Free, no account.">
+<link rel="canonical" href="https://redde.goosehouse.org/hermes">
+<meta name="theme-color" content="#0c1230">
+<meta property="og:title" content="Hermes Agent on iPhone, iPad and Mac | Redde">
+<meta property="og:description" content="A native app for your self-hosted Hermes Agent: chat, voice, approvals, bots and notifications, on iPhone, iPad, Mac, CarPlay and Apple Watch.">
+<meta property="og:image" content="https://redde.goosehouse.org/assets/crew.jpg">
+<meta property="og:url" content="https://redde.goosehouse.org/hermes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="apple-itunes-app" content="app-id=6810900557">
+<link rel="icon" type="image/png" href="/assets/icon.png">
+<link rel="apple-touch-icon" href="/assets/icon.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "Redde",
+      "operatingSystem": "iOS, iPadOS, macOS, watchOS",
+      "applicationCategory": "ProductivityApplication",
+      "description": "A native iPhone, iPad and Mac app for a self-hosted Hermes Agent, Claude Code, Codex and OpenAI-compatible models.",
+      "url": "https://redde.goosehouse.org/hermes",
+      "downloadUrl": "https://apps.apple.com/app/id6810900557",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": { "@type": "Organization", "name": "Goosehouse LLC" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Is there an iPhone app for Hermes Agent?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Redde is a free native app for iPhone, iPad and Mac that connects to your own Hermes Agent through its Dashboard, Webapp or API server. It's an independent client, not made by Nous Research." } },
+        { "@type": "Question", "name": "How do I connect Redde to Hermes Agent?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Point Redde at your Hermes Dashboard (hermes serve, port 9119) with its login, at the Webapp (port 9120), or at the gateway's API server (port 8642) with its API_SERVER_KEY. A setup link or QR code fills it in for you." } },
+        { "@type": "Question", "name": "Does my Hermes Agent need to be reachable from the internet?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Redde talks straight to your server, on your home network, over a tailnet such as Tailscale, or behind Cloudflare Access, Pangolin or a reverse proxy. Redde has no cloud of its own and no account." } },
+        { "@type": "Question", "name": "Can Hermes Agent send notifications to my iPhone?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes, with the free Redde plugin on your Hermes. It tells your phone when a reply is ready, a command waits for approval or a schedule has run, encrypted end to end, even with Redde closed." } },
+        { "@type": "Question", "name": "Do Hermes profiles work in Redde?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Each Hermes profile shows as a bot with its own face, voice and chats. Mention one with @, put several in a group chat, or let one work in the background." } }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+  :root {
+    --navy: #0c1230; --navy2: #182450; --mist: #c8d6f0; --gold: #e8b04b;
+    --blue: #1e6fd9; --ink: #eef2fb; --dim: #8fa0c4; --line: rgba(200,214,240,.14);
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); background: var(--navy);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6; overflow-x: hidden;
+  }
+  a { color: var(--mist); }
+  a:hover { color: var(--gold); }
+  img { display: block; max-width: 100%; height: auto; }
+  code { font-family: var(--mono); font-size: .88em; background: rgba(200,214,240,.08); padding: 1px 6px; border-radius: 5px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .topline { height: 4px; background: linear-gradient(90deg, var(--gold), var(--blue)); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; }
+  .brand img { width: 38px; height: 38px; border-radius: 10px; }
+  .brand span { font-size: 1.3rem; font-weight: 800; }
+  .get { font-family: var(--mono); font-size: .8rem; color: var(--gold); border: 1px solid rgba(232,176,75,.5); border-radius: 8px; padding: 4px 12px; text-decoration: none; white-space: nowrap; }
+  .kicker { font-family: var(--mono); font-size: .8rem; color: var(--gold); letter-spacing: .08em; margin: 0; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: 48px; align-items: center; padding: 64px 0 48px; }
+  h1 { font-size: clamp(2.3rem, 5vw, 3.6rem); line-height: 1.06; margin: 14px 0 18px; font-weight: 800; letter-spacing: -.02em; }
+  h1 em { font-style: normal; color: var(--gold); }
+  h2 { font-size: clamp(1.6rem, 3.2vw, 2.1rem); line-height: 1.12; margin: 0 0 14px; font-weight: 800; letter-spacing: -.01em; }
+  h3 { margin: 0 0 6px; font-size: 1.05rem; }
+  .lede { color: var(--mist); font-size: 1.08rem; margin: 0 0 24px; max-width: 34em; }
+  .store { display: inline-block; background: var(--gold); color: var(--navy); font-weight: 700; padding: 12px 22px; border-radius: 12px; text-decoration: none; }
+  .store:hover { color: var(--navy); filter: brightness(1.06); }
+  .fine { color: var(--dim); font-size: .85rem; margin: 14px 0 0; }
+  .shot { border-radius: 28px; border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0,0,0,.45); max-width: 340px; margin: 0 auto; }
+  section { padding: 48px 0; border-top: 1px solid var(--line); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-top: 26px; }
+  .card { background: var(--navy2); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+  .card p { margin: 0; color: var(--mist); font-size: .95rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: .95rem; }
+  th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--gold); font-family: var(--mono); font-weight: 500; font-size: .8rem; letter-spacing: .05em; }
+  td { color: var(--mist); }
+  .table-wrap { overflow-x: auto; }
+  ol.steps { padding-left: 1.2em; margin: 18px 0 0; color: var(--mist); }
+  ol.steps li { margin-bottom: 12px; }
+  ol.steps b { color: var(--ink); }
+  pre { background: #070b1f; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-family: var(--mono); font-size: .82rem; color: var(--mist); margin: 8px 0 0; }
+  details { background: var(--navy2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-top: 12px; }
+  summary { cursor: pointer; font-weight: 700; }
+  details p { color: var(--mist); margin: 10px 0 0; }
+  footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--dim); font-size: .85rem; }
+  footer p { margin: 0 0 12px; max-width: 46em; }
+  @media (max-width: 760px) {
+    .hero { grid-template-columns: 1fr; padding-top: 40px; gap: 32px; }
+    .wrap { padding: 0 16px; }
+    .shot { max-width: 280px; }
+  }
+</style>
+</head>
+<body>
+<div class="topline"></div>
+<header>
+  <div class="wrap">
+    <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="38" height="38"><span>Redde</span></a>
+    <a class="get" href="https://apps.apple.com/app/id6810900557">App Store →</a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <p class="kicker">$ hermes agent · iphone · ipad · mac</p>
+      <h1>Your Hermes Agent, <em>in your pocket.</em></h1>
+      <p class="lede">Redde is a native app for the Hermes Agent you run yourself. Chat or talk with
+      it, watch it work, approve its commands from the Lock Screen, and run its bots, Kanban
+      board and schedules, on iPhone, iPad, Mac, CarPlay and Apple Watch.</p>
+      <a class="store" href="https://apps.apple.com/app/id6810900557">Get Redde on the App Store</a>
+      <p class="fine">Free. No account, no analytics: your chats go only to your own server.</p>
+    </div>
+    <img class="shot" src="/assets/bots.jpg" alt="Redde's chat list with Hermes profiles as bots" width="828" height="1800">
+  </div>
+
+  <section>
+    <div class="wrap">
+      <h2>Everything your Hermes does, from your phone</h2>
+      <div class="grid">
+        <div class="card"><h3>Chat and voice</h3><p>Type, or talk hands-free: speech is recognized on the phone, and replies are read aloud by the built-in voice, Kokoro, ElevenLabs or your Hermes's own voice.</p></div>
+        <div class="card"><h3>See it work</h3><p>Reasoning and tool calls as they happen, with a Live Activity on the Lock Screen while a long task runs.</p></div>
+        <div class="card"><h3>Approve from anywhere</h3><p>A command that needs your OK shows up as a notification: approve or deny it there, out loud, or with a nod in AirPods.</p></div>
+        <div class="card"><h3>Profiles as bots</h3><p>Each Hermes profile is a bot with a face, a voice and its own chats. @mention one, or put two to six in a group chat.</p></div>
+        <div class="card"><h3>Kanban, schedules, goals</h3><p>Your Hermes Kanban board, cron jobs and goals with check-ins, plus projects, skills, plugins, memory and models, all managed from the phone.</p></div>
+        <div class="card"><h3>Notifications when closed</h3><p>With the free Redde plugin, your Hermes tells your phone when a reply is ready or it needs you, encrypted end to end.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Three ways to connect</h2>
+      <p class="lede">Redde talks straight to your server: on your home network, over a tailnet, or
+      behind Cloudflare Access, Pangolin or a reverse proxy.</p>
+      <div class="table-wrap">
+      <table>
+        <tr><th>CONNECTION</th><th>WHAT YOU GIVE REDDE</th><th>GOOD FOR</th></tr>
+        <tr><td>Hermes Dashboard</td><td><code>hermes serve</code> (port 9119) and its login</td><td>Everything: live reasoning, approvals, slash commands, projects, Kanban, files</td></tr>
+        <tr><td>Hermes Webapp</td><td>Hermes 0.23's Webapp (port 9120 unless you set <code>webapp.port</code>), same login</td><td>The same as the Dashboard, through the Webapp's listener</td></tr>
+        <tr><td>Hermes API</td><td>The gateway's API server (port 8642) and its <code>API_SERVER_KEY</code></td><td>A single key; chats shared with your other Hermes clients</td></tr>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Set it up in a few minutes</h2>
+      <ol class="steps">
+        <li><b>Install Redde</b> from the <a href="https://apps.apple.com/app/id6810900557">App Store</a> on your iPhone, iPad or Mac.</li>
+        <li><b>Connect it to your Hermes</b>: enter the address and login, or scan a setup QR code made by another device or by <code>scripts/setup-code.py</code> in <a href="https://github.com/goosehouse-llc/redde">the source</a>.</li>
+        <li><b>Optional: add the Redde plugin</b> for notifications, goals, briefings and phone tools. Redde offers it in Settings › Redde Plugin, or on your server:
+          <pre>hermes plugins install goosehouse-llc/redde/companion/hermes-plugin/redde-push --enable --force</pre>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Questions</h2>
+      <details><summary>Is there an iPhone app for Hermes Agent?</summary><p>Redde is a free native app for iPhone, iPad and Mac that connects to your own Hermes Agent through its Dashboard, Webapp or API server. It's an independent client, not made by Nous Research.</p></details>
+      <details><summary>Does my Hermes need to be on the internet?</summary><p>No. Redde talks straight to your server, on your home network, over a tailnet such as Tailscale, or behind Cloudflare Access, Pangolin or a reverse proxy. Redde has no cloud of its own and no account.</p></details>
+      <details><summary>Can my Hermes send notifications to my iPhone?</summary><p>Yes, with the free Redde plugin on your Hermes. It tells your phone when a reply is ready, a command waits for approval or a schedule has run, encrypted end to end, even with Redde closed. The relay that carries them can't read them.</p></details>
+      <details><summary>Do Hermes profiles work?</summary><p>Each profile shows as a bot with its own face, voice and chats. Mention one with @, put several in a group chat, or let one work in the background and tell you when it's done.</p></details>
+      <details><summary>Does Redde work with anything besides Hermes?</summary><p>Claude Code, Codex, Gemini CLI and other coding agents through the free Redde bridge on your computer, and any OpenAI-compatible endpoint: llama.cpp, vLLM, Ollama or a hosted provider.</p></details>
+      <p style="margin-top:28px"><a class="store" href="https://apps.apple.com/app/id6810900557">Get Redde on the App Store</a></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a> is an open-source project by
+    Nous Research. Redde is an independent client made by Goosehouse LLC; it is not affiliated with,
+    endorsed by or sponsored by Nous Research.</p>
+    <p><a href="/">Redde home</a> · <a href="https://github.com/goosehouse-llc/redde">Source</a> ·
+    <a href="https://legal.goosehouse.org/redde/support">Support</a> ·
+    <a href="https://legal.goosehouse.org/redde/privacy">Privacy</a> · © 2026 Goosehouse LLC</p>
+  </div>
+</footer>
+</body>
+</html>
