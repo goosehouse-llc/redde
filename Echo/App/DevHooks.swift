@@ -480,6 +480,9 @@ enum DevHooks {
             settings.fastLaneURL = "http://llama.home.example:11500"
             settings.fastLaneModel = "qwen36-35b-a3b"
         }
+        // `-echo.serverName NAME`: the server in use renamed (2026-11-22: the agents video's Hermes
+        // server had come out "Home", beside Claude Code and Codex).
+        if let name = value("-echo.serverName") { settings.renameServer(settings.activeServerID, to: name) }
 
         // `-transport` from a test is the active server's own connection too: the record keeps
         // the kind the last test left on it (an agent), and Setup reads the record's.

@@ -6,7 +6,7 @@ song, as make_24's. The store had shown 2.3.1's day cut since October; 2.4's wer
   make_27.py          redde-27-app-preview-iphone.mp4 (886×1920), in design/
 
 All from the agents take (cfr-c1-coders.mov, PromoVideoUITests.testAgentsCoders, 2026-11-15): the
-chat list, the server menu with Home, Claude Code and Codex; Claude Code fixing the login bug and
+chat list, the server menu with Hermes, Claude Code and Codex; Claude Code fixing the login bug and
 asking before it runs the tests; the stack of what needs you, Claude Code's change on top. Claude
 Code and Codex are scripted stand-ins (`-echo.demoCoders`), as the closing's small print says.
 """
@@ -31,14 +31,17 @@ ALLOW = ('It asks you first', 'Allow Once, and it runs the tests.')
 NEEDS = ('What needs you', 'Every agent’s ask, in one stack.')
 
 # (take, start, end, caption, colour, bars): start and end in cfr-<take>.mov, make_agents' cut points.
+# Taken again 2026-11-22 with the Hermes server named "Hermes" (it had come out "Home" beside Claude
+# Code and Codex): each cut moved to the same moment by the test's marks (the 11-15 take is kept in
+# tmp/take-c1-coders-1115).
 SHOTS = [
-    (T, 26.0, 34.4, ALL, PURPLE, 2),
-    (T, 67.0, 75.0, CLAUDE, ORANGE, 2),
-    (T, 75.0, 84.6, ALLOW, ORANGE, 2),
-    (T, 159.6, 168.2, NEEDS, CORAL, 2),
+    (T, 28.1, 36.5, ALL, PURPLE, 2),
+    (T, 69.4, 77.2, CLAUDE, ORANGE, 2),
+    (T, 77.2, 87.0, ALLOW, ORANGE, 2),
+    (T, 166.7, 173.3, NEEDS, CORAL, 2),
 ]
-TITLE_TAKE = (T, 22.6, 25.8)   # the chat list, before the server menu opens
-END_TAKE = (T, 168.0)          # the stack, held
+TITLE_TAKE = (T, 25.8, 29.0)   # the chat list, before the server menu opens
+END_TAKE = (T, 173.2)          # the stack, held (the app is gone at 173.6)
 
 TITLE_BARS, END_BARS = 2, 2
 LANDS_AT = [BAR * (TITLE_BARS + sum(s[5] for s in SHOTS[:i])) for i in range(len(SHOTS))]

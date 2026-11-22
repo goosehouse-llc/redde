@@ -1265,7 +1265,7 @@ final class PromoVideoUITests: XCTestCase {
     /// waiting); back to Home and Quill for the release notes; and the drawer's stack, Codex's ask on
     /// top of the bots'.
     func testAgentsCoders() throws {
-        let app = try agents(["-echo.screen", "sessions", "-echo.demoMarks", "-echo.demoCoders", "-echo.showTouches"])
+        let app = try agents(["-echo.screen", "sessions", "-echo.demoMarks", "-echo.demoCoders", "-echo.showTouches", "-echo.serverName", "Hermes"])
         XCTAssertTrue(app.staticTexts["Good morning"].firstMatch.waitForExistence(timeout: 20), "no drawer")
         func send() { app.buttons.matching(identifier: "Send").allElementsBoundByIndex.last { $0.isHittable }?.tap() }
         func hideKeyboard() {
@@ -1365,15 +1365,15 @@ final class PromoVideoUITests: XCTestCase {
         hideKeyboard()
         mark("reviewed")
         hold(4.5)
-        // Back to the team: Home, then Quill.
+        // Back to the team: Hermes, then Quill.
         toList(app)
         mark("drawer")
         hold(1.5)
         let back = app.buttons["Server"].firstMatch
         XCTAssertTrue(back.waitForExistence(timeout: 5), "no server menu on Codex")
         back.tap()
-        let home = app.buttons["Home"].firstMatch
-        XCTAssertTrue(home.waitForExistence(timeout: 5), "Home isn't in the menu")
+        let home = app.buttons["Hermes"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 5), "Hermes isn't in the menu")
         hold(1.5)
         home.tap()
         mark("home")
