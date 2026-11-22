@@ -29,6 +29,40 @@ final class TodayStripUITests: XCTestCase {
         }
     }
 
+    /// An idea opens in full on a tap (2026-11-22: "allow to tap on the card to see what it says
+    /// before making me dismiss or push it"): every word, and the message Do It would send. Closed,
+    /// it is still in the deck; Not Now closes the sheet.
+    func testAnIdeaOpensInFullOnATap() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoIdeas", "-echo.drawerPage", "today"] + XCUIApplication.straightToChat
+        app.launch()
+        let chat = app.scrollViews.firstMatch
+        XCTAssertTrue(chat.waitForExistence(timeout: 15))
+        chat.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: chat.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        let card = app.staticTexts["Book the vet for Pickles"].firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 10), "No idea card")
+        card.tap()
+        let request = app.staticTexts["idea-request"]
+        XCTAssertTrue(request.waitForExistence(timeout: 5), "The idea didn't open")
+        XCTAssertEqual(request.label, "Book Pickles in at the vet on Thursday afternoon")
+        XCTAssertTrue(app.buttons["idea-do-it"].exists)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "idea-open"
+        shot.lifetime = .keepAlways
+        add(shot)
+        app.navigationBars.buttons["Close"].tap()
+        XCTAssertTrue(card.waitForExistence(timeout: 5), "Closing put the idea away")
+        card.tap()
+        XCTAssertTrue(request.waitForExistence(timeout: 5))
+        // Not Now from the sheet closes it (the demo's made-up ideas come back after it, so the
+        // deck itself isn't checked here).
+        app.buttons["idea-not-now"].tap()
+        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: request)
+        wait(for: [gone], timeout: 5)
+    }
+
     /// A list's own page (2026-11-14, "make the to do list nicer to look at"): its name and ring,
     /// what's left, then what's done; checking one off moves it down to Done.
     func testAListOpensAsItsOwnPage() {

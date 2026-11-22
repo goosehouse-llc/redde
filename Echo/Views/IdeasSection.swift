@@ -116,6 +116,8 @@ private struct IdeaDeck: View {
     let later: (AgentIdea, Date) -> Void
     let said: (AgentIdea, Bool) -> Void
     @State private var noted = 0
+    /// The idea tapped, read in full before it is done or put away (`IdeaDetail`).
+    @State private var reading: AgentIdea?
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -131,17 +133,21 @@ private struct IdeaDeck: View {
             actions: [(String(localized: "Later"), { later($0, Later.soon()) }),
                       (String(localized: "More Like This"), { said($0, true); noted += 1 }),
                       (String(localized: "Fewer Like This"), { said($0, false) })],
+            tap: { reading = $0 },
             face: { idea, isTop, moved in cardFace(idea, isTop: isTop, moved: moved) },
             menu: { menu($0) },
             footer: {
                 // The same shape as the Briefings deck's: its swipe, then hold (2.4 tidy).
                 if ideas.count > 1 {
-                    Text("\(1) of \(ideas.count) · Swipe right to do it, hold for more", comment: "Under the ideas deck: which card of how many, and its gestures").monospacedDigit()
+                    Text("\(1) of \(ideas.count) · Tap to read, swipe right to do it", comment: "Under the ideas deck: which card of how many, and its gestures").monospacedDigit()
                 } else {
-                    Text("Swipe right to do it, hold for more", comment: "Under the ideas deck with one card: its gestures")
+                    Text("Tap to read, swipe right to do it", comment: "Under the ideas deck with one card: its gestures")
                 }
             })
         .sensoryFeedback(.success, trigger: noted)
+        .sheet(item: $reading) { idea in
+            IdeaDetail(idea: idea, take: take, put: put, later: later)
+        }
     }
 
     private func cardFace(_ idea: AgentIdea, isTop: Bool, moved: CGFloat) -> some View {
@@ -179,3 +185,105 @@ private struct IdeaDeck: View {
         String(localized: "task.done", defaultValue: "Done", comment: "A task, finished (not the Done button): a ticked checklist item, the agent's finished task, the Kanban column, the title after a plugin change")
     }
 }
+
+/// An idea in full, from a tap on its card (asked 2026-11-22: "allow to tap on the card to see what it
+/// says before making me dismiss or push it"): the card cuts its words at three lines and never showed
+/// what Do It sends. Here: who offered it and when, every word of it, the message Do It sends that
+/// agent, and Do It, Not Now, Done and Later.
+private struct IdeaDetail: View {
+    let idea: AgentIdea
+    let take: (AgentIdea) -> Void
+    let put: (AgentIdea) -> Void
+    let later: (AgentIdea, Date) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let face = DeckCard.face(profile: idea.profile)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        DeckCardHeader(face: face, name: idea.agent,
+                                       subtitle: Text("has an idea · \(idea.at.relativeLabel)", comment: "Under an agent's name on an opened idea: when it was offered, e.g. has an idea · 2 hours ago"),
+                                       symbol: "lightbulb.max.fill")
+                        Text(idea.title)
+                            .chatFont(.title2, weight: .bold, design: .rounded)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let why = idea.why, !why.isEmpty {
+                            Text(why).chatFont(.body).opacity(0.8).fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .deckCard(face, theme: theme)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Do It sends \(idea.agent.isEmpty ? String(localized: "Your agent") : idea.agent) this", comment: "Over the message an idea's Do It sends, on the opened idea: the agent's name")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                        Text(idea.request)
+                            .chatFont(.body)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(14)
+                            .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 14))
+                            .accessibilityIdentifier("idea-request")
+                    }
+                }
+                .padding()
+            }
+            .safeAreaInset(edge: .bottom) { choices }
+            .navigationTitle(Text("Idea", comment: "The title of an opened idea card"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        ForEach(Later.choices(), id: \.0) { choice, when in
+                            Button { act { later(idea, when) } } label: { Label { Text(choice.label) } icon: { Image(systemName: choice.symbol) } }
+                        }
+                    } label: {
+                        Label { Text("Later") } icon: { Image(systemName: "clock") }
+                    }
+                }
+            }
+        }
+        // Tall enough for a card, its message and the buttons; drag up for a long one.
+        .presentationDetents([.fraction(0.72), .large])
+    }
+
+    /// Not Now, Done and Do It, as the deck's buttons have them.
+    private var choices: some View {
+        HStack(spacing: 10) {
+            Button(role: .destructive) { act { put(idea) } } label: {
+                Text("Not Now").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(.red)
+            .accessibilityIdentifier("idea-not-now")
+            Button { act { put(idea) } } label: {
+                Text(verbatim: done).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            Button { act { take(idea) } } label: {
+                Label { Text("Do It") } icon: { Image(systemName: "bolt.fill") }.frame(maxWidth: .infinity)
+            }
+            .prominentButton(tint: .green)
+            .accessibilityIdentifier("idea-do-it")
+        }
+        .controlSize(.large)
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(.bar)
+    }
+
+    /// The sheet goes first, then the choice, so the deck moves on under it.
+    private func act(_ choice: @escaping () -> Void) {
+        dismiss()
+        choice()
+    }
+
+    private var done: String {
+        String(localized: "task.done", defaultValue: "Done", comment: "A task, finished (not the Done button): a ticked checklist item, the agent's finished task, the Kanban column, the title after a plugin change")
+    }
+}
+
