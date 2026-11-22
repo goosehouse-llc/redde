@@ -3,12 +3,14 @@
 Character limits are Apple's. Everything here describes shipped, verified behaviour.
 
 ## Name (30)
-Redde: Every AI agent, one app
+Redde: Proactive
 
-From 2.6 (his pick 2026-11-15: the release where Redde talks to other agents too). 2.6 was pulled from review to rename it "Redde: AI Agents, Voice & Chat", then he switched name and subtitle around in App Store Connect while it waited for review (name and subtitle can be edited then). Before: "Redde Agent" (2.5), "Hermes Redde" until 2.5 (2.5 went in as "Redde: AI Agent Voice & Chat" for an hour, then "Redde Agent", his pick 2026-11-11). The name and subtitle are set in App Store Connect → App Information (the store script doesn't send them). Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
+From 2.7 (his rename in App Store Connect, 2026-11-22, with 2.7's things to keep in mind, a quieter agent and When You've Gone Quiet). Before it, from 2.6 (his pick 2026-11-15: the release where Redde talks to other agents too). 2.6 was pulled from review to rename it "Redde: AI Agents, Voice & Chat", then he switched name and subtitle around in App Store Connect while it waited for review (name and subtitle can be edited then). Before: "Redde Agent" (2.5), "Hermes Redde" until 2.5 (2.5 went in as "Redde: AI Agent Voice & Chat" for an hour, then "Redde Agent", his pick 2026-11-11). The name and subtitle are set in App Store Connect → App Information (the store script doesn't send them). Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
 
 ## Subtitle (30)
-Voice Chat & Coding Agents
+Every AI Agent, one app
+
+From 2.7 (2026-11-22; it was the name since 2.6). Before: "Voice Chat & Coding Agents" (2.6, from 2026-11-17), so voice, chat and coding are no longer in the name or subtitle.
 
 No other company's product names here or in the keywords (Claude Code, Codex, Hermes): Apple rejects them in metadata. Nor Apple's own: 2.6 (295) was rejected 2026-11-17 under 5.2.5 for "Voice Chat, Coding & CarPlay" (CarPlay in the subtitle); this subtitle went in that day and the same build was resubmitted. CarPlay named as a feature in the description passed.
 
@@ -16,7 +18,7 @@ No other company's product names here or in the keywords (Claude Code, Codex, He
 New in 2.7: your agents ask each other, with you in the loop. Goals you tick off, things to keep in mind, and an agent that knows when to stay quiet.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name or subtitle)
-assistant,self-hosted,llm,bots,private,chatbot,local,homelab,code,terminal,mcp,client,server,kanban
+assistant,self-hosted,llm,bots,private,chatbot,local,homelab,coding,terminal,mcp,server,voice,chat
 
 ## Description (4000)
 
@@ -107,7 +109,7 @@ Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 
 - The privacy policy: docs/privacy.md (November 22 lines: agents asking each other, Find Skills through the server, cleared notifications, briefing choices on the server, Save to Photos, Report a Problem). Publish it before submitting.
 - The review notes (docs/app-review-notes.md) fit again: 3,908 characters with the placeholder, Save to Photos's permission added. `scripts/app-store-push.py notes` puts the key in and sends them.
 - What's New 2.6 said "Settings → Set up connection…"; 2.7's text names Connection → Set up connection… where it comes up.
-- Keywords for 2.7: siri, shortcuts, watch and acp out (Apple's product names, and searches that bring nobody); mcp, client, server and kanban in.
+- Keywords for 2.7: siri, shortcuts, watch and acp out (Apple's product names, and searches that bring nobody); mcp, client, server and kanban in. After the rename to "Redde: Proactive" / "Every AI Agent, one app" (2026-11-22): voice and chat in, code → coding (the old subtitle had them), client and kanban out.
 - Close GitHub #78, #79, #81 and #83 at release.
 - Sent to App Store Connect 2026-11-22 (version 2.7 made): copy, the new 06-goals pictures, and the iPhone App Preview (redde-27). The iPad preview is still 2.3.1's day cut.
 
