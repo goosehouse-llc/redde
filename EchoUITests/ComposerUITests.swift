@@ -71,6 +71,18 @@ final class ComposerUITests: XCTestCase {
         row.tap()
     }
 
+    /// Scrolls the open list until a row is on screen: chats other tests left behind are newer
+    /// than the demo's and can push it below the fold (2026-11-22, a full run).
+    @discardableResult
+    private func findRow(_ title: String, in app: XCUIApplication) -> Bool {
+        let row = app.staticTexts[title]
+        guard row.waitForExistence(timeout: 10) || app.staticTexts["Good morning"].exists || app.staticTexts["Today"].exists else { return false }
+        for _ in 0..<8 where !(row.exists && row.isHittable) {
+            app.windows.firstMatch.swipeUp()
+        }
+        return row.exists && row.isHittable
+    }
+
     func testEachConversationKeepsItsOwnDraft() {
         continueAfterFailure = false
         var app = launch(["-echo.fresh", "-echo.demoLibrary"])
@@ -80,8 +92,7 @@ final class ComposerUITests: XCTestCase {
 
         // Another conversation: its own draft, empty so far.
         app.buttons["Conversations"].firstMatch.tap()
-        let hike = app.staticTexts["Plan the weekend hike"]
-        XCTAssertTrue(hike.waitForExistence(timeout: 10), "The demo conversations aren't in the list")
+        XCTAssertTrue(findRow("Plan the weekend hike", in: app), "The demo conversations aren't in the list")
         tapRow("Plan the weekend hike", in: app)
         composer = field(app)
         XCTAssertTrue(app.navigationBars.staticTexts["Plan the weekend hike"].waitForExistence(timeout: 10))
@@ -97,7 +108,7 @@ final class ComposerUITests: XCTestCase {
         // And the hike's is still with the hike, after the app has been closed too. The list
         // says which conversation has something unsent.
         app.buttons["Conversations"].firstMatch.tap()
-        XCTAssertTrue(hike.waitForExistence(timeout: 10))
+        XCTAssertTrue(findRow("Plan the weekend hike", in: app))
         XCTAssertTrue(app.staticTexts["Has a draft"].waitForExistence(timeout: 5), "The list doesn't mark the conversation with a draft")
         XCTAssertEqual(app.staticTexts.matching(identifier: "Has a draft").count, 1, "Only the one conversation has a draft")
         keep("a draft marked in the list")
@@ -109,7 +120,7 @@ final class ComposerUITests: XCTestCase {
         app = launch()
         _ = field(app)
         app.buttons["Conversations"].firstMatch.tap()
-        XCTAssertTrue(hike.waitForExistence(timeout: 10))
+        XCTAssertTrue(findRow("Plan the weekend hike", in: app))
         tapRow("Plan the weekend hike", in: app)
         XCTAssertTrue(app.navigationBars.staticTexts["Plan the weekend hike"].waitForExistence(timeout: 10))
         XCTAssertEqual(field(app).value as? String, "about the hike", "The draft didn't survive the app being closed")
