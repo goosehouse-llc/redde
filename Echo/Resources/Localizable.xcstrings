@@ -97556,6 +97556,113 @@
         }
       }
     },
+    "Briefings on Your Day" : {
+      "comment" : "What's New 2.7: each briefing switched on or off in Settings › Your Day",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefinger på Din dag"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefings unter Dein Tag"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informes en Tu día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les briefings dans Votre journée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefing in La tua giornata"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「あなたの1日」でブリーフィング"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나의 하루에서 브리핑"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefinger under Dagen din"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefings onder Je dag"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefingi w Twój dzień"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefings em Seu Dia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сводки в «Ваш день»"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Briefingar under Din dag"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gününüz'de brifingler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зведення в «Ваш день»"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“你的一天”里的简报"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「你的一天」裡的簡報"
+          }
+        }
+      }
+    },
     "Briefings your way" : {
       "comment" : "What's New 2.5: weather card in briefings, Change Time, Today tile colors",
       "localizations" : {
@@ -210492,6 +210599,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "印地語"
+          }
+        }
+      }
+    },
+    "Hold a picture in a chat for Save to Photos and Share, or use the button beside Close in the full-screen viewer." : {
+      "comment" : "What's New 2.7: saving and sharing pictures",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold på et billede i en chat for Gem i Fotos og Del, eller brug knappen ved siden af Luk i fuldskærmsvisningen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte ein Bild in einem Chat gedrückt für In Fotos sichern und Teilen, oder nutze die Taste neben Schließen in der Vollbildansicht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsada una imagen en un chat para Guardar en Fotos y Compartir, o usa el botón junto a Cerrar en la vista a pantalla completa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenez une image dans une discussion pour Enregistrer dans Photos et Partager, ou utilisez le bouton à côté de Fermer en plein écran."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuta un'immagine in una chat per Salva in Foto e Condividi, oppure usa il pulsante accanto a Chiudi nella vista a schermo intero."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チャットの画像を長押しすると「写真に保存」と「共有」が使えます。フルスクリーン表示では「閉じる」の隣のボタンからも。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "채팅에서 이미지를 길게 누르면 사진에 저장과 공유를 쓸 수 있고, 전체 화면에서는 닫기 옆 버튼을 쓰면 됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold på et bilde i en chat for Lagre i Bilder og Del, eller bruk knappen ved siden av Lukk i fullskjermvisningen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd een afbeelding in een chat vast voor Bewaar in Foto's en Deel, of gebruik de knop naast Sluit in de schermvullende weergave."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przytrzymaj obraz w czacie, aby użyć Zapisz w Zdjęciach i Udostępnij, albo użyj przycisku obok Zamknij w widoku pełnoekranowym."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque e segure uma imagem num chat para Salvar em Fotos e Compartilhar, ou use o botão ao lado de Fechar na tela cheia."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживайте изображение в чате, чтобы выбрать «Сохранить в Фото» или «Поделиться», или нажмите кнопку рядом с «Закрыть» в полноэкранном просмотре."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Håll på en bild i en chatt för Spara i Bilder och Dela, eller använd knappen bredvid Stäng i helskärmsvisningen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir sohbetteki görsele basılı tutarak Fotoğraflar'a Kaydet ve Paylaş'ı kullanın ya da tam ekranda Kapat'ın yanındaki düğmeye dokunun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Утримуйте зображення в чаті, щоб вибрати «Зберегти у Фото» або «Поширити», чи натисніть кнопку поруч із «Закрити» в повноекранному перегляді."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在聊天中按住图片即可“存储到照片”和“共享”，在全屏查看时也可用“关闭”旁边的按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在聊天中按住圖片即可「儲存到照片」和「分享」，全螢幕檢視時也可用「關閉」旁的按鈕。"
           }
         }
       }
@@ -375813,6 +376027,113 @@
         }
       }
     },
+    "Save pictures" : {
+      "comment" : "What's New 2.7: Save to Photos and Share on pictures in the chat",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gem billeder"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilder sichern"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar imágenes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer les images"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salva le immagini"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像を保存"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이미지 저장"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagre bilder"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bewaar afbeeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisuj obrazy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar imagens"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранение изображений"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spara bilder"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görselleri kaydet"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Збереження зображень"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存储图片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存圖片"
+          }
+        }
+      }
+    },
     "Save secret" : {
       "localizations" : {
         "da" : {
@@ -425682,6 +426003,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "關閉技能後 Redde 就不再載入它；可使用編輯器編輯或建立技能。"
+          }
+        }
+      }
+    },
+    "Switch each briefing on or off in Settings → Your Day; your choices, and the briefings you've read, are the same on every device. Heads-Ups can watch only the calendars you pick, and Coming Up can delete a job. It takes the Redde plugin 1.34." : {
+      "comment" : "What's New 2.7: briefings on Your Day",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå hver briefing til eller fra under Indstillinger → Din dag; dine valg og de briefinger, du har læst, er de samme på alle enheder. Forvarsler kan holde øje med kun de kalendere, du vælger, og Kommende kan slette et job. Kræver Redde-pluginet 1.34."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schalte jedes Briefing unter Einstellungen → Dein Tag ein oder aus; deine Wahl und die gelesenen Briefings sind auf allen Geräten gleich. Vorabhinweise können nur die Kalender beachten, die du wählst, und Demnächst kann einen Job löschen. Erfordert das Redde-Plugin 1.34."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activa o desactiva cada informe en Ajustes → Tu día; tus elecciones y los informes que has leído son los mismos en todos tus dispositivos. Los avisos pueden vigilar solo los calendarios que elijas, y Próximamente puede eliminar una tarea. Requiere el plugin de Redde 1.34."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activez ou désactivez chaque briefing dans Réglages → Votre journée ; vos choix et les briefings lus sont les mêmes sur tous vos appareils. Les alertes peuvent ne suivre que les calendriers choisis, et À venir peut supprimer une tâche. Nécessite le plugin Redde 1.34."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attiva o disattiva ogni briefing in Impostazioni → La tua giornata; le tue scelte e i briefing letti sono gli stessi su tutti i dispositivi. Gli avvisi possono seguire solo i calendari che scegli, e In arrivo può eliminare un'attività. Richiede il plugin Redde 1.34."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定 → あなたの1日 で各ブリーフィングをオン・オフできます。選んだ設定と読んだブリーフィングはすべてのデバイスで同じです。事前のお知らせは選んだカレンダーだけを見ることができ、今後の予定からジョブを削除できます。Reddeプラグイン1.34が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정 → 나의 하루에서 브리핑마다 켜거나 끌 수 있습니다. 선택한 설정과 읽은 브리핑은 모든 기기에서 같습니다. 사전 알림은 고른 캘린더만 볼 수 있고, 곧 예정에서 작업을 삭제할 수 있습니다. Redde 플러그인 1.34가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå hver briefing av eller på under Innstillinger → Dagen din; valgene dine og briefingene du har lest, er de samme på alle enheter. Forvarsler kan følge bare kalenderne du velger, og Kommende kan slette en jobb. Krever Redde-tillegget 1.34."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet elke briefing aan of uit via Instellingen → Je dag; je keuzes en de briefings die je hebt gelezen zijn op elk apparaat hetzelfde. Seintjes kunnen alleen de agenda's volgen die je kiest, en Komt eraan kan een taak verwijderen. Vereist de Redde-plug-in 1.34."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włączaj i wyłączaj każdy briefing w Ustawienia → Twój dzień; twoje wybory i przeczytane briefingi są takie same na każdym urządzeniu. Zapowiedzi mogą śledzić tylko wybrane kalendarze, a w Nadchodzące można usunąć zadanie. Wymaga wtyczki Redde 1.34."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ative ou desative cada briefing em Ajustes → Seu Dia; suas escolhas e os briefings que você leu são os mesmos em todos os dispositivos. Os avisos podem acompanhar só os calendários que você escolher, e A Seguir pode apagar uma tarefa. Requer o plugin do Redde 1.34."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включайте и выключайте каждую сводку в Настройки → Ваш день; ваш выбор и прочитанные сводки одинаковы на всех устройствах. Предупреждения могут следить только за выбранными календарями, а в «Предстоящее» можно удалить задачу. Нужен плагин Redde 1.34."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå på eller av varje briefing under Inställningar → Din dag; dina val och briefingarna du har läst är desamma på alla enheter. Förvarningar kan bevaka bara de kalendrar du väljer, och Kommande kan radera ett jobb. Kräver Redde-pluginet 1.34."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her brifingi Ayarlar → Gününüz'den açıp kapatın; seçimleriniz ve okuduğunuz brifingler tüm aygıtlarınızda aynıdır. Hatırlatmalar yalnızca seçtiğiniz takvimleri izleyebilir, Yaklaşanlar'dan bir iş silinebilir. Redde eklentisi 1.34 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вмикайте й вимикайте кожне зведення в Параметри → Ваш день; ваш вибір і прочитані зведення однакові на всіх пристроях. Попередження можуть стежити лише за вибраними календарями, а в «Найближче» можна видалити завдання. Потрібен плагін Redde 1.34."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 设置 → 你的一天 中逐个开关简报；你的选择和已读的简报在所有设备上保持一致。提前提醒可以只关注你选的日历，“即将进行”可以删除任务。需要 Redde 插件 1.34。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 設定 → 你的一天 中逐一開關簡報；你的選擇和已讀的簡報在所有裝置上都一樣。事前提醒可以只看你選的行事曆，「即將進行」可以刪除工作。需要 Redde 外掛 1.34。"
           }
         }
       }

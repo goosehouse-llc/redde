@@ -57,7 +57,9 @@ LIMITS = {'promotionalText': 170, 'keywords': 100, 'description': 4000, 'whatsNe
 # design/video/make_preview.py, not kept in git) and the frame shown before it plays.
 # 2.3.1 (2026-11-02, his pick): the lighter "A day with Redde" cuts (make_day23.py store-light [ipad]),
 # full frame, 29.4 s; the forecast card (9 s in) is the frame shown before they play.
-PREVIEWS = [('IPHONE_67', [('design/redde-day23-app-preview-iphone-light.mp4', '00:00:09:00')]),
+# 2.7 (2026-11-22): the iPhone's is the agents cut (design/video/make_27.py), full frame, 29.4 s,
+# Claude Code's approval (15 s in) shown before it plays; the iPad keeps the day cut.
+PREVIEWS = [('IPHONE_67', [('design/redde-27-app-preview-iphone.mp4', '00:00:15:00')]),
             ('IPAD_PRO_3GEN_129', [('design/redde-day23-app-preview-ipad-light.mp4', '00:00:09:00')])]
 # The Mac's (`--mac`): 2880 × 1800, App Store Connect's largest 16:10 size, made by
 # design/screenshots/mac.py.

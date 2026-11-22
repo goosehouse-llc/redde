@@ -82,23 +82,30 @@ Your agents talk to each other, with you in the loop. Skills from the hub, pictu
 • Skills from Hermes's skills hub: Find Skills, see what one does and install it, checked by Hermes's scanner before it goes on.
 • Pictures in agent chats: what Claude Code or Codex sends or reads shows in the chat, and a file a reply names opens on your phone.
 • A long paste goes beside your message as a text file, instead of filling the field.
+• Save pictures: hold a picture in a chat for Save to Photos and Share, or use the button in the full-screen viewer.
+• Briefings on Your Day: switch each one on or off in Settings → Your Day, and your choices, and the briefings you've read or put away, are the same on every device. Heads-Ups can watch only the calendars you pick. Delete a scheduled job from Coming Up.
+• Tap an idea card to read all of it, and what Do It sends, before you choose.
 • Clear a notification on one device and it's cleared on the others.
 • Report a Problem, at the bottom of Settings: a report of your setup with nothing private in it, to copy or open as a GitHub issue.
 • Pull down on Today to refresh it.
 • Settings in three groups: Connection, Your Agent and The App.
 • Smoother typing, and faster phone tools and calendar reads.
 • Hermes 0.23 supported.
-• Fixes: deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A three-digit Inbox count stays on one line. A new chat shows in the iPad sidebar at once. A map shows for an address in "today at 200 East Robinson St, …".
+• Fixes: deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A reply Hermes stops for taking too long ends in Redde too, with Retry. Buttons are easy to read on a pale theme colour. Ahead of Your Day shows how much of it is on. A briefing's tile on Today can stop its notifications. The Inbox shows its Unsorted pile while mail waits to be sorted. A three-digit Inbox count stays on one line. A new chat shows in the iPad sidebar at once. A map shows for an address in "today at 200 East Robinson St, …".
 
-Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 1.32 on your Hermes, and cleared notifications 1.33: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
+Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 1.32 on your Hermes, cleared notifications 1.33, and briefings the same on every device 1.34: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
 
 ## Before submitting 2.7
-- In-app What's New: no 2.7 entry yet. Suggested items, to translate into the 17 languages: @mentions between every agent; Ask Me First; skills hub; pictures in agent chats; Report a Problem.
-- Version: bump to 2.7 in project.yml; the build after 295.
+- The build is 2.7 (296), iPhone and iPad, archived from main once everything is committed and pushed.
+- In-app What's New 2.7: seven items in 17 languages (agents asking each other, Ask Me First, skills hub, pictures in agent chats, saving pictures, briefings on Your Day, Report a Problem).
 - The Watch-only live call (53365bf) is left out: it has run only in the simulator. Try it on a real watch first (its socket rules differ), then add a line.
-- The relay must be deployed for cleared notifications (an old relay shows a clear as a quiet alert). Plugin 1.33.0 and bridge 0.11 must be on main (they are).
+- The relay is deployed for cleared notifications (2026-11-19). Plugin 1.34.0 (briefing choices on every device) and bridge 0.11 must be on main, and the plugin's GitHub release published at release.
 - Run the unit tests and the whole UI suite, then put Release on an iPhone and an iPad and launch-check both.
-- App Privacy: nothing new collected. Report a Problem copies a report or opens GitHub in the browser; nothing is sent by Redde. The skills hub is asked by the person's own Hermes. Recheck the privacy policy for the skills hub and Report a Problem lines.
+- App Privacy stays "Data Not Collected": Report a Problem copies a report or opens GitHub in the browser, and Redde sends nothing; the skills hub is asked by the person's own Hermes; @mentions go between the person's own servers and bridges; Save to Photos adds a picture (add-only permission, NSPhotoLibraryAddUsageDescription, in 17 languages).
+- The privacy policy: docs/privacy.md (November 22 lines: agents asking each other, Find Skills through the server, cleared notifications, briefing choices on the server, Save to Photos, Report a Problem). Publish it before submitting.
+- The review notes (docs/app-review-notes.md) fit again: 3,908 characters with the placeholder, Save to Photos's permission added. `scripts/app-store-push.py notes` puts the key in and sends them.
+- What's New 2.6 said "Settings → Set up connection…"; 2.7's text names Connection → Set up connection… where it comes up.
+- Close GitHub #78, #79, #81 and #83 at release.
 
 ## What's New in 2.6 (4000)
 Claude Code, Codex and other agents, a new drawer, and better suggested replies.
