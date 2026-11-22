@@ -222,7 +222,7 @@ phone = [
   ('ph-inbox',    '04-inbox',    'Your inbox, sorted.',          'Seven piles and your own, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,
    [(READER, 0.80, (0.50, 0.66), -1.5)]),
   ('ph-today',    '05-today',    'What needs you, first.',       'Approvals, what’s working, your team and your day, at the top of your chats.', (24, 32, 46), WHITE, MIST),
-  ('ph-goal',     '06-goals',    'Goals it works toward.',       'Tell your agent what you want done. It plans the steps, checks in, and shows how far along you are.', CORAL, WHITE, PEACH),
+  ('ph-goal',     '06-goals',    'Goals, step by step.',         'Tick off your steps as you go. Your agent works on its own and checks in on yours.', CORAL, WHITE, PEACH),
   # 2.3.1: things to buy (the agent's pick, prices, stock), with a flight and the home's controls over it.
   ('ph-purchase', '07-answers',  'Answers you can use.',         'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
    [(FLIGHT, 0.45, (0.245, 0.865), -1.5), (HOME, 0.43, (0.765, 0.855), 1.5)], 2380),
@@ -239,7 +239,7 @@ pad = [
    [(INBOX, 0.40, (0.60, 0.28), -1.5), (READER, 0.36, (0.70, 0.66), 1.5)]),
   ('pad-today',        '05-ipad-today', 'What needs you, first.',      'Approvals, what’s working, your team and your day, at the top of your chats. Coming Up shows what’s next.', (24, 32, 46), WHITE, MIST,
    [(COMINGUP, 0.44, (0.64, 0.42), 1.0)]),
-  ('pad-today',        '06-ipad-goals',  'Goals it works toward.',      'Tell your agent what you want done. It plans the steps, checks in, and shows how far along you are.', CORAL, WHITE, PEACH,
+  ('pad-today',        '06-ipad-goals',  'Goals, step by step.',        'Tick off your steps as you go. Your agent works on its own and checks in on yours.', CORAL, WHITE, PEACH,
    [(GOAL, 0.40, (0.64, 0.58), -1.0)]),
   ('pad-purchase',     '07-ipad-answers', 'Answers you can use.',      'Things to buy with your agent’s pick, flights, your home’s lights. Cards, not walls of text.', TEAL, WHITE, MINT,
    [(FLIGHT, 0.28, (0.19, 0.60), -1.5), (HOME, 0.24, (0.19, 0.80), 2.0)]),

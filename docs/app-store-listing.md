@@ -13,7 +13,7 @@ Voice Chat & Coding Agents
 No other company's product names here or in the keywords (Claude Code, Codex, Hermes): Apple rejects them in metadata. Nor Apple's own: 2.6 (295) was rejected 2026-11-17 under 5.2.5 for "Voice Chat, Coding & CarPlay" (CarPlay in the subtitle); this subtitle went in that day and the same build was resubmitted. CarPlay named as a feature in the description passed.
 
 ## Promotional text (170, editable without a new build)
-New in 2.6: Claude Code, Codex and other agents through the free Redde bridge, a new drawer that starts with what needs you, Maps for your agent, and smarter replies.
+New in 2.7: your agents ask each other, with you in the loop. Goals you tick off step by step, skills from the hub, and pictures in agent chats.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name or subtitle)
 assistant,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,code,terminal,acp
@@ -25,7 +25,7 @@ Redde is a complete iPhone, iPad and Mac client for your own AI agent: Hermes, t
 You bring the backend. Redde has no account and no analytics, and your conversations go only to your server, and to a voice service if you pick one.
 
 AHEAD OF YOUR DAY
-• Goals: tell your agent what you want to get done. It plans the steps, checks in on a schedule and shows your progress above your chats.
+• Goals: agree a plan with your agent and tick off your steps as you go, while it works on its own and checks in on yours.
 • Morning Ideas, a Week Ahead and an Evening Wrap-up arrive as cards. Leave-By Alerts work out from your calendar and Apple Maps when to go.
 • "Let me know when it ships": watches and follow-ups come back on their own.
 • Answers come as cards: your day, the weather, places on a map, prices with a deal meter, a list to tick off.
@@ -36,7 +36,7 @@ CODING AGENTS
 
 BOTS
 • Each Hermes profile is a bot with a face, a voice and a chat of its own. Start from a template and make its job, model and tools your own.
-• Type @ to hand work to another bot, or put two to six in a group chat. A bot can work in the background and tell you when it's done. Give one a schedule and its answer arrives with a notification, even with Redde closed.
+• Type @ to ask any agent, a bot or Claude Code; your agent can ask one too, if you say yes. Or put two to six bots in a group chat. A bot can work in the background and tell you when it's done. Give one a schedule and its answer arrives with a notification, even with Redde closed.
 
 TALK, DON'T TYPE
 • Tap the mic or say "Hey" and your agent's name, or show it what the camera sees. Speech is recognized on your device; replies are read by the built-in voice, Kokoro, ElevenLabs or your Hermes.
@@ -50,12 +50,12 @@ SEE THE AGENT WORK
 A FULL CLIENT
 • Start a chat on the phone, continue on the desktop. Search, pin, fork, quote, or go incognito.
 • An email inbox your agent sorts into piles, yours too, with rules you set. Gmail or any mailbox; nothing is sent until you approve it.
-• Projects, scheduled jobs, a Kanban board, skills, plugins, memory you can edit, MCP servers, files and an SSH terminal.
+• Projects, scheduled jobs, a Kanban board, skills from the hub, plugins, memory you can edit, MCP servers, files and an SSH terminal.
 • Phone tools: your agent can use your calendar, reminders, contacts, photos, Apple Home, Maps and the Health data you choose, set alarms and start calls and texts, each only if you allow it.
-• Markdown, code, tables, diagrams and math; pictures, PDFs and audio open in place.
+• Markdown, code, tables, diagrams and math; pictures, PDFs and audio open inline.
 
 YOUR BACKEND, YOUR RULES
-• Connect through the Hermes Dashboard or API, on your LAN, a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Several servers, synced with iCloud.
+• Connect through the Hermes Dashboard, Webapp or API, on your LAN, a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Several servers, synced with iCloud.
 • Or go straight to any OpenAI-compatible endpoint: llama.cpp, llama-swap, vLLM, Ollama or a hosted provider.
 • Set up by QR code, and set models and keys from the phone. Credentials stay in the Keychain.
 • In 17 languages. Face ID lock, nine themes, iPad split view, iPhone Duo, and a native Mac app.
@@ -79,6 +79,7 @@ Your agents talk to each other, with you in the loop. Skills from the hub, pictu
 
 • Every agent can ask every other by @mention: your Hermes bots, the agents on your Redde bridge (Claude Code, Codex and the rest) and the bots on your other servers. Tag one in your message, or let your agent ask one itself: the answer shows in your chat and your agent carries on with it. In voice mode the answers are read aloud too.
 • Ask Me First, on from the start: before an agent asks another, or a Hermes bot hands its work to another, Redde asks you, with Ask or Don't on a card, in the chat or out loud. Settings → Replies & Writing → Agents Talking to Each Other has the switches.
+• Goals you tick off: a goal's plan says which steps are yours and which your agent's. Tick yours off on the goal or from its Today tile and the count moves at once. Your agent starts on its own steps as soon as you agree the plan in the chat, with no second approval, and asks about yours at its check-ins.
 • Skills from Hermes's skills hub: Find Skills, see what one does and install it, checked by Hermes's scanner before it goes on.
 • Pictures in agent chats: what Claude Code or Codex sends or reads shows in the chat, and a file a reply names opens on your phone.
 • A long paste goes beside your message as a text file, instead of filling the field.
@@ -93,19 +94,20 @@ Your agents talk to each other, with you in the loop. Skills from the hub, pictu
 • Hermes 0.23 supported, its Webapp too: choose Dashboard or Webapp and give the Webapp's address and port.
 • Fixes: deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A reply Hermes stops for taking too long ends in Redde too, with Retry. Buttons are easy to read on a pale theme colour. Ahead of Your Day shows how much of it is on. A briefing's tile on Today can stop its notifications. The Inbox shows its Unsorted pile while mail waits to be sorted. A three-digit Inbox count stays on one line. A new chat shows in the iPad sidebar at once. A map shows for an address in "today at 200 East Robinson St, …".
 
-Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 1.32 on your Hermes, cleared notifications 1.33, and briefings the same on every device 1.34: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
+Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 1.32 on your Hermes, cleared notifications 1.33, briefings the same on every device 1.34, and ticking off goal steps 1.35: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
 
 ## Before submitting 2.7
 - The build is 2.7 (296), iPhone and iPad, archived from main once everything is committed and pushed.
-- In-app What's New 2.7: seven items in 17 languages (agents asking each other, Ask Me First, skills hub, pictures in agent chats, saving pictures, briefings on Your Day, Report a Problem).
+- In-app What's New 2.7: eight items in 17 languages (agents asking each other, Ask Me First, goals you tick off, skills hub, pictures in agent chats, saving pictures, briefings on Your Day, Report a Problem).
 - The Watch-only live call (53365bf) is left out: it has run only in the simulator. Try it on a real watch first (its socket rules differ), then add a line.
-- The relay is deployed for cleared notifications (2026-11-19). Plugin 1.34.0 (briefing choices on every device) and bridge 0.11 must be on main, and the plugin's GitHub release published at release.
+- The relay is deployed for cleared notifications (2026-11-19). Plugin 1.35.0 (goal steps yours or the agent's; 1.34 briefing choices on every device) and bridge 0.11 must be on main, and the plugin's GitHub release published at release.
 - Run the unit tests and the whole UI suite, then put Release on an iPhone and an iPad and launch-check both.
 - App Privacy stays "Data Not Collected": Report a Problem copies a report or opens GitHub in the browser, and Redde sends nothing; the skills hub is asked by the person's own Hermes; @mentions go between the person's own servers and bridges; Save to Photos adds a picture (add-only permission, NSPhotoLibraryAddUsageDescription, in 17 languages).
 - The privacy policy: docs/privacy.md (November 22 lines: agents asking each other, Find Skills through the server, cleared notifications, briefing choices on the server, Save to Photos, Report a Problem). Publish it before submitting.
 - The review notes (docs/app-review-notes.md) fit again: 3,908 characters with the placeholder, Save to Photos's permission added. `scripts/app-store-push.py notes` puts the key in and sends them.
 - What's New 2.6 said "Settings → Set up connection…"; 2.7's text names Connection → Set up connection… where it comes up.
 - Close GitHub #78, #79, #81 and #83 at release.
+- Sent to App Store Connect 2026-11-22 (version 2.7 made): copy, the new 06-goals pictures, and the iPhone App Preview (redde-27). The iPad preview is still 2.3.1's day cut.
 
 ## What's New in 2.6 (4000)
 Claude Code, Codex and other agents, a new drawer, and better suggested replies.
