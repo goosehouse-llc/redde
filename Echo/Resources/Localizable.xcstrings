@@ -123199,6 +123199,220 @@
         }
       }
     },
+    "Connected to the Hermes Webapp %@. It has no sign-in." : {
+      "comment" : "Connection test passed: the Webapp Hermes 0.23's gateway serves itself; its version",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forbundet til Hermes Webapp %@. Den har intet login."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Hermes Webapp %@ verbunden. Es hat keine Anmeldung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado a Hermes Webapp %@. No tiene inicio de sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecté à Hermes Webapp %@. Elle n’a pas de connexion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connesso a Hermes Webapp %@. Non ha un accesso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Webapp %@に接続しました。ログインはありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Webapp %@에 연결되었습니다. 로그인이 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koblet til Hermes Webapp %@. Den har ingen innlogging."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbonden met Hermes Webapp %@. Er is geen inlog."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączono z Hermes Webapp %@. Nie ma logowania."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado ao Hermes Webapp %@. Ele não tem login."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключено к Hermes Webapp %@. Входа нет."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansluten till Hermes Webapp %@. Den har ingen inloggning."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Webapp %@ sürümüne bağlanıldı. Girişi yok."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Підключено до Hermes Webapp %@. Входу немає."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已连接到 Hermes Webapp %@。它没有登录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已連線到 Hermes Webapp %@。它沒有登入。"
+          }
+        }
+      }
+    },
+    "Connected to the Hermes Webapp %@. Login accepted." : {
+      "comment" : "Connection test passed: the Webapp Hermes 0.23's gateway serves itself; its version",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forbundet til Hermes Webapp %@. Login accepteret."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Hermes Webapp %@ verbunden. Anmeldung akzeptiert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado a Hermes Webapp %@. Inicio de sesión aceptado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecté à Hermes Webapp %@. Identifiant accepté."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connesso a Hermes Webapp %@. Accesso accettato."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Webapp %@に接続しました。ログインが承認されました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Webapp %@에 연결되었습니다. 로그인이 승인되었습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koblet til Hermes Webapp %@. Innlogging godtatt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbonden met Hermes Webapp %@. Inlog geaccepteerd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączono z Hermes Webapp %@. Login zaakceptowany."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado ao Hermes Webapp %@. Login aceito."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключено к Hermes Webapp %@. Вход принят."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansluten till Hermes Webapp %@. Inloggningen godkändes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Webapp %@ sürümüne bağlanıldı. Giriş kabul edildi."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Підключено до Hermes Webapp %@. Вхід прийнято."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已连接到 Hermes Webapp %@。登录已接受。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已連線到 Hermes Webapp %@。登入已接受。"
+          }
+        }
+      }
+    },
     "Connected, but the endpoint doesn't list a model named %@." : {
       "localizations" : {
         "da" : {
@@ -140142,6 +140356,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dashboard 存取權杖"
+          }
+        }
+      }
+    },
+    "Dashboard or Webapp (WebSocket)" : {
+      "comment" : "A Hermes connection, listed under the header Hermes: the Dashboard, or the Webapp Hermes 0.23's gateway serves itself",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard eller Webapp (WebSocket)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard oder Webapp (WebSocket)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard o Webapp (WebSocket)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard ou Webapp (WebSocket)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard o Webapp (WebSocket)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DashboardまたはWebapp（WebSocket）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard 또는 Webapp (WebSocket)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard eller Webapp (WebSocket)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard of Webapp (WebSocket)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard lub Webapp (WebSocket)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard ou Webapp (WebSocket)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard или Webapp (WebSocket)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard eller Webapp (WebSocket)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard veya Webapp (WebSocket)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard або Webapp (WebSocket)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard 或 Webapp（WebSocket）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard 或 Webapp（WebSocket）"
           }
         }
       }
@@ -198654,6 +198975,113 @@
         }
       }
     },
+    "Hermes 0.23's Webapp works here too: give its address and port (9120 unless webapp.port says otherwise) and the same login." : {
+      "comment" : "Under the Dashboard's address: the Webapp the Hermes gateway serves itself is reached the same way",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 0.23's Webapp virker også her: angiv dens adresse og port (9120, medmindre webapp.port siger andet) og samme login."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Webapp von Hermes 0.23 geht hier auch: gib ihre Adresse und ihren Port an (9120, sofern webapp.port nichts anderes sagt) und dieselbe Anmeldung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La Webapp de Hermes 0.23 también funciona aquí: indica su dirección y puerto (9120, salvo que webapp.port diga otro) y el mismo inicio de sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La Webapp de Hermes 0.23 marche aussi ici : indiquez son adresse et son port (9120, sauf si webapp.port en dit un autre) et le même identifiant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anche la Webapp di Hermes 0.23 funziona qui: inserisci indirizzo e porta (9120, salvo diversa indicazione in webapp.port) e lo stesso accesso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 0.23のWebappもここで使えます。アドレスとポート（webapp.portで変えていなければ9120）と、同じログインを入力してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 0.23의 Webapp도 여기서 쓸 수 있습니다. 주소와 포트(webapp.port를 바꾸지 않았다면 9120), 같은 로그인을 입력하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webappen i Hermes 0.23 virker også her: oppgi adressen og porten (9120 med mindre webapp.port sier noe annet) og samme innlogging."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De Webapp van Hermes 0.23 werkt hier ook: geef het adres en de poort (9120, tenzij webapp.port iets anders zegt) en dezelfde inlog."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webapp z Hermesa 0.23 też tu działa: podaj jej adres i port (9120, chyba że webapp.port mówi inaczej) oraz ten sam login."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Webapp do Hermes 0.23 também funciona aqui: informe o endereço e a porta dele (9120, a menos que webapp.port diga outra) e o mesmo login."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webapp из Hermes 0.23 тоже работает здесь: укажите её адрес и порт (9120, если webapp.port не задаёт другой) и тот же вход."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webappen i Hermes 0.23 fungerar också här: ange dess adress och port (9120 om inte webapp.port säger annat) och samma inloggning."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 0.23'ün Webapp'i de burada çalışır: adresini ve bağlantı noktasını (webapp.port başka demiyorsa 9120) ve aynı girişi yazın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webapp із Hermes 0.23 теж працює тут: вкажіть її адресу й порт (9120, якщо webapp.port не задає інший) і той самий вхід."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 0.23 的 Webapp 也可以在这里使用：填写它的地址和端口（若 webapp.port 未另设则为 9120）以及同一个登录。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes 0.23 的 Webapp 也能在這裡使用：填入它的位址和連接埠（若 webapp.port 未另設則為 9120）以及同一個登入。"
+          }
+        }
+      }
+    },
     "Hermes API" : {
       "comment" : "Session Details: the connection",
       "localizations" : {
@@ -201011,6 +201439,220 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法連線到 Hermes Dashboard"
+          }
+        }
+      }
+    },
+    "Hermes Dashboard or Webapp" : {
+      "comment" : "Setup: the section for the Dashboard's address and login",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard eller Webapp"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard oder Webapp"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard o Webapp"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard ou Webapp"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard o Webapp"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes DashboardまたはWebapp"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard 또는 Webapp"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard eller Webapp"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard of Webapp"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard lub Webapp"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard ou Webapp"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard или Webapp"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard eller Webapp"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard veya Webapp"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard або Webapp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard 或 Webapp"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard 或 Webapp"
+          }
+        }
+      }
+    },
+    "Hermes Dashboard or Webapp (WebSocket)" : {
+      "comment" : "A connection: the Hermes Dashboard, or the Webapp Hermes 0.23's gateway serves itself",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard eller Webapp (WebSocket)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard oder Webapp (WebSocket)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard o Webapp (WebSocket)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard ou Webapp (WebSocket)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard o Webapp (WebSocket)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes DashboardまたはWebapp（WebSocket）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard 또는 Webapp (WebSocket)"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard eller Webapp (WebSocket)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard of Webapp (WebSocket)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard lub Webapp (WebSocket)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard ou Webapp (WebSocket)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard или Webapp (WebSocket)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard eller Webapp (WebSocket)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard veya Webapp (WebSocket)"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard або Webapp (WebSocket)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard 或 Webapp（WebSocket）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes Dashboard 或 Webapp（WebSocket）"
           }
         }
       }

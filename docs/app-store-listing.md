@@ -90,7 +90,7 @@ Your agents talk to each other, with you in the loop. Skills from the hub, pictu
 • Pull down on Today to refresh it.
 • Settings in three groups: Connection, Your Agent and The App.
 • Smoother typing, and faster phone tools and calendar reads.
-• Hermes 0.23 supported.
+• Hermes 0.23 supported, its Webapp too: choose Dashboard or Webapp and give the Webapp's address and port.
 • Fixes: deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A reply Hermes stops for taking too long ends in Redde too, with Retry. Buttons are easy to read on a pale theme colour. Ahead of Your Day shows how much of it is on. A briefing's tile on Today can stop its notifications. The Inbox shows its Unsorted pile while mail waits to be sorted. A three-digit Inbox count stays on one line. A new chat shows in the iPad sidebar at once. A map shows for an address in "today at 200 East Robinson St, …".
 
 Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 1.32 on your Hermes, cleared notifications 1.33, and briefings the same on every device 1.34: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.

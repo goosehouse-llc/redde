@@ -19,7 +19,7 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
     var label: String {
         switch self {
         case .hermesSessions: String(localized: "Hermes API (shared sessions)")
-        case .hermesServe: String(localized: "Hermes Dashboard (WebSocket)")
+        case .hermesServe: String(localized: "Hermes Dashboard or Webapp (WebSocket)", comment: "A connection: the Hermes Dashboard, or the Webapp Hermes 0.23's gateway serves itself")
         case .chatCompletions: String(localized: "OpenAI-compatible (direct to a model)")
         case .acp: String(localized: "Other agent (ACP)", comment: "A connection: Claude Code, Codex and other agents through the Agent Client Protocol")
         }
@@ -27,7 +27,7 @@ nonisolated enum Transport: String, CaseIterable, Identifiable, Codable {
     /// Its name inside its group (`Kind`), where the group's header says the rest.
     var shortLabel: String {
         switch self {
-        case .hermesServe: String(localized: "Dashboard (WebSocket)", comment: "A Hermes connection, listed under the header Hermes")
+        case .hermesServe: String(localized: "Dashboard or Webapp (WebSocket)", comment: "A Hermes connection, listed under the header Hermes: the Dashboard, or the Webapp Hermes 0.23's gateway serves itself")
         case .hermesSessions: String(localized: "API (shared sessions)", comment: "A Hermes connection, listed under the header Hermes")
         case .acp: String(localized: "Claude Code, Codex and others (ACP)", comment: "A connection listed under the header Other Agents: agents through the Agent Client Protocol and the Redde bridge")
         case .chatCompletions: String(localized: "OpenAI-compatible server", comment: "A connection listed under the header Direct to a Model: llama-swap, LM Studio and the like")

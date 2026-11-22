@@ -55,6 +55,9 @@ nonisolated enum ConnectionTester {
             // page; a login saved for it is said to be of no use.
             do {
                 try await HermesServeClient.shared.ensureLoggedIn()
+                if await isWebapp() {
+                    return .ok(String(localized: "Connected to the Hermes Webapp \(version). It has no sign-in.", comment: "Connection test passed: the Webapp Hermes 0.23's gateway serves itself; its version"))
+                }
                 return .ok(String(localized: "Connected to Hermes Dashboard \(version). It has no sign-in.", comment: "Connection test passed; the Dashboard's version"))
             } catch {
                 return .failed(error.localizedDescription)
@@ -62,10 +65,23 @@ nonisolated enum ConnectionTester {
         }
         do {
             try await HermesServeClient.shared.ensureLoggedIn()
+            if await isWebapp() {
+                return .ok(String(localized: "Connected to the Hermes Webapp \(version). Login accepted.", comment: "Connection test passed: the Webapp Hermes 0.23's gateway serves itself; its version"))
+            }
             return .ok(String(localized: "Connected to Hermes Dashboard \(version). Login accepted."))
         } catch {
             return .failed(String(localized: "Hermes Dashboard \(version) reachable, but login failed: \(error.localizedDescription)"))
         }
+    }
+
+    /// Whether the address is Hermes 0.23's Webapp, the Dashboard its gateway serves itself
+    /// (asked 2026-11-22): its sessions' owner says so in `gateway.ready` (`session_authority`),
+    /// which the socket hears as it opens. Nothing in `/api/status` tells the two apart.
+    @MainActor
+    private static func isWebapp() async -> Bool {
+        let client = HermesServeClient.shared
+        guard (try? await client.ensureConnected()) != nil else { return false }
+        return client.sessionAuthority
     }
 
     /// Whether the Dashboard at `url` asks for a login (`auth_required` in its public status),

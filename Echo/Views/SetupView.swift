@@ -139,12 +139,15 @@ struct SetupView: View {
                             }
                         }
                     } header: {
-                        Text("Hermes Dashboard")
+                        Text("Hermes Dashboard or Webapp", comment: "Setup: the section for the Dashboard's address and login")
                     } footer: {
+                        VStack(alignment: .leading, spacing: 6) {
                         dashboardMode == .open
                             ? Text(String(localized: "This Dashboard has no sign-in, so there is nothing to type: Redde reads its session token from the Dashboard each time it connects and never stores it. Adds tool approvals and slash commands.",
                                           comment: "Setup footer for a Hermes Dashboard with no sign-in"))
                             : Text("The same login as the Hermes Dashboard: its username and password, or Sign in with a browser where it uses Google or another provider. Adds tool approvals and slash commands.")
+                        Text("Hermes 0.23's Webapp works here too: give its address and port (9120 unless webapp.port says otherwise) and the same login.", comment: "Under the Dashboard's address: the Webapp the Hermes gateway serves itself is reached the same way")
+                        }
                     }
                     .task(id: settings.serveURL) {
                         dashboardAsks = nil

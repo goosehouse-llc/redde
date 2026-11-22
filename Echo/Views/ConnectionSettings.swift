@@ -140,12 +140,15 @@ struct ServeLoginSettings: View {
                 Text(stateLabel).foregroundStyle(.secondary)
             }
         } header: {
-            Text("Hermes Dashboard (WebSocket)")
+            Text("Hermes Dashboard or Webapp (WebSocket)", comment: "A connection: the Hermes Dashboard, or the Webapp Hermes 0.23's gateway serves itself")
         } footer: {
+            VStack(alignment: .leading, spacing: 6) {
             mode == .open
                 ? Text(String(localized: "This Dashboard has no sign-in. Redde reads its session token from the Dashboard each time it connects and never stores it. Gives live reasoning, tool approvals and slash commands over one WebSocket.",
                               comment: "Settings › Connection details footer for a Dashboard with no sign-in"))
                 : Text("The same login as the Hermes Dashboard: its username and password, or, where it signs you in with Google or another provider, Sign in with a browser. Gives live reasoning, tool approvals and slash commands over one WebSocket.")
+            Text("Hermes 0.23's Webapp works here too: give its address and port (9120 unless webapp.port says otherwise) and the same login.", comment: "Under the Dashboard's address: the Webapp the Hermes gateway serves itself is reached the same way")
+            }
         }
         // Keyed on the server and its address: another one has its own sign-in, and a sign-in
         // isn't used at an address it wasn't made at.
