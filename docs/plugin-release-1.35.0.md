@@ -1,14 +1,15 @@
-# Redde plugin 1.34.0 — GitHub release draft
+# Redde plugin 1.35.0 — GitHub release draft
 
-Title: **Redde plugin 1.34.0**. Tag: `redde-push-1.34.0`, on the commit that carries
-`version: 1.34.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
-`redde-push-1.31.0`; this one covers 1.31.1 to 1.34.0. The full list is in that folder's
+Title: **Redde plugin 1.35.0**. Tag: `redde-push-1.35.0`, on the commit that carries
+`version: 1.35.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
+`redde-push-1.31.0`; this one covers 1.31.1 to 1.35.0. The full list is in that folder's
 `CHANGELOG.md`. Publish it when Redde 2.7 is out. Everything below the line is the release's text.
 
 ---
 
-The Hermes plugin that goes with Redde 2.7: Ask Me First when bots hand work to each other,
-notifications cleared on every device, and briefings switched the same way on all of them.
+The Hermes plugin that goes with Redde 2.7: goals whose steps you tick off, Ask Me First when bots
+hand work to each other, notifications cleared on every device, and briefings switched the same
+way on all of them.
 
 Update it from Redde's Settings › Redde Plugin, or on your Hermes with `hermes plugins install`
 and `--force`. If you have several profiles, update each one's copy, and restart both the gateway
@@ -16,6 +17,12 @@ and `hermes serve` afterwards.
 
 ## What's new
 
+- **Goals with your steps and your agent's (1.35).** A goal's plan now says who does each step.
+  Your steps are a checklist you tick off in Redde, on the goal or from its Today tile, and the
+  progress moves at once on every device. Your agent's steps go on the Kanban board ready to run,
+  so agreeing the plan in the chat is the only approval. At check-ins your agent asks about the
+  steps that are yours instead of guessing, and never marks one done unless you said so. Goals
+  made before keep working: a step whose card still waits in Triage counts as yours.
 - **Briefings the same on all your devices (1.34).** Notify Me, Drawer Only and Off were each
   device's own, so turning a job off on your iPhone left your iPad still notifying. Now there is
   one choice per job for all of them: a job turned off sends to none, and a Drawer Only job's
@@ -39,5 +46,5 @@ and `hermes serve` afterwards.
 
 ## Good to know
 
-- Briefings on every device and cleared notifications need Redde 2.7. An older Redde keeps each
+- Ticking steps off, briefings on every device and cleared notifications need Redde 2.7. An older Redde keeps each
   device's own choices and clears notifications only where you cleared them.

@@ -344,7 +344,7 @@ struct TodayStrip: View {
                                            : Text("Goal", comment: "Today strip: a goal's tile"),
                       ring: (goal.done, goal.total, color), wash: color,
                       title: goal.title,
-                      detail: goal.next.map { String(localized: "Next: \($0)", comment: "Today strip: a goal's next step") }
+                      detail: (goal.nextForYou?.step.title ?? goal.next).map { String(localized: "Next: \($0)", comment: "Today strip: a goal's next step") }
                           ?? GoalReport.plain(goal.headline))
         tile.watermark = "flag.checkered"
         if goal.total > 0 {
@@ -355,7 +355,27 @@ struct TodayStrip: View {
             })
             tile.detail = ""
         }
-        return tileButton(tile, keys: keys, open: { openGoal(goal) }) { TileColorMenu(key: tile.key) }
+        return tileButton(tile, keys: keys, open: { openGoal(goal) }) {
+            // The person's next step, ticked from here too (2026-11-22).
+            if let next = goal.nextForYou {
+                Button { Task { _ = await Goals.tick(goal, step: next.index, done: true) } } label: {
+                    Label { Text("Done: \(next.step.title)", comment: "A goal's Today tile, held: ticks off the person's next step") } icon: { Image(systemName: "checkmark.circle") }
+                }
+            }
+            TileColorMenu(key: tile.key)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            // Beside its next step: done, without opening the goal.
+            if let next = goal.nextForYou {
+                Button { Task { _ = await Goals.tick(goal, step: next.index, done: true) } } label: {
+                    Image(systemName: "checkmark.circle.fill").font(.title2).symbolRenderingMode(.hierarchical).foregroundStyle(color)
+                        .padding(12).contentShape(.circle)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Done: \(next.step.title)", comment: "A goal's Today tile, held: ticks off the person's next step"))
+                .accessibilityIdentifier("goal-tile-done")
+            }
+        }
     }
 }
 

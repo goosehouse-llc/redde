@@ -3,6 +3,20 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.35.0 (2026-11-22)
+
+- Goals with your steps and the agent's. Every step of a goal's plan had gone to the Kanban board
+  as the agent's work, so a step like "Run 5K on Saturday" ended up blocked there, nothing could
+  be ticked off from the phone, and the plan was approved twice. Now the agent says for each step
+  whether it's yours or its own (`redde_goal` steps are `{title, who}`):
+  - Your steps are a checklist you tick off in Redde (`/redde-push goals step`), and a check-in
+    asks about the open ones instead of guessing.
+  - The agent's steps go on the board and start at once: agreeing to the plan in the chat is the
+    approval.
+  A goal from before keeps its steps: one whose card was let go on the board stays the agent's,
+  the rest are yours, and a waiting card leaves the board when you tick its step. `update` takes
+  `undone` too. Needs Redde 2.7.
+
 ## 1.34.0 (2026-11-21)
 
 - Briefings the same on all your devices. Notify Me, Drawer Only and Off (Stop These

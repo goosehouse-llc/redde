@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// A goal's page (2.4): how far along it is, what the last check-in said, the plan, and the goal's
-/// controls. With the Dashboard login the plan is its cards on the Kanban board (tenant
-/// `redde-goal-<id>`), and a card waiting on the person (in Triage before the plan is approved, in
-/// Review, or Blocked) is approved or sent back here. Over the Hermes API alone, which has no
-/// Kanban, the plan is the steps the plugin last reported. On either: Check In Now, Pause, the
+/// controls. The plan is the person's steps, a checklist ticked here (plugin 1.35), and the agent's:
+/// with the Dashboard login its cards on the Kanban board (tenant `redde-goal-<id>`), one finished
+/// (Review) or Blocked looked at or sent back here. Over the Hermes API alone, which has no Kanban,
+/// the agent's steps are as the plugin last reported them. On either: Check In Now, Pause, the
 /// check-ins' schedule and End Goal, through the check-in job.
 struct GoalView: View {
     let goalID: String
@@ -19,6 +19,8 @@ struct GoalView: View {
     @State private var confirmEnd = false
     @State private var changing: KanbanTask?
     @State private var changes = ""
+    /// The person's steps being said to the plugin.
+    @State private var ticking: Set<Int> = []
     @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
 
@@ -29,6 +31,7 @@ struct GoalView: View {
             if let goal {
                 summary(goal)
                 plan(goal)
+                lastCheckIn(goal)
                 controls(goal)
             } else if !loading {
                 Text("This goal has ended.", comment: "A goal's page when the goal is gone").foregroundStyle(.secondary)
@@ -76,6 +79,11 @@ struct GoalView: View {
             }
             .padding(.vertical, 4)
         }
+    }
+
+    /// What the last check-in said, under the plan: the steps are what's done here.
+    @ViewBuilder private func lastCheckIn(_ goal: GoalReport) -> some View {
+        let face = DeckCard.face(profile: goal.profile)
         if !goal.headline.isEmpty {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
@@ -115,41 +123,60 @@ struct GoalView: View {
         .padding(.vertical, 2)
     }
 
+    /// The plan in two (2026-11-22, "not sure the current makes sense": every step had been a
+    /// card for the agent, so the person's own sat Blocked on the board and nothing could be ticked here):
+    /// the person's steps, a checklist to tick, and the agent's, its cards on the board.
     @ViewBuilder private func plan(_ goal: GoalReport) -> some View {
-        let waiting = (cards ?? []).filter { $0.status == "triage" }
-        Section {
-            if let cards {
-                if cards.isEmpty {
-                    Text("No plan yet. Your agent puts its steps on your Kanban board once you've talked it through.",
-                         comment: "A goal's page: no plan cards on the board yet").font(.footnote).foregroundStyle(.secondary)
-                }
-                ForEach(cards) { card in cardRow(card) }
-            } else if let steps = goal.steps, !steps.isEmpty {
-                ForEach(Array(steps.enumerated()), id: \.offset) { _, step in
-                    Label { Text(step.title).strikethrough(step.done) } icon: {
-                        Image(systemName: step.done ? "checkmark.circle.fill" : "circle").foregroundStyle(step.done ? .green : .secondary)
+        let steps = goal.steps ?? []
+        let yours = steps.enumerated().filter { $0.element.isYours }
+        let agents = cards.map { list in list.filter { card in !yours.contains { $0.element.cardID == card.id } } }
+        if !yours.isEmpty {
+            Section {
+                ForEach(yours, id: \.offset) { index, step in
+                    Button { tick(goal, index, !step.done) } label: {
+                        Label { Text(step.title).strikethrough(step.done).foregroundStyle(step.done ? .secondary : .primary) } icon: {
+                            Image(systemName: step.done ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(step.done ? .green : .secondary).font(.title3)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(.rect)
                     }
+                    .buttonStyle(.plain)
+                    .disabled(ticking.contains(index))
+                    .accessibilityIdentifier("goal-step-\(index + 1)")
+                    .accessibilityValue(step.done ? Text("Done", comment: "VoiceOver: a goal's step is done") : Text("Not done", comment: "VoiceOver: a goal's step isn't done"))
                 }
-            } else if !loading {
-                Text("The plan shows here after the first check-in.", comment: "A goal's page over the Hermes API, before any steps were reported")
-                    .font(.footnote).foregroundStyle(.secondary)
+            } header: {
+                Text("Your Steps", comment: "A goal's page: the steps the person does, a checklist")
+            } footer: {
+                Text("Tap a step when you've done it. At its check-ins your agent asks about the rest.", comment: "A goal's page: under the person's steps")
             }
-        } header: {
-            HStack {
-                Text("Plan", comment: "A goal's page: the section with its steps")
-                Spacer()
-                if waiting.count > 1 {
-                    Button { approve(waiting) } label: { Text("Approve All", comment: "A goal's page: approves every plan card waiting in Triage") }
-                        .buttonStyle(.borderless)
-                        .disabled(working)
+        }
+        let theirs = steps.filter { !$0.isYours }
+        if agents?.isEmpty == false || !theirs.isEmpty || (yours.isEmpty && !loading) {
+            Section {
+                if let agents, !agents.isEmpty {
+                    ForEach(agents) { card in cardRow(card) }
+                } else if !theirs.isEmpty {
+                    ForEach(Array(theirs.enumerated()), id: \.offset) { _, step in
+                        Label { Text(step.title).strikethrough(step.done) } icon: {
+                            Image(systemName: step.done ? "checkmark.circle.fill" : "circle").foregroundStyle(step.done ? .green : .secondary)
+                        }
+                    }
+                } else if steps.isEmpty {
+                    Text("The plan shows here once you and your agent have agreed on it.", comment: "A goal's page before it has a plan")
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
-            }
-        } footer: {
-            if cards == nil, !KanbanClient.isAvailable {
-                Text("Approving steps from Redde takes the Hermes Dashboard login. Over the Hermes API, answer your agent in the goal's chat.",
-                     comment: "A goal's page: the plan without Kanban")
-            } else if !waiting.isEmpty {
-                Text("Steps in Triage wait for your OK before your agent starts on them.", comment: "A goal's page: under a plan with cards to approve")
+            } header: {
+                if !theirs.isEmpty || agents?.isEmpty == false {
+                    Text("\(goal.agent.isEmpty ? Settings.shared.headerTitle : goal.agent)'s Steps", comment: "A goal's page: the steps the agent does itself; the agent's name")
+                } else {
+                    Text("Plan", comment: "A goal's page: the section with its steps")
+                }
+            } footer: {
+                if !theirs.isEmpty || agents?.isEmpty == false {
+                    Text("Your agent works on these on the Kanban board, and asks you to look when one is done.", comment: "A goal's page: under the agent's steps")
+                }
             }
         }
     }
@@ -175,6 +202,15 @@ struct GoalView: View {
             }
         }
         .padding(.vertical, 2)
+    }
+
+    private func tick(_ goal: GoalReport, _ index: Int, _ done: Bool) {
+        ticking.insert(index)
+        problem = nil
+        Task {
+            defer { ticking.remove(index) }
+            if let why = await Goals.tick(goal, step: index, done: done) { problem = why }
+        }
     }
 
     @ViewBuilder private func controls(_ goal: GoalReport) -> some View {
@@ -222,8 +258,11 @@ struct GoalView: View {
     private func waitsOnPerson(_ card: KanbanTask) -> Bool { ["triage", "review", "blocked"].contains(card.status) }
 
     private func approveLabel(_ card: KanbanTask) -> String {
-        card.status == "blocked" ? String(localized: "Unblock", comment: "A goal's plan card: lets a blocked step go on")
-            : String(localized: "Approve", comment: "A goal's plan card: lets the agent start on a step, or accepts a finished one")
+        switch card.status {
+        case "blocked": String(localized: "Unblock", comment: "A goal's plan card: lets a blocked step go on")
+        case "review": String(localized: "Looks Good", comment: "A goal's plan card: accepts a step the agent finished")
+        default: String(localized: "Approve", comment: "A goal's plan card: lets the agent start on a step, or accepts a finished one")
+        }
     }
 
     /// Triage → To do (Ready when an agent is on it, so the board starts it); Review → Done;
@@ -367,9 +406,10 @@ struct GoalView: View {
     #if DEBUG
     private func demoCards() -> [KanbanTask] {
         let steps = goal?.steps ?? []
-        let firstOpen = steps.firstIndex { !$0.done }
+        let firstOpen = steps.firstIndex { !$0.done && !$0.isYours }
         return steps.enumerated().compactMap { i, step in
-            let status = step.done ? "done" : i == firstOpen ? "review" : "triage"
+            guard !step.isYours else { return nil }
+            let status = step.done ? "done" : i == firstOpen ? "review" : "ready"
             return KanbanTask(.object(["id": .string(step.cardID ?? "k\(i)"), "title": .string(step.title), "status": .string(status),
                                        "tenant": .string(Goals.tenant(goalID)), "created_at": .number(Double(i))]))
         }

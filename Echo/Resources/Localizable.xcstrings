@@ -19820,6 +19820,113 @@
         }
       }
     },
+    "%@'s Steps" : {
+      "comment" : "A goal's page: the steps the agent does itself; the agent's name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@s trin"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schritte von %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasos de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Étapes de %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passaggi di %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@のステップ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@의 단계"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sine trinn"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stappen van %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kroki: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etapas de %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Шаги: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@s steg"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ adımları"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кроки: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@的步骤"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@的步驟"
+          }
+        }
+      }
+    },
     "%@'s tools over the Hermes Dashboard, its Bot Chat included, from the next message (Hermes 0.21.0: in chats started after the change); the first reply after a change is slow on a model running on your own machine. The Hermes API server keeps its own list (platform_toolsets.api_server in config.yaml on the Hermes host)." : {
       "localizations" : {
         "da" : {
@@ -45018,6 +45125,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "會在你伺服器上的 ~/Projects 中建立同名檔案夾。專案的對話會在其中工作。"
+          }
+        }
+      }
+    },
+    "A goal's plan says which steps are yours and which your agent's. Tick yours off on the goal or from its Today tile, and the count moves at once; your agent starts on its own as soon as you agree the plan, and asks about yours at its check-ins. It takes the Redde plugin 1.35." : {
+      "comment" : "What's New 2.7: goals",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et måls plan siger, hvilke trin der er dine, og hvilke der er din agents. Kryds dine af på målet eller fra dets I dag-felt, og tallet flytter sig med det samme; din agent går i gang med sine, så snart I er enige om planen, og spørger til dine ved sine statustjek. Det kræver Redde-pluginet 1.35."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Plan eines Ziels sagt, welche Schritte deine sind und welche die deines Agenten. Hake deine am Ziel oder auf seiner Heute-Kachel ab, und der Zähler geht sofort weiter; dein Agent beginnt mit seinen, sobald ihr den Plan abgesprochen habt, und fragt bei den Check-ins nach deinen. Dafür braucht es das Redde-Plugin 1.35."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan de un objetivo dice qué pasos son tuyos y cuáles de tu agente. Marca los tuyos en el objetivo o desde su mosaico de Hoy y el recuento avanza al momento; tu agente empieza con los suyos en cuanto acordáis el plan, y pregunta por los tuyos en sus revisiones. Requiere el plugin de Redde 1.35."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan d’un objectif dit quelles étapes sont les vôtres et lesquelles celles de votre agent. Cochez les vôtres sur l’objectif ou depuis sa tuile Aujourd’hui, et le compte avance aussitôt ; votre agent se met aux siennes dès que vous êtes d’accord sur le plan, et vous demande où en sont les vôtres à ses points d’étape. Il faut le plugin Redde 1.35."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il piano di un obiettivo dice quali passaggi sono tuoi e quali del tuo agente. Spunta i tuoi sull’obiettivo o dal suo riquadro Oggi e il conteggio avanza subito; il tuo agente inizia i suoi appena concordate il piano e chiede dei tuoi alle sue verifiche. Serve il plugin Redde 1.35."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目標の計画には、どのステップがあなたのもので、どれがエージェントのものかが示されます。自分のステップは目標の画面か「今日」のタイルからチェックでき、進み具合はすぐに更新されます。エージェントは計画に合意するとすぐ自分のステップに取りかかり、チェックインのときにあなたのステップについて尋ねます。Reddeプラグイン1.35が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "목표의 계획에 어떤 단계가 내 것이고 어떤 단계가 에이전트의 것인지 표시됩니다. 내 단계는 목표 화면이나 오늘 타일에서 체크하면 진행 상황이 바로 반영되고, 에이전트는 계획에 합의하는 즉시 자기 단계를 시작하며 체크인 때 내 단계를 물어봅니다. Redde 플러그인 1.35가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planen for et mål sier hvilke trinn som er dine og hvilke som er agentens. Kryss av dine på målet eller fra flisen i I dag, så flytter tallet seg med en gang; agenten begynner på sine så snart dere er enige om planen, og spør om dine ved statussjekkene. Det krever Redde-tillegget 1.35."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het plan van een doel zegt welke stappen van jou zijn en welke van je agent. Vink de jouwe af bij het doel of vanaf de tegel in Vandaag, en de teller loopt meteen op; je agent begint aan de zijne zodra jullie het eens zijn over het plan, en vraagt bij de check-ins naar de jouwe. Hiervoor is de Redde-plug-in 1.35 nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan celu mówi, które kroki są Twoje, a które agenta. Odhaczaj swoje w celu albo z jego kafelka w Dzisiaj, a licznik od razu się zmienia; agent zaczyna swoje, gdy tylko uzgodnicie plan, a o Twoje pyta w raportach. Wymaga wtyczki Redde 1.35."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O plano de uma meta diz quais etapas são suas e quais são do seu agente. Marque as suas na meta ou no bloco dela em Hoje, e a contagem avança na hora; o seu agente começa as dele assim que vocês combinam o plano, e pergunta pelas suas nos check-ins. Requer o plugin do Redde 1.35."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В плане цели видно, какие шаги ваши, а какие — агента. Отмечайте свои на странице цели или на её плитке в «Сегодня», и счётчик сразу меняется; агент берётся за свои, как только вы согласуете план, и на проверках спрашивает о ваших. Нужен плагин Redde 1.35."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett måls plan säger vilka steg som är dina och vilka som är agentens. Bocka av dina på målet eller från dess ruta i Idag, så flyttas räkningen direkt; din agent börjar på sina så fort ni är överens om planen och frågar om dina vid avstämningarna. Det kräver Redde-tillägget 1.35."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir hedefin planı hangi adımların sizin, hangilerinin ajanınızın olduğunu söyler. Kendi adımlarınızı hedefte ya da Bugün kutucuğundan işaretleyin, sayı hemen ilerlesin; ajanınız planda anlaştığınız anda kendi adımlarına başlar ve durum kontrollerinde sizinkileri sorar. Redde Eklentisi 1.35 gerektirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У плані цілі видно, які кроки ваші, а які — агента. Позначайте свої на сторінці цілі або на її плитці в «Сьогодні», і лічильник одразу змінюється; агент береться за свої, щойно ви погодите план, і під час перевірок питає про ваші. Потрібен плагін Redde 1.35."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目标的计划会写明哪些步骤是你的，哪些是智能体的。在目标页或它的“今天”磁贴上勾掉你的步骤，进度马上更新；你们商定计划后，智能体立即开始它的步骤，并在进展检查时问你的进度。需要 Redde插件 1.35。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目標的計畫會寫明哪些步驟是你的，哪些是代理的。在目標頁或它的「今天」方塊上勾掉你的步驟，進度馬上更新；你們商定計畫後，代理立即開始它的步驟，並在進度檢查時問你的進度。需要 Redde 外掛 1.35。"
           }
         }
       }
@@ -134407,6 +134621,113 @@
         }
       }
     },
+    "Couldn't reach your Hermes. Try again in a moment." : {
+      "comment" : "A goal's step couldn't be ticked: the server didn't answer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke nå din Hermes. Prøv igen om lidt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes war nicht erreichbar. Versuch es gleich noch einmal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo contactar con tu Hermes. Inténtalo de nuevo en un momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de joindre votre Hermes. Réessayez dans un instant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile raggiungere il tuo Hermes. Riprova tra un momento."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesに接続できませんでした。少ししてからもう一度お試しください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes에 연결할 수 없습니다. 잠시 후 다시 시도하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fikk ikke kontakt med Hermes. Prøv igjen om litt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes was niet bereikbaar. Probeer het zo nog eens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się połączyć z Hermesem. Spróbuj za chwilę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível falar com o seu Hermes. Tente de novo daqui a pouco."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось связаться с Hermes. Попробуйте чуть позже."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunde inte nå din Hermes. Försök igen om en stund."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'inize ulaşılamadı. Birazdan yeniden deneyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося зв’язатися з Hermes. Спробуйте трохи згодом."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接到你的 Hermes。请稍后再试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連線到你的 Hermes。請稍後再試。"
+          }
+        }
+      }
+    },
     "Couldn't reach your Hermes. Try again when Redde is connected." : {
       "comment" : "Make It a List / Add to a List: the server couldn't be reached",
       "localizations" : {
@@ -151254,7 +151575,7 @@
       }
     },
     "Done: %@" : {
-      "comment" : "A home card's device once Apple Home changed it, e.g. Done: Turn off",
+      "comment" : "A goal's Today tile, held: ticks off the person's next step",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -189487,6 +189808,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "目標"
+          }
+        }
+      }
+    },
+    "Goals you tick off" : {
+      "comment" : "What's New 2.7: a goal's steps are the person's or the agent's; the person's ticked off in Redde",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mål, du krydser af"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziele zum Abhaken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objetivos que vas marcando"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des objectifs à cocher"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obiettivi da spuntare"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チェックしていく目標"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "체크해 가는 목표"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mål du krysser av"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doelen om af te vinken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cele do odhaczania"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metas para ir marcando"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цели с галочками"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mål du bockar av"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İşaretleyerek ilerlediğiniz hedefler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цілі з позначками"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可以打勾的目标"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可以打勾的目標"
           }
         }
       }
@@ -254569,6 +254997,113 @@
         }
       }
     },
+    "Looks Good" : {
+      "comment" : "A goal's plan card: accepts a step the agent finished",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ser godt ud"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sieht gut aus"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Está bien"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C’est bon"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va bene"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これでOK"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "좋아요"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ser bra ut"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziet er goed uit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W porządku"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Está bom"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всё хорошо"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ser bra ut"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İyi görünüyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Усе добре"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可以"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可以"
+          }
+        }
+      }
+    },
     "Looks things up on the web and comes back with what it found, and where it found it." : {
       "localizations" : {
         "da" : {
@@ -292124,6 +292659,7 @@
       }
     },
     "Not done" : {
+      "comment" : "VoiceOver: a goal's step isn't done",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -430803,6 +431339,113 @@
         }
       }
     },
+    "Tap a step when you've done it. At its check-ins your agent asks about the rest." : {
+      "comment" : "A goal's page: under the person's steps",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på et trin, når du har gjort det. Ved sine statustjek spørger din agent til resten."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf einen Schritt, wenn du ihn erledigt hast. Bei den Check-ins fragt dein Agent nach dem Rest."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca un paso cuando lo hayas hecho. En sus revisiones, tu agente pregunta por el resto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez une étape quand vous l’avez faite. À ses points d’étape, votre agent vous demande où en est le reste."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca un passaggio quando l’hai fatto. Alle sue verifiche il tuo agente chiede degli altri."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終わったステップをタップしてください。残りはチェックインのときにエージェントが尋ねます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "한 단계를 마치면 탭하세요. 나머지는 체크인 때 에이전트가 물어봅니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på et trinn når du har gjort det. Ved statussjekkene spør agenten din om resten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op een stap als je hem gedaan hebt. Bij de check-ins vraagt je agent naar de rest."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij krok, gdy go wykonasz. O resztę agent zapyta w kolejnych raportach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque numa etapa quando a fizer. Nos check-ins, o seu agente pergunta pelo resto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите на шаг, когда сделаете его. Об остальных агент спросит на проверках."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på ett steg när du har gjort det. Vid avstämningarna frågar din agent om resten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir adımı yaptığınızda ona dokunun. Kalanları ajanınız durum kontrollerinde sorar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Торкніться кроку, коли виконаєте його. Про решту агент спитає під час перевірок."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成一个步骤后点一下它。其余的，智能体会在进展检查时问你。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成一個步驟後點一下它。其餘的，代理會在進度檢查時問你。"
+          }
+        }
+      }
+    },
     "Tap Done and add it in the form." : {
       "localizations" : {
         "da" : {
@@ -453361,6 +454004,113 @@
         }
       }
     },
+    "The plan shows here once you and your agent have agreed on it." : {
+      "comment" : "A goal's page before it has a plan",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planen vises her, når du og din agent er blevet enige om den."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Plan erscheint hier, sobald du und dein Agent ihn abgesprochen habt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan aparece aquí cuando tú y tu agente lo hayáis acordado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan s’affiche ici une fois que vous l’avez convenu avec votre agent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il piano compare qui quando tu e il tuo agente lo avete concordato."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントと合意すると、計画がここに表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트와 계획에 합의하면 여기에 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planen vises her når du og agenten din har blitt enige om den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het plan verschijnt hier zodra jij en je agent het eens zijn."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan pojawi się tutaj, gdy uzgodnisz go z agentem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O plano aparece aqui quando você e o seu agente o combinarem."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "План появится здесь, когда вы с агентом его согласуете."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planen visas här när du och din agent har kommit överens om den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan, ajanınızla üzerinde anlaştığınızda burada görünür."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "План з’явиться тут, коли ви з агентом його погодите."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你和智能体商定计划后，它会显示在这里。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你和代理商定計畫後，它會顯示在這裡。"
+          }
+        }
+      }
+    },
     "The plugin isn't on this Hermes yet." : {
       "localizations" : {
         "da" : {
@@ -473226,6 +473976,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "tickets.oceanario.pt/en/saturday"
+          }
+        }
+      }
+    },
+    "Ticking steps off takes the Redde plugin 1.35: update it in Settings › Redde Plugin." : {
+      "comment" : "A goal's step couldn't be ticked: the plugin is too old",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trin kan krydses af med Redde-pluginet 1.35: opdater det under Indstillinger › Redde-plugin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schritte abhaken geht ab dem Redde-Plugin 1.35: aktualisiere es unter Einstellungen › Redde-Plugin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para marcar pasos hace falta el plugin de Redde 1.35: actualízalo en Ajustes › Plugin de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cocher des étapes demande le plugin Redde 1.35 : mettez-le à jour dans Réglages › Plugin Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per spuntare i passaggi serve il plugin Redde 1.35: aggiornalo in Impostazioni › Plugin Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ステップのチェックにはReddeプラグイン1.35が必要です。設定 › Reddeプラグインでアップデートしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "단계를 체크하려면 Redde 플러그인 1.35가 필요합니다. 설정 › Redde 플러그인에서 업데이트하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Å krysse av trinn krever Redde-tillegget 1.35: oppdater det under Innstillinger › Redde-tillegg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stappen afvinken kan met de Redde-plug-in 1.35: werk hem bij in Instellingen › Redde-plug-in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odhaczanie kroków wymaga wtyczki Redde 1.35: zaktualizuj ją w Ustawienia › Wtyczka Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar etapas requer o plugin do Redde 1.35: atualize em Ajustes › Plugin do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмечать шаги можно с плагином Redde 1.35: обновите его в Настройки › Плагин Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Att bocka av steg kräver Redde-tillägget 1.35: uppdatera det i Inställningar › Redde-tillägg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adımları işaretlemek Redde Eklentisi 1.35 gerektirir: Ayarlar › Redde Eklentisi'nden güncelleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Позначати кроки можна з плагіном Redde 1.35: оновіть його в Параметри › Плагін Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "勾选步骤需要 Redde插件 1.35：请在 设置 › Redde插件 中更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "勾選步驟需要 Redde 外掛 1.35：請在 設定 › Redde 外掛 中更新。"
           }
         }
       }
@@ -529465,6 +530322,113 @@
         }
       }
     },
+    "Your agent works on these on the Kanban board, and asks you to look when one is done." : {
+      "comment" : "A goal's page: under the agent's steps",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent arbejder på dem på Kanban-tavlen og beder dig se på hvert, når det er færdigt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent erledigt diese auf dem Kanban-Board und bittet dich um einen Blick, sobald einer fertig ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente trabaja en estos en el tablero Kanban y te pide que mires cada uno cuando lo termina."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent s’en charge sur le tableau Kanban et vous demande d’y jeter un œil quand l’une est finie."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente li porta avanti sulla bacheca Kanban e ti chiede di guardarli quando uno è finito."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントがKanbanボードで進め、終わったものから確認を求めます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 Kanban 보드에서 진행하고, 하나가 끝나면 확인을 요청합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din jobber med disse på Kanban-tavlen og ber deg se på hvert når det er ferdig."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent werkt hieraan op het Kanban-bord en vraagt je te kijken als er een klaar is."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent zajmuje się nimi na tablicy Kanban i prosi Cię o rzut oka, gdy któryś skończy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O seu agente cuida delas no quadro Kanban e pede para você olhar cada uma quando termina."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент выполняет их на доске Kanban и просит вас взглянуть, когда шаг готов."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent arbetar med dessa på Kanban-tavlan och ber dig titta när ett är klart."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız bunlar üzerinde Kanban panosunda çalışır ve biri bitince bakmanızı ister."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент виконує їх на дошці Kanban і просить вас глянути, коли крок готовий."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体在 Kanban 看板上完成这些，每完成一项都会请你看看。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理在 Kanban 看板上完成這些，每完成一項都會請你看看。"
+          }
+        }
+      }
+    },
     "Your agent's briefings come here: the Evening Wrap-up, heads-ups before events, and any daily brief you ask it for. Set them up in Settings → Your Day." : {
       "localizations" : {
         "da" : {
@@ -538727,6 +539691,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的引導"
+          }
+        }
+      }
+    },
+    "Your Steps" : {
+      "comment" : "A goal's page: the steps the person does, a checklist",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dine trin"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Schritte"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus pasos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos étapes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi passaggi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたのステップ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나의 단계"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dine trinn"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jouw stappen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoje kroki"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suas etapas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши шаги"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina steg"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adımlarınız"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваші кроки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的步骤"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的步驟"
           }
         }
       }

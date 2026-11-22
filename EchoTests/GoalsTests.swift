@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UserNotifications
 @testable import Echo
 
 /// Goals (2.4): a check-in's note is kept as its goal's latest, the plugin's list is merged over
@@ -83,6 +84,51 @@ struct GoalsTests {
         #expect(g7.headline == "Newer words.", "a check-in heard since keeps its words")
         #expect(g7.steps?.first?.cardID == "k1")
         #expect(Goals.parse(list: "usage: hermes redde-push …") == nil, "an older plugin's answer")
+    }
+
+    /// The plugin's own reply (`goals.listing`): `profile`, `by` and `card`, and from 1.35 each
+    /// step's owner. Until 2026-11-22 the app read `agent`, `target` and `card_id`, so a bot's goal
+    /// showed as the main agent's, with no date.
+    @Test func thePluginsListIsReadAsItSaysIt() throws {
+        let listed = try #require(Goals.parse(list: """
+            redde-push goals [{"id":"g8","profile":"scout","title":"Read 20 books","by":"2027-01-31","every":"0 9 * * 1","job":"j8",
+             "steps":[{"title":"Pick the list","card":"t1","who":"agent","done":true},{"title":"Read book 1","card":null,"who":"you","done":false},
+                      {"title":"Read book 2","card":null,"who":"you","done":false}],
+             "progress":{"done":0,"total":3,"headline":"Started.","next":"Read book 1","at":1000}}]
+            """))
+        let g8 = try #require(listed.first)
+        #expect(g8.profile == "scout")
+        #expect(g8.target != nil)
+        #expect(g8.steps?.map(\.isYours) == [false, true, true])
+        #expect(g8.steps?.first?.cardID == "t1")
+        #expect((g8.done, g8.total) == (1, 3), "the plan's own count, the agent's finished card in it")
+        #expect(g8.nextForYou?.index == 1)
+    }
+
+    /// A check-in's notification names its goal, for a tap to open the goal's page.
+    @Test func aCheckInsNotificationNamesItsGoal() throws {
+        let content = UNMutableNotificationContent()
+        #expect(try note(#"{"v":1,"k":"routine","x":"brief","t":"[redde-goal:g7] Run","b":"Two runs.","o":"g7","q":"2/7","p":"scout"}"#).fill(content))
+        #expect(content.userInfo[PushNote.goalKey] as? String == "g7")
+        let plain = UNMutableNotificationContent()
+        #expect(try note(#"{"v":1,"k":"routine","t":"What to wear","b":"A coat.","p":"scout"}"#).fill(plain))
+        #expect(plain.userInfo[PushNote.goalKey] == nil)
+    }
+
+    @Test func aStepTickedHereMovesTheCountAndTheNextStep() throws {
+        let store = store()
+        var goal = GoalReport(id: "g9", title: "Run", agent: "", done: 0, total: 2, headline: "", at: .now, failed: false,
+                              steps: [.init(title: "Run 3K", done: false, who: "you"), .init(title: "Run 5K", done: false, who: "you")])
+        GoalReport.merge([goal], in: store)
+        GoalReport.setStep("g9", 0, done: true, in: store)
+        goal = try #require(GoalReport.all(in: store)["g9"])
+        #expect((goal.done, goal.total) == (1, 2))
+        #expect(goal.nextForYou?.step.title == "Run 5K")
+        GoalReport.setStep("g9", 0, done: false, in: store)
+        #expect(GoalReport.all(in: store)["g9"]?.done == 0, "a tick taken back")
+        // An older plugin's step: a card means it was the agent's, none that it's theirs.
+        #expect(GoalReport.Step(title: "x", cardID: "k", done: false).isYours == false)
+        #expect(GoalReport.Step(title: "x", done: false).isYours)
     }
 
     @Test func anEndedGoalStaysEnded() throws {

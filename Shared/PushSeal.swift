@@ -422,6 +422,8 @@ nonisolated extension PushNote {
     /// On a group chat's: the room, and the task of a turn to try again. On a bot's schedule's: the bot.
     static let roomKey = "room"
     static let botKey = "bot"
+    /// On a goal's check-in: the goal, whose page a tap opens (its steps to tick, 2026-11-22).
+    static let goalKey = "goal"
     static let taskKey = "task"
     /// On a key request's notification: the request, whose card a tap opens.
     static let keyRequestKey = "keyRequest"
@@ -619,6 +621,7 @@ nonisolated extension PushNote {
         if let g, !g.isEmpty { info[Self.roomKey] = g }
         // A bot's opens its chat; the main agent's (a job Sol made) has none to open: Redde opens.
         if kind == .routine, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
+        if kind == .routine, let o, !o.isEmpty { info[Self.goalKey] = o }
         // A bot's missed call opens its chat; the main agent's, the conversation it called from.
         if kind == .call, let p, !p.isEmpty, p != "default" { info[Self.botKey] = p }
         if kind == .work {

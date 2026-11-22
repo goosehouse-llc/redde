@@ -3,12 +3,18 @@ the trip"), with a plan, check-ins on a schedule and their progress on the phone
 after Meta's Muse, whose goals are its signature; Redde 2.4).
 
 The agent proposes a short plan, the person agrees, and the agent calls `redde_goal` with action
-"set". That keeps the goal in this profile's `redde-push/goals.json`, puts each step on the Hermes
-Kanban board as a card in triage (tenant `redde-goal-<id>`, so no worker starts on it before the
-person approves it in Redde) where this Hermes has a board, and makes a cron job that checks in on
-it, named `[redde-goal:<id>] <title>` and delivered "local". Each check-in's answer starts with a
+"set". That keeps the goal in this profile's `redde-push/goals.json` and makes a cron job that checks
+in on it, named `[redde-goal:<id>] <title>` and delivered "local". Each check-in's answer starts with a
 line `PROGRESS: <done>/<steps> | <headline> | <next>`, which the schedules' reader (`routines.py`)
 keeps here and sends to the phones as a briefing with the goal's id (`o`) and progress (`q`).
+
+Each step is the person's or the agent's (1.35.0, 2026-11-22, their "not sure the current makes
+sense": every step had gone to the board as the agent's, so "Run 5K on Saturday" sat Blocked there,
+nothing could be ticked from the phone and the plan was approved twice). The person's steps are a
+checklist they tick in Redde (`/redde-push goals step`), and a check-in asks about the open ones rather
+than guessing. The agent's go on the Hermes Kanban board where it has one (tenant `redde-goal-<id>`),
+ready at once: agreeing to the plan in the chat is the approval. A step kept before 1.35 has no owner:
+it reads as the agent's when its card was let go on the board, and as the person's otherwise.
 
 Hermes has a `/goal` command and Kanban `goal_mode` of its own (a chat kept working until a goal is
 met): unrelated, and the agent is told not to use them for these.
@@ -56,7 +62,8 @@ _GOALISH = re.compile(
     r"track my progress|keep me on track|hold me accountable|i'?m (?:training|saving up|studying) for)\b",
     re.IGNORECASE)
 
-NOTE = (f"[Redde: this may be a goal. If they want help reaching it, propose a short plan (3-7 steps) and when you'll "
+NOTE = (f"[Redde: this may be a goal. If they want help reaching it, propose a short plan (3-7 steps), saying for each "
+        "whether they do it or you do (research, finding, booking, drafting: yours; their own doing: theirs), and when you'll "
         "check in (default: Mondays at 9:00, every other day if it's under two weeks away), ask them to confirm with "
         f"your question tool, and once they agree call {TOOL} with action \"set\" (find it with tool_search if it isn't "
         "among your tools). Not Hermes's /goal command.]")
@@ -64,7 +71,9 @@ NOTE = (f"[Redde: this may be a goal. If they want help reaching it, propose a s
 DESCRIPTION = (
     "The user's goals in Redde: something to reach over days or weeks, with a plan, check-ins on a schedule and "
     "progress on their iPhone. 'set' (after they agree to the plan: title, by, steps, every), 'update' (id; done: "
-    "step numbers now done; add: new steps; by; every), 'status' (all, or one id), 'end' (id). Not Hermes's /goal.")
+    "step numbers now done; undone: ones not done after all; add: new steps; by; every), 'status' (all, or one id), "
+    "'end' (id). Each step is {title, who}: who 'you' for theirs, which they tick off in Redde, 'agent' for yours, "
+    "which go on the Kanban board and start at once. Not Hermes's /goal.")
 
 
 # ---- the file ------------------------------------------------------------------------------------
@@ -232,10 +241,16 @@ def checkin_note(home: Path, message, platform: str = "", board=None) -> str | N
         return None
     statuses = _card_statuses(found, board)
     steps = kept.get("steps") or []
-    lines = []
+    lines, open_theirs = [], []
     for number, step in enumerate(steps, 1):
-        status = statuses.get(str(step.get("card") or "")) or ("done" if step.get("done") else "to do")
-        lines.append(f"{number}. {step.get('title')} ({status})")
+        theirs = owner(step, statuses) == "you"
+        status = ("done" if step.get("done") else "to do") if theirs else (statuses.get(str(step.get("card") or "")) or ("done" if step.get("done") else "to do"))
+        lines.append(f"{number}. {step.get('title')} ({'theirs' if theirs else 'yours'}, {status})")
+        if theirs and not step.get("done"):
+            open_theirs.append(step.get("title"))
+    ask = (" Their steps are theirs to tick off in Redde: never mark one done unless they told you it is. If one "
+           "looks due, ask in your lines whether they've done it; Redde shows it beside your answer with a Done button."
+           if open_theirs else "")
     last = kept.get("progress") or {}
     said = (f" Last check-in: {last.get('done')}/{last.get('total')}, \"{last.get('headline')}\"." if last else "")
     by = f" Target: {kept['by']}." if kept.get("by") else ""
@@ -244,7 +259,7 @@ def checkin_note(home: Path, message, platform: str = "", board=None) -> str | N
     return (f"[Redde: goal \"{kept.get('title')}\".{by}{said} Steps: " + "; ".join(lines) + f".{late} "
             "Check how it is going with your tools and what you know. Start your answer with one line exactly "
             "\"PROGRESS: <steps done>/<steps> | <a few words on how it's going> | <the next step>\", then at most "
-            f"three short lines for them. Mark finished steps with {TOOL} action \"update\". Anything that needs "
+            f"three short lines for them.{ask} Mark your own finished steps with {TOOL} action \"update\". Anything that needs "
             "their approval or a choice, offer with suggest_to_user. Not Hermes's /goal command.]")
 
 
@@ -268,19 +283,56 @@ def _board_conn():
             pass
 
 
-def _make_cards(goal: str, steps: list[str], assignee: str, body: str, board=None, first: int = 1) -> list[str | None]:
-    """A card in triage for each step, under tenant `redde-goal-<id>`, or None each where there is
-    no board here (or it refused). `board` stands in for `_board_conn` in tests."""
+def planned(steps) -> list[dict]:
+    """The steps the agent gave, as {title, who}: a plain string is the person's (nothing starts on
+    its own), as is any `who` but "agent"."""
+    found = []
+    for step in steps or []:
+        if isinstance(step, dict):
+            text, who = step.get("title") or step.get("step") or "", "agent" if str(step.get("who") or "").lower() in ("agent", "me", "assistant") else "you"
+        else:
+            text, who = step, "you"
+        text = " ".join(str(text or "").split())[:120]
+        if text:
+            found.append({"title": text, "who": who})
+    return found
+
+
+def owner(step: dict, statuses: dict[str, str] | None = None) -> str:
+    """Whose a kept step is. One from before 1.35 has none: the agent's when its card was let go
+    on the board (out of triage), the person's otherwise."""
+    if step.get("who") in ("you", "agent"):
+        return step["who"]
+    status = (statuses or {}).get(str(step.get("card") or ""))
+    return "agent" if status and status not in ("triage", "archived") else "you"
+
+
+def _make_cards(goal: str, steps: list[dict], assignee: str, body: str, board=None, first: int = 1) -> list[str | None]:
+    """A card for each of the agent's steps, under tenant `redde-goal-<id>`, ready at once (the plan
+    was agreed in the chat), or None where a step is the person's, there is no board here, or it
+    refused. `board` stands in for `_board_conn` in tests."""
+    if not any(s["who"] == "agent" for s in steps):
+        return [None] * len(steps)
     try:
         with (board or _board_conn)() as (kb, conn):
             made = []
             for number, step in enumerate(steps, first):
-                made.append(str(kb.create_task(conn, title=step, body=body, assignee=assignee,
-                                               tenant=f"redde-goal-{goal}", triage=True,
-                                               idempotency_key=f"redde-goal-{goal}-{number}")))
+                made.append(str(kb.create_task(conn, title=step["title"], body=body, assignee=assignee,
+                                               tenant=f"redde-goal-{goal}",
+                                               idempotency_key=f"redde-goal-{goal}-{number}"))
+                            if step["who"] == "agent" else None)
             return made
     except Exception:
         return [None] * len(steps)
+
+
+def _let_card_go(card: str, board=None) -> None:
+    """A step the person ticked had a card (one kept before 1.35, held in triage): off the board."""
+    try:
+        with (board or _board_conn)() as (kb, conn):
+            kb.archive_task(conn, card)
+    except Exception:
+        pass
 
 
 def _card_statuses(goal: str, board=None) -> dict[str, str]:
@@ -326,7 +378,7 @@ def set_up(home: Path, profile: str, what: str, by: str | None = None, steps=Non
             by = date.fromisoformat(str(by)[:10]).isoformat()
         except ValueError:
             return {"error": "\"by\" must be a date like 2026-03-01."}
-    planned = [" ".join(str(s or "").split())[:120] for s in (steps or []) if str(s or "").strip()][:STEPS]
+    plan = planned(steps)[:STEPS]
     if len(sweep(home)) >= MOST:
         return {"error": f"There are already {MOST} goals: ask them which to end first."}
     if make is None:
@@ -336,11 +388,11 @@ def set_up(home: Path, profile: str, what: str, by: str | None = None, steps=Non
             return {"error": "This Hermes can't schedule check-ins (no cron). Tell them in words instead."}
     goal = uuid.uuid4().hex[:10]
     schedule = schedule_for(by, every, today)
-    cards = _make_cards(goal, planned, profile, f"A step toward the user's goal \"{what}\" (Redde).", board)
+    cards = _make_cards(goal, plan, profile, f"A step toward the user's goal \"{what}\" (Redde).", board)
     job = make(prompt(goal, what), schedule, name=f"{TAG}{goal}] {what}", deliver="local")
     kept = {"id": goal, "title": what, "by": by, "every": schedule, "profile": profile,
             "job": str((job or {}).get("id") or "") if isinstance(job, dict) else "",
-            "steps": [{"title": s, "card": c, "done": False} for s, c in zip(planned, cards)],
+            "steps": [{"title": s["title"], "who": s["who"], "card": c, "done": False} for s, c in zip(plan, cards)],
             "made": int(time.time())}
     with _locked(home):
         goals = load(home)
@@ -348,12 +400,13 @@ def set_up(home: Path, profile: str, what: str, by: str | None = None, steps=Non
         save(home, goals)
     on_board = any(cards)
     return {"set": goal, "check_ins": schedule,
-            "said": ("The plan is on the Kanban board, waiting for them to approve each step in Redde. " if on_board else "")
+            "said": ("Your steps are on the Kanban board and start now. " if on_board else "")
+                    + ("Theirs are a checklist they tick off in Redde. " if any(s["who"] == "you" for s in plan) else "")
                     + "Tell them in a few words when you'll check in."}
 
 
 def update(home: Path, goal: str, done=None, add=None, by: str | None = None, every: str | None = None,
-           board=None, edit=None) -> dict:
+           board=None, edit=None, undone=None) -> dict:
     """Steps done or added, a new date or new check-ins. `edit` is Hermes's `cron.jobs.update_job`."""
     with _locked(home):
         goals = load(home)
@@ -361,17 +414,19 @@ def update(home: Path, goal: str, done=None, add=None, by: str | None = None, ev
         if kept is None:
             return {"error": f"No goal {goal}: call {TOOL} with action \"status\" for their ids."}
         steps = kept.setdefault("steps", [])
-        for number in done or []:
-            try:
-                steps[int(number) - 1]["done"] = True
-            except (ValueError, TypeError, IndexError):
-                pass
-        added = [" ".join(str(s or "").split())[:120] for s in (add or []) if str(s or "").strip()][:max(0, STEPS - len(steps))]
+        for numbers, value in ((done, True), (undone, False)):
+            for number in numbers or []:
+                try:
+                    if int(number) >= 1:
+                        steps[int(number) - 1]["done"] = value
+                except (ValueError, TypeError, IndexError):
+                    pass
+        added = planned(add)[:max(0, STEPS - len(steps))]
         if added:
             # (their cards' idempotency keys follow on from the steps already there)
             cards = _make_cards(goal, added, str(kept.get("profile") or "default"),
                                 f"A step toward the user's goal \"{kept.get('title')}\" (Redde).", board, first=len(steps) + 1)
-            steps += [{"title": s, "card": c, "done": False} for s, c in zip(added, cards)]
+            steps += [{"title": s["title"], "who": s["who"], "card": c, "done": False} for s, c in zip(added, cards)]
         if by:
             try:
                 kept["by"] = date.fromisoformat(str(by)[:10]).isoformat()
@@ -391,10 +446,33 @@ def update(home: Path, goal: str, done=None, add=None, by: str | None = None, ev
     return {"updated": goal, "steps_done": f"{finished}/{total}"}
 
 
+def tick(home: Path, goal: str, number: int, done: bool, board=None) -> bool:
+    """The person ticked one of their steps in Redde (or took the tick back); whether there was
+    such a step. A step kept before 1.35 whose card was still held in triage becomes theirs, and
+    its card leaves the board."""
+    with _locked(home):
+        goals = load(home)
+        kept = next((g for g in goals if g.get("id") == goal and not g.get("ended")), None)
+        steps = (kept or {}).get("steps") or []
+        if not 1 <= number <= len(steps):
+            return False
+        step = steps[number - 1]
+        card = str(step.get("card") or "")
+        stray = card if done and card and owner(step, _card_statuses(goal, board) if "who" not in step else None) == "you" else ""
+        step["done"] = done
+        if stray:
+            step["who"], step["card"] = "you", None
+        save(home, goals)
+    if stray:
+        _let_card_go(stray, board)
+    return True
+
+
 def status(home: Path, goal: str | None = None) -> dict:
     goals = [g for g in sweep(home) if not goal or g.get("id") == goal]
     return {"goals": [{"id": g["id"], "title": g.get("title"), "by": g.get("by"), "check_ins": g.get("every"),
-                       "steps": [f"{i}. {s.get('title')}{' (done)' if s.get('done') else ''}"
+                       "steps": [f"{i}. {s.get('title')} ({'theirs' if owner(s) == 'you' else 'yours'}"
+                                 f"{', done' if s.get('done') else ''})"
                                  for i, s in enumerate(g.get("steps") or [], 1)],
                        "progress": g.get("progress")} for g in goals]}
 
@@ -440,6 +518,8 @@ def listing(stores) -> list[dict]:
         jobs = {goal_id(str(j.get("name") or "")): j for j in listed or [] if is_goal(j)}
         for kept in goals:
             job = jobs.get(kept["id"]) or {}
+            carded = any(s.get("card") for s in kept.get("steps") or [])
+            statuses = _card_statuses(kept["id"]) if carded else {}
             last = kept.get("progress") or {}
             ran = _seconds(job.get("last_run_at"))
             if job.get("id") and ran and ran > float(last.get("at") or 0):
@@ -449,7 +529,8 @@ def listing(stores) -> list[dict]:
             found.append({"id": kept["id"], "profile": profile, "title": kept.get("title"), "by": kept.get("by"),
                           "every": kept.get("every"), "job": str(job.get("id") or kept.get("job") or ""),
                           "next": job.get("next_run_at"), "paused": job.get("state") == "paused" or job.get("enabled") is False,
-                          "steps": [{"title": s.get("title"), "card": s.get("card"), "done": bool(s.get("done"))}
+                          "steps": [{"title": s.get("title"), "card": s.get("card"), "who": owner(s, statuses),
+                                     "done": bool(s.get("done")) or (owner(s, statuses) == "agent" and statuses.get(str(s.get("card") or "")) == "done")}
                                     for s in kept.get("steps") or []],
                           "progress": last or None})
     return found
@@ -473,7 +554,8 @@ def register(ctx, home_of) -> None:
         if action == "set":
             said = set_up(home, caller(home)[0], args.get("title"), args.get("by"), args.get("steps"), args.get("every"))
         elif action == "update":
-            said = update(home, str(args.get("id") or ""), args.get("done"), args.get("add"), args.get("by"), args.get("every"))
+            said = update(home, str(args.get("id") or ""), args.get("done"), args.get("add"), args.get("by"), args.get("every"),
+                          undone=args.get("undone"))
         elif action == "end":
             said = end(home, str(args.get("id") or ""))
         else:
@@ -486,9 +568,10 @@ def register(ctx, home_of) -> None:
                                             "id": {"type": "string"},
                                             "title": {"type": "string"},
                                             "by": {"type": "string", "description": "YYYY-MM-DD"},
-                                            "steps": {"type": "array", "items": {"type": "string"}},
+                                            "steps": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "who": {"type": "string", "enum": ["you", "agent"], "description": "you: the user does it; agent: you do it"}}, "required": ["title", "who"]}},
                                             "done": {"type": "array", "items": {"type": "integer"}},
-                                            "add": {"type": "array", "items": {"type": "string"}},
+                                            "undone": {"type": "array", "items": {"type": "integer"}},
+                                            "add": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "who": {"type": "string", "enum": ["you", "agent"], "description": "you: the user does it; agent: you do it"}}, "required": ["title", "who"]}},
                                             "every": {"type": "string", "description": "weekly, other_day, daily or cron"}},
                              "required": ["action"]}}
     ctx.register_tool(name=TOOL, toolset=TOOLSET, schema=schema, handler=handle, emoji="🎯")

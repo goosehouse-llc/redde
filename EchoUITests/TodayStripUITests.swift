@@ -29,6 +29,34 @@ final class TodayStripUITests: XCTestCase {
         }
     }
 
+    /// A goal's steps are the person's or the agent's (2026-11-22, "not sure the current makes
+    /// sense"): theirs a checklist, ticked on the goal's page and the count follows at once; the
+    /// Today tile's check ticks off the next one without opening the goal.
+    func testTheirStepsAreTickedOnTheGoalAndFromToday() {
+        let app = openDrawer()
+        let goal = tile(app, "Run a 10K by March")
+        XCTAssertTrue(goal.waitForExistence(timeout: 10), "No goal tile")
+        XCTAssertTrue(app.staticTexts["Next: Long run at 8 km"].exists || tile(app, "Long run at 8 km").exists,
+                      "The tile doesn't name their next step")
+        let done = app.buttons["goal-tile-done"].firstMatch
+        XCTAssertTrue(done.exists, "No Done on the goal's tile")
+        done.tap()
+        XCTAssertTrue(tile(app, "Taper week").waitForExistence(timeout: 5), "Done didn't move the tile on to the next step")
+        goal.tap()
+        XCTAssertTrue(app.staticTexts["Your Steps"].waitForExistence(timeout: 5), "No checklist on the goal")
+        XCTAssertTrue(app.staticTexts["Sol's Steps"].exists, "The agent's steps aren't apart")
+        XCTAssertFalse(app.buttons["Approve All"].exists, "The plan is approved in the chat, not again here")
+        XCTAssertEqual(app.buttons["goal-step-5"].value as? String, "Done", "The tile's tick isn't on the goal's page")
+        app.buttons["goal-step-6"].tap()
+        XCTAssertTrue(app.staticTexts["5/7"].waitForExistence(timeout: 5), "The count didn't follow the tick")
+        app.buttons["goal-step-6"].tap()
+        XCTAssertTrue(app.staticTexts["4/7"].waitForExistence(timeout: 5), "A tick couldn't be taken back")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "goal-steps"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
     /// An idea opens in full on a tap (2026-11-22: "allow to tap on the card to see what it says
     /// before making me dismiss or push it"): every word, and the message Do It would send. Closed,
     /// it is still in the deck; Not Now closes the sheet.

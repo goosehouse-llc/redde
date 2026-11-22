@@ -35,6 +35,28 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
         var title: String
         var cardID: String?
         var done: Bool
+        /// Whose step it is (plugin 1.35): "you" for the person's, ticked off in Redde; "agent" for
+        /// the agent's, a card on the Kanban board. Nil from an older plugin.
+        var who: String?
+
+        /// The person's to tick: theirs, or, from an older plugin, one with no card on the board.
+        var isYours: Bool { who == "you" || (who == nil && cardID == nil) }
+    }
+
+    /// The first of the person's steps not done yet, and where it is in the plan.
+    var nextForYou: (index: Int, step: Step)? {
+        guard let steps, let index = steps.firstIndex(where: { $0.isYours && !$0.done }) else { return nil }
+        return (index, steps[index])
+    }
+
+    /// A step ticked (or the tick taken back) here, before the server has said so: the count
+    /// follows the plan's steps.
+    mutating func setStep(_ index: Int, done: Bool) {
+        guard var steps, steps.indices.contains(index) else { return }
+        steps[index].done = done
+        self.steps = steps
+        self.done = steps.filter(\.done).count
+        total = steps.count
     }
 
     /// The share done, 0 to 1; 0 with no steps yet.
@@ -182,6 +204,15 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
             if report.title.isEmpty { report.title = job.title }
             kept[job.id] = report
         }
+        save(kept, in: defaults)
+    }
+
+    /// A step ticked on this device (`setStep`), kept so the chat list and Today show it at once.
+    static func setStep(_ id: String, _ index: Int, done: Bool, in defaults: UserDefaults? = NeedsYou.shared) {
+        var kept = all(in: defaults)
+        guard var report = kept[id] else { return }
+        report.setStep(index, done: done)
+        kept[id] = report
         save(kept, in: defaults)
     }
 

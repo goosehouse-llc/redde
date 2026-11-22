@@ -386,6 +386,12 @@ extension ConversationsList {
         .task(id: "\(settings.connectionKey)|\(scenePhase == .active)") {
             if scenePhase == .active { await TodayLists.shared.refresh() }
         }
+        .onChange(of: GoalsInbox.shared.opening, initial: true) { _, id in
+            guard let id else { return }
+            GoalsInbox.shared.opening = nil
+            shownGoal = GoalsInbox.shared.goals.first { $0.id == id }
+                ?? GoalReport(id: id, title: "", agent: "", done: 0, total: 0, headline: "", at: .now, failed: false)
+        }
         .sheet(item: $shownGoal) { goal in
             NavigationStack {
                 GoalView(goalID: goal.id)

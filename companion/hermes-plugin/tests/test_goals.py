@@ -28,6 +28,12 @@ class FakeBoard:
     def list_tasks(self, conn, *, tenant=None, **_):
         return [t for t in self.tasks if t.tenant == tenant]
 
+    def archive_task(self, conn, task_id, **_):
+        for task in self.tasks:
+            if task.id == task_id:
+                task.status = "archived"
+        return True
+
     @contextmanager
     def __call__(self):
         yield self, None
@@ -132,7 +138,8 @@ class GoalTests(RoutinesTests):
         self.assertIsNone(goals.turn_note("I want to run a 10K by March", platform="cron"))
         self.assertIn("redde_goal", goals.NOTE)
         self.assertIn("Not Hermes's /goal", goals.NOTE)
-        self.assertLess(len(goals.NOTE), 450, "a turn's note: short")
+        self.assertIn("whether they do it or you do", goals.NOTE)
+        self.assertLess(len(goals.NOTE), 560, "a turn's note: short")
 
     def test_check_ins_default_to_mondays_or_every_other_day_when_its_soon(self):
         today = date(2026, 11, 2)
@@ -143,25 +150,31 @@ class GoalTests(RoutinesTests):
         self.assertEqual(goals.schedule_for(None, "30 18 * * 5", today=today), "30 18 * * 5")
         self.assertEqual(goals.schedule_for(None, "every so often", today=today), goals.WEEKLY)
 
-    def test_setting_a_goal_makes_its_cards_in_triage_its_check_in_and_keeps_it(self):
+    def test_setting_a_goal_puts_only_the_agents_steps_on_the_board_ready_and_keeps_it(self):
         board = FakeBoard()
-        said = goals.set_up(self.root, "default", "Run a 10K", "2027-03-01", ["Run 3K twice a week", "Run 5K", "Sign up for a race"],
+        said = goals.set_up(self.root, "default", "Run a 10K", "2027-03-01",
+                            [{"title": "Run 3K twice a week", "who": "you"}, {"title": "Find a training plan", "who": "agent"},
+                             "Sign up for a race"],
                             make=self.made(), board=board, today=date(2026, 11, 2))
         goal = said["set"]
         self.assertIn("Kanban", said["said"])
+        self.assertIn("checklist", said["said"])
         self.assertEqual(said["check_ins"], goals.WEEKLY)
-        self.assertEqual([(t.status, t.tenant, t.assignee) for t in board.tasks], [("triage", f"redde-goal-{goal}", "default")] * 3)
+        # Agreeing in the chat was the approval: the agent's step starts at once; theirs aren't cards.
+        self.assertEqual([(t.title, t.status, t.tenant, t.assignee) for t in board.tasks],
+                         [("Find a training plan", "ready", f"redde-goal-{goal}", "default")])
         job = self.jobs[0]
         self.assertEqual((job["name"], job["schedule"], job["deliver"]), (f"[redde-goal:{goal}] Run a 10K", goals.WEEKLY, "local"))
         self.assertTrue(job["prompt"].startswith(f"[redde-goal:{goal}]"))
         kept = goals.load(self.root)[0]
         self.assertEqual((kept["title"], kept["by"], kept["job"]), ("Run a 10K", "2027-03-01", "job1"))
-        self.assertEqual([s["card"] for s in kept["steps"]], ["t1", "t2", "t3"])
+        self.assertEqual([(s["who"], s["card"]) for s in kept["steps"]], [("you", None), ("agent", "t1"), ("you", None)],
+                         "a plain string is theirs: nothing starts on its own")
 
     def test_without_a_board_the_steps_are_kept_here(self):
         said = goals.set_up(self.root, "scout", "Read 20 books", None, ["Pick the list"], make=self.made(), board=no_board)
         self.assertNotIn("Kanban", said["said"])
-        self.assertEqual(goals.load(self.root)[0]["steps"], [{"title": "Pick the list", "card": None, "done": False}])
+        self.assertEqual(goals.load(self.root)[0]["steps"], [{"title": "Pick the list", "who": "you", "card": None, "done": False}])
 
     def test_odd_asks_are_refused(self):
         self.assertIn("error", goals.set_up(self.root, "default", "", make=self.made()))
@@ -170,15 +183,17 @@ class GoalTests(RoutinesTests):
 
     def test_steps_are_marked_done_and_added_after_the_others(self):
         board = FakeBoard()
-        goal = goals.set_up(self.root, "default", "Run a 10K", None, ["Run 3K", "Run 5K"], make=self.made(), board=board)["set"]
+        goal = goals.set_up(self.root, "default", "Run a 10K", None, [{"title": "Run 3K", "who": "agent"}, "Run 5K"],
+                            make=self.made(), board=board)["set"]
         edits = []
-        said = goals.update(self.root, goal, done=[1, 9, "x"], add=["Run 8K"], every="daily", board=board,
+        said = goals.update(self.root, goal, done=[1, 9, "x"], add=[{"title": "Run 8K", "who": "agent"}], every="daily", board=board,
                             edit=lambda job, updates: edits.append((job, updates)))
         self.assertEqual(said["steps_done"], "1/3")
         self.assertEqual([t.idempotency_key for t in board.tasks][-1], f"redde-goal-{goal}-3", "its own card, not step 1's again")
         self.assertEqual(edits, [("job1", {"schedule": goals.DAILY})])
         listed = goals.status(self.root)["goals"][0]
-        self.assertEqual(listed["steps"], ["1. Run 3K (done)", "2. Run 5K", "3. Run 8K"])
+        self.assertEqual(listed["steps"], ["1. Run 3K (yours, done)", "2. Run 5K (theirs)", "3. Run 8K (yours)"])
+        self.assertEqual(goals.update(self.root, goal, undone=[1])["steps_done"], "0/3", "a step not done after all")
 
     def test_ending_a_goal_stops_its_check_ins(self):
         goal = goals.set_up(self.root, "default", "Run a 10K", make=self.made(), board=no_board)["set"]
@@ -189,11 +204,13 @@ class GoalTests(RoutinesTests):
 
     def test_a_check_in_is_told_its_steps_and_how_to_answer(self):
         board = FakeBoard()
-        goal = goals.set_up(self.root, "default", "Run a 10K", "2027-03-01", ["Run 3K", "Run 5K"], make=self.made(), board=board)["set"]
+        goal = goals.set_up(self.root, "default", "Run a 10K", "2027-03-01",
+                            [{"title": "Find a plan", "who": "agent"}, {"title": "Run 5K", "who": "you"}], make=self.made(), board=board)["set"]
         board.tasks[0].status = "done"
         asked = self.jobs[0]["prompt"]
         note = goals.checkin_note(self.root, asked, "cron", board=board)
-        self.assertIn("1. Run 3K (done); 2. Run 5K (triage)", note)
+        self.assertIn("1. Find a plan (yours, done); 2. Run 5K (theirs, to do)", note)
+        self.assertIn("never mark one done unless they told you", note, "theirs are asked about, not guessed")
         self.assertIn("Target: 2027-03-01", note)
         self.assertIn("PROGRESS: <steps done>/<steps>", note)
         self.assertIn("suggest_to_user", note)
@@ -259,7 +276,48 @@ class GoalTests(RoutinesTests):
         self.assertEqual(len(listed), 1)
         self.assertEqual((listed[0]["id"], listed[0]["profile"], listed[0]["job"]), ("g2", "scout", "job1"))
         self.assertEqual(listed[0]["progress"]["next"], "Fix the crash", "read now: no phone paired to have kept it")
-        self.assertEqual(listed[0]["steps"], [{"title": "Beta", "card": "t9", "done": True}])
+        self.assertEqual(listed[0]["steps"], [{"title": "Beta", "card": "t9", "who": "you", "done": True}],
+                         "kept before 1.35, its card not let go on the board: theirs")
+
+    def test_the_person_ticks_their_step_from_the_phone(self):
+        board = FakeBoard()
+        goal = goals.set_up(self.root, "default", "Run a 10K", None, [{"title": "Run 5K", "who": "you"}, {"title": "Find a race", "who": "agent"}],
+                            make=self.made(), board=board)["set"]
+        self.assertTrue(goals.tick(self.root, goal, 1, True, board))
+        self.assertTrue(goals.load(self.root)[0]["steps"][0]["done"])
+        self.assertTrue(goals.tick(self.root, goal, 1, False, board))
+        self.assertFalse(goals.load(self.root)[0]["steps"][0]["done"], "a tick taken back")
+        self.assertFalse(goals.tick(self.root, goal, 3, True, board))
+        self.assertFalse(goals.tick(self.root, "nope", 1, True, board))
+        self.assertEqual(board.tasks[0].status, "ready", "the agent's card is left alone")
+
+    def test_the_app_ticks_a_step_over_either_connection(self):
+        goal = goals.set_up(self.root, "default", "Run a 10K", None, ["Run 5K"], make=self.made(), board=no_board)["set"]
+        original = plugin._home
+        plugin._home = lambda: self.root
+        try:
+            self.assertEqual(plugin._goal_step_slash(["default", goal, "1", "done"], board=no_board), f"redde-push goals step {goal} 1 done")
+            self.assertTrue(goals.load(self.root)[0]["steps"][0]["done"])
+            self.assertEqual(plugin._goal_step_slash(["default", goal, "1", "undo"], board=no_board), f"redde-push goals step {goal} 1 undone")
+            self.assertEqual(plugin._goal_step_slash(["default", goal, "4", "done"], board=no_board), "redde-push goals unknown")
+            self.assertIn("for the Redde app", plugin._goal_step_slash(["default", goal, "x", "done"]))
+            self.assertIn("for the Redde app", plugin._goal_step_slash(["../x", goal, "1", "done"]))
+        finally:
+            plugin._home = original
+
+    def test_a_step_kept_before_owners_is_theirs_while_its_card_waits_in_triage(self):
+        board = FakeBoard()
+        board.create_task(None, title="Run 5K", tenant="redde-goal-g1", triage=True, idempotency_key="k1")
+        board.create_task(None, title="Find a race", tenant="redde-goal-g1", idempotency_key="k2")
+        goals.save(self.root, [{"id": "g1", "title": "Run a 10K", "steps": [{"title": "Run 5K", "card": "t1", "done": False},
+                                                                             {"title": "Find a race", "card": "t2", "done": False}]}])
+        kept = goals.load(self.root)[0]["steps"]
+        statuses = goals._card_statuses("g1", board)
+        self.assertEqual([goals.owner(s, statuses) for s in kept], ["you", "agent"])
+        self.assertTrue(goals.tick(self.root, "g1", 1, True, board))
+        self.assertEqual(board.tasks[0].status, "archived", "ticked by the person: its waiting card leaves the board")
+        self.assertEqual((goals.load(self.root)[0]["steps"][0]["who"], goals.load(self.root)[0]["steps"][0]["card"]), ("you", None))
+        self.assertEqual(board.tasks[1].status, "ready")
 
     def test_the_tool_stays_small(self):
         made = {}

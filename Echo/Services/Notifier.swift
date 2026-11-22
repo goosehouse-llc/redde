@@ -245,6 +245,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let leaveAt = (info[LeaveBy.latitudeKey] as? Double).flatMap { lat in (info[LeaveBy.longitudeKey] as? Double).map { (lat, $0) } }
         let leaveMode = info[LeaveBy.modeKey] as? String
         let noteID = info[PushNote.noteKey] as? String
+        let goal = info[PushNote.goalKey] as? String
         nonisolated(unsafe) let handled = completionHandler   // iOS's own; only ever called below
         Task { @MainActor in
             // Tapped, answered or swiped away here: gone on the person's other devices too.
@@ -267,6 +268,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             // A workstream's: its own chat, in its agent's profile (an approval is answered there).
             if kind == PushNote.Kind.work.rawValue, action == UNNotificationDefaultActionIdentifier, let sessionID {
                 LaunchRouter.shared.requestSession(sessionID, profile: profile, title: title, viaAPI: viaAPI ?? false)
+                handled()
+                return
+            }
+            // A goal's check-in: the goal, where its steps are ticked off (2026-11-22; it had opened
+            // the bot's chat, or nothing, and the steps it asked about were out of reach).
+            if let goal, kind == PushNote.Kind.routine.rawValue, action == UNNotificationDefaultActionIdentifier {
+                GoalsInbox.shared.reload()
+                GoalsInbox.shared.opening = goal
                 handled()
                 return
             }

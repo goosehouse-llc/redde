@@ -66,7 +66,7 @@ enum Goals {
             let style = Date.FormatStyle(locale: Locale(identifier: "en_US"), calendar: calendar).weekday(.wide).month(.wide).day().year()
             lines.append("By \(target.formatted(style)).")
         }
-        lines.append("Set it up as a goal with redde_goal: make a plan of steps on the Kanban board for me to approve, "
+        lines.append("Set it up as a goal with redde_goal: make a plan of steps, saying which are mine to do and which are yours, "
                      + "and check in with me \(schedule.spoken) on how it's going. Show me the plan first.")
         return lines.joined(separator: "\n")
     }
@@ -80,13 +80,18 @@ enum Goals {
         return goals.compactMap { g -> GoalReport? in
             guard let id = g["id"]?.string, !id.isEmpty else { return nil }
             let progress = g["progress"]
+            // (The plugin says `card`, `profile` and `by`; this read `card_id`, `agent` and `target`
+            // until 2026-11-22, so a bot's goal showed as the main agent's and with no date.)
             let steps = (g["steps"]?.array ?? []).compactMap { s -> GoalReport.Step? in
                 guard let title = s["title"]?.string, !title.isEmpty else { return nil }
-                return GoalReport.Step(title: title, cardID: s["card_id"]?.string, done: s["done"]?.bool ?? false)
+                return GoalReport.Step(title: title, cardID: (s["card"] ?? s["card_id"])?.string?.nilIfEmpty, done: s["done"]?.bool ?? false,
+                                       who: s["who"]?.string)
             }
-            let done = progress?["done"]?.int ?? steps.filter(\.done).count
-            let total = progress?["total"]?.int ?? steps.count
-            let agent = g["agent"]?.string ?? ""
+            // The plan's own count where there is one (the person's ticks and the board's cards, plugin
+            // 1.35), else what the last check-in said.
+            let done = steps.isEmpty ? progress?["done"]?.int ?? 0 : steps.filter(\.done).count
+            let total = steps.isEmpty ? progress?["total"]?.int ?? 0 : steps.count
+            let agent = (g["profile"] ?? g["agent"])?.string ?? ""
             // The main agent's name is the app's (`GoalCard`); a bot's as the roster has it.
             let name = agent.isEmpty || agent == "default" ? "" : BotRoutines.botName(agent) ?? agent
             return GoalReport(id: id, title: g["title"]?.string ?? "", agent: name,
@@ -94,7 +99,7 @@ enum Goals {
                               headline: progress?["headline"]?.string ?? "", next: progress?["next"]?.string?.nilIfEmpty,
                               details: progress?["details"]?.string?.nilIfEmpty,
                               at: CronJob.date(progress?["at"]) ?? .distantPast, failed: false, job: g["job"]?.string,
-                              target: date(g["target"]), steps: steps.isEmpty ? nil : steps)
+                              target: date(g["by"] ?? g["target"]), steps: steps.isEmpty ? nil : steps)
         }
     }
 
@@ -140,6 +145,24 @@ enum Goals {
         return jobs
     }
 
+    /// The person ticked one of their steps (or took the tick back): shown at once, then said to
+    /// the plugin (1.35: `goals step <profile> <goal> <n> done|undo`), over either connection. Nil
+    /// when it was said; else why not, the tick taken back here.
+    @MainActor
+    static func tick(_ goal: GoalReport, step index: Int, done: Bool) async -> String? {
+        GoalsInbox.shared.setStep(goal.id, index, done: done)
+        #if DEBUG
+        if demo { return nil }
+        #endif
+        let line = "goals step \(goal.profile ?? "default") \(goal.id) \(index + 1) \(done ? "done" : "undo")"
+        let reply = try? await PushService.command(over: .shared)(line)
+        if reply?.hasPrefix("redde-push goals step ") == true { return nil }
+        GoalsInbox.shared.setStep(goal.id, index, done: !done)
+        return reply == nil
+            ? String(localized: "Couldn't reach your Hermes. Try again in a moment.", comment: "A goal's step couldn't be ticked: the server didn't answer")
+            : String(localized: "Ticking steps off takes the Redde plugin 1.35: update it in Settings › Redde Plugin.", comment: "A goal's step couldn't be ticked: the plugin is too old")
+    }
+
     /// The goal's check-in job in a list.
     static func job(of goal: GoalReport, in jobs: [CronJob]) -> CronJob? {
         jobs.first { $0.id == goal.job } ?? jobs.first { GoalReport.id(inJobName: $0.name) == goal.id }
@@ -166,13 +189,13 @@ enum Goals {
                    """,
                    at: .now.addingTimeInterval(-3_600 * 5), failed: false, job: "jg10k",
                    target: Calendar.current.date(byAdding: .day, value: 118, to: .now),
-                   steps: [.init(title: "Pick a 12-week plan", cardID: "k1", done: true),
-                           .init(title: "Get fitted for running shoes", cardID: "k2", done: true),
-                           .init(title: "First 5 km without stopping", cardID: "k3", done: true),
-                           .init(title: "Book the Riverside 10K", cardID: "k4", done: false),
-                           .init(title: "Long run at 8 km", cardID: "k5", done: false),
-                           .init(title: "Taper week", cardID: "k6", done: false),
-                           .init(title: "Race day", cardID: "k7", done: false)]),
+                   steps: [.init(title: "Pick a 12-week plan", cardID: "k1", done: true, who: "agent"),
+                           .init(title: "Get fitted for running shoes", done: true, who: "you"),
+                           .init(title: "First 5 km without stopping", done: true, who: "you"),
+                           .init(title: "Find the Riverside 10K's early entry", cardID: "k4", done: false, who: "agent"),
+                           .init(title: "Long run at 8 km", done: false, who: "you"),
+                           .init(title: "Taper week", done: false, who: "you"),
+                           .init(title: "Race day", done: false, who: "you")]),
         GoalReport(id: "gspanish", title: "Order dinner in Spanish in Madrid", agent: "Scout", profile: "scout", done: 1, total: 5,
                    headline: "Day 12 of the app streak; the menu words are next.", next: "Twenty minutes on food words tonight",
                    at: .now.addingTimeInterval(-86_400 * 2), failed: false, job: "jgspanish",
@@ -197,6 +220,8 @@ enum Goals {
 final class GoalsInbox {
     static let shared = GoalsInbox()
     private(set) var goals: [GoalReport] = []
+    /// A goal to show, from a tapped check-in: the chat list opens its page.
+    var opening: String?
 
     /// The chat list's: at most two, the newest check-ins first.
     var onList: [GoalReport] { Array(goals.prefix(2)) }
@@ -212,6 +237,18 @@ final class GoalsInbox {
         #endif
         let now = GoalReport.showing()
         if now != goals { goals = now }
+    }
+
+    /// A step ticked here: on the card and Today at once.
+    func setStep(_ id: String, _ index: Int, done: Bool) {
+        #if DEBUG
+        if Goals.demo {
+            if let i = goals.firstIndex(where: { $0.id == id }) { goals[i].setStep(index, done: done) }
+            return
+        }
+        #endif
+        GoalReport.setStep(id, index, done: done)
+        reload()
     }
 
     /// Ended here: off the list at once.

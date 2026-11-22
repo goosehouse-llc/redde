@@ -672,6 +672,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:2] == ["goals", "list"]:
         # Every agent's goals, with their steps and latest progress (goals.py), as JSON.
         return wire.reply("goals", goals.listing(routines.Stores(calls.caller(_home())[1])))
+    if words[:2] == ["goals", "step"]:
+        # The person ticked one of their steps (goals.py, 1.35.0): `goals step <profile> <goal> <n> done|undo`.
+        return _goal_step_slash(words[2:])
     if words[:2] == ["goals", "end"]:
         # End a goal: its check-in job deleted, the goal marked ended (goals.py).
         return _end_goal_slash(words[2:])
@@ -767,6 +770,19 @@ def _slash(raw_args: str = "") -> str:
         threading.Thread(target=pusher.send, args=([device], core.note("paired")), name="redde-push-paired", daemon=True).start()
         return f"redde-push paired {core.host_name()}"
     return "redde-push: this command is for the Redde app. In a terminal: hermes redde-push pair"
+
+
+def _goal_step_slash(words: list[str], board=None) -> str:
+    """`/redde-push goals step <profile> <goal> <n> done|undo`: "redde-push goals step <goal> <n>
+    done|undone", or "redde-push goals unknown"."""
+    if (len(words) != 4 or not calls.PROFILE.fullmatch(words[0]) or not goals.goal_id(f"[redde-goal:{words[1]}]")
+            or not words[2].isdigit() or words[3] not in ("done", "undo")):
+        return "redde-push goals: this command is for the Redde app."
+    root = calls.caller(_home())[1]
+    home = root if words[0] == "default" else root / "profiles" / words[0]
+    if not goals.tick(home, words[1], int(words[2]), words[3] == "done", board):
+        return "redde-push goals unknown"
+    return f"redde-push goals step {words[1]} {words[2]} {'done' if words[3] == 'done' else 'undone'}"
 
 
 def _end_goal_slash(words: list[str], remove=None) -> str:
