@@ -54,6 +54,7 @@ final class IdeasInbox {
 
     /// Put off until `until`, with a quiet notification when it's back.
     func later(_ idea: AgentIdea, until: Date) {
+        touched(idea)
         #if DEBUG
         if DemoDay.on || DevHooks.has("-echo.demoIdeas") { ideas.removeAll { $0.id == idea.id }; return }
         #endif
@@ -64,18 +65,124 @@ final class IdeasInbox {
 
     /// More Like This, or Fewer Like This (which puts it away too).
     func said(_ idea: AgentIdea, liked: Bool) {
+        touched(idea)
         FeedbackFold.said(.idea, title: idea.title, agent: idea.agent, liked: liked)
         if !liked { remove(idea) }
     }
 
+    /// The agents whose cards were touched lately, and when: told to the plugin once an hour each.
+    @ObservationIgnored private var told: [String: Date] = [:]
+
+    /// One of an agent's cards taken, put away, put off or answered (plugin 1.36): that agent's
+    /// ideas, quiet after sets left alone, notify again.
+    private func touched(_ idea: AgentIdea) {
+        #if DEBUG
+        if DemoDay.on || DevHooks.has("-echo.demoIdeas") { return }
+        #endif
+        let profile = idea.profile.isEmpty ? "default" : idea.profile
+        if let last = told[profile], last.timeIntervalSinceNow > -3_600 { return }
+        told[profile] = .now
+        Task { _ = try? await PushService.command(over: .shared)("ideas touched \(profile)") }
+    }
+
+    /// Don't Suggest This (plugin 1.36): put away, heard as Fewer Like This, and its heading kept
+    /// on the Hermes so no agent offers its like again (`IdeasBlocked`).
+    func block(_ idea: AgentIdea) {
+        FeedbackFold.said(.idea, title: idea.title, agent: idea.agent, liked: false)
+        remove(idea)
+        #if DEBUG
+        if DemoDay.on || DevHooks.has("-echo.demoIdeas") { return }
+        #endif
+        let title = idea.title
+        Task { _ = await IdeasBlocked.block(title) }
+    }
+
     /// Taken or put away.
     func remove(_ idea: AgentIdea) {
+        touched(idea)
         #if DEBUG
         if DemoDay.on { ideas.removeAll { $0.id == idea.id }; return }
         #endif
         AgentIdea.remove(idea.id)
         LaterReminder.cancel(idea.id)
         reload()
+    }
+}
+
+/// What the person said not to suggest (Don't Suggest This on an idea, plugin 1.36), kept on the
+/// Hermes for every agent: `/redde-push ideas block|unblock <heading>` and `ideas blocked`, the
+/// headings base64url, over either connection.
+enum IdeasBlocked {
+    @MainActor
+    static func block(_ title: String) async -> Bool {
+        await say("block", title) == "redde-push ideas blocked"
+    }
+
+    @MainActor
+    static func unblock(_ title: String) async -> Bool {
+        await say("unblock", title) == "redde-push ideas unblocked"
+    }
+
+    /// Nil when the Hermes can't say (an older plugin, or out of reach).
+    @MainActor
+    static func list() async -> [String]? {
+        guard let reply = try? await PushService.command(over: .shared)("ideas blocked") else { return nil }
+        return parse(reply)
+    }
+
+    static func parse(_ reply: String) -> [String]? {
+        let prefix = "redde-push ideas blocked "
+        guard reply.hasPrefix(prefix), let data = PushSeal.data(base64URL: String(reply.dropFirst(prefix.count)).trimmingCharacters(in: .whitespacesAndNewlines))
+        else { return nil }
+        return try? JSONDecoder().decode([String].self, from: data)
+    }
+
+    static func line(_ verb: String, _ title: String) -> String {
+        "ideas \(verb) \(PushSeal.base64URL(Data(title.utf8)))"
+    }
+
+    @MainActor
+    private static func say(_ verb: String, _ title: String) async -> String? {
+        (try? await PushService.command(over: .shared)(line(verb, title)))?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+/// Morning Ideas › Not Suggested: what the person said not to suggest, each to let back in.
+struct NotSuggestedSection: View {
+    @State private var titles: [String]?
+    @State private var problem: String?
+
+    var body: some View {
+        Group {
+            if let titles, !titles.isEmpty {
+                Section {
+                    ForEach(titles, id: \.self) { Text($0) }
+                        .onDelete { rows in
+                            for title in rows.map({ titles[$0] }) { allow(title) }
+                        }
+                } header: {
+                    Text("Not Suggested", comment: "Morning Ideas: the list of ideas the person said not to suggest again")
+                } footer: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("You said not to suggest these (Don't Suggest This on an idea). Your agents leave out ideas like them. Swipe one away to let it back in.",
+                             comment: "Morning Ideas: under Not Suggested")
+                        if let problem { Text(problem).foregroundStyle(.red) }
+                    }
+                }
+            }
+        }
+        .task { titles = await IdeasBlocked.list() }
+    }
+
+    private func allow(_ title: String) {
+        titles?.removeAll { $0 == title }
+        problem = nil
+        Task {
+            if await !IdeasBlocked.unblock(title) {
+                problem = String(localized: "Couldn't reach your Hermes. Try again in a moment.", comment: "A goal's step couldn't be ticked: the server didn't answer")
+                titles = await IdeasBlocked.list()
+            }
+        }
     }
 }
 
@@ -95,7 +202,7 @@ struct IdeasSection: View {
             Section {
                 if isOpen {
                     IdeaDeck(ideas: inbox.ideas, take: take, put: { idea in inbox.remove(idea) },
-                             later: { inbox.later($0, until: $1) }, said: { inbox.said($0, liked: $1) })
+                             later: { inbox.later($0, until: $1) }, said: { inbox.said($0, liked: $1) }, block: { inbox.block($0) })
                         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 10, trailing: 16))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -115,6 +222,8 @@ private struct IdeaDeck: View {
     /// Hold a card: Later, and More or Fewer Like This (asked 2026-10-28, "Proactive").
     let later: (AgentIdea, Date) -> Void
     let said: (AgentIdea, Bool) -> Void
+    /// Don't Suggest This (plugin 1.36).
+    let block: (AgentIdea) -> Void
     @State private var noted = 0
     /// The idea tapped, read in full before it is done or put away (`IdeaDetail`).
     @State private var reading: AgentIdea?
@@ -132,7 +241,8 @@ private struct IdeaDeck: View {
                       .init(symbol: "checkmark", label: done, color: .blue, fly: -1, act: put)],
             actions: [(String(localized: "Later"), { later($0, Later.soon()) }),
                       (String(localized: "More Like This"), { said($0, true); noted += 1 }),
-                      (String(localized: "Fewer Like This"), { said($0, false) })],
+                      (String(localized: "Fewer Like This"), { said($0, false) }),
+                      (dontSuggest, { block($0) })],
             tap: { reading = $0 },
             face: { idea, isTop, moved in cardFace(idea, isTop: isTop, moved: moved) },
             menu: { menu($0) },
@@ -146,7 +256,7 @@ private struct IdeaDeck: View {
             })
         .sensoryFeedback(.success, trigger: noted)
         .sheet(item: $reading) { idea in
-            IdeaDetail(idea: idea, take: take, put: put, later: later)
+            IdeaDetail(idea: idea, take: take, put: put, later: later, block: block)
         }
     }
 
@@ -177,7 +287,12 @@ private struct IdeaDeck: View {
         Section("Tell Your Agent") {
             Button("More Like This", systemImage: "hand.thumbsup") { said(idea, true); noted += 1 }
             Button("Fewer Like This", systemImage: "hand.thumbsdown") { said(idea, false) }
+            Button(dontSuggest, systemImage: "nosign", role: .destructive) { block(idea) }
         }
+    }
+
+    private var dontSuggest: String {
+        String(localized: "Don't Suggest This", comment: "An idea card's menu: put it away and never offer ideas like it again")
     }
 
     /// "Done" as a thing finished, the word a finished task and the Kanban column have.
@@ -195,6 +310,7 @@ private struct IdeaDetail: View {
     let take: (AgentIdea) -> Void
     let put: (AgentIdea) -> Void
     let later: (AgentIdea, Date) -> Void
+    let block: (AgentIdea) -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
 
@@ -241,6 +357,11 @@ private struct IdeaDetail: View {
                         ForEach(Later.choices(), id: \.0) { choice, when in
                             Button { act { later(idea, when) } } label: { Label { Text(choice.label) } icon: { Image(systemName: choice.symbol) } }
                         }
+                        Divider()
+                        Button(role: .destructive) { act { block(idea) } } label: {
+                            Label { Text("Don't Suggest This", comment: "An idea card's menu: put it away and never offer ideas like it again") } icon: { Image(systemName: "nosign") }
+                        }
+                        .accessibilityIdentifier("idea-dont-suggest")
                     } label: {
                         Label { Text("Later") } icon: { Image(systemName: "clock") }
                     }

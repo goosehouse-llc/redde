@@ -21662,6 +21662,215 @@
         }
       }
     },
+    "%lld a Day" : {
+      "comment" : "Settings › Notifications › Quiet Hours › At Most a Day: a limit, e.g. 5 a Day",
+      "localizations" : {
+        "da" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld om dagen"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld pro Tag"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld al día"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld par jour"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld al giorno"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "1日%lld件"
+                }
+              }
+            }
+          }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "하루 %lld개"
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld om dagen"
+                }
+              }
+            }
+          }
+        },
+        "nl" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld per dag"
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld dziennie"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld por dia"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld в день"
+                }
+              }
+            }
+          }
+        },
+        "sv" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld om dagen"
+                }
+              }
+            }
+          }
+        },
+        "tr" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Günde %lld"
+                }
+              }
+            }
+          }
+        },
+        "uk" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld на день"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "每天 %lld 条"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "每天 %lld 則"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld areas" : {
       "comment" : "Edit Bot → Phone Tools: how many areas the bot may use",
       "localizations" : {
@@ -25284,6 +25493,317 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld 個已完成"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld hours" : {
+      "comment" : "A number of hours: how long you've been quiet before the job runs",
+      "localizations" : {
+        "da" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld time"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld timer"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Stunde"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Stunden"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld hora"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld horas"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld heure"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld heures"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld ora"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld ore"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld時間"
+                }
+              }
+            }
+          }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld시간"
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld time"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld timer"
+                }
+              }
+            }
+          }
+        },
+        "nl" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld uur"
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld godziny"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld godzin"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld godzina"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld godziny"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld hora"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld horas"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld часа"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld часов"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld час"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld часа"
+                }
+              }
+            }
+          }
+        },
+        "sv" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld timme"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld timmar"
+                }
+              }
+            }
+          }
+        },
+        "tr" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld saat"
+                }
+              }
+            }
+          }
+        },
+        "uk" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld години"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld годин"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld година"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld години"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 小时"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 小時"
                 }
               }
             }
@@ -55379,6 +55899,7 @@
       }
     },
     "Add" : {
+      "comment" : "Things to Keep in Mind: adds the fact typed",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -62639,6 +63160,423 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "心房顫動記錄"
+          }
+        }
+      }
+    },
+    "After" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Efter"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Después de"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "経過後"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "경과 후"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Po"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Após"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Через"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Efter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sonra"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Через"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "之后"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "之後"
+          }
+        }
+      }
+    },
+    "After %lld hours" : {
+      "comment" : "Settings › Daily Jobs: When You've Gone Quiet's wait, e.g. After 24 hours",
+      "localizations" : {
+        "da" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Efter %lld time"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Efter %lld timer"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Nach %lld Stunde"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Nach %lld Stunden"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Después de %lld hora"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Después de %lld horas"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Après %lld heure"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Après %lld heures"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Dopo %lld ora"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Dopo %lld ore"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld時間後"
+                }
+              }
+            }
+          }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld시간 후"
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Etter %lld time"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Etter %lld timer"
+                }
+              }
+            }
+          }
+        },
+        "nl" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Na %lld uur"
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Po %lld godzinach"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Po %lld godzinach"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Po %lld godzinie"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Po %lld godzinach"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Após %lld hora"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Após %lld horas"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld часа"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld часов"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld час"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld часа"
+                }
+              }
+            }
+          }
+        },
+        "sv" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Efter %lld timme"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Efter %lld timmar"
+                }
+              }
+            }
+          }
+        },
+        "tr" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld saat sonra"
+                }
+              }
+            }
+          }
+        },
+        "uk" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld години"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld годин"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld годину"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Через %lld години"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 小时后"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 小時後"
+                }
+              }
+            }
           }
         }
       }
@@ -89562,6 +90500,113 @@
         }
       }
     },
+    "At Most a Day" : {
+      "comment" : "Settings › Notifications › Quiet Hours: how many notifications agents may send on their own each day",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Højst om dagen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höchstens pro Tag"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Máximo al día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au maximum par jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al massimo al giorno"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1日の上限"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "하루 최대"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maks per dag"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maximaal per dag"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najwyżej dziennie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Máximo por Dia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не более в день"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Högst per dag"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günde En Fazla"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щонайбільше на день"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天最多"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每天最多"
+          }
+        }
+      }
+    },
     "At the rate your agent found" : {
       "comment" : "A currency card whose rate came with no time",
       "localizations" : {
@@ -113143,6 +114188,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "進度檢查"
+          }
+        }
+      }
+    },
+    "Check-ins paused" : {
+      "comment" : "A goal's page: the goal went quiet and its check-ins were paused",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Statustjek sat på pause"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check-ins pausiert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisiones en pausa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Points d’étape suspendus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifiche in pausa"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チェックインを一時停止中"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "체크인 일시 정지됨"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Statussjekker satt på pause"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check-ins gepauzeerd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raporty wstrzymane"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check-ins pausados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверки приостановлены"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avstämningar pausade"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durum Kontrolleri duraklatıldı"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перевірки призупинено"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "进展检查已暂停"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進度檢查已暫停"
           }
         }
       }
@@ -151147,6 +152299,113 @@
         }
       }
     },
+    "Don't Suggest This" : {
+      "comment" : "An idea card's menu: put it away and never offer ideas like it again",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foreslå ikke dette"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht mehr vorschlagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sugerir esto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne pas suggérer ceci"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non suggerire questo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これを提案しない"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이건 추천 안 함"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikke foreslå dette"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit niet voorstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie proponuj tego"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não Sugerir Isto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Больше не предлагать"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Föreslå inte detta"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunu Önerme"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Більше не пропонувати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要建议这个"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要建議這個"
+          }
+        }
+      }
+    },
     "Don't Work It Out" : {
       "localizations" : {
         "da" : {
@@ -155002,6 +156261,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "開車"
+          }
+        }
+      }
+    },
+    "Driving into France, I need 3-day car insurance" : {
+      "comment" : "Things to Keep in Mind: the example in the empty field",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeg kører ind i Frankrig og skal bruge 3-dages bilforsikring"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich fahre nach Frankreich und brauche eine 3-Tage-Autoversicherung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voy a conducir a Francia y necesito un seguro de coche de 3 días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je vais en France en voiture et il me faut une assurance auto de 3 jours"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vado in Francia in auto e mi serve un’assicurazione auto di 3 giorni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "車でフランスに入るので、3日間の自動車保険が必要"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프랑스로 운전해 가는데 3일짜리 자동차 보험이 필요해"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeg kjører inn i Frankrike og trenger 3-dagers bilforsikring"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik rijd Frankrijk in en heb een autoverzekering voor 3 dagen nodig"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jadę samochodem do Francji i potrzebuję 3-dniowego ubezpieczenia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vou dirigir até a França e preciso de seguro de carro de 3 dias"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Еду во Францию на машине, нужна страховка на 3 дня"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jag kör in i Frankrike och behöver en 3-dagars bilförsäkring"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fransa’ya arabayla gidiyorum, 3 günlük araç sigortası lazım"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Їду до Франції на машині, потрібна страховка на 3 дні"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我要开车去法国，需要 3 天的车险"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我要開車去法國，需要 3 天的車險"
           }
         }
       }
@@ -237470,6 +238836,113 @@
         }
       }
     },
+    "Keep Going" : {
+      "comment" : "A goal's page: keeps a quiet goal, its check-ins running again",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortsæt"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitermachen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seguir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continua"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "続ける"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계속하기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortsett"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doorgaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontynuuj"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжить"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortsätt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Devam Et"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продовжити"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續"
+          }
+        }
+      }
+    },
     "Keep listening after each reply until you say “stop listening”." : {
       "localizations" : {
         "da" : {
@@ -237678,6 +239151,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保留"
+          }
+        }
+      }
+    },
+    "Keeping a quiet goal going takes the Redde plugin 1.36: update it in Settings › Redde Plugin." : {
+      "comment" : "Keep Going on a quiet goal didn't work: the plugin is too old",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvis et stille mål skal køre videre, kræver det Redde-plugin 1.36: opdater det i Indstillinger › Redde-plugin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Damit ein ruhiges Ziel weiterläuft, braucht es das Redde-Plugin 1.36: Aktualisiere es unter Einstellungen › Redde-Plugin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para mantener en marcha un objetivo inactivo hace falta el plugin de Redde 1.36: actualízalo en Ajustes › Plugin de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour poursuivre un objectif en sommeil, il faut le plugin Redde 1.36 : mettez-le à jour dans Réglages › Plugin Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per mantenere attivo un obiettivo fermo serve il plugin Redde 1.36: aggiornalo in Impostazioni › Plugin Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止中の目標を続けるには、Reddeプラグイン1.36が必要です。設定 › Reddeプラグインでアップデートしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "조용해진 목표를 계속 진행하려면 Redde 플러그인 1.36이 필요합니다. 설정 › Redde 플러그인에서 업데이트하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For å holde et stille mål i gang trengs Redde-tillegg 1.36: oppdater det i Innstillinger › Redde-tillegg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om een rustig doel door te laten lopen is Redde-plug-in 1.36 nodig: werk hem bij in Instellingen › Redde-plug-in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aby kontynuować cichy cel, potrzebna jest wtyczka Redde 1.36: zaktualizuj ją w Ustawieniach › Wtyczka Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para manter uma meta parada em andamento, é preciso o plugin do Redde 1.36: atualize em Ajustes › Plugin do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы продолжить неактивную цель, нужен плагин Redde 1.36: обновите его в разделе Настройки › Плагин Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "För att hålla ett tyst mål igång krävs Redde-tillägg 1.36: uppdatera det i Inställningar › Redde-tillägg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessiz bir hedefi sürdürmek için Redde Eklentisi 1.36 gerekir: Ayarlar › Redde Eklentisi bölümünden güncelleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоб продовжити неактивну ціль, потрібен плагін Redde 1.36: оновіть його в Параметри › Плагін Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要让沉寂的目标继续进行，需要 Redde 插件 1.36：请在“设置 › Redde插件”中更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要讓沉寂的目標繼續進行，需要 Redde 外掛 1.36：請在「設定 › Redde 外掛」中更新。"
           }
         }
       }
@@ -287758,6 +289338,113 @@
         }
       }
     },
+    "No Limit" : {
+      "comment" : "Settings › Notifications › Quiet Hours › At Most a Day: no daily limit",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen grænse"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Limit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin límite"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune limite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun limite"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上限なし"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "제한 없음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen grense"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen limiet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bez limitu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem Limite"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без ограничений"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen gräns"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sınır Yok"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без обмежень"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无限制"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無限制"
+          }
+        }
+      }
+    },
     "No line matches." : {
       "localizations" : {
         "da" : {
@@ -294601,6 +296288,113 @@
         }
       }
     },
+    "Not Suggested" : {
+      "comment" : "Morning Ideas: the list of ideas the person said not to suggest again",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikke foreslået"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht vorgeschlagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sugeridas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non suggérées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non suggerite"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提案しない"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "추천 안 함"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikke foreslått"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet voorgesteld"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie proponowane"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não Sugeridas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не предлагается"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inte föreslagna"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önerilmeyenler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не пропонується"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不再建议"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不再建議"
+          }
+        }
+      }
+    },
     "Not usable" : {
       "comment" : "Email settings: an account Redde can't read",
       "localizations" : {
@@ -297281,6 +299075,323 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚未要求任何內容。"
+          }
+        }
+      }
+    },
+    "Nothing has happened on this goal for %lld days." : {
+      "comment" : "A goal's page: how long the goal has been quiet",
+      "localizations" : {
+        "da" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Der er ikke sket noget med dette mål i %lld dag."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Der er ikke sket noget med dette mål i %lld dage."
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Bei diesem Ziel ist seit %lld Tag nichts passiert."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Bei diesem Ziel ist seit %lld Tagen nichts passiert."
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "No ha pasado nada en este objetivo en %lld día."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "No ha pasado nada en este objetivo en %lld días."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Il ne s’est rien passé sur cet objectif depuis %lld jour."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Il ne s’est rien passé sur cet objectif depuis %lld jours."
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Non è successo nulla in questo obiettivo da %lld giorno."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Non è successo nulla in questo obiettivo da %lld giorni."
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "この目標では%lld日間、何も起きていません。"
+                }
+              }
+            }
+          }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "이 목표는 %lld일 동안 아무 진전이 없습니다."
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Det har ikke skjedd noe med dette målet på %lld dag."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Det har ikke skjedd noe med dette målet på %lld dager."
+                }
+              }
+            }
+          }
+        },
+        "nl" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Er is in %lld dag niets gebeurd met dit doel."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Er is in %lld dagen niets gebeurd met dit doel."
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "W tym celu nic się nie wydarzyło od %lld dni."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "W tym celu nic się nie wydarzyło od %lld dni."
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "W tym celu nic się nie wydarzyło od %lld dnia."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "W tym celu nic się nie wydarzyło od %lld dnia."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Nada aconteceu nesta meta há %lld dia."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Nada aconteceu nesta meta há %lld dias."
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "По этой цели ничего не происходило %lld дня."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "По этой цели ничего не происходило %lld дней."
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "По этой цели ничего не происходило %lld день."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "По этой цели ничего не происходило %lld дня."
+                }
+              }
+            }
+          }
+        },
+        "sv" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Inget har hänt med det här målet på %lld dag."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Inget har hänt med det här målet på %lld dagar."
+                }
+              }
+            }
+          }
+        },
+        "tr" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Bu hedefte %lld gündür hiçbir şey olmadı."
+                }
+              }
+            }
+          }
+        },
+        "uk" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "У цій цілі нічого не відбувалося %lld дні."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "У цій цілі нічого не відбувалося %lld днів."
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "У цій цілі нічого не відбувалося %lld день."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "У цій цілі нічого не відбувалося %lld дня."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "这个目标已经 %lld 天没有任何动静。"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "這個目標已經 %lld 天沒有任何動靜。"
+                }
+              }
+            }
           }
         }
       }
@@ -327123,6 +329234,113 @@
         }
       }
     },
+    "Past the day's limit, the rest arrive quietly too, into the list." : {
+      "comment" : "Settings › Notifications › Quiet Hours: footer, what At Most a Day does",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Efter dagens grænse kommer resten også stille ind på listen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Über dem Tageslimit kommen die übrigen ebenfalls leise in die Liste."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasado el límite del día, el resto también llega en silencio, a la lista."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au-delà de la limite du jour, les autres arrivent aussi discrètement, dans la liste."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Superato il limite del giorno, anche le altre arrivano in silenzio, nell’elenco."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1日の上限を超えた分も、通知なしでリストに届きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "하루 한도를 넘은 나머지도 알림 없이 목록으로 들어옵니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etter dagens grense kommer resten også stille inn i listen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boven de daglimiet komt de rest ook stilletjes binnen, in de lijst."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Po przekroczeniu dziennego limitu pozostałe również docierają po cichu, na listę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passado o limite do dia, o resto também chega em silêncio, na lista."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сверх дневного лимита остальные тоже приходят без звука, в список."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Efter dagens gräns kommer resten också tyst in i listan."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günlük sınırın ötesinde kalanlar da sessizce listeye gelir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Понад денний ліміт решта теж надходить тихо, до списку."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超过每日上限后，其余的也会静静地进入列表。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超過每日上限後，其餘的也會靜靜地進入列表。"
+          }
+        }
+      }
+    },
     "Paste" : {
       "localizations" : {
         "da" : {
@@ -342058,6 +344276,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "安靜時間"
+          }
+        }
+      }
+    },
+    "Quieter on its own" : {
+      "comment" : "What's New 2.7: daily limit, ideas and watches that back off, goals that fade, When You've Gone Quiet",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Roligere af sig selv"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Von selbst leiser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más tranquilo por sí solo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus calme tout seul"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più tranquillo da solo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "静かに、自動で"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알아서 더 조용하게"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Roligere av seg selv"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uit zichzelf rustiger"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciszej z własnej woli"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais quieto por conta própria"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тише само по себе"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tystare av sig själv"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kendiliğinden daha sessiz"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тихіше саме по собі"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更安静，自动调整"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更安靜，自動調整"
           }
         }
       }
@@ -393113,6 +395438,113 @@
         }
       }
     },
+    "Set At Most a Day in Quiet Hours. Ideas you leave alone come quietly, a watch that keeps finding nothing slows down, and a goal that goes quiet asks once before its check-ins pause. Choose Don't Suggest This on an idea, or turn on When You've Gone Quiet in Daily Jobs. It takes the Redde plugin 1.36." : {
+      "comment" : "What's New 2.7: quieter",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sæt Højst om dagen under Rolige timer. Idéer, du lader ligge, kommer stille, en overvågning, der ikke finder noget, sætter tempoet ned, og et mål, der går i stå, spørger én gang, før dets statustjek holder pause. Vælg Foreslå ikke dette på en idé, eller slå Når du ikke har skrevet længe til i Daglige job. Kræver Redde-plugin 1.36."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lege unter Ruhezeiten „Höchstens pro Tag“ fest. Ideen, die du liegen lässt, kommen leise, eine Beobachtung, die nichts findet, wird langsamer, und ein Ziel, das einschläft, fragt einmal nach, bevor seine Check-ins pausieren. Wähle bei einer Idee „Nicht mehr vorschlagen“ oder schalte unter Tägliche Jobs „Wenn du länger nicht schreibst“ ein. Benötigt das Redde-Plugin 1.36."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define Máximo al día en Horas de silencio. Las ideas que dejas pasar llegan en silencio, una vigilancia que no encuentra nada se ralentiza, y un objetivo que se apaga pregunta una vez antes de pausar sus revisiones. Elige No sugerir esto en una idea, o activa Cuando llevas tiempo sin escribir en Tareas diarias. Requiere el plugin de Redde 1.36."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réglez Au maximum par jour dans Heures calmes. Les idées que vous laissez de côté arrivent discrètement, une surveillance qui ne trouve rien ralentit, et un objectif qui s’endort demande une fois avant de suspendre ses points d’étape. Choisissez Ne pas suggérer ceci sur une idée, ou activez Après un long silence dans Tâches quotidiennes. Nécessite le plugin Redde 1.36."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta Al massimo al giorno in Ore di silenzio. Le idee che lasci stare arrivano in silenzio, un controllo che non trova nulla rallenta, e un obiettivo che si ferma chiede una volta prima di sospendere le verifiche. Scegli Non suggerire questo su un’idea, oppure attiva Quando non scrivi da un po’ in Job giornalieri. Richiede il plugin Redde 1.36."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「静かな時間」で「1日の上限」を設定できます。放っておいたアイデアは通知なしで届き、何も見つからないウォッチは間隔が空き、動きのない目標は、チェックインを一時停止する前に一度だけ確認します。アイデアで「これを提案しない」を選ぶか、「毎日のジョブ」で「しばらく連絡がないとき」をオンにしてください。Reddeプラグイン1.36が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "조용한 시간에서 하루 최대를 설정하세요. 그냥 둔 아이디어는 조용히 도착하고, 계속 아무것도 찾지 못하는 감시는 간격이 느려지며, 조용해진 목표는 체크인을 일시 정지하기 전에 한 번 물어봅니다. 아이디어에서 ‘이건 추천 안 함’을 선택하거나, 매일 작업에서 ‘한동안 메시지가 없을 때’를 켜세요. Redde 플러그인 1.36이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sett Maks per dag under Stille timer. Idéer du lar ligge kommer stille, en overvåking som ikke finner noe går saktere, og et mål som går i stå spør én gang før statussjekkene settes på pause. Velg Ikke foreslå dette på en idé, eller slå på Når du har vært stille under Daglige jobber. Krever Redde-tillegg 1.36."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stel Maximaal per dag in bij Stille uren. Ideeën die je laat liggen komen stilletjes, een bewaker die niets blijft vinden gaat langzamer, en een doel dat stilvalt vraagt één keer na voordat de check-ins pauzeren. Kies Dit niet voorstellen bij een idee, of zet Als je even niet schrijft aan bij Dagelijkse taken. Vereist Redde-plug-in 1.36."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw Najwyżej dziennie w Godzinach ciszy. Pomysły, które zostawiasz, przychodzą po cichu, obserwacja, która nic nie znajduje, zwalnia, a cel, w którym nic się nie dzieje, pyta raz, zanim wstrzyma raporty. Wybierz Nie proponuj tego przy pomyśle albo włącz Gdy dłuższy czas nie piszesz w Codziennych zadaniach. Wymaga wtyczki Redde 1.36."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Defina No Máximo por Dia em Horas de Silêncio. Ideias que você deixa de lado chegam em silêncio, uma vigilância que não encontra nada desacelera, e uma meta parada pergunta uma vez antes de pausar os check-ins. Escolha Não Sugerir Isto em uma ideia, ou ative Quando Você Fica Sem Escrever em Tarefas Diárias. Exige o plugin do Redde 1.36."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задайте «Не более в день» в «Часах тишины». Идеи, которые вы не трогаете, приходят без звука, наблюдение, которое ничего не находит, замедляется, а цель, по которой ничего не происходит, спросит один раз, прежде чем приостановить проверки. Выберите «Больше не предлагать» в идее или включите «Если вы давно не писали» в «Ежедневных заданиях». Нужен плагин Redde 1.36."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ställ in Högst per dag under Tysta timmar. Idéer du låter vara kommer tyst, en bevakning som inte hittar något går långsammare, och ett mål som står still frågar en gång innan avstämningarna pausas. Välj Föreslå inte detta på en idé, eller slå på När du inte har skrivit på ett tag under Dagliga jobb. Kräver Redde-tillägg 1.36."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessiz Saatler’de Günde En Fazla’yı ayarlayın. Elinizi sürmediğiniz fikirler sessizce gelir, hiçbir şey bulamayan bir izleme yavaşlar, durağanlaşan bir hedef de Durum Kontrollerini duraklatmadan önce bir kez sorar. Bir fikirde Bunu Önerme’yi seçin veya Günlük Görevler’de Uzun Süre Yazmadığınızda’yı açın. Redde Eklentisi 1.36 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задайте «Щонайбільше на день» у «Годинах тиші». Ідеї, яких ви не чіпаєте, надходять тихо, спостереження, що нічого не знаходить, сповільнюється, а ціль, у якій нічого не відбувається, спитає один раз, перш ніж призупинити перевірки. Виберіть «Більше не пропонувати» в ідеї або ввімкніть «Коли ви давно не писали» у «Щоденних завданнях». Потрібен плагін Redde 1.36."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“安静时间”中设置“每天最多”。你不理会的想法会静静到达，总是一无所获的监视会放慢频率，沉寂的目标会在暂停进展检查前问你一次。在想法上选择“不要建议这个”，或在“每日任务”中打开“当你久未发消息时”。需要 Redde插件 1.36。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「安靜時間」中設定「每天最多」。你不理會的點子會靜靜送達，總是一無所獲的監看會放慢頻率，沉寂的目標會在暫停進度檢查前問你一次。在點子上選擇「不要建議這個」，或在「每日工作」中開啟「當你久未傳訊息時」。需要 Redde 外掛 1.36。"
+          }
+        }
+      }
+    },
     "Set It" : {
       "comment" : "A reminder card's button when nothing was set: asks the agent to set it for real",
       "localizations" : {
@@ -420346,6 +422778,113 @@
         }
       }
     },
+    "Still want this?" : {
+      "comment" : "A goal's page: the goal went quiet and the agent asked whether to keep it",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vil du stadig have dette?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Willst du das noch?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Sigues queriendo esto?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous le voulez toujours ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo vuoi ancora?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まだ続けますか？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 원하시나요?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vil du fortsatt ha dette?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wil je dit nog steeds?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nadal tego chcesz?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ainda quer isto?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это всё ещё нужно?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vill du fortfarande ha detta?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hâlâ istiyor musunuz?"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Усе ще потрібно?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还想继续吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還想繼續嗎？"
+          }
+        }
+      }
+    },
     "Still working on it." : {
       "localizations" : {
         "da" : {
@@ -434116,6 +436655,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在任何聊天中，或用「新增目標」（按住「新對話」按鈕），告訴你的代理你想完成的事。它會在你的 Kanban 看板上建立步驟計畫讓你核准，定期檢查進度，聊天列表頂端的目標卡片會顯示目前的進度。需要你的 Hermes 上有 Redde 外掛 1.16。"
+          }
+        }
+      }
+    },
+    "Tell your agent what's always true for you, like the insurance you need across the border, or add it in Settings → Your Day. Heads-Ups and Morning Ideas check it against the days around each event, and tell you when something is missing or runs out. It takes the Redde plugin 1.36." : {
+      "comment" : "What's New 2.7: things to keep in mind",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortæl din agent, hvad der altid gælder for dig, fx den forsikring, du skal bruge over grænsen, eller tilføj det i Indstillinger → Din dag. Forvarsler og Morgenidéer tjekker det mod dagene omkring hver begivenhed og siger til, når noget mangler eller udløber. Kræver Redde-plugin 1.36."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sag deinem Agenten, was für dich immer gilt, etwa die Versicherung, die du über der Grenze brauchst, oder füge es unter Einstellungen → Dein Tag hinzu. Vorabhinweise und Morgenideen prüfen es gegen die Tage rund um jeden Termin und sagen dir, wenn etwas fehlt oder abläuft. Benötigt das Redde-Plugin 1.36."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuéntale a tu agente lo que siempre es cierto para ti, como el seguro que necesitas al cruzar la frontera, o añádelo en Ajustes → Tu día. Avisos e Ideas matutinas lo comprueban con los días alrededor de cada evento y te avisan cuando falta algo o caduca. Requiere el plugin de Redde 1.36."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites à votre agent ce qui est toujours vrai pour vous, comme l’assurance qu’il vous faut de l’autre côté de la frontière, ou ajoutez-le dans Réglages → Votre journée. Alertes et Idées du matin le vérifient au regard des jours autour de chaque événement et vous préviennent quand quelque chose manque ou expire. Nécessite le plugin Redde 1.36."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dì al tuo agente ciò che per te è sempre vero, come l’assicurazione che ti serve oltre confine, oppure aggiungilo in Impostazioni → La tua giornata. Avvisi e Idee del mattino lo controllano nei giorni intorno a ogni evento e ti dicono quando manca o scade qualcosa. Richiede il plugin Redde 1.36."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "国境を越えるときに必要な保険など、あなたにとって常に当てはまることをエージェントに伝えるか、設定 → あなたの1日で追加してください。事前のお知らせと朝のアイデアが、各予定の前後の日々と照らして確認し、足りないものや期限切れを知らせます。Reddeプラグイン1.36が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "국경을 넘을 때 필요한 보험처럼 나에게 항상 해당하는 내용을 에이전트에게 알려 주거나, 설정 → 나의 하루에서 추가하세요. 사전 알림과 아침 아이디어가 각 일정 전후의 날들과 대조해, 빠졌거나 만료되는 것을 알려 드립니다. Redde 플러그인 1.36이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortell agenten din hva som alltid gjelder for deg, som forsikringen du trenger over grensen, eller legg det til i Innstillinger → Dagen din. Forvarsler og Morgenidéer sjekker det mot dagene rundt hver hendelse og sier fra når noe mangler eller går ut. Krever Redde-tillegg 1.36."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertel je agent wat altijd voor jou geldt, zoals de verzekering die je over de grens nodig hebt, of voeg het toe in Instellingen → Je dag. Seintjes en Ochtendideeën controleren het tegen de dagen rond elke afspraak en laten het weten als er iets ontbreekt of afloopt. Vereist Redde-plug-in 1.36."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiedz agentowi, co zawsze jest prawdą w Twoim przypadku, na przykład o ubezpieczeniu potrzebnym za granicą, albo dodaj to w Ustawieniach → Twój dzień. Zapowiedzi i Poranne pomysły sprawdzają to w dniach wokół każdego wydarzenia i mówią, gdy czegoś brakuje lub coś wygasa. Wymaga wtyczki Redde 1.36."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conte ao seu agente o que é sempre verdade para você, como o seguro de que precisa ao cruzar a fronteira, ou adicione em Ajustes → Seu Dia. Avisos e Ideias Matinais conferem com os dias em torno de cada evento e avisam quando algo falta ou vence. Exige o plugin do Redde 1.36."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расскажите агенту, что для вас всегда верно, например о страховке, которая нужна за границей, или добавьте это в Настройки → Ваш день. Предупреждения и Утренние идеи сверяют это с днями вокруг каждого события и сообщают, если чего-то не хватает или срок истекает. Нужен плагин Redde 1.36."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berätta för din agent vad som alltid gäller för dig, som försäkringen du behöver över gränsen, eller lägg till det i Inställningar → Din dag. Förvarningar och Morgonidéer kontrollerar det mot dagarna runt varje händelse och säger till när något saknas eller går ut. Kräver Redde-tillägg 1.36."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınıza sizin için her zaman geçerli olanı söyleyin, örneğin sınırın ötesinde gereken sigortayı, ya da Ayarlar → Gününüz’den ekleyin. Hatırlatmalar ve Sabah Fikirleri bunu her etkinliğin çevresindeki günlerle karşılaştırır ve bir şey eksikse ya da bitiyorsa size söyler. Redde Eklentisi 1.36 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розкажіть агенту, що для вас завжди правда, наприклад про страховку, потрібну за кордоном, або додайте це в Параметри → Ваш день. Попередження та Ранкові ідеї звіряють це з днями навколо кожної події й повідомляють, якщо чогось бракує або термін спливає. Потрібен плагін Redde 1.36."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "告诉你的智能体对你始终成立的事，比如出境时需要的保险，或在“设置 → 你的一天”中添加。提前提醒和早间想法会对照每个日程前后的日子检查，并在有东西缺失或到期时告诉你。需要 Redde插件 1.36。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "告訴你的智能體對你始終成立的事，例如出境時需要的保險，或在「設定 → 你的一天」中加入。事前提醒和晨間點子會對照每個行程前後的日子檢查，並在有東西缺少或到期時告訴你。需要 Redde 外掛 1.36。"
           }
         }
       }
@@ -461909,6 +464555,327 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "它們會從 Redde 的記錄中移除，對所有用戶端皆然。"
+          }
+        }
+      }
+    },
+    "Things to keep in mind" : {
+      "comment" : "What's New 2.7: facts always true for the person, checked by Heads-Ups and Morning Ideas",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ting at huske"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu beachten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosas que recordar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À ne pas oublier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cose da ricordare"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "覚えておくこと"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기억할 것"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ting å huske"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om te onthouden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warto pamiętać"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lembretes fixos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что учитывать"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Att tänka på"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akılda Tutulacaklar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Що враховувати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要留意的事"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要留意的事"
+          }
+        }
+      }
+    },
+    "Things to Keep in Mind" : {
+      "comment" : "Settings › Your Day: facts about the person that Heads-Ups and Morning Ideas check",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ting at huske"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu beachten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosas que recordar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À ne pas oublier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cose da ricordare"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "覚えておくこと"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기억할 것"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ting å huske"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om te onthouden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warto pamiętać"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lembretes Fixos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что учитывать"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Att tänka på"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akılda Tutulacaklar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Що враховувати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要留意的事"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要留意的事"
+          }
+        }
+      }
+    },
+    "Things to Keep in Mind takes the Redde plugin 1.36: update it in Settings › Redde Plugin." : {
+      "comment" : "Things to Keep in Mind: the plugin is too old",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ting at huske kræver Redde-plugin 1.36: opdater det i Indstillinger › Redde-plugin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu beachten braucht das Redde-Plugin 1.36: Aktualisiere es unter Einstellungen › Redde-Plugin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosas que recordar requiere el plugin de Redde 1.36: actualízalo en Ajustes › Plugin de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À ne pas oublier nécessite le plugin Redde 1.36 : mettez-le à jour dans Réglages › Plugin Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cose da ricordare richiede il plugin Redde 1.36: aggiornalo in Impostazioni › Plugin Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「覚えておくこと」にはReddeプラグイン1.36が必要です。設定 › Reddeプラグインでアップデートしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘기억할 것’에는 Redde 플러그인 1.36이 필요합니다. 설정 › Redde 플러그인에서 업데이트하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ting å huske krever Redde-tillegg 1.36: oppdater det i Innstillinger › Redde-tillegg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om te onthouden vereist Redde-plug-in 1.36: werk hem bij in Instellingen › Redde-plug-in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funkcja Warto pamiętać wymaga wtyczki Redde 1.36: zaktualizuj ją w Ustawieniach › Wtyczka Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lembretes Fixos exige o plugin do Redde 1.36: atualize em Ajustes › Plugin do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для функции «Что учитывать» нужен плагин Redde 1.36: обновите его в разделе Настройки › Плагин Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Att tänka på kräver Redde-tillägg 1.36: uppdatera det i Inställningar › Redde-tillägg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akılda Tutulacaklar için Redde Eklentisi 1.36 gerekir: Ayarlar › Redde Eklentisi bölümünden güncelleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для функції «Що враховувати» потрібен плагін Redde 1.36: оновіть його в Параметри › Плагін Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“需要留意的事”需要 Redde插件 1.36：请在“设置 › Redde插件”中更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「需要留意的事」需要 Redde 外掛 1.36：請在「設定 › Redde 外掛」中更新。"
           }
         }
       }
@@ -512049,6 +515016,113 @@
         }
       }
     },
+    "What's always true for you, said once. Heads-Ups, Morning Ideas and the Week Ahead check each one against the days around every event, and tell you when something is missing or runs out: a policy that ends before you're back, a booking you haven't made. Your agents add to this list when you tell them something like it. Kept on your Hermes, for all your agents." : {
+      "comment" : "Things to Keep in Mind: footer",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det, der altid gælder for dig, sagt én gang. Forvarsler, Morgenidéer og Ugen, der kommer tjekker hver enkelt op mod dagene omkring hver begivenhed og siger til, når noget mangler eller udløber: en police, der slutter, før du er hjemme, en booking, du ikke har lavet. Dine agenter føjer til listen, når du fortæller dem noget lignende. Gemmes på din Hermes, til alle dine agenter."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was für dich immer gilt, einmal gesagt. Vorabhinweise, Morgenideen und der Wochenausblick prüfen jeden Punkt gegen die Tage rund um jeden Termin und sagen dir, wenn etwas fehlt oder abläuft: eine Police, die endet, bevor du zurück bist, eine Buchung, die du noch nicht gemacht hast. Deine Agenten ergänzen die Liste, wenn du ihnen etwas Ähnliches sagst. Gespeichert auf deinem Hermes, für alle deine Agenten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que siempre es cierto para ti, dicho una sola vez. Avisos, Ideas matutinas y La semana que viene comprueban cada punto con los días alrededor de cada evento y te avisan cuando falta algo o caduca: una póliza que termina antes de que vuelvas, una reserva que no has hecho. Tus agentes añaden a esta lista cuando les cuentas algo parecido. Se guarda en tu Hermes, para todos tus agentes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qui est toujours vrai pour vous, dit une seule fois. Alertes, Idées du matin et Semaine à venir vérifient chaque point au regard des jours autour de chaque événement et vous préviennent quand quelque chose manque ou expire : un contrat qui se termine avant votre retour, une réservation pas encore faite. Vos agents complètent cette liste quand vous leur dites quelque chose de semblable. Conservé sur votre Hermes, pour tous vos agents."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciò che per te è sempre vero, detto una volta. Avvisi, Idee del mattino e Settimana in arrivo controllano ogni voce nei giorni intorno a ogni evento e ti dicono quando manca o scade qualcosa: una polizza che finisce prima del tuo ritorno, una prenotazione non ancora fatta. I tuoi agenti aggiungono a questo elenco quando dici loro qualcosa di simile. Conservato sul tuo Hermes, per tutti i tuoi agenti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたにとって常に当てはまること(一度伝えるだけ)。事前のお知らせ、朝のアイデア、来週の見通しが、各予定の前後の日々と照らして一つずつ確認し、足りないものや期限切れを知らせます。たとえば、帰る前に切れる保険や、まだ取っていない予約などです。似たことを伝えると、エージェントがこのリストに追加します。あなたのHermesに保存され、すべてのエージェントで共有されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나에게 항상 해당하는 내용을 한 번만 말해 두세요. 사전 알림, 아침 아이디어, 다가오는 한 주가 각 일정 전후의 날들과 하나씩 대조해, 빠졌거나 만료되는 것을 알려 드립니다. 예를 들어 돌아오기 전에 끝나는 보험이나 아직 하지 않은 예약입니다. 비슷한 내용을 에이전트에게 말하면 에이전트가 이 목록에 추가합니다. 내 Hermes에 저장되며 모든 에이전트가 사용합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det som alltid gjelder for deg, sagt én gang. Forvarsler, Morgenidéer og Uken som kommer sjekker hvert punkt mot dagene rundt hver hendelse og sier fra når noe mangler eller går ut: en forsikring som utløper før du er tilbake, en bestilling du ikke har gjort. Agentene dine legger til i listen når du forteller dem noe lignende. Lagres på Hermes-en din, for alle agentene dine."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat altijd voor jou geldt, één keer gezegd. Seintjes, Ochtendideeën en Komende week controleren elk punt tegen de dagen rond elke afspraak en laten het weten als er iets ontbreekt of afloopt: een polis die eindigt voordat je terug bent, een boeking die je nog niet hebt gedaan. Je agents vullen deze lijst aan als je ze iets dergelijks vertelt. Bewaard op je Hermes, voor al je agents."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To, co zawsze jest prawdą w Twoim przypadku, powiedziane raz. Zapowiedzi, Poranne pomysły i Nadchodzący tydzień sprawdzają każdy punkt w dniach wokół każdego wydarzenia i mówią, gdy czegoś brakuje lub coś wygasa: polisa kończąca się przed Twoim powrotem, rezerwacja, której jeszcze nie ma. Twoi agenci dopisują do tej listy, gdy powiesz im coś podobnego. Przechowywane na Twoim Hermesie, dla wszystkich Twoich agentów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que é sempre verdade para você, dito uma vez. Avisos, Ideias Matinais e Semana que Vem conferem cada item com os dias em torno de cada evento e avisam quando algo falta ou vence: uma apólice que termina antes de você voltar, uma reserva que você não fez. Seus agentes acrescentam a esta lista quando você diz algo parecido. Guardado no seu Hermes, para todos os seus agentes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "То, что для вас всегда верно, сказанное один раз. Предупреждения, Утренние идеи и Обзор недели сверяют каждый пункт с днями вокруг каждого события и сообщают, если чего-то не хватает или срок истекает: полис заканчивается до вашего возвращения, бронирование не сделано. Ваши агенты дополняют этот список, когда вы говорите им что-то подобное. Хранится на вашем Hermes, для всех ваших агентов."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det som alltid gäller för dig, sagt en gång. Förvarningar, Morgonidéer och Veckan som kommer kontrollerar varje punkt mot dagarna runt varje händelse och säger till när något saknas eller går ut: en försäkring som slutar innan du är tillbaka, en bokning du inte har gjort. Dina agenter lägger till i listan när du berättar något liknande. Sparas på din Hermes, för alla dina agenter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sizin için her zaman geçerli olanlar, bir kez söylenir. Hatırlatmalar, Sabah Fikirleri ve Haftaya Bakış her maddeyi etkinliklerin çevresindeki günlerle karşılaştırır ve bir şey eksikse ya da bitiyorsa size söyler: siz dönmeden biten bir poliçe, yapmadığınız bir rezervasyon. Benzer bir şey söylediğinizde ajanlarınız bu listeye ekleme yapar. Hermes’inizde saklanır, tüm ajanlarınız için."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Те, що для вас завжди правда, сказане один раз. Попередження, Ранкові ідеї та Огляд тижня звіряють кожен пункт із днями навколо кожної події й повідомляють, якщо чогось бракує або термін спливає: поліс закінчується до вашого повернення, бронювання не зроблено. Ваші агенти доповнюють цей список, коли ви говорите їм щось подібне. Зберігається на вашому Hermes, для всіх ваших агентів."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对你始终成立的事，只需说一次。提前提醒、早间想法和下周概览会对照每个日程前后的日子逐条检查，并在有东西缺失或到期时告诉你：比如在你回来之前就到期的保单，或还没订的预订。当你告诉智能体类似的事时，它们也会添加到这个列表。保存在你的 Hermes 上，供所有智能体使用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對你始終成立的事，只需說一次。事前提醒、晨間點子和下週概覽會對照每個行程前後的日子逐項檢查，並在有東西缺少或到期時告訴你：例如在你回來之前就到期的保單，或還沒訂的預訂。當你告訴智能體類似的事時，它們也會加入這份清單。儲存在你的 Hermes 上，供所有智能體使用。"
+          }
+        }
+      }
+    },
     "What's my first meeting, and do I need an umbrella?" : {
       "localizations" : {
         "da" : {
@@ -515022,6 +518096,112 @@
         }
       }
     },
+    "When you haven't written to any of your agents for a while, your agent looks at what may need you (approvals waiting, things coming due, tomorrow) and tells you only if something does. Once each time you go quiet. The hourly checks don't use your model. Needs Redde's plugin 1.36 on your Hermes." : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du ikke har skrevet til nogen af dine agenter i et stykke tid, ser din agent på, hvad der kan have brug for dig (ventende godkendelser, ting der snart forfalder, i morgen) og giver kun besked, hvis noget har. Én gang, hver gang der går lang tid uden en besked fra dig. De timevise tjek bruger ikke din model. Kræver Reddes plugin 1.36 på din Hermes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du eine Weile keinem deiner Agenten geschrieben hast, sieht dein Agent nach, was dich brauchen könnte (wartende Freigaben, bald Fälliges, morgen) und meldet sich nur, wenn etwas ansteht. Einmal, jedes Mal wenn du länger nicht schreibst. Die stündlichen Prüfungen nutzen dein Modell nicht. Benötigt das Redde-Plugin 1.36 auf deinem Hermes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando llevas un tiempo sin escribir a ninguno de tus agentes, tu agente revisa qué puede necesitarte (aprobaciones pendientes, cosas que vencen, mañana) y te avisa solo si hay algo. Una vez cada vez que pasas un tiempo sin escribir. Las comprobaciones cada hora no usan tu modelo. Requiere el plugin de Redde 1.36 en tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand vous n’avez écrit à aucun de vos agents depuis un moment, votre agent regarde ce qui pourrait avoir besoin de vous (validations en attente, échéances proches, demain) et ne vous prévient que si c’est le cas. Une fois à chaque long moment sans message de votre part. Les vérifications horaires n’utilisent pas votre modèle. Nécessite le plugin Redde 1.36 sur votre Hermes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando non scrivi a nessuno dei tuoi agenti da un po’, il tuo agente guarda cosa potrebbe aver bisogno di te (approvazioni in attesa, scadenze vicine, domani) e ti avvisa solo se c’è qualcosa. Una volta ogni volta che smetti di scrivere per un po’. I controlli orari non usano il tuo modello. Richiede il plugin Redde 1.36 sul tuo Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "しばらくどのエージェントにもメッセージを送っていないとき、エージェントは対応が必要そうなこと(承認待ち、期限が近いもの、明日の予定)を確認し、あるときだけ知らせます。しばらく連絡が途絶えるたびに1回です。1時間ごとの確認ではモデルは使われません。HermesにReddeプラグイン1.36が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "한동안 어떤 에이전트에게도 메시지를 보내지 않으면, 에이전트가 내가 필요할 만한 일(대기 중인 승인, 곧 마감되는 일, 내일)을 살펴보고 있을 때만 알려 줍니다. 한동안 메시지를 보내지 않을 때마다 한 번입니다. 매시간 확인에는 모델을 사용하지 않습니다. Hermes에 Redde 플러그인 1.36이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du ikke har skrevet til noen av agentene dine på en stund, ser agenten din på hva som kan trenge deg (ventende godkjenninger, ting som snart forfaller, i morgen) og sier fra bare hvis noe gjør det. Én gang hver gang du ikke skriver på en stund. De timevise sjekkene bruker ikke modellen din. Krever Redde-tillegg 1.36 på Hermes-en din."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je een tijdje aan geen van je agents hebt geschreven, kijkt je agent wat jou nodig kan hebben (wachtende goedkeuringen, dingen die bijna aflopen, morgen) en laat het alleen weten als er iets is. Eén keer telkens als je een tijdje niet schrijft. De uurlijkse controles gebruiken je model niet. Vereist Redde-plug-in 1.36 op je Hermes."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy przez jakiś czas nie piszesz do żadnego ze swoich agentów, agent sprawdza, co może Cię potrzebować (oczekujące zatwierdzenia, zbliżające się terminy, jutro) i daje znać tylko wtedy, gdy coś jest. Raz za każdym razem, gdy na dłużej przestajesz pisać. Cogodzinne kontrole nie korzystają z Twojego modelu. Wymaga wtyczki Redde 1.36 na Twoim Hermesie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando você fica um tempo sem escrever para nenhum dos seus agentes, seu agente olha o que pode precisar de você (aprovações aguardando, prazos chegando, amanhã) e avisa só se houver algo. Uma vez a cada vez que você fica um tempo sem escrever. As verificações de hora em hora não usam seu modelo. Exige o plugin do Redde 1.36 no seu Hermes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если вы некоторое время не писали ни одному из агентов, агент смотрит, что может требовать вас (ожидающие подтверждения, приближающиеся сроки, завтрашний день) и сообщает, только если что-то есть. Один раз каждый раз, когда вы надолго перестаёте писать. Ежечасные проверки не используют вашу модель. Нужен плагин Redde 1.36 на вашем Hermes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När du inte har skrivit till någon av dina agenter på ett tag tittar din agent på vad som kan behöva dig (väntande godkännanden, saker som snart förfaller, i morgon) och säger bara till om något gör det. En gång varje gång du slutar skriva en stund. De timvisa kontrollerna använder inte din modell. Kräver Redde-tillägg 1.36 på din Hermes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanlarınızdan hiçbirine bir süredir yazmadığınızda, ajanınız size ihtiyaç duyabilecek şeylere (bekleyen onaylar, yaklaşan son tarihler, yarın) bakar ve yalnızca bir şey varsa bildirir. Bir süre yazmayı bıraktığınız her seferde bir kez. Saatlik kontroller modelinizi kullanmaz. Hermes’inizde Redde Eklentisi 1.36 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Якщо ви певний час не писали жодному з агентів, агент дивиться, що може потребувати вас (підтвердження в черзі, наближені терміни, завтрашній день) і повідомляє, лише якщо щось є. Один раз щоразу, коли ви надовго перестаєте писати. Щогодинні перевірки не використовують вашу модель. Потрібен плагін Redde 1.36 на вашому Hermes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当你有一阵子没有给任何智能体发消息时，你的智能体会查看可能需要你处理的事（待批准的事项、即将到期的事、明天），只有确实有事时才会通知你。每次你久未发消息，只通知一次。每小时的检查不会使用你的模型。需要你的 Hermes 上安装 Redde插件 1.36。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當你有一陣子沒有傳訊息給任何智能體時，你的智能體會查看可能需要你處理的事（待批准的事項、即將到期的事、明天），只有確實有事時才會通知你。每次你久未傳訊息，只通知一次。每小時的檢查不會使用你的模型。需要你的 Hermes 上安裝 Redde 外掛 1.36。"
+          }
+        }
+      }
+    },
     "When you mention something to do later (“I'll call the plumber tomorrow”), your agent can set a follow-up: it comes back to you then as an idea card." : {
       "localizations" : {
         "da" : {
@@ -515124,6 +518304,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "當你提到稍後要做的事（「我明天打電話給水電工」），你的代理可以設定跟進：時候到了它會以點子卡片的形式回到你面前。"
+          }
+        }
+      }
+    },
+    "When You've Gone Quiet" : {
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du ikke har skrevet længe"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du länger nicht schreibst"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando llevas tiempo sin escribir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après un long silence"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando non scrivi da un po’"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "しばらく連絡がないとき"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "한동안 메시지가 없을 때"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du ikke har skrevet på en stund"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je even niet schrijft"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy dłuższy czas nie piszesz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando Você Fica Sem Escrever"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если вы давно не писали"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När du inte har skrivit på ett tag"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzun Süre Yazmadığınızda"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ви давно не писали"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当你久未发消息时"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當你久未傳訊息時"
           }
         }
       }
@@ -525886,6 +529172,113 @@
         }
       }
     },
+    "You said not to suggest these (Don't Suggest This on an idea). Your agents leave out ideas like them. Swipe one away to let it back in." : {
+      "comment" : "Morning Ideas: under Not Suggested",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du har sagt, at disse ikke skal foreslås (Foreslå ikke dette på en idé). Dine agenter udelader lignende idéer. Stryg en væk for at lukke den ind igen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast gesagt, dass diese nicht vorgeschlagen werden sollen (Nicht mehr vorschlagen bei einer Idee). Deine Agenten lassen ähnliche Ideen weg. Streiche eine weg, um sie wieder zuzulassen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dijiste que no se sugirieran estas (No sugerir esto en una idea). Tus agentes omiten ideas parecidas. Desliza una para volver a permitirla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez demandé de ne pas suggérer celles-ci (Ne pas suggérer ceci sur une idée). Vos agents écartent les idées du même genre. Balayez-en une pour la réautoriser."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai detto di non suggerire queste (Non suggerire questo su un’idea). I tuoi agenti omettono idee simili. Scorri una per riammetterla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これらは提案しないよう指定されています(アイデアの「これを提案しない」)。エージェントは似たアイデアを除外します。スワイプして削除すると、再び提案されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 항목들은 추천하지 않도록 설정했습니다(아이디어의 ‘이건 추천 안 함’). 에이전트는 비슷한 아이디어를 제외합니다. 항목을 쓸어서 지우면 다시 추천됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du har sagt at disse ikke skal foreslås (Ikke foreslå dette på en idé). Agentene dine utelater lignende idéer. Sveip en bort for å slippe den inn igjen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt aangegeven dat deze niet voorgesteld mogen worden (Dit niet voorstellen bij een idee). Je agents laten soortgelijke ideeën weg. Veeg er een weg om hem weer toe te laten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiedziano, aby ich nie proponować (Nie proponuj tego przy pomyśle). Twoi agenci pomijają podobne pomysły. Przesuń jeden, aby znów go dopuścić."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você pediu para não sugerir estas (Não Sugerir Isto em uma ideia). Seus agentes deixam de fora ideias parecidas. Deslize uma para permitir de novo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы просили не предлагать эти идеи («Больше не предлагать» в идее). Ваши агенты пропускают похожие идеи. Смахните идею, чтобы вернуть её."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du har sagt att dessa inte ska föreslås (Föreslå inte detta på en idé). Dina agenter utelämnar liknande idéer. Svep bort en för att släppa in den igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunların önerilmemesini söylediniz (bir fikirde Bunu Önerme). Ajanlarınız benzer fikirleri dışarıda bırakır. Yeniden izin vermek için birini kaydırıp kaldırın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ви просили не пропонувати ці ідеї («Більше не пропонувати» в ідеї). Ваші агенти пропускають схожі ідеї. Змахніть ідею, щоб повернути її."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你已表示不要建议这些想法（想法上的“不要建议这个”）。你的智能体会略过类似的想法。滑动移除一条，即可重新允许。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你已表示不要建議這些點子（點子上的「不要建議這個」）。你的智能體會略過類似的點子。滑動移除一則，即可重新允許。"
+          }
+        }
+      }
+    },
     "You said this %lld times" : {
       "localizations" : {
         "da" : {
@@ -533410,6 +536803,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的 Hermes 回覆的格式 Redde 無法讀取。請更新那裡的 Redde 外掛。"
+          }
+        }
+      }
+    },
+    "Your Hermes can't say. Things to Keep in Mind takes the Redde plugin 1.36." : {
+      "comment" : "Things to Keep in Mind: the list couldn't be read",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kan ikke sige det. Ting at huske kræver Redde-plugin 1.36."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes kann das nicht sagen. Zu beachten braucht das Redde-Plugin 1.36."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes no puede decirlo. Cosas que recordar requiere el plugin de Redde 1.36."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes ne peut pas le dire. À ne pas oublier nécessite le plugin Redde 1.36."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo Hermes non può dirlo. Cose da ricordare richiede il plugin Redde 1.36."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesでは確認できません。「覚えておくこと」にはReddeプラグイン1.36が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes에서 확인할 수 없습니다. ‘기억할 것’에는 Redde 플러그인 1.36이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes-en din kan ikke si det. Ting å huske krever Redde-tillegg 1.36."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes kan het niet zeggen. Om te onthouden vereist Redde-plug-in 1.36."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes nie potrafi tego powiedzieć. Warto pamiętać wymaga wtyczki Redde 1.36."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes não consegue dizer. Lembretes Fixos exige o plugin do Redde 1.36."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes не может ответить. Для функции «Что учитывать» нужен плагин Redde 1.36."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kan inte säga det. Att tänka på kräver Redde-tillägg 1.36."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes’iniz söyleyemiyor. Akılda Tutulacaklar için Redde Eklentisi 1.36 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes не може цього сказати. Для функції «Що враховувати» потрібен плагін Redde 1.36."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 无法说明。“需要留意的事”需要 Redde插件 1.36。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 無法說明。「需要留意的事」需要 Redde 外掛 1.36。"
           }
         }
       }

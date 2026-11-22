@@ -99,6 +99,134 @@ def remember(home: Path, profile: str, now: float) -> None:
     tmp.replace(path)
 
 
+# ---- what not to suggest (1.36.0, after hermes-muse's "stop bringing this up", 2026-11-22) ---------
+#: Don't Suggest This on an idea's card in Redde: the card's heading kept, for every agent. An idea
+#: that matches one is left out, and a run that offers ideas is told the list.
+
+BLOCKED = "ideas-blocked.json"
+BLOCKED_MOST = 50
+_SMALL = {"the", "and", "for", "with", "from", "into", "your", "you", "their", "them", "this", "that", "what", "about",
+          "out", "off", "our", "its", "his", "her", "a", "an", "to", "of", "in", "on", "at", "my", "me", "it", "up"}
+
+
+def _words(text: str) -> set[str]:
+    return {w for w in re.findall(r"[^\W_]+", str(text or "").lower()) if len(w) > 2 and w not in _SMALL}
+
+
+def blocked(home: Path) -> list[str]:
+    """What the person said not to suggest, newest first."""
+    try:
+        kept = json.loads((Path(home) / "redde-push" / BLOCKED).read_text())
+    except Exception:
+        return []
+    return [str(entry.get("t")) for entry in kept if isinstance(entry, dict) and entry.get("t")]
+
+
+def _keep_blocked(home: Path, titles: list[str]) -> None:
+    path = Path(home) / "redde-push" / BLOCKED
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".new")
+    tmp.write_text(json.dumps([{"t": t} for t in titles[:BLOCKED_MOST]], ensure_ascii=False))
+    tmp.replace(path)
+
+
+def block(home: Path, title: str) -> bool:
+    title = core.clipped(" ".join(str(title or "").split()), 60)
+    if not _words(title):
+        return False
+    _keep_blocked(home, [title] + [t for t in blocked(home) if t.lower() != title.lower()])
+    return True
+
+
+def unblock(home: Path, title: str) -> bool:
+    titles = blocked(home)
+    left = [t for t in titles if t.lower() != " ".join(str(title or "").split()).lower()]
+    if len(left) == len(titles):
+        return False
+    _keep_blocked(home, left)
+    return True
+
+
+def unwanted(idea: dict, titles: list[str]) -> bool:
+    """Whether an idea (as `cleaned` keeps it) is one they said not to suggest: most of a blocked
+    heading's words in its heading or request."""
+    said = _words(f"{idea.get('t', '')} {idea.get('r', '')}")
+    for title in titles:
+        words = _words(title)
+        if words and len(words & said) >= max(1, round(len(words) * 0.6)):
+            return True
+    return False
+
+
+def wanted(home: Path, ideas: list[dict]) -> list[dict]:
+    titles = blocked(home)
+    return [idea for idea in ideas if not unwanted(idea, titles)] if titles else ideas
+
+
+def run_note(home: Path, message, platform: str = "") -> str | None:
+    """For `pre_llm_call`: a run that offers ideas (it names the tool or is one of Redde's idea
+    jobs), told what not to suggest."""
+    if platform != "cron":
+        return None
+    text = message if isinstance(message, str) else " ".join(
+        str(p.get("text") or "") for p in message or [] if isinstance(p, dict)) if isinstance(message, list) else ""
+    if TOOL not in text and "IDEA:" not in text:
+        return None
+    titles = blocked(home)
+    if not titles:
+        return None
+    return ("[Redde: they asked not to be offered ideas like these again: " + "; ".join(f"\"{t}\"" for t in titles[:20])
+            + ". Leave anything like them out.]")
+
+
+# ---- left alone (1.36.0, after Heartbeat 2.0's mute after unanswered messages, 2026-11-22) ------
+#: An agent's ideas that nobody took, put away or put off, set after set: from the IGNORED-th in a
+#: row they come quietly, into the deck with no sound or banner, until the person touches one of
+#: that agent's cards again (Redde says so: `/redde-push ideas touched <profile>`).
+
+IGNORED = 3
+UNTOUCHED = "ideas-untouched.json"
+
+
+def _untouched(home: Path) -> dict:
+    try:
+        kept = json.loads((Path(home) / "redde-push" / UNTOUCHED).read_text())
+        return kept if isinstance(kept, dict) else {}
+    except Exception:
+        return {}
+
+
+def _keep_untouched(home: Path, kept: dict) -> None:
+    path = Path(home) / "redde-push" / UNTOUCHED
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".new")
+    tmp.write_text(json.dumps(kept))
+    tmp.replace(path)
+
+
+def untouched(home: Path, profile: str) -> int:
+    return int(_untouched(home).get(profile) or 0)
+
+
+def quiet_if_ignored(home: Path, profile: str, made: dict) -> bool:
+    """Counts a set of ideas going out, and makes it quiet (`z` "drawer") when the ones before it
+    were left alone; whether it is quiet."""
+    kept = _untouched(home)
+    left = int(kept.get(profile) or 0)
+    kept[profile] = left + 1
+    _keep_untouched(home, kept)
+    if left >= IGNORED:
+        made["z"] = "drawer"
+        return True
+    return False
+
+
+def touched(home: Path, profile: str) -> None:
+    kept = _untouched(home)
+    if kept.pop(profile, None) is not None:
+        _keep_untouched(home, kept)
+
+
 def cleaned(ideas) -> list[dict]:
     """What the phone is given of each idea: `t` the heading, `w` why now, `r` the request."""
     kept = []
@@ -120,7 +248,11 @@ def cleaned(ideas) -> list[dict]:
 def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: float | None = None) -> dict:
     """Sends the ideas to every paired phone; what the tool answers."""
     now = time.time() if now is None else now
-    kept = cleaned(ideas)
+    given = cleaned(ideas)
+    kept = wanted(home, given)
+    if given and not kept:
+        return {"error": "They asked not to be offered ideas like these (Don't Suggest This in Redde): offer something "
+                         "else, or nothing."}
     if not kept:
         return {"error": "No ideas to send: give each one a \"request\" (and a \"title\")."}
     if len(sent_lately(home, profile, now)) >= HOURLY:
@@ -130,6 +262,7 @@ def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: fl
         return {"error": "No iPhone is paired with Redde's notifications here, so the ideas can't reach them. Tell "
                          "them in words instead."}
     made = core.ideas_note(profile, name, kept, uuid.uuid4().hex[:16])
+    quiet_if_ignored(home, profile, made)   # (left alone set after set: quietly, 1.36.0)
     phones = store.where_you_are(phones, "ideas")
     sent = 0
     for device in phones:

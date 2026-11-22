@@ -105,6 +105,31 @@ struct GoalsTests {
         #expect(g8.nextForYou?.index == 1)
     }
 
+    /// A goal gone quiet (plugin 1.36): asked about, then paused; Keep Going takes the quiet off here.
+    @Test func aQuietGoalIsReadAndKeptGoing() throws {
+        let store = store()
+        let listed = try #require(Goals.parse(list: """
+            [{"id":"gq","profile":"default","title":"Learn piano","quiet":17,"asked":true,"faded":true,"steps":[]},
+             {"id":"gn","profile":"default","title":"Run","quiet":0,"asked":false,"faded":false}]
+            """))
+        #expect(listed[0].quietDays == 17 && listed[0].faded == true && listed[0].goneQuiet)
+        #expect(listed[1].quietDays == nil && listed[1].faded == nil && !listed[1].goneQuiet)
+        GoalReport.merge(listed, in: store)
+        GoalReport.keep("gq", in: store)
+        #expect(GoalReport.all(in: store)["gq"]?.goneQuiet == false)
+    }
+
+    /// Don't Suggest This: the heading said to the plugin base64url, the list read back.
+    @Test func notSuggestedIdeasTravelAsTheirHeadings() throws {
+        let line = IdeasBlocked.line("block", "Book the vet for Pickles 🐶")
+        #expect(line.hasPrefix("ideas block ") && !line.dropFirst(12).contains(" "))
+        let back = try #require(PushSeal.data(base64URL: String(line.dropFirst(12))))
+        #expect(String(decoding: back, as: UTF8.self) == "Book the vet for Pickles 🐶")
+        let list = PushSeal.base64URL(Data(#"["Tidy the garage","Café"]"#.utf8))
+        #expect(IdeasBlocked.parse("redde-push ideas blocked \(list)\n") == ["Tidy the garage", "Café"])
+        #expect(IdeasBlocked.parse("usage: redde-push …") == nil, "an older plugin")
+    }
+
     /// A check-in's notification names its goal, for a tap to open the goal's page.
     @Test func aCheckInsNotificationNamesItsGoal() throws {
         let content = UNMutableNotificationContent()

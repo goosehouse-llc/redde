@@ -30,6 +30,7 @@ struct GoalView: View {
         List {
             if let goal {
                 summary(goal)
+                if goal.goneQuiet { quiet(goal) }
                 plan(goal)
                 lastCheckIn(goal)
                 controls(goal)
@@ -78,6 +79,48 @@ struct GoalView: View {
                 }
             }
             .padding(.vertical, 4)
+        }
+    }
+
+    /// A goal that went quiet (plugin 1.36): its check-in asked whether they still want it, or
+    /// paused for the quiet. Keep Going starts the quiet again; End Goal is the other answer.
+    @ViewBuilder private func quiet(_ goal: GoalReport) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 6) {
+                Label {
+                    Text(goal.faded == true
+                         ? String(localized: "Check-ins paused", comment: "A goal's page: the goal went quiet and its check-ins were paused")
+                         : String(localized: "Still want this?", comment: "A goal's page: the goal went quiet and the agent asked whether to keep it"))
+                        .font(.headline)
+                } icon: { Image(systemName: "moon.zzz") }
+                if let days = goal.quietDays {
+                    Text("Nothing has happened on this goal for \(days) days.", comment: "A goal's page: how long the goal has been quiet")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 2)
+            Button { keepGoing(goal) } label: {
+                HStack {
+                    Label { Text("Keep Going", comment: "A goal's page: keeps a quiet goal, its check-ins running again") } icon: { Image(systemName: "play.circle") }
+                    if working { Spacer(); ProgressView() }
+                }
+            }
+            .disabled(working)
+            .accessibilityIdentifier("goal-keep-going")
+            Button(role: .destructive) { confirmEnd = true } label: {
+                Label { Text("End Goal", comment: "A goal's page: the button that ends it") } icon: { Image(systemName: "flag.slash") }
+            }
+            .disabled(working)
+        }
+    }
+
+    private func keepGoing(_ goal: GoalReport) {
+        working = true
+        problem = nil
+        Task {
+            defer { working = false }
+            if let why = await Goals.keep(goal) { problem = why; return }
+            await load()
         }
     }
 

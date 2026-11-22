@@ -99,7 +99,8 @@ enum Goals {
                               headline: progress?["headline"]?.string ?? "", next: progress?["next"]?.string?.nilIfEmpty,
                               details: progress?["details"]?.string?.nilIfEmpty,
                               at: CronJob.date(progress?["at"]) ?? .distantPast, failed: false, job: g["job"]?.string,
-                              target: date(g["by"] ?? g["target"]), steps: steps.isEmpty ? nil : steps)
+                              target: date(g["by"] ?? g["target"]), steps: steps.isEmpty ? nil : steps,
+                              quietDays: g["quiet"]?.int.flatMap { $0 > 0 ? $0 : nil }, faded: g["faded"]?.bool == true ? true : nil)
         }
     }
 
@@ -161,6 +162,24 @@ enum Goals {
         return reply == nil
             ? String(localized: "Couldn't reach your Hermes. Try again in a moment.", comment: "A goal's step couldn't be ticked: the server didn't answer")
             : String(localized: "Ticking steps off takes the Redde plugin 1.35: update it in Settings › Redde Plugin.", comment: "A goal's step couldn't be ticked: the plugin is too old")
+    }
+
+    /// Keep Going on a goal that went quiet (plugin 1.36: `goals keep <profile> <goal>`): its quiet
+    /// starts again and paused check-ins run again. Nil when it was said; else why not.
+    @MainActor
+    static func keep(_ goal: GoalReport) async -> String? {
+        #if DEBUG
+        if demo { GoalsInbox.shared.kept(goal.id); return nil }
+        #endif
+        let reply = try? await PushService.command(over: .shared)("goals keep \(goal.profile ?? "default") \(goal.id)")
+        if reply?.hasPrefix("redde-push goals kept ") == true {
+            GoalReport.keep(goal.id)
+            GoalsInbox.shared.reload()
+            return nil
+        }
+        return reply == nil
+            ? String(localized: "Couldn't reach your Hermes. Try again in a moment.", comment: "A goal's step couldn't be ticked: the server didn't answer")
+            : String(localized: "Keeping a quiet goal going takes the Redde plugin 1.36: update it in Settings › Redde Plugin.", comment: "Keep Going on a quiet goal didn't work: the plugin is too old")
     }
 
     /// The goal's check-in job in a list.
@@ -250,6 +269,13 @@ final class GoalsInbox {
         GoalReport.setStep(id, index, done: done)
         reload()
     }
+
+    #if DEBUG
+    /// Kept going in the demo: the quiet gone from it.
+    func kept(_ id: String) {
+        if let i = goals.firstIndex(where: { $0.id == id }) { goals[i].quietDays = nil; goals[i].faded = nil }
+    }
+    #endif
 
     /// Ended here: off the list at once.
     func end(_ id: String) {

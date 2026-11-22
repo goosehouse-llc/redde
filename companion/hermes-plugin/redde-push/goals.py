@@ -49,6 +49,12 @@ _ID = re.compile(r"\[redde-goal:([A-Za-z0-9_-]{1,40})\]")
 #: The check-in's first line: "PROGRESS: 3/7 | Ran 5K on Saturday | Book the race".
 # How much of a check-in's report beyond its PROGRESS line is kept for the goal's page.
 DETAILS_LIMIT = 3000
+#: A goal that has gone quiet (1.36.0, after hermes-muse's goals that fade, 2026-11-22): nothing
+#: ticked, added or moved for QUIET days, and its next check-in asks once whether they still want
+#: it; still nothing FADE days after that, and its check-ins pause (never end: Redde offers Pick It
+#: Up Again and End Goal).
+QUIET = timedelta(days=14)
+FADE = timedelta(days=7)
 _PROGRESS = re.compile(r"^\W*progress\W*:?\s*(\d{1,3})\s*/\s*(\d{1,3})[*_\s]*(?:\|\s*([^|\n]*?)\s*)?(?:\|\s*([^\n]*?)\s*)?\W*$",
                        re.IGNORECASE | re.MULTILINE)
 
@@ -196,15 +202,119 @@ def progress(answer: str) -> tuple[dict | None, str]:
 
 
 def remember(home: Path, goal: str, found: dict, at: float | None = None) -> bool:
-    """Keeps a check-in's progress on the goal; whether there was such a goal."""
+    """Keeps a check-in's progress on the goal; whether there was such a goal. More steps done than
+    the last check-in said is the goal moving."""
     with _locked(home):
         goals = load(home)
         for kept in goals:
             if kept.get("id") == goal:
+                before = kept.get("progress") or {}
+                if int(found.get("done") or 0) > int(before.get("done") or 0) and before:
+                    moved(kept, at)
                 kept["progress"] = {**found, "at": int(at or time.time())}
                 save(home, goals)
                 return True
     return False
+
+
+def moved(kept: dict, at: float | None = None) -> None:
+    """Something happened on the goal: its quiet starts again, and a question or a pause for it
+    is over."""
+    kept["moved"] = int(at or time.time())
+    kept.pop("asked", None)
+    kept.pop("fading", None)
+    kept.pop("faded", None)
+
+
+def quiet_days(kept: dict, now: float | None = None) -> int:
+    """Whole days since anything happened on the goal (0 for one kept before 1.36.0 not yet seen)."""
+    since = kept.get("moved")
+    return int(((now or time.time()) - float(since)) // 86400) if since else 0
+
+
+def fade_note(home: Path, goal: str, now: float | None = None) -> str:
+    """What a check-in is told about the goal's quiet, and the step it takes: the question asked
+    once, after QUIET; the pause, FADE after the question. A check-in that runs after a pause
+    (they picked it up again in Redde or Hermes) starts the quiet again."""
+    now = time.time() if now is None else now
+    with _locked(home):
+        goals = load(home)
+        kept = next((g for g in goals if g.get("id") == goal and not g.get("ended")), None)
+        if kept is None:
+            return ""
+        said, run = "", 6 * 3600   # (the same run hears it again at each of its model calls)
+        days = quiet_days(kept, now)
+        pausing = (f" Nothing has moved on this goal for {days} days, and they didn't answer when you asked last "
+                   "time: say in one line that you're pausing its check-ins, and that they can pick it up again in "
+                   "Redde or by telling you. Don't ask anything else.")
+        asking = (f" Nothing has moved on this goal for {days} days: ask them, once and kindly, whether they still "
+                  f"want it, and offer to change the plan or end it. If they want to keep it, call {TOOL} action "
+                  "\"update\" for it; to end it, action \"end\".")
+        if kept.get("fading"):
+            said = pausing if now - float(kept["fading"]) < run else ""
+        elif not kept.get("moved") or kept.get("faded"):
+            moved(kept, now)
+        elif kept.get("asked") and now - float(kept["asked"]) < run:
+            said = asking
+        elif kept.get("asked") and now - float(kept["asked"]) >= FADE.total_seconds():
+            kept["fading"], said = int(now), pausing
+        elif not kept.get("asked") and now - float(kept["moved"]) >= QUIET.total_seconds():
+            kept["asked"], said = int(now), asking
+        save(home, goals)
+        return said
+
+
+def after_checkin(home: Path, goal: str, pause=None) -> bool:
+    """After a check-in ran: one told to pause pauses the goal's job (`pause` is Hermes's
+    `cron.jobs.pause_job`, a stand-in in tests); whether it did."""
+    with _locked(home):
+        goals = load(home)
+        kept = next((g for g in goals if g.get("id") == goal and not g.get("ended")), None)
+        if kept is None or not kept.get("fading"):
+            return False
+        kept.pop("fading", None)
+        kept["faded"] = int(time.time())
+        save(home, goals)
+    job = next((str(j.get("id")) for j in _jobs(home) or [] if goal_id(str(j.get("name") or "")) == goal and j.get("id")),
+               kept.get("job"))
+    if not job:
+        return False
+    try:
+        if pause is None:
+            from cron import jobs as cron
+            with cron.use_cron_store(home):
+                cron.pause_job(job, reason="Redde: nothing moved on this goal for weeks")
+        else:
+            pause(job)
+        return True
+    except Exception:
+        return False
+
+
+def keep(home: Path, goal: str, resume=None) -> bool:
+    """The person said to keep the goal going, in Redde: its quiet starts again, and a job paused
+    for the quiet runs again (`resume`, Hermes's `cron.jobs.resume_job`). Whether there was one."""
+    with _locked(home):
+        goals = load(home)
+        kept = next((g for g in goals if g.get("id") == goal and not g.get("ended")), None)
+        if kept is None:
+            return False
+        was_paused = bool(kept.get("faded"))
+        moved(kept)
+        save(home, goals)
+    job = next((str(j.get("id")) for j in _jobs(home) or [] if goal_id(str(j.get("name") or "")) == goal and j.get("id")),
+               kept.get("job"))
+    if was_paused and job:
+        try:
+            if resume is None:
+                from cron import jobs as cron
+                with cron.use_cron_store(home):
+                    cron.resume_job(job)
+            else:
+                resume(job)
+        except Exception:
+            pass
+    return True
 
 
 # ---- turn notes ----------------------------------------------------------------------------------
@@ -256,6 +366,7 @@ def checkin_note(home: Path, message, platform: str = "", board=None) -> str | N
     by = f" Target: {kept['by']}." if kept.get("by") else ""
     late = (" The target date has passed: ask them whether to end it or set a new date."
             if kept.get("by") and str(kept["by"]) < date.today().isoformat() else "")
+    late += fade_note(home, found)
     return (f"[Redde: goal \"{kept.get('title')}\".{by}{said} Steps: " + "; ".join(lines) + f".{late} "
             "Check how it is going with your tools and what you know. Start your answer with one line exactly "
             "\"PROGRESS: <steps done>/<steps> | <a few words on how it's going> | <the next step>\", then at most "
@@ -393,7 +504,7 @@ def set_up(home: Path, profile: str, what: str, by: str | None = None, steps=Non
     kept = {"id": goal, "title": what, "by": by, "every": schedule, "profile": profile,
             "job": str((job or {}).get("id") or "") if isinstance(job, dict) else "",
             "steps": [{"title": s["title"], "who": s["who"], "card": c, "done": False} for s, c in zip(plan, cards)],
-            "made": int(time.time())}
+            "made": int(time.time()), "moved": int(time.time())}
     with _locked(home):
         goals = load(home)
         goals.append(kept)
@@ -427,6 +538,7 @@ def update(home: Path, goal: str, done=None, add=None, by: str | None = None, ev
             cards = _make_cards(goal, added, str(kept.get("profile") or "default"),
                                 f"A step toward the user's goal \"{kept.get('title')}\" (Redde).", board, first=len(steps) + 1)
             steps += [{"title": s["title"], "who": s["who"], "card": c, "done": False} for s, c in zip(added, cards)]
+        moved(kept)   # (the agent acting on the goal, keeping it going when they said to, is the goal moving)
         if by:
             try:
                 kept["by"] = date.fromisoformat(str(by)[:10]).isoformat()
@@ -460,6 +572,8 @@ def tick(home: Path, goal: str, number: int, done: bool, board=None) -> bool:
         card = str(step.get("card") or "")
         stray = card if done and card and owner(step, _card_statuses(goal, board) if "who" not in step else None) == "you" else ""
         step["done"] = done
+        if done:
+            moved(kept)
         if stray:
             step["who"], step["card"] = "you", None
         save(home, goals)
@@ -532,7 +646,11 @@ def listing(stores) -> list[dict]:
                           "steps": [{"title": s.get("title"), "card": s.get("card"), "who": owner(s, statuses),
                                      "done": bool(s.get("done")) or (owner(s, statuses) == "agent" and statuses.get(str(s.get("card") or "")) == "done")}
                                     for s in kept.get("steps") or []],
-                          "progress": last or None})
+                          "progress": last or None,
+                          # Gone quiet (1.36.0): days since anything happened, once the question was asked,
+                          # and whether its check-ins were paused for it.
+                          "quiet": quiet_days(kept) if kept.get("asked") or kept.get("faded") else 0,
+                          "asked": bool(kept.get("asked")), "faded": bool(kept.get("faded"))})
     return found
 
 

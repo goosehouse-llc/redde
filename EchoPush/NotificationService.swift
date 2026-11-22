@@ -78,6 +78,13 @@ final class NotificationService: UNNotificationServiceExtension {
             if quiet.covers(.now), QuietHours.waits(note) {
                 MutedChats.quiet(content)
                 HeldNote.scheduleDigest(HeldNote.hold(note), at: quiet.ends(after: .now))
+            } else if note.z == "drawer", note.kind != .routine {
+                // Quiet from the plugin (1.36): ideas left alone set after set, a watch paused for
+                // finding nothing. (A briefing's own Drawer Only is the job's choice, below.)
+                MutedChats.quiet(content)
+            } else if QuietHours.waits(note), quiet.spent(at: .now) {
+                // Past the day's limit (2026-11-22): into the list, without a sound or a banner.
+                MutedChats.quiet(content)
             }
             if note.repeatsTheApp() {
                 // The app said so when it happened. This takes its banner's place without

@@ -12,8 +12,25 @@ nonisolated struct QuietHours: Codable, Equatable, Sendable {
     /// Minutes after midnight.
     var start = 22 * 60
     var end = 7 * 60
+    /// At most this many a day of what agents send on their own, the rest quietly to the list
+    /// (2026-11-22, after hermes-muse's daily budget). Nil: no limit. Counted on each device.
+    var perDay: Int?
 
     private static let key = "quietHours"
+    private static let countKey = "quietCount"
+    static let limits = [3, 5, 10, 20]
+
+    /// Whether a note that waits (`waits`) has gone past the day's limit; one that hasn't is
+    /// counted. Nothing is counted while there's no limit.
+    func spent(at date: Date, in defaults: UserDefaults? = NeedsYou.shared, calendar: Calendar = .current) -> Bool {
+        guard let perDay, perDay > 0 else { return false }
+        let day = calendar.startOfDay(for: date).timeIntervalSince1970
+        let kept = defaults?.dictionary(forKey: Self.countKey)
+        let count = (kept?["day"] as? Double) == day ? (kept?["n"] as? Int ?? 0) : 0
+        guard count < perDay else { return true }
+        defaults?.set(["day": day, "n": count + 1], forKey: Self.countKey)
+        return false
+    }
 
     static func load(from defaults: UserDefaults? = NeedsYou.shared) -> QuietHours {
         defaults?.data(forKey: key).flatMap { try? JSONDecoder().decode(QuietHours.self, from: $0) } ?? QuietHours()

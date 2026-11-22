@@ -1,13 +1,13 @@
-# Redde plugin 1.35.0 — GitHub release draft
+# Redde plugin 1.36.0 — GitHub release draft
 
-Title: **Redde plugin 1.35.0**. Tag: `redde-push-1.35.0`, on the commit that carries
-`version: 1.35.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
-`redde-push-1.31.0`; this one covers 1.31.1 to 1.35.0. The full list is in that folder's
+Title: **Redde plugin 1.36.0**. Tag: `redde-push-1.36.0`, on the commit that carries
+`version: 1.36.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
+`redde-push-1.31.0`; this one covers 1.31.1 to 1.36.0. The full list is in that folder's
 `CHANGELOG.md`. Publish it when Redde 2.7 is out. Everything below the line is the release's text.
 
 ---
 
-The Hermes plugin that goes with Redde 2.7: goals whose steps you tick off, Ask Me First when bots
+The Hermes plugin that goes with Redde 2.7: goals whose steps you tick off and that ask before they nag, ideas you can say no to for good, Ask Me First when bots
 hand work to each other, notifications cleared on every device, and briefings switched the same
 way on all of them.
 
@@ -17,6 +17,22 @@ and `hermes serve` afterwards.
 
 ## What's new
 
+- **Goals that go quiet ask first (1.36).** After two weeks with nothing done on a goal, its next
+  check-in asks you once whether you still want it. If you don't answer, the check-ins pause a
+  week later instead of carrying on. Nothing is deleted: Keep Going on the goal's page in Redde
+  starts them again.
+- **Don't Suggest This (1.36).** Hold an idea card, or open it, and choose Don't Suggest This.
+  None of your agents will offer ideas like it again. Redde's Morning Ideas page lists what you
+  turned down, so you can let one back in.
+- **Things to keep in mind (1.36).** Tell your agent something that's always true for you
+  ("driving into France, I need 3-day car insurance"), or add it in Settings › Your Day. Heads-Ups,
+  Morning Ideas and the Week Ahead check it against the days around each event and say when
+  something is missing or runs out before you're back.
+- **When you've gone quiet (1.36).** An optional daily job that runs only once you haven't written
+  to your agents for 12 to 72 hours, and speaks up only if something needs you. The hourly checks
+  don't call your model.
+- **Fewer pings for what you ignore (1.36).** Ideas you leave alone three times come quietly until
+  you touch one, and a watch that keeps finding nothing slows down, then pauses and tells you.
 - **Goals with your steps and your agent's (1.35).** A goal's plan now says who does each step.
   Your steps are a checklist you tick off in Redde, on the goal or from its Today tile, and the
   progress moves at once on every device. Your agent's steps go on the Kanban board ready to run,

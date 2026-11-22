@@ -1413,8 +1413,20 @@ struct QuietHoursSection: View {
                 DatePicker("From", selection: time(\.start), displayedComponents: .hourAndMinute)
                 DatePicker("Until", selection: time(\.end), displayedComponents: .hourAndMinute)
             }
+            Picker(selection: Binding(get: { quiet.perDay ?? 0 }, set: { quiet.perDay = $0 == 0 ? nil : $0; quiet.save() })) {
+                Text("No Limit", comment: "Settings › Notifications › Quiet Hours › At Most a Day: no daily limit").tag(0)
+                ForEach(QuietHours.limits, id: \.self) { n in
+                    Text("\(n) a Day", comment: "Settings › Notifications › Quiet Hours › At Most a Day: a limit, e.g. 5 a Day").tag(n)
+                }
+            } label: {
+                Text("At Most a Day", comment: "Settings › Notifications › Quiet Hours: how many notifications agents may send on their own each day")
+            }
+            .accessibilityIdentifier("quiet-per-day")
         } footer: {
-            Text("Between these times, what your agents send on their own (ideas, briefings and heads-ups, watches, scheduled answers) arrives without a sound or a banner, and one notification when the quiet ends says what came. Approvals, questions, replies you're waiting for and calls come through as always.")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Between these times, what your agents send on their own (ideas, briefings and heads-ups, watches, scheduled answers) arrives without a sound or a banner, and one notification when the quiet ends says what came. Approvals, questions, replies you're waiting for and calls come through as always.")
+                Text("Past the day's limit, the rest arrive quietly too, into the list.", comment: "Settings › Notifications › Quiet Hours: footer, what At Most a Day does")
+            }
         }
     }
 

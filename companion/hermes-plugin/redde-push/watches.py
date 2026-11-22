@@ -18,6 +18,8 @@ when nothing changed, which Hermes delivers nowhere (every release), and its tur
 
 from __future__ import annotations
 
+import json
+
 import re
 import time
 from pathlib import Path
@@ -93,15 +95,71 @@ def no_email(answer: str) -> bool:
     return (answer or "").strip().strip(".!*_` ").upper().startswith(NO_EMAIL)
 
 
-def pause(home: Path, job_id: str, cron=None) -> bool:
+def pause(home: Path, job_id: str, cron=None, reason: str = "Redde: no email access") -> bool:
     """Pauses a watch's job in its own store (Hermes's `cron.jobs`, a stand-in in tests)."""
     try:
         if cron is None:
             from cron import jobs as cron
         with cron.use_cron_store(home):
-            return bool(cron.pause_job(job_id, reason="Redde: no email access"))
+            return bool(cron.pause_job(job_id, reason=reason))
     except Exception:
         return False
+
+
+# ---- a watch that keeps finding nothing (1.36.0, after Heartbeat 2.0's no-op governor) ----------
+#: Each of its runs is a model call. After SLOW_AFTER runs in a row with nothing to tell, over two
+#: days at least, every other run is skipped; after PAUSE_AFTER, over a week at least, the watch is
+#: paused and the person told once, quietly, with how to turn it back on. Anything found starts the
+#: count again; a run that failed doesn't count either way.
+
+SLOW_AFTER, SLOW_DAYS = 8, 2
+PAUSE_AFTER, PAUSE_DAYS = 24, 7
+IDLE = "watch-idle.json"
+PAUSED_SAID = ("Nothing to tell in {n} checks over {days} days, so I've paused this watch to save the model "
+               "calls. Turn it back on in Redde's Scheduled Jobs when you want it again.")
+
+
+def _idle(home: Path) -> dict:
+    try:
+        kept = json.loads((Path(home) / "redde-push" / IDLE).read_text())
+        return kept if isinstance(kept, dict) else {}
+    except Exception:
+        return {}
+
+
+def _keep_idle(home: Path, kept: dict) -> None:
+    path = Path(home) / "redde-push" / IDLE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".new")
+    tmp.write_text(json.dumps(kept))
+    tmp.replace(path)
+
+
+def found_something(home: Path, job_id: str) -> None:
+    kept = _idle(home)
+    if kept.pop(job_id, None) is not None:
+        _keep_idle(home, kept)
+
+
+def found_nothing(home: Path, job_id: str, now: float | None = None) -> str:
+    """Counts a run with nothing to tell: "pause", "skip" (the next run), or "" for nothing to do."""
+    now = time.time() if now is None else now
+    kept = _idle(home)
+    entry = kept.get(job_id) if isinstance(kept.get(job_id), dict) else {}
+    count, since = int(entry.get("n") or 0) + 1, float(entry.get("since") or now)
+    kept[job_id] = {"n": count, "since": int(since)}
+    days = (now - since) / 86400
+    if count >= PAUSE_AFTER and days >= PAUSE_DAYS:
+        kept.pop(job_id, None)
+        _keep_idle(home, kept)
+        return "pause"
+    _keep_idle(home, kept)
+    return "skip" if count >= SLOW_AFTER and days >= SLOW_DAYS and count % 2 == 0 else ""
+
+
+def idle_days(home: Path, job_id: str, now: float | None = None) -> tuple[int, int]:
+    entry = _idle(home).get(job_id) or {}
+    return int(entry.get("n") or 0), int(((now or time.time()) - float(entry.get("since") or time.time())) // 86400)
 
 
 def last_told(home: Path, job_id: str) -> tuple[str, float] | None:

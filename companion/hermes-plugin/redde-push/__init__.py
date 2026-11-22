@@ -39,7 +39,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import asks, calls, cards, core, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, turnnote, waiting, watches, wire, work, work_runs
+from . import asks, calls, cards, core, facts, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, silence, turnnote, waiting, watches, wire, work, work_runs
 from . import models as model_settings   # (the Models & Providers route, 1.26.0)
 from . import tasks as task_reports   # (reports of handed-off tasks, 1.27.0)
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
@@ -349,6 +349,24 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
         notes.append(goals.checkin_note(_home(), user_message, platform))
     except Exception:
         log.debug("redde-push: goal note failed", exc_info=True)
+    try:
+        # A run that offers ideas: what they said not to suggest (ideas.py, 1.36.0).
+        notes.append(ideas.run_note(calls.caller(_home())[1], user_message, platform))
+    except Exception:
+        log.debug("redde-push: ideas note failed", exc_info=True)
+    try:
+        # Things always true for them (facts.py, 1.36.0): a run that plans ahead is told them and
+        # how to check them; a message that sounds like one, that it can be kept.
+        notes.append(facts.run_note(calls.caller(_home())[1], user_message, platform))
+        notes.append(facts.turn_note(said, platform))
+    except Exception:
+        log.debug("redde-push: facts note failed", exc_info=True)
+    try:
+        # When the person last wrote, for the jobs that wake once they've gone quiet (silence.py).
+        if silence.person(platform, said):
+            silence.Said(calls.caller(_home())[1]).wrote()
+    except Exception:
+        log.debug("redde-push: couldn't note the person's turn", exc_info=True)
     try:
         # One of their lists (lists.py, 1.20.0): redde_list, not the agent's own todo tool.
         notes.append(lists.turn_note(said, platform))
@@ -675,6 +693,20 @@ def _slash(raw_args: str = "") -> str:
     if words[:2] == ["goals", "step"]:
         # The person ticked one of their steps (goals.py, 1.35.0): `goals step <profile> <goal> <n> done|undo`.
         return _goal_step_slash(words[2:])
+    if len(words) == 3 and words[:2] == ["ideas", "touched"] and calls.PROFILE.fullmatch(words[2]):
+        # One of that agent's idea cards taken, put away or put off: its ideas notify again (1.36.0).
+        ideas.touched(calls.caller(_home())[1], words[2])
+        return "redde-push ideas touched"
+    if words[:1] == ["facts"]:
+        # Things to keep in mind (facts.py, 1.36.0): `facts list`, `facts add|remove <text, base64url>`.
+        return _facts_slash(words[1:])
+    if words[:1] == ["ideas"] and len(words) in (2, 3) and words[1] in ("blocked", "block", "unblock"):
+        # Don't Suggest This (ideas.py, 1.36.0): `ideas block|unblock <heading, base64url>`, and
+        # `ideas blocked` for the list, as base64url JSON.
+        return _ideas_slash(words[1:])
+    if words[:2] == ["goals", "keep"]:
+        # Keep a goal that went quiet going (goals.py, 1.36.0): its quiet starts again, a pause ends.
+        return _keep_goal_slash(words[2:])
     if words[:2] == ["goals", "end"]:
         # End a goal: its check-in job deleted, the goal marked ended (goals.py).
         return _end_goal_slash(words[2:])
@@ -783,6 +815,50 @@ def _goal_step_slash(words: list[str], board=None) -> str:
     if not goals.tick(home, words[1], int(words[2]), words[3] == "done", board):
         return "redde-push goals unknown"
     return f"redde-push goals step {words[1]} {words[2]} {'done' if words[3] == 'done' else 'undone'}"
+
+
+def _facts_slash(words: list[str]) -> str:
+    """`facts list`: "redde-push facts <base64url JSON list>"; `facts add|remove <base64url>`:
+    "redde-push facts added|removed", or "redde-push facts refused <why>"."""
+    home = calls.caller(_home())[1]
+    if words == ["list"]:
+        return f"redde-push facts {core.b64u(json.dumps(facts.texts(home), ensure_ascii=False).encode())}"
+    if len(words) != 2 or words[0] not in ("add", "remove"):
+        return "redde-push facts: this command is for the Redde app."
+    try:
+        text = core.unb64u(words[1]).decode()
+    except Exception:
+        return "redde-push facts: this command is for the Redde app."
+    said = facts.add(home, text, "redde") if words[0] == "add" else facts.remove(home, text)
+    if "error" in said:
+        return f"redde-push facts refused {said['error']}"
+    return f"redde-push facts {'added' if words[0] == 'add' else 'removed'}"
+
+
+def _ideas_slash(words: list[str]) -> str:
+    """`ideas blocked`: "redde-push ideas blocked <base64url JSON list>"; `ideas block|unblock
+    <base64url heading>`: "redde-push ideas blocked|unblocked", or "redde-push ideas unknown"."""
+    home = calls.caller(_home())[1]
+    if words == ["blocked"]:
+        return f"redde-push ideas blocked {core.b64u(json.dumps(ideas.blocked(home), ensure_ascii=False).encode())}"
+    if len(words) != 2 or words[0] == "blocked":
+        return "redde-push ideas: this command is for the Redde app."
+    try:
+        title = core.unb64u(words[1]).decode()
+    except Exception:
+        return "redde-push ideas: this command is for the Redde app."
+    done = ideas.block(home, title) if words[0] == "block" else ideas.unblock(home, title)
+    return f"redde-push ideas {words[0]}ed" if done else "redde-push ideas unknown"
+
+
+def _keep_goal_slash(words: list[str], resume=None) -> str:
+    """`/redde-push goals keep <profile> <goal>`: "redde-push goals kept <goal>", or "redde-push
+    goals unknown"."""
+    if len(words) != 2 or not calls.PROFILE.fullmatch(words[0]) or not goals.goal_id(f"[redde-goal:{words[1]}]"):
+        return "redde-push goals: this command is for the Redde app."
+    root = calls.caller(_home())[1]
+    kept = goals.keep(root if words[0] == "default" else root / "profiles" / words[0], words[1], resume)
+    return f"redde-push goals kept {words[1]}" if kept else "redde-push goals unknown"
 
 
 def _end_goal_slash(words: list[str], remove=None) -> str:
@@ -984,6 +1060,8 @@ def register(ctx) -> None:
     register_middleware = getattr(ctx, "register_middleware", None)
     if callable(register_middleware):
         register_middleware("llm_execution", remind.Reminders(_main_home, lambda: _store_in(_main_home()), _remind).turn)
+        # A job that waits for them to go quiet, answered here until they have (silence.py, 1.36.0).
+        register_middleware("llm_execution", silence.QuietWakes(_main_home).turn)
     ctx.register_command("redde-push", _slash, description="Used by the Redde app to follow a conversation",
                          args_hint="watch <session> <device> | rooms <device> <room,...>")
     # Phone tools (device.py): offered to the agent only for what the phone has turned on.
@@ -1002,6 +1080,7 @@ def register(ctx) -> None:
     watches.register(ctx, _home, _store_in)
     # Goals (goals.py): a plan on the Kanban board, check-ins, progress on the phone.
     goals.register(ctx, _home)
+    facts.register(ctx, _home)   # things to keep in mind (1.36.0)
     # Lists (lists.py): to-do lists and the like, a tile each on the phone's Today row.
     lists.register(ctx, _home)
     # Email (mail.py): redde_mail while an account is set up, and one way to send.

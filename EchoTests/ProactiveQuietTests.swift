@@ -31,6 +31,39 @@ struct ProactiveQuietTests {
         #expect(!QuietHours.waits(try note(["v": 1, "k": "call"])))
     }
 
+    /// At most N a day (2026-11-22): the first N counted, the rest quiet, a new day counted again.
+    @Test func theDailyLimitQuietsTheRest() {
+        let defaults = UserDefaults(suiteName: "quiet-\(UUID().uuidString)")!
+        var quiet = QuietHours()
+        #expect(!quiet.spent(at: .now, in: defaults), "no limit")
+        quiet.perDay = 2
+        let morning = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(!quiet.spent(at: morning, in: defaults))
+        #expect(!quiet.spent(at: morning.addingTimeInterval(60), in: defaults))
+        #expect(quiet.spent(at: morning.addingTimeInterval(120), in: defaults))
+        #expect(!quiet.spent(at: morning.addingTimeInterval(86_400), in: defaults), "the next day")
+    }
+
+    /// When You've Gone Quiet (plugin 1.36): hourly, its wait in the prompt's mark and read back.
+    @Test func theQuietJobRunsHourlyWithItsWaitInItsMark() throws {
+        let prompt = GoneQuiet.job.fullPrompt(48)
+        #expect(prompt.hasPrefix("[redde-quiet:48h] "))
+        #expect(prompt.contains("[SILENT]"))
+        let job = try #require(CronJob(.object(["id": .string("q1"), "name": .string(GoneQuiet.name), "schedule": .string("7 * * * *"),
+                                                 "prompt": .string(prompt), "enabled": .bool(true)])))
+        #expect(GoneQuiet.job.option(in: job) == 48)
+        #expect(GoneQuiet.job.hourly && DailyJobsView.jobs.contains { $0.name == GoneQuiet.name })
+    }
+
+    /// Things to Keep in Mind (plugin 1.36): each fact said to the plugin base64url, the list read back.
+    @Test func keptFactsTravelBase64URL() throws {
+        let line = KeptFacts.line("add", "Driving into France, I need 3-day car insurance")
+        #expect(line.hasPrefix("facts add ") && !line.dropFirst(10).contains(" "))
+        let list = PushSeal.base64URL(Data(#"["Pickles needs his jab every March"]"#.utf8))
+        #expect(KeptFacts.parse("redde-push facts \(list)\n") == ["Pickles needs his jab every March"])
+        #expect(KeptFacts.parse("redde-push facts: this command is for the Redde app.") == nil)
+    }
+
     @Test func theDigestSaysWhatCame() throws {
         let defaults = UserDefaults(suiteName: "quiet-\(UUID().uuidString)")!
         HeldNote.hold(try note(["v": 1, "k": "routine", "x": "brief", "t": "Heads-up: Dentist"]), in: defaults)

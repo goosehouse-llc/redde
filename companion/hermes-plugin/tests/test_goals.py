@@ -1,5 +1,6 @@
 """Goals and skipping a run (`goals.py`, `routines.skip`): python -m unittest discover -s companion/hermes-plugin/tests"""
 import json
+import time
 import types
 import unittest
 from contextlib import contextmanager
@@ -318,6 +319,80 @@ class GoalTests(RoutinesTests):
         self.assertEqual(board.tasks[0].status, "archived", "ticked by the person: its waiting card leaves the board")
         self.assertEqual((goals.load(self.root)[0]["steps"][0]["who"], goals.load(self.root)[0]["steps"][0]["card"]), ("you", None))
         self.assertEqual(board.tasks[1].status, "ready")
+
+    def _aged(self, goal, **fields):
+        kept = goals.load(self.root)
+        for g in kept:
+            if g["id"] == goal:
+                g.update(fields)
+        goals.save(self.root, kept)
+        return next(g for g in goals.load(self.root) if g["id"] == goal)
+
+    def test_a_quiet_goal_is_asked_about_once_then_paused_never_ended(self):
+        goal = goals.set_up(self.root, "default", "Run a 10K", None, [{"title": "Run 5K", "who": "you"}], make=self.made(), board=no_board)["set"]
+        asked = self.jobs[0]["prompt"]
+        self.assertTrue(goals.load(self.root)[0]["moved"], "a new goal has just moved")
+        self.assertNotIn("Nothing has moved", goals.checkin_note(self.root, asked, "cron", board=no_board))
+        now = time.time()
+        self._aged(goal, moved=int(now - 15 * 86400))
+        note = goals.checkin_note(self.root, asked, "cron", board=no_board)
+        self.assertIn("Nothing has moved on this goal for 15 days: ask them, once", note)
+        self.assertIn("Nothing has moved", goals.checkin_note(self.root, asked, "cron", board=no_board), "the same run hears it at each model call")
+        self._aged(goal, asked=int(now - 8 * 3600))
+        self.assertNotIn("Nothing has moved", goals.checkin_note(self.root, asked, "cron", board=no_board), "asked once, not at each check-in")
+        self.assertFalse(goals.after_checkin(self.root, goal, pause=lambda job: None), "nothing to pause yet")
+        self._aged(goal, asked=int(now - 8 * 86400))
+        self.assertIn("you're pausing its check-ins", goals.checkin_note(self.root, asked, "cron", board=no_board))
+        paused = []
+        self.assertTrue(goals.after_checkin(self.root, goal, pause=paused.append))
+        self.assertEqual(paused, ["job1"])
+        kept = goals.load(self.root)[0]
+        self.assertTrue(kept["faded"] and not kept.get("ended"), "paused, not ended")
+        listed = goals.listing(routines.Stores(self.root))[0]
+        self.assertTrue(listed["faded"] and listed["asked"] and listed["quiet"] >= 15)
+        resumed = []
+        self.assertTrue(goals.keep(self.root, goal, resume=resumed.append))
+        self.assertEqual(resumed, ["job1"])
+        kept = goals.load(self.root)[0]
+        self.assertFalse(kept.get("asked") or kept.get("faded"))
+        self.assertEqual(goals.listing(routines.Stores(self.root))[0]["quiet"], 0)
+
+    def test_ticking_a_step_or_progress_moves_the_goal(self):
+        goal = goals.set_up(self.root, "default", "Run a 10K", None, [{"title": "Run 5K", "who": "you"}, "Find a race"], make=self.made(), board=no_board)["set"]
+        old = int(time.time() - 20 * 86400)
+        self._aged(goal, moved=old, asked=old)
+        goals.tick(self.root, goal, 1, True, no_board)
+        self.assertGreater(goals.load(self.root)[0]["moved"], old)
+        self.assertNotIn("asked", goals.load(self.root)[0], "a question answered by doing")
+        self._aged(goal, moved=old)
+        goals.remember(self.root, goal, {"done": 1, "total": 2, "headline": "h", "next": ""})
+        self.assertEqual(goals.load(self.root)[0]["moved"], old, "the first progress isn't news")
+        goals.remember(self.root, goal, {"done": 1, "total": 2, "headline": "h", "next": ""})
+        self.assertEqual(goals.load(self.root)[0]["moved"], old, "the same count again isn't")
+        goals.remember(self.root, goal, {"done": 2, "total": 2, "headline": "h", "next": ""})
+        self.assertGreater(goals.load(self.root)[0]["moved"], old)
+
+    def test_a_goal_kept_before_it_could_fade_starts_its_quiet_now(self):
+        goal = goals.set_up(self.root, "default", "Run a 10K", make=self.made(), board=no_board)["set"]
+        kept = goals.load(self.root)
+        kept[0].pop("moved")
+        goals.save(self.root, kept)
+        self.assertNotIn("Nothing has moved", goals.checkin_note(self.root, self.jobs[0]["prompt"], "cron", board=no_board))
+        self.assertTrue(goals.load(self.root)[0]["moved"])
+
+    def test_the_app_keeps_a_quiet_goal_going(self):
+        goal = goals.set_up(self.root, "default", "Run a 10K", make=self.made(), board=no_board)["set"]
+        self._aged(goal, faded=1, asked=1)
+        resumed = []
+        original = plugin._home
+        plugin._home = lambda: self.root
+        try:
+            self.assertEqual(plugin._keep_goal_slash(["default", goal], resume=resumed.append), f"redde-push goals kept {goal}")
+            self.assertEqual(plugin._keep_goal_slash(["default", "nope"], resume=resumed.append), "redde-push goals unknown")
+            self.assertIn("for the Redde app", plugin._keep_goal_slash(["../x", goal]))
+        finally:
+            plugin._home = original
+        self.assertEqual(resumed, ["job1"])
 
     def test_the_tool_stays_small(self):
         made = {}

@@ -31,6 +31,11 @@ struct DailyJob {
     /// Its page offers which calendars it reads (Heads-Ups, asked 2026-11-21: "I'd like a way for
     /// heads up to be on only certain calendars"); none picked is every one the agent may read.
     var calendars = false
+    /// Its page lists the ideas the person said not to suggest (Morning Ideas, plugin 1.36).
+    var notSuggested = false
+    /// Runs every hour, its option a number of hours (When You've Gone Quiet, plugin 1.36): no time
+    /// to pick, the plugin lets a run through only once the person has been quiet that long.
+    var hourly = false
 
     /// The prompt as set: the job's, then the calendars it reads when only some, then what the
     /// person said of earlier ones, then their day's health, if they share it.
@@ -87,7 +92,7 @@ struct DailyJob {
     func set(at hour: Int, _ minute: Int, option: Int, calendars picked: [String]? = nil, replacing job: CronJob?) async throws {
         let prompt = fullPrompt(option, calendars: picked ?? job.flatMap { Self.calendars(in: $0.prompt) } ?? pickedCalendars)
         guard let backend = CronBackend.current() else { throw TransportError.malformed(String(localized: "Scheduled jobs need the Hermes Dashboard or the Hermes API.")) }
-        let schedule = "\(minute) \(hour) * * \(days)"
+        let schedule = hourly ? "\(minute) * * * *" : "\(minute) \(hour) * * \(days)"
         if let job {
             // (a Run On choice still waiting for the plugin keeps its mark)
             let named = job.askedModel.flatMap { RunOn.marked(name, $0) } ?? name
@@ -100,6 +105,11 @@ struct DailyJob {
     /// The option a job's prompt was made with: its opening says it ("Heads-ups, 30 minutes
     /// before."), so a list that sends only the prompt's first lines still has it.
     func option(in job: CronJob) -> Int {
+        if hourly {
+            guard let found = job.prompt.prefix(40).firstMatch(of: /\[redde-quiet:(\d+)h\]/), let hours = Int(found.output.1),
+                  options.contains(hours) else { return defaultOption }
+            return hours
+        }
         guard let found = job.prompt.prefix(80).firstMatch(of: /(\d+) minutes before/), let minutes = Int(found.output.1),
               options.contains(minutes) else { return defaultOption }
         return minutes
@@ -125,7 +135,30 @@ enum MorningIdeas {
         name: name, prompt: { _ in prompt }, hour: 7, minute: 30, title: "Morning Ideas", toggle: "Morning Ideas",
         footer: "Each morning your agent looks at your day (your calendar, reminders, the board, what you asked it lately) and offers up to five things it could do, as cards at the top of your chats and a notification. Swipe one right to have it done, left to put it away. Nothing is done until you take one. Needs Redde's plugin 1.10 on your Hermes, and notifications from it turned on.",
         symbol: "lightbulb", runNow: "Send Ideas Now", asked: "Asked. The ideas come as a notification when your agent is done.",
-        heard: [.idea], health: true)
+        heard: [.idea], health: true, notSuggested: true)
+}
+
+/// When You've Gone Quiet (2026-11-22, after Heartbeat 2.0's "when silent 24h" wakes): once the
+/// person hasn't written to any agent for so many hours, the main agent looks at what may need them
+/// and says so only if something does. Runs every hour; the plugin (1.36, `silence.py`) answers
+/// each run that isn't due without the model, and lets one through per quiet stretch.
+enum GoneQuiet {
+    static let name = "[redde-notify] When you've gone quiet"
+    static func prompt(hours: Int) -> String {
+        """
+        [redde-quiet:\(hours)h] The user hasn't written to you for over \(hours) hours. Look at what may need them: \
+        approvals and questions waiting, kanban cards waiting on them, follow-ups and reminders coming due, tomorrow's \
+        calendar, and anything you were doing for them. Only if something is worth their attention now, tell them in \
+        two or three short lines, the most important first. Don't ask how they are or say you noticed they were quiet. \
+        If nothing is worth it, answer exactly [SILENT].
+        """
+    }
+
+    static let job = DailyJob(
+        name: name, prompt: { prompt(hours: $0) }, hour: 0, minute: 7, title: "When You've Gone Quiet", toggle: "When You've Gone Quiet",
+        footer: "When you haven't written to any of your agents for a while, your agent looks at what may need you (approvals waiting, things coming due, tomorrow) and tells you only if something does. Once each time you go quiet. The hourly checks don't use your model. Needs Redde's plugin 1.36 on your Hermes.",
+        symbol: "moon.zzz", runNow: "Send Ideas Now", asked: "Asked. The ideas come as a notification when your agent is done.",
+        options: [12, 24, 48, 72], optionLabel: "After", defaultOption: 24, hourly: true)
 }
 
 /// The Evening Wrap-up (asked 2026-10-28, after Meta's Muse): what got done today, what waits on
@@ -251,18 +284,29 @@ struct DailyJobView: View {
                 }
                 .disabled(!loaded || working)
                 if on {
-                    DatePicker(selection: $time, displayedComponents: .hourAndMinute) { Text(daily.timeLabel) }
-                        .onChange(of: time) { Task { await apply() } }
-                        .disabled(working)
+                    if !daily.hourly {
+                        DatePicker(selection: $time, displayedComponents: .hourAndMinute) { Text(daily.timeLabel) }
+                            .onChange(of: time) { Task { await apply() } }
+                            .disabled(working)
+                    }
                     if !daily.options.isEmpty {
                         Picker(selection: $option) {
-                            ForEach(daily.options, id: \.self) { Text("\($0) min", comment: "A number of minutes").tag($0) }
+                            ForEach(daily.options, id: \.self) { n in
+                                if daily.hourly {
+                                    Text("\(n) hours", comment: "A number of hours: how long you've been quiet before the job runs").tag(n)
+                                } else {
+                                    Text("\(n) min", comment: "A number of minutes").tag(n)
+                                }
+                            }
                         } label: { Text(daily.optionLabel) }
                         .onChange(of: option) { Task { await apply() } }
                         .disabled(working)
                     }
-                    Button { Task { await runNow() } } label: { Label { Text(daily.runNow) } icon: { Image(systemName: "play") } }
-                        .disabled(working || job == nil)
+                    // (a run now would find them about, and the plugin keep it quiet)
+                    if !daily.hourly {
+                        Button { Task { await runNow() } } label: { Label { Text(daily.runNow) } icon: { Image(systemName: "play") } }
+                            .disabled(working || job == nil)
+                    }
                 }
             } footer: {
                 Text(daily.footer)
@@ -311,6 +355,7 @@ struct DailyJobView: View {
             if sent {
                 Section { Label { Text(daily.asked) } icon: { Image(systemName: "checkmark.circle") } }
             }
+            if daily.notSuggested { NotSuggestedSection() }
             // How the last run went: a refusal or an error shows here, not only in the job's output.
             if let job, let ran = job.lastRunAt {
                 Section("Last run") {

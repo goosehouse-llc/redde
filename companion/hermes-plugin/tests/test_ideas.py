@@ -56,6 +56,41 @@ class IdeasTests(unittest.TestCase):
         self.assertIn("sent", ideas.offer(self.store, self.main, "default", "Sol", many, now=1100), "another agent may")
         self.assertIn("sent", ideas.offer(self.store, self.main, "ops", "Home", many, now=1000 + 3601), "an hour on")
 
+    def test_dont_suggest_this_leaves_like_ideas_out_and_tells_idea_runs(self):
+        paired(self.store, self.relay.url, "dev-marta")
+        self.assertIsNone(ideas.run_note(self.main, "Use suggest_to_user", "cron"), "nothing blocked, nothing said")
+        self.assertTrue(ideas.block(self.main, "Book the vet for Pickles"))
+        self.assertFalse(ideas.block(self.main, "  the a  "), "no words, nothing kept")
+        self.assertTrue(ideas.block(self.main, "book the VET for pickles"), "the same again, once")
+        self.assertEqual(ideas.blocked(self.main), ["book the VET for pickles"])
+        said = ideas.offer(self.store, self.main, "ops", "Home", self.offered(), now=1000)
+        self.assertEqual(said["phones"], 1)
+        self.assertNotIn("Pickles", json.dumps([i for i in ideas.wanted(self.main, ideas.cleaned(self.offered()))]))
+        self.assertIn("Don't Suggest This", ideas.offer(self.store, self.main, "ops", "Home",
+                      [{"title": "Vet for Pickles", "request": "Book Pickles at the vet"}], now=1001)["error"])
+        self.assertIn("Order more coffee", json.dumps(ideas.wanted(self.main, ideas.from_answer("IDEA: Order more coffee beans | low | Order beans"))))
+        note = ideas.run_note(self.main, "Look at my day and use suggest_to_user", "cron")
+        self.assertIn('"book the VET for pickles"', note)
+        self.assertIsNone(ideas.run_note(self.main, "Look at my day and use suggest_to_user", "desktop"))
+        self.assertIsNone(ideas.run_note(self.main, "Check the weather", "cron"))
+        self.assertTrue(ideas.unblock(self.main, "book the vet for pickles"))
+        self.assertFalse(ideas.unblock(self.main, "book the vet for pickles"))
+        self.assertEqual(ideas.blocked(self.main), [])
+
+    def test_the_app_blocks_lists_and_unblocks_over_either_connection(self):
+        original = plugin._home
+        plugin._home = lambda: self.main
+        try:
+            title = core.b64u("Tidy the garage".encode())
+            self.assertEqual(plugin._slash(f"ideas block {title}"), "redde-push ideas blocked")
+            listed = plugin._slash("ideas blocked").split()[-1]
+            self.assertEqual(json.loads(core.unb64u(listed)), ["Tidy the garage"])
+            self.assertEqual(plugin._slash(f"ideas unblock {title}"), "redde-push ideas unblocked")
+            self.assertEqual(plugin._slash(f"ideas unblock {title}"), "redde-push ideas unknown")
+            self.assertIn("for the Redde app", plugin._slash("ideas block a b c"))
+        finally:
+            plugin._home = original
+
     def test_a_long_offer_is_cut_to_fit_a_notification(self):
         long = [{"title": "T" * 60, "why": "W" * 120, "request": "R" * 300} for _ in range(5)]
         made = core.ideas_note("default", "Sol", ideas.cleaned(long), "0123456789abcdef")

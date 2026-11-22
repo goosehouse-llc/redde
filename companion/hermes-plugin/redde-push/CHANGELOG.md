@@ -3,6 +3,34 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.36.0 (2026-11-22)
+
+- Goals that go quiet are asked about, not left to nag. When nothing has happened on a goal for
+  two weeks (no step ticked, added or moved), its next check-in asks you once whether you still
+  want it. If a week passes with no answer, the check-in after says it's pausing, and the goal's
+  check-ins pause. Nothing is deleted: Redde's goal page offers Keep Going
+  (`/redde-push goals keep`), which runs them again, and End Goal. Needs Redde 2.7.
+- Don't Suggest This. Redde can tell the plugin not to suggest an idea again
+  (`/redde-push ideas block|unblock|blocked`). The idea's heading is kept for every agent. Ideas
+  like it are left out, whether they come from `suggest_to_user` or are written in a Morning Ideas
+  answer. A run that offers ideas is also told the list. Redde's Morning Ideas page lists them so
+  you can let one back in.
+- Things to keep in mind. Facts that are always true for you ("driving into France I need 3-day
+  car insurance") are kept for every agent, through the new `redde_fact` tool or Redde's Settings
+  › Your Day › Things to Keep in Mind (`/redde-push facts list|add|remove`). Heads-Ups, Morning
+  Ideas and the Week Ahead are given them, and told to read the days around each event (the trip
+  before it, the stay after it) and to check your mail and calendar. A heads-up then says so when
+  something a fact calls for is missing, or runs out before the event is over. A message that
+  sounds like one ("whenever I…") is told it can be kept. Needs Redde 2.7.
+- When you've gone quiet. A job whose prompt starts `[redde-quiet:24h]` runs every hour, but is
+  answered here with `[SILENT]` and no model until you haven't written to any agent for that long.
+  Then it runs once for that quiet stretch. Redde makes it (Daily Jobs › When You've Gone Quiet).
+  Hermes 0.22+ (middleware), like reminders.
+- Backing off. An agent's ideas that are left alone three sets in a row come quietly, into the
+  deck with no sound or banner, until you touch one of its cards (`/redde-push ideas touched`). A
+  watch that finds nothing run after run skips every other run after 8 in two days. After 24 runs
+  over a week it pauses, and tells you once, quietly, how to turn it back on.
+
 ## 1.35.0 (2026-11-22)
 
 - Goals with your steps and the agent's. Every step of a goal's plan had gone to the Kanban board

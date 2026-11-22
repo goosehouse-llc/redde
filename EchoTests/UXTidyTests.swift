@@ -36,8 +36,8 @@ struct UXTidyTests {
         #expect(Settings.syncedKeys.contains("hiddenChatListCards"), "the choice goes to the person's other devices")
     }
 
-    @Test func theDailyJobsPageListsAllFive() {
-        #expect(Set(DailyJobsView.jobs.map(\.name)).count == 5)
+    @Test func theDailyJobsPageListsAllSix() {
+        #expect(Set(DailyJobsView.jobs.map(\.name)).count == 6, "When You've Gone Quiet the sixth (2026-11-22)")
         // Your Day sits in the Your Agent group, after Agent itself (2026-11-15).
         let pages = SettingsPage.agentPages
         #expect(pages.firstIndex(of: .agent)! < pages.firstIndex(of: .day)!)

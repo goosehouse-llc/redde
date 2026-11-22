@@ -13,10 +13,10 @@ Voice Chat & Coding Agents
 No other company's product names here or in the keywords (Claude Code, Codex, Hermes): Apple rejects them in metadata. Nor Apple's own: 2.6 (295) was rejected 2026-11-17 under 5.2.5 for "Voice Chat, Coding & CarPlay" (CarPlay in the subtitle); this subtitle went in that day and the same build was resubmitted. CarPlay named as a feature in the description passed.
 
 ## Promotional text (170, editable without a new build)
-New in 2.7: your agents ask each other, with you in the loop. Goals you tick off step by step, skills from the hub, and pictures in agent chats.
+New in 2.7: your agents ask each other, with you in the loop. Goals you tick off, things to keep in mind, and an agent that knows when to stay quiet.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name or subtitle)
-assistant,self-hosted,llm,bots,watch,siri,shortcuts,private,chatbot,local,homelab,code,terminal,acp
+assistant,self-hosted,llm,bots,private,chatbot,local,homelab,code,terminal,mcp,client,server,kanban
 
 ## Description (4000)
 
@@ -80,6 +80,9 @@ Your agents talk to each other, with you in the loop. Skills from the hub, pictu
 • Every agent can ask every other by @mention: your Hermes bots, the agents on your Redde bridge (Claude Code, Codex and the rest) and the bots on your other servers. Tag one in your message, or let your agent ask one itself: the answer shows in your chat and your agent carries on with it. In voice mode the answers are read aloud too.
 • Ask Me First, on from the start: before an agent asks another, or a Hermes bot hands its work to another, Redde asks you, with Ask or Don't on a card, in the chat or out loud. Settings → Replies & Writing → Agents Talking to Each Other has the switches.
 • Goals you tick off: a goal's plan says which steps are yours and which your agent's. Tick yours off on the goal or from its Today tile and the count moves at once. Your agent starts on its own steps as soon as you agree the plan in the chat, with no second approval, and asks about yours at its check-ins.
+• Things to keep in mind: tell your agent what's always true for you ("driving into France, I need 3-day car insurance"), or add it in Settings → Your Day. Heads-Ups and Morning Ideas check it against the days around each event and tell you when something is missing or runs out.
+• Quieter on its own: At Most a Day in Quiet Hours. Ideas you leave alone come quietly, and Don't Suggest This keeps an idea away for good. A watch that finds nothing slows, then pauses. A goal untouched for two weeks asks once, then pauses, with Keep Going.
+• When You've Gone Quiet, in Daily Jobs: after 12 to 72 hours without a word from you, your agent speaks up only if something needs you.
 • Skills from Hermes's skills hub: Find Skills, see what one does and install it, checked by Hermes's scanner before it goes on.
 • Pictures in agent chats: what Claude Code or Codex sends or reads shows in the chat, and a file a reply names opens on your phone.
 • A long paste goes beside your message as a text file, instead of filling the field.
@@ -88,24 +91,23 @@ Your agents talk to each other, with you in the loop. Skills from the hub, pictu
 • Tap an idea card to read all of it, and what Do It sends, before you choose.
 • Clear a notification on one device and it's cleared on the others.
 • Report a Problem, at the bottom of Settings: a report of your setup with nothing private in it, to copy or open as a GitHub issue.
-• Pull down on Today to refresh it.
-• Settings in three groups: Connection, Your Agent and The App.
 • Smoother typing, and faster phone tools and calendar reads.
 • Hermes 0.23 supported, its Webapp too: choose Dashboard or Webapp and give the Webapp's address and port.
-• Fixes: deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A reply Hermes stops for taking too long ends in Redde too, with Retry. Buttons are easy to read on a pale theme colour. Ahead of Your Day shows how much of it is on. A briefing's tile on Today can stop its notifications. The Inbox shows its Unsorted pile while mail waits to be sorted. A three-digit Inbox count stays on one line. A new chat shows in the iPad sidebar at once. A map shows for an address in "today at 200 East Robinson St, …".
+• Fixes: deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A reply Hermes stops for taking too long ends in Redde too, with Retry. A briefing's tile on Today can stop its notifications. The Inbox shows its Unsorted pile while mail waits to be sorted. A new chat shows in the iPad sidebar at once. A map shows for an address in "today at 200 East Robinson St, …".
 
-Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 1.32 on your Hermes, cleared notifications 1.33, briefings the same on every device 1.34, and ticking off goal steps 1.35: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
+Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 1.32 on your Hermes, cleared notifications 1.33, briefings the same on every device 1.34, ticking off goal steps 1.35, and things to keep in mind, the quieter agent and When You've Gone Quiet 1.36: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
 
 ## Before submitting 2.7
 - The build is 2.7 (296), iPhone and iPad, archived from main once everything is committed and pushed.
-- In-app What's New 2.7: eight items in 17 languages (agents asking each other, Ask Me First, goals you tick off, skills hub, pictures in agent chats, saving pictures, briefings on Your Day, Report a Problem).
+- In-app What's New 2.7: ten items in 17 languages (agents asking each other, Ask Me First, goals you tick off, things to keep in mind, quieter on its own, skills hub, pictures in agent chats, saving pictures, briefings on Your Day, Report a Problem).
 - The Watch-only live call (53365bf) is left out: it has run only in the simulator. Try it on a real watch first (its socket rules differ), then add a line.
-- The relay is deployed for cleared notifications (2026-11-19). Plugin 1.35.0 (goal steps yours or the agent's; 1.34 briefing choices on every device) and bridge 0.11 must be on main, and the plugin's GitHub release published at release.
+- The relay is deployed for cleared notifications (2026-11-19). Plugin 1.36.0 (things to keep in mind, When You've Gone Quiet, backing off, goals that fade, Don't Suggest This; 1.35 goal steps yours or the agent's; 1.34 briefing choices on every device) and bridge 0.11 must be on main, and the plugin's GitHub release published at release.
 - Run the unit tests and the whole UI suite, then put Release on an iPhone and an iPad and launch-check both.
 - App Privacy stays "Data Not Collected": Report a Problem copies a report or opens GitHub in the browser, and Redde sends nothing; the skills hub is asked by the person's own Hermes; @mentions go between the person's own servers and bridges; Save to Photos adds a picture (add-only permission, NSPhotoLibraryAddUsageDescription, in 17 languages).
 - The privacy policy: docs/privacy.md (November 22 lines: agents asking each other, Find Skills through the server, cleared notifications, briefing choices on the server, Save to Photos, Report a Problem). Publish it before submitting.
 - The review notes (docs/app-review-notes.md) fit again: 3,908 characters with the placeholder, Save to Photos's permission added. `scripts/app-store-push.py notes` puts the key in and sends them.
 - What's New 2.6 said "Settings → Set up connection…"; 2.7's text names Connection → Set up connection… where it comes up.
+- Keywords for 2.7: siri, shortcuts, watch and acp out (Apple's product names, and searches that bring nobody); mcp, client, server and kanban in.
 - Close GitHub #78, #79, #81 and #83 at release.
 - Sent to App Store Connect 2026-11-22 (version 2.7 made): copy, the new 06-goals pictures, and the iPhone App Preview (redde-27). The iPad preview is still 2.3.1's day cut.
 

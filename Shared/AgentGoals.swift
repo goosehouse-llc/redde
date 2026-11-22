@@ -30,6 +30,14 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
     /// By when, and the plan's steps, as the Dashboard's `/redde-push goals list` gives them.
     var target: Date?
     var steps: [Step]?
+    /// Gone quiet (plugin 1.36): days nothing has happened on it, once its check-in asked whether
+    /// they still want it, and whether its check-ins were paused for the quiet. Nil from an older
+    /// plugin, or one that hasn't asked.
+    var quietDays: Int?
+    var faded: Bool?
+
+    /// Asked about or paused for the quiet: the goal's page offers Keep Going.
+    var goneQuiet: Bool { (quietDays ?? 0) > 0 || faded == true }
 
     nonisolated struct Step: Codable, Equatable, Sendable {
         var title: String
@@ -204,6 +212,16 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
             if report.title.isEmpty { report.title = job.title }
             kept[job.id] = report
         }
+        save(kept, in: defaults)
+    }
+
+    /// Kept going on this device (`Goals.keep`): the quiet gone from it at once.
+    static func keep(_ id: String, in defaults: UserDefaults? = NeedsYou.shared) {
+        var kept = all(in: defaults)
+        guard var report = kept[id] else { return }
+        report.quietDays = nil
+        report.faded = nil
+        kept[id] = report
         save(kept, in: defaults)
     }
 

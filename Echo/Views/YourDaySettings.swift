@@ -43,6 +43,10 @@ struct YourDaySettings: View {
             NavigationLink { WatchesView() } label: { Label("Watches & Follow-ups", systemImage: "eye") }
                 .disabled(!canReachGateway)
             NavigationLink { TriggersView() } label: { Label("Triggers from Your iPhone", systemImage: "bolt.badge.clock") }
+            NavigationLink { KeepInMindView() } label: {
+                Label { Text("Things to Keep in Mind", comment: "Settings › Your Day: facts about the person that Heads-Ups and Morning Ideas check") } icon: { Image(systemName: "pin") }
+            }
+            .disabled(!canReachGateway)
             // Location: a page of the first screen since 2026-11-15 (`LocationSettingsView`).
             #if os(iOS)
             if HealthDays.available {
@@ -71,7 +75,7 @@ struct YourDaySettings: View {
 /// Settings → Your Day → Daily Jobs: the five daily jobs in one list, each with whether it is on and
 /// when it runs, read from the server's jobs; a row opens the job's own page (`DailyJobView`).
 struct DailyJobsView: View {
-    static let jobs: [DailyJob] = [MorningIdeas.job, HeadsUps.job, EveningWrapUp.job, WeekAhead.job, RoutineSuggestions.job]
+    static let jobs: [DailyJob] = [MorningIdeas.job, HeadsUps.job, EveningWrapUp.job, WeekAhead.job, RoutineSuggestions.job, GoneQuiet.job]
 
     /// The server's jobs by name; nil until read (or when they can't be).
     @State private var found: [String: CronJob]?
@@ -109,6 +113,9 @@ struct DailyJobsView: View {
     /// "7:30 AM", "Sun 6:00 PM", or Off.
     static func status(_ job: CronJob?, daily: DailyJob) -> Text {
         guard let job else { return Text("Off") }
+        if daily.hourly {
+            return Text("After \(daily.option(in: job)) hours", comment: "Settings › Daily Jobs: When You've Gone Quiet's wait, e.g. After 24 hours")
+        }
         guard let (hour, minute) = DailyJob.time(of: job),
               let at = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: .now) else { return Text("On") }
         let time = at.formatted(date: .omitted, time: .shortened)
@@ -155,5 +162,112 @@ struct LocationSettingsView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+    }
+}
+
+
+/// Things to keep in mind (plugin 1.36, `facts.py`; 2026-11-22, after "whenever I drive across the
+/// border I need 3-day car insurance"): what is always true for the person, kept on their Hermes
+/// for every agent. Heads-Ups, Morning Ideas and the Week Ahead check each one against the days
+/// around every event, and say when something is missing or runs out. The agent adds them too, when
+/// the person tells it one (`redde_fact`).
+enum KeptFacts {
+    @MainActor
+    static func list() async -> [String]? {
+        guard let reply = try? await PushService.command(over: .shared)("facts list") else { return nil }
+        return parse(reply)
+    }
+
+    static func parse(_ reply: String) -> [String]? {
+        let prefix = "redde-push facts "
+        let rest = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard rest.hasPrefix(prefix), let data = PushSeal.data(base64URL: String(rest.dropFirst(prefix.count))) else { return nil }
+        return try? JSONDecoder().decode([String].self, from: data)
+    }
+
+    static func line(_ verb: String, _ text: String) -> String {
+        "facts \(verb) \(PushSeal.base64URL(Data(text.utf8)))"
+    }
+
+    /// Nil when it was done; else why not.
+    @MainActor
+    static func change(_ verb: String, _ text: String) async -> String? {
+        guard let raw = try? await PushService.command(over: .shared)(line(verb, text)) else {
+            return String(localized: "Couldn't reach your Hermes. Try again in a moment.", comment: "A goal's step couldn't be ticked: the server didn't answer")
+        }
+        let reply = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if reply == "redde-push facts added" || reply == "redde-push facts removed" { return nil }
+        if reply.hasPrefix("redde-push facts refused ") { return String(reply.dropFirst("redde-push facts refused ".count)) }
+        return String(localized: "Things to Keep in Mind takes the Redde plugin 1.36: update it in Settings › Redde Plugin.", comment: "Things to Keep in Mind: the plugin is too old")
+    }
+}
+
+struct KeepInMindView: View {
+    @State private var facts: [String]?
+    @State private var draft = ""
+    @State private var working = false
+    @State private var problem: String?
+    @State private var loaded = false
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(facts ?? [], id: \.self) { Text($0) }
+                    .onDelete { rows in
+                        for text in rows.compactMap({ facts?[$0] }) { remove(text) }
+                    }
+                HStack {
+                    TextField(String(localized: "Driving into France, I need 3-day car insurance", comment: "Things to Keep in Mind: the example in the empty field"),
+                              text: $draft, axis: .vertical)
+                        .onSubmit(add)
+                        .accessibilityIdentifier("keep-in-mind-field")
+                    Button(action: add) { Image(systemName: "plus.circle.fill") }
+                        .disabled(working || draft.trimmingCharacters(in: .whitespacesAndNewlines).count < 4)
+                        .accessibilityLabel(Text("Add", comment: "Things to Keep in Mind: adds the fact typed"))
+                }
+            } footer: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("What's always true for you, said once. Heads-Ups, Morning Ideas and the Week Ahead check each one against the days around every event, and tell you when something is missing or runs out: a policy that ends before you're back, a booking you haven't made. Your agents add to this list when you tell them something like it. Kept on your Hermes, for all your agents.",
+                         comment: "Things to Keep in Mind: footer")
+                    if loaded, facts == nil {
+                        Text("Your Hermes can't say. Things to Keep in Mind takes the Redde plugin 1.36.", comment: "Things to Keep in Mind: the list couldn't be read")
+                    }
+                    if let problem { Text(problem).foregroundStyle(.red) }
+                }
+            }
+        }
+        .navigationTitle(Text("Things to Keep in Mind", comment: "Settings › Your Day: facts about the person that Heads-Ups and Morning Ideas check"))
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task { await load() }
+        .refreshable { await load() }
+    }
+
+    private func load() async {
+        facts = await KeptFacts.list()
+        loaded = true
+    }
+
+    private func add() {
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard text.count >= 4, !working else { return }
+        working = true
+        problem = nil
+        Task {
+            defer { working = false }
+            if let why = await KeptFacts.change("add", text) { problem = why; return }
+            draft = ""
+            await load()
+        }
+    }
+
+    private func remove(_ text: String) {
+        facts?.removeAll { $0 == text }
+        problem = nil
+        Task {
+            if let why = await KeptFacts.change("remove", text) { problem = why }
+            await load()
+        }
     }
 }

@@ -652,7 +652,21 @@ class Routines:
                     if watching:
                         # A watch says something only when there is something to say.
                         if not failed and (not words or watches.quiet(words)):
+                            # Nothing, run after run: every other run skipped, then the watch paused
+                            # and the person told once, quietly (watches.py, 1.36.0).
+                            idle_n, idle_days = watches.idle_days(home, str(job["id"]))
+                            step = watches.found_nothing(home, str(job["id"]))
+                            if step == "skip" and _instant(job.get("next_run_at")):
+                                skip(home, job, int(_instant(job.get("next_run_at"))), rename=False)
+                            elif step == "pause" and watches.pause(home, str(job["id"]), reason="Redde: nothing found for a week"):
+                                note = core.watch_note(profile, self.stores.name(home, profile), watches.title(name),
+                                                       watches.PAUSED_SAID.format(n=idle_n + 1, days=max(idle_days, watches.PAUSE_DAYS)),
+                                                       watches.watch_id(name) or "")
+                                note["z"] = "drawer"
+                                outgoing.append((profile, note))
                             continue
+                        if not failed:
+                            watches.found_something(home, str(job["id"]))
                         # A watch on email where the agent can't read any (Redde 2.4's templates):
                         # said once, as such, and the watch paused until there is a way.
                         blind = not failed and watches.no_email(words)
@@ -672,6 +686,8 @@ class Routines:
                             goals.remember(home, goal, {**found, "details": rest[:goals.DETAILS_LIMIT]} if rest else found)
                         body = rest if failed or not found else "\n".join(
                             line for line in ([found["headline"], f"Next: {found['next']}" if found["next"] else ""] + [rest]) if line)
+                        # Told to pause for the quiet (1.36.0): paused now that it has said so.
+                        goals.after_checkin(home, goal)
                         if not body and not found:
                             continue
                         outgoing.append((profile, core.routine_note(profile, self.stores.name(home, profile), goals.title(name), body,
@@ -682,7 +698,7 @@ class Routines:
                         # The tool used during the run: the cards are on the phone already.
                         if not failed and ideas.sent_lately(self.stores.root, profile, time.time()):
                             continue
-                        written = [] if failed else ideas.from_answer(words)
+                        written = [] if failed else ideas.wanted(self.stores.root, ideas.from_answer(words))
                         if written:
                             outgoing.append((profile, core.ideas_note(profile, self.stores.name(home, profile), written,
                                                                       uuid.uuid4().hex[:16])))
@@ -729,6 +745,9 @@ class Routines:
                 # A job the phone hides (Redde's Don't Show, 2026-11-05): nothing sent for it.
                 targets = self.store.unmuted(targets, job_mute(profile, made["i"]))
                 quiet_if_drawer_only(self.store, profile, made)
+            if made.get("k") == "ideas" and targets:
+                # Left alone set after set: quietly (ideas.py, 1.36.0).
+                ideas.quiet_if_ignored(self.stores.root, profile, made)
             if targets:
                 sent += self.send(targets, made)
         return sent
