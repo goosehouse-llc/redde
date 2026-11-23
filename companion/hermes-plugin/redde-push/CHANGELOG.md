@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.36.2 (2026-11-22)
+
+- Show cards get real posters. Each title's poster is opened before the card goes to the phone. One
+  that loads stays; one that goes nowhere (an agent that built a TMDb address from a film's id) or
+  is missing is looked up, with no key: a film's on Wikipedia, a series' on TVmaze. A dead poster
+  with none found is taken off. Slow sites and addresses on private networks are left as they
+  were, and the whole card waits six seconds at most.
+
 ## 1.36.1 (2026-11-22)
 
 - Show cards (and every other card with items) are drawn again for models that keep to the tool's

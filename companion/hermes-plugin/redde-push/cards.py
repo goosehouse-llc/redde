@@ -49,7 +49,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from . import forecast, products
+from . import forecast, posters, products
 
 TOOL = "redde_show"
 TOOLSET = "redde_cards"
@@ -382,7 +382,7 @@ SHAPES = {
     "show": ("'title' (of a list); 'items' (1 to 6, your pick first), each {title, year (e.g. 2022, or 2019-2023), format "
              "(movie or series), seasons or runtime (minutes), genres, ratings ([{source, value}], e.g. IMDb 8.7/10, as found), "
              "overview (two lines), director or creator, cast (a few), watch (the services it is on where the person is), "
-             "poster (https), trailer and url (pages, as found), pick (true for one)}; 'note'"),
+             "poster (https, as found: never build one; Redde checks it, and finds one when it's missing), trailer and url (pages, as found), pick (true for one)}; 'note'"),
     "conversion": ("'amount'; 'from' and 'to' (units as written, e.g. mi, km, °F, cups, or ISO currency codes); for a currency "
                    "'rate' (one 'from' in 'to', as found) with 'as_of' (ISO, when) and 'source'; 'result' only for units the app "
                    "may not know; 'title'; 'note'. The app works units out itself"),
@@ -738,6 +738,11 @@ def look_up(card, prefs: dict) -> tuple[dict, str | None, str | None]:
             filled, line = products.check_card(card, forecast.zone(prefs.get("tz")), limit=MAX_PRODUCTS)
             return filled, line, None
         except Exception:    # never the card's undoing: as the agent wrote it
+            return card, None, None
+    if kind == "show":
+        try:
+            return posters.fill(card), None, None   # (1.36.2: a poster that goes nowhere checked, found on Wikipedia)
+        except Exception:
             return card, None, None
     place = card.get("place") or card.get("location")
     place = " ".join(place.split()) if isinstance(place, str) else ""
