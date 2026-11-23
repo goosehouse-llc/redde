@@ -13480,6 +13480,113 @@
         }
       }
     },
+    "%@ renews" : {
+      "comment" : "Follow-Through: a trial or subscription about to charge",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ fornyes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ verlängert sich"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ se renueva"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ se renouvelle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ si rinnova"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@が更新されます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 갱신 예정"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ fornyes"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ wordt verlengd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odnowienie: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ será renovado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продление: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ förnyas"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ yenileniyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подовження: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@即将续费"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@即將續訂"
+          }
+        }
+      }
+    },
     "%@ replied" : {
       "comment" : "Live Activity: the agent, by its name, has replied",
       "localizations" : {
@@ -16912,6 +17019,113 @@
         }
       },
       "shouldTranslate" : false
+    },
+    "%@, by %@" : {
+      "comment" : "Follow-Through: where it goes back to, and the last day",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, senest %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, bis %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, hasta el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, avant le %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, entro %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@、%@まで"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@까지"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, senest %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, uiterlijk %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, termin: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, até %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, срок: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, senast %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, son gün %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, термін: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，%@前"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，%@前"
+          }
+        }
+      }
     },
     "%@, group chat with %@" : {
       "localizations" : {
@@ -46405,6 +46619,113 @@
         }
       }
     },
+    "A film on your watch list new on Jellyfin, a new season of a series you finished." : {
+      "comment" : "Follow-Through: under the arrivals switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En film fra din liste med ting at se, der er ny på Jellyfin, en ny sæson af en serie, du har set færdig."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Film von deiner Merkliste neu auf Jellyfin, eine neue Staffel einer Serie, die du zu Ende geschaut hast."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una película de tu lista para ver que llega a Jellyfin, una temporada nueva de una serie que terminaste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un film de votre liste à regarder arrivé sur Jellyfin, une nouvelle saison d’une série que vous avez terminée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un film della tua lista da vedere arrivato su Jellyfin, una nuova stagione di una serie che hai finito."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "視聴リストの映画がJellyfinに追加されたとき、見終えたシリーズの新シーズン。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시청 목록의 영화가 Jellyfin에 새로 올라왔을 때, 다 본 시리즈의 새 시즌."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En film fra listen din med ting å se som er ny på Jellyfin, en ny sesong av en serie du har sett ferdig."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een film van je kijklijst die nieuw is op Jellyfin, een nieuw seizoen van een serie die je hebt uitgekeken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Film z Twojej listy do obejrzenia, który pojawił się w Jellyfin, nowy sezon serialu, który masz już za sobą."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um filme da sua lista para assistir que chegou ao Jellyfin, uma nova temporada de uma série que você terminou."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фильм из вашего списка к просмотру, появившийся в Jellyfin, новый сезон досмотренного сериала."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En film från din lista med saker att se som är ny på Jellyfin, en ny säsong av en serie du har sett klart."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İzleme listenizden Jellyfin'e yeni gelen bir film, bitirdiğiniz bir dizinin yeni sezonu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фільм із вашого списку для перегляду, що з’явився в Jellyfin, новий сезон серіалу, який ви додивилися."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片单里的电影在Jellyfin上新上线，看完的剧集出了新一季。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片單裡的電影在 Jellyfin 新上架、看完的影集推出新一季。"
+          }
+        }
+      }
+    },
     "A folder of that name is made in ~/Projects on your server, and this conversation works in it from now on." : {
       "localizations" : {
         "da" : {
@@ -74504,6 +74825,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "開啟的聊天會顯示你在其他裝置上寫的回覆，回到 Redde 時會重新載入。代理工作時說的話會收進它的步驟裡。"
+          }
+        }
+      }
+    },
+    "An order" : {
+      "comment" : "Follow-Through: a delivery with no name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bestilling"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Bestellung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un pedido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une commande"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un ordine"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注文品"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주문 상품"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bestilling"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een bestelling"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamówienie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um pedido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказ"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En beställning"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir sipariş"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一笔订单"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一筆訂單"
           }
         }
       }
@@ -148893,6 +149321,113 @@
         }
       }
     },
+    "Deliveries running late, return windows closing, trials about to charge." : {
+      "comment" : "Follow-Through: under the orders switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forsinkede leveringer, returfrister der udløber, prøveperioder der snart koster penge."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verspätete Lieferungen, ablaufende Rückgabefristen, Probeabos kurz vor der Abbuchung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entregas con retraso, plazos de devolución que vencen, pruebas a punto de cobrarse."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Livraisons en retard, délais de retour qui se terminent, essais sur le point d’être facturés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consegne in ritardo, finestre di reso in scadenza, prove gratuite che stanno per diventare a pagamento."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遅れている配達、締め切りが近い返品期限、課金が始まるお試し期間。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "늦어지는 배송, 곧 끝나는 반품 기간, 곧 결제되는 무료 체험."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forsinkede leveranser, returfrister som går ut, prøveperioder som snart belastes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leveringen met vertraging, retourtermijnen die aflopen, proefperiodes die bijna gaan kosten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spóźnione dostawy, kończące się terminy zwrotu, okresy próbne tuż przed obciążeniem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entregas atrasadas, prazos de devolução acabando, testes prestes a cobrar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Опаздывающие доставки, истекающие сроки возврата, пробные периоды перед списанием."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Försenade leveranser, returfrister som går ut, provperioder som snart debiteras."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geciken teslimatlar, kapanan iade süreleri, ücretlendirilmek üzere olan denemeler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запізнілі доставки, строки повернення, що спливають, пробні періоди перед списанням."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "延误的快递、即将截止的退货期、即将扣费的试用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "延誤的包裹、即將截止的退貨期、即將扣款的試用。"
+          }
+        }
+      }
+    },
     "delivery.atTime" : {
       "comment" : "A delivery card: the time of day the package came, after its day (Delivered today), e.g. at 2:14 PM. A time, not a place",
       "localizations" : {
@@ -183630,6 +184165,113 @@
         }
       }
     },
+    "Follow-Through" : {
+      "comment" : "What's New 2.7: what mail says will happen, checked when it should have",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Følg med"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachverfolgung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pendientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suivi"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monitoraggio"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "抜け漏れチェック"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "끝까지 챙기기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Følg med"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bijhouden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopilnowanie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pendências"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На контроле"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Håll koll"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sonuç Takibi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На контролі"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "落实追踪"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "落實追蹤"
+          }
+        }
+      }
+    },
     "Follow-up" : {
       "comment" : "Coming Up: a follow-up the agent set",
       "localizations" : {
@@ -183839,6 +184481,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "待跟進"
+          }
+        }
+      }
+    },
+    "Following Now" : {
+      "comment" : "Follow-Through: what's being followed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Følger nu"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird verfolgt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En seguimiento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En cours de suivi"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ora monitorati"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確認中"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지금 챙기는 것"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Følger nå"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nu bijgehouden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teraz pilnowane"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acompanhando Agora"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сейчас на контроле"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevakas nu"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu An Takip Edilenler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зараз на контролі"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在追踪"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在追蹤"
           }
         }
       }
@@ -187041,6 +187790,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "從%@到%@，最低%@，最高%@"
+          }
+        }
+      }
+    },
+    "From %@, due %@" : {
+      "comment" : "Follow-Through: a delivery's shop and day",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fra %@, forventet %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Von %@, fällig %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De %@, llega el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De %@, prévue le %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da %@, previsto %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@から・%@到着予定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@에서, %@ 도착 예정"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fra %@, ventet %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Van %@, verwacht %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Od: %@, termin: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De %@, previsto para %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "От: %@, срок: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Från %@, väntas %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gönderen: %@, teslim: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Від: %@, термін: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来自%@，预计%@送达"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來自%@，預計%@送達"
           }
         }
       }
@@ -239182,6 +240038,113 @@
         }
       }
     },
+    "Jellyfin is reached with the keys in %@'s settings." : {
+      "comment" : "Follow-Through: where Jellyfin's address and key were found",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin nås med nøglerne i indstillingerne for %@."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin wird mit den Schlüsseln aus den Einstellungen von %@ erreicht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se accede a Jellyfin con las claves de los ajustes de %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin est joint avec les clés des réglages de %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin si raggiunge con le chiavi nelle impostazioni di questo agente: %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfinには%@の設定にあるキーで接続します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin은 %@ 설정에 있는 키로 연결합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin nås med nøklene i innstillingene til %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin wordt bereikt met de sleutels in de instellingen van %@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin działa dzięki kluczom z ustawień: %@."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Jellyfin é acessado com as chaves dos ajustes de %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin доступен по ключам из настроек: %@."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin nås med nycklarna i inställningarna för %@."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin'e şu ayarlardaki anahtarlarla ulaşılır: %@."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin доступний за ключами з параметрів: %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过%@设置中的密钥连接Jellyfin。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過%@設定中的金鑰連線 Jellyfin。"
+          }
+        }
+      }
+    },
     "Job" : {
       "comment" : "A scheduled job with no name",
       "localizations" : {
@@ -287241,6 +288204,113 @@
         }
       }
     },
+    "New to Watch" : {
+      "comment" : "Follow-Through: the arrivals switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nyt at se"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neu zum Anschauen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novedades para ver"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveautés à regarder"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novità da vedere"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新着作品"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로 볼 작품"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nytt å se"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw om te kijken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe do obejrzenia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novidades para Assistir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новое к просмотру"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nytt att se"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İzlenecek Yeniler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нове для перегляду"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新上线"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新上架"
+          }
+        }
+      }
+    },
     "New Watch" : {
       "localizations" : {
         "da" : {
@@ -291706,6 +292776,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ 上沒有 Hermes Dashboard 回應。"
+          }
+        }
+      }
+    },
+    "No Jellyfin found: new seasons still come from your watch lists. To add Jellyfin, ask your agent to request JELLYFIN_URL and JELLYFIN_API_KEY." : {
+      "comment" : "Follow-Through: Jellyfin isn't set up",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen Jellyfin fundet: nye sæsoner kommer stadig fra dine lister med ting at se. Bed din agent om at efterspørge JELLYFIN_URL og JELLYFIN_API_KEY for at tilføje Jellyfin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Jellyfin gefunden: Neue Staffeln kommen weiterhin aus deinen Merklisten. Um Jellyfin hinzuzufügen, bitte deinen Agenten, JELLYFIN_URL und JELLYFIN_API_KEY anzufordern."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se encontró Jellyfin: las temporadas nuevas siguen llegando de tus listas para ver. Para añadir Jellyfin, pide a tu agente que solicite JELLYFIN_URL y JELLYFIN_API_KEY."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun Jellyfin trouvé : les nouvelles saisons viennent toujours de vos listes à regarder. Pour ajouter Jellyfin, demandez à votre agent de demander JELLYFIN_URL et JELLYFIN_API_KEY."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun Jellyfin trovato: le nuove stagioni arrivano comunque dalle tue liste da vedere. Per aggiungere Jellyfin, chiedi al tuo agente di richiedere JELLYFIN_URL e JELLYFIN_API_KEY."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfinが見つかりません。新シーズンは引き続き視聴リストから届きます。Jellyfinを追加するには、エージェントにJELLYFIN_URLとJELLYFIN_API_KEYを求めるよう頼んでください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin을 찾지 못했습니다. 새 시즌은 계속 시청 목록에서 알려 드립니다. Jellyfin을 추가하려면 에이전트에게 JELLYFIN_URL과 JELLYFIN_API_KEY를 요청하도록 부탁하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fant ingen Jellyfin: nye sesonger kommer fortsatt fra listene dine med ting å se. For å legge til Jellyfin, be agenten din spørre etter JELLYFIN_URL og JELLYFIN_API_KEY."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen Jellyfin gevonden: nieuwe seizoenen komen nog steeds van je kijklijsten. Vraag je agent om JELLYFIN_URL en JELLYFIN_API_KEY aan te vragen om Jellyfin toe te voegen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie znaleziono Jellyfin: nowe sezony nadal przychodzą z Twoich list do obejrzenia. Aby dodać Jellyfin, poproś agenta, żeby poprosił o JELLYFIN_URL i JELLYFIN_API_KEY."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum Jellyfin encontrado: novas temporadas continuam vindo das suas listas para assistir. Para adicionar o Jellyfin, peça ao seu agente para solicitar JELLYFIN_URL e JELLYFIN_API_KEY."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin не найден: новые сезоны по-прежнему берутся из ваших списков к просмотру. Чтобы добавить Jellyfin, попросите агента запросить JELLYFIN_URL и JELLYFIN_API_KEY."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen Jellyfin hittades: nya säsonger kommer fortfarande från dina listor med saker att se. Lägg till Jellyfin genom att be din agent fråga efter JELLYFIN_URL och JELLYFIN_API_KEY."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin bulunamadı: yeni sezonlar yine izleme listelerinizden gelir. Jellyfin'i eklemek için ajanınızdan JELLYFIN_URL ve JELLYFIN_API_KEY istemesini isteyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jellyfin не знайдено: нові сезони й далі беруться з ваших списків для перегляду. Щоб додати Jellyfin, попросіть агента запросити JELLYFIN_URL і JELLYFIN_API_KEY."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到Jellyfin：新一季仍会从你的片单中送达。要添加Jellyfin，请让你的智能体请求JELLYFIN_URL和JELLYFIN_API_KEY。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到 Jellyfin：新一季仍會從你的片單送達。若要加入 Jellyfin，請讓你的代理要求提供 JELLYFIN_URL 和 JELLYFIN_API_KEY。"
           }
         }
       }
@@ -305069,6 +306246,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚無內容"
+          }
+        }
+      }
+    },
+    "Nothing yet. As mail comes and goes, what needs following shows here." : {
+      "comment" : "Follow-Through: nothing being followed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intet endnu. Efterhånden som mails kommer og går, vises det, der skal følges, her."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch nichts. Während E-Mails kommen und gehen, erscheint hier, was nachverfolgt werden muss."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada todavía. A medida que llegan correos, aquí aparece lo que hay que seguir."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien pour l’instant. Au fil des e-mails, ce qui demande un suivi s’affichera ici."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora niente. Man mano che arrivano le email, qui compare ciò che va seguito."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まだありません。メールのやり取りにつれて、確認が必要なことがここに表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 없습니다. 메일이 오가면 챙겨야 할 일이 여기에 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingenting ennå. Etter hvert som e-post kommer og går, vises det som bør følges, her."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nog niets. Terwijl er mail binnenkomt, verschijnt hier wat opgevolgd moet worden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na razie nic. Gdy maile będą przychodzić i odchodzić, tutaj pojawi się to, czego trzeba dopilnować."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada ainda. Conforme os e-mails chegam e vão, o que precisa de acompanhamento aparece aqui."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока ничего. По мере того как приходит и уходит почта, здесь появится то, что нужно держать на контроле."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inget än. När e-post kommer och går visas det som behöver bevakas här."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Henüz bir şey yok. E-postalar gelip gittikçe takip edilmesi gerekenler burada görünür."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поки нічого. Коли надходитиме й надсилатиметься пошта, тут з’явиться те, що треба тримати на контролі."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂时没有。随着邮件往来，需要跟进的事会显示在这里。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前沒有。隨著郵件往來，需要跟進的事會顯示在這裡。"
           }
         }
       }
@@ -325830,6 +327114,113 @@
         }
       }
     },
+    "Orders & Trials" : {
+      "comment" : "Follow-Through: the orders switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestillinger og prøveperioder"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestellungen & Probeabos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedidos y pruebas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commandes et essais"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordini e prove"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注文とお試し期間"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주문 및 무료 체험"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestillinger og prøveperioder"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestellingen & proefperiodes"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamówienia i okresy próbne"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedidos e Testes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказы и пробные периоды"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beställningar och provperioder"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siparişler ve Denemeler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення й пробні періоди"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "订单与试用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂單與試用"
+          }
+        }
+      }
+    },
     "Orders, invoices, payments, shipping and bookings." : {
       "comment" : "Email piles: what the Receipts pile holds",
       "localizations" : {
@@ -345164,6 +346555,113 @@
         }
       }
     },
+    "Promises & Replies" : {
+      "comment" : "Follow-Through: the mail switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Løfter og svar"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versprechen & Antworten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promesas y respuestas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promesses et réponses"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promesse e risposte"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "約束と返信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "약속 및 답장"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Løfter og svar"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beloftes & antwoorden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obietnice i odpowiedzi"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promessas e Respostas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обещания и ответы"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löften och svar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sözler ve Yanıtlar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обіцянки й відповіді"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承诺与回复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承諾與回覆"
+          }
+        }
+      }
+    },
     "Promotions" : {
       "comment" : "Email inbox pile: sales, offers and marketing",
       "localizations" : {
@@ -349959,6 +351457,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "從快取讀取"
+          }
+        }
+      }
+    },
+    "Read from your mail on your Hermes, in English, with no model. Only what didn't happen comes back, as an idea card, in the day and at most hourly. Swipe one away to stop following it." : {
+      "comment" : "Follow-Through: footer of the list",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Læses fra din mail på din Hermes, på engelsk, uden model. Kun det, der ikke skete, kommer tilbage som et idékort, i løbet af dagen og højst én gang i timen. Skub et væk for at stoppe med at følge det."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf deinem Hermes aus deinen E-Mails gelesen, auf Englisch, ohne Modell. Nur was nicht passiert ist, kommt zurück, als Ideenkarte, tagsüber und höchstens stündlich. Wisch eine weg, um sie nicht mehr zu verfolgen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se lee de tu correo en tu Hermes, en inglés, sin modelo. Solo vuelve lo que no ocurrió, como tarjeta de idea, durante el día y como mucho una vez por hora. Desliza una para dejar de seguirla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lu dans vos e-mails sur votre Hermes, en anglais, sans modèle. Seul ce qui ne s’est pas produit revient, sous forme de carte d’idée, en journée et au plus une fois par heure. Balayez-en une pour ne plus la suivre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letto dalla tua email sul tuo Hermes, in inglese, senza modello. Torna solo ciò che non è successo, come scheda idea, di giorno e al massimo una volta all'ora. Scorrine via una per smettere di seguirla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "英語のメールを、モデルを使わずにHermes上で読み取ります。実現しなかったことだけが、日中に最大1時間に1回、アイデアカードとして戻ってきます。スワイプで消すと確認をやめます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes에서 모델 없이 영어 메일을 읽습니다. 일어나지 않은 일만 낮 시간에 최대 한 시간에 한 번 아이디어 카드로 다시 알려 줍니다. 밀어서 지우면 더 이상 챙기지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leses fra e-posten din på din Hermes, på engelsk, uten modell. Bare det som ikke skjedde, kommer tilbake, som et idékort, på dagtid og høyst én gang i timen. Sveip en bort for å slutte å følge den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gelezen uit je mail op je Hermes, in het Engels, zonder model. Alleen wat niet is gebeurd komt terug, als ideekaart, overdag en hoogstens één keer per uur. Veeg er een weg om hem niet meer bij te houden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odczytywane z Twojej poczty na Twoim Hermesie, po angielsku, bez modelu. Wraca tylko to, co się nie wydarzyło, jako karta pomysłu, w ciągu dnia i najwyżej co godzinę. Przesuń pozycję, aby przestać jej pilnować."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lido do seu e-mail no seu Hermes, em inglês, sem modelo. Só volta o que não aconteceu, como um cartão de ideia, durante o dia e no máximo uma vez por hora. Deslize um para parar de acompanhar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читается из вашей почты на вашем Hermes, на английском, без модели. Возвращается только то, что не произошло, карточкой идеи, днем и не чаще раза в час. Смахните пункт, чтобы снять его с контроля."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läses från din e-post på din Hermes, på engelska, utan modell. Bara det som inte hände kommer tillbaka, som ett idékort, under dagen och högst en gång i timmen. Svep bort en för att sluta bevaka den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'inizde, e-postanızdan, İngilizce ve model olmadan okunur. Yalnızca gerçekleşmeyenler bir fikir kartı olarak, gün içinde ve en fazla saatte bir geri gelir. Takibi bırakmak için birini kaydırarak kaldırın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читається з вашої пошти на вашому Hermes, англійською, без моделі. Повертається лише те, чого не сталося, карткою ідеї, удень і не частіше ніж раз на годину. Посуньте пункт, щоб зняти його з контролю."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在你的Hermes上读取英文邮件，不使用模型。只有没有发生的事才会在白天以想法卡片的形式回来，最多每小时一次。滑掉一张即可停止追踪。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在你的 Hermes 上讀取英文郵件，不使用模型。只有沒發生的事才會在白天以點子卡片回到你面前，最多每小時一次。滑掉一張即可停止追蹤。"
           }
         }
       }
@@ -370399,6 +372004,113 @@
         }
       }
     },
+    "Reply to %@" : {
+      "comment" : "Follow-Through: mail they owe a reply",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svar %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ antworten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responder a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Répondre à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rispondi a %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@に返信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@에게 답장"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svar %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antwoord %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odpowiedz: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responder a %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ответить: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svara %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yanıtla: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відповісти: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回复%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回覆%@"
+          }
+        }
+      }
+    },
     "Reply with Agent" : {
       "comment" : "Email: ask the agent to draft a reply",
       "localizations" : {
@@ -374230,6 +375942,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重試回覆"
+          }
+        }
+      }
+    },
+    "Return %@" : {
+      "comment" : "Follow-Through: a return window, with what was bought",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Returner %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ zurückschicken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Devolver %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retourner %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restituisci %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@を返品"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 반품"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Returner %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ retourneren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwróć: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Devolver %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вернуть: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Returnera %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İade et: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повернути: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退货：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退貨：%@"
           }
         }
       }
@@ -392232,6 +394051,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "傳送"
+          }
+        }
+      }
+    },
+    "Send %@ what you promised" : {
+      "comment" : "Follow-Through: a promise in mail they sent",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send %@ det, du lovede"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ schicken, was du versprochen hast"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar a %@ lo que prometiste"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer à %@ ce que vous avez promis"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manda a %@ ciò che hai promesso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "約束したものを%@に送る"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@에게 약속한 것 보내기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send %@ det du lovet"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuur %@ wat je beloofd hebt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij obiecane: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar a %@ o que você prometeu"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить обещанное: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka det du lovade till %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Söz verdiğini gönder: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Надіслати обіцяне: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把答应的东西发给%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把答應的東西寄給%@"
           }
         }
       }
@@ -417808,6 +419734,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已有同名的項目。"
+          }
+        }
+      }
+    },
+    "Something you promised in an email, a question still unanswered, a reply you owe, a late delivery, a return window closing, a trial about to charge: Redde keeps track and brings back only what didn't happen. A film on your watch list new on Jellyfin, and a new season of a show you finished, come too. Settings › Your Day › Follow-Through. It takes the Redde plugin 1.39." : {
+      "comment" : "What's New 2.7: follow-through",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noget, du lovede i en mail, et spørgsmål, der stadig ikke er besvaret, et svar, du skylder, en forsinket levering, en returfrist, der udløber, en prøveperiode, der snart koster penge: Redde holder styr på det og bringer kun det tilbage, der ikke skete. En film fra din liste med ting at se, der er ny på Jellyfin, og en ny sæson af en serie, du har set færdig, kommer også. Indstillinger › Din dag › Følg med. Det kræver Redde-plugin 1.39."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas, das du in einer E-Mail versprochen hast, eine noch offene Frage, eine Antwort, die du schuldest, eine verspätete Lieferung, eine ablaufende Rückgabefrist, ein Probeabo kurz vor der Abbuchung: Redde behält es im Blick und bringt nur zurück, was nicht passiert ist. Ein Film von deiner Merkliste, der neu auf Jellyfin ist, und eine neue Staffel einer Serie, die du zu Ende geschaut hast, kommen auch. Einstellungen › Dein Tag › Nachverfolgung. Dafür braucht es das Redde-Plugin 1.39."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo que prometiste en un correo, una pregunta aún sin respuesta, una respuesta que debes, una entrega con retraso, un plazo de devolución que vence, una prueba a punto de cobrarse: Redde lo sigue y solo te trae de vuelta lo que no ocurrió. También llegan una película de tu lista para ver que aparece en Jellyfin y una temporada nueva de una serie que terminaste. Ajustes › Tu día › Pendientes. Necesita el plugin de Redde 1.39."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une promesse faite dans un e-mail, une question restée sans réponse, une réponse que vous devez, une livraison en retard, un délai de retour qui se termine, un essai sur le point d’être facturé : Redde garde tout cela à l’œil et ne vous rappelle que ce qui ne s’est pas produit. Un film de votre liste à regarder arrivé sur Jellyfin et une nouvelle saison d’une série que vous avez terminée arrivent aussi. Réglages › Votre journée › Suivi. Requiert le plugin Redde 1.39."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una promessa fatta in un'email, una domanda ancora senza risposta, una risposta che devi, una consegna in ritardo, una finestra di reso in scadenza, una prova che sta per diventare a pagamento: Redde ne tiene traccia e ti ripropone solo ciò che non è successo. Arrivano anche un film della tua lista da vedere appena uscito su Jellyfin e una nuova stagione di una serie che hai finito. Impostazioni › La tua giornata › Monitoraggio. Richiede il plugin Redde 1.39."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メールで約束したこと、まだ答えのない質問、返信すべきメール、遅れている配達、締め切りが近い返品期限、課金が始まるお試し期間。Reddeが追いかけて、実現しなかったことだけを知らせます。視聴リストの映画がJellyfinに追加されたときや、見終えた番組の新シーズンもお知らせします。設定 › あなたの1日 › 抜け漏れチェック。Reddeプラグイン1.39が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이메일로 약속한 일, 아직 답이 없는 질문, 해야 할 답장, 늦어지는 배송, 곧 끝나는 반품 기간, 곧 결제되는 무료 체험: Redde가 챙기다가 일어나지 않은 일만 다시 알려 줍니다. 시청 목록의 영화가 Jellyfin에 새로 올라오거나 다 본 프로그램의 새 시즌이 나와도 알려 줍니다. 설정 › 나의 하루 › 끝까지 챙기기. Redde 플러그인 1.39가 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noe du lovet i en e-post, et spørsmål som fortsatt ikke er besvart, et svar du skylder, en forsinket levering, en returfrist som går ut, en prøveperiode som snart belastes: Redde holder oversikt og tar bare opp igjen det som ikke skjedde. En film fra listen din med ting å se som er ny på Jellyfin, og en ny sesong av en serie du har sett ferdig, kommer også. Innstillinger › Dagen din › Følg med. Det krever Redde-tillegget 1.39."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iets wat je in een e-mail hebt beloofd, een vraag die nog openstaat, een antwoord dat je verschuldigd bent, een levering met vertraging, een retourtermijn die afloopt, een proefperiode die bijna gaat kosten: Redde houdt het bij en brengt alleen terug wat niet is gebeurd. Een film van je kijklijst die nieuw is op Jellyfin en een nieuw seizoen van een serie die je hebt uitgekeken, komen ook. Instellingen › Je dag › Bijhouden. Hiervoor is de Redde-plug-in 1.39 nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obietnica z maila, pytanie wciąż bez odpowiedzi, zaległa odpowiedź, spóźniona dostawa, kończący się termin zwrotu, okres próbny tuż przed obciążeniem: Redde to śledzi i wraca tylko z tym, co się nie wydarzyło. Pojawi się też film z Twojej listy do obejrzenia, który trafił do Jellyfin, i nowy sezon serialu, który masz już za sobą. Ustawienia › Twój dzień › Dopilnowanie. Wymaga wtyczki Redde 1.39."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo que você prometeu em um e-mail, uma pergunta ainda sem resposta, uma resposta que você deve, uma entrega atrasada, um prazo de devolução acabando, um teste prestes a cobrar: o Redde acompanha e traz de volta só o que não aconteceu. Um filme da sua lista para assistir que chegou ao Jellyfin e uma nova temporada de uma série que você terminou também aparecem. Ajustes › Seu Dia › Pendências. Requer o plugin do Redde 1.39."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обещание в письме, вопрос без ответа, ответ за вами, опаздывающая доставка, истекающий срок возврата, пробный период перед списанием: Redde следит за этим и возвращает только то, что не произошло. Фильм из вашего списка к просмотру, появившийся в Jellyfin, и новый сезон досмотренного сериала тоже придут. «Настройки» › «Ваш день» › «На контроле». Нужен плагин Redde 1.39."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Något du lovade i ett mejl, en fråga som fortfarande är obesvarad, ett svar du är skyldig, en försenad leverans, en returfrist som går ut, en provperiod som snart debiteras: Redde håller koll och tar bara upp det som inte hände. En film från din lista med saker att se som är ny på Jellyfin, och en ny säsong av en serie du har sett klart, kommer också. Inställningar › Din dag › Håll koll. Det kräver Redde-tillägget 1.39."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir e-postada verdiğiniz bir söz, hâlâ yanıtlanmamış bir soru, borçlu olduğunuz bir yanıt, geciken bir teslimat, kapanan bir iade süresi, ücretlendirilmek üzere olan bir deneme: Redde bunları takip eder ve yalnızca gerçekleşmeyenleri geri getirir. İzleme listenizden Jellyfin'e yeni gelen bir film ve bitirdiğiniz bir dizinin yeni sezonu da gelir. Ayarlar › Gününüz › Sonuç Takibi. Redde Eklentisi 1.39 gerektirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обіцянка в листі, запитання без відповіді, відповідь за вами, запізніла доставка, строк повернення, що спливає, пробний період перед списанням: Redde стежить за цим і повертає лише те, чого не сталося. Фільм із вашого списку для перегляду, що з’явився в Jellyfin, і новий сезон серіалу, який ви додивилися, теж надійдуть. Параметри › Ваш день › На контролі. Потрібен плагін Redde 1.39."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "邮件里答应的事、仍未答复的问题、该回的邮件、延误的快递、即将截止的退货期、即将扣费的试用：Redde会一直追踪，只把没有发生的事带回来。片单里的电影在Jellyfin上新上线、看完的节目出了新一季，也会告诉你。设置 › 你的一天 › 落实追踪。需要Redde插件1.39。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "郵件裡答應的事、仍未答覆的問題、該回的郵件、延誤的包裹、即將截止的退貨期、即將扣款的試用：Redde 會持續追蹤，只把沒發生的事帶回來。片單裡的電影在 Jellyfin 新上架、看完的節目推出新一季，也會告訴你。設定 › 你的一天 › 落實追蹤。需要 Redde 外掛 1.39。"
           }
         }
       }
@@ -508670,6 +510703,113 @@
         }
       }
     },
+    "Waiting on %@" : {
+      "comment" : "Follow-Through: a question they sent, not yet answered",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venter på %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warten auf %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attente de %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In attesa di %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@の返事待ち"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@의 답장 기다리는 중"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Venter på %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wacht op %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czeka na odpowiedź: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ждет ответа: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Väntar på %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yanıt bekleniyor: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чекає на відповідь: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待%@回复"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待%@回覆"
+          }
+        }
+      }
+    },
     "Waiting on you" : {
       "localizations" : {
         "da" : {
@@ -517936,6 +520076,113 @@
         }
       }
     },
+    "What you said you'd send, questions waiting on an answer, mail you owe a reply." : {
+      "comment" : "Follow-Through: under the mail switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det, du sagde, du ville sende, spørgsmål, der venter på svar, mails, du skylder et svar."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was du schicken wolltest, Fragen, die auf eine Antwort warten, E-Mails, auf die du noch antworten musst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que dijiste que enviarías, preguntas que esperan respuesta, correos que debes responder."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que vous avez dit que vous enverriez, les questions qui attendent une réponse, les e-mails auxquels vous devez répondre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciò che hai detto che avresti mandato, domande in attesa di risposta, email a cui devi rispondere."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送ると言ったもの、答えを待つ質問、返信すべきメール。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보내겠다고 한 것, 답을 기다리는 질문, 답장해야 할 메일."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det du sa du skulle sende, spørsmål som venter på svar, e-post du skylder svar på."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat je zei dat je zou sturen, vragen die op een antwoord wachten, mail waarop je nog moet antwoorden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To, co masz wysłać, pytania czekające na odpowiedź, maile, na które trzeba odpowiedzieć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que você disse que enviaria, perguntas esperando resposta, e-mails que você precisa responder."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "То, что вы обещали отправить, вопросы без ответа, письма, на которые вы должны ответить."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det du sa att du skulle skicka, frågor som väntar på svar, e-post du är skyldig ett svar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Göndereceğinizi söylediğiniz şeyler, yanıt bekleyen sorular, yanıt borçlu olduğunuz e-postalar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Те, що ви обіцяли надіслати, запитання без відповіді, листи, на які ви маєте відповісти."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你说过要发送的东西、等待答复的问题、该回复的邮件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你說過要寄出的東西、等待答覆的問題、你該回覆的郵件。"
+          }
+        }
+      }
+    },
     "What you say is heard on this iPhone and goes only to your agent, as a typed message does; the agent's answers go only to the reading voice." : {
       "localizations" : {
         "da" : {
@@ -527191,7 +529438,7 @@
       }
     },
     "with %@" : {
-      "comment" : "A list item's plan: who it's with, after its date (\"Thu, Nov 26, 7:30 PM · with Jess\")",
+      "comment" : "A list item's plan: who it's with, after its date (\"Thu, Nov 26, 7:30 PM · with Robin\")",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -540898,6 +543145,113 @@
         }
       }
     },
+    "Your Hermes can't say. Follow-Through takes the Redde plugin 1.39: update it in Settings › Redde Plugin." : {
+      "comment" : "Follow-Through: the plugin is too old",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kan ikke sige det. “Følg med” kræver Redde-plugin 1.39: opdater det i Indstillinger › Redde-plugin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes gibt keine Auskunft. Die Nachverfolgung braucht das Redde-Plugin 1.39: Aktualisiere es unter Einstellungen › Redde-Plugin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes no lo sabe decir. Pendientes necesita el plugin de Redde 1.39: actualízalo en Ajustes › Plugin de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes ne peut pas le dire. Le Suivi requiert le plugin Redde 1.39 : mettez-le à jour dans Réglages › Plugin Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo Hermes non sa dirlo. Monitoraggio richiede il plugin Redde 1.39: aggiornalo in Impostazioni › Plugin Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesから情報を取得できません。抜け漏れチェックにはReddeプラグイン1.39が必要です。設定 › Reddeプラグインで更新してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes가 알려 주지 못합니다. 끝까지 챙기기에는 Redde 플러그인 1.39가 필요합니다. 설정 › Redde 플러그인에서 업데이트하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kan ikke si det. «Følg med» krever Redde-tillegget 1.39: oppdater det i Innstillinger › Redde-tillegg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes kan het niet zeggen. Bijhouden vereist de Redde-plug-in 1.39: werk hem bij in Instellingen › Redde-plug-in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes nie potrafi tego powiedzieć. Dopilnowanie wymaga wtyczki Redde 1.39: zaktualizuj ją w Ustawienia › Wtyczka Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes não sabe dizer. Pendências requer o plugin do Redde 1.39: atualize-o em Ajustes › Plugin do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes не может ответить. Для функции «На контроле» нужен плагин Redde 1.39: обновите его в «Настройки» › «Плагин Redde»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kan inte säga det. ”Håll koll” kräver Redde-tillägget 1.39: uppdatera det i Inställningar › Redde-tillägg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'iniz söyleyemiyor. Sonuç Takibi için Redde Eklentisi 1.39 gerekir: Ayarlar › Redde Eklentisi'nden güncelleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes не може цього сказати. Для функції «На контролі» потрібен плагін Redde 1.39: оновіть його в Параметри › Плагін Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的Hermes无法提供信息。落实追踪需要Redde插件1.39：请在“设置 › Redde插件”中更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 無法提供資訊。落實追蹤需要 Redde 外掛 1.39：請在「設定 › Redde 外掛」中更新。"
+          }
+        }
+      }
+    },
     "Your Hermes can't say. Things to Keep in Mind takes the Redde plugin 1.36." : {
       "comment" : "Things to Keep in Mind: the list couldn't be read",
       "localizations" : {
@@ -545157,6 +547511,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的郵件只在你的 Hermes 和郵件供應商之間傳送。Redde 會在你打開收件匣時詢問你的 Hermes；不會經過 Redde 或任何其他人的伺服器。"
+          }
+        }
+      }
+    },
+    "your main agent" : {
+      "comment" : "Follow-Through: Jellyfin found in the main profile",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din hovedagent"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deinem Hauptagenten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tu agente principal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "votre agent principal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "il tuo agente principale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メインのエージェント"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주 에이전트"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hovedagenten din"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je hoofdagent"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój główny agent"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seu agente principal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ваш основной агент"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din huvudagent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ana ajanınız"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ваш основний агент"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的主智能体"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的主要代理"
           }
         }
       }

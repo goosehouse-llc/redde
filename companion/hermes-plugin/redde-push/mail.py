@@ -1458,6 +1458,12 @@ class Inbox:
         self._trim(kept)
         self.state.save_account(account.id, kept, since=before)
         self._rules(account, kept, new, texts)
+        try:
+            # Follow-through (1.39.0): promises, questions, replies owed, orders, returns, trials.
+            from . import followthrough
+            followthrough.after_sync(self, account, new, texts, now)
+        except Exception:
+            log.debug("redde-push: follow-through failed", exc_info=True)
         return new
 
     def _sync_imap(self, account: Account, box: Imap, kept: dict) -> list[dict]:

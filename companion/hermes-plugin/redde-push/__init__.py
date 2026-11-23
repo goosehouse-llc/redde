@@ -717,6 +717,10 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["lists"]:
         # The person's lists (lists.py): every one as JSON, and a change from the phone. The main home's.
         return lists.slash(calls.caller(_home())[1], words[1:])
+    if words[:1] == ["follow"]:
+        # Follow-through (followthrough.py, 1.39.0): what's being followed, its switches, drop one.
+        from . import followthrough
+        return followthrough.slash(calls.caller(_home())[1], words[1:])
     if words[:1] == ["memory"]:
         # An import's facts to long-term memory (longterm.py): which store, and a memory MCP server
         # written to with no model call.

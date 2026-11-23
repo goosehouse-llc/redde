@@ -47,6 +47,11 @@ struct YourDaySettings: View {
                 Label { Text("Things to Keep in Mind", comment: "Settings › Your Day: facts about the person that Heads-Ups and Morning Ideas check") } icon: { Image(systemName: "pin") }
             }
             .disabled(!canReachGateway)
+            NavigationLink { FollowThroughView() } label: {
+                Label { Text("Follow-Through", comment: "Settings › Your Day: what the agent follows up on from mail and watch lists") } icon: { Image(systemName: "arrow.triangle.2.circlepath") }
+            }
+            .disabled(!canReachGateway)
+            .accessibilityIdentifier("follow-through")
             // Location: a page of the first screen since 2026-11-15 (`LocationSettingsView`).
             #if os(iOS)
             if HealthDays.available {

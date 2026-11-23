@@ -14,7 +14,7 @@ agent or the person changes with 'style'. A watch list's films and series get th
 looked up as a show card's are (`posters.lookup`, no key), off the agent's turn: a thread fills
 them in and the phone shows them on its next look (`fill_posters`).
 
-Plans (1.38.0, asked 2026-11-23: "Donnie Brasco, Thanksgiving night, with Jess" sat in a note
+Plans (1.38.0, asked 2026-11-23: "Donnie Brasco, Thanksgiving night, with Robin" sat in a note
 file where nothing would ever look at it; "this is proactive in the sense of the example I gave
 before. We need more like this"): an item can be planned for a time, with someone. 'plan' keeps
 when and with whom on the item and sets two one-off jobs on the agent that planned it, as a

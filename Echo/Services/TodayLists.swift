@@ -22,12 +22,12 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
         var when: Date? = nil
         var company: String? = nil
 
-        /// "Thu, Nov 26, 7:30 PM · with Jess".
+        /// "Thu, Nov 26, 7:30 PM · with Robin".
         var plan: String? {
             guard let when else { return nil }
             let at = when.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
             guard let company, !company.isEmpty else { return at }
-            return at + " · " + String(localized: "with \(company)", comment: "A list item's plan: who it's with, after its date (\"Thu, Nov 26, 7:30 PM · with Jess\")")
+            return at + " · " + String(localized: "with \(company)", comment: "A list item's plan: who it's with, after its date (\"Thu, Nov 26, 7:30 PM · with Robin\")")
         }
 
         /// Its name without the year it was written with ("Home Alone (1990)").
@@ -455,7 +455,7 @@ final class TodayLists {
             ("Love Actually", 2003, false), ("Scrooged", 1988, true), ("The Polar Express", 2004, false)].enumerated().map { n, film in
                 .init(id: "f\(n)", text: film.0, done: film.2, poster: "https://demo.example/posters/\(film.0.lowercased().filter { $0.isLetter || $0 == " " }.replacingOccurrences(of: " ", with: "-")).jpg",
                       year: film.1, when: n == 0 ? Calendar.current.date(byAdding: .day, value: 3, to: Calendar.current.startOfDay(for: .now))?.addingTimeInterval(19.5 * 3600) : nil,
-                      company: n == 0 ? "Jess" : nil) }, kind: .watch, emoji: "🎄", hue: .red),
+                      company: n == 0 ? "Robin" : nil) }, kind: .watch, emoji: "🎄", hue: .red),
         TodayList(id: "groceries", title: "Groceries", items: [
             .init(id: "g1", text: "Oat milk", done: false), .init(id: "g2", text: "Eggs", done: true),
             .init(id: "g3", text: "Sourdough", done: false), .init(id: "g4", text: "Lemons", done: false),

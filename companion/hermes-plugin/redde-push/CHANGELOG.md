@@ -3,10 +3,32 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.39.0 (2026-11-23)
+
+- Follow-through (`followthrough.py`): what the person's mail says will happen is kept and checked
+  when it should have, with no model. Only what didn't happen comes back, as an idea card for the
+  main agent, in the day, a set an hour, at most eight a day.
+  - Promises in mail they sent ("I'll send the signed copy by Friday"): that afternoon, if nothing
+    has gone to that person since, a card offering to do it and draft the mail.
+  - Questions they sent: settled by an answer from that person; after four days, a card offering
+    a nudge.
+  - Replies owed: mail sorted Needs Reply, still in the inbox and unanswered after three days.
+  - Deliveries ("Arriving Thursday"): "Arriving today" that morning, settled by "Delivered" (which
+    also ticks off a gift on a gifts list the order names), a card offering a note to the shop
+    two days late. Return windows five days before they close; trials and renewals three days
+    before they charge.
+  - Each inbox look also reads the newest sent mail (IMAP's Sent folder, Gmail's in:sent), every
+    ten minutes at most, the first lines only.
+- Arrivals (`arrivals.py`): a title on a watch list that has just come into Jellyfin, and a
+  finished series' next season starting within a month (TVmaze). Jellyfin is found from
+  JELLYFIN_URL and JELLYFIN_API_KEY in any profile's .env.
+- `/redde-push follow list|set <mail|orders|arrivals> on|off|drop <id>`, for Redde's Settings › Your
+  Day › Follow-Through.
+
 ## 1.38.0 (2026-11-23)
 
 - Plans that happen: `redde_list` 'plan' keeps when and with whom on a list item ("Donnie Brasco,
-  Thanksgiving night, with Jess"), so it isn't left in a note nothing reads. The agent that planned
+  Thanksgiving night, with Robin"), so it isn't left in a note nothing reads. The agent that planned
   it gets two one-off jobs. On the day, a card reminds them. After it (the next morning for an
   evening plan), the agent finds out with its own tools whether it happened; for a film or a
   series, that's whether their media server shows it played, asking the bot that can reach it. If
@@ -15,7 +37,7 @@ Settings › Redde Plugin, to a Hermes whose plugin is older than the one the ap
 - Fixed: a tick from Redde could miss an item whose id came out all digits (about one in 43),
   read as an item's number instead. Ids are matched first, and new ones always have a letter.
 - A message that sounds like a plan for a set time ("watch Donnie Brasco on Thanksgiving with
-  Jess") reminds the agent to keep it as one.
+  Robin") reminds the agent to keep it as one.
 
 ## 1.37.1 (2026-11-23)
 

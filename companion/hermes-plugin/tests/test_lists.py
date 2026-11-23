@@ -196,7 +196,7 @@ class ListLooksTests(unittest.TestCase):
 
 
 class PlanTests(unittest.TestCase):
-    """1.38.0 (2026-11-23): "Donnie Brasco, Thanksgiving night, with Jess" kept where something
+    """1.38.0 (2026-11-23): "Donnie Brasco, Thanksgiving night, with Robin" kept where something
     looks at it: a card on the day, and a check after that it happened."""
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -217,23 +217,23 @@ class PlanTests(unittest.TestCase):
 
     def test_a_planned_film_is_reminded_on_the_day_and_checked_the_morning_after(self):
         lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
-        said = self.plan(items=["Donnie Brasco"], when="2026-11-26T19:30:00-05:00", **{"with": "Jess"})
+        said = self.plan(items=["Donnie Brasco"], when="2026-11-26T19:30:00-05:00", **{"with": "Robin"})
         self.assertEqual(said["planned"], "Donnie Brasco")
         self.assertIn("calendar", said["said"])
         (remind, at1, name1), (check, at2, _) = self.jobs
         self.assertEqual(at1, "2026-11-26T10:00-05:00")
         self.assertEqual(at2, "2026-11-27T10:00-05:00", "an evening plan: checked the next morning")
         self.assertTrue(name1.startswith("[redde-plan:"))
-        self.assertIn("7:30 PM: Donnie Brasco with Jess", remind)
+        self.assertIn("7:30 PM: Donnie Brasco with Robin", remind)
         self.assertIn("Get Donnie Brasco ready to play", remind)
         self.assertIn("shows it played", check)
         self.assertIn("@mention", check)
         self.assertIn("Did you watch Donnie Brasco?", check)
-        self.assertIn("find another night with Jess", check)
+        self.assertIn("find another night with Robin", check)
         item = lists.listing(self.home)[0]["items"][1]
-        self.assertEqual((item["when"], item["with"]), ("2026-11-26T19:30-05:00", "Jess"))
+        self.assertEqual((item["when"], item["with"]), ("2026-11-26T19:30-05:00", "Robin"))
         self.assertIn(item["id"], check, "the check ticks off this item")
-        self.assertIn("(planned 2026-11-26T19:30-05:00 with Jess)", said["items"][1])
+        self.assertIn("(planned 2026-11-26T19:30-05:00 with Robin)", said["items"][1])
 
     def test_planning_again_drops_the_old_jobs(self):
         lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
@@ -257,7 +257,7 @@ class PlanTests(unittest.TestCase):
         self.assertIn("one item", self.plan(items=["Elf", "Heat"], when="2026-11-26T19:30:00-05:00")["error"])
 
     def test_a_plan_in_a_message_is_noted(self):
-        self.assertIn("'plan'", lists.turn_note("We're going to watch Donnie Brasco on Thanksgiving with Jess"))
+        self.assertIn("'plan'", lists.turn_note("We're going to watch Donnie Brasco on Thanksgiving with Robin"))
         self.assertIn("'plan'", lists.turn_note("let's see Wicked friday night"))
         self.assertIsNone(lists.turn_note("I watched a film"))
 

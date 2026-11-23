@@ -1,8 +1,8 @@
-# Redde plugin 1.38.0 — GitHub release draft
+# Redde plugin 1.39.0 — GitHub release draft
 
-Title: **Redde plugin 1.38.0**. Tag: `redde-push-1.38.0`, on the commit that carries
-`version: 1.38.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
-`redde-push-1.31.0`; this one covers 1.31.1 to 1.38.0. The full list is in that folder's
+Title: **Redde plugin 1.39.0**. Tag: `redde-push-1.39.0`, on the commit that carries
+`version: 1.39.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
+`redde-push-1.31.0`; this one covers 1.31.1 to 1.39.0. The full list is in that folder's
 `CHANGELOG.md`. Publish it when Redde 2.7 is out. Everything below the line is the release's text.
 
 ---
@@ -33,6 +33,7 @@ and `hermes serve` afterwards.
   don't call your model.
 - **Fewer pings for what you ignore (1.36).** Ideas you leave alone three times come quietly until
   you touch one, and a watch that keeps finding nothing slows down, then pauses and tells you.
+- **Follow-through (1.39.0).** Promises in mail you sent, questions waiting on an answer, replies you owe, deliveries, return windows and trials are kept on your Hermes and checked when they should have happened; only what didn't comes back, as an idea card. A watch-list title new on Jellyfin, and a finished series' next season, come back too. Settings › Your Day › Follow-Through.
 - **Plans that happen (1.38.0).** Tell your agent you'll watch a film with someone on a given night and it goes on your list with the date. Redde reminds you on the day, and afterwards checks it happened: a film your media server shows as played is ticked off, and one that isn't comes back to find another night.
 - **Lists with a look (1.37.0).** Every list gets an emoji, a colour and a kind, from the agent or guessed from its title, and a list of films or series shows them as posters.
 - **Posters on show cards (1.36.2).** A film's or a series' poster is checked before the card shows, and one that's missing or goes nowhere is found on Wikipedia or TVmaze. A poster on your own Jellyfin or Plex server is kept too, and Redde shows it first (1.36.3).

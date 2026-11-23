@@ -582,6 +582,15 @@ class Routines:
             except Exception:
                 log.debug("redde-push: syncing email failed", exc_info=True)
             try:
+                # Follow-through's cards come due (followthrough.py), Jellyfin's arrivals (arrivals.py).
+                with self.store.rooms_lock("follow") as mine:
+                    if mine and self.store.devices:
+                        from . import arrivals, followthrough
+                        followthrough.due(self.stores.root, self._follow_offer, self._inbox_ids)
+                        arrivals.look(self.stores.root, self._follow_offer)
+            except Exception:
+                log.debug("redde-push: follow-through failed", exc_info=True)
+            try:
                 # Leave-By Alerts' traffic re-checks whose time has come (leave.py).
                 leave.send_due(self.store, self.send)
             except Exception:
@@ -600,6 +609,20 @@ class Routines:
             return False
         answer = ideas.offer(self.store, self.stores.root, "default", "Redde", [{"title": title, "why": why, "request": request}])
         return "sent" in answer
+
+    def _follow_offer(self, cards: list[dict]) -> bool:
+        """Follow-through's cards, to the main agent's ideas on every paired phone."""
+        from . import ideas
+        answer = ideas.offer(self.store, self.stores.root, "default", "Redde", cards)
+        return "sent" in answer
+
+    def _inbox_ids(self) -> set:
+        """Every message id in the inbox as last looked at, all accounts."""
+        from . import mail
+        state, ids = mail.State(self.stores.root), set()
+        for account in mail.accounts(self.stores.root):
+            ids |= set((state.account(account.id).get("messages") or {}).keys())
+        return ids
 
     def _mail_said(self, title: str, body: str, entry: str) -> None:
         """One of the person's email rules said to tell them: to every paired phone."""
