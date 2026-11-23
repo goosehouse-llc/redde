@@ -154,10 +154,10 @@ SCHEMA = {
                         },
                         "place": {"type": "string", "description": "weather and time: where, e.g. Lisbon, or Orlando, FL"},
                         "timezone": {"type": "string", "description": "time: an IANA zone, e.g. Europe/Lisbon, if you know it"},
-                        "units": {"type": "string", "enum": ["C", "F"], "description": "weather: if the person said"},
+                        "units": {"type": "string", "enum": ["C", "F"]},
                         "action": {"type": "string"},
                         "kind": {"type": "string", "enum": list(REVIEW_KINDS + REMINDER_KINDS)},
-                        "subtitle": {"type": "string", "description": "review, checklist: a line under the title"},
+                        "subtitle": {"type": "string"},
                         "verb": {"type": "string", "description": "checklist: an item done is, e.g. packed"},
                         "fields": {"type": "array", "items": {"type": "object", "properties": {
                             "label": {"type": "string"}, "value": {"type": "string"},
@@ -166,13 +166,16 @@ SCHEMA = {
                         "options": {"type": "array", "items": {"type": "object", "properties": {
                             "title": {"type": "string"}, "detail": {"type": "string"}, "image": {"type": "string"}}, "required": ["title"]}},
                         "multiple": {"type": "boolean"},
-                        "actions": {"type": "array", "items": {"type": "object"}},
+                        # (its fields spelled out: with a bare object Sol sent [] and [{}] three times, 2026-11-23)
+                        "actions": {"type": "array", "items": {"type": "object", "properties": {
+                            "title": {"type": "string"}, "why": {"type": "string"}, "when": {"type": "string"},
+                            "request": {"type": "string"}, "picked": {"type": "boolean"}}, "required": ["title", "request"]}},
                         # (no fields of its own: every kind has items. 2026-11-22 they were the checklist's {text,
                         # done, section, note}, and a model kept to them for a show card, {"text": "Donnie Brasco"},
                         # refused five times for want of a title)
                         "items": {"type": "array", "items": {"type": "object"}},
                         "emoji": {"type": "string"},
-                        "events": {"type": "array", "description": "agenda: events from your calendar tool", "items": {
+                        "events": {"type": "array", "items": {
                             "type": "object", "properties": {
                                 "title": {"type": "string"},
                                 "start": {"type": "string", "description": "2026-10-30T09:30:00-04:00, or 2026-10-30 for all day"},
@@ -180,12 +183,14 @@ SCHEMA = {
                                 "calendar": {"type": "string"}, "notes": {"type": "string"},
                                 "color": {"type": "string"}},
                             "required": ["title", "start"]}},
-                        "date": {"type": "string", "description": "agenda: the day asked about"},
-                        "dates": {"type": "array", "items": {"type": "string"}, "description": "agenda: days asked about"},
+                        "date": {"type": "string"},
+                        "dates": {"type": "array", "items": {"type": "string"}},
                         "note": {"type": "string"},
                         "devices": {"type": "array", "items": {"type": "object"}},
                         "games": {"type": "array", "items": {"type": "object"}},
-                        "rows": {"type": "array", "items": {"type": "object"}},
+                        "rows": {"type": "array", "items": {"type": "object", "properties": {
+                            "criterion": {"type": "string"}, "values": {"type": "array", "items": {"type": "string"}},
+                            "best": {"type": "integer"}}}},
                         "at": {"type": "string"},
                         "repeat": {"type": "string"},
                         "where": {"type": "string"},
@@ -232,9 +237,12 @@ def check(args) -> tuple[list[str], list[str]]:
     if isinstance(args, dict) and cards is None and args.get("type"):
         cards = [args]
     if not isinstance(cards, list) or not cards:
-        return [], ["give 'cards': a list of one to four cards"]
+        return [], [_unreadable(cards) or "give 'cards': a list of one to four cards"]
     shown, problems = [], []
     for n, card in enumerate(cards[:MAX_CARDS], 1):
+        if why := _unreadable(card):
+            problems.append(f"card {n}: {why}")
+            continue
         kind = str(card.get("type") or "").lower() if isinstance(card, dict) else ""
         if kind not in TYPES:
             problems.append(f"card {n}: 'type' must be one of {', '.join(TYPES)}")
@@ -723,6 +731,29 @@ def _decoded(value):
     return value
 
 
+def _unwrapped(cards: list) -> list:
+    """Cards written out as JSON text inside the list, decoded: Hermes hands on a 'cards' it was
+    sent as text it couldn't coerce as a list of that one string (Sol on Hermes 0.23, 2026-11-23)."""
+    out = []
+    for card in cards:
+        card = _decoded(card)
+        out.extend(card) if isinstance(card, list) else out.append(card)
+    return out
+
+
+def _unreadable(text) -> str | None:
+    """Why cards written out as JSON text can't be read, and where, for the model to mend them."""
+    if not isinstance(text, str) or text.strip()[:1] not in ("[", "{"):
+        return None
+    try:
+        json.loads(text)
+    except ValueError as error:
+        at = getattr(error, "pos", 0)
+        return (f"that's broken JSON ({getattr(error, 'msg', error)} at character {at}, near "
+                f"{text[max(0, at - 30):at + 10]!r}); send 'cards' as a real list of objects, not as text")
+    return None
+
+
 def unpacked(args):
     """The cards with their lists as lists. 2026-11-05: Sol sent a review's 'fields' as a JSON string;
     the check read its characters as labels and said it was shown, and the app, which wants a
@@ -741,7 +772,7 @@ def unpacked(args):
             c["type"] = "reminder"
         return c
     if isinstance(args.get("cards"), list):
-        args["cards"] = [card(c) for c in args["cards"]]
+        args["cards"] = [card(c) for c in _unwrapped(args["cards"])]
     elif args.get("type"):
         args = card(args)
     return args
@@ -852,7 +883,8 @@ def handle(args, home=None, session_id: str = "", **_) -> str:
     shown, problems = check(args)
     problems = missed + problems
     if not shown:
-        return json.dumps({"error": "Nothing could be shown: " + "; ".join(problems) + "."})
+        return json.dumps({"error": "Nothing could be shown: " + "; ".join(problems) + ". Mend it and send it again, "
+                                    "without mentioning this to them."})
     asks = [c for c in args["cards"][:MAX_CARDS] if isinstance(c, dict) and str(c.get("type") or "").lower() in ASKS]
     note = ("The cards are on the person's screen in Redde now. Answer in a sentence or two"
             + (" from what 'said' gives" if said else "") + "; don't read out what the cards already show.")
@@ -935,13 +967,43 @@ LEVEL_NOTES = {
 #: Plan For It (1.41.0, asked 2026-11-23: "tell it 'I'm doing something' and have it act on anything
 #: that may help ... the model prompts a few different actions it can take that are user
 #: selectable"): they say what they're about to do, in English, with when.
+_ERRAND = (r"(?:home|work|bed|sleep|school|class|church|town|lunch|dinner|breakfast|brunch|target|costco|walmart|kroger|publix|"
+           r"aldi|starbucks|whole foods|trader joe\S*|the\s+(?:store|gym|office|shop|bank|market|mall|grocery|couch|bathroom|"
+           r"doctor|dentist|vet|post office|movies)|my\s+(?:office|job|desk|room))\b")
+_A_WORD_OR_TWO = r"(?:[\w'’-]+\s+){0,2}?"
+#: Something that takes planning, not any verb with a day: tried on the real server 2026-11-23,
+#: "I'm running late today", "I'm having a bad day today" and "I'm going to sleep soon" all got a plan.
 _DOING = re.compile(
-    r"\b(?:i['’]?m|i am|we['’]?re|we are|i['’]?ll be|we['’]?ll be)\s+(?:about to\s+)?(?:going|driving|flying|heading|travel(?:l)?ing|"
-    r"taking|hosting|having|moving|starting|visiting|selling|buying|throwing|running|doing|off|leaving|getting married|"
-    r"interviewing|presenting|camping|hiking|celebrating|renovating|painting|launching)\b"
-    r"(?!\s+to\s+(?:be|do|try|send|write|call|email|text|ask|need|make|have|get|say|tell|look|check|see|think|go\s+to\s+bed)\b)",
-    re.IGNORECASE)
-_SOON = re.compile(r"\b(?:today|tonight|tomorrow|this (?:week|weekend|month|morning|afternoon|evening)|next (?:week|weekend|month|year|"
+    r"\b(?:i['’]?m|i am|we['’]?re|we are|i['’]?ll be|we['’]?ll be)\s+(?:about to\s+|also\s+|finally\s+)?(?:"
+    # A trip, somewhere that isn't the day's errand.
+    r"(?:driving|flying|travel(?:l)?ing|heading|off)\s+(?:(?:out|up|down|over|back)\s+)?to\s+(?!" + _ERRAND + r")\S"
+    r"|going\s+(?:(?:out|up|down|over|back)\s+)?to\s+(?!" + _ERRAND + r")(?-i:[A-Z])"
+    r"|going\s+(?:camping|hiking|skiing|fishing|backpacking|surfing|abroad|overseas|away|on\s+(?:a|an|our|my|the)\s+"
+    + _A_WORD_OR_TWO + r"(?:trip|vacation|holiday|cruise|honeymoon|retreat))\b"
+    r"|leaving\s+(?:for\s+(?!" + _ERRAND + r")\S|on\s+(?:a|an|our|my)\s+" + _A_WORD_OR_TWO + r"(?:trip|vacation|holiday|cruise)\b)"
+    r"|taking\s+(?:a|an|our|my|the)\s+" + _A_WORD_OR_TWO + r"(?:trip|vacation|holiday|cruise|flight|ferry)\b"
+    r"|taking\s+(?:the|my|our)\s+\w+\s+to\s+(?-i:[A-Z])"
+    r"|visiting\s+\S"
+    # A move.
+    r"|moving\s+(?:house\b|out\b|in\b|to\s+(?-i:[A-Z])|to\s+a\s|next\s+(?:week|weekend|month|year|\w+day)\b|"
+    r"this\s+(?:week|weekend|month|year|summer|spring|fall|winter)\b|on\s+\w+day\b|\w+day\b)"
+    # An occasion.
+    r"|(?:hosting|throwing)\s+(?!up\b|out\b|away\b|it\b|this\b)\S"
+    r"|getting\s+married\b|(?:interviewing|presenting|camping|hiking|skiing|backpacking|renovating)\b"
+    r"|(?:celebrating|launching)\s+\S|painting\s+(?:the|our|my)\s+(?!nails\b)\S"
+    r"|having\s+(?:a\s+baby|surgery|thanksgiving|christmas|easter|(?:\w+\s+){1,2}over\b|(?:a|an|our|my)\s+" + _A_WORD_OR_TWO
+    + r"(?:party|wedding|shower|reunion|barbecue|bbq|cookout|housewarming|procedure|operation|open house|yard sale|garage sale)\b)"
+    r"|starting\s+(?:school|college|(?:a|my|our)\s+(?:new\s+)?(?:job|school|college|business|company|semester|renovation)\b)"
+    r"|running\s+(?:a|an|the|my)\s+" + _A_WORD_OR_TWO + r"(?:marathon|race|half|5k|10k|ultra|triathlon|workshop|conference)\b"
+    r"|doing\s+(?:a|an|the|our|my)\s+" + _A_WORD_OR_TWO
+    + r"(?:marathon|road trip|trip|triathlon|renovation|move|wedding|talk|presentation|demo|open house|yard sale|garage sale|party)\b"
+    r"|(?:selling|buying)\s+(?:a|an|the|our|my)\s+(?:new\s+|used\s+)?(?:house|home|car|condo|apartment|truck|boat|business)\b"
+    r")", re.IGNORECASE)
+#: Told what they're doing and asked for one thing ("...Friday, find me a hotel"): that thing, not a plan.
+_ASKS_FOR = re.compile(r"\b(?:can|could|would|will) you\b|\bplease\b|(?:^|[.!;:,]\s*|\b(?:and|so|then)\s+)(?:find|book|remind|look up|"
+                       r"search|add|send|tell|show|get|set|schedule|order|draft|write|call|text|email|make|give|check|put|cancel|"
+                       r"compare|buy|reserve)\b", re.IGNORECASE)
+_SOON = re.compile(r"\b(?:today|tonight|tomorrow|this (?:week|weekend|month|morning|afternoon|evening|spring|summer|fall|autumn|winter|year)|in (?:january|february|march|april|june|july|august|september|october|november|december)\b|next (?:week|weekend|month|year|"
                    r"mon|tue|wed|thu|fri|sat|sun)\w*|on (?:mon|tue|wed|thu|fri|sat|sun)\w*|(?:mon|tues|wednes|thurs|fri|satur|sun)day|"
                    r"in (?:a|an|\d+|two|three|a few) (?:days?|weeks?|months?)|soon|about to|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|"
                    r"nov|dec)[a-z]*\.? \d{1,2}\b|\d{1,2}(?:st|nd|rd|th)\b|for (?:the )?(?:holidays|christmas|thanksgiving|new year))",
@@ -950,7 +1012,8 @@ PLAN_NOTE = (f"[Redde: they told you what they're about to do. Show a 'plan' car
              "doing and when (e.g. Driving to Montreal · Friday), and 3 to 6 'actions' you could take for it with your tools "
              "(look something up it needs, a check before it, a reminder or schedule, a list, a calendar event, a message "
              "drafted), each {title, why (a few words), when: 'now' or ISO with offset for later, request: what you'd do, as "
-             "they'd ask it, picked: true on the ones they'd surely want}. Then a line, and stop: they pick.]")
+             "they'd ask it, picked: true on the ones they'd surely want}. 'cards' is a real list, not text. Say nothing before "
+             "the card; after it a line, and stop: they pick.]")
 PLAN_ANSWER_NOTE = ("[Redde: they picked from the plan. Do the 'now' ones now, one at a time, with your tools (a review card "
                     "first for anything you'd send, book or buy). The 'later' ones Redde keeps: each comes back to them as a "
                     "card at its time, so don't schedule them yourself. Then say in a line what you did.]")
@@ -1382,7 +1445,8 @@ def _turn_note(home: Path, message, platform: str = "", at: datetime | None = No
         return alone
     # Told what they're about to do, and not asking anything ("I'm flying to Lisbon on Dec 18" is no
     # flight's status): a plan (1.41.0).
-    if "[Redde card " not in text and "?" not in text and _DOING.search(text) and _SOON.search(text) and not _ASKS_LIST.search(text):
+    if "[Redde card " not in text and "?" not in text and _DOING.search(text) and _SOON.search(text) \
+            and not _ASKS_LIST.search(text) and not _ASKS_FOR.search(text):
         return PLAN_NOTE
     # A card's answer is the go-ahead itself, not a new ask.
     calendar_asked = bool(_ASKS_CALENDAR.search(text)) and not _PUTS_ON_CALENDAR.search(text)

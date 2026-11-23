@@ -905,14 +905,18 @@ def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
     with _locked(home):
         data = load(home)
         sent = [t for t in data.get("offered") or [] if now - t < 86400]
-        if len(sent) >= DAILY:
+        # (a plan's pick is theirs, for the time they chose: the day's limit is for what's suggested)
+        if len(sent) >= DAILY and not any(i["kind"] == "planned" and i.get("state") == "open" and float(i.get("due") or 0) <= now
+                                          for i in data["items"].values()):
             return 0
         hourly = day_time and not (sent and now - max(sent) < GAP)
         room = min(AT_ONCE, DAILY - len(sent))
         switches, cards, picked = data["switches"], [], []
         ids = None
-        for item in sorted(data["items"].values(), key=lambda i: i.get("due") or 0):
-            if item.get("state") != "open" or len(cards) >= room:
+        for item in sorted(data["items"].values(), key=lambda i: (i["kind"] != "planned", i.get("due") or 0)):
+            if item.get("state") != "open" or len(cards) >= AT_ONCE:
+                continue
+            if item["kind"] != "planned" and sum(i["kind"] != "planned" for i, _ in picked) >= room:
                 continue
             if not switches.get(GROUPS.get(item["kind"], "mail"), True):
                 continue
@@ -952,7 +956,7 @@ def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
             cards.append(made)
             picked.append((item, "due"))
         if cards and offer(cards):
-            data["offered"] = sent + [now] * len(cards)
+            data["offered"] = sent + [now] * sum(i["kind"] != "planned" for i, _ in picked)
             for item, how in picked:
                 if how == "today":
                     item["today_said"] = now

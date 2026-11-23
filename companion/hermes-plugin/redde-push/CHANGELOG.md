@@ -20,8 +20,16 @@ Settings › Redde Plugin, to a Hermes whose plugin is older than the one the ap
   session id: the model was being asked to write them.
 - A curly apostrophe, as an iPhone's keyboard and Mail write it ("We’re", "I’ll"), is heard like a
   straight one: plans, promises in mail, loose ends, goals and things to remember missed it.
+- A plan is offered for what takes planning (a trip, a move, an occasion), not for any verb with a
+  day ("I'm running late today"), and not when the message asks for one thing ("…find me a hotel").
+- The show tool spells out a plan action's fields: with a bare object, a model sent empty actions
+  until it had been refused three times.
+- Cards a model writes out as JSON text are read, also when Hermes passes them on as a list of that
+  text; broken JSON is refused as such, with where, not as a wrong card type.
 - A schedule made and run within the same half minute tells the phone: the loop took any job it
   hadn't seen yet for an old one, so that first run said nothing (intermittent in the lab).
+- A plan's later pick comes back at its time on a day that's used up its 8 suggestions, and doesn't
+  count toward them. A compare card's rows are spelled out in the tool, as a plan's actions are.
 
 ## 1.40.0 (2026-11-23)
 
