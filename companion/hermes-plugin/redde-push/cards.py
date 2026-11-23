@@ -121,7 +121,7 @@ SCHEMA = {
         "Up to 4 cards. Then answer in a sentence or two; don't read the cards out. "
         "Cards they answer with a tap: before you send, buy, book or change anything for them, a 'review' ('fields' "
         "they can edit, 'action' the button, e.g. Send), then stop and act only on their answer; 'choice' ('options'), "
-        "'checklist' ('items', each with a 'section' and a short 'note'; an 'emoji'), 'form' ('fields', each with a "
+        "'checklist' ('items', each {text, section, a short note}; an 'emoji'), 'form' ('fields', each with a "
         "'kind'). Their answer is their next message. "
         "'agenda': events by day ('events' as your calendar tool gave them: 'title', 'start' as ISO with "
         "offset or a date for all day, 'end', 'location', 'calendar', 'color'; 'date' or 'dates' asked about, so a free day "
@@ -161,9 +161,10 @@ SCHEMA = {
                         "options": {"type": "array", "items": {"type": "object", "properties": {
                             "title": {"type": "string"}, "detail": {"type": "string"}, "image": {"type": "string"}}, "required": ["title"]}},
                         "multiple": {"type": "boolean"},
-                        "items": {"type": "array", "items": {"type": "object", "properties": {
-                            "text": {"type": "string"}, "done": {"type": "boolean"}, "section": {"type": "string"},
-                            "note": {"type": "string", "description": "e.g. ×2"}}}},
+                        # (no fields of its own: every kind has items. 2026-11-22 they were the checklist's {text,
+                        # done, section, note}, and a model kept to them for a show card, {"text": "Donnie Brasco"},
+                        # refused five times for want of a title)
+                        "items": {"type": "array", "items": {"type": "object"}},
                         "emoji": {"type": "string"},
                         "events": {"type": "array", "description": "agenda: events from your calendar tool", "items": {
                             "type": "object", "properties": {

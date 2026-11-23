@@ -388,7 +388,8 @@ class AnswerCardTests(unittest.TestCase):
         self.assertEqual(props["kind"]["enum"], list(cards.REVIEW_KINDS + cards.REMINDER_KINDS), "a review's kinds, and from 1.12.0 a reminder's")
         self.assertIn("subtitle", props)
         self.assertIn("verb", props)
-        self.assertIn("note", props["items"]["items"]["properties"])
+        self.assertNotIn("properties", props["items"]["items"], "items take each kind's own fields, a show's title too")
+        self.assertIn("each {text, section, a short note}", cards.SCHEMA["description"], "the checklist's are said in words")
 
 
 class ReviewNoteTests(unittest.TestCase):

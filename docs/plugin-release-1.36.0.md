@@ -58,6 +58,7 @@ and `hermes serve` afterwards.
 
 ## Fixes
 
+- Film and series cards are drawn again with models that keep to the tool's schema (they had written only `text` for each title, and the card was refused) (1.36).
 - A schedule whose run failed no longer sends its error to your phone unless the schedule asks
   for its failures to be told (1.31.1, GitHub issue 79).
 - Hermes's install scan rates the plugin safe again on 0.22.7, 0.23.1 and 0.23.2 (1.33.0).
