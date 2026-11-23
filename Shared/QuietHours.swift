@@ -133,9 +133,15 @@ nonisolated struct HeldNote: Codable, Equatable, Sendable {
                                          trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)))
     }
 
-    /// Seen already: Redde opened in the quiet, or after it.
-    static func seen(center: UNUserNotificationCenter = .current(), in defaults: UserDefaults? = NeedsYou.shared) {
+    /// Seen already: Redde opened in the quiet, or after it. The digest is taken off away from the
+    /// main thread: `removePendingNotificationRequests` waits for the notification service's reply,
+    /// and a service that doesn't answer held Redde's main thread for good as it came forward
+    /// (2026-11-22, the 13" iPad simulator: every UI query timed out on a frozen app).
+    static func seen(in defaults: UserDefaults? = NeedsYou.shared) {
         clear(in: defaults)
-        center.removePendingNotificationRequests(withIdentifiers: [digestID])
+        let id = digestID
+        DispatchQueue.global(qos: .utility).async {
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        }
     }
 }
