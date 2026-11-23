@@ -201,3 +201,48 @@ struct GoalsTests {
         #expect(!Goals.ask(goal: "Learn Spanish!", by: nil, schedule: .daily).contains("By "))
     }
 }
+
+/// The goal's page as one plan (2026-11-22, "still not sure what to do with this goal screen":
+/// a ring saying 1/7 over ten cards, eight struck through, the Blocked two last with no reason).
+struct GoalPlanTests {
+    private func card(_ id: String, _ status: String, _ at: Double = 0) -> KanbanTask {
+        KanbanTask(.object(["id": .string(id), "title": .string("Card \(id)"), "status": .string(status),
+                            "tenant": .string("redde-goal-g"), "created_at": .number(at)]))!
+    }
+
+    @Test func thePlanIsTheStepsInOrderAndTheRingCountsThem() {
+        let steps: [GoalReport.Step] = [
+            .init(title: "Research yeast", cardID: "a", done: false, who: "agent"),
+            .init(title: "Buy bottles", done: true, who: "you"),
+            .init(title: "Bottle it", done: false, who: "you"),
+            .init(title: "Plan bottling", cardID: "b", done: false, who: "agent"),
+        ]
+        let cards = [card("a", "blocked", 1), card("b", "done", 2), card("rem", "done", 3), card("log", "done", 4),
+                     card("ask", "review", 5), card("todo", "ready", 6)]
+        let plan = GoalPlan(steps: steps, cards: cards)
+        #expect(plan.isPlan)
+        #expect(plan.waiting.map(\.id) == ["step-0", "ask"], "what waits on them, the plan's and the agent's own")
+        #expect(plan.open.map(\.title) == ["Bottle it"])
+        #expect(plan.done.map(\.title) == ["Buy bottles", "Plan bottling"], "a card done counts its step done")
+        #expect(plan.extra.map(\.id) == ["todo", "rem", "log"], "the agent's own cards, open first, apart from the plan")
+        #expect(plan.count?.done == 2 && plan.count?.total == 4, "the ring counts the plan, not the cards")
+        #expect(plan.waiting.first?.step == 0 && plan.open.first?.step == 2, "rows keep their place in the steps for ticking")
+    }
+
+    @Test func withNoStepsTheCardsAreTheAgentsTasksAndTheRingIsLeftToTheCheckIn() {
+        let plan = GoalPlan(steps: nil, cards: [card("x", "done", 2), card("y", "blocked", 1), card("z", "running", 3)])
+        #expect(!plan.isPlan)
+        #expect(plan.count == nil)
+        #expect(plan.waiting.map(\.id) == ["y"])
+        #expect(plan.open.map(\.id) == ["z"])
+        #expect(plan.done.map(\.id) == ["x"])
+    }
+
+    @Test func overTheAPIWithNoBoardTheStepsStandAsReported() {
+        let plan = GoalPlan(steps: [.init(title: "Agent's", cardID: "a", done: true, who: "agent"),
+                                    .init(title: "Theirs", done: false, who: "you")], cards: nil)
+        #expect(plan.done.map(\.title) == ["Agent's"])
+        #expect(plan.open.map(\.title) == ["Theirs"])
+        #expect(plan.waiting.isEmpty && plan.extra.isEmpty)
+    }
+}

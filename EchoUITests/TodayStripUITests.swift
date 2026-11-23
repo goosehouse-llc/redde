@@ -9,10 +9,10 @@ final class TodayStripUITests: XCTestCase {
         app.launchArguments = ["-echo.demo", "-echo.demoGoals", "-echo.demoBriefings", "day", "-echo.drawerPage", "today"]
             + XCUIApplication.straightToChat
         app.launch()
-        let chat = app.scrollViews.firstMatch
-        XCTAssertTrue(chat.waitForExistence(timeout: 15))
-        chat.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
-            .press(forDuration: 0.05, thenDragTo: chat.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        // (the chat's own scroll view isn't always one XCTest finds, 2026-11-22: the composer instead)
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
         return app
     }
 
@@ -43,13 +43,23 @@ final class TodayStripUITests: XCTestCase {
         done.tap()
         XCTAssertTrue(tile(app, "Taper week").waitForExistence(timeout: 5), "Done didn't move the tile on to the next step")
         goal.tap()
-        XCTAssertTrue(app.staticTexts["Your Steps"].waitForExistence(timeout: 5), "No checklist on the goal")
-        XCTAssertTrue(app.staticTexts["Sol's Steps"].exists, "The agent's steps aren't apart")
+        // (2026-11-22, "still not sure what to do with this goal screen": what waits on them first,
+        // with why; the plan in its order; finished steps and the agent's own cards folded away.)
+        XCTAssertTrue(app.staticTexts["Needs You"].waitForExistence(timeout: 5), "What waits on them isn't first")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Which pace'")).firstMatch.exists, "A blocked step doesn't say why")
+        XCTAssertTrue(app.buttons["Answer"].exists && app.buttons["Go Ahead"].exists, "A blocked step's buttons don't say what they do")
+        XCTAssertTrue(app.staticTexts["Plan"].exists, "The plan isn't one list")
+        XCTAssertTrue(app.buttons["goal-own-tasks"].exists, "The agent's own cards aren't folded away")
         XCTAssertFalse(app.buttons["Approve All"].exists, "The plan is approved in the chat, not again here")
-        XCTAssertEqual(app.buttons["goal-step-5"].value as? String, "Done", "The tile's tick isn't on the goal's page")
-        app.buttons["goal-step-6"].tap()
+        XCTAssertFalse(app.buttons["goal-step-5"].exists, "A finished step isn't folded away")
+        app.buttons["goal-step-6"].tap()   // Taper week, in the plan
         XCTAssertTrue(app.staticTexts["5/7"].waitForExistence(timeout: 5), "The count didn't follow the tick")
-        app.buttons["goal-step-6"].tap()
+        app.buttons["goal-done-steps"].tap()
+        app.swipeUp()   // (the finished steps open beneath, below the screen's edge)
+        XCTAssertEqual(app.buttons["goal-step-5"].waitForExistence(timeout: 3) ? app.buttons["goal-step-5"].value as? String : nil, "Done",
+                       "The tile's tick isn't on the goal's page")
+        app.buttons["goal-step-6"].tap()   // now among the finished ones: the tick taken back
+        app.swipeDown()
         XCTAssertTrue(app.staticTexts["4/7"].waitForExistence(timeout: 5), "A tick couldn't be taken back")
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "goal-steps"
@@ -65,10 +75,10 @@ final class TodayStripUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demo", "-echo.demoIdeas", "-echo.drawerPage", "today"] + XCUIApplication.straightToChat
         app.launch()
-        let chat = app.scrollViews.firstMatch
-        XCTAssertTrue(chat.waitForExistence(timeout: 15))
-        chat.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
-            .press(forDuration: 0.05, thenDragTo: chat.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        // (the chat's own scroll view isn't always one XCTest finds, 2026-11-22: the composer instead)
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
         let card = app.staticTexts["Book the vet for Pickles"].firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No idea card")
         card.tap()
@@ -98,10 +108,10 @@ final class TodayStripUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demo", "-echo.demoLists", "-echo.drawerPage", "today"] + XCUIApplication.straightToChat
         app.launch()
-        let chat = app.scrollViews.firstMatch
-        XCTAssertTrue(chat.waitForExistence(timeout: 15))
-        chat.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
-            .press(forDuration: 0.05, thenDragTo: chat.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        // (the chat's own scroll view isn't always one XCTest finds, 2026-11-22: the composer instead)
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
         let groceries = tile(app, "Groceries")
         XCTAssertTrue(groceries.waitForExistence(timeout: 5), "No list tile")
         reach(app, groceries)
@@ -134,7 +144,7 @@ final class TodayStripUITests: XCTestCase {
         XCTAssertTrue(goal.waitForExistence(timeout: 5), "No goal tile")
         reach(app, goal)
         goal.tap()
-        XCTAssertTrue(app.staticTexts["Last Check-in"].waitForExistence(timeout: 5), "The goal didn't open")
+        XCTAssertTrue(app.staticTexts["Plan"].waitForExistence(timeout: 5), "The goal didn't open")
     }
 
     func testABriefingTileOpensTheBriefing() {
@@ -264,10 +274,10 @@ final class TodayStripUITests: XCTestCase {
         app.launchArguments = ["-echo.demo", "-echo.demoGoals", "-echo.demoBriefings", "day", "-echo.demoUpNext", "-todayTileOrder", "()"]
             + XCUIApplication.straightToChat
         app.launch()
-        let chat = app.scrollViews.firstMatch
-        XCTAssertTrue(chat.waitForExistence(timeout: 15))
-        chat.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
-            .press(forDuration: 0.05, thenDragTo: chat.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        // (the chat's own scroll view isn't always one XCTest finds, 2026-11-22: the composer instead)
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
         let lunch = tile(app, "Lunch with Ana")
         guard lunch.waitForExistence(timeout: 10) else {
             throw XCTSkip("No calendar access in this simulator (simctl privacy <sim> grant calendar com.goosehouse.echo)")

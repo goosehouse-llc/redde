@@ -295,3 +295,70 @@ struct GoalChatRequest: Equatable {
     var message: String
     var issuedAt: Date
 }
+
+/// A goal's page read as one plan (2026-11-22, his "still not sure what to do with this goal
+/// screen": a ring saying 1/7 over ten cards, eight struck through, the two Blocked ones at the
+/// bottom with Unblock and no reason). The plan is the goal's own steps, in their order, and the
+/// ring counts those; what waits on the person comes first, whichever card it is; finished steps
+/// and the cards the agent made for itself (a reminder, a reading logged) fold away.
+///
+/// With no steps from the plugin (an older one, or a goal set up before steps were kept) the
+/// agent's cards are listed as its tasks, and the ring stays the check-in's own count: a card done
+/// says the agent finished its part, not that the goal moved.
+nonisolated struct GoalPlan: Equatable {
+    nonisolated struct Row: Equatable, Identifiable {
+        var id: String
+        var title: String
+        /// Where it is in the goal's steps (for ticking off), nil for a card outside them.
+        var step: Int?
+        var yours: Bool
+        var done: Bool
+        var card: KanbanTask?
+    }
+
+    /// Cards that can't go on without the person: Blocked, Review, Triage.
+    var waiting: [Row] = []
+    /// The plan's steps still to do, in its order (or, with no plan, the agent's open cards).
+    var open: [Row] = []
+    var done: [Row] = []
+    /// The agent's own cards for the goal that aren't steps of the plan and don't wait on anyone.
+    var extra: [Row] = []
+    /// Whether these are the plan's steps (and the ring counts them) or only the agent's cards.
+    var isPlan = false
+
+    static let waits: Set<String> = ["blocked", "review", "triage"]
+
+    init(steps: [GoalReport.Step]?, cards: [KanbanTask]?) {
+        let cards = cards ?? []
+        let byID = Dictionary(cards.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        guard let steps, !steps.isEmpty else {
+            for card in cards.sorted(by: { ($0.createdAt ?? .distantPast) < ($1.createdAt ?? .distantPast) }) {
+                let row = Row(id: card.id, title: card.title, yours: false, done: card.status == "done", card: card)
+                if Self.waits.contains(card.status) { waiting.append(row) } else if row.done { done.append(row) } else { open.append(row) }
+            }
+            return
+        }
+        isPlan = true
+        var linked = Set<String>()
+        for (index, step) in steps.enumerated() {
+            let card = step.isYours ? nil : step.cardID.flatMap { byID[$0] }
+            if let id = step.cardID { linked.insert(id) }
+            let row = Row(id: "step-\(index)", title: step.title, step: index, yours: step.isYours,
+                          done: card.map { $0.status == "done" } ?? step.done, card: card)
+            if let card, Self.waits.contains(card.status) { waiting.append(row) } else if row.done { done.append(row) } else { open.append(row) }
+        }
+        let others = cards.filter { !linked.contains($0.id) }
+            .sorted { ($0.status == "done" ? 1 : 0, $0.createdAt ?? .distantPast) < ($1.status == "done" ? 1 : 0, $1.createdAt ?? .distantPast) }
+        for card in others {
+            let row = Row(id: card.id, title: card.title, yours: false, done: card.status == "done", card: card)
+            if Self.waits.contains(card.status) { waiting.append(row) } else { extra.append(row) }
+        }
+    }
+
+    /// The plan's steps done, of all of them; nil when there's no plan to count.
+    var count: (done: Int, total: Int)? {
+        guard isPlan else { return nil }
+        let steps = (waiting + open + done).filter { $0.step != nil }
+        return (steps.filter(\.done).count, steps.count)
+    }
+}
