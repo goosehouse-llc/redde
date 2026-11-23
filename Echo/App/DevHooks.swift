@@ -14,7 +14,7 @@ import WidgetKit
 /// Launch arguments (`xcrun simctl launch <device> com.goosehouse.echo <flags>`):
 /// - `-echo.demo`: seed the demo conversation. `-echo.demoShort` keeps its first exchange,
 ///   `-echo.demoTwo` its first two (ending on the checklist and table), `-echo.demoLong` seeds a
-///   transcript many screens long, `-echo.demoLibrary` adds a few local conversations
+///   transcript many screens long, `-echo.demoLongTurn` a reply of 32 tool calls, `-echo.demoLibrary` adds a few local conversations
 ///   (`-echo.demoSaved`: the same as copies of conversations on the active Hermes server).
 ///   `-echo.demoStream [seconds]` plays the first exchange live, thinking and all (the promo
 ///   video); with a number, from an empty conversation, the question sent after that long.
@@ -270,6 +270,7 @@ enum DevHooks {
             BotDirectory.shared.set(ConversationsList.demoBots, key: "\(home.uuidString)|")
         }
         if has("-echo.demoLong") { conversation.seedLongDemo() }
+        if has("-echo.demoLongTurn") { conversation.seedLongTurnDemo() }
         if has("-echo.demoTodos") { conversation.seedTodoDemo() }
         if has("-echo.demoPhoneShot") { conversation.seedPhoneShotDemo() }
         if has("-echo.demoPhone") {

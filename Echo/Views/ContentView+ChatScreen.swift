@@ -55,6 +55,8 @@ extension ContentView {
                     #endif
                     // Solid themes have no glass field to hide the transcript scrolling past the composer.
                     .background(theme.usesGlass ? AnyShapeStyle(.clear) : AnyShapeStyle(theme.pageColor))
+                    // On glass, a reply scrolled away ran on behind the field and below it (Reddit, 2026-11-23).
+                    .background { if theme.usesGlass { ComposerFade(color: theme.pageColor) } }
             }
             // Pictures, files, links and text dropped anywhere on the chat go to the composer.
             .chatDropTarget(draft: $draft, attachments: $pendingAttachments) { composerFocused = true }
@@ -385,5 +387,20 @@ private struct WorkerRunNote: View {
             .padding(.horizontal, 16).padding(.vertical, 12)
             .background(.regularMaterial, in: .rect(cornerRadius: 18))
             .padding(.horizontal, 12).padding(.bottom, 8)
+    }
+}
+
+/// Behind the composer on a glass theme: the transcript fades into the page as it reaches the field.
+private struct ComposerFade: View {
+    let color: Color
+
+    var body: some View {
+        LinearGradient(stops: [.init(color: color.opacity(0), location: 0), .init(color: color.opacity(0.9), location: 0.3),
+                               .init(color: color, location: 0.55)],
+                       startPoint: .top, endPoint: .bottom)
+            .padding(.top, -24)
+            .ignoresSafeArea(edges: .bottom)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }

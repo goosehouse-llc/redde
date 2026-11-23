@@ -8,6 +8,30 @@ struct AssistantTurnActivityTests {
         ToolActivity(name: name, status: .completed)
     }
 
+    /// Their spacing added up to half a screen of nothing above "Used 47 tools" (Reddit, 2026-11-23).
+    @MainActor @Test func onlyARowWithNothingOfItsOwnLeavesTheTranscript() throws {
+        let question = Message(role: .user, text: "Find the answer.")
+        var first = Message(role: .assistant, text: "")
+        first.tools = [tool("web_search")]
+        var blank = Message(role: .assistant, text: "")
+        blank.reasoning = "Next."
+        blank.tools = [tool("read_file")]
+        var said = Message(role: .assistant, text: "Let me check that.")
+        said.tools = [tool("read_file")]
+        var handed = Message(role: .assistant, text: "")
+        handed.tools = [tool("message_agent")]
+        let answer = Message(role: .assistant, text: "Here is the answer.")
+
+        let layout = AssistantTurnActivity.layout([question, first, blank, said, handed, answer])
+        #expect(!MessageRow.isOnlyInTheFold(question, turn: layout[question.id], isLive: false))
+        #expect(!MessageRow.isOnlyInTheFold(first, turn: layout[first.id], isLive: false), "it carries the agent's name")
+        #expect(MessageRow.isOnlyInTheFold(blank, turn: layout[blank.id], isLive: false))
+        #expect(!MessageRow.isOnlyInTheFold(blank, turn: layout[blank.id], isLive: true), "the row being written")
+        #expect(!MessageRow.isOnlyInTheFold(said, turn: layout[said.id], isLive: false), "its words show in the chat")
+        #expect(!MessageRow.isOnlyInTheFold(handed, turn: layout[handed.id], isLive: false), "it shows who took the work")
+        #expect(!MessageRow.isOnlyInTheFold(answer, turn: layout[answer.id], isLive: false))
+    }
+
     @Test func repeatedAssistantMessagesShareOneActivityDisclosure() throws {
         let question = Message(role: .user, text: "Find the answer.")
         var first = Message(role: .assistant, text: "")

@@ -550,30 +550,32 @@ struct TranscriptView: View {
         let live = conversation.isStreaming && message.id == conversation.messages.last?.id
         let reading = readingID == message.id && voiceSession.phase == .speaking
         let final = turn?.isFinal != false
-        MessageRow(message: message, isLive: live,
-                   onRegenerate: message.role == .assistant && final && !conversation.isStreaming
-                       ? { @MainActor @Sendable in Task { await conversation.regenerate(replyID: message.id) } } : nil,
-                   onEdit: message.role == .user && !message.isSteer && !conversation.isStreaming
-                       ? { @MainActor @Sendable in onEdit(message) } : nil,
-                   onReadAloud: message.role == .assistant && final
-                       ? { @MainActor @Sendable in readAloud(message) } : nil,
-                   onLoadToolDetails: turn?.isGrouped == true ? nil : toolDetailsLoader(for: message, canLoad: canLoadTools),
-                   onLoadTurnToolDetails: turnToolDetailsLoader(for: turn, canLoad: canLoadTools),
-                   turn: turn,
-                   isReading: reading,
-                   showActions: final,
-                   highlight: highlight(for: message.id))
-            .equatable()
-            // Consecutive reply rows read as one turn instead of a stack of separate bubbles.
-            .padding(.top, turn?.isContinuation == true ? -10 : 0)
-            // Its time, seen with a swipe left (`swipeForTimes`).
-            .overlay(alignment: .topTrailing) {
-                if message.role != .assistant || final { MessageTime(date: message.createdAt) }
-            }
-            // Just sent: it rises out of the composer (and the reply's row waits a beat for it).
-            .modifier(MessageArrival(kind: MessageArrival.kind(for: message, isLive: live), leading: theme.promptPrefix != nil))
-            .siriMessage(conversationID: conversation.id, messageID: message.id)
-            .id(message.id)
+        if !MessageRow.isOnlyInTheFold(message, turn: turn, isLive: live) {
+            MessageRow(message: message, isLive: live,
+                       onRegenerate: message.role == .assistant && final && !conversation.isStreaming
+                           ? { @MainActor @Sendable in Task { await conversation.regenerate(replyID: message.id) } } : nil,
+                       onEdit: message.role == .user && !message.isSteer && !conversation.isStreaming
+                           ? { @MainActor @Sendable in onEdit(message) } : nil,
+                       onReadAloud: message.role == .assistant && final
+                           ? { @MainActor @Sendable in readAloud(message) } : nil,
+                       onLoadToolDetails: turn?.isGrouped == true ? nil : toolDetailsLoader(for: message, canLoad: canLoadTools),
+                       onLoadTurnToolDetails: turnToolDetailsLoader(for: turn, canLoad: canLoadTools),
+                       turn: turn,
+                       isReading: reading,
+                       showActions: final,
+                       highlight: highlight(for: message.id))
+                .equatable()
+                // Consecutive reply rows read as one turn instead of a stack of separate bubbles.
+                .padding(.top, turn?.isContinuation == true ? -10 : 0)
+                // Its time, seen with a swipe left (`swipeForTimes`).
+                .overlay(alignment: .topTrailing) {
+                    if message.role != .assistant || final { MessageTime(date: message.createdAt) }
+                }
+                // Just sent: it rises out of the composer (and the reply's row waits a beat for it).
+                .modifier(MessageArrival(kind: MessageArrival.kind(for: message, isLive: live), leading: theme.promptPrefix != nil))
+                .siriMessage(conversationID: conversation.id, messageID: message.id)
+                .id(message.id)
+        }
     }
 
     /// The speaker button: read this reply, or stop if it's the one being read.

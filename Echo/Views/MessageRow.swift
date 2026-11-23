@@ -129,6 +129,19 @@ struct MessageRow: View, Equatable {
     /// For "Remember This": absent outside a transcript (voice mode), and so is the item.
     @Environment(Conversation.self) private var conversation: Conversation?
 
+    /// A row of a grouped turn with nothing left to draw: its thinking and steps are in the turn's
+    /// fold. Left in the transcript it still took the stack's spacing, so a run of tool calls was
+    /// half a screen of nothing (Reddit, 2026-11-23: 47 tools). Anything of its own keeps the row.
+    static func isOnlyInTheFold(_ message: Message, turn: AssistantTurnActivity.Placement?, isLive: Bool) -> Bool {
+        guard let turn, turn.isGrouped, !turn.showsSpeaker, !turn.isFinal, !isLive, message.role == .assistant,
+              message.error == nil, message.reaction == nil,
+              message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, message.notes.isEmpty,
+              message.todos?.isEmpty != false, message.subagents.isEmpty, message.attachments.isEmpty,
+              message.cards?.isEmpty != false, AgentMemory.change(in: message.tools) == nil
+        else { return false }
+        return !message.tools.contains { AgentBrowsing.isBrowsing($0.name) || $0.name == "message_agent" || Handoff.cardTools.contains($0.name) }
+    }
+
     var body: some View {
         // What the person asked a tagged bot is theirs, a bubble like any (`BotAsides`).
         if message.role == .user, let delivered = message.delivered, delivered.kind != .asked {

@@ -564,6 +564,21 @@ extension Conversation {
         mutateMessagesForDemo { $0.append(Message(role: .user, text: "End of the long demo.")) }
     }
 
+    /// Dev hook (`-echo.demoLongTurn`): a reply that made 32 tool calls with nothing written beside
+    /// them, as a long agent run leaves it (a Reddit report, 2026-11-23: 47 tools and half a screen
+    /// of nothing above them).
+    func seedLongTurnDemo() {
+        cancel()
+        let steps = (1...32).map { step -> Message in
+            var row = Message(role: .assistant, text: "")
+            row.reasoning = "Step \(step): what comes next."
+            row.tools = [ToolActivity(name: "terminal", preview: "ls episodes/\(step)", status: .completed)]
+            return row
+        }
+        replaceForDemo(messages: [Message(role: .user, text: "Make packages for episodes 47 and 48.")] + steps
+                       + [Message(role: .assistant, text: "Both packages are made.")])
+    }
+
     /// Dev hook (`-echo.demoTodos`): two replies in which the agent keeps a task list, written the
     /// way a transcript holds it: the first call names the whole list, the next ones only what
     /// changed, and the checklist is read back out of those steps.
