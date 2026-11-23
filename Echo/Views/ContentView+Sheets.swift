@@ -209,6 +209,7 @@ extension ContentView {
         case "headsUps": AnyView(DailyJobView(daily: HeadsUps.job))
         case "wrapUp": AnyView(DailyJobView(daily: EveningWrapUp.job))
         case "watches": AnyView(WatchesView())
+        case "followThrough": AnyView(FollowThroughView())
         case "goal": AnyView(GoalView(goalID: "g10k"))   // with -echo.demoGoals
         case "goals": AnyView(GoalsListView())
         case "phoneTools": AnyView(PhoneToolsSettingsView())

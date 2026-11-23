@@ -21,6 +21,7 @@ struct ReplyCardsView: View {
                 case let .choice(choice): ChoiceCard(card: choice, whole: card)
                 case let .checklist(list): ChecklistCard(card: list, whole: card)
                 case let .form(form): FormCard(card: form, whole: card)
+                case let .plan(plan): PlanCard(card: plan, whole: card)
                 case let .key(ask): KeyAskCard(card: ask)
                 case let .purchase(purchase): PurchaseCard(card: purchase, whole: card)
                 case let .home(home): HomeCard(card: home, whole: card)

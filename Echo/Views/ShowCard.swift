@@ -54,6 +54,8 @@ struct ShowCard: View {
     private func hero(_ index: Int) -> some View {
         let item = card.items[index], s = shown[index]
         return VStack(alignment: .leading, spacing: 12) {
+            // A tap on the film opens its page (asked 2026-11-23: "make the movie card clickable").
+            Button { openURL(s.url ?? Self.search(item)) } label: {
             HStack(alignment: .top, spacing: 14) {
                 CardPicture(url: s.poster, symbol: Self.symbol(item), width: 92, height: 138, fill: true, corner: 10, pixels: 420)
                 VStack(alignment: .leading, spacing: 5) {
@@ -70,8 +72,15 @@ struct ShowCard: View {
                 }
                 Spacer(minLength: 0)
             }
+            .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: s.spoken))
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint(s.url != nil ? Text("Opens its page in your browser", comment: "VoiceOver hint: a show card's More Info")
+                                            : Text("Looks it up in the TV app", comment: "VoiceOver hint: a show card's title, with no page of its own"))
+            .accessibilityIdentifier("show-card-lead")
             details(index, inRow: false)
         }
     }
@@ -209,6 +218,15 @@ struct ShowCard: View {
     }
 
     static func symbol(_ item: ReplyCard.Shows.Title) -> String { item.format == .series ? "tv" : "film" }
+
+    /// Where a title with no page of its own opens: the TV app's search for it (a universal link),
+    /// which says where it's streaming, to rent or to buy.
+    static func search(_ item: ReplyCard.Shows.Title) -> URL {
+        var parts = URLComponents(string: "https://tv.apple.com/search")!
+        let name = item.name.replacing(/\s*\((?:19|20)\d\d\)\s*$/, with: "")
+        parts.queryItems = [URLQueryItem(name: "term", value: name)]
+        return parts.url!
+    }
 }
 
 extension ShowCard {

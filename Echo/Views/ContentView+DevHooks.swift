@@ -144,7 +144,7 @@ extension ContentView {
         case "botGallery": showBotGallery = true
         case "roleFaces": showRoleFaces = true
         case "patch": showDemoPatch = true
-        case "activity", "comingUp", "pluginUpdates", "triggers", "calendars", "headsUps", "wrapUp", "watches", "goal", "goals", "phoneTools", "health", "usage", "memory", "memoryImport", "memoryManifest", "inbox", "mailSetup", "mailAdd", "mailRules", "mailLabels", "mailReader", "inboxCard", "mailBrief", "dailyJobs", "location", "chatListCards", "models", "skillsHub": demoDayPage = DevHooks.value("-echo.screen")
+        case "activity", "comingUp", "pluginUpdates", "triggers", "calendars", "headsUps", "wrapUp", "watches", "goal", "goals", "phoneTools", "health", "usage", "memory", "memoryImport", "memoryManifest", "inbox", "mailSetup", "mailAdd", "mailRules", "mailLabels", "mailReader", "inboxCard", "mailBrief", "dailyJobs", "location", "chatListCards", "models", "skillsHub", "followThrough": demoDayPage = DevHooks.value("-echo.screen")
         case "aheadOfYourDay": showAheadOfYourDay = true
         #endif
         default: break

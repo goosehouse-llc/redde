@@ -41,7 +41,8 @@ FILE = "followthrough.json"
 SWITCHES = ("mail", "orders", "trips", "arrivals", "habits")
 #: Which switch each kind of item is under.
 GROUPS = {"promise": "mail", "waiting": "mail", "owed": "mail", "meeting": "mail", "delivery": "orders",
-          "return": "orders", "trial": "orders", "bill": "orders", "expiry": "orders", "trip": "trips"}
+          "return": "orders", "trial": "orders", "bill": "orders", "expiry": "orders", "trip": "trips",
+          "planned": "plans"}   # (no switch of its own: they picked it)
 #: Days before a card: a question unanswered, a reply owed, a late delivery; a return window and a
 #: trial ahead.
 WAITING, OWED, LATE, RETURN_AHEAD, TRIAL_AHEAD = 4, 3, 2, 5, 3
@@ -414,8 +415,9 @@ def from_bill(data: dict, message: dict, text: str, now: float, shop: str | None
                                                                        amount.group(0) if amount else None),
             "autopay": auto, "day": day.isoformat(), "made": when}
     steps = [("verify", _at(day + timedelta(days=BILL_AFTER), 10))]
-    if not auto:
-        steps.append(("remind", _at(day - timedelta(days=BILL_AHEAD), 10)))
+    if not auto and now < _at(day, 19):
+        # (a bill that comes in less than three days before its day is reminded now, not never)
+        steps.append(("remind", max(_at(day - timedelta(days=BILL_AHEAD), 10), now)))
     if data["items"].get(item["id"]):
         return []
     _keep(data, _steps(item, steps, now))
@@ -488,9 +490,12 @@ def from_trip(data: dict, message: dict, text: str, now: float) -> list[str]:
 def _trip_steps(item: dict, now: float) -> dict:
     leave = date.fromisoformat(item["day"])
     done = {s["step"] for s in item.get("done_steps") or []}
-    steps = [("pack", _at(leave - timedelta(days=3), 10))]
-    if item.get("flight"):
-        steps.append(("checkin", _at(leave - timedelta(days=1), 10)))
+    # A trip booked less than three days ahead is packed for now; a day ahead, only checked in for.
+    steps = []
+    if now < _at(leave - timedelta(days=1), 10):
+        steps.append(("pack", max(_at(leave - timedelta(days=3), 10), now)))
+    if item.get("flight") and now < _at(leave, 12):
+        steps.append(("checkin", max(_at(leave - timedelta(days=1), 10), now)))
     if item.get("back"):
         steps.append(("home", _at(date.fromisoformat(item["back"]) + timedelta(days=1), 10)))
     return _steps(item, [s for s in steps if s[0] not in done and s[1] > now - 86400], now)
@@ -743,9 +748,30 @@ def _when(day_text: str) -> str:
     return day.strftime("%A" if 0 < (day - today).days < 7 else "%B %-d").replace(" 0", " ")
 
 
+def planned(home: Path, key: str, plan: str, actions: list[dict]) -> list[str]:
+    """A plan card's picks for later (Plan For It, 1.41.0): each comes back as a card at its time,
+    in the day or not (they picked the time). The same answer read again adds nothing."""
+    made = []
+    with _locked(home):
+        data = load(home)
+        for action in actions[:8]:
+            title, request, at = str(action.get("title") or "").strip(), str(action.get("request") or "").strip(), action.get("at")
+            if not title or not request or not isinstance(at, (int, float)):
+                continue
+            item = {"id": _id("planned", key, title), "kind": "planned", "title": title[:80], "what": plan[:80],
+                    "request": request[:600], "due": float(at), "day": _day(float(at)).isoformat(), "made": time.time()}
+            if _keep(data, item):
+                made.append(item["id"])
+        save(home, data)
+    return made
+
+
 def card(item: dict, mailbox: dict | None = None) -> dict | None:
     """The idea card for an item come due, or None once it no longer needs one."""
     kind, name, subject = item["kind"], item.get("name") or item.get("who"), item.get("subject")
+    if kind == "planned":
+        return {"title": item.get("title", "")[:60], "why": (f"You planned it for {item['what']}" if item.get("what") else "You planned it")[:140],
+                "request": item.get("request") or item.get("title", "")}
     if kind == "promise":
         return {"title": f"Send {name.split()[0]} what you promised"[:60],
                 "why": f"You wrote \"{item.get('said')}\" in \"{subject}\""[:140],
@@ -818,10 +844,13 @@ def step_card(item: dict, step: str, data: dict) -> dict | None:
         to = f" to {item['place']}" if item.get("place") else ""
         span = f"{item.get('day')}" + (f" to {item['back']}" if item.get("back") else "")
         if step == "pack":
-            return {"title": f"Pack for {place}"[:60],
+            # (1.41.0: one plan for the trip, what to do picked by them, not a packing list alone)
+            return {"title": f"Get ready for {place}"[:60],
                     "why": (f"You leave {_when(item.get('day'))}" + (f", flight {item['flight']}" if item.get("flight") else ""))[:140],
-                    "request": f"Make me a packing list in Redde for my trip{to}, {span}, from the weather there and what my "
-                               "email says about it. And make sure the trip is on my calendar, so Leave-By can time it."}
+                    "request": f"I'm going on my trip{to}, {span}" + (f", flight {item['flight']}" if item.get("flight") else "")
+                               + ". Show me a 'plan' card of what you could do for it: a packing list in Redde from the weather "
+                               "there and what my email says, the trip on my calendar so Leave-By can time it, checking in the "
+                               "day before, and anything else that would help."}
         if step == "checkin":
             ref = f" ({item['ref']})" if item.get("ref") else ""
             return {"title": f"Check in for {item.get('flight')}"[:60], "why": f"You fly {_when(item.get('day'))}",
@@ -887,7 +916,7 @@ def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
                 continue
             if not switches.get(GROUPS.get(item["kind"], "mail"), True):
                 continue
-            if item["kind"] != "meeting" and not hourly:
+            if item["kind"] not in ("meeting", "planned") and not hourly:
                 continue
             if item["kind"] == "delivery" and not item.get("today_said") and item.get("today", 0) <= now < item.get("due", 0) \
                     and _day(now).isoformat() == item.get("day"):

@@ -378,6 +378,14 @@ REPLY_WAIT = 600
 ARRIVAL_WAIT = 90
 #: How long before the run's end Hermes's message can have been stored.
 ARRIVAL_SLACK = 120
+#: How new a schedule first seen with a run can be for that run to be told (the loop looks every 30 s).
+JUST_MADE = 300
+
+
+def just_made(job: dict, clock: float) -> bool:
+    """A schedule made moments ago that has already run: that run is news, though it's first seen."""
+    made, ran = _instant(job.get("created_at")), _instant(job.get("last_run_at"))
+    return bool(made and ran and ran >= made and clock - made <= JUST_MADE)
 
 
 def failure_told(job: dict) -> bool:
@@ -654,8 +662,10 @@ class Routines:
                         continue
                     key, last = f"{profile}|{job['id']}", str(job.get("last_run_at") or "")
                     now[key] = last
-                    # First seen, or never run: nothing to say yet.
-                    if key not in seen or not last or seen[key] == last:
+                    # First seen, or never run: nothing to say yet. Unless it was only just made: its
+                    # first run can end between two looks.
+                    before = seen.get(key, "" if just_made(job, clock) else None)
+                    if before is None or not last or before == last:
                         continue
                     # A reminder told as its run started (remind.py, 1.14.6): said already.
                     if told and remind.what(job) and remind.told_lately(self.store, key, clock):
@@ -750,7 +760,7 @@ class Routines:
                         else:
                             silent = False
                         if silent is None:
-                            now[key] = seen[key]
+                            now[key] = before
                             continue
                         if silent:
                             continue

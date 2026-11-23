@@ -93,6 +93,17 @@ def _get(url: str, deadline: float) -> tuple[str, int, dict, bytes]:
 GET = _get
 
 
+class Found(str):
+    """A poster's address, with the page it was found on (1.40.1: the card's title opens it)."""
+    page: str | None = None
+
+    @classmethod
+    def at(cls, picture: str, page) -> "Found":
+        made = cls(picture)
+        made.page = page if isinstance(page, str) and page.startswith("https://") else None
+        return made
+
+
 def state(url: str, deadline: float) -> str:
     """"ok", "dead" or "unknown" for a picture's address."""
     how, status, headers, _ = GET(url, deadline)
@@ -138,7 +149,8 @@ def wikipedia(title: str, year: str | None, series: bool | None, deadline: float
             continue
         picture = (found.get("originalimage") or found.get("thumbnail") or {}).get("source")
         if isinstance(picture, str) and picture.startswith("https://"):
-            return picture
+            return Found.at(picture, ((found.get("content_urls") or {}).get("mobile") or {}).get("page")
+                            or ((found.get("content_urls") or {}).get("desktop") or {}).get("page"))
     return None
 
 
@@ -160,7 +172,7 @@ def tvmaze(title: str, year: str | None, deadline: float) -> str | None:
             continue
         picture = (show.get("image") or {}).get("original") or (show.get("image") or {}).get("medium")
         if isinstance(picture, str) and picture.startswith("https://"):
-            return picture
+            return Found.at(picture, show.get("url"))
     return None
 
 
@@ -214,7 +226,9 @@ def fill(card: dict) -> dict:
         if (poster is not None or home) and isinstance(item, dict):
             item = {k: v for k, v in item.items() if k not in KEYS}
             if poster:
-                item["poster"] = poster
+                item["poster"] = str(poster)
+                if getattr(poster, "page", None) and not item.get("url"):
+                    item["url"] = poster.page      # (what a tap on the title opens, 1.40.1)
             if home:
                 item["own_poster"] = home
         filled.append(item)

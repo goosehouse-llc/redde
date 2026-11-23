@@ -3,6 +3,24 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.41.0 (2026-11-23)
+
+- Plan For It (`cards.py`): told what they're about to do, with when ("We're driving to Montreal
+  Friday"), and asking nothing, the agent is asked for a 'plan' card first: 3 to 6 things it could
+  do for it, each now or at a time, the obvious ones ticked. Their Do These comes back as
+  `plan {now, later, left}`: the agent does the ones for now; the later ones are kept
+  (`followthrough.planned`) and come back as a card at their time, in the day or not. A trip's
+  first card is now "Get ready for <place>", which asks for a plan for it.
+- A show card with no link of its own gets the page its poster was found on (Wikipedia, TVmaze):
+  the app opens it when the title is tapped.
+- A bill that comes in less than three days before its day is reminded at once, not never; a trip
+  booked less than three days ahead gets its card at once, a day ahead only its check-in (found in
+  the lab, inside Hermes 0.23.2).
+- Reminders run with no model again on Hermes 0.22.7 and later, whose cron runs have a chat's
+  session id: the model was being asked to write them.
+- A schedule made and run within the same half minute tells the phone: the loop took any job it
+  hadn't seen yet for an old one, so that first run said nothing (intermittent in the lab).
+
 ## 1.40.0 (2026-11-23)
 
 - Bills and renewals (`followthrough.py`): a bill with its day due, from mail or from a new

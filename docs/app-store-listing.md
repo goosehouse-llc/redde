@@ -81,6 +81,7 @@ The words in both sit inside the "art safe area" of Apple's templates. Use Previ
 Proactive: your agent gets ahead of your day and speaks up only when something needs you.
 
 • Things to keep in mind: tell your agent what's always true for you ("driving into France, I need 3-day car insurance"), or add it in Settings → Your Day. Heads-Ups and Morning Ideas check it against the days around each event and tell you when something is missing or runs out.
+• Plan for it: tell your agent what you're about to do ("we're driving to Montreal Friday"), tick what it offers to do, and tap Do These. What's for later comes back when it's time.
 • Plans that happen: tell your agent you'll watch a film with someone on Thanksgiving and it goes on your list with the date. Redde reminds you on the day, and the morning after checks: a film Jellyfin or Plex shows as played is ticked off, one that isn't comes back for another night.
 • Follow-Through: an email promise, a question unanswered, a reply you owe, a late delivery, a return window or a trial about to charge comes back only if it didn't happen. So does a film on your watch list new on Jellyfin, or a new season.
 • Bills before they're due and checked as paid; a passport or policy in time to renew; packing, check-in and receipts for a trip; what's open with people an hour before you meet; what you buy often, when it's due.
@@ -98,7 +99,7 @@ Proactive: your agent gets ahead of your day and speaks up only when something n
 • Hermes 0.23 and its Webapp supported.
 • Fixes: deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A reply Hermes stops for taking too long ends in Redde too, with Retry. Cards on the Dashboard show what the plugin looked up.
 
-Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 1.32 on your Hermes, cleared notifications 1.33, briefings the same on every device 1.34, ticking off goal steps 1.35, things to keep in mind, the quieter agent and When You've Gone Quiet 1.36, lists with a look 1.37, plans that happen 1.38, Follow-Through 1.39, and bills, trips, meetings and usual buys 1.40: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
+What's new on your Hermes takes the Redde plugin 1.32 to 1.41: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
 
 ## Before submitting 2.7
 - The build is 2.7 (298; 296 was pulled from review 2026-11-22 for the goal page, 297 on 2026-11-23 for lists with a look, show-card posters and the Dashboard's card fix), iPhone and iPad, archived from main once everything is committed and pushed.

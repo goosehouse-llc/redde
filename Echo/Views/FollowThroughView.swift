@@ -96,6 +96,7 @@ extension FollowThrough.Item {
         case "expiry": "calendar.badge.exclamationmark"
         case "trip": "airplane"
         case "meeting": "person.2"
+        case "planned": "list.bullet.clipboard"
         default: "circle"
         }
     }
@@ -114,7 +115,7 @@ extension FollowThrough.Item {
         case "expiry": what ?? thing ?? ""
         case "trip": place.map { String(localized: "Trip to \($0)", comment: "Follow-Through: a trip, with where to") }
             ?? String(localized: "A trip", comment: "Follow-Through: a trip with no place known")
-        case "meeting": meetingTitle ?? ""
+        case "meeting", "planned": meetingTitle ?? ""
         default: subject ?? ""
         }
     }
@@ -136,6 +137,9 @@ extension FollowThrough.Item {
         case "trip":
             let home = back.map { " – " + $0.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()) } ?? ""
             return [flight, date + home].compactMap { $0 }.joined(separator: " · ")
+        case "planned":
+            let at = due?.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()) ?? date
+            return what.map { String(localized: "For \($0) · \(at)", comment: "Follow-Through: a plan's action for later, with the plan and when") } ?? at
         case "meeting":
             return start?.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()) ?? date
         default: return ""

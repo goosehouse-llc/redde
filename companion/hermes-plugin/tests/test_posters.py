@@ -51,6 +51,18 @@ class PosterTests(unittest.TestCase):
         self.assertEqual(filled["items"][0]["poster"], POSTER)
         self.assertEqual(web.asked[0], "https://image.tmdb.org/t/p/w500/9366.jpg", "its own poster tried first")
 
+    def test_the_page_it_was_found_on_is_what_the_title_opens(self):
+        # 2026-11-23: "make the movie card clickable": a card with no link gets the poster's page.
+        page = "https://en.m.wikipedia.org/wiki/Donnie_Brasco_(film)"
+        found = json.loads(summary("1997 film by Mike Newell")[3])
+        found["content_urls"] = {"mobile": {"page": page}}
+        posters.GET = Web({WIKI + "Donnie_Brasco_(1997_film)": ("ok", 200, "application/json", json.dumps(found).encode())})
+        item = posters.fill(self.show(title="Donnie Brasco (1997)", year=None, format=None))["items"][0]
+        self.assertEqual((item["poster"], item["url"]), (POSTER, page))
+        self.assertIs(type(item["poster"]), str, "plain text in the card")
+        kept = posters.fill(self.show(url="https://www.imdb.com/title/tt0119008/"))["items"][0]
+        self.assertEqual(kept["url"], "https://www.imdb.com/title/tt0119008/", "the agent's own link stays")
+
     def test_a_missing_poster_is_found_and_a_bare_title_must_be_the_film(self):
         posters.GET = Web({WIKI + "Donnie_Brasco": summary("American FBI agent")})
         self.assertNotIn("poster", posters.fill(self.show())["items"][0], "the man's page isn't the film's")

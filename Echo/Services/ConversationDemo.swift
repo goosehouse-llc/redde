@@ -1254,6 +1254,22 @@ extension Conversation {
             replaceForDemo(messages: shown)
             return
         }
+        // `-echo.demoPlan`: Plan For It, for a drive (2026-11-23).
+        if DevHooks.has("-echo.demoPlan") {
+            let friday = Calendar.current.nextDate(after: .now, matching: DateComponents(hour: 7, weekday: 6), matchingPolicy: .nextTime) ?? .now
+            let iso = ISO8601DateFormatter.string(from: friday, timeZone: .current, formatOptions: [.withInternetDateTime])
+            replaceForDemo(messages: [
+                Message(role: .user, text: "We're driving to Montreal Friday"),
+                reply("Here's what I can do for the drive. Tick what you want.", #"""
+                {"cards": [{"type": "plan", "title": "Driving to Montreal · Friday", "actions": [
+                  {"title": "Check the border and your car insurance", "why": "Crossing into Canada", "when": "now", "request": "Check what I need to drive into Canada, and whether my car insurance covers it", "picked": true},
+                  {"title": "Weather on the route", "why": "I-87 and A-15", "when": "now", "request": "Look up the weather on the drive to Montreal on Friday", "picked": true},
+                  {"title": "Leave-By alert", "why": "Traffic out of the city", "when": "\#(iso)", "request": "Tell me when to leave for Montreal, with traffic"},
+                  {"title": "Packing list", "why": "Two nights, cold", "when": "now", "request": "Make me a packing list in Redde for two cold nights in Montreal"},
+                  {"title": "Tell Robin when you leave", "why": "A text drafted", "when": "\#(iso)", "request": "Draft a text to Robin that we've left for Montreal"}]}]}
+                """#)])
+            return
+        }
         // `-echo.demoAsksBooking`: a review of a text, then of a booking, its details as rows.
         if DevHooks.has("-echo.demoAsksBooking") {
             replaceForDemo(messages: [

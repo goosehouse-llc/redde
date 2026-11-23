@@ -189,6 +189,10 @@ struct NewestCardsTests {
         let similar = ShowCard.ask(.similar, s)
         #expect(similar.shown == "More like The Quiet Floor" && similar.said.contains("'show' card") && similar.said.contains("not these"))
         #expect(ShowCard.ask(.watch, s).said.contains("never guess a service"))
+        // A title with no page opens the TV app's search for it, its year left off (2026-11-23).
+        guard case let .show(named) = try card(#"{"type": "movie", "title": "Donnie Brasco (1997)"}"#) else { Issue.record("named"); return }
+        #expect(ShowCard.search(named.items[0]).absoluteString == "https://tv.apple.com/search?term=Donnie%20Brasco")
+        #expect(ShowCard.Shown(named.items[0]).url == nil)
     }
 
     /// A poster on the person's own server (2026-11-22: Sol's Jellyfin poster, http on the

@@ -96,6 +96,29 @@ class RemindTests(unittest.TestCase):
             self.assertEqual(len(self.asked), 1, session)
         self.assertEqual(self.sent, [])
 
+    def test_a_run_with_a_chats_session_id_is_known_by_the_running_job(self):
+        # Hermes 0.22.7+ (found in the lab 2026-11-23): a cron run's session is `local-…`, and the
+        # job is in the run's context. Another session in that context (a sub-agent) isn't the run.
+        import types
+        from contextvars import ContextVar
+        running = ContextVar("lab_cron_execution", default=None)
+        gateway, cron = types.ModuleType("gateway"), types.ModuleType("gateway.session_cron")
+        cron.current_execution = running.get
+        gateway.session_cron = cron
+        saved = {name: sys.modules.get(name) for name in ("gateway", "gateway.session_cron")}
+        sys.modules.update({"gateway": gateway, "gateway.session_cron": cron})
+        try:
+            self.assertIsNone(remind.find(self.root, "local-abc"), "no run going")
+            running.set((object(), "local-abc", STRETCH["id"], "exec-1"))
+            self.assertEqual(remind.find(self.root, "local-abc")[2]["id"], STRETCH["id"])
+            self.assertIsNone(remind.find(self.root, "local-subagent"))
+        finally:
+            for name, module in saved.items():
+                if module is None:
+                    sys.modules.pop(name, None)
+                else:
+                    sys.modules[name] = module
+
     def test_a_bots_reminder_is_found_in_its_profile(self):
         self.jobs([{**STRETCH, "id": "b0b0b0b0b0b0"}], profile="ops")
         self.turn("cron_b0b0b0b0b0b0_20261103_200518")

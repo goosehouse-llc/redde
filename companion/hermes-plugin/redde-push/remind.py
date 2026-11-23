@@ -56,15 +56,29 @@ def line(said: str) -> str:
     return f"Reminder: {said}" + ("" if said.endswith((".", "!", "?")) else ".")
 
 
+def running_job(session: str) -> str | None:
+    """The job whose run this very session is, on Hermes 0.22.7+: its runs have a chat's session id
+    (`local-…`), and say which job through the run's context. A sub-agent's session isn't it."""
+    try:
+        from gateway.session_cron import current_execution
+        running = current_execution()
+    except Exception:
+        return None
+    if not session or not running or len(running) < 3 or running[1] != session:
+        return None
+    return str(running[2] or "") or None
+
+
 def find(root: Path, session: str) -> tuple[str, Path, dict] | None:
     """The job a cron run's session belongs to: (profile, its home, the job), or None."""
     run = RUN.match(session or "")
-    if not run:
+    job_id = run.group("job") if run else running_job(session)
+    if not job_id:
         return None
     stores = routines.Stores(root)
     for profile, home in stores.homes():
         for job in stores.jobs(home):
-            if str(job.get("id")) == run.group("job"):
+            if str(job.get("id")) == job_id:
                 return profile, home, job
     return None
 

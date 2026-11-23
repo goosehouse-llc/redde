@@ -330,6 +330,9 @@ class Handler(BaseHTTPRequestHandler):
                                 "mention": "[@mentions resolved from the Bot Mode roster" in last_user,
                                 # Cards (lab.sh cards): the plugin's word on a turn asking the time or the weather.
                                 "redde_note": "[Redde: asked about" in last_user,
+                                # Plan For It (lab.sh plan): the plugin's word on "we're driving to … Friday", and on its answer.
+                                "plan_note": "[Redde: they told you what they're about to do" in last_user,
+                                "plan_answer": "[Redde: they picked from the plan" in last_user,
                                 # Calls (lab.sh calls): the plugin's word on a turn asking to be called.
                                 "call_note": "[Redde: to ring the user's iPhone" in last_user,
                                 # A reminder's run (lab.sh routines): the plugin answers it, so the model is never asked.

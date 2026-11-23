@@ -83,6 +83,17 @@ class BillTests(Base):
         self.assertEqual(self.due("2026-12-06T10:30"), [])
         self.assertEqual(item["id"] in self.data["items"] and self.data["items"][item["id"]]["how"], "paid")
 
+    def test_a_bill_that_comes_late_is_reminded_at_once(self):
+        # Found by the lab (2026-11-23): a bill two days before its day lost its reminder.
+        self.read(mail("billing@cityelectric.com", "Your November bill is ready", name="City Electric", when=at("2026-12-02T08:00")),
+                  "Amount due: $84.20. Payment due date: December 4, 2026.")
+        (remind,) = self.due("2026-12-02T10:30")
+        self.assertEqual(remind["title"], "Pay City Electric $84.20 by Friday")
+        self.read(mail("billing@water.com", "Your bill", name="City Water", when=at("2026-12-05T08:00")),
+                  "Amount due: $41.10. Payment due date: December 4, 2026.")
+        water = [i for i in self.data["items"].values() if i["shop"] == "City Water"]
+        self.assertEqual([s["step"] for w in water for s in w["steps"]], ["verify"], "past its day: only the check")
+
     def test_a_package_due_to_arrive_is_no_bill(self):
         self.read(mail("ship@shop.com", "Your order statement"), "Your package is due to arrive Thursday.")
         self.assertEqual([i["kind"] for i in self.data["items"].values()], [])
@@ -116,7 +127,8 @@ class TripTests(Base):
         self.assertEqual((trip["place"], trip["flight"], trip["ref"], trip["day"], trip["back"]),
                          ("Lisbon", "TP202", "QX7LMB", "2026-12-18", "2026-12-27"))
         (pack,) = self.due("2026-12-15T10:30")
-        self.assertEqual(pack["title"], "Pack for Lisbon")
+        self.assertEqual(pack["title"], "Get ready for Lisbon")
+        self.assertIn("'plan' card", pack["request"])
         self.assertIn("packing list in Redde", pack["request"])
         self.assertIn("Leave-By", pack["request"])
         (checkin,) = self.due("2026-12-17T10:30")
@@ -124,6 +136,18 @@ class TripTests(Base):
         self.assertIn("QX7LMB", checkin["request"])
         (home,) = self.due("2026-12-28T10:30")
         self.assertEqual(home["title"], "File the receipts from Lisbon?")
+
+    def test_a_trip_booked_late(self):
+        # Found by the lab (2026-11-23): two days ahead lost the packing card.
+        self.read(mail("noreply@flytap.com", "Your trip to Lisbon: booking confirmed", when=at("2026-12-16T09:00")), self.TEXT)
+        (trip,) = self.data["items"].values()
+        self.assertEqual([s["step"] for s in trip["steps"]], ["pack", "checkin", "home"])
+        (pack,) = self.due("2026-12-16T10:30")
+        self.assertEqual(pack["title"], "Get ready for Lisbon")
+        self.read(mail("noreply@flytap.com", "Your trip to Porto: booking confirmed", when=at("2026-12-29T15:00")),
+                  "Your flight to Porto is booked. Flight TP 450. Departure: December 30, 2026 7:05 PM. Return: January 2, 2027.")
+        porto = next(i for i in self.data["items"].values() if i["place"] == "Porto")
+        self.assertEqual([s["step"] for s in porto["steps"]], ["checkin", "home"], "the day before: check-in, no packing card")
 
     def test_a_second_mail_fills_in_the_first(self):
         self.read(mail("noreply@flytap.com", "Your booking", name="TAP"), "Flight TP 202. Departure: December 18, 2026.")

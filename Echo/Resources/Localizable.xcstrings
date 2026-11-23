@@ -32807,6 +32807,113 @@
         }
       }
     },
+    "%lld of %lld picked" : {
+      "comment" : "A plan card: how many actions are ticked",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld af %lld valgt"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld von %lld ausgewählt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de %lld elegidas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sur %lld choisies"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld di %lld scelte"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld件を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld개 선택됨"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld av %lld valgt"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld van %lld gekozen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "wybrano %lld z %lld"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de %lld escolhidas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "выбрано %lld из %lld"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld av %lld valda"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld / %lld seçildi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "вибрано %lld з %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选%lld/%lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選 %lld/%lld"
+          }
+        }
+      }
+    },
     "%lld of %lld shared" : {
       "comment" : "How many kinds of Apple Health data the agent may read",
       "localizations" : {
@@ -149858,6 +149965,7 @@
     },
     "Deliveries running late, return windows closing, trials about to charge." : {
       "comment" : "Follow-Through: under the orders switch",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -153385,6 +153493,220 @@
         }
       }
     },
+    "Do These" : {
+      "comment" : "A plan card's button: the agent does the ticked actions",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gør disse"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erledigen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hacerlas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faire ça"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai queste"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これを実行"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실행하기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gjør disse"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doe dit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrób to"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fazer Isso"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполнить"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gör dessa"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunları Yap"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виконати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "执行这些"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "執行這些"
+          }
+        }
+      }
+    },
+    "Do these: %@" : {
+      "comment" : "The message a plan card's Do These sends, with the actions picked",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gør disse: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erledige das: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz esto: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fais ceci : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai queste cose: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これをやって：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이것들 해 줘: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gjør disse: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doe dit: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrób te rzeczy: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faça isto: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделай это: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gör dessa: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunları yap: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зроби це: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "做这些：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "做這些：%@"
+          }
+        }
+      }
+    },
     "Documentation" : {
       "localizations" : {
         "da" : {
@@ -154018,6 +154340,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "不限"
+          }
+        }
+      }
+    },
+    "Doing: %@" : {
+      "comment" : "A plan card, answered: the actions picked",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udføres: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird erledigt: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haciendo: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En cours : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In corso: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "実行中：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실행 중: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utføres: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezig: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W toku: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fazendo: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполняется: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görs: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yapılıyor: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виконується: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在执行：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在執行：%@"
           }
         }
       }
@@ -185444,6 +185873,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "為時 %@"
+          }
+        }
+      }
+    },
+    "For %@ · %@" : {
+      "comment" : "Follow-Through: a plan's action for later, with the plan and when",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Til %@ · %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für %@ · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para %@ · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour %@ · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per %@ · %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@に向けて · %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 준비 · %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Til %@ · %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voor %@ · %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan: %@ · %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para %@ · %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "План: %@ · %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "För %@ · %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ için · %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "План: %@ · %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为%@ · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為%@ · %@"
           }
         }
       }
@@ -260659,6 +261195,113 @@
         }
       }
     },
+    "Looks it up in the TV app" : {
+      "comment" : "VoiceOver hint: a show card's title, with no page of its own",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slår den op i TV-appen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sucht danach in der TV-App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo busca en la app TV"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le recherche dans l’app TV"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo cerca nell'app TV"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「TV」アプリで検索します"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV 앱에서 찾아봅니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slår den opp i TV-appen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoekt het op in de TV-app"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyszukuje w aplikacji TV"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procura no app TV"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ищет в приложении TV"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slår upp den i TV-appen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV uygulamasında arar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Шукає в програмі TV"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“TV”App中查找"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「TV」App 中查找"
+          }
+        }
+      }
+    },
     "Looks things up on the web and comes back with what it found, and where it found it." : {
       "localizations" : {
         "da" : {
@@ -297898,6 +298541,113 @@
         }
       }
     },
+    "None picked" : {
+      "comment" : "A plan card answered with nothing ticked",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intet valgt"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nichts ausgewählt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada elegido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien de choisi"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna scelta"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択なし"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택 안 함"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen valgt"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niets gekozen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nic nie wybrano"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada escolhido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ничего не выбрано"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inget valt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiçbiri seçilmedi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нічого не вибрано"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇"
+          }
+        }
+      }
+    },
     "None yet." : {
       "localizations" : {
         "da" : {
@@ -308280,7 +309030,7 @@
       }
     },
     "Now" : {
-      "comment" : "A weather card's reading, and its first hour: now",
+      "comment" : "A plan card: an action done at once",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -327758,6 +328508,7 @@
     },
     "Orders & Trials" : {
       "comment" : "Follow-Through: the orders switch",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -342282,6 +343033,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "計畫"
+          }
+        }
+      }
+    },
+    "Plan for it" : {
+      "comment" : "A plan card's line under its title, when the agent gave none",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planlæg det"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plane dafür"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planéalo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prévoir"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pianificalo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "計画を立てる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "미리 계획하기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planlegg det"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan het in"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaplanuj to"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planeje"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спланировать"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planera för det"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planını yap"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спланувати"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为此做个计划"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為此做個計畫"
           }
         }
       }
@@ -443102,6 +443960,113 @@
         }
       }
     },
+    "Tell your agent what you're about to do, like \"We're driving to Montreal Friday\", and it offers a plan: a few things it can do for it, now or at the right time. Tick what you want and tap Do These. What's for later comes back when it's time. It takes the Redde plugin 1.41." : {
+      "comment" : "What's New 2.7: Plan For It",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortæl din agent, hvad du skal til at gøre, fx “Vi kører til Montreal på fredag”, så tilbyder den en plan: et par ting, den kan gøre for det, nu eller på det rette tidspunkt. Sæt hak ved det, du vil have, og tryk på Gør disse. Det, der er til senere, kommer tilbage, når det er tid. Det kræver Redde-plugin 1.41."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sag deinem Agenten, was du gleich vorhast, etwa „Wir fahren am Freitag nach Montreal“, und er schlägt einen Plan vor: ein paar Dinge, die er dafür tun kann, jetzt oder zur richtigen Zeit. Hak an, was du willst, und tippe auf „Erledigen“. Was für später ist, kommt zurück, wenn es so weit ist. Dafür braucht es das Redde-Plugin 1.41."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dile a tu agente lo que vas a hacer, como «Vamos en coche a Montreal el viernes», y te propone un plan: unas cuantas cosas que puede hacer para ello, ahora o en el momento adecuado. Marca lo que quieras y toca Hacerlas. Lo que es para después vuelve cuando toca. Necesita el plugin de Redde 1.41."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites à votre agent ce que vous allez faire, par exemple « On part en voiture à Montréal vendredi », et il propose un plan : quelques actions qu’il peut faire pour vous, maintenant ou au bon moment. Cochez ce que vous voulez et touchez Faire ça. Ce qui est pour plus tard revient le moment venu. Requiert le plugin Redde 1.41."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di' al tuo agente cosa stai per fare, per esempio “Venerdì andiamo in macchina a Montréal”, e ti propone un piano: alcune cose che può fare per te, subito o al momento giusto. Spunta ciò che vuoi e tocca Fai queste. Ciò che è per dopo torna quando è il momento. Richiede il plugin Redde 1.41."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「金曜日にモントリオールまで車で行くよ」のように、これからすることをエージェントに伝えると、計画を提案します。今すぐ、またはちょうどいいときにできることをいくつか。必要なものにチェックを入れて「これを実行」をタップ。後でやることは、その時が来たら戻ってきます。Reddeプラグイン1.41が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“금요일에 몬트리올까지 차로 가”처럼 곧 할 일을 에이전트에게 말하면 계획을 제안합니다. 지금 또는 알맞은 때에 해 줄 수 있는 몇 가지 일입니다. 원하는 것을 체크하고 실행하기를 탭하세요. 나중 일은 때가 되면 다시 알려 줍니다. Redde 플러그인 1.41이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortell agenten din hva du skal til å gjøre, som «Vi kjører til Montreal på fredag», så foreslår den en plan: noen ting den kan gjøre for det, nå eller til rett tid. Kryss av det du vil ha, og trykk på Gjør disse. Det som er til senere, kommer tilbake når det er tid. Det krever Redde-tillegget 1.41."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertel je agent wat je gaat doen, zoals ‘We rijden vrijdag naar Montreal’, en hij biedt een plan aan: een paar dingen die hij ervoor kan doen, nu of op het juiste moment. Vink aan wat je wilt en tik op Doe dit. Wat voor later is, komt terug als het tijd is. Hiervoor is de Redde-plug-in 1.41 nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiedz agentowi, co zamierzasz, np. „W piątek jedziemy do Montrealu”, a zaproponuje plan: kilka rzeczy, które może w tej sprawie zrobić, teraz lub we właściwym czasie. Zaznacz, co chcesz, i stuknij Zrób to. To, co na później, wróci, gdy przyjdzie pora. Wymaga wtyczki Redde 1.41."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diga ao seu agente o que você está prestes a fazer, como “Vamos de carro para Montreal na sexta”, e ele oferece um plano: algumas coisas que pode fazer por você, agora ou na hora certa. Marque o que quiser e toque em Fazer Isso. O que é para depois volta na hora certa. Requer o plugin do Redde 1.41."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скажите агенту, что вы собираетесь делать, например «В пятницу едем в Монреаль», и он предложит план: несколько дел, которые он может сделать для этого, сейчас или в нужное время. Отметьте нужное и нажмите «Выполнить». То, что на потом, вернется, когда придет время. Нужен плагин Redde 1.41."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berätta för din agent vad du ska göra, som ”Vi kör till Montreal på fredag”, så föreslår den en plan: några saker den kan göra inför det, nu eller vid rätt tidpunkt. Bocka för det du vill ha och tryck på Gör dessa. Det som är till senare kommer tillbaka när det är dags. Det kräver Redde-tillägget 1.41."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınıza ne yapmak üzere olduğunuzu söyleyin, örneğin “Cuma günü arabayla Montreal'e gidiyoruz”, size bir plan önersin: bunun için şimdi ya da doğru zamanda yapabileceği birkaç şey. İstediklerinizi işaretleyin ve Bunları Yap'a dokunun. Sonraya kalanlar zamanı gelince geri gelir. Redde Eklentisi 1.41 gerektirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скажіть агентові, що ви збираєтеся робити, наприклад «У п’ятницю їдемо до Монреаля», і він запропонує план: кілька справ, які він може для цього зробити, зараз або в потрібний час. Позначте потрібне й торкніться «Виконати». Те, що на потім, повернеться, коли настане час. Потрібен плагін Redde 1.41."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "告诉你的智能体你接下来要做什么，比如“我们周五开车去蒙特利尔”，它就会提出一个计划：几件它可以为此做的事，现在做或在合适的时候做。勾选你想要的，然后轻点“执行这些”。之后要做的事会在到时候回来提醒你。需要Redde插件1.41。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "告訴你的代理你接下來要做什麼，例如「我們星期五開車去蒙特婁」，它就會提出一個計畫：幾件它可以為此做的事，現在做或在適當的時候做。勾選你想要的，然後點一下「執行這些」。之後要做的事會在時候到了回到你面前。需要 Redde 外掛 1.41。"
+          }
+        }
+      }
+    },
     "Tell your agent what's always true for you, like the insurance you need across the border, or add it in Settings → Your Day. Heads-Ups and Morning Ideas check it against the days around each event, and tell you when something is missing or runs out. It takes the Redde plugin 1.36." : {
       "comment" : "What's New 2.7: things to keep in mind",
       "localizations" : {
@@ -521469,6 +522434,7 @@
     },
     "What you said you'd send, questions waiting on an answer, mail you owe a reply." : {
       "comment" : "Follow-Through: under the mail switch",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -538953,6 +539919,113 @@
         }
       }
     },
+    "Your agent does the ones you picked: now, or at their time" : {
+      "comment" : "VoiceOver hint: a plan card's Do These",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent gør dem, du valgte: nu eller på deres tidspunkt"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Agent erledigt, was du ausgewählt hast: jetzt oder zu ihrer Zeit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu agente hace las que elegiste: ahora o a su hora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre agent fait celles que vous avez choisies : maintenant, ou au moment prévu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo agente fa quelle che hai scelto: subito o al momento giusto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選んだものをエージェントが実行します。今すぐ、または予定の時刻に"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택한 항목을 에이전트가 지금 또는 정해진 때에 실행합니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenten din gjør de du valgte: nå eller når det er tid"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agent doet wat je hebt gekozen: nu, of op het juiste moment"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent zrobi to, co wybrano: teraz lub we właściwym czasie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu agente faz as que você escolheu: agora ou na hora delas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент выполнит выбранное: сейчас или в нужное время"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din agent gör de du valde: nu eller när det är dags"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınız seçtiklerinizi yapar: şimdi ya da zamanı gelince"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агент виконає вибране: зараз або в потрібний час"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体会执行你选中的项目：立即执行，或到时执行"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理會執行你選的項目：立即執行，或在預定時間執行"
+          }
+        }
+      }
+    },
     "Your agent finds places near you, says how long the way takes with traffic now, and opens Apple Maps ready to go. Turn it on in Settings → Phone Tools → Maps. It takes the Redde plugin 1.30." : {
       "comment" : "What's New 2.6: Maps",
       "localizations" : {
@@ -544645,6 +545718,7 @@
     },
     "Your Hermes can't say. Follow-Through takes the Redde plugin 1.39: update it in Settings › Redde Plugin." : {
       "comment" : "Follow-Through: the plugin is too old",
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {

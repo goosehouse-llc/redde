@@ -28,6 +28,10 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
     case choice(Choice)
     case checklist(Checklist)
     case form(Form)
+    /// Plan For It (asked 2026-11-23: "tell it 'I'm doing something' ... the model prompts a few
+    /// different actions it can take that are user selectable"): what they're about to do, and
+    /// what the agent could do for it, now or at a time; they tick, and Do These answers it.
+    case plan(Plan)
     /// A key a bot asked for (`request_secret`, `KeyRequests`): which, for which profile, why. It
     /// opens the card the key is pasted into; nothing of the key is in the chat.
     case key(KeyAsk)
@@ -361,6 +365,27 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         var long: Bool
     }
 
+    /// What they're about to do and the actions the agent offers for it.
+    nonisolated struct Plan: Codable, Equatable, Sendable {
+        var title: String
+        var subtitle: String?
+        var note: String?
+        var actions: [Action]
+
+        nonisolated struct Action: Codable, Equatable, Sendable {
+            var title: String
+            var why: String?
+            /// When it's for later; nil, now.
+            var at: Date?
+            /// Its time as the agent wrote it (ISO with its offset), sent back as it came.
+            var when: String?
+            /// What the agent would do, as the person would ask it.
+            var request: String
+            /// The agent's guess at what they'd surely want: ticked to start.
+            var picked: Bool
+        }
+    }
+
     /// Things to pick from: one, or several.
     nonisolated struct Choice: Codable, Equatable, Sendable {
         var title: String?
@@ -426,7 +451,7 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         // A purchase card's chips (Cheaper options, Compare) answer it.
         // A purchase card's chips, a home's controls, a reminder's Change and Cancel, a score's Refresh.
         // From 2026-10-31: a recipe's, a delivery's, a flight's, a show's and a stock's chips.
-        case .review, .choice, .checklist, .form, .purchase, .home, .reminder, .score, .recipe, .delivery, .flight, .show, .stock: true
+        case .review, .choice, .checklist, .form, .plan, .purchase, .home, .reminder, .score, .recipe, .delivery, .flight, .show, .stock: true
         case .map, .places, .weather, .time, .agenda, .key, .compare, .conversion, .inbox: false
         }
     }
@@ -440,6 +465,7 @@ nonisolated enum ReplyCard: Codable, Equatable, Sendable {
         case let .choice(c): said = "choice|" + (c.title ?? "") + "|" + c.options.map(\.title).joined(separator: "|")
         case let .checklist(c): said = "checklist|" + c.title + "|" + c.items.map(\.text).joined(separator: "|")
         case let .form(f): said = "form|" + f.title + "|" + f.fields.map(\.label).joined(separator: "|")
+        case let .plan(p): said = "plan|" + p.title + "|" + p.actions.map(\.title).joined(separator: "|")
         case let .purchase(p): said = "purchase|" + (p.title ?? "") + "|" + p.items.map(\.name).joined(separator: "|")
         case let .home(h): said = "home|" + (h.title ?? "") + "|" + h.devices.map { $0.entity ?? $0.name }.joined(separator: "|")
         // The times as whole seconds by `wholeFigures`, which can't trap (UAT 2.3.1: a timer of 1e308 seconds did, here).
@@ -779,6 +805,8 @@ nonisolated enum ReplyCards {
                                  fields: fields, note: text(value["note"]).map { String($0.prefix(300)) },
                                  kind: .init(lenient: text(value["kind"])), subtitle: text(value["subtitle"]).map { String($0.prefix(80)) },
                                  draft: MailDraft(json: value["draft"])))
+        case "plan", "plan_for_it", "actions":
+            return plan(value).map(ReplyCard.plan)
         case "choice", "choose", "options":
             let options: [ReplyCard.Option] = (value["options"]?.array ?? []).prefix(maxOptions).compactMap { o in
                 if let plain = o.string?.nilIfEmpty { return .init(title: String(plain.prefix(120))) }
@@ -1394,6 +1422,22 @@ nonisolated extension ReplyCards {
         }
         guard !devices.isEmpty else { return nil }
         return .init(title: text(value["title"]).map { String($0.prefix(80)) }, devices: devices)
+    }
+
+    /// A plan: what they're doing, and two to eight actions, each with what the agent would do.
+    static func plan(_ value: JSONValue, timeZone: TimeZone = .current) -> ReplyCard.Plan? {
+        guard let title = text(value["title"] ?? value["doing"] ?? value["what"]) else { return nil }
+        let actions: [ReplyCard.Plan.Action] = (value["actions"]?.array ?? value["options"]?.array ?? []).prefix(8).compactMap { a in
+            guard let name = text(a["title"] ?? a["name"] ?? a["label"]) else { return nil }
+            let request = text(a["request"] ?? a["do"] ?? a["prompt"]) ?? name
+            let when = text(a["when"] ?? a["at"]).flatMap { $0.lowercased() == "now" ? nil : $0 }
+            let at = when.flatMap { ReplyCard.Agenda.when($0, timeZone: timeZone) }.flatMap { $0.allDay ? nil : $0.date }
+            return .init(title: String(name.prefix(80)), why: text(a["why"] ?? a["detail"]).map { String($0.prefix(140)) },
+                         at: at, when: at == nil ? nil : when, request: String(request.prefix(600)), picked: a["picked"]?.bool ?? false)
+        }
+        guard actions.count >= 2 else { return nil }
+        return .init(title: String(title.prefix(120)), subtitle: text(value["subtitle"]).map { String($0.prefix(80)) },
+                     note: text(value["note"]).map { String($0.prefix(300)) }, actions: actions)
     }
 
     /// A reminder: its title, and when as an ISO time with its offset (or in words where it isn't one).

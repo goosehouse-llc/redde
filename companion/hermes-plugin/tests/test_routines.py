@@ -59,6 +59,29 @@ class RoutinesTests(unittest.TestCase):
         self.assertEqual(made["d"], "scout", "no title kept for it: its profile")
         self.assertEqual(self.watch.look(), 0, "said once")
 
+    def made_and_run(self, made_ago, ran_ago):
+        """scout's schedule, first seen now, made and run that many seconds ago."""
+        from datetime import datetime, timezone
+        stamp = lambda ago: datetime.fromtimestamp(time.time() - ago, timezone.utc).isoformat()
+        home = self.job("scout", last=stamp(ran_ago), name="[bot:scout] Fresh", deliver="local")
+        store = home / "cron" / "jobs.json"
+        data = json.loads(store.read_text())
+        data["jobs"][0].update(created_at=stamp(made_ago), name="[redde-notify] Fresh")
+        store.write_text(json.dumps(data))
+        self.output(home, "# Cron Job\n\n## Response\n\nFresh report.")
+
+    def test_a_schedule_made_and_run_between_two_looks_is_told(self):
+        # Found in the lab (2026-11-23): the loop looks every half minute and took any job it hadn't
+        # seen for an old one, so a schedule made and run in that gap never reached the phone.
+        self.made_and_run(made_ago=20, ran_ago=5)
+        self.assertEqual(self.watch.look(), 1)
+        self.assertEqual(self.sent[0][1]["b"], "Fresh report.")
+        self.assertEqual(self.watch.look(), 0, "said once")
+
+    def test_an_older_schedule_first_seen_still_isnt_news(self):
+        self.made_and_run(made_ago=routines.JUST_MADE + 60, ran_ago=5)
+        self.assertEqual(self.watch.look(), 0)
+
     def chat(self, profile, rows):
         """The bot's state.db with these (role, content, seconds ago, tool calls) rows in its Bot Chat."""
         import sqlite3

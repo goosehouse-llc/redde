@@ -17,6 +17,8 @@
 #   scripts/hermes-lab/lab.sh leave [tag ...]      Leave-By Alerts' traffic re-check: wakes said over the Dashboard, sent to one device
 #   scripts/hermes-lab/lab.sh goals [tag ...]      goals (Kanban cards in triage, check-ins with progress), skipping a run, email watches
 #   scripts/hermes-lab/lab.sh lists [tag ...]      the person's lists: redde_list in a turn, the app's lists list / lists do
+#   scripts/hermes-lab/lab.sh followthrough [tag ...]  Follow-Through: bills, trips, meetings, usual buys, Paperless (in the day)
+#   scripts/hermes-lab/lab.sh plan [tag ...]        Plan For It: the turn's note, the card's answer, a later pick sent at its time
 #   scripts/hermes-lab/lab.sh work [tag ...]       workstreams: redde_work starts a hidden chat that works, ends and reports back
 #   scripts/hermes-lab/lab.sh workapi [tag ...]    the same over the Hermes API: run by the gateway, answered from the Work sheet
 #   scripts/hermes-lab/lab.sh runon [tag ...]      a job's own model (Run On): set over the Dashboard, by the plugin from a mark, and back
@@ -753,6 +755,41 @@ goals() {
   echo "\nAll checks passed."
 }
 
+# Follow-Through (followthrough_check.py, plugin 1.40.0): a bill, a passport, a flight, an invitation
+# and a sent promise through the plugin's own mail sync; the Hermes's loop sends what's due to a
+# paired stand-in phone; a stand-in Paperless; a payment settles a bill; the app's switches. The push
+# scenario, in a home of the lab's own. Run it in the day (cards go 9 am to 7 pm).
+followthrough() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / follow-through"
+    if ! LAB_OWN_HOME=run up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" followthrough_check.py "$LAB_HOME/hermes-$tag/.venv/bin/hermes") || failed+=("$tag")
+    # The app's screen on what the check left being followed (LAB_UI_DEVICE=<simulator id>).
+    if [[ -n "${LAB_UI_DEVICE:-}" ]]; then
+      (cd "$HERE/../.." && xcodebuild test -scheme EchoUITests -destination "id=$LAB_UI_DEVICE" -derivedDataPath DerivedData-unit2 \
+        -only-testing:EchoUITests/FollowThroughLabUITests) || failed+=("$tag (screen)")
+    fi
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
+# Plan For It (plan_check.py, plugin 1.41.0): the turn's note on "we're driving to … Friday", the
+# card's answer as Redde sends it, its later pick kept and sent to a paired stand-in phone at its time.
+plan() {
+  local tags=("${@:-$DEFAULT_TAGS[@]}") failed=()
+  for tag in $tags; do
+    echo "===== Hermes $tag / plan for it"
+    if ! LAB_OWN_HOME=run up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    (cd "$HERE" && "$LAB_HOME/hermes-$tag/.venv/bin/python" plan_check.py "$LAB_HOME/hermes-$tag/.venv/bin/hermes") || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Lists (lists_check.py): a turn's redde_list call makes a list the app's `lists list` gives back,
 # and the app's `lists do` checks an item off. The push scenario (the plugin).
 lists() {
@@ -1048,6 +1085,8 @@ case "${1:-}" in
   leave) shift; leave "$@" ;;
   goals) shift; goals "$@" ;;
   lists) shift; lists "$@" ;;
+  followthrough) shift; followthrough "$@" ;;
+  plan) shift; plan "$@" ;;
   work) shift; work "$@" ;;
   workapi) shift; workapi "$@" ;;
   runon) shift; runon "$@" ;;

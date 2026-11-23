@@ -43,6 +43,7 @@ description is in every prompt. The format must match what the app reads
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sys
 import time
@@ -51,12 +52,14 @@ from pathlib import Path
 
 from . import forecast, posters, products
 
+log = logging.getLogger(__name__)
+
 TOOL = "redde_show"
 TOOLSET = "redde_cards"
 MAX_CARDS = 4
 MAX_PLACES = 12
 TYPES = ("map", "places", "weather", "time", "agenda", "review", "choice", "checklist", "form", "purchase", "home", "reminder", "compare", "score",
-         "recipe", "delivery", "flight", "show", "conversion", "stock", "inbox")
+         "recipe", "delivery", "flight", "show", "conversion", "stock", "inbox", "plan")
 #: The cards from 1.12.0 (and 1.13.0, the last six) whose shape is in their turn note and their
 #: error, not in the schema.
 MORE = ("purchase", "home", "reminder", "compare", "score", "recipe", "delivery", "flight", "show", "conversion", "stock", "inbox")
@@ -71,7 +74,9 @@ REMINDER_KINDS = ("reminder", "timer", "alarm", "schedule")
 GAME_STATUSES = ("final", "live", "upcoming")
 MAX_EVENTS = 50
 #: The cards the person answers.
-ASKS = ("review", "choice", "checklist", "form")
+ASKS = ("review", "choice", "checklist", "form", "plan")
+#: A plan's actions (Plan For It, 1.41.0): at least, at most.
+PLAN_LEAST, PLAN_MOST = 2, 8
 FIELD_KINDS = ("text", "long", "number", "date", "time", "toggle", "choice")
 #: What a review is, which the app draws it as (2026-10-30: an email as a sheet with who it's to,
 #: its subject and its words). Optional: the app tells an email by its fields too.
@@ -117,12 +122,12 @@ SCHEMA = {
         "for where something is, directions, places nearby, the weather or the time. Weather and time look themselves "
         "up: give just the 'place' (a city, e.g. 'Orlando, FL'; none means theirs), call this "
         "before you answer, and answer from what it returns ('said'), never from memory or a guess: your clock may be "
-        "in another time zone. For a map or places, give what you found: coordinates, else a name and street address. "
+        "in another zone. For a map or places, give what you found: coordinates, else a name and street address. "
         "Up to 4 cards. Then answer in a sentence or two; don't read the cards out. "
         "Cards they answer with a tap: before you send, buy, book or change anything for them, a 'review' ('fields' "
         "they can edit, 'action' the button, e.g. Send), then stop and act only on their answer; 'choice' ('options'), "
         "'checklist' ('items', each {text, section, a short note}; an 'emoji'), 'form' ('fields', each with a "
-        "'kind'). Their answer is their next message. "
+        "'kind'), 'plan' ('actions'). Their answer is their next message. "
         "'agenda': events by day ('events' as your calendar tool gave them: 'title', 'start' as ISO with "
         "offset or a date for all day, 'end', 'location', 'calendar', 'color'; 'date' or 'dates' asked about, so a free day "
         "shows). Also 'purchase' (whenever you suggest things to buy: a card, never a table), 'home' (smart-home devices), 'reminder' (a reminder, timer, alarm "
@@ -161,6 +166,7 @@ SCHEMA = {
                         "options": {"type": "array", "items": {"type": "object", "properties": {
                             "title": {"type": "string"}, "detail": {"type": "string"}, "image": {"type": "string"}}, "required": ["title"]}},
                         "multiple": {"type": "boolean"},
+                        "actions": {"type": "array", "items": {"type": "object"}},
                         # (no fields of its own: every kind has items. 2026-11-22 they were the checklist's {text,
                         # done, section, note}, and a model kept to them for a show card, {"text": "Donnie Brasco"},
                         # refused five times for want of a title)
@@ -666,6 +672,16 @@ def _ask(card: dict, kind: str) -> tuple[str, str | None]:
         drawn = str(card.get("kind") or "").strip().lower() if kind == "review" else ""
         drawn = f"; as {'an' if drawn in ('email', 'event') else 'a'} {drawn}" if drawn in REVIEW_KINDS[:4] else ""
         return f"{kind}: {title.strip()} ({', '.join(fields[:5])}; button {card.get('action') or ('Do It' if kind == 'review' else 'Send')}{drawn})", None
+    if kind == "plan":
+        actions = [a for a in card.get("actions") or [] if isinstance(a, dict) and str(a.get("title") or "").strip()]
+        if not title.strip() or len(actions) < PLAN_LEAST:
+            return "", (f"a plan needs a 'title' (what they're doing) and {PLAN_LEAST} to {PLAN_MOST} 'actions', each "
+                        "{title, why, when: 'now' or ISO with offset, request, picked}")
+        if any(not str(a.get("request") or "").strip() for a in actions):
+            return "", "each of a plan's 'actions' needs a 'request': what you'd do, as they'd ask it"
+        later = [a for a in actions if _later(a.get("when")) is not None]
+        return (f"plan: {title.strip()} ({len(actions[:PLAN_MOST])} actions"
+                + (f", {len(later)} for later" if later else "") + "; button Do These)"), None
     if kind == "choice":
         options = _labels(card.get("options"), "title", "name", "label")
         if len(options) < 2:
@@ -682,6 +698,18 @@ def _ask(card: dict, kind: str) -> tuple[str, str | None]:
     if not items:
         return "", "a checklist needs 'items', each with a 'text'"
     return f"checklist: {title.strip() or 'list'} ({len(items)} items{f' in {len(groups)} groups' if len(groups) > 1 else ''})", None
+
+
+def _later(when) -> float | None:
+    """A plan action's time, when it's for later (ISO with its offset): seconds since 1970."""
+    text = str(when or "").strip()
+    if not text or text.lower() == "now":
+        return None
+    try:
+        at = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return at.timestamp() if at.tzinfo else at.astimezone().timestamp()
 
 
 def _decoded(value):
@@ -904,6 +932,28 @@ LEVEL_NOTES = {
     "act": ("[Redde: they let you act on their behalf: do what they ask, then say exactly what you did. Only before paying "
             f"or deleting something show a 'review' card with {TOOL} and wait for their answer.]"),
 }
+#: Plan For It (1.41.0, asked 2026-11-23: "tell it 'I'm doing something' and have it act on anything
+#: that may help ... the model prompts a few different actions it can take that are user
+#: selectable"): they say what they're about to do, in English, with when.
+_DOING = re.compile(
+    r"\b(?:i'?m|i am|we'?re|we are|i'?ll be|we'?ll be)\s+(?:about to\s+)?(?:going|driving|flying|heading|travel(?:l)?ing|"
+    r"taking|hosting|having|moving|starting|visiting|selling|buying|throwing|running|doing|off|leaving|getting married|"
+    r"interviewing|presenting|camping|hiking|celebrating|renovating|painting|launching)\b"
+    r"(?!\s+to\s+(?:be|do|try|send|write|call|email|text|ask|need|make|have|get|say|tell|look|check|see|think|go\s+to\s+bed)\b)",
+    re.IGNORECASE)
+_SOON = re.compile(r"\b(?:today|tonight|tomorrow|this (?:week|weekend|month|morning|afternoon|evening)|next (?:week|weekend|month|year|"
+                   r"mon|tue|wed|thu|fri|sat|sun)\w*|on (?:mon|tue|wed|thu|fri|sat|sun)\w*|(?:mon|tues|wednes|thurs|fri|satur|sun)day|"
+                   r"in (?:a|an|\d+|two|three|a few) (?:days?|weeks?|months?)|soon|about to|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|"
+                   r"nov|dec)[a-z]*\.? \d{1,2}\b|\d{1,2}(?:st|nd|rd|th)\b|for (?:the )?(?:holidays|christmas|thanksgiving|new year))",
+                   re.IGNORECASE)
+PLAN_NOTE = (f"[Redde: they told you what they're about to do. Show a 'plan' card with {TOOL} first: its 'title' what they're "
+             "doing and when (e.g. Driving to Montreal · Friday), and 3 to 6 'actions' you could take for it with your tools "
+             "(look something up it needs, a check before it, a reminder or schedule, a list, a calendar event, a message "
+             "drafted), each {title, why (a few words), when: 'now' or ISO with offset for later, request: what you'd do, as "
+             "they'd ask it, picked: true on the ones they'd surely want}. Then a line, and stop: they pick.]")
+PLAN_ANSWER_NOTE = ("[Redde: they picked from the plan. Do the 'now' ones now, one at a time, with your tools (a review card "
+                    "first for anything you'd send, book or buy). The 'later' ones Redde keeps: each comes back to them as a "
+                    "card at its time, so don't schedule them yourself. Then say in a line what you did.]")
 REVIEW_NOTE = ("[Redde: before you send, book, buy or change anything for them, show what you'll do as a 'review' "
                f"card with {TOOL} (its 'kind': email, message, event or purchase) and stop; do it only when their "
                "answer comes back.]")
@@ -1325,9 +1375,15 @@ def _turn_note(home: Path, message, platform: str = "", at: datetime | None = No
     if platform not in REDDES or not offered(home):
         return None
     text = _text(message)
+    if "[Redde card " in text and ": plan {" in text:
+        return plan_answer(home, text)      # (its picks can say "weather": it's an answer, not an ask)
     if "[Redde card " not in text and not gated(home) and (alone := card_alone_note(text)) is not None:
         remember_ask(session, PURCHASE_NOTE if "'purchase' card" in alone else None)
         return alone
+    # Told what they're about to do, and not asking anything ("I'm flying to Lisbon on Dec 18" is no
+    # flight's status): a plan (1.41.0).
+    if "[Redde card " not in text and "?" not in text and _DOING.search(text) and _SOON.search(text) and not _ASKS_LIST.search(text):
+        return PLAN_NOTE
     # A card's answer is the go-ahead itself, not a new ask.
     calendar_asked = bool(_ASKS_CALENDAR.search(text)) and not _PUTS_ON_CALENDAR.search(text)
     # "What's the weather tomorrow" is the weather's, unless the calendar is named too.
@@ -1356,7 +1412,7 @@ def _turn_note(home: Path, message, platform: str = "", at: datetime | None = No
     if not time_asked and not weather_asked:
         # A card's answer is the go-ahead itself, not a new ask.
         if "[Redde card " in text:
-            return None
+            return plan_answer(home, text)
         if _ASKS_LIST.search(text):
             return LIST_NOTE
         if not _ASKS_ACTION.search(text) or gated(home):
@@ -1373,6 +1429,31 @@ def _turn_note(home: Path, message, platform: str = "", at: datetime | None = No
     else:
         note += " Don't guess the time: what the card returns has it.]"
     return note
+
+
+def plan_answer(home: Path, text: str) -> str | None:
+    """A plan card's answer (the app's note, `plan {json}`): its later picks kept, to come back as
+    cards at their time (`followthrough.planned`), and the note to do the rest now."""
+    start = text.find("[Redde card ")
+    mark = text.find(": plan {", start) if start >= 0 else -1
+    if mark < 0:
+        return None
+    try:
+        picked, _ = json.JSONDecoder().raw_decode(text, mark + len(": plan "))
+    except ValueError:
+        return None
+    if not isinstance(picked, dict):
+        return None
+    key = text[start + len("[Redde card "):mark]
+    later = [a for a in picked.get("later") or [] if isinstance(a, dict) and _later(a.get("at")) is not None]
+    if later:
+        try:
+            from . import calls, followthrough
+            followthrough.planned(calls.caller(home)[1], key, str(picked.get("title") or ""),
+                                  [{**a, "at": _later(a.get("at"))} for a in later])
+        except Exception:
+            log.debug("redde-push: keeping a plan's later picks failed", exc_info=True)
+    return PLAN_ANSWER_NOTE
 
 
 def more_note(text: str) -> str | None:

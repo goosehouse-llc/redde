@@ -984,3 +984,135 @@ struct FormCard: View {
         return formatter.string(from: date)
     }
 }
+
+// MARK: - Plan for it
+
+/// Plan For It (asked 2026-11-23: "tell it 'I'm doing something' and have it act on anything that
+/// may help me ... a few different actions it can take that are user selectable"): what they're
+/// about to do, and what the agent could do for it, each a row to tick, with when it would happen
+/// (Now, or a day and time). The agent's guesses start ticked. Do These answers it: the ones for
+/// now the agent does at once; the later ones the plugin keeps and offers back as a card at their
+/// time (`followthrough.planned`).
+struct PlanCard: View {
+    let card: ReplyCard.Plan
+    let whole: ReplyCard
+    @State private var picked: Set<Int>
+    @State private var answers = CardAnswers.shared
+    @Environment(\.answerCard) private var answerer
+    @Environment(\.colorScheme) private var appScheme
+    private var scheme: ColorScheme { appScheme.onCard }
+
+    init(card: ReplyCard.Plan, whole: ReplyCard) {
+        self.card = card
+        self.whole = whole
+        _picked = State(initialValue: Set(card.actions.indices.filter { card.actions[$0].picked }))
+    }
+
+    private var answered: String? { answers.said[whole.key] }
+
+    var body: some View {
+        let chosen = answered.map(Self.picked(in:))
+        AnswerBox(symbol: "list.bullet.clipboard", title: card.title,
+                  subtitle: card.subtitle ?? String(localized: "Plan for it", comment: "A plan card's line under its title, when the agent gave none"),
+                  needsYou: answered == nil && answerer != nil) {
+            VStack(spacing: 8) {
+                ForEach(Array(card.actions.enumerated()), id: \.offset) { index, action in
+                    let on = chosen.map { $0.contains(action.title) } ?? picked.contains(index)
+                    Button { toggle(index) } label: { row(action, on: on, faded: chosen != nil && !on) }
+                        .buttonStyle(.plain)
+                        .inert(answered != nil || answerer == nil || answerer?.busy == true)
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                        .accessibilityHint(Text("Picks it, or leaves it out", comment: "VoiceOver hint: an option of a card where several may be picked"))
+                        .accessibilityIdentifier("plan-action-\(index)")
+                }
+            }
+            if let note = card.note { Text(note).chatFont(.caption).foregroundStyle(.secondary) }
+            if let chosen {
+                let titles = card.actions.map(\.title).filter(chosen.contains)
+                AnsweredLine(text: titles.isEmpty ? String(localized: "None picked", comment: "A plan card answered with nothing ticked")
+                                                  : String(localized: "Doing: \(titles.joined(separator: ", "))", comment: "A plan card, answered: the actions picked"))
+            } else if let answerer {
+                HStack {
+                    Text("\(picked.count) of \(card.actions.count) picked", comment: "A plan card: how many actions are ticked")
+                        .chatFont(.caption).foregroundStyle(.secondary).monospacedDigit()
+                    Spacer(minLength: 0)
+                    Button { send(answerer) } label: {
+                        FilledButtonTitle(title: String(localized: "Do These", comment: "A plan card's button: the agent does the ticked actions"))
+                            .padding(.horizontal, 12).padding(.vertical, 6).frame(minHeight: 32)
+                    }
+                    .chatFont(.subheadline, weight: .semibold)
+                    .prominentButton()
+                    .buttonBorderShape(.capsule)
+                    .disabled(picked.isEmpty || answerer.busy)
+                    .accessibilityHint(Text("Your agent does the ones you picked: now, or at their time", comment: "VoiceOver hint: a plan card's Do These"))
+                    .accessibilityIdentifier("plan-do-these")
+                }
+            }
+        }
+    }
+
+    private func row(_ action: ReplyCard.Plan.Action, on: Bool, faded: Bool) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: on ? "checkmark.circle.fill" : "circle")
+                .chatFont(.title3)
+                .foregroundStyle(on ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(action.title).chatFont(.callout, weight: .semibold).fixedSize(horizontal: false, vertical: true)
+                if let why = action.why { Text(why).chatFont(.caption).foregroundStyle(.secondary).lineLimit(3) }
+            }
+            Spacer(minLength: 6)
+            Text(verbatim: Self.when(action))
+                .chatFont(.caption2, weight: .semibold)
+                .foregroundStyle(action.at == nil ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(scheme.cardPanel, in: .capsule)
+        }
+        .padding(10)
+        .background(on ? AnyShapeStyle(.tint.opacity(0.10)) : AnyShapeStyle(scheme.cardPanel), in: .rect(cornerRadius: 14))
+        .opacity(faded ? 0.5 : 1)
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func toggle(_ index: Int) {
+        if picked.contains(index) { picked.remove(index) } else { picked.insert(index) }
+    }
+
+    private func send(_ answerer: CardAnswerer) {
+        let chosen = picked.sorted().map { card.actions[$0] }
+        answerer.answer(.plan(card), String(localized: "Do these: \(chosen.map(\.title).joined(separator: ", "))",
+                                            comment: "The message a plan card's Do These sends, with the actions picked"),
+                        Self.note(card, picked: Set(picked)))
+    }
+
+    /// "Now", or the day and time it's for: "Fri 7:00 AM".
+    static func when(_ action: ReplyCard.Plan.Action) -> String {
+        guard let at = action.at else { return String(localized: "Now", comment: "A plan card: an action done at once") }
+        return Calendar.current.isDateInToday(at) ? at.formatted(date: .omitted, time: .shortened)
+            : at.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+    }
+
+    /// What goes to the agent (and the plugin, which keeps the later ones): `plan {json}`, in English.
+    static func note(_ card: ReplyCard.Plan, picked: Set<Int>) -> String {
+        var now: [[String: String]] = [], later: [[String: String]] = [], left: [String] = []
+        for (index, action) in card.actions.enumerated() {
+            guard picked.contains(index) else { left.append(action.title); continue }
+            if let when = action.when, action.at != nil {
+                later.append(["title": action.title, "request": action.request, "at": when])
+            } else {
+                now.append(["title": action.title, "request": action.request])
+            }
+        }
+        let body: [String: Any] = ["title": card.title, "now": now, "later": later, "left": left]
+        let data = (try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys, .withoutEscapingSlashes])) ?? Data("{}".utf8)
+        return "plan " + String(decoding: data, as: UTF8.self)
+    }
+
+    /// The titles an answer picked, from its note.
+    static func picked(in said: String) -> Set<String> {
+        guard let start = said.range(of: "plan {")?.lowerBound, let data = said[said.index(start, offsetBy: 5)...].data(using: .utf8),
+              let body = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [] }
+        let rows = ((body["now"] as? [[String: Any]]) ?? []) + ((body["later"] as? [[String: Any]]) ?? [])
+        return Set(rows.compactMap { $0["title"] as? String })
+    }
+}

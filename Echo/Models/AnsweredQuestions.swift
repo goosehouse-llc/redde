@@ -30,6 +30,7 @@ nonisolated enum AnsweredQuestions {
         case let .review(r): r.title
         case let .checklist(c): c.title
         case let .form(f): f.title
+        case let .plan(p): p.title
         default: nil
         }
         return asked?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty.map { String($0.prefix(200)) }

@@ -1,8 +1,8 @@
-# Redde plugin 1.40.0 — GitHub release draft
+# Redde plugin 1.41.0 — GitHub release draft
 
-Title: **Redde plugin 1.40.0**. Tag: `redde-push-1.40.0`, on the commit that carries
-`version: 1.40.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
-`redde-push-1.31.0`; this one covers 1.31.1 to 1.40.0. The full list is in that folder's
+Title: **Redde plugin 1.41.0**. Tag: `redde-push-1.41.0`, on the commit that carries
+`version: 1.41.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
+`redde-push-1.31.0`; this one covers 1.31.1 to 1.41.0. The full list is in that folder's
 `CHANGELOG.md`. Publish it when Redde 2.7 is out. Everything below the line is the release's text.
 
 ---
@@ -33,6 +33,7 @@ and `hermes serve` afterwards.
   don't call your model.
 - **Fewer pings for what you ignore (1.36).** Ideas you leave alone three times come quietly until
   you touch one, and a watch that keeps finding nothing slows down, then pauses and tells you.
+- **Plan For It (1.41.0).** Tell your agent what you're about to do ("We're driving to Montreal Friday") and it offers a plan: a few things it can do for it, now or at a time, to tick. The ones for later come back as cards when it's time. A show card's title opens its page.
 - **Bills, trips, meetings and usual buys (1.40.0).** Bills from mail or Paperless are reminded before they're due and checked as paid after; a passport, policy or warranty comes back in time to renew. A flight or a stay brings packing, check-in and its receipts. A meeting invite brings what's open with those people an hour before. What you buy every so often is offered back when it's about due.
 - **Follow-through (1.39.0).** Promises in mail you sent, questions waiting on an answer, replies you owe, deliveries, return windows and trials are kept on your Hermes and checked when they should have happened; only what didn't comes back, as an idea card. A watch-list title new on Jellyfin, and a finished series' next season, come back too. Settings › Your Day › Follow-Through.
 - **Plans that happen (1.38.0).** Tell your agent you'll watch a film with someone on a given night and it goes on your list with the date. Redde reminds you on the day, and afterwards checks it happened: a film your media server shows as played is ticked off, and one that isn't comes back to find another night.
