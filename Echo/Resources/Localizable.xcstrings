@@ -5963,6 +5963,113 @@
         }
       }
     },
+    "%@ bill" : {
+      "comment" : "Follow-Through: a bill to pay, with who it's from",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regning fra %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechnung von %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Factura de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Facture %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bolletta %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@の請求書"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 청구서"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regning fra %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rekening van %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rachunek: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conta de %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Счет: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Räkning från %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ faturası"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рахунок: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@账单"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@帳單"
+          }
+        }
+      }
+    },
     "%@ call" : {
       "localizations" : {
         "da" : {
@@ -43644,6 +43751,113 @@
         }
       }
     },
+    "A bill comes back before it's due, and again if no payment shows up after. A passport, a policy or a warranty comes back in time to renew. A flight or a stay brings a packing list, check-in the day before and the receipts once you're home. An hour before a meeting, what's open with those people. And what you buy every so often, offered back when it's about due. From your mail and Paperless. It takes the Redde plugin 1.40." : {
+      "comment" : "What's New 2.7: bills, trips, meetings, usual buys",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En regning kommer tilbage, før den forfalder, og igen, hvis der ikke dukker en betaling op bagefter. Et pas, en police eller en garanti kommer tilbage i tide til at blive fornyet. En flyrejse eller et ophold giver en pakkeliste, check-in dagen før og kvitteringerne, når du er hjemme. En time før et møde: det, der er åbent med de mennesker. Og det, du køber en gang imellem, bliver tilbudt igen, når det er ved at være tid. Fra din mail og Paperless. Det kræver Redde-plugin 1.40."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Rechnung kommt vor der Fälligkeit zurück und noch einmal, wenn danach keine Zahlung auftaucht. Ein Reisepass, eine Police oder eine Garantie kommt rechtzeitig zum Verlängern zurück. Ein Flug oder eine Unterkunft bringt eine Packliste, den Check-in am Tag davor und die Belege, sobald du zu Hause bist. Eine Stunde vor einem Termin, was mit diesen Leuten noch offen ist. Und was du immer wieder kaufst, wird dir angeboten, wenn es fast so weit ist. Aus deinen E-Mails und Paperless. Dafür braucht es das Redde-Plugin 1.40."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una factura vuelve antes de vencer, y otra vez si después no aparece el pago. Un pasaporte, una póliza o una garantía vuelve a tiempo para renovarla. Un vuelo o una estancia trae una lista para la maleta, el check-in el día antes y los recibos cuando vuelves a casa. Una hora antes de una reunión, lo que tienes pendiente con esas personas. Y lo que compras cada cierto tiempo te lo vuelve a ofrecer cuando toca. Desde tu correo y Paperless. Necesita el plugin de Redde 1.40."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une facture revient avant son échéance, puis à nouveau si aucun paiement n’apparaît ensuite. Un passeport, un contrat d’assurance ou une garantie revient à temps pour être renouvelé. Un vol ou un séjour apporte une liste de bagages, l’enregistrement la veille et les reçus une fois rentré. Une heure avant une réunion, ce qui reste en suspens avec ces personnes. Et ce que vous achetez de temps en temps vous est reproposé quand il est presque temps. Depuis vos e-mails et Paperless. Requiert le plugin Redde 1.40."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una bolletta torna prima della scadenza, e di nuovo se poi non risulta il pagamento. Un passaporto, una polizza o una garanzia torna in tempo per il rinnovo. Un volo o un soggiorno porta una lista per la valigia, il check-in il giorno prima e le ricevute una volta a casa. Un'ora prima di una riunione, ciò che è ancora aperto con quelle persone. E ciò che compri ogni tanto ti viene riproposto quando è quasi ora. Dalla tua email e da Paperless. Richiede il plugin Redde 1.40."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求書は期日前に戻ってきて、支払いが確認できなければその後にもう一度。パスポート、保険、保証は更新に間に合うように戻ってきます。フライトや宿泊には持ち物リスト、前日のチェックイン、帰宅後の領収書。会議の1時間前には、その相手との未解決のこと。そして時々買うものは、そろそろというころに提案します。メールとPaperlessから。Reddeプラグイン1.40が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "청구서는 기한 전에 다시 알려 주고, 이후 결제가 확인되지 않으면 한 번 더 알려 줍니다. 여권, 보험, 보증은 갱신에 늦지 않게 알려 줍니다. 항공편이나 숙박에는 짐 목록, 전날 체크인, 집에 돌아온 뒤 영수증이 따라옵니다. 회의 한 시간 전에는 그 사람들과 아직 남은 일을 알려 줍니다. 그리고 가끔 사는 것은 살 때가 되면 다시 제안합니다. 메일과 Paperless에서 가져옵니다. Redde 플러그인 1.40이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En regning kommer tilbake før forfall, og igjen hvis ingen betaling dukker opp etterpå. Et pass, en forsikring eller en garanti kommer tilbake i tide til å fornyes. En flyreise eller et opphold gir en pakkeliste, innsjekking dagen før og kvitteringene når du er hjemme. En time før et møte: det som er åpent med de personene. Og det du kjøper av og til, foreslås igjen når det snart er tid. Fra e-posten din og Paperless. Det krever Redde-tillegget 1.40."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een rekening komt terug voordat hij vervalt, en nog eens als er daarna geen betaling verschijnt. Een paspoort, een polis of een garantie komt op tijd terug om te verlengen. Een vlucht of verblijf brengt een paklijst, de check-in de dag ervoor en de bonnetjes zodra je thuis bent. Een uur voor een afspraak: wat er nog openstaat met die mensen. En wat je af en toe koopt, wordt je weer aangeboden als het bijna zover is. Uit je mail en Paperless. Hiervoor is de Redde-plug-in 1.40 nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rachunek wraca przed terminem płatności i jeszcze raz, jeśli potem nie widać wpłaty. Paszport, polisa lub gwarancja wracają na czas, by je odnowić. Lot lub pobyt przynosi listę do spakowania, odprawę dzień wcześniej i paragony po powrocie do domu. Godzinę przed spotkaniem: otwarte sprawy z tymi osobami. A to, co kupujesz co jakiś czas, wraca z propozycją, gdy pora znowu kupić. Z Twojej poczty i Paperless. Wymaga wtyczki Redde 1.40."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma conta volta antes do vencimento, e de novo se nenhum pagamento aparecer depois. Um passaporte, uma apólice ou uma garantia volta a tempo de renovar. Um voo ou uma hospedagem traz uma lista para a mala, o check-in na véspera e os recibos quando você volta para casa. Uma hora antes de uma reunião, o que está em aberto com essas pessoas. E o que você compra de vez em quando é oferecido de novo quando está quase na hora. Do seu e-mail e do Paperless. Requer o plugin do Redde 1.40."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Счет возвращается до срока оплаты и еще раз, если после него оплата не появилась. Паспорт, полис или гарантия возвращаются вовремя, чтобы их продлить. Перелет или проживание приносят список вещей, регистрацию за день и чеки, когда вы дома. За час до встречи — незакрытые дела с этими людьми. А то, что вы покупаете время от времени, предлагается снова, когда подходит срок. Из вашей почты и Paperless. Нужен плагин Redde 1.40."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En räkning kommer tillbaka innan den förfaller, och igen om ingen betalning syns efteråt. Ett pass, en försäkring eller en garanti kommer tillbaka i tid för att förnyas. En flygresa eller en vistelse ger en packlista, incheckning dagen före och kvittona när du är hemma. En timme före ett möte: det som är öppet med de personerna. Och det du köper då och då föreslås igen när det snart är dags. Från din e-post och Paperless. Det kräver Redde-tillägget 1.40."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir fatura vadesinden önce, sonrasında ödeme görünmezse de yeniden geri gelir. Pasaport, poliçe ya da garanti yenileme zamanında geri gelir. Bir uçuş ya da konaklama; bavul listesi, bir gün önce check-in ve eve döndüğünüzde makbuzları getirir. Bir toplantıdan bir saat önce, o kişilerle açık kalan konular. Ara sıra aldıklarınız da zamanı yaklaşınca yeniden önerilir. E-postanızdan ve Paperless'tan. Redde Eklentisi 1.40 gerektirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рахунок повертається до строку оплати й ще раз, якщо після нього оплата не з’явилася. Паспорт, поліс або гарантія повертаються вчасно, щоб їх подовжити. Переліт або проживання приносять список речей, реєстрацію за день і чеки, коли ви вдома. За годину до зустрічі — незакриті справи з цими людьми. А те, що ви купуєте час від часу, пропонується знову, коли підходить строк. З вашої пошти й Paperless. Потрібен плагін Redde 1.40."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "账单会在到期前提醒你，之后若没看到付款还会再提醒一次。护照、保单或保修会及时提醒你续期。航班或住宿会带来行李清单、前一天的值机或入住提醒，以及回家后的收据。会议前一小时，告诉你和这些人之间还有哪些未了的事。你隔段时间就会买的东西，快到时候会再推荐给你。来自你的邮件和Paperless。需要Redde插件1.40。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帳單會在到期前提醒你，之後若沒看到付款還會再提醒一次。護照、保單或保固會及時提醒你續約。航班或住宿會帶來行李清單、前一天的報到或入住提醒，以及回家後的收據。會議前一小時，告訴你和那些人之間還有哪些未了的事。你每隔一陣子會買的東西，快到時候會再推薦給你。來自你的郵件和 Paperless。需要 Redde 外掛 1.40。"
+          }
+        }
+      }
+    },
     "A blend" : {
       "localizations" : {
         "da" : {
@@ -53741,6 +53955,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工具呼叫"
+          }
+        }
+      }
+    },
+    "A trip" : {
+      "comment" : "Follow-Through: a trip with no place known",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En rejse"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Reise"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un viaje"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un voyage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un viaggio"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅行"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "여행"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En reise"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een reis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podróż"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma viagem"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поездка"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En resa"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir seyahat"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поїздка"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一趟旅行"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一趟旅行"
           }
         }
       }
@@ -95308,6 +95629,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "bf_emma(1)+af_heart(4)+af_bella(2)"
+          }
+        }
+      }
+    },
+    "Bills, trips and meetings" : {
+      "comment" : "What's New 2.7: more follow-through",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regninger, rejser og møder"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechnungen, Reisen und Termine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Facturas, viajes y reuniones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Factures, voyages et réunions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bollette, viaggi e riunioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求書、旅行、会議"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "청구서, 여행, 회의"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regninger, reiser og møter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rekeningen, reizen en afspraken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rachunki, podróże i spotkania"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contas, viagens e reuniões"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Счета, поездки и встречи"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Räkningar, resor och möten"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faturalar, seyahatler ve toplantılar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рахунки, поїздки й зустрічі"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "账单、旅行和会议"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帳單、旅行和會議"
           }
         }
       }
@@ -149321,6 +149749,113 @@
         }
       }
     },
+    "Deliveries running late, return windows closing, trials about to charge, bills before they're due and paid after, and what runs out: a passport, a policy, a warranty." : {
+      "comment" : "Follow-Through: under the orders switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forsinkede leveringer, returfrister der udløber, prøveperioder der snart koster penge, regninger før forfald og om de er betalt bagefter, og det, der udløber: et pas, en police, en garanti."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verspätete Lieferungen, ablaufende Rückgabefristen, Probeabos kurz vor der Abbuchung, Rechnungen vor der Fälligkeit und bezahlt danach, und was abläuft: ein Reisepass, eine Police, eine Garantie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entregas con retraso, plazos de devolución que vencen, pruebas a punto de cobrarse, facturas antes de vencer y pagadas después, y lo que caduca: un pasaporte, una póliza, una garantía."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Livraisons en retard, délais de retour qui se terminent, essais sur le point d’être facturés, factures avant l’échéance et payées ensuite, et ce qui expire : un passeport, un contrat d’assurance, une garantie."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consegne in ritardo, finestre di reso in scadenza, prove gratuite che stanno per diventare a pagamento, bollette prima della scadenza e pagate dopo, e ciò che scade: un passaporto, una polizza, una garanzia."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遅れている配達、締め切りが近い返品期限、課金が始まるお試し期間、期日前と支払い後の請求書、そして期限が切れるもの：パスポート、保険、保証。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "늦어지는 배송, 곧 끝나는 반품 기간, 곧 결제되는 무료 체험, 기한 전 청구서와 결제 후 확인, 그리고 만료되는 것: 여권, 보험, 보증."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forsinkede leveranser, returfrister som går ut, prøveperioder som snart belastes, regninger før forfall og om de er betalt etterpå, og det som går ut: et pass, en forsikring, en garanti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leveringen met vertraging, retourtermijnen die aflopen, proefperiodes die bijna gaan kosten, rekeningen voordat ze vervallen en betaald daarna, en wat verloopt: een paspoort, een polis, een garantie."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spóźnione dostawy, kończące się terminy zwrotu, okresy próbne tuż przed obciążeniem, rachunki przed terminem i sprawdzenie wpłaty po nim, a także to, co wygasa: paszport, polisa, gwarancja."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entregas atrasadas, prazos de devolução acabando, testes prestes a cobrar, contas antes do vencimento e pagas depois, e o que vence: um passaporte, uma apólice, uma garantia."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Опаздывающие доставки, истекающие сроки возврата, пробные периоды перед списанием, счета до срока оплаты и проверка оплаты после, а также то, что истекает: паспорт, полис, гарантия."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Försenade leveranser, returfrister som går ut, provperioder som snart debiteras, räkningar innan de förfaller och om de är betalda efteråt, och det som går ut: ett pass, en försäkring, en garanti."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geciken teslimatlar, kapanan iade süreleri, ücretlendirilmek üzere olan denemeler, vadesi yaklaşan ve ödenip ödenmediği izlenen faturalar ve süresi dolanlar: pasaport, poliçe, garanti."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запізнілі доставки, строки повернення, що спливають, пробні періоди перед списанням, рахунки до строку оплати й перевірка оплати після, а також те, що закінчується: паспорт, поліс, гарантія."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "延误的快递、即将截止的退货期、即将扣费的试用、到期前和付款后的账单，以及即将到期的东西：护照、保单、保修。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "延誤的包裹、即將截止的退貨期、即將扣款的試用、到期前和付款後的帳單，以及即將到期的東西：護照、保單、保固。"
+          }
+        }
+      }
+    },
     "Deliveries running late, return windows closing, trials about to charge." : {
       "comment" : "Follow-Through: under the orders switch",
       "localizations" : {
@@ -175935,6 +176470,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "展開摘要"
+          }
+        }
+      }
+    },
+    "Expires %@" : {
+      "comment" : "Follow-Through: when something runs out",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udløber %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läuft ab %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caduca el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expire le %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scade il %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@に期限切れ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 만료"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Går ut %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verloopt %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wygasa: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vence em %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Истекает: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Går ut %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitiş: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закінчується: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@到期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@到期"
           }
         }
       }
@@ -327221,6 +327863,113 @@
         }
       }
     },
+    "Orders, Bills & Renewals" : {
+      "comment" : "Follow-Through: the orders switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestillinger, regninger og fornyelser"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestellungen, Rechnungen & Verlängerungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedidos, facturas y renovaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commandes, factures et renouvellements"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordini, bollette e rinnovi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注文・請求書・更新"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주문, 청구서 및 갱신"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestillinger, regninger og fornyelser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestellingen, rekeningen & verlengingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamówienia, rachunki i odnowienia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedidos, Contas e Renovações"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заказы, счета и продления"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beställningar, räkningar och förnyelser"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siparişler, Faturalar ve Yenilemeler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Замовлення, рахунки й подовження"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "订单、账单与续期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂單、帳單與續約"
+          }
+        }
+      }
+    },
     "Orders, invoices, payments, shipping and bookings." : {
       "comment" : "Email piles: what the Receipts pile holds",
       "localizations" : {
@@ -329696,6 +330445,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "行李"
+          }
+        }
+      }
+    },
+    "Packing three days before a flight or a stay, check-in the day before, the receipts once you're home." : {
+      "comment" : "Follow-Through: under the trips switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pakning tre dage før en flyrejse eller et ophold, check-in dagen før, kvitteringerne, når du er hjemme."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Packen drei Tage vor einem Flug oder einer Unterkunft, Check-in am Tag davor, die Belege, sobald du zu Hause bist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La maleta tres días antes de un vuelo o una estancia, el check-in el día antes, los recibos cuando vuelves a casa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les bagages trois jours avant un vol ou un séjour, l’enregistrement la veille, les reçus une fois rentré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La valigia tre giorni prima di un volo o di un soggiorno, il check-in il giorno prima, le ricevute una volta a casa."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フライトや宿泊の3日前に荷造り、前日にチェックイン、帰宅後に領収書。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "항공편이나 숙박 3일 전에 짐 싸기, 전날 체크인, 집에 돌아오면 영수증."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pakking tre dager før en flyreise eller et opphold, innsjekking dagen før, kvitteringene når du er hjemme."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inpakken drie dagen voor een vlucht of verblijf, de check-in de dag ervoor, de bonnetjes zodra je thuis bent."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pakowanie trzy dni przed lotem lub pobytem, odprawa dzień wcześniej, paragony po powrocie do domu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A mala três dias antes de um voo ou uma hospedagem, o check-in na véspera, os recibos quando você volta para casa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сборы за три дня до перелета или проживания, регистрация за день, чеки, когда вы дома."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Packning tre dagar före en flygresa eller en vistelse, incheckning dagen före, kvittona när du är hemma."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir uçuş ya da konaklamadan üç gün önce bavul, bir gün önce check-in, eve dönünce makbuzlar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Збори за три дні до перельоту чи проживання, реєстрація за день, чеки, коли ви вдома."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "航班或住宿前三天整理行李，前一天值机或入住，回家后整理收据。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "航班或住宿前三天打包行李，前一天報到或入住，回家後整理收據。"
           }
         }
       }
@@ -332888,6 +333744,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "紙張白和你的字體"
+          }
+        }
+      }
+    },
+    "Paperless is read with the keys in %@'s settings: new documents are checked for bills and what runs out." : {
+      "comment" : "Follow-Through: where Paperless's address and key were found",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless læses med nøglerne i indstillingerne for %@: nye dokumenter tjekkes for regninger og det, der udløber."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless wird mit den Schlüsseln aus den Einstellungen von %@ gelesen: Neue Dokumente werden auf Rechnungen und Ablaufendes geprüft."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless se lee con las claves de los ajustes de %@: los documentos nuevos se revisan en busca de facturas y de lo que caduca."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless est lu avec les clés des réglages de %@ : les nouveaux documents sont examinés pour les factures et ce qui expire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless si legge con le chiavi nelle impostazioni di questo agente: %@. I nuovi documenti vengono controllati per bollette e scadenze."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperlessは%@の設定にあるキーで読み取ります。新しい書類から請求書や期限が切れるものを確認します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless는 %@ 설정에 있는 키로 읽습니다. 새 문서에서 청구서와 만료되는 것을 확인합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless leses med nøklene i innstillingene til %@: nye dokumenter sjekkes for regninger og det som går ut."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless wordt gelezen met de sleutels in de instellingen van %@: nieuwe documenten worden nagekeken op rekeningen en wat verloopt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless jest odczytywany dzięki kluczom z ustawień: %@. Nowe dokumenty są sprawdzane pod kątem rachunków i tego, co wygasa."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Paperless é lido com as chaves dos ajustes de %@: documentos novos são verificados em busca de contas e do que vence."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless читается по ключам из настроек: %@. Новые документы проверяются на счета и то, что истекает."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless läses med nycklarna i inställningarna för %@: nya dokument kontrolleras efter räkningar och det som går ut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless şu ayarlardaki anahtarlarla okunur: %@. Yeni belgeler faturalar ve süresi dolanlar için denetlenir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperless читається за ключами з параметрів: %@. Нові документи перевіряються на рахунки й те, що закінчується."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过%@设置中的密钥读取Paperless：会检查新文档中的账单和即将到期的东西。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過%@設定中的金鑰讀取 Paperless：會檢查新文件中的帳單和即將到期的東西。"
           }
         }
       }
@@ -489380,6 +490343,220 @@
         }
       }
     },
+    "Trip to %@" : {
+      "comment" : "Follow-Through: a trip, with where to",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rejse til %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reise nach %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viaje a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voyage à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viaggio a %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@への旅行"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 여행"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reise til %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reis naar %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podróż: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viagem para %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поездка: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resa till %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seyahat: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поїздка: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往%@的旅行"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往%@的旅行"
+          }
+        }
+      }
+    },
+    "Trips" : {
+      "comment" : "Follow-Through: the trips switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rejser"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reisen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viajes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voyages"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viaggi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅行"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "여행"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reizen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podróże"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viagens"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поездки"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resor"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seyahatler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поїздки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅行"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅行"
+          }
+        }
+      }
+    },
     "Trust" : {
       "localizations" : {
         "da" : {
@@ -504513,6 +505690,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "常價 %@"
+          }
+        }
+      }
+    },
+    "Usual Buys" : {
+      "comment" : "Follow-Through: the habits switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faste indkøb"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Übliche Einkäufe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compras habituales"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Achats habituels"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acquisti abituali"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いつもの買い物"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자주 사는 것"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faste innkjøp"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaste aankopen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stałe zakupy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compras Habituais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярные покупки"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vanliga köp"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Düzenli Alışverişler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Регулярні покупки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常买的东西"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常買的東西"
           }
         }
       }
@@ -520076,6 +521360,113 @@
         }
       }
     },
+    "What you said you'd send, questions waiting on an answer, mail you owe a reply, and what's open with the people you're about to meet." : {
+      "comment" : "Follow-Through: under the mail switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det, du sagde, du ville sende, spørgsmål, der venter på svar, mails, du skylder et svar, og det, der er åbent med de mennesker, du snart skal mødes med."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was du schicken wolltest, Fragen, die auf eine Antwort warten, E-Mails, auf die du noch antworten musst, und was mit den Leuten offen ist, die du gleich triffst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que dijiste que enviarías, preguntas que esperan respuesta, correos que debes responder, y lo pendiente con las personas con las que vas a reunirte."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que vous avez dit que vous enverriez, les questions qui attendent une réponse, les e-mails auxquels vous devez répondre, et ce qui reste en suspens avec les personnes que vous allez voir."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciò che hai detto che avresti mandato, domande in attesa di risposta, email a cui devi rispondere, e ciò che è ancora aperto con le persone che stai per incontrare."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送ると言ったもの、答えを待つ質問、返信すべきメール、そしてこれから会う人との未解決のこと。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보내겠다고 한 것, 답을 기다리는 질문, 답장해야 할 메일, 그리고 곧 만날 사람들과 아직 남은 일."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det du sa du skulle sende, spørsmål som venter på svar, e-post du skylder svar på, og det som er åpent med dem du snart skal møte."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat je zei dat je zou sturen, vragen die op een antwoord wachten, mail waarop je nog moet antwoorden, en wat er openstaat met de mensen die je zo gaat zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To, co masz wysłać, pytania czekające na odpowiedź, maile, na które trzeba odpowiedzieć, i otwarte sprawy z osobami, z którymi zaraz się spotkasz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que você disse que enviaria, perguntas esperando resposta, e-mails que você precisa responder, e o que está em aberto com as pessoas que você vai encontrar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "То, что вы обещали отправить, вопросы без ответа, письма, на которые вы должны ответить, и незакрытые дела с теми, с кем у вас скоро встреча."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det du sa att du skulle skicka, frågor som väntar på svar, e-post du är skyldig ett svar och det som är öppet med dem du snart ska träffa."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Göndereceğinizi söylediğiniz şeyler, yanıt bekleyen sorular, yanıt borçlu olduğunuz e-postalar ve birazdan buluşacağınız kişilerle açık kalan konular."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Те, що ви обіцяли надіслати, запитання без відповіді, листи, на які ви маєте відповісти, і незакриті справи з тими, з ким у вас скоро зустріч."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你说过要发送的东西、等待答复的问题、该回复的邮件，以及和即将见面的人之间未了的事。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你說過要寄出的東西、等待答覆的問題、你該回覆的郵件，以及和即將見面的人之間未了的事。"
+          }
+        }
+      }
+    },
     "What you said you'd send, questions waiting on an answer, mail you owe a reply." : {
       "comment" : "Follow-Through: under the mail switch",
       "localizations" : {
@@ -520285,6 +521676,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你說的話會在這部 iPhone 上辨識，並像輸入的訊息一樣只傳送給你的代理；代理的回答只會傳送到朗讀聲音。"
+          }
+        }
+      }
+    },
+    "What you tick off a shopping list every so often, offered back when it's about due." : {
+      "comment" : "Follow-Through: under the habits switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det, du krydser af på en indkøbsliste en gang imellem, tilbudt igen, når det er ved at være tid."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was du immer wieder auf einer Einkaufsliste abhakst, wird dir angeboten, wenn es fast so weit ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que tachas de una lista de la compra cada cierto tiempo, ofrecido de nuevo cuando toca."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que vous cochez de temps en temps sur une liste de courses vous est reproposé quand il est presque temps."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciò che spunti ogni tanto da una lista della spesa, riproposto quando è quasi ora."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "買い物リストで時々チェックするものを、そろそろというころに提案します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "장보기 목록에서 가끔 체크하는 것을 살 때가 되면 다시 제안합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det du krysser av på en handleliste av og til, foreslått igjen når det snart er tid."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat je af en toe van een boodschappenlijst afvinkt, opnieuw aangeboden als het bijna zover is."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To, co co jakiś czas odhaczasz na liście zakupów, wraca z propozycją, gdy pora znowu kupić."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que você marca numa lista de compras de vez em quando, oferecido de novo quando está quase na hora."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "То, что вы время от времени отмечаете в списке покупок, предлагается снова, когда подходит срок."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det du bockar av på en inköpslista då och då, föreslaget igen när det snart är dags."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alışveriş listesinde ara sıra işaretlediğiniz şeyler, zamanı yaklaşınca yeniden önerilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Те, що ви час від часу позначаєте в списку покупок, пропонується знову, коли підходить строк."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你隔段时间就会在购物清单上勾掉的东西，快到时候会再推荐给你。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你每隔一陣子會在購物清單上勾掉的東西，快到時候會再推薦給你。"
           }
         }
       }
@@ -543248,6 +544746,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的 Hermes 無法提供資訊。落實追蹤需要 Redde 外掛 1.39：請在「設定 › Redde 外掛」中更新。"
+          }
+        }
+      }
+    },
+    "Your Hermes can't say. Follow-Through takes the Redde plugin 1.40: update it in Settings › Redde Plugin." : {
+      "comment" : "Follow-Through: the plugin is too old",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kan ikke sige det. “Følg med” kræver Redde-plugin 1.40: opdater det i Indstillinger › Redde-plugin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes gibt keine Auskunft. Die Nachverfolgung braucht das Redde-Plugin 1.40: Aktualisiere es unter Einstellungen › Redde-Plugin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes no lo sabe decir. Pendientes necesita el plugin de Redde 1.40: actualízalo en Ajustes › Plugin de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes ne peut pas le dire. Le Suivi requiert le plugin Redde 1.40 : mettez-le à jour dans Réglages › Plugin Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo Hermes non sa dirlo. Monitoraggio richiede il plugin Redde 1.40: aggiornalo in Impostazioni › Plugin Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermesから情報を取得できません。抜け漏れチェックにはReddeプラグイン1.40が必要です。設定 › Reddeプラグインで更新してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes가 알려 주지 못합니다. 끝까지 챙기기에는 Redde 플러그인 1.40이 필요합니다. 설정 › Redde 플러그인에서 업데이트하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kan ikke si det. «Følg med» krever Redde-tillegget 1.40: oppdater det i Innstillinger › Redde-tillegg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes kan het niet zeggen. Bijhouden vereist de Redde-plug-in 1.40: werk hem bij in Instellingen › Redde-plug-in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes nie potrafi tego powiedzieć. Dopilnowanie wymaga wtyczki Redde 1.40: zaktualizuj ją w Ustawienia › Wtyczka Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes não sabe dizer. Pendências requer o plugin do Redde 1.40: atualize-o em Ajustes › Plugin do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes не может ответить. Для функции «На контроле» нужен плагин Redde 1.40: обновите его в «Настройки» › «Плагин Redde»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes kan inte säga det. ”Håll koll” kräver Redde-tillägget 1.40: uppdatera det i Inställningar › Redde-tillägg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes'iniz söyleyemiyor. Sonuç Takibi için Redde Eklentisi 1.40 gerekir: Ayarlar › Redde Eklentisi'nden güncelleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш Hermes не може цього сказати. Для функції «На контролі» потрібен плагін Redde 1.40: оновіть його в Параметри › Плагін Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的Hermes无法提供信息。落实追踪需要Redde插件1.40：请在“设置 › Redde插件”中更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 無法提供資訊。落實追蹤需要 Redde 外掛 1.40：請在「設定 › Redde 外掛」中更新。"
           }
         }
       }

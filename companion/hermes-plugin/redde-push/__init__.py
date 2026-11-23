@@ -362,6 +362,13 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     except Exception:
         log.debug("redde-push: facts note failed", exc_info=True)
     try:
+        # What's open with people (followthrough.py, 1.40.0): a run that plans ahead mentions it
+        # in the heads-up of an event with them.
+        from . import followthrough
+        notes.append(followthrough.run_note(calls.caller(_home())[1], user_message, platform))
+    except Exception:
+        log.debug("redde-push: follow-through note failed", exc_info=True)
+    try:
         # When the person last wrote, for the jobs that wake once they've gone quiet (silence.py).
         if silence.person(platform, said):
             silence.Said(calls.caller(_home())[1]).wrote()

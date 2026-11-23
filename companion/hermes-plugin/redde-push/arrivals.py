@@ -40,38 +40,10 @@ TIMEOUT = 10.0
 FETCH = None
 
 
-def _env(path: Path) -> dict[str, str]:
-    found = {}
-    try:
-        lines = path.read_text().splitlines()
-    except OSError:
-        return found
-    wanted = URL_NAMES + KEY_NAMES + USER_NAMES
-    for line in lines:
-        name, _, value = line.strip().removeprefix("export ").partition("=")
-        if name.strip() in wanted and value.strip():
-            found[name.strip()] = value.strip().strip("'\"")
-    return found
-
-
 def find(root: Path) -> dict | None:
     """{url, key, user, profile} from the first profile whose .env has both, or None."""
-    root = Path(root)
-    homes = [("default", root)]
-    if (root / "profiles").is_dir():
-        homes += [(h.name, h) for h in sorted((root / "profiles").iterdir()) if h.is_dir()]
-    for profile, home in homes:
-        values = _env(home / ".env")
-        if profile == "default":
-            values = {**{k: v for k, v in os.environ.items() if k in URL_NAMES + KEY_NAMES + USER_NAMES}, **values}
-        url = next((values[n] for n in URL_NAMES if values.get(n)), None)
-        key = next((values[n] for n in KEY_NAMES if values.get(n)), None)
-        if url and key:
-            if not re.match(r"https?://", url, re.IGNORECASE):
-                url = "http://" + url
-            return {"url": url.rstrip("/"), "key": key, "user": next((values[n] for n in USER_NAMES if values.get(n)), None),
-                    "profile": profile}
-    return None
+    from . import envs
+    return envs.find(root, URL_NAMES, KEY_NAMES, USER_NAMES)
 
 
 def status(root: Path) -> dict:

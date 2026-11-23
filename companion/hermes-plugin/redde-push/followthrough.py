@@ -38,12 +38,20 @@ from . import dates, wire
 log = logging.getLogger("redde_push.followthrough")
 
 FILE = "followthrough.json"
-SWITCHES = ("mail", "orders", "arrivals")
+SWITCHES = ("mail", "orders", "trips", "arrivals", "habits")
+#: Which switch each kind of item is under.
+GROUPS = {"promise": "mail", "waiting": "mail", "owed": "mail", "meeting": "mail", "delivery": "orders",
+          "return": "orders", "trial": "orders", "bill": "orders", "expiry": "orders", "trip": "trips"}
 #: Days before a card: a question unanswered, a reply owed, a late delivery; a return window and a
 #: trial ahead.
 WAITING, OWED, LATE, RETURN_AHEAD, TRIAL_AHEAD = 4, 3, 2, 5, 3
 #: Cards only in the day (the server's time): at most this many at once, a set an hour, so many a day.
 DAY_FROM, DAY_TO, AT_ONCE, GAP, DAILY = 9, 19, 5, 3600, 8
+#: A meeting's card is an hour before it, wider in the day and not kept to the hour's gap.
+MEETING_FROM, MEETING_TO, MEETING_BEFORE = 7, 21, 3600
+#: A bill: reminded this many days before it's due, checked as paid this many after. An expiry:
+#: told this many days ahead (a passport, longer).
+BILL_AHEAD, BILL_AFTER, EXPIRY_AHEAD, PASSPORT_AHEAD = 3, 2, 30, 90
 #: Kept at most this many, and settled ones this long.
 MOST, KEEP_DONE = 300, 30 * 86400
 SENT_EVERY = 10 * 60
@@ -77,7 +85,45 @@ _ORDER_NO = re.compile(r"\border\s*(?:#|no\.?|number)?\s*:?\s*#?([A-Z0-9][A-Z0-9
 _SUBJECT_NOISE = re.compile(r"^(?:re|fwd?|shipped|ordered|delivered|arriving[^:]*|your order(?: of)?|order confirmation|"
                             r"out for delivery|a shipment from your order)[:\s-]*", re.IGNORECASE)
 _ORDERISH = re.compile(r"\b(?:order|shipped|shipping|delivery|delivered|arriving|package|parcel|tracking|return|refund|"
-                       r"trial|subscription|renew|receipt|invoice|membership)\b", re.IGNORECASE)
+                       r"trial|subscription|renew|receipt|invoice|membership|bill|statement|payment|due|premium|"
+                       r"expir\w*|passport|licen[cs]e|registration|insurance|policy|warranty|flight|itinerary|booking|"
+                       r"reservation|trip|e-?ticket|boarding|check-?in|hotel|stay|invitation|invite)\b", re.IGNORECASE)
+
+# bills (1.40.0)
+_BILLISH = re.compile(r"\b(?:bill|statement|invoice|payment due|amount due|balance due|due date|autopay|premium)\b", re.IGNORECASE)
+_DUE = re.compile(r"\b(?:payment due(?: date)?|due date|(?:is |are )?due (?:on|by)|amount due by|please pay by|pay by|"
+                  r"minimum payment due(?: by| date)?)\b", re.IGNORECASE)
+_AMOUNT = re.compile(r"(?i:amount due|total due|balance due|minimum (?:payment )?due|new balance|statement balance|"
+                     r"total amount|amount)\s*:?\s*([$€£]\s?\d[\d,]*(?:\.\d{2})?)")
+_AUTOPAY = re.compile(r"\b(?:autopay|auto-pay|automatic payment|will be automatically (?:paid|debited|charged|drafted)|"
+                      r"scheduled payment|will be paid automatically)\b", re.IGNORECASE)
+_PAID = re.compile(r"\b(?:payment (?:received|confirmation|confirmed|processed|posted|successful|was successful)|"
+                   r"thank you for your payment|thanks for your payment|we(?:'ve| have) received your payment|"
+                   r"your payment of .{0,30}(?:has been|was|is) (?:received|processed|posted))\b", re.IGNORECASE)
+# expiries
+_EXPIRY_THING = re.compile(r"\b(?:passport|driver'?s? licen[cs]e|licen[cs]e|registration|insurance|policy|warranty|"
+                           r"membership|permit|visa|certificate|id card|inspection|domain)\b", re.IGNORECASE)
+_EXPIRES = re.compile(r"\b(?:expires?(?: on)?|expiration(?: date)?|expiry(?: date)?|valid (?:until|through|thru)|"
+                      r"renew(?:al)? (?:by|before|date|due)|(?:coverage|policy) (?:ends|period ends)|"
+                      r"warranty (?:ends|expires|until|through|valid until))\b", re.IGNORECASE)
+_CARD_EXPIRY = re.compile(r"\b(?:card (?:ending|number)|credit card|debit card|exp(?:iration)?\.? date\s*:?\s*\d\d/\d\d)\b",
+                          re.IGNORECASE)
+# trips
+_TRIPISH = re.compile(r"\b(?:flight|itinerary|booking|reservation|trip|e-?ticket|boarding pass|check-?in|hotel|stay)\b",
+                      re.IGNORECASE)
+_FLIGHT = re.compile(r"\b[Ff](?:light|LIGHT)\s*(?:[Nn]umber|[Nn]o\.?|#)?\s*:?\s*([A-Z][A-Z0-9]|[0-9][A-Z])\s?(\d{1,4})\b")
+_DEPART = re.compile(r"\b(?:depart(?:s|ure|ing)?(?: date)?|outbound|leaves|flight date|travel date|check-?in(?: date)?)\b",
+                     re.IGNORECASE)
+_BACK = re.compile(r"\b(?:return(?:ing)?(?: flight| date)?|inbound|check-?out(?: date)?)\b", re.IGNORECASE)
+_STAY = re.compile(r"\bcheck-?in\b[\s\S]{0,400}\bcheck-?out\b", re.IGNORECASE)
+_PLACE = re.compile(r"\b(?:to|in|for)\s+([A-Z][\w'.-]+(?:\s+[A-Z][\w'.-]+){0,2})")
+_REF = re.compile(r"(?i:\b(?:confirmation|booking|record locator|reservation|reference|pnr)(?:\s+(?:code|number|no\.?|#))?)"
+                  r"\s*:?\s*#?([A-Z0-9]{5,8})\b")
+# meetings
+_INVITE = re.compile(r"^(?:updated )?invitation(?: from [^:]+)?:\s*(?P<title>.+?)(?:\s+@\s+(?P<when>.+?))?\s*(?:\(|$)", re.IGNORECASE)
+_CANCELED = re.compile(r"^(?:canceled|cancelled)(?: event| invitation)?:\s*(?P<title>.+?)(?:\s+@\s+.*)?$", re.IGNORECASE)
+_WHEN_LINE = re.compile(r"\bWhen\s*:\s*(.{5,140})", re.IGNORECASE)
+_ROBOTS = re.compile(r"^(?:calendar-notification|calendar|noreply|no-reply)@", re.IGNORECASE)
 
 
 # ---- what's kept ----------------------------------------------------------------------------------
@@ -210,6 +256,8 @@ def from_sent(data: dict, message: dict, me: str, now: float) -> list[str]:
             continue
         if item["kind"] in ("promise", "owed") and item.get("who") in to:
             _settle(item, "sent", now)
+    for person in people[:3]:
+        _remember_person(data, person, "", _subject(message.get("subject")), when, "out")
     if not people or len(people) > 3 or message.get("bulk"):
         return []
     text, subject, made = message.get("_text") or "", _subject(message.get("subject")), []
@@ -233,6 +281,8 @@ def from_sent(data: dict, message: dict, me: str, now: float) -> list[str]:
 def from_inbox(data: dict, message: dict, now: float) -> list[str]:
     """A message that came: an answer settles waiting on its sender; needs-reply mail is kept."""
     who, when = (message.get("address") or "").lower(), float(message.get("date") or now)
+    if is_person(who) and not message.get("bulk"):
+        _remember_person(data, who, message.get("from") or who, _subject(message.get("subject")), when, "in")
     for item in data["items"].values():
         if item.get("state") == "open" and item["kind"] == "waiting" and item.get("who") == who and when > float(item.get("made") or 0):
             _settle(item, "answered", now)
@@ -327,6 +377,230 @@ def from_order(data: dict, message: dict, text: str, now: float) -> tuple[list[s
     return made, came
 
 
+# ---- bills, expiries, trips, meetings (1.40.0) ---------------------------------------------------
+
+def _steps(item: dict, steps: list[tuple[str, float]], now: float) -> dict:
+    """An item whose cards come at several times: the ones still to come, the first as `due`."""
+    item["steps"] = [{"step": name, "at": at} for name, at in sorted(steps, key=lambda s: s[1]) if at > now - 86400]
+    item["due"] = item["steps"][0]["at"] if item["steps"] else 0
+    return item
+
+
+def _payee(message: dict) -> str:
+    return _shop(message)
+
+
+def from_bill(data: dict, message: dict, text: str, now: float, shop: str | None = None, domain: str | None = None) -> list[str]:
+    """A bill with its day due: reminded three days before (not when it's paid automatically),
+    checked two days after for a payment confirmation."""
+    subject, when = message.get("subject") or "", float(message.get("date") or now)
+    body, ref = f"{subject}\n{text}", _day(when)
+    shop, domain = shop or _payee(message), domain if domain is not None else _domain(message.get("address"))
+    if _PAID.search(body):
+        for item in data["items"].values():
+            if item.get("state") == "open" and item["kind"] == "bill" and float(item.get("made") or 0) <= when \
+                    and ((domain and item.get("domain") == domain) or _same_payee(item.get("shop"), shop)):
+                _settle(item, "paid", now)
+        return []
+    if not _BILLISH.search(body):
+        return []
+    day = dates.after(body, _DUE, ref, numeric=True)
+    if not day or not (ref - timedelta(days=1) <= day <= ref + timedelta(days=60)):
+        return []
+    amount = _AMOUNT.search(body) or _PRICE.search(body)
+    auto = bool(_AUTOPAY.search(body))
+    item = {"id": _id("bill", domain or shop, day), "kind": "bill", "shop": shop, "domain": domain,
+            "what": _subject(subject) if subject else shop, "amount": (amount.group(1) if amount and amount.lastindex else
+                                                                       amount.group(0) if amount else None),
+            "autopay": auto, "day": day.isoformat(), "made": when}
+    steps = [("verify", _at(day + timedelta(days=BILL_AFTER), 10))]
+    if not auto:
+        steps.append(("remind", _at(day - timedelta(days=BILL_AHEAD), 10)))
+    if data["items"].get(item["id"]):
+        return []
+    _keep(data, _steps(item, steps, now))
+    return [item["id"]]
+
+
+def _same_payee(a, b) -> bool:
+    first = lambda x: (re.findall(r"[a-z0-9]{3,}", str(x or "").lower()) or [""])[0]
+    return bool(first(a)) and first(a) == first(b)
+
+
+def from_expiry(data: dict, what: str, body: str, ref: date, when: float, now: float, gate: str) -> list[str]:
+    """Something that runs out (a passport, a policy, a warranty): told a month ahead, three for a
+    passport. Only for what `gate` (a subject, a document's title) says it is."""
+    thing = _EXPIRY_THING.search(gate or "")
+    if not thing:
+        return []
+    for hit in _EXPIRES.finditer(body):
+        if _CARD_EXPIRY.search(body[max(0, hit.start() - 60): hit.end() + 30]):
+            continue
+        day = dates.after(body[hit.start():], _EXPIRES, ref, numeric=False)
+        if day and ref + timedelta(days=14) <= day <= ref + timedelta(days=3 * 366):
+            ahead = PASSPORT_AHEAD if thing.group(0).lower() == "passport" else EXPIRY_AHEAD
+            item = {"id": _id("expiry", what, day), "kind": "expiry", "what": what[:70], "thing": thing.group(0).lower(),
+                    "day": day.isoformat(), "made": when}
+            _steps(item, [("remind", max(_at(day - timedelta(days=ahead), 10), now))], now - 86400)
+            return [item["id"]] if _keep(data, item) else []
+    return []
+
+
+def from_trip(data: dict, message: dict, text: str, now: float) -> list[str]:
+    """A flight or a stay: a packing card three days before, check-in the day before a flight, and
+    the trip's receipts the day after it's over."""
+    subject, when = message.get("subject") or "", float(message.get("date") or now)
+    body, ref = f"{subject}\n{text}", _day(when)
+    if not _TRIPISH.search(subject):
+        return []
+    flight = _FLIGHT.search(body)
+    stay = bool(_STAY.search(body))
+    if not (flight or stay):
+        return []
+    leave = dates.after(body, _DEPART, ref, within=80)
+    if not leave or not (ref <= leave <= ref + timedelta(days=330)):
+        return []
+    back = dates.after(body, _BACK, ref, within=80)
+    if back and not (leave <= back <= leave + timedelta(days=60)):
+        back = None
+    place = _PLACE.search(subject)
+    place = place.group(1).strip(" .") if place else None
+    ref_code = _REF.search(body)
+    flight_no = f"{flight.group(1)}{flight.group(2)}" if flight else None
+    # one trip per departure day: a second mail about it fills in what the first didn't say
+    for item in data["items"].values():
+        if item["kind"] == "trip" and item.get("state") == "open" and abs((date.fromisoformat(item["day"]) - leave).days) <= 1:
+            changed = False
+            for key, value in (("flight", flight_no), ("back", back.isoformat() if back else None), ("place", place),
+                               ("ref", ref_code.group(1) if ref_code else None)):
+                if value and not item.get(key):
+                    item[key], changed = value, True
+            if changed:
+                _trip_steps(item, now)
+            return []
+    item = {"id": _id("trip", leave, ref_code.group(1) if ref_code else flight_no or _domain(message.get("address"))),
+            "kind": "trip", "place": place, "flight": flight_no, "ref": ref_code.group(1) if ref_code else None,
+            "shop": _shop(message), "day": leave.isoformat(), "back": back.isoformat() if back else None, "made": when}
+    _keep(data, _trip_steps(item, now))
+    return [item["id"]]
+
+
+def _trip_steps(item: dict, now: float) -> dict:
+    leave = date.fromisoformat(item["day"])
+    done = {s["step"] for s in item.get("done_steps") or []}
+    steps = [("pack", _at(leave - timedelta(days=3), 10))]
+    if item.get("flight"):
+        steps.append(("checkin", _at(leave - timedelta(days=1), 10)))
+    if item.get("back"):
+        steps.append(("home", _at(date.fromisoformat(item["back"]) + timedelta(days=1), 10)))
+    return _steps(item, [s for s in steps if s[0] not in done and s[1] > now - 86400], now)
+
+
+def from_invite(data: dict, message: dict, text: str, me: str, now: float) -> list[str]:
+    """A calendar invitation with other people in it: a card an hour before, with what's open with
+    them, when there's something to say. A cancellation drops it."""
+    subject, when = (message.get("subject") or "").strip(), float(message.get("date") or now)
+    gone = _CANCELED.match(subject)
+    if gone:
+        for item in data["items"].values():
+            if item["kind"] == "meeting" and item.get("state") == "open" and item.get("title", "").lower() == gone.group("title").strip().lower():
+                item.update(state="dropped", settled=now)
+        return []
+    invite = _INVITE.match(subject)
+    if not invite:
+        return []
+    said = invite.group("when") or (_WHEN_LINE.search(text or "") or [None, ""])[1]
+    ref = _day(when)
+    day, clock = dates.first(said or "", ref), dates.time_in(said or "")
+    if not day or not clock:
+        return []
+    start = datetime(day.year, day.month, day.day, *clock).timestamp()
+    if start <= now:
+        return []
+    who = [message.get("address") or ""] + list(message.get("to") or []) + list(message.get("cc") or [])
+    people = list(dict.fromkeys(a.lower() for a in who if a and a.lower() != me and not _ROBOTS.match(a) and is_person(a)))
+    if not people:
+        return []
+    title = invite.group("title").strip()[:80]
+    item = {"id": _id("meeting", title, start), "kind": "meeting", "title": title, "start": start, "people": people[:8],
+            "names": {message.get("address", "").lower(): message.get("from")} if message.get("from") else {},
+            "day": day.isoformat(), "made": when}
+    _steps(item, [("prep", start - MEETING_BEFORE)], now)
+    return [item["id"]] if _keep(data, item) else []
+
+
+def _name_of(address: str) -> str:
+    return address.split("@")[0].replace(".", " ").replace("_", " ").title()
+
+
+def _remember_person(data: dict, address: str, name: str, subject: str, when: float, way: str) -> None:
+    people = data.setdefault("people", {})
+    known = people.get(address)
+    if name and "@" not in name and known and "@" not in str(known.get("name")) and float(known.get("date") or 0) >= when:
+        return
+    real = name if name and "@" not in name else (known or {}).get("name")
+    if known and float(known.get("date") or 0) >= when:
+        known["name"] = real or known.get("name")
+        return
+    people[address] = {"name": real or _name_of(address), "subject": subject, "date": when, "way": way}
+    if len(people) > 500:
+        for old in sorted(people, key=lambda a: people[a].get("date") or 0)[: len(people) - 500]:
+            people.pop(old)
+
+
+def from_paper(data: dict, doc: dict, now: float) -> list[str]:
+    """A document new in Paperless: a bill's day due, or something that runs out."""
+    title = str(doc.get("title") or "")[:80]
+    text = str(doc.get("content") or "")[:6000]
+    message = {"subject": title, "date": now, "address": "", "from": str(doc.get("correspondent_name") or title)}
+    made = from_bill(data, message, text, now, shop=message["from"], domain="")
+    made += from_expiry(data, title, f"{title}\n{text}", _day(now), now, now, f"{title}\n{text[:400]}")
+    return made
+
+
+def from_kept_mail(data: dict, message: dict, text: str, me: str, now: float, switches: dict) -> list[str]:
+    """Every reader that keeps something from one message, as switched on."""
+    made = []
+    if switches.get("orders"):
+        made += from_bill(data, message, text, now)
+        made += from_expiry(data, _subject(message.get("subject")), f"{message.get('subject') or ''}\n{text}",
+                            _day(float(message.get("date") or now)), float(message.get("date") or now), now,
+                            message.get("subject") or "")
+    if switches.get("trips"):
+        made += from_trip(data, message, text, now)
+    if switches.get("mail"):
+        made += from_invite(data, message, text, me, now)
+    return made
+
+
+def run_note(home: Path, message, platform: str = "") -> str | None:
+    """For `pre_llm_call`: a run that plans ahead (Heads-Ups, Morning Ideas, the Week Ahead) is told
+    what's open with people, so a meeting with one of them says so."""
+    from . import facts
+    if platform != "cron" or not facts.PLANNING.match(facts._text(message)):
+        return None
+    data = load(home)
+    if not data["switches"]["mail"]:
+        return None
+    lines = []
+    for item in sorted(data["items"].values(), key=lambda i: i.get("made") or 0, reverse=True):
+        if item.get("state") != "open":
+            continue
+        who = f"{item.get('name') or item.get('who')} ({item.get('who')})"
+        if item["kind"] == "promise":
+            lines.append(f"they promised {who} \"{item.get('said')}\"")
+        elif item["kind"] == "waiting":
+            lines.append(f"they're waiting on {who} about \"{item.get('subject')}\"")
+        elif item["kind"] == "owed":
+            lines.append(f"they owe {who} a reply to \"{item.get('subject')}\"")
+        if len(lines) >= 8:
+            break
+    if not lines:
+        return None
+    return ("[Redde: open with people, from their mail: " + "; ".join(lines) + ". If an event you look at is with one "
+            "of them, say it in that event's heads-up in a few words. Say nothing of the others.]")
+
+
 # ---- the inbox's hook ----------------------------------------------------------------------------
 
 def sent_imap(box, account, kept: dict, now: float) -> list[dict]:
@@ -379,7 +653,7 @@ def after_sync(inbox, account, new: list[dict], texts: dict, now: float | None =
     with _locked(home):
         data = load(home)
         switches = data["switches"]
-        if not (switches["mail"] or switches["orders"]):
+        if not (switches["mail"] or switches["orders"] or switches["trips"]):
             return
         me = (account.address or "").lower()
         for message in new:
@@ -388,12 +662,14 @@ def after_sync(inbox, account, new: list[dict], texts: dict, now: float | None =
             text = texts.get(message.get("id")) or message.get("_text") or ""
             if switches["mail"]:
                 from_inbox(data, message, now)
-            if switches["orders"] and orderish(message):
+            if (switches["orders"] or switches["trips"] or switches["mail"]) and orderish(message):
                 if not text and account.via == "gmail_api":
                     text = _gmail_text(inbox, account, message)
-                _, came = from_order(data, message, text, now)
-                for delivery in came:
-                    _gifts_came(home, delivery)
+                if switches["orders"]:
+                    _, came = from_order(data, message, text, now)
+                    for delivery in came:
+                        _gifts_came(home, delivery)
+                from_kept_mail(data, message, text, me, now, switches)
         if switches["mail"]:
             kept = data["sent"].setdefault(account.id, {})
             if now - float(kept.get("at") or 0) >= SENT_EVERY:
@@ -450,12 +726,16 @@ def _gifts_came(home: Path, delivery: dict) -> None:
 
 # ---- what comes due -----------------------------------------------------------------------------
 
+#: The moment cards are being made for (`due` sets it), so "Friday" is said from then.
+_SAYING_AT: list[float] = []
+
+
 def _when(day_text: str) -> str:
     try:
         day = date.fromisoformat(day_text)
     except (TypeError, ValueError):
         return ""
-    today = date.today()
+    today = _day(_SAYING_AT[-1]) if _SAYING_AT else date.today()
     if day == today:
         return "today"
     if day == today + timedelta(days=1):
@@ -509,26 +789,105 @@ def today_card(item: dict) -> dict:
             "request": f"Find the tracking for my {item.get('shop')} order of {item.get('what')} in my email."}
 
 
+def _clock(ts: float) -> str:
+    return datetime.fromtimestamp(ts).strftime("%-I:%M %p").replace(":00 ", " ")
+
+
+def step_card(item: dict, step: str, data: dict) -> dict | None:
+    """The card for one of an item's steps, or None when there's nothing to say."""
+    kind = item["kind"]
+    if kind == "bill":
+        amount = f" {item['amount']}" if item.get("amount") else ""
+        if step == "remind":
+            return {"title": f"Pay {item.get('shop')}{amount} by {_when(item.get('day'))}"[:60],
+                    "why": f"{item.get('what')}"[:140],
+                    "request": f"Help me pay my {item.get('shop')} bill{amount}, due {item.get('day')}: find it in my email "
+                               "or my documents and tell me how to pay it."}
+        return {"title": f"Did the {item.get('shop')} bill get paid?"[:60],
+                "why": ("It's on autopay, but no confirmation came" if item.get("autopay") else
+                        f"It was due {item.get('day')}, and no payment confirmation came")[:140],
+                "request": f"Check whether my {item.get('shop')} bill{amount}, due {item.get('day')}, was paid: look for a "
+                           "confirmation in my email, and tell me what to do if it wasn't."}
+    if kind == "expiry":
+        thing = (item.get("thing") or "it").capitalize()
+        return {"title": f"{thing} expires {_when(item.get('day'))}"[:60], "why": f"{item.get('what')}"[:140],
+                "request": f"My {item.get('what')} expires on {item.get('day')}. Find what I need to renew it, in my email "
+                           "and documents, and the steps."}
+    if kind == "trip":
+        place = item.get("place") or "your trip"
+        to = f" to {item['place']}" if item.get("place") else ""
+        span = f"{item.get('day')}" + (f" to {item['back']}" if item.get("back") else "")
+        if step == "pack":
+            return {"title": f"Pack for {place}"[:60],
+                    "why": (f"You leave {_when(item.get('day'))}" + (f", flight {item['flight']}" if item.get("flight") else ""))[:140],
+                    "request": f"Make me a packing list in Redde for my trip{to}, {span}, from the weather there and what my "
+                               "email says about it. And make sure the trip is on my calendar, so Leave-By can time it."}
+        if step == "checkin":
+            ref = f" ({item['ref']})" if item.get("ref") else ""
+            return {"title": f"Check in for {item.get('flight')}"[:60], "why": f"You fly {_when(item.get('day'))}",
+                    "request": f"Find my {item.get('flight')} booking{ref} in my email and help me check in."}
+        if step == "home":
+            return {"title": f"File the receipts from {place}?"[:60], "why": f"Back since {_when(item.get('back'))}",
+                    "request": f"Gather the receipts from my trip{to}, {span}, from my email into one list for expenses."}
+    if kind == "meeting":
+        return meeting_card(item, data)
+    return None
+
+
+def meeting_card(item: dict, data: dict) -> dict | None:
+    """What's open with the meeting's people, and their last email; None when there's nothing."""
+    people, known = item.get("people") or [], data.get("people") or {}
+    said, names = [], []
+    for address in people:
+        name = (item.get("names") or {}).get(address) or (known.get(address) or {}).get("name") or _name_of(address)
+        name = name if "@" not in str(name) else _name_of(address)
+        first = str(name).split()[0] if name else address
+        names.append(str(name))
+        for open_ in data["items"].values():
+            if open_.get("state") != "open" or open_.get("who") != address:
+                continue
+            if open_["kind"] == "promise":
+                said.append(f"you promised {first} \"{open_.get('said')}\"")
+            elif open_["kind"] == "waiting":
+                said.append(f"waiting on {first} about \"{open_.get('subject')}\"")
+            elif open_["kind"] == "owed":
+                said.append(f"{first}'s \"{open_.get('subject')}\" needs a reply")
+        last = known.get(address)
+        if last and float(item.get("start") or 0) - float(last.get("date") or 0) < 30 * 86400:
+            said.append(f"last email \"{last.get('subject')}\"")
+    if not said:
+        return None
+    at, title = _clock(float(item["start"])), item.get("title")
+    return {"title": f"Before {title} at {at}"[:60], "why": "; ".join(dict.fromkeys(said))[:140],
+            "request": f"Before my meeting \"{title}\" at {at} with {', '.join(names[:4])}, brief me: our recent emails, what "
+                       "I promised them and what I'm waiting on from them."}
+
+
 def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
-    """Cards for what's come due, in the day; `offer(ideas) -> bool` sends them (`ideas.offer`).
-    `mailbox() -> set` gives the inbox's message ids, for replies owed. How many went."""
+    """Cards for what's come due; `offer(ideas) -> bool` sends them (`ideas.offer`). In the day, a set
+    an hour, so many a day; a meeting's in a wider day and not kept to the hour. `mailbox() -> set`
+    gives the inbox's message ids, for replies owed. How many went."""
     now = now or time.time()
     hour = datetime.fromtimestamp(now).hour
-    if not DAY_FROM <= hour < DAY_TO:
+    if not MEETING_FROM <= hour < MEETING_TO:
         return 0
+    day_time = DAY_FROM <= hour < DAY_TO
+    _SAYING_AT[:] = [now]
     with _locked(home):
         data = load(home)
         sent = [t for t in data.get("offered") or [] if now - t < 86400]
-        if sent and now - max(sent) < GAP or len(sent) >= DAILY:
+        if len(sent) >= DAILY:
             return 0
+        hourly = day_time and not (sent and now - max(sent) < GAP)
         room = min(AT_ONCE, DAILY - len(sent))
         switches, cards, picked = data["switches"], [], []
         ids = None
         for item in sorted(data["items"].values(), key=lambda i: i.get("due") or 0):
             if item.get("state") != "open" or len(cards) >= room:
                 continue
-            group = "mail" if item["kind"] in ("promise", "waiting", "owed") else "orders"
-            if not switches[group]:
+            if not switches.get(GROUPS.get(item["kind"], "mail"), True):
+                continue
+            if item["kind"] != "meeting" and not hourly:
                 continue
             if item["kind"] == "delivery" and not item.get("today_said") and item.get("today", 0) <= now < item.get("due", 0) \
                     and _day(now).isoformat() == item.get("day"):
@@ -536,6 +895,21 @@ def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
                 picked.append((item, "today"))
                 continue
             if float(item.get("due") or 0) > now:
+                continue
+            if item.get("steps") is not None:
+                if not item["steps"]:
+                    item.update(state="offered", settled=now)
+                    continue
+                step = item["steps"][0]["step"]
+                if item["kind"] == "meeting" and now > float(item.get("start") or 0):
+                    item.update(state="done", settled=now, how="over")
+                    continue
+                made = step_card(item, step, data)
+                if made is None:
+                    _advance(item, now)
+                    continue
+                cards.append(made)
+                picked.append((item, "step"))
                 continue
             if item["kind"] == "owed" and ids is None and mailbox is not None:
                 try:
@@ -553,10 +927,22 @@ def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
             for item, how in picked:
                 if how == "today":
                     item["today_said"] = now
+                elif how == "step":
+                    _advance(item, now)
                 else:
                     item.update(state="offered", settled=now)
         save(home, data)
         return len(cards) if cards else 0
+
+
+def _advance(item: dict, now: float) -> None:
+    """An item's step offered (or with nothing to say): on to its next, or done with."""
+    step = item["steps"].pop(0)
+    item.setdefault("done_steps", []).append({**step, "said": now})
+    if item["steps"]:
+        item["due"] = item["steps"][0]["at"]
+    else:
+        item.update(state="offered", settled=now)
 
 
 # ---- the app's command --------------------------------------------------------------------------
@@ -567,7 +953,9 @@ def listing(home: Path) -> dict:
     shown = []
     for i in items[:100]:
         shown.append({k: i.get(k) for k in ("id", "kind", "name", "who", "subject", "said", "shop", "what", "order", "day",
-                                             "price") if i.get(k) is not None} | {"due": int(i.get("due") or 0)})
+                                             "price", "amount", "autopay", "thing", "place", "flight", "back", "title")
+                       if i.get(k) is not None} | {"due": int(i.get("due") or 0)}
+                     | ({"start": int(i["start"])} if i.get("start") else {}))
     return {"switches": data["switches"], "items": shown}
 
 
@@ -575,7 +963,8 @@ def slash(home: Path, words: list[str]) -> str:
     """`/redde-push follow list`, `follow set <switch> on|off`, `follow drop <id>`."""
     if words == ["list"]:
         from . import arrivals
-        return wire.reply("follow", {**listing(home), "jellyfin": arrivals.status(home)})
+        from . import paper
+        return wire.reply("follow", {**listing(home), "jellyfin": arrivals.status(home), "paperless": paper.status(home)})
     if len(words) == 3 and words[0] == "set" and words[1] in SWITCHES and words[2] in ("on", "off"):
         with _locked(home):
             data = load(home)

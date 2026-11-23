@@ -353,6 +353,12 @@ def _change(home: Path, args: dict, by: str, now: float | None, touched: list[di
                 else:
                     item["done"] = action == "check"
                     item["done_at"] = at if action == "check" else None
+                    if action == "check" and look(kept)["kind"] == "shopping":
+                        try:   # usual buys (habits.py, 1.40.0)
+                            from . import habits
+                            habits.note(home, item.get("text"), kept["id"], kept.get("title") or "", at)
+                        except Exception:
+                            pass
             said = {action + ("ed" if action != "remove" else "d"): [i.get("text") for i in found]}
             if missed:
                 said["not_found"] = missed

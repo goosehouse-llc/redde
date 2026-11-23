@@ -3,6 +3,27 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.40.0 (2026-11-23)
+
+- Bills and renewals (`followthrough.py`): a bill with its day due, from mail or from a new
+  Paperless document (`paper.py`, found from PAPERLESS_URL and a PAPERLESS_…TOKEN in any profile's
+  .env), is reminded three days before (not when it's on autopay) and checked two days after; a
+  payment confirmation from the same sender settles it. What runs out (a passport three months
+  ahead, a policy, a registration, a warranty a month ahead) comes back in time to renew. A card's
+  expiry month isn't one.
+- Trips: a flight or a hotel stay in mail (a second mail about it fills in the first): a card to
+  make a packing list and put the trip on the calendar three days before, check-in the day before
+  a flight, the trip's receipts the day after it's over.
+- Meeting prep: a calendar invitation in mail with other people in it brings a card an hour before
+  (7 am to 9 pm, not kept to the hour's gap), saying what's open with them (a promise, a question,
+  a reply owed, the last email), and nothing when nothing is. A cancellation drops it.
+  Heads-Ups, Morning Ideas and the Week Ahead are told what's open with people, for the events
+  they look at.
+- Usual buys (`habits.py`): what's ticked off a shopping list again and again, at a steady gap, is
+  offered back when it's about due and not on a list.
+- Switches: `trips` and `habits` beside `mail`, `orders`, `arrivals`; `follow list` says whether
+  Paperless was found. Cards are dated from the moment they're made.
+
 ## 1.39.0 (2026-11-23)
 
 - Follow-through (`followthrough.py`): what the person's mail says will happen is kept and checked

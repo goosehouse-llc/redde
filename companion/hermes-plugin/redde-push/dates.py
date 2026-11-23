@@ -95,12 +95,14 @@ def read(match: re.Match, ref: date) -> date | None:
     return None
 
 
-def after(text: str, words: re.Pattern, ref: date, within: int = 60) -> date | None:
+def after(text: str, words: re.Pattern, ref: date, within: int = 60, numeric: bool = True) -> date | None:
     """The first date written within `within` characters after one of `words` ("arriving", "return
-    by"), or None."""
+    by"), or None. `numeric` False passes over "12/27" (a card's expiry month, read as a day)."""
     for hit in words.finditer(text):
         rest = text[hit.end(): hit.end() + within]
         found = PHRASE.search(rest)
+        if found and not numeric and found.group("num"):
+            continue
         if found and not re.search(r"[.;!?]\s", rest[: found.start()]):
             when = read(found, ref)
             if when:
@@ -111,3 +113,17 @@ def after(text: str, words: re.Pattern, ref: date, within: int = 60) -> date | N
 def first(text: str, ref: date) -> date | None:
     found = PHRASE.search(text)
     return read(found, ref) if found else None
+
+
+_TIME = re.compile(r"\b([01]?\d|2[0-3])(?::([0-5]\d))?\s*([ap])\.?\s?m\b\.?|\b([01]?\d|2[0-3]):([0-5]\d)\b", re.IGNORECASE)
+
+
+def time_in(text: str) -> tuple[int, int] | None:
+    """The first time of day written ("10am", "7:05 PM", "14:30"), as (hour, minute)."""
+    found = _TIME.search(text or "")
+    if not found:
+        return None
+    if found.group(1):
+        hour, minute = int(found.group(1)) % 12, int(found.group(2) or 0)
+        return (hour + (12 if found.group(3).lower() == "p" else 0), minute)
+    return int(found.group(4)), int(found.group(5))

@@ -18,11 +18,23 @@ struct FollowThrough: Equatable {
         var day: Date?
         var price: String?
         var due: Date?
+        // 1.40: bills, expiries, trips, meetings
+        var amount: String?
+        var thing: String?
+        var place: String?
+        var flight: String?
+        var back: Date?
+        var meetingTitle: String?
+        var start: Date?
     }
 
     var mail = true
     var orders = true
+    var trips = true
     var arrivals = true
+    var habits = true
+    /// The profile whose .env has Paperless's address and key; nil when none has.
+    var paperless: String?
     var items: [Item] = []
     /// The profile whose .env has Jellyfin's address and key; nil when none has.
     var jellyfin: String?
@@ -38,6 +50,11 @@ struct FollowThrough: Equatable {
         made.mail = switches["mail"] ?? true
         made.orders = switches["orders"] ?? true
         made.arrivals = switches["arrivals"] ?? true
+        made.trips = switches["trips"] ?? true
+        made.habits = switches["habits"] ?? true
+        if let found = root["paperless"] as? [String: Any], found["found"] as? Bool == true {
+            made.paperless = found["profile"] as? String
+        }
         if let found = root["jellyfin"] as? [String: Any] {
             made.jellyfinFound = found["found"] as? Bool ?? false
             made.jellyfin = found["profile"] as? String
@@ -50,7 +67,11 @@ struct FollowThrough: Equatable {
             return Item(id: id, kind: kind, name: row["name"] as? String, subject: row["subject"] as? String,
                         said: row["said"] as? String, shop: row["shop"] as? String, what: row["what"] as? String,
                         day: (row["day"] as? String).flatMap(day.date(from:)), price: row["price"] as? String,
-                        due: (row["due"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue) })
+                        due: (row["due"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue) },
+                        amount: row["amount"] as? String, thing: row["thing"] as? String, place: row["place"] as? String,
+                        flight: row["flight"] as? String, back: (row["back"] as? String).flatMap(day.date(from:)),
+                        meetingTitle: row["title"] as? String,
+                        start: (row["start"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue) })
         }
         return made
     }
@@ -71,6 +92,10 @@ extension FollowThrough.Item {
         case "delivery": "shippingbox"
         case "return": "arrow.uturn.backward.circle"
         case "trial": "creditcard"
+        case "bill": "doc.text"
+        case "expiry": "calendar.badge.exclamationmark"
+        case "trip": "airplane"
+        case "meeting": "person.2"
         default: "circle"
         }
     }
@@ -85,6 +110,11 @@ extension FollowThrough.Item {
         case "delivery": what ?? String(localized: "An order", comment: "Follow-Through: a delivery with no name")
         case "return": String(localized: "Return \(what ?? "")", comment: "Follow-Through: a return window, with what was bought")
         case "trial": String(localized: "\(shop ?? "") renews", comment: "Follow-Through: a trial or subscription about to charge")
+        case "bill": String(localized: "\(shop ?? "") bill", comment: "Follow-Through: a bill to pay, with who it's from")
+        case "expiry": what ?? thing ?? ""
+        case "trip": place.map { String(localized: "Trip to \($0)", comment: "Follow-Through: a trip, with where to") }
+            ?? String(localized: "A trip", comment: "Follow-Through: a trip with no place known")
+        case "meeting": meetingTitle ?? ""
         default: subject ?? ""
         }
     }
@@ -99,6 +129,15 @@ extension FollowThrough.Item {
         case "trial":
             let then = price.map { " · " + $0 } ?? ""
             return date + then
+        case "bill":
+            let owed = amount.map { $0 + " · " } ?? ""
+            return owed + String(localized: "due \(date)", comment: "Follow-Through: a bill's day due")
+        case "expiry": return String(localized: "Expires \(date)", comment: "Follow-Through: when something runs out")
+        case "trip":
+            let home = back.map { " – " + $0.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()) } ?? ""
+            return [flight, date + home].compactMap { $0 }.joined(separator: " · ")
+        case "meeting":
+            return start?.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()) ?? date
         default: return ""
         }
     }
@@ -114,19 +153,30 @@ struct FollowThroughView: View {
             if let shown {
                 Section {
                     toggle(\.mail, "mail", Text("Promises & Replies", comment: "Follow-Through: the mail switch"),
-                           Text("What you said you'd send, questions waiting on an answer, mail you owe a reply.", comment: "Follow-Through: under the mail switch"),
+                           Text("What you said you'd send, questions waiting on an answer, mail you owe a reply, and what's open with the people you're about to meet.", comment: "Follow-Through: under the mail switch"),
                            symbol: "envelope.badge")
-                    toggle(\.orders, "orders", Text("Orders & Trials", comment: "Follow-Through: the orders switch"),
-                           Text("Deliveries running late, return windows closing, trials about to charge.", comment: "Follow-Through: under the orders switch"),
+                    toggle(\.orders, "orders", Text("Orders, Bills & Renewals", comment: "Follow-Through: the orders switch"),
+                           Text("Deliveries running late, return windows closing, trials about to charge, bills before they're due and paid after, and what runs out: a passport, a policy, a warranty.", comment: "Follow-Through: under the orders switch"),
                            symbol: "shippingbox")
+                    toggle(\.trips, "trips", Text("Trips", comment: "Follow-Through: the trips switch"),
+                           Text("Packing three days before a flight or a stay, check-in the day before, the receipts once you're home.", comment: "Follow-Through: under the trips switch"),
+                           symbol: "airplane")
+                    toggle(\.habits, "habits", Text("Usual Buys", comment: "Follow-Through: the habits switch"),
+                           Text("What you tick off a shopping list every so often, offered back when it's about due.", comment: "Follow-Through: under the habits switch"),
+                           symbol: "cart.badge.plus")
                     toggle(\.arrivals, "arrivals", Text("New to Watch", comment: "Follow-Through: the arrivals switch"),
                            Text("A film on your watch list new on Jellyfin, a new season of a series you finished.", comment: "Follow-Through: under the arrivals switch"),
                            symbol: "sparkles.tv")
                 } footer: {
+                    VStack(alignment: .leading, spacing: 4) {
+                    if let profile = shown.paperless {
+                        Text("Paperless is read with the keys in \(profile == "default" ? String(localized: "your main agent", comment: "Follow-Through: Jellyfin found in the main profile") : profile)'s settings: new documents are checked for bills and what runs out.", comment: "Follow-Through: where Paperless's address and key were found")
+                    }
                     if shown.jellyfinFound, let profile = shown.jellyfin {
                         Text("Jellyfin is reached with the keys in \(profile == "default" ? String(localized: "your main agent", comment: "Follow-Through: Jellyfin found in the main profile") : profile)'s settings.", comment: "Follow-Through: where Jellyfin's address and key were found")
                     } else {
                         Text("No Jellyfin found: new seasons still come from your watch lists. To add Jellyfin, ask your agent to request JELLYFIN_URL and JELLYFIN_API_KEY.", comment: "Follow-Through: Jellyfin isn't set up")
+                    }
                     }
                 }
 
@@ -156,7 +206,7 @@ struct FollowThroughView: View {
                 }
             } else if loaded {
                 Section {
-                    Text("Your Hermes can't say. Follow-Through takes the Redde plugin 1.39: update it in Settings › Redde Plugin.", comment: "Follow-Through: the plugin is too old")
+                    Text("Your Hermes can't say. Follow-Through takes the Redde plugin 1.40: update it in Settings › Redde Plugin.", comment: "Follow-Through: the plugin is too old")
                 }
             }
             if let problem { Section { Text(problem).foregroundStyle(.red) } }

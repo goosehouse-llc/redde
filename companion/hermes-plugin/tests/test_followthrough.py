@@ -196,10 +196,10 @@ class OrderTests(unittest.TestCase):
         follow.from_order(self.data, message, "Your free trial ends on December 1, 2026. After that you'll be charged "
                                               "$14.99/month.", TUESDAY)
         (trial,) = self.due("2026-11-28T10:30")
-        self.assertEqual(trial["title"], "StreamCo renews December 1")
+        self.assertEqual(trial["title"], "StreamCo renews Tuesday")
         self.assertIn("$14.99/month", trial["why"])
         (back,) = self.due("2026-12-21T10:30")
-        self.assertEqual(back["title"], "Return window closes December 26")
+        self.assertEqual(back["title"], "Return window closes Saturday")
         self.assertIn("a lamp", back["why"])
 
 
@@ -211,7 +211,7 @@ class SlashTests(unittest.TestCase):
             follow.from_sent(data, sent("bo@example.com", "Could you confirm?"), ME, TUESDAY)
             follow.save(home, data)
             shown = json.loads(follow.slash(home, ["list"]).removeprefix("redde-push follow "))
-            self.assertEqual(shown["switches"], {"mail": True, "orders": True, "arrivals": True})
+            self.assertEqual(shown["switches"], {"mail": True, "orders": True, "trips": True, "arrivals": True, "habits": True})
             self.assertEqual(shown["jellyfin"], {"found": False})
             (item,) = shown["items"]
             self.assertEqual((item["kind"], item["who"], item["subject"]), ("waiting", "bo@example.com", "Lease renewal"))
