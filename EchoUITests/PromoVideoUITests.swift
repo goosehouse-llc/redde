@@ -1271,7 +1271,8 @@ final class PromoVideoUITests: XCTestCase {
         func hideKeyboard() {
             guard app.keyboards.firstMatch.exists else { return }
             let hide = app.keyboards.buttons["Hide keyboard"]
-            if hide.exists { hide.tap() } else { app.swipeDown() }
+            // (the iPad's key fails XCTest's scroll-to-visible: tapped where it is, 2026-11-22)
+            if hide.exists { hide.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() } else { app.swipeDown() }
         }
         func ask(_ words: String) {
             let composer = app.composerField

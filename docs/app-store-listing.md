@@ -111,7 +111,7 @@ Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 
 - What's New 2.6 said "Settings → Set up connection…"; 2.7's text names Connection → Set up connection… where it comes up.
 - Keywords for 2.7: siri, shortcuts, watch and acp out (Apple's product names, and searches that bring nobody); mcp, client, server and kanban in. After the rename to "Redde: Proactive" / "Every AI Agent, one app" (2026-11-22): voice and chat in, code → coding (the old subtitle had them), client and kanban out.
 - Close GitHub #78, #79, #81 and #83 at release.
-- Sent to App Store Connect 2026-11-22 (version 2.7 made): copy, the new 06-goals pictures, and the iPhone App Preview (redde-27). The iPad preview is still 2.3.1's day cut.
+- Sent to App Store Connect 2026-11-22 (version 2.7 made): copy, the new 06-goals pictures, and the iPhone App Preview (redde-27). The iPad preview, the same agents take recorded on the 13" iPad and cut by `make_27.py ipad` (v27_ipad_cuts.py), replaced 2.3.1's day cut on 2026-11-22.
 
 ## What's New in 2.6 (4000)
 Claude Code, Codex and other agents, a new drawer, and better suggested replies.
