@@ -224,9 +224,11 @@ nonisolated struct HermesServeTransport: HermesTransport {
             let failed = p["error"] != nil && !(p["error"]?.isNull ?? true)
             // The whole result rides on the event (`result_text` is the host's own
             // rendering of it, sent in verbose mode).
-            let output = ToolActivity.detail(p["result_text"]?.string) ?? ToolActivity.detail(p["result"])
+            let name = p["name"]?.string ?? ""
+            let card = ReplyCards.carriesCards(name) ? ToolActivity.output(name, p["result"]) : nil
+            let output = card ?? ToolActivity.detail(p["result_text"]?.string) ?? ToolActivity.detail(p["result"])
                 ?? ToolActivity.detail(p["error"])
-            continuation.yield(.toolFinished(name: p["name"]?.string ?? "", failed: failed, output: output))
+            continuation.yield(.toolFinished(name: name, failed: failed, output: output))
         case "todo.updated":
             // The agent's task list, whole, after the to-do tool changed it.
             if let list = TodoList.list(p) { continuation.yield(.todos(list)) }

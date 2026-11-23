@@ -77,7 +77,7 @@ extension Conversation {
                 // The row carries the call; its result only for the edit tools.
                 let call = ToolActivity.unwrapped(name: name, args: row["args"])
                 let tool = ToolActivity(name: call.name, preview: row["context"]?.string?.nilIfEmpty, status: .completed,
-                                        args: ToolActivity.args(call.name, call.args), output: ToolActivity.detail(row["content"]))
+                                        args: ToolActivity.args(call.name, call.args), output: ToolActivity.output(call.name, row["content"]))
                 if let last = out.indices.last, out[last].role == .assistant {
                     out[last].tools.append(tool)
                 } else {
@@ -143,7 +143,7 @@ extension Conversation {
                 guard let last = out.indices.last, out[last].role == .assistant,
                       let i = out[last].tools.firstIndex(where: { $0.output == nil && (row.tool_name == nil || $0.name == row.tool_name) })
                         ?? out[last].tools.firstIndex(where: { $0.output == nil }) else { continue }
-                out[last].tools[i].output = ToolActivity.detail(row.content?.text)
+                out[last].tools[i].output = ToolActivity.output(out[last].tools[i].name, (row.content?.text).map { JSONValue.string($0) })
             default:
                 continue // system rows aren't transcript bubbles
             }

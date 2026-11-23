@@ -1,8 +1,8 @@
-# Redde plugin 1.36.2 — GitHub release draft
+# Redde plugin 1.37.0 — GitHub release draft
 
-Title: **Redde plugin 1.36.2**. Tag: `redde-push-1.36.2`, on the commit that carries
-`version: 1.36.2` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
-`redde-push-1.31.0`; this one covers 1.31.1 to 1.36.2. The full list is in that folder's
+Title: **Redde plugin 1.37.0**. Tag: `redde-push-1.37.0`, on the commit that carries
+`version: 1.37.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
+`redde-push-1.31.0`; this one covers 1.31.1 to 1.37.0. The full list is in that folder's
 `CHANGELOG.md`. Publish it when Redde 2.7 is out. Everything below the line is the release's text.
 
 ---
@@ -33,7 +33,8 @@ and `hermes serve` afterwards.
   don't call your model.
 - **Fewer pings for what you ignore (1.36).** Ideas you leave alone three times come quietly until
   you touch one, and a watch that keeps finding nothing slows down, then pauses and tells you.
-- **Posters on show cards (1.36.2).** A film's or a series' poster is checked before the card shows, and one that's missing or goes nowhere is found on Wikipedia or TVmaze.
+- **Lists with a look (1.37.0).** Every list gets an emoji, a colour and a kind, from the agent or guessed from its title, and a list of films or series shows them as posters.
+- **Posters on show cards (1.36.2).** A film's or a series' poster is checked before the card shows, and one that's missing or goes nowhere is found on Wikipedia or TVmaze. A poster on your own Jellyfin or Plex server is kept too, and Redde shows it first (1.36.3).
 - **Real-life steps stay yours (1.36.1).** Your agent plans what happens in your life (bottling,
   race day, a date arriving) as your step, even when it sets a reminder for it, and a check-in no
   longer marks its own step done just because it scheduled something.

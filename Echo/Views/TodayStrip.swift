@@ -176,13 +176,16 @@ struct TodayStrip: View {
         let open = list.open
         let kind = list.items.isEmpty ? Text("List", comment: "Today strip: a to-do list's tile, with nothing on it yet")
             : open.isEmpty ? Text("All done", comment: "Today strip: a to-do list with every item checked off")
+            : list.kind == .watch ? Text("\(open.count) to watch", comment: "Today strip: how many films or series on a watch list aren't watched yet")
             : Text("\(open.count) to do", comment: "Today strip: how many items on a to-do list aren't checked off")
         let detail = open.isEmpty
             ? (list.items.isEmpty ? String(localized: "Nothing on it yet", comment: "Today strip: an empty to-do list") : "")
             : open.prefix(4).map(\.text).formatted(.list(type: .and, width: .narrow))
-        var tile = TodayTile(key: "list:" + list.id, kind: kind, symbol: open.isEmpty && !list.items.isEmpty ? "checkmark.circle.fill" : "checklist",
-                             tint: .green, wash: .green, title: list.title, detail: open.isEmpty ? detail : "")
-        tile.watermark = "checklist"
+        // Its look (plugin 1.37): its colour, and its emoji before its name.
+        let symbol = open.isEmpty && !list.items.isEmpty ? "checkmark.circle.fill" : (list.kind?.symbol ?? "checklist")
+        var tile = TodayTile(key: "list:" + list.id, kind: kind, symbol: symbol, tint: list.color, wash: list.color,
+                             title: [list.emoji, list.title].compactMap { $0 }.joined(separator: " "), detail: open.isEmpty ? detail : "")
+        tile.watermark = list.kind?.symbol ?? "checklist"
         if !list.items.isEmpty { tile.feature = AnyView(TodayListItems(list: list)) }
         return tileButton(tile, keys: keys, open: { lists.shownID = list.id }) {
             if !list.finished.isEmpty {
@@ -672,7 +675,8 @@ private struct TodayBigNumber: View {
     }
 }
 
-/// A list's open items, three of them, under a bar of how much of it is done.
+/// A list's open items, three of them, under a bar of how much of it is done; a watch list's, a
+/// row of their posters.
 private struct TodayListItems: View {
     let list: TodayList
     @Environment(\.todayTileSolid) private var solid
@@ -681,11 +685,22 @@ private struct TodayListItems: View {
         let open = list.open
         VStack(alignment: .leading, spacing: 5) {
             ProgressView(value: Double(list.finished.count), total: Double(max(1, list.items.count)))
-                .tint(solid ? .primary : Color.green)
+                .tint(solid ? .primary : list.color)
                 .accessibilityHidden(true)
-            ForEach(open.prefix(3)) { item in
+            if list.kind == .watch, open.contains(where: { $0.poster != nil }) {
+                HStack(spacing: -12) {
+                    ForEach(Array(open.prefix(4).enumerated()), id: \.element.id) { n, item in
+                        CardPicture(url: item.poster.flatMap(URL.init(string:)), symbol: "film", width: 40, height: 60, fill: true, corner: 6, pixels: 180)
+                            .shadow(color: .black.opacity(0.25), radius: 3, x: 2)
+                            .zIndex(Double(4 - n))
+                    }
+                }
+                .padding(.top, 2)
+                .accessibilityHidden(true)
+            }
+            ForEach(open.prefix(list.kind == .watch && open.contains(where: { $0.poster != nil }) ? 1 : 3)) { item in
                 HStack(spacing: 6) {
-                    Image(systemName: "circle").font(.system(size: 9, weight: .bold)).tileAccent(.green)
+                    Image(systemName: "circle").font(.system(size: 9, weight: .bold)).tileAccent(list.color)
                     Text(item.text).chatFont(.caption).lineLimit(1)
                 }
             }

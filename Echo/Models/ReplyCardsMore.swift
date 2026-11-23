@@ -294,7 +294,9 @@ nonisolated extension ReplyCard {
             /// A series' last year: with `year`, "2019–2023".
             var endYear: Int?
             var format: Format?
-            /// Its poster, https only; shown only with Link previews on.
+            /// Its poster: https, shown only with Link previews on; or from 2026-11-22 one on the
+            /// person's own network (a Jellyfin or Plex server at home or on the tailnet, http or
+            /// https), shown always: no outside site sees it (`ReplyCards.ownNetwork`).
             var poster: String?
             var ratings: [Rating] = []
             var runtime: TimeInterval?
@@ -549,6 +551,18 @@ nonisolated extension ReplyCards {
         text(value).flatMap { URL(string: $0)?.scheme.map { ["http", "https"].contains($0.lowercased()) } == true ? $0 : nil }
     }
 
+    /// The address when it is on the person's own network, http or https (asked 2026-11-22: Sol
+    /// gave Donnie Brasco's poster from the Jellyfin server on the tailnet, http://100.x…, and the
+    /// card showed none): a private, Tailscale or link-local address, localhost, or a name only a
+    /// home or a tailnet answers (.local, .lan, .ts.net, .internal, .home.arpa, one word). Nothing
+    /// outside sees such a visit, so its picture needs no Link previews (`ProductImages.allowed`).
+    static func ownNetwork(_ url: URL) -> URL? {
+        guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return nil }
+        if ChatCompletionsTransport.isSelfHosted(url) { return url }
+        let parts = (url.host() ?? "").split(separator: ".").compactMap { Int($0) }
+        return parts.count == 4 && parts[0] == 169 && parts[1] == 254 ? url : nil
+    }
+
     /// A picture's address: https only.
     static func https(_ value: JSONValue?) -> String? {
         text(value).flatMap { URL(string: $0)?.scheme?.lowercased() == "https" ? $0 : nil }
@@ -723,7 +737,10 @@ nonisolated extension ReplyCards {
         title.format = ["movie", "film"].contains(where: format.contains) ? .movie
             : ["series", "tv", "show", "season"].contains(where: format.contains) ? .series
             : title.seasons != nil ? .series : title.runtime != nil ? .movie : nil
-        title.poster = https(value["poster"] ?? value["image"] ?? value["picture"])
+        // Their own server's first (plugin 1.36.3 keeps it as `own_poster`, beside one it looked up).
+        let own = [value["own_poster"], value["poster"], value["image"], value["picture"]].lazy
+            .compactMap { self.text($0).flatMap { URL(string: $0).flatMap(ownNetwork)?.absoluteString } }.first
+        title.poster = own ?? https(value["poster"] ?? value["image"] ?? value["picture"])
         title.ratings = ratings(value)
         title.genres = names(value["genres"] ?? value["genre"]).prefix(4).map { String($0.prefix(24)) }
         title.overview = text(value["overview"] ?? value["summary"] ?? value["plot"] ?? value["description"] ?? value["why"]).map { String($0.prefix(400)) }

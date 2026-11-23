@@ -3,6 +3,24 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.37.0 (2026-11-23)
+
+- Lists have a look: a kind (watch, todo, shopping, reading, packing, gifts, other), an emoji and a
+  colour. The agent gives them when it makes a list, or they're guessed from the title ("Christmas
+  Movies": a watch list, 🎄, red). `redde_list` 'style' changes them, and so does Redde's Change
+  Look.
+- A watch list's films and series get their posters and years, looked up as a show card's are,
+  in a thread after the turn so the agent isn't kept waiting. Each title is tried once.
+- Poster lookups now name themselves to Wikipedia and TVmaze (`redde-push` and the repository's
+  address) rather than borrowing a browser's: Wikimedia answered the browser's name from a script
+  with 429s. A title written with a comma ("Love, Actually") is also tried without it.
+
+## 1.36.3 (2026-11-22)
+
+- A show card's poster on your own network (a Jellyfin or Plex server at home or on the tailnet,
+  http or https) is kept as `own_poster`, your own library's poster, which Redde 2.7 (298) shows first.
+  A poster is still looked up for `poster`, so an older Redde, which shows only https posters, has one.
+
 ## 1.36.2 (2026-11-22)
 
 - Show cards get real posters. Each title's poster is opened before the card goes to the phone. One

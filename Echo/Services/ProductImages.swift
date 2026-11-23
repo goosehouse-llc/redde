@@ -32,14 +32,14 @@ final class ProductImages {
         cache.countLimit = 60
         #if DEBUG && canImport(UIKit)
         // The demo's products are drawn here, and nothing is fetched (`-echo.demoCards purchase`).
-        if DevHooks.has("-echo.demoCards") { fetch = { await ProductImages.demo($0) } }
+        if DevHooks.has("-echo.demoCards") || DevHooks.has("-echo.demoLists") { fetch = { await ProductImages.demo($0) } }
         #endif
     }
 
-    /// The picture to fetch for a product: its address with Link previews on; else none, and the
-    /// card draws what it is instead.
+    /// The picture to fetch for a product: its address with Link previews on, or one on the
+    /// person's own network whatever the setting; else none, and the card draws what it is instead.
     static func allowed(_ url: URL?, settings: Settings = .shared) -> URL? {
-        settings.linkPreviews ? url : nil
+        settings.linkPreviews || url.flatMap(ReplyCards.ownNetwork) != nil ? url : nil
     }
 
     /// The picture, if it has come already: a card drawn again shows it at once.
@@ -86,9 +86,10 @@ final class ProductImages {
         return URLSession(configuration: configuration)
     }()
 
-    /// The store's picture, https only, as an image and not too large.
+    /// The store's picture, https only (or any picture on the person's own network), as an image
+    /// and not too large.
     @concurrent nonisolated static func download(_ url: URL) async -> Data? {
-        guard url.scheme?.lowercased() == "https" else { return nil }
+        guard url.scheme?.lowercased() == "https" || ReplyCards.ownNetwork(url) != nil else { return nil }
         var request = URLRequest(url: url)
         request.setValue("image/*", forHTTPHeaderField: "Accept")
         guard let (data, response) = try? await session.data(for: request),

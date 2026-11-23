@@ -5,6 +5,14 @@ every bot reads and changes the same ones, and the phone can check things off wi
 `/redde-push lists …`, the same changes the agent makes with `redde_list`.
 
 Never the agent's own `todo` tool: that is its plan for one turn, shown under its reply.
+
+From 1.37.0 (asked 2026-11-23, of a list of Christmas films: "Is there a way to make these lists a
+bit more fun? This is really boring") each list has a look: a `kind` (a watch list of films and
+series, a to-do list, shopping, reading, packing, gifts or any other), an `emoji` and a `color`,
+which the agent gives when it makes the list or which are guessed from its title, and which the
+agent or the person changes with 'style'. A watch list's films and series get their posters,
+looked up as a show card's are (`posters.lookup`, no key), off the agent's turn: a thread fills
+them in and the phone shows them on its next look (`fill_posters`).
 """
 
 from __future__ import annotations
@@ -13,19 +21,45 @@ import base64
 import json
 import os
 import re
+import threading
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from pathlib import Path
 
-from . import wire
+from . import posters, wire
 
 TOOLSET = "redde_ideas"
 TOOL = "redde_list"
 FILE = "lists.json"
 #: At most this many lists, items on one, and characters in a title or an item.
 MOST, ITEMS, TITLE, TEXT = 30, 300, 60, 200
-ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "delete")
+ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "style", "delete")
+KINDS = ("watch", "todo", "shopping", "reading", "packing", "gifts", "other")
+COLORS = ("red", "orange", "yellow", "green", "mint", "teal", "blue", "indigo", "purple", "pink", "brown", "gray")
+#: A list's look from its title, the first that fits: (words, kind or None, emoji, color). A
+#: season's look wins over its kind's ("Christmas Movies": a watch list, 🎄, red).
+LOOKS = (
+    (r"christmas|xmas|holiday|advent|festive", None, "🎄", "red"),
+    (r"hallowe.?en|spooky|horror", None, "🎃", "orange"),
+    (r"thanksgiving", None, "🦃", "orange"),
+    (r"birthday|party", None, "🎉", "pink"),
+    (r"summer|beach", None, "🏖️", "teal"),
+    (r"movie|film|watch|shows?\b|series|tv\b|cinema|binge", "watch", "🍿", "indigo"),
+    (r"grocer|shopping|supermarket|costco|market|buy", "shopping", "🛒", "green"),
+    (r"pack|trip|travel|vacation|holiday", "packing", "🧳", "teal"),
+    (r"reading|books?\b|novels?\b", "reading", "📚", "brown"),
+    (r"gift|present|wish", "gifts", "🎁", "red"),
+    (r"to.?do|tasks?|chores?|errands?|jobs|today|week", "todo", "✅", "blue"),
+)
+#: Each kind's own, for what the title doesn't say.
+KIND_LOOKS = {"watch": ("🍿", "indigo"), "todo": ("✅", "blue"), "shopping": ("🛒", "green"), "reading": ("📚", "brown"),
+              "packing": ("🧳", "teal"), "gifts": ("🎁", "red"), "other": ("📝", "blue")}
+_WORDS = [(re.compile(rf"\b(?:{w})", re.IGNORECASE), k, e, c) for w, k, e, c in LOOKS]
+#: A watch list's posters: at most this many looked up a time, for this long in all.
+POSTERS_AT_ONCE, POSTER_WAIT = 24, 20.0
+_YEAR = re.compile(r"\s*\((1[89]\d\d|20\d\d)\)\s*$")
 
 #: What sounds like one of their lists, in English: cheap to look for, said in a turn's note only.
 _LISTISH = re.compile(
@@ -33,6 +67,59 @@ _LISTISH = re.compile(
     r"wish|reading|watch|bucket|task|checklist)\s*list|check ?list|my lists?|the list|(?:check|cross|tick|mark) (?:\w+ ){0,4}off|"
     r"(?:add|put|write) .{1,80}? (?:to|on|onto) (?:my|the|our) .{0,30}?list)\b",
     re.IGNORECASE)
+
+def guess(title: str) -> tuple[str, str, str]:
+    """A list's kind, emoji and color from its title."""
+    kind = emoji = color = None
+    for words, k, e, c in _WORDS:
+        if words.search(title or ""):
+            kind = kind or k
+            if emoji is None:
+                emoji, color = e, c
+    kind = kind or "other"
+    own = KIND_LOOKS[kind]
+    return kind, emoji or own[0], color or own[1]
+
+
+def _emoji(value) -> str | None:
+    """One emoji (with its joiners and selectors), else None."""
+    text = str(value or "").strip()
+    if not text or len(text) > 12 or any(ch.isalnum() and ord(ch) < 0x2000 for ch in text):
+        return None
+    return text
+
+
+def look(kept: dict) -> dict:
+    """The list's kind, emoji and color: as kept, else guessed from its title (and a kind given
+    that isn't the title's brings its own emoji and color)."""
+    guessed, emoji, color = guess(str(kept.get("title") or ""))
+    kind = kept.get("kind") if kept.get("kind") in KINDS else guessed
+    if kind != guessed:
+        emoji, color = KIND_LOOKS[kind]
+    return {"kind": kind, "emoji": _emoji(kept.get("emoji")) or emoji,
+            "color": kept.get("color") if kept.get("color") in COLORS else color}
+
+
+def _styled(kept: dict, args: dict) -> list[str]:
+    """The look the agent or the phone gave, kept: what was wrong with it."""
+    wrong = []
+    if args.get("kind") is not None:
+        kind = str(args.get("kind")).lower()
+        kept["kind"] = kind if kind in KINDS else kept.get("kind")
+        if kind not in KINDS:
+            wrong.append(f"kind is one of {', '.join(KINDS)}")
+    if args.get("emoji") is not None:
+        emoji = _emoji(args.get("emoji"))
+        kept["emoji"] = emoji or kept.get("emoji")
+        if not emoji:
+            wrong.append("emoji is one emoji")
+    if args.get("color") is not None:
+        color = str(args.get("color")).lower()
+        kept["color"] = color if color in COLORS else kept.get("color")
+        if color not in COLORS:
+            wrong.append(f"color is one of {', '.join(COLORS)}")
+    return wrong
+
 
 NOTE = (f"[Redde: their lists (to-do, groceries, packing…) live in Redde and show on their phone's Today row: keep them "
         f"with {TOOL} (find it with tool_search if it isn't among your tools). 'show' first when you don't know which "
@@ -44,8 +131,10 @@ DESCRIPTION = (
     "on their phone's Today row until deleted. Actions: 'show' (every list, or one: `list`), 'make' (title, items), "
     "'add' (list, items: texts), 'check' / 'uncheck' / 'remove' (list, items: numbers as 'show' gives them, or "
     "their words), 'clear_done' (list: removes checked items), 'rename' (list, title), 'delete' (list). `list` is a "
-    "list's id or its title; with only one list it may be left out. Not your own todo tool (your plan for this "
-    "turn) and not reminders.")
+    "list's id or its title; with only one list it may be left out. 'make' and 'style' (list) take a look: "
+    "`kind` (watch: films and series, which Redde shows as posters, one title per item; todo, shopping, reading, "
+    "packing, gifts, other), an `emoji` and a `color`; left out, they're guessed from the title. Not your own "
+    "todo tool (your plan for this turn) and not reminders.")
 
 
 # ---- the file ------------------------------------------------------------------------------------
@@ -147,7 +236,7 @@ def _picked(items: list[dict], refs) -> tuple[list[dict], list[str]]:
 
 def _shown(kept: dict) -> dict:
     items = kept.get("items") or []
-    return {"id": kept["id"], "title": kept.get("title"),
+    return {"id": kept["id"], "title": kept.get("title"), **look(kept),
             "items": [f"{n}. [{'x' if i.get('done') else ' '}] {i.get('text')}" for n, i in enumerate(items, 1)],
             "open": sum(1 for i in items if not i.get("done")), "done": sum(1 for i in items if i.get("done"))}
 
@@ -157,7 +246,16 @@ def _new_items(texts: list[str], by: str, now: int) -> list[dict]:
 
 
 def change(home: Path, args: dict, by: str = "default", now: float | None = None) -> dict:
-    """One change, the agent's or the phone's, under the lock: what it did, for the one asking."""
+    """One change, the agent's or the phone's, under the lock: what it did, for the one asking. A
+    watch list it touched has its new titles' posters looked up after, the lock let go."""
+    touched: list[dict] = []
+    said = _change(home, args, by, now, touched)
+    for kept in touched:
+        _posters_later(home, kept)
+    return said
+
+
+def _change(home: Path, args: dict, by: str, now: float | None, touched: list[dict]) -> dict:
     args = args if isinstance(args, dict) else {}
     action = str(args.get("action") or "show")
     if action not in ACTIONS:
@@ -181,13 +279,15 @@ def change(home: Path, args: dict, by: str = "default", now: float | None = None
                     return {"error": f"There are {MOST} lists already: delete one first."}
                 kept = {"id": uuid.uuid4().hex[:10], "title": title, "made": at, "by": by, "changed": at, "items": []}
                 lists.append(kept)
+            wrong = _styled(kept, args)
             added = _texts(args.get("items"))[: max(0, ITEMS - len(kept["items"]))]
             kept["items"] += _new_items(added, by, at)
             kept["changed"] = at
             save(home, lists)
+            touched.append(kept)
             # (A list by that title already: the items go on it, not on a second list of the same name.)
             return {"made" if fresh else "already_there": kept["id"], **_shown(kept),
-                    "said": "It's on their Today row in Redde now."}
+                    "said": "It's on their Today row in Redde now.", **({"not_kept": wrong} if wrong else {})}
         kept = _find(lists, args.get("list"))
         if kept is None:
             return _missing(lists, args.get("list"))
@@ -224,12 +324,22 @@ def change(home: Path, args: dict, by: str = "default", now: float | None = None
                 return {"error": "Give the new title."}
             kept["title"] = title
             said = {"renamed": title}
+        elif action == "style":
+            given = [k for k in ("kind", "emoji", "color") if args.get(k) is not None]
+            if not given:
+                return {"error": "Give a kind, an emoji or a color."}
+            wrong = _styled(kept, args)
+            if len(wrong) == len(given):
+                return {"error": "; ".join(wrong) + "."}
+            said = {"styled": look(kept), **({"not_kept": wrong} if wrong else {})}
         else:   # delete
             lists.remove(kept)
             save(home, lists)
             return {"deleted": kept.get("title"), "said": "Its tile is gone from their Today row."}
         kept["changed"] = at
         save(home, lists)
+        if action in ("add", "style"):
+            touched.append(kept)
         return {**said, **_shown(kept)}
 
 
@@ -245,11 +355,90 @@ def _missing(lists: list[dict], which) -> dict:
 # ---- for the app ---------------------------------------------------------------------------------
 
 def listing(home: Path) -> list[dict]:
-    """Every list, as kept, for the phone's Today row: oldest first (the order they were made)."""
-    return [{"id": k["id"], "title": k.get("title") or "", "changed": k.get("changed") or k.get("made"),
-             "items": [{"id": i.get("id"), "text": i.get("text") or "", "done": bool(i.get("done"))}
+    """Every list, as kept, for the phone's Today row: oldest first (the order they were made). A
+    watch list with titles not yet looked up sets their posters looking."""
+    kept = load(home)
+    for k in kept:
+        _posters_later(home, k)
+    return [{"id": k["id"], "title": k.get("title") or "", "changed": k.get("changed") or k.get("made"), **look(k),
+             "items": [{"id": i.get("id"), "text": i.get("text") or "", "done": bool(i.get("done")),
+                        **{f: i[f] for f in ("poster", "year") if i.get(f)}}
                        for i in k.get("items") or [] if i.get("id")]}
-            for k in load(home)]
+            for k in kept]
+
+
+# ---- a watch list's posters ----------------------------------------------------------------------
+
+#: How a title's poster is found: (title, year or None, deadline) → its address or None. Tests swap it.
+FIND = lambda title, year, deadline: posters.lookup(title, year, None, deadline)   # noqa: E731
+#: Off the turn, in a thread; tests run it there and then.
+BACKGROUND = True
+_running: set[str] = set()
+_running_lock = threading.Lock()
+
+
+def _untried(kept: dict) -> list[dict]:
+    if look(kept)["kind"] != "watch":
+        return []
+    return [i for i in kept.get("items") or [] if i.get("id") and not i.get("poster_tried")][:POSTERS_AT_ONCE]
+
+
+def _posters_later(home: Path, kept: dict) -> None:
+    if not _untried(kept):
+        return
+    key = str(Path(home).resolve())
+    with _running_lock:
+        if key in _running:
+            return
+        _running.add(key)
+
+    def run():
+        try:
+            fill_posters(home)
+        except Exception:   # never the list's undoing: tried again on the next look
+            pass
+        finally:
+            with _running_lock:
+                _running.discard(key)
+
+    if BACKGROUND:
+        threading.Thread(target=run, name="redde-list-posters", daemon=True).start()
+    else:
+        run()
+
+
+def fill_posters(home: Path, now: float | None = None) -> int:
+    """Looks up the posters of every watch list's titles not tried yet, a few at once and for
+    POSTER_WAIT seconds at most, and keeps what was found: how many."""
+    with _locked(home):
+        wanted = [(k["id"], i["id"], str(i.get("text") or "")) for k in load(home) for i in _untried(k)]
+    if not wanted:
+        return 0
+    deadline = time.monotonic() + POSTER_WAIT
+    titled = {}
+    for _, item, text in wanted:
+        year = _YEAR.search(text)
+        titled[item] = (_YEAR.sub("", text).strip(), year.group(1) if year else None)
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {pool.submit(FIND, title, year, deadline): item for item, (title, year) in titled.items() if title}
+        done, _ = wait(futures, timeout=POSTER_WAIT + 1)
+    found = {item: f.result() for f, item in futures.items() if f in done and f.exception() is None}
+    asked = set(futures.values())
+    at = int(now if now is not None else time.time())
+    with _locked(home):
+        lists = load(home)
+        for k in lists:
+            for i in k.get("items") or []:
+                if i.get("id") not in asked:
+                    continue
+                if found.get(i["id"]):
+                    i["poster"] = found[i["id"]]
+                if titled[i["id"]][1]:
+                    i["year"] = int(titled[i["id"]][1])
+                if i["id"] in found:     # (one not back in time is tried again)
+                    i["poster_tried"] = at
+        save(home, lists)
+    return sum(1 for v in found.values() if v)
 
 
 def slash(home: Path, words: list[str]) -> str:
@@ -303,6 +492,9 @@ def register(ctx, home_of) -> None:
                              "properties": {"action": {"type": "string", "enum": list(ACTIONS)},
                                             "list": {"type": "string", "description": "The list's id or title"},
                                             "title": {"type": "string"},
+                                            "kind": {"type": "string", "enum": list(KINDS)},
+                                            "emoji": {"type": "string"},
+                                            "color": {"type": "string", "enum": list(COLORS)},
                                             "items": {"type": "array", "items": {"type": "string"},
                                                       "description": "Texts to add, or the items' numbers or words"}},
                              "required": ["action"]}}

@@ -139,7 +139,7 @@ def target(url: str) -> list[str]:
 
 # ---- reading a page
 
-def fetch_once(url: str, addresses: list[str], deadline: float) -> tuple[int, dict, bytes]:
+def fetch_once(url: str, addresses: list[str], deadline: float, headers: dict | None = None) -> tuple[int, dict, bytes]:
     """One request, to an address that was checked (never looked up again: a name can't change
     its answer between the check and the visit): the status, the headers (lower case) and, for a
     200, the body, no more than MAX_BODY, unzipped."""
@@ -163,7 +163,7 @@ def fetch_once(url: str, addresses: list[str], deadline: float) -> tuple[int, di
                 sock = ssl.create_default_context().wrap_socket(sock, server_hostname=host)
             connection = http.client.HTTPConnection(host, port, timeout=left)
             connection.sock = sock
-            connection.request("GET", path, headers=HEADERS)
+            connection.request("GET", path, headers=headers or HEADERS)
             response = connection.getresponse()
             headers = {k.lower(): v for k, v in response.getheaders()}
             body = b""

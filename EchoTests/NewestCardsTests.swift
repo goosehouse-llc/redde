@@ -191,6 +191,42 @@ struct NewestCardsTests {
         #expect(ShowCard.ask(.watch, s).said.contains("never guess a service"))
     }
 
+    /// A poster on the person's own server (2026-11-22: Sol's Jellyfin poster, http on the
+    /// tailnet) is kept and fetched without Link previews; an outside http one never is.
+    @MainActor @Test func aPosterOnTheirOwnNetworkIsShownWithoutLinkPreviews() throws {
+        guard case let .show(s) = try card(#"""
+        {"type": "show", "items": [{"title": "Donnie Brasco", "poster": "http://100.101.12.34:8096/Items/d7/Images/Primary?tag=ad"},
+          {"title": "Heat", "poster": "http://img.example.com/heat.jpg"}, {"title": "Ronin", "poster": "https://jellyfin.example.ts.net/p.jpg"},
+          {"title": "Thief", "poster": "https://upload.wikimedia.org/thief.jpg", "own_poster": "http://nas:8096/thief"}]}
+        """#) else { Issue.record("not a show card"); return }
+        #expect(s.items.map(\.poster) == ["http://100.101.12.34:8096/Items/d7/Images/Primary?tag=ad", nil, "https://jellyfin.example.ts.net/p.jpg",
+                                     "http://nas:8096/thief"])
+        for own in ["http://192.168.1.20/p.jpg", "http://10.0.0.5:8096/p", "http://jellyfin.local/p", "http://nas/p", "http://169.254.3.4/p"] {
+            #expect(ReplyCards.ownNetwork(URL(string: own)!) != nil, "\(own)")
+        }
+        for outside in ["http://img.example.com/p.jpg", "http://8.8.8.8/p", "file:///etc/passwd", "ftp://10.0.0.5/p"] {
+            #expect(ReplyCards.ownNetwork(URL(string: outside)!) == nil, "\(outside)")
+        }
+        let settings = Settings(defaults: UserDefaults(suiteName: "own-network-posters")!)
+        settings.linkPreviews = false
+        #expect(ProductImages.allowed(URL(string: "http://100.101.12.34:8096/p"), settings: settings) != nil)
+        #expect(ProductImages.allowed(URL(string: "https://upload.wikimedia.org/p.jpg"), settings: settings) == nil)
+    }
+
+    /// The plugin's answer wins over the call however the result comes (2026-11-22: the Dashboard
+    /// sends it parsed, and the step kept it as "key: value" lines, so the poster the plugin had
+    /// looked up never reached the card and Sol's own, an http one, was dropped).
+    @Test func aShowCardsLookedUpPosterComesThroughAParsedResult() throws {
+        let call = #"{"cards": [{"type": "show", "items": [{"title": "Donnie Brasco", "year": 1997, "poster": "http://img.example.com/p.jpg"}]}]}"#
+        let answer = try JSONValue.parse(Data(#"{"shown": ["show: 1"], "note": "On screen.", "cards": [{"type": "show", "items": [{"title": "Donnie Brasco", "year": 1997, "poster": "https://upload.wikimedia.org/d.jpg"}]}]}"#.utf8))
+        for output in [ToolActivity.output(ReplyCards.tool, answer), ToolActivity.output(ReplyCards.tool, .string(answer.displayText))] {
+            let step = ToolActivity(name: ReplyCards.tool, preview: nil, status: .completed, args: call, output: output)
+            guard case let .show(s)? = ReplyCards.cards(from: step)?.first else { Issue.record("no show card"); return }
+            #expect(s.items.first?.poster == "https://upload.wikimedia.org/d.jpg")
+        }
+        #expect(ToolActivity.output("terminal", answer)?.contains("note: On screen.") == true, "other tools still read as lines")
+    }
+
     // MARK: Conversions
 
     @Test func unitsAreWorkedOutOnThePhone() throws {

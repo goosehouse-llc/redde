@@ -31,6 +31,24 @@ struct TodayListsTests {
         #expect(refused.error == "No list called 'x'.")
     }
 
+    /// Plugin 1.37 (2026-11-23): a list's look, and a watch list's posters; an older plugin's
+    /// lists have none, and a poster that isn't https or on their own network is dropped.
+    @Test func readsAListsLookAndPosters() throws {
+        let answer = #"redde-push lists {"lists": [{"id": "w", "title": "Christmas Movies", "kind": "watch", "emoji": "🎄", "color": "red", "items": ["#
+            + #"{"id": "a", "text": "Home Alone (1990)", "done": false, "poster": "https://upload.wikimedia.org/h.jpg", "year": 1990},"#
+            + #"{"id": "b", "text": "Elf", "done": true, "poster": "http://img.example.com/elf.jpg"},"#
+            + #"{"id": "c", "text": "Die Hard", "done": false, "poster": "http://100.101.12.34:8096/Items/d/Images/Primary"}]},"#
+            + #"{"id": "o", "title": "Odd", "kind": "boat", "emoji": "hello", "color": "plaid", "items": []}]}"#
+        let lists = try #require(TodayList.parse(answer)).lists
+        let films = lists[0]
+        #expect(films.kind == .watch && films.emoji == "🎄" && films.hue == .red)
+        #expect(films.items.map(\.poster) == ["https://upload.wikimedia.org/h.jpg", nil, "http://100.101.12.34:8096/Items/d/Images/Primary"])
+        #expect(films.items[0].year == 1990 && films.items[0].name == "Home Alone")
+        #expect(lists[1].kind == nil && lists[1].emoji == nil && lists[1].hue == nil, "what it can't use is left out")
+        let old = try #require(TodayList.parse(Self.answer)).lists[0]
+        #expect(old.kind == nil && old.emoji == nil)
+    }
+
     @Test func refreshTakesTheLists() async {
         let lists = store { _ in Self.answer }
         await lists.refresh()

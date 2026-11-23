@@ -113,6 +113,21 @@ nonisolated struct ToolActivity: Identifiable, Equatable, Sendable, Codable {
         return String(decoding: data, as: UTF8.self)
     }
 
+    /// A call's result as its step keeps it: for reading (`detail`), except a card call's (the
+    /// plugin's answer, with the cards filled in), kept whole as JSON for `ReplyCards` to read
+    /// (2026-11-22: the Dashboard sends a result parsed, which `detail` writes as "key: value"
+    /// lines, and its verbose `result_text` is redacted and cut to its tail, so a show card's
+    /// looked-up poster never reached the card).
+    static func output(_ name: String, _ value: JSONValue?) -> String? {
+        guard ReplyCards.carriesCards(name), let value, !value.isNull else { return detail(value) }
+        if let text = value.string {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed.count < 256_000 ? trimmed : detail(trimmed)
+        }
+        guard let data = try? JSONEncoder().encode(value), data.count < 256_000 else { return detail(value) }
+        return String(decoding: data, as: UTF8.self)
+    }
+
     /// The same for JSON that arrives as text (a stored call's `arguments`): parsed when it
     /// parses, else shown as it came.
     static func detail(json text: String?) -> String? {

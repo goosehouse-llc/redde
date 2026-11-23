@@ -67,6 +67,24 @@ class PosterTests(unittest.TestCase):
         self.assertNotIn("image", filled["items"][0])
         self.assertNotIn("poster", filled["items"][0])
 
+    def test_their_own_servers_poster_is_kept_beside_one_looked_up(self):
+        posters.GET = web = Web({WIKI + "Donnie_Brasco_(1997_film)": summary("1997 film by Mike Newell")})
+        jellyfin = "http://100.101.12.34:8096/Items/d77832c9/Images/Primary?tag=ad82a056"
+        item = posters.fill(self.show(poster=jellyfin))["items"][0]
+        self.assertEqual((item["own_poster"], item["poster"]), (jellyfin, POSTER), "Redde 2.8 shows the first, 2.7 the second")
+        self.assertNotIn(jellyfin, web.asked, "never read from the server")
+        posters.GET = Web({})
+        item = posters.fill(self.show(poster=jellyfin))["items"][0]
+        self.assertEqual((item["own_poster"], item.get("poster")), (jellyfin, None), "none found: only their own")
+        for home in ("http://192.168.1.20/p.jpg", "https://jellyfin.example.ts.net/p.jpg", "http://nas:8096/p", "http://[fd7a:115c::1]/p"):
+            self.assertTrue(posters.own(home), home)
+        for outside in ("http://img.example.com/p.jpg", "https://8.8.8.8/p", "ftp://10.0.0.5/p", ""):
+            self.assertFalse(posters.own(outside), outside)
+
+    def test_an_outside_http_poster_is_looked_up(self):
+        posters.GET = Web({WIKI + "Donnie_Brasco_(1997_film)": summary("1997 film by Mike Newell")})
+        self.assertEqual(posters.fill(self.show(poster="http://img.example.com/p.jpg"))["items"][0]["poster"], POSTER)
+
     def test_one_that_cant_be_told_is_left_alone(self):
         posters.GET = Web({"https://jellyfin.example/p.jpg": ("refused", 0, "", b"")})
         filled = posters.fill(self.show(poster="https://jellyfin.example/p.jpg"))

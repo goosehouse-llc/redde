@@ -113,5 +113,77 @@ class ListsTests(unittest.TestCase):
         self.assertFalse(lists.path(bot).exists())
 
 
+
+class ListLooksTests(unittest.TestCase):
+    """1.37.0 (2026-11-23, of Christmas films: "make these lists a bit more fun")."""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        self.asked = []
+        lists.BACKGROUND, lists.FIND = False, self.find
+
+    def tearDown(self):
+        lists.BACKGROUND, lists.FIND = True, lambda title, year, deadline: plugin.posters.lookup(title, year, None, deadline)
+        self.tmp.cleanup()
+
+    def find(self, title, year, deadline):
+        self.asked.append((title, year))
+        return None if title == "A Very Brady Christmas" else f"https://upload.wikimedia.org/{title.replace(' ', '_')}.jpg"
+
+    def test_a_look_is_guessed_from_the_title(self):
+        self.assertEqual(lists.guess("Christmas Movies"), ("watch", "🎄", "red"))
+        self.assertEqual(lists.guess("Groceries"), ("shopping", "🛒", "green"))
+        self.assertEqual(lists.guess("To Do"), ("todo", "✅", "blue"))
+        self.assertEqual(lists.guess("Ready for Monday"), ("other", "📝", "blue"), "not 'reading'")
+        self.assertEqual(lists.guess("Books for the beach"), ("reading", "🏖️", "teal"))
+
+    def test_the_agent_gives_a_look_or_changes_it(self):
+        made = do(self.home, action="make", title="Saturday", kind="todo", emoji="🧹", color="mint")
+        self.assertEqual((made["kind"], made["emoji"], made["color"]), ("todo", "🧹", "mint"))
+        made = do(self.home, action="make", title="Gifts", emoji="hello", color="plaid")
+        self.assertEqual((made["emoji"], made["color"]), ("🎁", "red"))
+        self.assertEqual(len(made["not_kept"]), 2)
+        styled = do(self.home, action="style", list="Saturday", kind="shopping")
+        self.assertEqual(styled["styled"]["kind"], "shopping")
+        self.assertIn("error", do(self.home, action="style", list="Saturday"))
+        self.assertIn("error", do(self.home, action="style", list="Saturday", color="plaid"))
+        self.assertEqual(lists.look({"title": "Errands", "kind": "watch"})["emoji"], "🍿", "a kind given brings its own look")
+
+    def test_a_watch_lists_titles_get_posters_and_years(self):
+        do(self.home, action="make", title="Christmas Movies",
+           items=["Home Alone (1990)", "It's a Wonderful Life", "A Very Brady Christmas"])
+        self.assertEqual(sorted(self.asked), [("A Very Brady Christmas", None), ("Home Alone", "1990"), ("It's a Wonderful Life", None)])
+        listed = lists.listing(self.home)[0]
+        self.assertEqual((listed["kind"], listed["emoji"], listed["color"]), ("watch", "🎄", "red"))
+        home_alone, wonderful, brady = listed["items"]
+        self.assertEqual((home_alone["poster"], home_alone["year"]), ("https://upload.wikimedia.org/Home_Alone.jpg", 1990))
+        self.assertEqual(home_alone["text"], "Home Alone (1990)", "the text as they wrote it")
+        self.assertNotIn("poster", brady)
+        self.assertEqual(len(self.asked), 3, "each title tried once, not at every look")
+        do(self.home, action="add", list="Christmas Movies", items=["Elf"])
+        self.assertEqual(self.asked[-1], ("Elf", None))
+
+    def test_other_lists_look_nothing_up(self):
+        do(self.home, action="make", title="Groceries", items=["Milk"])
+        lists.listing(self.home)
+        self.assertEqual(self.asked, [])
+
+    def test_an_older_list_gets_its_look_and_posters_on_the_next_look(self):
+        lists.save(self.home, [{"id": "old1", "title": "Christmas Movies", "items": [{"id": "a", "text": "Die Hard", "done": False}]}])
+        lists.listing(self.home)
+        self.assertEqual(lists.listing(self.home)[0]["items"][0]["poster"], "https://upload.wikimedia.org/Die_Hard.jpg")
+
+    def test_the_tool_offers_the_look(self):
+        class Ctx:
+            def register_tool(self, **made):
+                self.made = made
+        ctx = Ctx()
+        lists.register(ctx, lambda: self.home)
+        props = ctx.made["schema"]["parameters"]["properties"]
+        self.assertEqual(props["kind"]["enum"], list(lists.KINDS))
+        self.assertIn("style", props["action"]["enum"])
+        self.assertLess(len(json.dumps(ctx.made["schema"])), 2000)
+
+
 if __name__ == "__main__":
     unittest.main()

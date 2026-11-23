@@ -138,6 +138,37 @@ final class TodayStripUITests: XCTestCase {
         done.name = "list-all-done"; done.lifetime = .keepAlways; add(done)
     }
 
+    /// A watch list (2026-11-23, "make these lists a bit more fun"): its tile and page in its own
+    /// colour with its emoji, its films as posters; one tapped is stamped Watched; Change Look opens.
+    func testAWatchListIsAWallOfPosters() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoLists", "-echo.drawerPage", "today", "-linkPreviews", "YES"] + XCUIApplication.straightToChat
+        app.launch()
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        let films = tile(app, "Christmas Movies")
+        XCTAssertTrue(films.waitForExistence(timeout: 5), "No watch list tile")
+        XCTAssertTrue(films.label.contains("🎄") && films.label.contains("5 to watch"), "The tile: \(films.label)")
+        let strip = XCTAttachment(screenshot: app.screenshot())
+        strip.name = "watch-list-tile"; strip.lifetime = .keepAlways; add(strip)
+        reach(app, films)
+        films.tap()
+        let elf = app.buttons.matching(NSPredicate(format: "label == %@", "Elf, 2003")).firstMatch
+        XCTAssertTrue(elf.waitForExistence(timeout: 5), "No poster for Elf")
+        sleep(1)
+        let wall = XCTAttachment(screenshot: app.screenshot())
+        wall.name = "watch-list-page"; wall.lifetime = .keepAlways; add(wall)
+        elf.tap()
+        XCTAssertTrue(app.staticTexts["3 of 7 done"].waitForExistence(timeout: 5), "Watching one didn't count")
+        app.buttons["Change Look"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Change Look"].waitForExistence(timeout: 5), "Change Look didn't open")
+        sleep(1)
+        let look = XCTAttachment(screenshot: app.screenshot())
+        look.name = "change-look"; look.lifetime = .keepAlways; add(look)
+    }
+
     func testAGoalTileOpensTheGoal() {
         let app = openDrawer()
         let goal = tile(app, "Run a 10K by March")

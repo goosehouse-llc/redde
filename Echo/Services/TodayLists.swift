@@ -6,16 +6,39 @@ import Observation
 /// Hermes by Redde's plugin 1.20 (`lists.py`, the agent's `redde_list`), shared by every bot, and
 /// each one a tile on the Today row after the Inbox until it is deleted. Not the agent's own todo
 /// list (`TodoList`), which is its plan for one turn.
+///
+/// From plugin 1.37.0 (asked 2026-11-23 of a list of Christmas films: "make these lists a bit more
+/// fun"), each list has a look: its kind, an emoji and a colour, the agent's or guessed from the
+/// title; a watch list's films and series come with their posters.
 nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
     struct Item: Codable, Equatable, Identifiable, Sendable {
         var id: String
         var text: String
         var done: Bool
+        /// A film's or a series' poster on a watch list (https, or on the person's own network).
+        var poster: String? = nil
+        var year: Int? = nil
+
+        /// Its name without the year it was written with ("Home Alone (1990)").
+        var name: String { text.replacing(/\s*\((?:18|19|20)\d\d\)\s*$/, with: "") }
+    }
+
+    /// What a list is for: a watch list's titles show as posters.
+    enum Kind: String, Codable, Sendable, CaseIterable {
+        case watch, todo, shopping, reading, packing, gifts, other
+    }
+
+    /// The colours a list can be: the plugin's names.
+    enum Hue: String, Codable, Sendable, CaseIterable {
+        case red, orange, yellow, green, mint, teal, blue, indigo, purple, pink, brown, gray
     }
 
     var id: String
     var title: String
     var items: [Item]
+    var kind: Kind? = nil
+    var emoji: String? = nil
+    var hue: Hue? = nil
 
     var open: [Item] { items.filter { !$0.done } }
     var finished: [Item] { items.filter(\.done) }
@@ -28,9 +51,13 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
             guard let id = l["id"]?.string, !id.isEmpty else { return nil }
             let items = (l["items"]?.array ?? []).compactMap { i -> Item? in
                 guard let id = i["id"]?.string, !id.isEmpty else { return nil }
-                return Item(id: id, text: i["text"]?.string ?? "", done: i["done"]?.bool ?? false)
+                let poster = i["poster"]?.string.flatMap { ReplyCards.https(.string($0)) ?? URL(string: $0).flatMap(ReplyCards.ownNetwork)?.absoluteString }
+                return Item(id: id, text: i["text"]?.string ?? "", done: i["done"]?.bool ?? false, poster: poster,
+                            year: i["year"]?.number.flatMap(\.nearestInt))
             }
-            return TodayList(id: id, title: l["title"]?.string ?? "", items: items)
+            let emoji = l["emoji"]?.string.flatMap { $0.count == 1 && $0.unicodeScalars.contains { $0.properties.isEmoji && $0.value > 0x238C } ? $0 : nil }
+            return TodayList(id: id, title: l["title"]?.string ?? "", items: items, kind: l["kind"]?.string.flatMap(Kind.init(rawValue:)),
+                             emoji: emoji, hue: l["color"]?.string.flatMap(Hue.init(rawValue:)))
         }
         return (lists, json["said"]?["error"]?.string)
     }
@@ -82,7 +109,13 @@ final class TodayLists {
 
     init() {
         #if DEBUG
-        if Self.demo { lists = Self.demoLists; available = true; return }
+        if Self.demo {
+            lists = Self.demoLists
+            available = true
+            // `-echo.demoLists films`: the watch list open at launch.
+            if let open = DevHooks.value("-echo.demoLists"), lists.contains(where: { $0.id == open }) { shownID = open }
+            return
+        }
         #endif
         restore()
     }
@@ -318,6 +351,20 @@ final class TodayLists {
         apply(list.id, ["action": .string("clear_done")]) { kept in kept.items.removeAll(where: \.done) }
     }
 
+    /// A list's look: its emoji, colour or kind, the same 'style' the agent gives.
+    func style(_ list: TodayList, emoji: String? = nil, hue: TodayList.Hue? = nil, kind: TodayList.Kind? = nil) {
+        var change: [String: JSONValue] = ["action": .string("style")]
+        if let emoji { change["emoji"] = .string(emoji) }
+        if let hue { change["color"] = .string(hue.rawValue) }
+        if let kind { change["kind"] = .string(kind.rawValue) }
+        guard change.count > 1 else { return }
+        apply(list.id, change) { kept in
+            if let emoji { kept.emoji = emoji }
+            if let hue { kept.hue = hue }
+            if let kind { kept.kind = kind }
+        }
+    }
+
     func rename(_ list: TodayList, to title: String) {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty, title != list.title else { return }
@@ -380,13 +427,18 @@ final class TodayLists {
     static var demo: Bool { DevHooks.has("-echo.demoLists") }
 
     static let demoLists: [TodayList] = [
+        TodayList(id: "films", title: "Christmas Movies", items: [
+            ("Home Alone", 1990, false), ("Elf", 2003, false), ("It's a Wonderful Life", 1946, true), ("Die Hard", 1988, false),
+            ("Love Actually", 2003, false), ("Scrooged", 1988, true), ("The Polar Express", 2004, false)].enumerated().map { n, film in
+                .init(id: "f\(n)", text: film.0, done: film.2, poster: "https://demo.example/posters/\(film.0.lowercased().filter { $0.isLetter || $0 == " " }.replacingOccurrences(of: " ", with: "-")).jpg",
+                      year: film.1) }, kind: .watch, emoji: "🎄", hue: .red),
         TodayList(id: "groceries", title: "Groceries", items: [
             .init(id: "g1", text: "Oat milk", done: false), .init(id: "g2", text: "Eggs", done: true),
             .init(id: "g3", text: "Sourdough", done: false), .init(id: "g4", text: "Lemons", done: false),
-            .init(id: "g5", text: "Coffee beans", done: true)]),
+            .init(id: "g5", text: "Coffee beans", done: true)], kind: .shopping, emoji: "🛒", hue: .green),
         TodayList(id: "todo", title: "To Do", items: [
             .init(id: "t1", text: "Call the vet about Friday", done: false), .init(id: "t2", text: "Renew the car registration", done: false),
-            .init(id: "t3", text: "Send Ana the photos", done: true)]),
+            .init(id: "t3", text: "Send Ana the photos", done: true)], kind: .todo, emoji: "✅", hue: .blue),
     ]
     #endif
 }
