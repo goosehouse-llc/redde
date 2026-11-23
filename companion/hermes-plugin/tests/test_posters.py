@@ -61,6 +61,12 @@ class PosterTests(unittest.TestCase):
         filled = posters.fill({"type": "show", "items": [{"title": "Severance", "year": "2022-", "format": "series"}]})
         self.assertEqual(filled["items"][0]["poster"], "https://static.tvmaze.com/s.jpg", "a series' from TVmaze, its name and year matched")
 
+    def test_a_year_in_the_name_is_taken_as_its_year(self):
+        posters.GET = web = Web({WIKI + "Donnie_Brasco_(1997_film)": summary("1997 film by Mike Newell")})
+        filled = posters.fill({"type": "show", "items": [{"title": "Donnie Brasco (1997)"}]})
+        self.assertEqual(filled["items"][0]["poster"], POSTER)
+        self.assertEqual(filled["items"][0]["title"], "Donnie Brasco (1997)", "the name as the agent wrote it")
+
     def test_a_dead_poster_with_none_found_is_taken_off(self):
         posters.GET = Web({})
         filled = posters.fill(self.show(image="https://image.tmdb.org/x.jpg"))

@@ -1,8 +1,8 @@
-# Redde plugin 1.37.0 — GitHub release draft
+# Redde plugin 1.37.1 — GitHub release draft
 
-Title: **Redde plugin 1.37.0**. Tag: `redde-push-1.37.0`, on the commit that carries
-`version: 1.37.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
-`redde-push-1.31.0`; this one covers 1.31.1 to 1.37.0. The full list is in that folder's
+Title: **Redde plugin 1.37.1**. Tag: `redde-push-1.37.1`, on the commit that carries
+`version: 1.37.1` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
+`redde-push-1.31.0`; this one covers 1.31.1 to 1.37.1. The full list is in that folder's
 `CHANGELOG.md`. Publish it when Redde 2.7 is out. Everything below the line is the release's text.
 
 ---

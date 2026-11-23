@@ -40,6 +40,7 @@ WAIT = 6.0
 MOST = 6
 KEYS = ("poster", "image", "picture", "own_poster")
 _YEAR = re.compile(r"(1[89]\d\d|20\d\d)")
+_NAMED_YEAR = re.compile(r"\s*\((1[89]\d\d|20\d\d)\)\s*$")
 _KIND = re.compile(r"\b(film|movie|television|tv series|series|miniseries|sitcom|anime|documentary|serial)\b", re.I)
 
 
@@ -173,9 +174,13 @@ def _one(item: dict, deadline: float) -> str | None:
         if now != "dead":
             return None
     title = str(item.get("title") or item.get("name") or "").strip()
+    # (1.37.1: Sol named it "Donnie Brasco (1997)", the year in the name and nowhere else)
+    named = _NAMED_YEAR.search(title)
+    if named:
+        title = title[:named.start()].strip()
     if not title:
         return None
-    year = _YEAR.search(str(item.get("year") or ""))
+    year = _YEAR.search(str(item.get("year") or "")) or named
     kind = str(item.get("format") or item.get("kind") or "").lower()
     series = True if "series" in kind or kind in ("tv", "show") else False if kind in ("movie", "film") else None
     found = lookup(title, year.group(1) if year else None, series, deadline)

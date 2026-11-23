@@ -3,6 +3,12 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.37.1 (2026-11-23)
+
+- A show card whose name carries its year ("Donnie Brasco (1997)", and no year of its own) has its
+  poster looked up by the name and that year. It found nothing before, so the card showed its film
+  strip.
+
 ## 1.37.0 (2026-11-23)
 
 - Lists have a look: a kind (watch, todo, shopping, reading, packing, gifts, other), an emoji and a
