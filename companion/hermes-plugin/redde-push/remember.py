@@ -11,13 +11,13 @@ import re
 _LEAD = r"^\s*(?:(?:ok(?:ay)?|hey|so|and|also|oh)[,.!]?\s+)*(?:\w+[,:]\s+)?(?:please\s+|can you\s+|could you\s+|i want you to\s+)?"
 #: "Remember that I'm vegetarian", "Remember: …", "please remember my sister is Ana",
 #: "Don't forget that …", "Keep in mind that …", and Redde's own "Remember that: …".
-_REMEMBER = re.compile(_LEAD + r"(?:remember|don'?t forget|do not forget|keep in mind|make a note)\b"
+_REMEMBER = re.compile(_LEAD + r"(?:remember|don['’]?t forget|do not forget|keep in mind|make a note)\b"
                        r"(?!\s+(?:to|when|how|what|where|who|why|if|the time)\b)"
-                       r"(?:\s+(?:that|this|these|my|i|i'm|we|our|me)\b|\s*:)", re.IGNORECASE)
+                       r"(?:\s+(?:that|this|these|my|i|i['’]m|we|our|me)\b|\s*:)", re.IGNORECASE)
 #: "Forget that I …", "Forget my old address", "stop remembering …", "remove … from your memory".
-_FORGET = re.compile(_LEAD + r"(?:(?:forget|stop remembering|don'?t remember|do not remember|unlearn)\b"
+_FORGET = re.compile(_LEAD + r"(?:(?:forget|stop remembering|don['’]?t remember|do not remember|unlearn)\b"
                      r"(?!\s+(?:it|about it|that happened|you saw)\s*[.!]?\s*$)"
-                     r"(?:\s+(?:that|this|these|what|about|my|i|i'm|we|our|everything)\b|\s*:)"
+                     r"(?:\s+(?:that|this|these|what|about|my|i|i['’]m|we|our|everything)\b|\s*:)"
                      r"|remove\b.{1,80}\bfrom (?:your )?memory\b)", re.IGNORECASE)
 
 REMEMBER_NOTE = ("[Redde: asked to remember something. Save it now with your memory tool: target 'user' for a fact about "

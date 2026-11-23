@@ -51,7 +51,7 @@ def title(name: str) -> str:
 
 
 #: A lead-in ahead of the answer ("Based on my research, here's the current status:").
-_LEAD_IN = re.compile(r"^(based on|after (checking|looking)|i (checked|looked)|here'?s|here is|let me|now|ok(ay)?|"
+_LEAD_IN = re.compile(r"^(based on|after (checking|looking)|i (checked|looked)|here['’]?s|here is|let me|now|ok(ay)?|"
                       r"good|great|alright)\b.{0,160}:$", re.IGNORECASE)
 #: A first sentence that only says nothing changed ("No price changes.", "Nothing has changed since the
 #: last check.", "Still the same."): 2026-11-05, a GTA 6 watch on Kapitsa sent "Based on my research,
@@ -59,7 +59,7 @@ _LEAD_IN = re.compile(r"^(based on|after (checking|looking)|i (checked|looked)|h
 _NO_CHANGE = re.compile(
     r"((there (are|have been|were) )?no ((new|real|notable|significant|price|stock|status) )*"
     r"(changes?|updates?|news|movement)|nothing (new|has changed|changed|to report)|"
-    r"(it'?s |it is |everything is |the price is |prices are )?(still )?(the same|unchanged))"
+    r"(it['’]?s |it is |everything is |the price is |prices are )?(still )?(the same|unchanged))"
     r"( (in|to|on|for|since|from|at|across) [^,;]{0,60})?", re.IGNORECASE)
 #: Words that turn a "no change" into news ("No price changes, but it's back in stock.").
 _BUT = re.compile(r"\b(but|however|except|although|though|now (in|out of) stock|back in stock|sold out)\b",

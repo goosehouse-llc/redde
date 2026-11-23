@@ -876,7 +876,7 @@ def handle(args, home=None, session_id: str = "", **_) -> str:
 # 9:55 PM, then 12:05 AM Thursday, on a Friday, and showed no card (2026-10-23).
 _ASKS_TIME = re.compile(r"\bwhat(?:'s|’s| is)? the time\b|\bwhat time\b|\btime (?:is it|now|there|in|zone)\b"
                         r"|\b(?:current|local) time\b|\bclock\b(?! (?:skew|speed|rate|cycles?|drift|signal|sync|frequency|source)\b)"
-                        r"|\bo'?clock\b", re.IGNORECASE)
+                        r"|\bo['’]?clock\b", re.IGNORECASE)
 #: Time as code has it is no asking of the hour ("convert the time zone in python", 2026-11-09).
 _CODE_TIME = re.compile(r"\b(?:python|swift|javascript|typescript|java|rust|golang|sql|bash|datetime|timestamps?|strftime|zoneinfo|"
                         r"pytz|tzinfo|unix time|epoch|ntp)\b", re.IGNORECASE)
@@ -936,7 +936,7 @@ LEVEL_NOTES = {
 #: that may help ... the model prompts a few different actions it can take that are user
 #: selectable"): they say what they're about to do, in English, with when.
 _DOING = re.compile(
-    r"\b(?:i'?m|i am|we'?re|we are|i'?ll be|we'?ll be)\s+(?:about to\s+)?(?:going|driving|flying|heading|travel(?:l)?ing|"
+    r"\b(?:i['’]?m|i am|we['’]?re|we are|i['’]?ll be|we['’]?ll be)\s+(?:about to\s+)?(?:going|driving|flying|heading|travel(?:l)?ing|"
     r"taking|hosting|having|moving|starting|visiting|selling|buying|throwing|running|doing|off|leaving|getting married|"
     r"interviewing|presenting|camping|hiking|celebrating|renovating|painting|launching)\b"
     r"(?!\s+to\s+(?:be|do|try|send|write|call|email|text|ask|need|make|have|get|say|tell|look|check|see|think|go\s+to\s+bed)\b)",

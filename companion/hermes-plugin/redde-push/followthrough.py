@@ -59,7 +59,7 @@ SENT_EVERY = 10 * 60
 SENT_FIRST_DAYS = 3
 
 _PROMISE = re.compile(
-    r"\b(?:i'?ll|i will|i'm going to|i am going to|i'?m gonna|let me|we'?ll|we will|i can)\s+(?:\w+\s+){0,3}?"
+    r"\b(?:i['’]?ll|i will|i['’]m going to|i am going to|i['’]?m gonna|let me|we['’]?ll|we will|i can)\s+(?:\w+\s+){0,3}?"
     r"(?P<what>send|get|have|share|forward|finish|follow up|circle back|look|review|call|write|email|reply|check|"
     r"put together|draft|confirm|update|sign|pay|submit|book|order|bring|return)\b", re.IGNORECASE)
 _ASK = re.compile(r"\?\s*$|\b(?:let me know|could you|can you|would you|will you|please (?:send|confirm|let|advise|share)|"
@@ -102,7 +102,7 @@ _PAID = re.compile(r"\b(?:payment (?:received|confirmation|confirmed|processed|p
                    r"thank you for your payment|thanks for your payment|we(?:'ve| have) received your payment|"
                    r"your payment of .{0,30}(?:has been|was|is) (?:received|processed|posted))\b", re.IGNORECASE)
 # expiries
-_EXPIRY_THING = re.compile(r"\b(?:passport|driver'?s? licen[cs]e|licen[cs]e|registration|insurance|policy|warranty|"
+_EXPIRY_THING = re.compile(r"\b(?:passport|driver['’]?s? licen[cs]e|licen[cs]e|registration|insurance|policy|warranty|"
                            r"membership|permit|visa|certificate|id card|inspection|domain)\b", re.IGNORECASE)
 _EXPIRES = re.compile(r"\b(?:expires?(?: on)?|expiration(?: date)?|expiry(?: date)?|valid (?:until|through|thru)|"
                       r"renew(?:al)? (?:by|before|date|due)|(?:coverage|policy) (?:ends|period ends)|"

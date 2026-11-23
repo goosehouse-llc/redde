@@ -28,8 +28,8 @@ AHEAD = timedelta(days=60)
 
 #: What sounds like something to do later, in English: cheap to look for, said in a turn's note only.
 _LOOSE_END = re.compile(
-    r"\b(i'?ll|i will|i need to|i have to|i must|i should|i ought to|i'm going to|i am going to|remind me|"
-    r"don'?t let me forget|need to remember|later today|later on|tomorrow|tonight|this weekend|next week|"
+    r"\b(i['’]?ll|i will|i need to|i have to|i must|i should|i ought to|i['’]m going to|i am going to|remind me|"
+    r"don['’]?t let me forget|need to remember|later today|later on|tomorrow|tonight|this weekend|next week|"
     r"by (monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on (monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b",
     re.IGNORECASE)
 

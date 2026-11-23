@@ -157,7 +157,7 @@ PLAN_NOTE = (f"[Redde: if they're planning something for a set time (a film to w
 _PLANISH = re.compile(
     r"\b(?:watch|see|read|cook|make|play|visit|try|go to|have)\b.{0,80}?\b(?:tonight|tomorrow|this (?:weekend|week)|"
     r"next \w+|on (?:mon|tues|wednes|thurs|fri|satur|sun)day|(?:mon|tues|wednes|thurs|fri|satur|sun)day (?:night|evening)|"
-    r"thanksgiving|christmas|new year'?s|easter|halloween|\d{1,2}(?::\d\d)?\s?(?:am|pm))\b", re.IGNORECASE)
+    r"thanksgiving|christmas|new year['’]?s|easter|halloween|\d{1,2}(?::\d\d)?\s?(?:am|pm))\b", re.IGNORECASE)
 
 
 # ---- the file ------------------------------------------------------------------------------------

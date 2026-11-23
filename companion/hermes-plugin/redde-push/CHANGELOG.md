@@ -18,6 +18,8 @@ Settings › Redde Plugin, to a Hermes whose plugin is older than the one the ap
   the lab, inside Hermes 0.23.2).
 - Reminders run with no model again on Hermes 0.22.7 and later, whose cron runs have a chat's
   session id: the model was being asked to write them.
+- A curly apostrophe, as an iPhone's keyboard and Mail write it ("We’re", "I’ll"), is heard like a
+  straight one: plans, promises in mail, loose ends, goals and things to remember missed it.
 - A schedule made and run within the same half minute tells the phone: the loop took any job it
   hadn't seen yet for an old one, so that first run said nothing (intermittent in the lab).
 

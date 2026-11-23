@@ -65,7 +65,7 @@ _GOALISH = re.compile(
     r"(?:\d|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|next|this|spring|summer|fall|autumn|winter|christmas)[a-z]*|my )|"
     r"i(?: want| need| hope| plan|'d like|’d like| would like) to .{3,80}?\bwithin (?:a|\d+|two|three|six) (?:days?|weeks?|months?|years?)|"
     r"help me (?:get to|reach|hit|train for|prepare for|get ready for|save (?:up )?for|stick to|work towards?)|"
-    r"track my progress|keep me on track|hold me accountable|i'?m (?:training|saving up|studying) for)\b",
+    r"track my progress|keep me on track|hold me accountable|i['’]?m (?:training|saving up|studying) for)\b",
     re.IGNORECASE)
 
 NOTE = (f"[Redde: this may be a goal. If they want help reaching it, propose a short plan (3-7 steps), saying for each "
