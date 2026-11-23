@@ -5,6 +5,9 @@ Settings › Redde Plugin, to a Hermes whose plugin is older than the one the ap
 
 ## 1.36.0 (2026-11-22)
 
+- Real-life steps stay the person's. A goal's plan gives what happens in their life (bottling, race
+  day, a date arriving) to them, even when the agent will remind them of it, and a check-in is told
+  that a reminder or a schedule it set doesn't make a step done.
 - Goals that go quiet are asked about, not left to nag. When nothing has happened on a goal for
   two weeks (no step ticked, added or moved), its next check-in asks you once whether you still
   want it. If a week passes with no answer, the check-in after says it's pausing, and the goal's

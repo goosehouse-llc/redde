@@ -215,6 +215,9 @@ class GoalTests(RoutinesTests):
         self.assertIn("Target: 2027-03-01", note)
         self.assertIn("PROGRESS: <steps done>/<steps>", note)
         self.assertIn("suggest_to_user", note)
+        self.assertIn("never done because you set a reminder", note,
+                      "a reminder set isn't the step done (2026-11-22: \"drink around Christmas\" struck through in November)")
+        self.assertIn("even when you'll remind them of it", goals.NOTE, "real-life steps are planned as theirs")
         self.assertIsNone(goals.checkin_note(self.root, "What's the weather?", "cron"))
         self.assertIsNone(goals.checkin_note(self.root, asked, "desktop"), "only the check-in's own turn")
         goals.remember(self.root, goal, {"done": 1, "total": 2, "headline": "Ran 3K", "next": "Run 5K"})

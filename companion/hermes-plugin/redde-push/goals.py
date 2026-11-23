@@ -69,17 +69,18 @@ _GOALISH = re.compile(
     re.IGNORECASE)
 
 NOTE = (f"[Redde: this may be a goal. If they want help reaching it, propose a short plan (3-7 steps), saying for each "
-        "whether they do it or you do (research, finding, booking, drafting: yours; their own doing: theirs), and when you'll "
+        "whether they do it or you do (research, booking, drafting: yours; what happens in their life: theirs, even when "
+        "you'll remind them of it), and when you'll "
         "check in (default: Mondays at 9:00, every other day if it's under two weeks away), ask them to confirm with "
         f"your question tool, and once they agree call {TOOL} with action \"set\" (find it with tool_search if it isn't "
         "among your tools). Not Hermes's /goal command.]")
 
 DESCRIPTION = (
-    "The user's goals in Redde: something to reach over days or weeks, with a plan, check-ins on a schedule and "
-    "progress on their iPhone. 'set' (after they agree to the plan: title, by, steps, every), 'update' (id; done: "
+    "The user's goals in Redde: something to reach over days or weeks, with a plan, scheduled check-ins and "
+    "progress in Redde. 'set' (after they agree to the plan: title, by, steps, every), 'update' (id; done: "
     "step numbers now done; undone: ones not done after all; add: new steps; by; every), 'status' (all, or one id), "
     "'end' (id). Each step is {title, who}: who 'you' for theirs, which they tick off in Redde, 'agent' for yours, "
-    "which go on the Kanban board and start at once. Not Hermes's /goal.")
+    "which go on the Kanban board and start at once. Real-life steps: theirs. Not Hermes's /goal.")
 
 
 # ---- the file ------------------------------------------------------------------------------------
@@ -370,7 +371,8 @@ def checkin_note(home: Path, message, platform: str = "", board=None) -> str | N
     return (f"[Redde: goal \"{kept.get('title')}\".{by}{said} Steps: " + "; ".join(lines) + f".{late} "
             "Check how it is going with your tools and what you know. Start your answer with one line exactly "
             "\"PROGRESS: <steps done>/<steps> | <a few words on how it's going> | <the next step>\", then at most "
-            f"three short lines for them.{ask} Mark your own finished steps with {TOOL} action \"update\". Anything that needs "
+            f"three short lines for them.{ask} Mark your own steps done with {TOOL} action \"update\" only when your tools have finished them: a step "
+            "that happens in their life is never done because you set a reminder or a schedule for it. Anything that needs "
             "their approval or a choice, offer with suggest_to_user. Not Hermes's /goal command.]")
 
 

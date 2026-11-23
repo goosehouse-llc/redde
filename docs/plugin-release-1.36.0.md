@@ -33,6 +33,9 @@ and `hermes serve` afterwards.
   don't call your model.
 - **Fewer pings for what you ignore (1.36).** Ideas you leave alone three times come quietly until
   you touch one, and a watch that keeps finding nothing slows down, then pauses and tells you.
+- **Real-life steps stay yours (1.36).** Your agent plans what happens in your life (bottling,
+  race day, a date arriving) as your step, even when it sets a reminder for it, and a check-in no
+  longer marks its own step done just because it scheduled something.
 - **Goals with your steps and your agent's (1.35).** A goal's plan now says who does each step.
   Your steps are a checklist you tick off in Redde, on the goal or from its Today tile, and the
   progress moves at once on every device. Your agent's steps go on the Kanban board ready to run,
