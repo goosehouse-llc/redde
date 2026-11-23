@@ -737,6 +737,46 @@ nonisolated enum ReplyCards {
         }
     }
 
+    /// A card call read back with its arguments and no result: the Dashboard's history rows.
+    private static func unanswered(_ step: ToolActivity) -> Bool {
+        step.name == tool && step.status != .failed && step.output == nil && step.args != nil
+    }
+
+    /// The cards a call asked for, from its arguments alone.
+    private static func asked(_ step: ToolActivity) -> [ReplyCard]? {
+        step.args.flatMap { try? JSONValue.parse(Data($0.utf8), keepingLongWholeNumbers: true) }.map(parse)
+    }
+
+    static func hasUnanswered(_ messages: [Message]) -> Bool {
+        messages.contains { $0.role == .assistant && $0.tools.contains(where: unanswered) }
+    }
+
+    /// A chat read back over the Dashboard has each card as the agent asked for it, without what
+    /// the plugin filled in, so leaving a chat and coming back took a film's poster off its card
+    /// (2026-11-23). The plugin's answers in `known` (this phone's copy, or the Dashboard's
+    /// messages page) go back on the calls that asked for the same cards, in order.
+    static func restoreAnswers(in messages: inout [Message], from known: [Message]) {
+        var answers: [(asked: [ReplyCard], output: String)] = known.filter { $0.role == .assistant }.flatMap(\.tools).compactMap { step in
+            guard step.name == tool, step.status != .failed, let output = step.output, let asked = asked(step), !asked.isEmpty,
+                  (try? JSONValue.parse(Data(output.utf8), keepingLongWholeNumbers: true))?["cards"]?.array != nil else { return nil }
+            return (asked, output)
+        }
+        guard !answers.isEmpty else { return }
+        for m in messages.indices where messages[m].role == .assistant {
+            var changed = false
+            for t in messages[m].tools.indices where unanswered(messages[m].tools[t]) {
+                guard let wanted = asked(messages[m].tools[t]), !wanted.isEmpty,
+                      let at = answers.firstIndex(where: { $0.asked == wanted }) else { continue }
+                messages[m].tools[t].output = answers.remove(at: at).output
+                changed = true
+            }
+            if changed {
+                let found = messages[m].tools.compactMap(cards(from:)).flatMap { $0 }
+                messages[m].cards = found.isEmpty ? nil : found
+            }
+        }
+    }
+
     // MARK: - Reading one card
 
     static func card(_ value: JSONValue) -> ReplyCard? {

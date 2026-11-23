@@ -10,7 +10,7 @@ import AppKit
 /// site's own servers, which see the visit: only with Settings → Appearance → Link previews on, for
 /// the same reason as a link's card (`LinkPreviews`). Made small for the card (`side` pixels across
 /// at most, or what the card asks for) off the main actor, kept in memory for the run of the app,
-/// and a picture that couldn't be had isn't asked again. No cookies go with the request, and none
+/// and a picture that couldn't be had isn't asked again for a while. No cookies go with the request, and none
 /// are kept. The one way a card's picture comes: `CardPicture` draws them all.
 @MainActor
 final class ProductImages {
@@ -24,7 +24,11 @@ final class ProductImages {
     /// By the picture's address and its size (`key`).
     private let cache = NSCache<NSString, UIImage>()
     private var loading: [String: Task<UIImage?, Never>] = [:]
-    private var failed: Set<URL> = []
+    /// When each last couldn't be had. Not for good: a server out of reach for a moment (the phone
+    /// between networks, Tailscale reconnecting) left its picture blank until the app was closed.
+    private var failed: [URL: Date] = [:]
+    nonisolated static let tryAgainAfter: TimeInterval = 120
+    var now: @Sendable () -> Date = { .now }
     /// How a picture is fetched. Tests and the demo give their own.
     var fetch: @Sendable (URL) async -> Data? = { await ProductImages.download($0) }
 
@@ -53,7 +57,7 @@ final class ProductImages {
     /// if it can't be had.
     func image(_ url: URL, side: CGFloat = ProductImages.side) async -> UIImage? {
         if let known = cached(url, side: side) { return known }
-        guard !failed.contains(url) else { return nil }
+        if let at = failed[url], now().timeIntervalSince(at) < Self.tryAgainAfter { return nil }
         let key = Self.key(url, side)
         if let running = loading[key] { return await running.value }
         let fetch = self.fetch
@@ -64,14 +68,26 @@ final class ProductImages {
         loading[key] = task
         let image = await task.value
         loading[key] = nil
-        if let image { cache.setObject(image, forKey: key as NSString) } else { failed.insert(url) }
+        if let image {
+            cache.setObject(image, forKey: key as NSString)
+            failed[url] = nil
+        } else {
+            failed[url] = now()
+        }
         return image
+    }
+
+    /// The first of the two that can be had.
+    func image(_ url: URL, or backup: URL?, side: CGFloat = ProductImages.side) async -> UIImage? {
+        if let found = await image(url, side: side) { return found }
+        guard let backup, backup != url else { return nil }
+        return await image(backup, side: side)
     }
 
     /// Part of "Erase everything", and for tests.
     func clear() {
         cache.removeAllObjects()
-        failed = []
+        failed = [:]
     }
 
     @concurrent private nonisolated static func shrink(_ data: Data, side: CGFloat) async -> UIImage? {

@@ -217,6 +217,60 @@ struct NewestCardsTests {
         #expect(ProductImages.allowed(URL(string: "https://upload.wikimedia.org/p.jpg"), settings: settings) == nil)
     }
 
+    /// Sol gives Donnie Brasco's poster from the Jellyfin server on the tailnet. A phone that can't
+    /// reach it (on cellular, Tailscale off) showed a blank card with a public poster right there,
+    /// and went on showing it until the app was closed (2026-11-23).
+    @MainActor @Test func aHomePosterOutOfReachFallsBackToTheOneFound() async throws {
+        nonisolated final class Network: @unchecked Sendable { var homeUp = false; var at = Date(timeIntervalSince1970: 1_000) }
+        guard case let .show(s) = try card(#"""
+        {"type": "show", "items": [{"title": "Donnie Brasco", "poster": "https://upload.wikimedia.org/d.jpg", "own_poster": "http://100.101.12.34:8096/d"},
+          {"title": "Heat", "poster": "https://upload.wikimedia.org/heat.jpg"}]}
+        """#) else { Issue.record("not a show card"); return }
+        #expect(s.items[0].poster == "http://100.101.12.34:8096/d" && s.items[0].backupPoster == "https://upload.wikimedia.org/d.jpg")
+        #expect(s.items[1].backupPoster == nil, "one poster: nothing to fall back on")
+        let home = try #require(s.items[0].poster.flatMap(URL.init(string:)))
+        let found = try #require(s.items[0].backupPoster.flatMap(URL.init(string:)))
+        let picture = UIGraphicsImageRenderer(size: CGSize(width: 40, height: 60)).image { _ in
+            UIColor.blue.setFill(); UIRectFill(.init(x: 0, y: 0, width: 40, height: 60))
+        }.pngData()
+        let network = Network()
+        let images = ProductImages()
+        images.fetch = { url in url == found || network.homeUp ? picture : nil }
+        images.now = { network.at }
+        #expect(await images.image(home, or: found) != nil, "the public one, with the server out of reach")
+        #expect(images.cached(home) == nil && images.cached(found) != nil)
+        network.homeUp = true
+        #expect(await images.image(home) == nil, "not asked again at once")
+        network.at += ProductImages.tryAgainAfter + 1
+        #expect(await images.image(home) != nil, "asked again after a while")
+    }
+
+    /// The Dashboard's history has a card call without its result: a film's poster was gone a moment
+    /// after leaving the chat and coming back (2026-11-23).
+    @Test func aChatReadBackKeepsThePluginsAnswer() throws {
+        let asked = #"{"cards": [{"type": "show", "items": [{"title": "Donnie Brasco", "year": 1997}]}]}"#
+        let answer = #"{"shown": ["show: 1"], "note": "On screen.", "cards": [{"type": "show", "items": [{"title": "Donnie Brasco", "year": 1997, "poster": "https://upload.wikimedia.org/d.jpg"}]}]}"#
+        var kept = Message(role: .assistant, text: "Here it is.")
+        kept.tools = [ToolActivity(name: ReplyCards.tool, preview: nil, status: .completed, args: asked, output: answer)]
+        let rows = try JSONValue.parse(Data("""
+        [{"role": "user", "text": "Show me Donnie Brasco"}, {"role": "assistant", "text": "Here it is."},
+         {"role": "tool", "name": "redde_show", "args": \(asked)},
+         {"role": "user", "text": "And Heat"}, {"role": "assistant", "text": "Here."},
+         {"role": "tool", "name": "redde_show", "args": {"cards": [{"type": "show", "items": [{"title": "Heat"}]}]}}]
+        """.utf8))
+        var read = Conversation.messages(fromServeRows: try #require(rows.array))
+        ReplyCards.resolve(&read)
+        func poster(_ reply: Int) -> String? {
+            guard case let .show(s)? = read.filter({ $0.role == .assistant })[reply].cards?.first else { return "no card" }
+            return s.items.first?.poster
+        }
+        #expect(poster(0) == nil && ReplyCards.hasUnanswered(read), "as the agent asked for it")
+        ReplyCards.restoreAnswers(in: &read, from: [kept])
+        #expect(poster(0) == "https://upload.wikimedia.org/d.jpg")
+        #expect(poster(1) == nil, "another card isn't given its answer")
+        #expect(ReplyCards.hasUnanswered(read), "that one is still to be found")
+    }
+
     /// The plugin's answer wins over the call however the result comes (2026-11-22: the Dashboard
     /// sends it parsed, and the step kept it as "key: value" lines, so the poster the plugin had
     /// looked up never reached the card and Sol's own, an http one, was dropped).

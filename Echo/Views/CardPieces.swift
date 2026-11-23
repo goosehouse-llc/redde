@@ -121,22 +121,27 @@ struct CardPicture: View {
     /// A picture already at hand, shown while there is none from `url` (a purchase card's product
     /// with no picture of its own: its store page's, from `LinkPreviews`). Only with Link previews on.
     var still: UIImage?
+    /// Tried when `url` can't be had (a poster on their own server, out of reach from here).
+    var backup: URL?
     @State private var settings = Settings.shared
     @State private var image: UIImage?
     @Environment(\.theme) private var theme
     @Environment(\.colorScheme) private var scheme
 
     init(url: URL?, symbol: String, width: CGFloat?, height: CGFloat, fill: Bool = false, corner: CGFloat? = nil, pixels: CGFloat = ProductImages.side,
-         still: UIImage? = nil) {
+         still: UIImage? = nil, backup: URL? = nil) {
         self.url = url
         self.still = still
+        self.backup = backup
         self.symbol = symbol
         self.width = width
         self.height = height
         self.fill = fill
         self.corner = corner ?? min(width ?? height, height) * 0.2
         self.pixels = pixels
-        _image = State(initialValue: ProductImages.shared.cached(url, side: pixels))
+        // (the backup too: a card drawn again doesn't flash its symbol while the first is out of reach)
+        _image = State(initialValue: ProductImages.shared.cached(url, side: pixels)
+            ?? ProductImages.shared.cached(ProductImages.allowed(backup), side: pixels))
     }
 
     /// A product's square.
@@ -170,7 +175,7 @@ struct CardPicture: View {
         .accessibilityHidden(true)
         .task(id: allowed) {
             guard let url = allowed, image == nil else { return }
-            let found = await ProductImages.shared.image(url, side: pixels)
+            let found = await ProductImages.shared.image(url, or: ProductImages.allowed(backup, settings: settings), side: pixels)
             withAnimation(.easeOut(duration: 0.2)) { image = found }
         }
     }

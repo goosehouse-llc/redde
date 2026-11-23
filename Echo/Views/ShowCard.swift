@@ -57,7 +57,7 @@ struct ShowCard: View {
             // A tap on the film opens its page (asked 2026-11-23: "make the movie card clickable").
             Button { openURL(s.url ?? Self.search(item)) } label: {
             HStack(alignment: .top, spacing: 14) {
-                CardPicture(url: s.poster, symbol: Self.symbol(item), width: 92, height: 138, fill: true, corner: 10, pixels: 420)
+                CardPicture(url: s.poster, symbol: Self.symbol(item), width: 92, height: 138, fill: true, corner: 10, pixels: 420, backup: s.backup)
                 VStack(alignment: .leading, spacing: 5) {
                     if item.pick && card.items.count > 1 {
                         Text(String(localized: "card.pick", defaultValue: "Pick", comment: "A tag on the agent's pick: the place, product or option it recommends"))
@@ -137,7 +137,7 @@ struct ShowCard: View {
         return VStack(alignment: .leading, spacing: 0) {
             Button { if open.contains(index) { open.remove(index) } else { open.insert(index) } } label: {
                 HStack(spacing: 12) {
-                    CardPicture(url: s.poster, symbol: Self.symbol(item), width: 40, height: 60, fill: true, corner: 6, pixels: 180)
+                    CardPicture(url: s.poster, symbol: Self.symbol(item), width: 40, height: 60, fill: true, corner: 6, pixels: 180, backup: s.backup)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(item.name).chatFont(.subheadline, weight: .semibold).lineLimit(2)
                         if let line = s.line { Text(verbatim: line).chatFont(.caption).foregroundStyle(.secondary).lineLimit(1) }
@@ -239,6 +239,7 @@ extension ShowCard {
         /// "Created by Dan Erickson · With Adam Scott, Britt Lower".
         var people: String?
         var poster: URL?
+        var backup: URL?
         var url: URL?
         var trailer: URL?
         var spoken: String
@@ -261,6 +262,7 @@ extension ShowCard {
             let cast = item.cast.isEmpty ? nil : String(localized: "With \(item.cast.formatted(.list(type: .and)))", comment: "A show card: who is in it, e.g. With Adam Scott and Britt Lower")
             people = [by, cast].compactMap(\.self).joined(separator: " · ").nilIfEmpty
             poster = item.poster.flatMap(URL.init(string:))
+            backup = item.backupPoster.flatMap(URL.init(string:))
             url = item.url.flatMap(URL.init(string:))
             trailer = item.trailer.flatMap(URL.init(string:))
             let ratings = item.ratings.map { [$0.source, $0.value].compactMap(\.self).joined(separator: " ") }

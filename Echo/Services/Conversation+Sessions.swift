@@ -278,6 +278,12 @@ extension Conversation {
         // A Kanban worker's run: its transcript from the Dashboard's messages page, as the desktop
         // shows it, without resuming it (Hermes refuses that, RPC 4132).
         if workerRun, !isNew { messages = await Self.readied(stored: try await dashboard.transcript(stored: summary.id)) }
+        // A resume's rows have a card call without the plugin's answer (a poster, a forecast): from
+        // this phone's copy, else the messages page, for a chat this phone hasn't kept them for.
+        if let keptMessages { ReplyCards.restoreAnswers(in: &messages, from: keptMessages) }
+        if ReplyCards.hasUnanswered(messages), let stored = try? await dashboard.transcript(stored: summary.id) {
+            ReplyCards.restoreAnswers(in: &messages, from: await Self.readied(stored: stored))
+        }
         // Serve resume leaves hidden page prompts out. The Dashboard's existing messages route
         // retains them, so use its newest page only as boundary metadata; the resume transcript's
         // rows and content remain authoritative.

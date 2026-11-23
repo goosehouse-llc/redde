@@ -298,6 +298,9 @@ nonisolated extension ReplyCard {
             /// person's own network (a Jellyfin or Plex server at home or on the tailnet, http or
             /// https), shown always: no outside site sees it (`ReplyCards.ownNetwork`).
             var poster: String?
+            /// The public one found for it, beside `poster` when that is on their own network: a
+            /// phone away from home, or with Tailscale off, can't reach the server (2026-11-23).
+            var backupPoster: String?
             var ratings: [Rating] = []
             var runtime: TimeInterval?
             var seasons: Int?
@@ -740,7 +743,9 @@ nonisolated extension ReplyCards {
         // Their own server's first (plugin 1.36.3 keeps it as `own_poster`, beside one it looked up).
         let own = [value["own_poster"], value["poster"], value["image"], value["picture"]].lazy
             .compactMap { self.text($0).flatMap { URL(string: $0).flatMap(ownNetwork)?.absoluteString } }.first
-        title.poster = own ?? https(value["poster"] ?? value["image"] ?? value["picture"])
+        let found = https(value["poster"] ?? value["image"] ?? value["picture"])
+        title.poster = own ?? found
+        title.backupPoster = own != nil && own != found ? found : nil
         title.ratings = ratings(value)
         title.genres = names(value["genres"] ?? value["genre"]).prefix(4).map { String($0.prefix(24)) }
         title.overview = text(value["overview"] ?? value["summary"] ?? value["plot"] ?? value["description"] ?? value["why"]).map { String($0.prefix(400)) }
