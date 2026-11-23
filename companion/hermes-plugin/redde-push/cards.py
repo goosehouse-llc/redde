@@ -566,6 +566,11 @@ def _show(card: dict, needs: str) -> tuple[str, str | None]:
     titles = [(_name(t, "title", "name"), isinstance(t, dict) and t.get("pick") is True) for t in listed[:MAX_TITLES]]
     kept = [(n, p) for n, p in titles if n]
     if not kept:
+        # (2026-11-22: a model sent {"text": "Donnie Brasco"} eight times over, the checklist's field)
+        worded = [_name(t, "text", "label") for t in listed[:MAX_TITLES] if isinstance(t, dict) and not _name(t, "title", "name")]
+        if any(worded):
+            return "", (f"each film or series puts its name in 'title', not 'text': write "
+                        f"{{\"title\": \"{worded[0]}\", \"year\": …, \"format\": \"movie\"}} and its other fields. " + needs)
         return "", needs
     said = f"show: {len(kept)} ({', '.join(n + (' (pick)' if p else '') for n, p in kept[:4])}{'…' if len(kept) > 4 else ''})"
     if len(listed) > MAX_TITLES:

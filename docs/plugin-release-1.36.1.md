@@ -1,8 +1,8 @@
-# Redde plugin 1.36.0 — GitHub release draft
+# Redde plugin 1.36.1 — GitHub release draft
 
-Title: **Redde plugin 1.36.0**. Tag: `redde-push-1.36.0`, on the commit that carries
-`version: 1.36.0` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
-`redde-push-1.31.0`; this one covers 1.31.1 to 1.36.0. The full list is in that folder's
+Title: **Redde plugin 1.36.1**. Tag: `redde-push-1.36.1`, on the commit that carries
+`version: 1.36.1` in `companion/hermes-plugin/redde-push/plugin.yaml`. The last release page is
+`redde-push-1.31.0`; this one covers 1.31.1 to 1.36.1. The full list is in that folder's
 `CHANGELOG.md`. Publish it when Redde 2.7 is out. Everything below the line is the release's text.
 
 ---
@@ -33,7 +33,7 @@ and `hermes serve` afterwards.
   don't call your model.
 - **Fewer pings for what you ignore (1.36).** Ideas you leave alone three times come quietly until
   you touch one, and a watch that keeps finding nothing slows down, then pauses and tells you.
-- **Real-life steps stay yours (1.36).** Your agent plans what happens in your life (bottling,
+- **Real-life steps stay yours (1.36.1).** Your agent plans what happens in your life (bottling,
   race day, a date arriving) as your step, even when it sets a reminder for it, and a check-in no
   longer marks its own step done just because it scheduled something.
 - **Goals with your steps and your agent's (1.35).** A goal's plan now says who does each step.
@@ -58,7 +58,7 @@ and `hermes serve` afterwards.
 
 ## Fixes
 
-- Film and series cards are drawn again with models that keep to the tool's schema (they had written only `text` for each title, and the card was refused) (1.36).
+- Film and series cards are drawn again with models that keep to the tool's schema (they had written only `text` for each title, and the card was refused) (1.36.1).
 - A schedule whose run failed no longer sends its error to your phone unless the schedule asks
   for its failures to be told (1.31.1, GitHub issue 79).
 - Hermes's install scan rates the plugin safe again on 0.22.7, 0.23.1 and 0.23.2 (1.33.0).

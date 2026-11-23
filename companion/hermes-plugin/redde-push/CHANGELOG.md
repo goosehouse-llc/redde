@@ -3,16 +3,19 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
-## 1.36.0 (2026-11-22)
+## 1.36.1 (2026-11-22)
 
 - Show cards (and every other card with items) are drawn again for models that keep to the tool's
-  schema. `redde_show`'s `items` were described as the checklist's `{text, done, section, note}`,
+  schema. A show whose items come with only `text` is told the name goes in `title`. `redde_show`'s `items` were described as the checklist's `{text, done, section, note}`,
   so a model wrote `{"text": "Donnie Brasco"}` for a film and the card was refused each time for
   want of a title. Items now take each card's own fields, and the checklist's are named in the
   tool's description.
 - Real-life steps stay the person's. A goal's plan gives what happens in their life (bottling, race
   day, a date arriving) to them, even when the agent will remind them of it, and a check-in is told
   that a reminder or a schedule it set doesn't make a step done.
+
+## 1.36.0 (2026-11-22)
+
 - Goals that go quiet are asked about, not left to nag. When nothing has happened on a goal for
   two weeks (no step ticked, added or moved), its next check-in asks you once whether you still
   want it. If a week passes with no answer, the check-in after says it's pausing, and the goal's

@@ -768,6 +768,13 @@ class NewestCardsTests(unittest.TestCase):
             self.assertEqual(shown, [], card)
             self.assertIn(words, problems[0], card)
 
+    def test_a_show_written_as_a_checklist_is_told_where_the_title_goes(self):
+        shown, problems = cards.check({"cards": [{"type": "show", "title": "Thursday",
+                                                  "items": [{"text": "Donnie Brasco", "done": False, "note": "1997"}]}]})
+        self.assertEqual(shown, [])
+        self.assertIn("puts its name in 'title', not 'text'", problems[0])
+        self.assertIn('{"title": "Donnie Brasco"', problems[0])
+
     def test_each_card_is_asked_for_by_what_the_person_says(self):
         asks = {
             "'recipe' card": ("Can you find me a recipe for banana bread?", "How do I make chicken stock?", "How do you roast a whole chicken?",
