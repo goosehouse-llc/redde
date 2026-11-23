@@ -193,11 +193,18 @@ struct TodayListView: View {
         Button { lists.toggle(item, in: list) } label: {
             HStack(spacing: 14) {
                 Tick(on: item.done, mark: mark)
-                Text(item.text)
-                    .chatFont(.body)
-                    .strikethrough(item.done, color: .secondary)
-                    .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.text)
+                        .chatFont(.body)
+                        .strikethrough(item.done, color: .secondary)
+                        .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                    if let plan = item.plan {
+                        Label(plan, systemImage: "calendar")
+                            .chatFont(.caption, weight: .medium)
+                            .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(mark))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.vertical, 3)
             .frame(minHeight: 44)
@@ -397,6 +404,12 @@ private struct PosterTile: View {
                     if let year = item.year {
                         Text(verbatim: String(year)).chatFont(.caption2).foregroundStyle(.secondary)
                     }
+                    if let plan = item.plan {
+                        Label(plan, systemImage: "calendar")
+                            .chatFont(.caption2, weight: .semibold)
+                            .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(mark))
+                            .lineLimit(2)
+                    }
                 }
             }
             .contentShape(.rect)
@@ -405,7 +418,7 @@ private struct PosterTile: View {
         .buttonStyle(.plain)
         .sensoryFeedback(trigger: item.done) { _, now in now ? .impact(weight: .medium) : .selection }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: [item.name, item.year.map(String.init)].compactMap { $0 }.joined(separator: ", ")))
+        .accessibilityLabel(Text(verbatim: [item.name, item.year.map(String.init), item.plan].compactMap { $0 }.joined(separator: ", ")))
         .accessibilityAddTraits([.isButton, .isToggle])
         .accessibilityValue(item.done ? Text("Watched", comment: "A watch list: the stamp on a film or series already seen") : Text("Not done"))
     }

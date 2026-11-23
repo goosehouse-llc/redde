@@ -340572,6 +340572,113 @@
         }
       }
     },
+    "Plans that happen" : {
+      "comment" : "What's New 2.7: a plan on a list, reminded on the day and checked afterwards",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planer, der bliver til noget"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pläne, die stattfinden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planes que se cumplen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des projets qui se font"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piani che si realizzano"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "実現する予定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실제로 이뤄지는 계획"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planer som blir noe av"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plannen die doorgaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plany, które dochodzą do skutku"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planos que acontecem"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Планы, которые сбываются"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planer som blir av"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerçekleşen planlar"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плани, що здійснюються"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说到做到的计划"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "說到做到的計畫"
+          }
+        }
+      }
+    },
     "platform:chat_id or bot-chat:profile" : {
       "localizations" : {
         "da" : {
@@ -440106,6 +440213,113 @@
         }
       }
     },
+    "Tell your agent you'll watch a film with someone on Thanksgiving and it goes on your list with the date. Redde reminds you on the day, and the morning after checks it happened: a film your Jellyfin or Plex shows as played is ticked off, and one that isn't comes back to find another night. It takes the Redde plugin 1.38." : {
+      "comment" : "What's New 2.7: plans that happen",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortæl din agent, at du skal se en film med nogen til Thanksgiving, så kommer den på din liste med datoen. Redde minder dig om det på dagen, og morgenen efter tjekker den, om det skete: en film, som din Jellyfin eller Plex viser som set, bliver krydset af, og en, der ikke er, kommer tilbage for at finde en anden aften. Det kræver Redde-pluginnet 1.38."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sag deinem Agenten, dass du an Thanksgiving mit jemandem einen Film schaust, und er kommt mit dem Datum auf deine Liste. Redde erinnert dich am Tag daran und prüft am Morgen danach, ob es stattfand: Ein Film, den dein Jellyfin oder Plex als gesehen zeigt, wird abgehakt, und einer, der es nicht ist, kommt zurück, um einen anderen Abend zu finden. Dafür braucht es das Redde-Plugin 1.38."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dile a tu agente que verás una película con alguien en Acción de Gracias y se añade a tu lista con la fecha. Redde te lo recuerda ese día y a la mañana siguiente comprueba si ocurrió: una película que tu Jellyfin o Plex muestra como vista se marca, y una que no vuelve para buscar otra noche. Requiere el plugin de Redde 1.38."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites à votre agent que vous regarderez un film avec quelqu'un à Thanksgiving et il rejoint votre liste avec la date. Redde vous le rappelle le jour même et, le lendemain matin, vérifie que c'est fait : un film que votre Jellyfin ou Plex indique comme vu est coché, et un qui ne l'est pas revient pour trouver un autre soir. Il faut le plugin Redde 1.38."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di' al tuo agente che guarderai un film con qualcuno per il Ringraziamento e finisce nella tua lista con la data. Redde te lo ricorda quel giorno e la mattina dopo controlla se è successo: un film che il tuo Jellyfin o Plex mostra come visto viene spuntato, e uno che non lo è torna per trovare un'altra sera. Serve il plugin Redde 1.38."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "感謝祭に誰かと映画を観るとエージェントに伝えると、日付付きでリストに入ります。Reddeは当日にお知らせし、翌朝に実際に観たかを確認します。JellyfinやPlexで再生済みの映画はチェックされ、まだのものは別の夜を探すために戻ってきます。Reddeプラグイン1.38が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "추수감사절에 누군가와 영화를 볼 거라고 에이전트에게 말하면 날짜와 함께 목록에 들어갑니다. Redde가 당일에 알려 주고, 다음 날 아침에 실제로 했는지 확인합니다. Jellyfin이나 Plex에서 재생됨으로 표시된 영화는 체크되고, 아닌 영화는 다른 밤을 찾도록 다시 돌아옵니다. Redde 플러그인 1.38이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si til agenten din at du skal se en film med noen på Thanksgiving, så havner den på listen din med datoen. Redde minner deg på det på dagen, og morgenen etter sjekker den om det skjedde: en film som Jellyfin eller Plex viser som sett, blir krysset av, og en som ikke er det, kommer tilbake for å finne en annen kveld. Det krever Redde-tillegget 1.38."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertel je agent dat je met Thanksgiving een film kijkt met iemand en hij komt met de datum op je lijst. Redde herinnert je eraan op de dag en checkt de ochtend erna of het is gebeurd: een film die je Jellyfin of Plex als bekeken toont, wordt afgevinkt, en een die dat niet is, komt terug om een andere avond te vinden. Hiervoor is de Redde-plug-in 1.38 nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiedz agentowi, że w Święto Dziękczynienia obejrzysz z kimś film, a trafi na Twoją listę z datą. Redde przypomni Ci o tym w danym dniu, a następnego ranka sprawdzi, czy się udało: film, który Jellyfin lub Plex pokazuje jako obejrzany, zostanie odhaczony, a ten, który nie, wróci, by znaleźć inny wieczór. Wymaga wtyczki Redde 1.38."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diga ao seu agente que vai assistir a um filme com alguém no Dia de Ação de Graças e ele entra na sua lista com a data. O Redde lembra você no dia e, na manhã seguinte, confere se aconteceu: um filme que seu Jellyfin ou Plex mostra como assistido é marcado, e um que não foi volta para achar outra noite. Requer o plugin do Redde 1.38."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скажите агенту, что посмотрите фильм с кем-то в День благодарения, и он попадёт в ваш список с датой. Redde напомнит в этот день, а на следующее утро проверит, состоялось ли: фильм, который Jellyfin или Plex показывает как просмотренный, отмечается, а непросмотренный возвращается, чтобы найти другой вечер. Нужен плагин Redde 1.38."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Säg till din agent att du ska se en film med någon på Thanksgiving så hamnar den på din lista med datumet. Redde påminner dig på dagen och kollar morgonen efter om det blev av: en film som din Jellyfin eller Plex visar som sedd bockas av, och en som inte är det kommer tillbaka för att hitta en annan kväll. Det kräver Redde-pluginet 1.38."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanına Şükran Günü'nde biriyle film izleyeceğini söyle, tarihiyle listene eklensin. Redde o gün sana hatırlatır ve ertesi sabah gerçekleşip gerçekleşmediğine bakar: Jellyfin veya Plex'in izlendi gösterdiği film işaretlenir, izlenmeyen ise başka bir akşam bulmak için geri gelir. Redde eklentisi 1.38 gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скажіть агентові, що подивитеся фільм із кимось на День подяки, і він потрапить у ваш список із датою. Redde нагадає в цей день, а наступного ранку перевірить, чи це сталося: фільм, який Jellyfin або Plex показує як переглянутий, позначається, а непереглянутий повертається, щоб знайти інший вечір. Потрібен плагін Redde 1.38."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "告诉你的智能体你会在感恩节和某人一起看部电影，它就会带着日期加到你的列表里。Redde 会在当天提醒你，并在第二天早上确认是否看了：Jellyfin 或 Plex 显示已播放的电影会被勾掉，还没看的会回来帮你另找一个晚上。需要 Redde 插件 1.38。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "告訴你的智慧助理你會在感恩節和某人一起看部電影，它就會帶著日期加到你的清單裡。Redde 會在當天提醒你，並在隔天早上確認是否看了：Jellyfin 或 Plex 顯示已播放的電影會被勾掉，還沒看的會回來幫你另找一個晚上。需要 Redde 外掛 1.38。"
+          }
+        }
+      }
+    },
     "Telling your agent…" : {
       "comment" : "Agent Activity: a Place crossed, its message on its way",
       "localizations" : {
@@ -526972,6 +527186,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "「打斷方式」設為「僅『stop』」時，這些語句也會停止回覆。"
+          }
+        }
+      }
+    },
+    "with %@" : {
+      "comment" : "A list item's plan: who it's with, after its date (\"Thu, Nov 26, 7:30 PM · with Jess\")",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "med %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mit %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "con %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "avec %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "con %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@と"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@와(과) 함께"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "med %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "met %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "z: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "com %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "с: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "med %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ile"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "з: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "與 %@"
           }
         }
       }

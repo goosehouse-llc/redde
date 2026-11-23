@@ -18,6 +18,17 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
         /// A film's or a series' poster on a watch list (https, or on the person's own network).
         var poster: String? = nil
         var year: Int? = nil
+        /// A plan (plugin 1.38): when, and with whom. Redde reminds them on the day and checks after.
+        var when: Date? = nil
+        var company: String? = nil
+
+        /// "Thu, Nov 26, 7:30 PM · with Jess".
+        var plan: String? {
+            guard let when else { return nil }
+            let at = when.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+            guard let company, !company.isEmpty else { return at }
+            return at + " · " + String(localized: "with \(company)", comment: "A list item's plan: who it's with, after its date (\"Thu, Nov 26, 7:30 PM · with Jess\")")
+        }
 
         /// Its name without the year it was written with ("Home Alone (1990)").
         var name: String { text.replacing(/\s*\((?:18|19|20)\d\d\)\s*$/, with: "") }
@@ -53,13 +64,25 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
                 guard let id = i["id"]?.string, !id.isEmpty else { return nil }
                 let poster = i["poster"]?.string.flatMap { ReplyCards.https(.string($0)) ?? URL(string: $0).flatMap(ReplyCards.ownNetwork)?.absoluteString }
                 return Item(id: id, text: i["text"]?.string ?? "", done: i["done"]?.bool ?? false, poster: poster,
-                            year: i["year"]?.number.flatMap(\.nearestInt))
+                            year: i["year"]?.number.flatMap(\.nearestInt), when: i["when"]?.string.flatMap(planDate),
+                            company: i["with"]?.string.flatMap { $0.isEmpty ? nil : String($0.prefix(60)) })
             }
             let emoji = l["emoji"]?.string.flatMap { $0.count == 1 && $0.unicodeScalars.contains { $0.properties.isEmoji && $0.value > 0x238C } ? $0 : nil }
             return TodayList(id: id, title: l["title"]?.string ?? "", items: items, kind: l["kind"]?.string.flatMap(Kind.init(rawValue:)),
                              emoji: emoji, hue: l["color"]?.string.flatMap(Hue.init(rawValue:)))
         }
         return (lists, json["said"]?["error"]?.string)
+    }
+
+    /// A plan's time as the plugin keeps it: "2026-11-26T19:30-05:00", seconds or not.
+    static func planDate(_ text: String) -> Date? {
+        for format in ["yyyy-MM-dd'T'HH:mmXXXXX", "yyyy-MM-dd'T'HH:mm:ssXXXXX"] {
+            let reader = DateFormatter()
+            reader.locale = Locale(identifier: "en_US_POSIX")
+            reader.dateFormat = format
+            if let date = reader.date(from: text) { return date }
+        }
+        return nil
     }
 
     /// What the plugin said it did, from a `lists do` answer: `made` or `already_there` hold the id
@@ -428,10 +451,11 @@ final class TodayLists {
 
     static let demoLists: [TodayList] = [
         TodayList(id: "films", title: "Christmas Movies", items: [
-            ("Home Alone", 1990, false), ("Elf", 2003, false), ("It's a Wonderful Life", 1946, true), ("Die Hard", 1988, false),
+            ("Donnie Brasco", 1997, false), ("Home Alone", 1990, false), ("Elf", 2003, false), ("It's a Wonderful Life", 1946, true), ("Die Hard", 1988, false),
             ("Love Actually", 2003, false), ("Scrooged", 1988, true), ("The Polar Express", 2004, false)].enumerated().map { n, film in
                 .init(id: "f\(n)", text: film.0, done: film.2, poster: "https://demo.example/posters/\(film.0.lowercased().filter { $0.isLetter || $0 == " " }.replacingOccurrences(of: " ", with: "-")).jpg",
-                      year: film.1) }, kind: .watch, emoji: "🎄", hue: .red),
+                      year: film.1, when: n == 0 ? Calendar.current.date(byAdding: .day, value: 3, to: Calendar.current.startOfDay(for: .now))?.addingTimeInterval(19.5 * 3600) : nil,
+                      company: n == 0 ? "Jess" : nil) }, kind: .watch, emoji: "🎄", hue: .red),
         TodayList(id: "groceries", title: "Groceries", items: [
             .init(id: "g1", text: "Oat milk", done: false), .init(id: "g2", text: "Eggs", done: true),
             .init(id: "g3", text: "Sourdough", done: false), .init(id: "g4", text: "Lemons", done: false),

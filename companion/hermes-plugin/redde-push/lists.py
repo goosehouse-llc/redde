@@ -13,6 +13,15 @@ which the agent gives when it makes the list or which are guessed from its title
 agent or the person changes with 'style'. A watch list's films and series get their posters,
 looked up as a show card's are (`posters.lookup`, no key), off the agent's turn: a thread fills
 them in and the phone shows them on its next look (`fill_posters`).
+
+Plans (1.38.0, asked 2026-11-23: "Donnie Brasco, Thanksgiving night, with Jess" sat in a note
+file where nothing would ever look at it; "this is proactive in the sense of the example I gave
+before. We need more like this"): an item can be planned for a time, with someone. 'plan' keeps
+when and with whom on the item and sets two one-off jobs on the agent that planned it, as a
+follow-up is set (`followups.py`): on the day, a card reminding them; after it (the next morning
+for an evening plan), a follow-through run that finds out with the agent's own tools whether it
+happened (for a film or a series, whether their media server shows it as played), ticks it off if
+it did, and offers it back as a card to find another time if it didn't.
 """
 
 from __future__ import annotations
@@ -25,6 +34,7 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, wait
+from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -35,7 +45,11 @@ TOOL = "redde_list"
 FILE = "lists.json"
 #: At most this many lists, items on one, and characters in a title or an item.
 MOST, ITEMS, TITLE, TEXT = 30, 300, 60, 200
-ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "style", "delete")
+ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "style", "plan", "delete")
+PLAN_TAG = "[redde-plan:"
+#: A plan this far ahead at most; the follow-through this long after a daytime plan, or the next
+#: morning at this hour for one from 5 pm.
+PLAN_AHEAD, PLAN_AFTER, PLAN_MORNING = timedelta(days=60), timedelta(hours=3), 10
 KINDS = ("watch", "todo", "shopping", "reading", "packing", "gifts", "other")
 COLORS = ("red", "orange", "yellow", "green", "mint", "teal", "blue", "indigo", "purple", "pink", "brown", "gray")
 #: A list's look from its title, the first that fits: (words, kind or None, emoji, color). A
@@ -133,8 +147,17 @@ DESCRIPTION = (
     "their words), 'clear_done' (list: removes checked items), 'rename' (list, title), 'delete' (list). `list` is a "
     "list's id or its title; with only one list it may be left out. 'make' and 'style' (list) take a look: "
     "`kind` (watch: films and series, which Redde shows as posters, one title per item; todo, shopping, reading, "
-    "packing, gifts, other), an `emoji` and a `color`; left out, they're guessed from the title. Not your own "
-    "todo tool (your plan for this turn) and not reminders.")
+    "packing, gifts, other), an `emoji` and a `color`; left out, they're guessed from the title. 'plan' (list, "
+    "items: one item or its text, `when` ISO 8601 with offset, `with` who): Redde reminds them on the day and "
+    "afterwards checks it happened. Not your own todo tool (your plan for this turn) and not reminders.")
+
+PLAN_NOTE = (f"[Redde: if they're planning something for a set time (a film to watch with someone, a book, a dinner, a "
+             f"trip), keep it as a plan on one of their lists with {TOOL} 'plan' (item, when, with), not in a note: "
+             "Redde reminds them on the day and checks afterwards that it happened.]")
+_PLANISH = re.compile(
+    r"\b(?:watch|see|read|cook|make|play|visit|try|go to|have)\b.{0,80}?\b(?:tonight|tomorrow|this (?:weekend|week)|"
+    r"next \w+|on (?:mon|tues|wednes|thurs|fri|satur|sun)day|(?:mon|tues|wednes|thurs|fri|satur|sun)day (?:night|evening)|"
+    r"thanksgiving|christmas|new year'?s|easter|halloween|\d{1,2}(?::\d\d)?\s?(?:am|pm))\b", re.IGNORECASE)
 
 
 # ---- the file ------------------------------------------------------------------------------------
@@ -215,8 +238,12 @@ def _picked(items: list[dict], refs) -> tuple[list[dict], list[str]]:
         refs = [refs]
     found, missed = [], []
     for ref in refs or []:
-        hit = None
-        if isinstance(ref, int) or (isinstance(ref, str) and ref.strip().isdigit()):
+        # An id first: one of eight hex digits can be all digits ("40417253"), which the phone
+        # sends to tick it off (1.38.0: about one tick in 43 was read as an item number and missed).
+        hit = next((i for i in items if isinstance(ref, str) and i.get("id") == ref.strip()), None)
+        if hit is not None:
+            pass
+        elif isinstance(ref, int) or (isinstance(ref, str) and ref.strip().isdigit()):
             n = int(ref)
             hit = items[n - 1] if 1 <= n <= len(items) else None
         else:
@@ -237,12 +264,27 @@ def _picked(items: list[dict], refs) -> tuple[list[dict], list[str]]:
 def _shown(kept: dict) -> dict:
     items = kept.get("items") or []
     return {"id": kept["id"], "title": kept.get("title"), **look(kept),
-            "items": [f"{n}. [{'x' if i.get('done') else ' '}] {i.get('text')}" for n, i in enumerate(items, 1)],
+            "items": [f"{n}. [{'x' if i.get('done') else ' '}] {i.get('text')}{_planned(i)}" for n, i in enumerate(items, 1)],
             "open": sum(1 for i in items if not i.get("done")), "done": sum(1 for i in items if i.get("done"))}
 
 
+def _planned(item: dict) -> str:
+    if not item.get("when"):
+        return ""
+    with_ = f" with {item['with']}" if item.get("with") else ""
+    return f" (planned {item['when']}{with_})"
+
+
+def _item_id() -> str:
+    """Eight hex digits with a letter among them, so it never reads as an item's number."""
+    while True:
+        made = uuid.uuid4().hex[:8]
+        if not made.isdigit():
+            return made
+
+
 def _new_items(texts: list[str], by: str, now: int) -> list[dict]:
-    return [{"id": uuid.uuid4().hex[:8], "text": t, "done": False, "added": now, "by": by} for t in texts]
+    return [{"id": _item_id(), "text": t, "done": False, "added": now, "by": by} for t in texts]
 
 
 def change(home: Path, args: dict, by: str = "default", now: float | None = None) -> dict:
@@ -324,6 +366,11 @@ def _change(home: Path, args: dict, by: str, now: float | None, touched: list[di
                 return {"error": "Give the new title."}
             kept["title"] = title
             said = {"renamed": title}
+        elif action == "plan":
+            planned = _plan(kept, args, by, at)
+            if "error" in planned:
+                return {**planned, **_shown(kept)}
+            said = planned
         elif action == "style":
             given = [k for k in ("kind", "emoji", "color") if args.get(k) is not None]
             if not given:
@@ -352,6 +399,117 @@ def _missing(lists: list[dict], which) -> dict:
     return {"error": f"No list called {_clean(which, TITLE)!r}.", "lists": titles}
 
 
+# ---- plans ---------------------------------------------------------------------------------------
+
+#: Hermes's `cron.jobs.create_job` and `remove_job`; stand-ins in tests.
+MAKE_JOB = None
+REMOVE_JOB = None
+
+
+def _cron():
+    make, remove = MAKE_JOB, REMOVE_JOB
+    if make is None:
+        try:
+            from cron.jobs import create_job as make, remove_job as remove
+        except Exception:
+            return None, None
+    return make, remove
+
+
+def _moment(text) -> datetime | str:
+    try:
+        moment = datetime.fromisoformat(str(text or "").strip().replace("Z", "+00:00"))
+    except ValueError:
+        return "`when` is a date and time with its UTC offset, like 2026-11-26T19:00:00-05:00."
+    if moment.tzinfo is None:
+        return "`when` needs its UTC offset (2026-11-26T19:00:00-05:00), so it's their time."
+    return moment
+
+
+def plan_times(when: datetime, now: datetime) -> tuple[datetime | None, datetime]:
+    """When to remind them (the morning of the day, or two hours before a morning plan; none once
+    past) and when to follow through (three hours after, or the next morning for an evening plan)."""
+    morning = when.replace(hour=PLAN_MORNING, minute=0, second=0, microsecond=0)
+    before = morning if when.hour >= 13 else when - timedelta(hours=2)
+    after = (morning + timedelta(days=1)) if when.hour >= 17 else when + PLAN_AFTER
+    return (before if before > now else None), after
+
+
+def _plan(kept: dict, args: dict, by: str, at: int) -> dict:
+    refs = args.get("items")
+    found, _ = _picked(kept.get("items") or [], refs)
+    if not found:
+        texts = _texts(refs)
+        if len(texts) != 1:
+            return {"error": "Plan one item: its number, its words, or the text of a new one."}
+        found = _new_items(texts, by, at)
+        kept["items"].append(found[0])
+    item = found[0]
+    when = _moment(args.get("when"))
+    if isinstance(when, str):
+        return {"error": when}
+    now = datetime.fromtimestamp(at, timezone.utc)
+    if when - now > PLAN_AHEAD:
+        return {"error": "That's more than 60 days off: plan it nearer the time."}
+    with_ = _clean(args.get("with"), 60)
+    make, remove = _cron()
+    for old in item.get("plan_jobs") or []:
+        try:
+            remove and remove(old)
+        except Exception:
+            pass
+    item["when"], item["with"], item["plan_jobs"] = when.isoformat(timespec="minutes"), with_ or None, []
+    before, after = plan_times(when, now)
+    if make is None:
+        return {"planned": item["text"], "when": item["when"],
+                "said": "Kept on the list; this Hermes can't schedule the reminder or the check (no cron)."}
+    plan = uuid.uuid4().hex[:10]
+    for moment, words in ((before, plan_reminder(kept, item, when)), (after, plan_check(kept, item, when))):
+        if moment is None:
+            continue
+        try:
+            job = make(words, moment.isoformat(timespec="minutes"), name=f"{PLAN_TAG}{plan}] {item['text'][:60]}", deliver="local")
+            if isinstance(job, dict) and job.get("id"):
+                item["plan_jobs"].append(job["id"])
+        except Exception:
+            pass
+    return {"planned": item["text"], "when": item["when"], **({"with": with_} if with_ else {}),
+            "said": (f"Redde reminds them {'on the day' if before else 'no more today'} and checks on "
+                     f"{after.strftime('%A %-d %B')} that it happened. If it isn't on their calendar, put it there "
+                     "with your calendar tool too.")}
+
+
+def _when_words(when: datetime) -> str:
+    return when.strftime("%A %-d %B at %-I:%M %p").replace(":00 ", " ")
+
+
+def plan_reminder(kept: dict, item: dict, when: datetime) -> str:
+    name, with_ = item["text"], f" with {item['with']}" if item.get("with") else ""
+    ready = f"Get {name} ready to play" if look(kept)["kind"] == "watch" else f"Help me get ready for {name}"
+    return (f"{PLAN_TAG}{kept['id']}:{item['id']}] The user planned {name}{with_} for {_when_words(when)}, on their "
+            f"list '{kept.get('title')}'. Unless it's been called off or is already ticked off ({TOOL} show), remind "
+            f"them with suggest_to_user: title \"{when.strftime('%-I:%M %p').replace(':00 ', ' ')}: {name}{with_}\", why "
+            f"\"You planned it\", request \"{ready}\". Nothing else. If a tool isn't among yours, find it with tool_search.")
+
+
+def plan_check(kept: dict, item: dict, when: datetime) -> str:
+    name, with_ = item["text"], f" with {item['with']}" if item.get("with") else ""
+    watch = look(kept)["kind"] == "watch"
+    how = ("It's a film or a series: see whether their media server (Jellyfin, Plex) shows it played since then; if "
+           "you can't reach it yourself, ask the bot that can with an @mention." if watch else
+           "Look for signs it was done in what your tools can see: their calendar, mail, reminders, messages.")
+    question = f"Did you watch {name}?" if watch else f"Did {name} happen?"
+    again = (f"We haven't watched {name} yet: find another night{with_} and put it on my calendar" if watch
+             else f"{name} didn't happen: find another time{with_} and put it on my calendar")
+    return (f"{PLAN_TAG}{kept['id']}:{item['id']}] Follow-through for the user: they planned {name}{with_} for "
+            f"{_when_words(when)}, on their list '{kept.get('title')}' (list {kept['id']}, item {item['id']}). If it's "
+            f"already ticked off ({TOOL} show), stop. Otherwise find out whether it happened with your tools, without "
+            f"asking them. {how} If it happened, tick it off with {TOOL} (action check, list {kept['id']}, items "
+            f"[\"{item['id']}\"]) and say nothing. If it plainly didn't, or you can't tell, offer it back with "
+            f"suggest_to_user: title \"{question}\", why a few words on when it was planned, request \"{again}\". If a "
+            "tool isn't among yours, find it with tool_search.")
+
+
 # ---- for the app ---------------------------------------------------------------------------------
 
 def listing(home: Path) -> list[dict]:
@@ -362,7 +520,7 @@ def listing(home: Path) -> list[dict]:
         _posters_later(home, k)
     return [{"id": k["id"], "title": k.get("title") or "", "changed": k.get("changed") or k.get("made"), **look(k),
              "items": [{"id": i.get("id"), "text": i.get("text") or "", "done": bool(i.get("done")),
-                        **{f: i[f] for f in ("poster", "year") if i.get(f)}}
+                        **{f: i[f] for f in ("poster", "year", "when", "with") if i.get(f)}}
                        for i in k.get("items") or [] if i.get("id")]}
             for k in kept]
 
@@ -473,9 +631,12 @@ def turn_note(message, platform: str = "") -> str | None:
     if platform in ("cron", "subagent", "bot_room"):
         return None
     text = _text(message)
-    if not text or text.lstrip().startswith("[") or not _LISTISH.search(text):
+    if not text or text.lstrip().startswith("["):
         return None
-    return NOTE
+    listish, planish = _LISTISH.search(text), _PLANISH.search(text)
+    if not (listish or planish):
+        return None
+    return " ".join(n for n in (NOTE if listish else None, PLAN_NOTE if planish else None) if n)
 
 
 def register(ctx, home_of) -> None:
@@ -495,6 +656,8 @@ def register(ctx, home_of) -> None:
                                             "kind": {"type": "string", "enum": list(KINDS)},
                                             "emoji": {"type": "string"},
                                             "color": {"type": "string", "enum": list(COLORS)},
+                                            "when": {"type": "string"},
+                                            "with": {"type": "string"},
                                             "items": {"type": "array", "items": {"type": "string"},
                                                       "description": "Texts to add, or the items' numbers or words"}},
                              "required": ["action"]}}

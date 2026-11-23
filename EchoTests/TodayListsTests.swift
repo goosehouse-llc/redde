@@ -37,13 +37,15 @@ struct TodayListsTests {
         let answer = #"redde-push lists {"lists": [{"id": "w", "title": "Christmas Movies", "kind": "watch", "emoji": "🎄", "color": "red", "items": ["#
             + #"{"id": "a", "text": "Home Alone (1990)", "done": false, "poster": "https://upload.wikimedia.org/h.jpg", "year": 1990},"#
             + #"{"id": "b", "text": "Elf", "done": true, "poster": "http://img.example.com/elf.jpg"},"#
-            + #"{"id": "c", "text": "Die Hard", "done": false, "poster": "http://100.101.12.34:8096/Items/d/Images/Primary"}]},"#
+            + #"{"id": "c", "text": "Die Hard", "done": false, "poster": "http://100.101.12.34:8096/Items/d/Images/Primary", "when": "2026-11-26T19:30-05:00", "with": "Jess"}]},"#
             + #"{"id": "o", "title": "Odd", "kind": "boat", "emoji": "hello", "color": "plaid", "items": []}]}"#
         let lists = try #require(TodayList.parse(answer)).lists
         let films = lists[0]
         #expect(films.kind == .watch && films.emoji == "🎄" && films.hue == .red)
         #expect(films.items.map(\.poster) == ["https://upload.wikimedia.org/h.jpg", nil, "http://100.101.12.34:8096/Items/d/Images/Primary"])
         #expect(films.items[0].year == 1990 && films.items[0].name == "Home Alone")
+        #expect(films.items[2].when == Date(timeIntervalSince1970: 1_795_739_400) && films.items[2].company == "Jess", "a plan (plugin 1.38)")
+        #expect(films.items[0].when == nil && films.items[0].plan == nil)
         #expect(lists[1].kind == nil && lists[1].emoji == nil && lists[1].hue == nil, "what it can't use is left out")
         let old = try #require(TodayList.parse(Self.answer)).lists[0]
         #expect(old.kind == nil && old.emoji == nil)

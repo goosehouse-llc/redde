@@ -89,6 +89,15 @@ class ListsTests(unittest.TestCase):
         self.assertIn("for the Redde app", lists.slash(self.home, ["do", "not base64!"]))
         self.assertIn("for the Redde app", lists.slash(self.home, ["eat"]))
 
+    def test_an_item_whose_id_is_all_digits_is_found_by_it(self):
+        do(self.home, action="make", title="Groceries", items=["Milk", "Eggs"])
+        kept = lists.load(self.home)
+        kept[0]["items"][1]["id"] = "40417253"
+        lists.save(self.home, kept)
+        said = do(self.home, action="check", list="Groceries", items=["40417253"])
+        self.assertEqual(said["checked"], ["Eggs"])
+        self.assertFalse(any(lists._item_id().isdigit() for _ in range(2000)))
+
     def test_the_turn_note(self):
         for said in ("Make me a to-do list", "add milk to my grocery list", "check off the eggs", "what's on my lists?",
                      "put batteries on the shopping list", "Start a packing list for Maine"):
@@ -183,6 +192,74 @@ class ListLooksTests(unittest.TestCase):
         self.assertEqual(props["kind"]["enum"], list(lists.KINDS))
         self.assertIn("style", props["action"]["enum"])
         self.assertLess(len(json.dumps(ctx.made["schema"])), 2000)
+
+
+
+class PlanTests(unittest.TestCase):
+    """1.38.0 (2026-11-23): "Donnie Brasco, Thanksgiving night, with Jess" kept where something
+    looks at it: a card on the day, and a check after that it happened."""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        self.jobs, self.removed = [], []
+        lists.BACKGROUND, lists.FIND = False, lambda title, year, deadline: None
+        lists.MAKE_JOB = lambda prompt, schedule, name=None, deliver=None: (self.jobs.append((prompt, schedule, name)) or {"id": f"j{len(self.jobs)}"})
+        lists.REMOVE_JOB = self.removed.append
+        self.now = 1_795_000_000   # 2026-11-18
+
+    def tearDown(self):
+        lists.BACKGROUND, lists.MAKE_JOB, lists.REMOVE_JOB = True, None, None
+        lists.FIND = lambda title, year, deadline: plugin.posters.lookup(title, year, None, deadline)
+        self.tmp.cleanup()
+
+    def plan(self, **args):
+        return lists.change(self.home, {"action": "plan", "list": "Movies", **args}, by="default", now=self.now)
+
+    def test_a_planned_film_is_reminded_on_the_day_and_checked_the_morning_after(self):
+        lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
+        said = self.plan(items=["Donnie Brasco"], when="2026-11-26T19:30:00-05:00", **{"with": "Jess"})
+        self.assertEqual(said["planned"], "Donnie Brasco")
+        self.assertIn("calendar", said["said"])
+        (remind, at1, name1), (check, at2, _) = self.jobs
+        self.assertEqual(at1, "2026-11-26T10:00-05:00")
+        self.assertEqual(at2, "2026-11-27T10:00-05:00", "an evening plan: checked the next morning")
+        self.assertTrue(name1.startswith("[redde-plan:"))
+        self.assertIn("7:30 PM: Donnie Brasco with Jess", remind)
+        self.assertIn("Get Donnie Brasco ready to play", remind)
+        self.assertIn("shows it played", check)
+        self.assertIn("@mention", check)
+        self.assertIn("Did you watch Donnie Brasco?", check)
+        self.assertIn("find another night with Jess", check)
+        item = lists.listing(self.home)[0]["items"][1]
+        self.assertEqual((item["when"], item["with"]), ("2026-11-26T19:30-05:00", "Jess"))
+        self.assertIn(item["id"], check, "the check ticks off this item")
+        self.assertIn("(planned 2026-11-26T19:30-05:00 with Jess)", said["items"][1])
+
+    def test_planning_again_drops_the_old_jobs(self):
+        lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
+        self.plan(items=["1"], when="2026-11-26T19:30:00-05:00")
+        self.plan(items=["Elf"], when="2026-11-27T20:00:00-05:00")
+        self.assertEqual(self.removed, ["j1", "j2"])
+        self.assertEqual(len(lists.load(self.home)[0]["items"]), 1)
+
+    def test_a_morning_plan_and_one_already_under_way(self):
+        lists.change(self.home, {"action": "make", "title": "To Do", "items": ["Call the vet"]}, now=self.now)
+        lists.change(self.home, {"action": "plan", "list": "To Do", "items": ["1"], "when": "2026-11-19T09:00:00-05:00"}, now=self.now)
+        (remind, at1, _), (check, at2, _) = self.jobs
+        self.assertEqual((at1, at2), ("2026-11-19T07:00-05:00", "2026-11-19T12:00-05:00"))
+        self.assertIn("Did Call the vet happen?", check)
+        self.assertIn("calendar, mail", check)
+
+    def test_what_wont_do(self):
+        lists.change(self.home, {"action": "make", "title": "Movies"}, now=self.now)
+        self.assertIn("UTC offset", self.plan(items=["Elf"], when="2026-11-26T19:30")["error"])
+        self.assertIn("60 days", self.plan(items=["Elf"], when="2027-06-01T19:30:00-05:00")["error"])
+        self.assertIn("one item", self.plan(items=["Elf", "Heat"], when="2026-11-26T19:30:00-05:00")["error"])
+
+    def test_a_plan_in_a_message_is_noted(self):
+        self.assertIn("'plan'", lists.turn_note("We're going to watch Donnie Brasco on Thanksgiving with Jess"))
+        self.assertIn("'plan'", lists.turn_note("let's see Wicked friday night"))
+        self.assertIsNone(lists.turn_note("I watched a film"))
 
 
 if __name__ == "__main__":
