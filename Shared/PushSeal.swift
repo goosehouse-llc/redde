@@ -148,6 +148,35 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
 
     /// Nil for a kind a newer plugin sends and this build doesn't know.
     var kind: Kind? { Kind(rawValue: k) }
+
+    /// The plugin calls a main agent with no Bot Mode title "Hermes": the name the person gave it
+    /// is a setting here, which that Hermes never hears of. So a reminder set in Sol's chat said
+    /// it came from "Hermes" (2026-11-23). Only where `d` is the agent's name, and only that word:
+    /// a title the agent has on the server stays.
+    func namingMainAgent(_ name: String?) -> PushNote {
+        guard let name, !name.isEmpty, p == "default", d == "Hermes", let kind,
+              [Kind.routine, .work, .watch, .call, .ideas, .key].contains(kind) else { return self }
+        var named = self
+        named.d = name
+        return named
+    }
+}
+
+/// What the person calls their main agent, in the app group for the notification extension, which
+/// has no `Settings`. Empty when they haven't named it.
+nonisolated enum MainAgentName {
+    private static let key = "push.mainAgentName"
+    static var shared: UserDefaults? { UserDefaults(suiteName: PushVault.group) }
+
+    static func save(_ name: String, in defaults: UserDefaults? = shared) {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (defaults?.string(forKey: key) ?? "") != name else { return }
+        if name.isEmpty { defaults?.removeObject(forKey: key) } else { defaults?.set(name, forKey: key) }
+    }
+
+    static func read(in defaults: UserDefaults? = shared) -> String? {
+        defaults?.string(forKey: key)
+    }
 }
 
 /// One Hermes this device (an iPhone, an iPad, a Mac) is paired with.
@@ -236,7 +265,7 @@ nonisolated enum PushSeal {
         for pairing in pairings where keyID(pairing.key) == id {
             guard let plain = try? open(sealed, key: SymmetricKey(data: pairing.key), aad: Data(pairing.id.utf8)),
                   let note = try? JSONDecoder().decode(PushNote.self, from: plain) else { continue }
-            return (note, pairing)
+            return (note.namingMainAgent(MainAgentName.read()), pairing)
         }
         return nil
     }

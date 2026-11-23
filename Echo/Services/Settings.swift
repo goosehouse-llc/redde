@@ -550,7 +550,10 @@ final class Settings: ServeEndpoint {
     }
     /// What the header calls the assistant. Empty means "Redde".
     var displayName: String {
-        didSet { store(displayName, forKey: Keys.displayName) }
+        didSet {
+            store(displayName, forKey: Keys.displayName)
+            noteMainAgentName()
+        }
     }
     /// What each ACP agent calls itself, by its address, as last heard when connecting. On this
     /// device only.
@@ -775,6 +778,12 @@ final class Settings: ServeEndpoint {
         }
         defaults.set(activeServerID.uuidString, forKey: Keychain.activeServerKey)
         scopeShortcutSessionKeys()
+        noteMainAgentName()
+    }
+
+    /// The main agent's name where the notification extension can read it. Not a test's settings.
+    private func noteMainAgentName() {
+        if defaults === UserDefaults.standard { MainAgentName.save(displayName) }
     }
 
     // MARK: - iCloud
