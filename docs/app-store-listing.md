@@ -1,49 +1,51 @@
-# App Store listing — Redde: Every AI agent, one app
+# App Store listing — Redde: Proactive AI
 
 Character limits are Apple's. Everything here describes shipped, verified behaviour.
 
 ## Name (30)
-Redde: Proactive
+Redde: Proactive AI
 
-From 2.7 (his rename in App Store Connect, 2026-11-22, with 2.7's things to keep in mind, a quieter agent and When You've Gone Quiet). Before it, from 2.6 (his pick 2026-11-15: the release where Redde talks to other agents too). 2.6 was pulled from review to rename it "Redde: AI Agents, Voice & Chat", then he switched name and subtitle around in App Store Connect while it waited for review (name and subtitle can be edited then). Before: "Redde Agent" (2.5), "Hermes Redde" until 2.5 (2.5 went in as "Redde: AI Agent Voice & Chat" for an hour, then "Redde Agent", his pick 2026-11-11). The name and subtitle are set in App Store Connect → App Information (the store script doesn't send them). Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
+From 2.7 (2026-11-22: "Proactive AI" rather than "Proactive AI Agent", so the subtitle's "Agent" isn't said twice; search counts a word once across name and subtitle). Before that the same day "Redde: Proactive" (his rename in App Store Connect, 2026-11-22, with 2.7's things to keep in mind, a quieter agent and When You've Gone Quiet). Before it, from 2.6 (his pick 2026-11-15: the release where Redde talks to other agents too). 2.6 was pulled from review to rename it "Redde: AI Agents, Voice & Chat", then he switched name and subtitle around in App Store Connect while it waited for review (name and subtitle can be edited then). Before: "Redde Agent" (2.5), "Hermes Redde" until 2.5 (2.5 went in as "Redde: AI Agent Voice & Chat" for an hour, then "Redde Agent", his pick 2026-11-11). The name and subtitle are set in App Store Connect → App Information (the store script doesn't send them). Nous Research, which owns the HERMES AGENT mark, asked Apple to have it changed (Apple Legal APP286553-D, received 2026-11-11). Hermes stays out of the name and keywords; the description names it only to say what Redde works with, with the line that Redde isn't affiliated.
 
 ## Subtitle (30)
-Every AI Agent, one app
+Every agent, one app
 
-From 2.7 (2026-11-22; it was the name since 2.6). Before: "Voice Chat & Coding Agents" (2.6, from 2026-11-17), so voice, chat and coding are no longer in the name or subtitle.
+From 2.7 (2026-11-22, "AI" moved into the name; before that the same day "Every AI Agent, one app", the name since 2.6). Before: "Voice Chat & Coding Agents" (2.6, from 2026-11-17), so voice, chat and coding are no longer in the name or subtitle.
 
 No other company's product names here or in the keywords (Claude Code, Codex, Hermes): Apple rejects them in metadata. Nor Apple's own: 2.6 (295) was rejected 2026-11-17 under 5.2.5 for "Voice Chat, Coding & CarPlay" (CarPlay in the subtitle); this subtitle went in that day and the same build was resubmitted. CarPlay named as a feature in the description passed.
 
 ## Promotional text (170, editable without a new build)
-New in 2.7: your agents ask each other, with you in the loop. Goals you tick off, things to keep in mind, and an agent that knows when to stay quiet.
+New in 2.7: Redde gets ahead of you. It checks your plans against what you've told it, catches what's missing, and stays quiet until something needs you.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name or subtitle)
 assistant,self-hosted,llm,bots,private,chatbot,local,homelab,coding,terminal,mcp,server,voice,chat
 
 ## Description (4000)
 
-Redde is a complete iPhone, iPad and Mac client for your own AI agent: Hermes, the open-source agent, or Claude Code, Codex and other coding agents on your computer. Talk or type, watch it work, let it get ahead of your day, and give it a crew of bots.
+Redde is a proactive AI agent app for iPhone, iPad and Mac, for your own agent: Hermes, the open-source agent, or Claude Code, Codex and other coding agents on your computer. It gets ahead of your day and speaks up when something needs you. Talk or type, watch it work, and give it a crew of bots.
 
 You bring the backend. Redde has no account and no analytics, and your conversations go only to your server, and to a voice service if you pick one.
 
-AHEAD OF YOUR DAY
-• Goals: agree a plan with your agent and tick off your steps as you go, while it works on its own and checks in on yours.
-• Morning Ideas, a Week Ahead and an Evening Wrap-up arrive as cards. Leave-By Alerts work out from your calendar and Apple Maps when to go.
-• "Let me know when it ships": watches and follow-ups come back on their own.
-• Answers come as cards: your day, the weather, places on a map, prices with a deal meter, a list to tick off.
+PROACTIVE
+• Morning Ideas, Heads-Ups before your events, a Week Ahead and an Evening Wrap-up arrive as cards. Leave-By Alerts tell you when to leave.
+• Things to keep in mind: say once what's always true for you, and it checks your plans against it and tells you what's missing or runs out.
+• Goals: agree a plan and tick off your steps while your agent works on its own and checks in on yours.
+• "Let me know when it ships": watches and follow-ups come back on their own. Gone quiet for a day? It speaks up only if something needs you.
+• It knows when to stay quiet: a daily limit, ideas you ignore come quietly, idle watches slow down.
+• Answers come as cards: your day, the weather, a map, prices, a list to tick off.
 
 CODING AGENTS
 • Claude Code, Codex, Gemini CLI and other ACP agents, through the free Redde bridge on your Mac or Linux computer. Add more from the ACP registry.
-• See each step and file change, approve commands and answer questions, by chat or voice, in the car too. Or try the built-in Demo Agent.
+• See each step and file change, approve commands and answer questions, by chat or voice, in the car too.
 
 BOTS
 • Each Hermes profile is a bot with a face, a voice and a chat of its own. Start from a template and make its job, model and tools your own.
-• Type @ to ask any agent, a bot or Claude Code; your agent can ask one too, if you say yes. Or put two to six bots in a group chat. A bot can work in the background and tell you when it's done. Give one a schedule and its answer arrives with a notification, even with Redde closed.
+• Type @ to ask any agent, a bot or Claude Code; your agent can ask one too, if you say yes. Or put two to six bots in a group chat. Give one a schedule and its answer arrives as a notification.
 
 TALK, DON'T TYPE
 • Tap the mic or say "Hey" and your agent's name, or show it what the camera sees. Speech is recognized on your device; replies are read by the built-in voice, Kokoro, ElevenLabs or your Hermes.
-• Or talk live, interrupting any time: a free local call in your reading voice, or GPT-Live, Gemini Live, Grok Voice or ElevenLabs on your own key. An agent you allow can call you.
-• Hands-free until you say "that's all". CarPlay, Apple Watch, Siri, widgets and the Action Button. Spoken prefixes switch models or go to a bot.
+• Or talk live: a free local call, or GPT-Live, Gemini Live, Grok Voice or ElevenLabs on your own key. An agent you allow can call you.
+• Hands-free until you say "that's all". CarPlay, Apple Watch, Siri, widgets and the Action Button.
 
 SEE THE AGENT WORK
 • Reasoning and tool calls live, with a Live Activity; lock the phone and it carries on.
@@ -54,7 +56,6 @@ A FULL CLIENT
 • An email inbox your agent sorts into piles, yours too, with rules you set. Gmail or any mailbox; nothing is sent until you approve it.
 • Projects, scheduled jobs, a Kanban board, skills from the hub, plugins, memory you can edit, MCP servers, files and an SSH terminal.
 • Phone tools: your agent can use your calendar, reminders, contacts, photos, Apple Home, Maps and the Health data you choose, set alarms and start calls and texts, each only if you allow it.
-• Markdown, code, tables, diagrams and math; pictures, PDFs and audio open inline.
 
 YOUR BACKEND, YOUR RULES
 • Connect through the Hermes Dashboard, Webapp or API, on your LAN, a tailnet, or behind Cloudflare Access, Pangolin or a reverse proxy. Several servers, synced with iCloud.
@@ -77,14 +78,14 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
 ## What's New in 2.7 (4000)
-Your agents talk to each other, with you in the loop. Skills from the hub, pictures in agent chats, and smoother typing.
+Proactive: your agent gets ahead of your day and speaks up only when something needs you. And your agents now ask each other, with you in the loop.
 
-• Every agent can ask every other by @mention: your Hermes bots, the agents on your Redde bridge (Claude Code, Codex and the rest) and the bots on your other servers. Tag one in your message, or let your agent ask one itself: the answer shows in your chat and your agent carries on with it. In voice mode the answers are read aloud too.
-• Ask Me First, on from the start: before an agent asks another, or a Hermes bot hands its work to another, Redde asks you, with Ask or Don't on a card, in the chat or out loud. Settings → Replies & Writing → Agents Talking to Each Other has the switches.
-• Goals you tick off: a goal's plan says which steps are yours and which your agent's. Tick yours off on the goal or from its Today tile and the count moves at once. Your agent starts on its own steps as soon as you agree the plan in the chat, with no second approval, and asks about yours at its check-ins.
 • Things to keep in mind: tell your agent what's always true for you ("driving into France, I need 3-day car insurance"), or add it in Settings → Your Day. Heads-Ups and Morning Ideas check it against the days around each event and tell you when something is missing or runs out.
 • Quieter on its own: At Most a Day in Quiet Hours. Ideas you leave alone come quietly, and Don't Suggest This keeps an idea away for good. A watch that finds nothing slows, then pauses. A goal untouched for two weeks asks once, then pauses, with Keep Going.
 • When You've Gone Quiet, in Daily Jobs: after 12 to 72 hours without a word from you, your agent speaks up only if something needs you.
+• Goals you tick off: a goal's plan says which steps are yours and which your agent's. Tick yours off on the goal or from its Today tile and the count moves at once. Your agent starts on its own steps as soon as you agree the plan in the chat, with no second approval, and asks about yours at its check-ins.
+• Every agent can ask every other by @mention: your Hermes bots, the agents on your Redde bridge (Claude Code, Codex and the rest) and the bots on your other servers. Tag one in your message, or let your agent ask one itself: the answer shows in your chat and your agent carries on with it. In voice mode the answers are read aloud too.
+• Ask Me First, on from the start: before an agent asks another, or a Hermes bot hands its work to another, Redde asks you, with Ask or Don't on a card, in the chat or out loud. Settings → Replies & Writing → Agents Talking to Each Other has the switches.
 • Skills from Hermes's skills hub: Find Skills, see what one does and install it, checked by Hermes's scanner before it goes on.
 • Pictures in agent chats: what Claude Code or Codex sends or reads shows in the chat, and a file a reply names opens on your phone.
 • A long paste goes beside your message as a text file, instead of filling the field.
@@ -110,6 +111,7 @@ Agents asking each other and Ask Me First for Hermes bots take the Redde plugin 
 - The review notes (docs/app-review-notes.md) fit again: 3,908 characters with the placeholder, Save to Photos's permission added. `scripts/app-store-push.py notes` puts the key in and sends them.
 - What's New 2.6 said "Settings → Set up connection…"; 2.7's text names Connection → Set up connection… where it comes up.
 - Keywords for 2.7: siri, shortcuts, watch and acp out (Apple's product names, and searches that bring nobody); mcp, client, server and kanban in. After the rename to "Redde: Proactive" / "Every AI Agent, one app" (2026-11-22): voice and chat in, code → coding (the old subtitle had them), client and kanban out.
+- Billed as proactive (2026-11-22): name "Redde: Proactive AI", subtitle "Every agent, one app" (both set in App Store Connect; the App Information record shows WAITING_FOR_REVIEW only because Mac 2.5 is in review), promo text, the description's opening and PROACTIVE section, and What's New led by the proactive items. Sent with `copy`.
 - Close GitHub #78, #79, #81 and #83 at release.
 - Sent to App Store Connect 2026-11-22 (version 2.7 made): copy, the new 06-goals pictures, and the iPhone App Preview (redde-27). The iPad preview, the same agents take recorded on the 13" iPad and cut by `make_27.py ipad` (v27_ipad_cuts.py), replaced 2.3.1's day cut on 2026-11-22.
 
