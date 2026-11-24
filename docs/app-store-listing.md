@@ -105,7 +105,7 @@ QUIETER ON ITS OWN
 
 GOALS AND LISTS
 • Goals you tick off: a goal's plan says which steps are yours and which your agent's. Tick yours off on the goal or its Today tile.
-• Lists with a look: every list has an emoji and a color. A list of films or series is a wall of posters, stamped Watched as you go.
+• Lists with a look: every list has an emoji and a color. Film lists show each poster beside its title. To-dos sort by when, and a long press sets a date.
 
 AGENTS TOGETHER
 • Every agent can ask every other by @mention: your Hermes bots, Claude Code, Codex and the rest on your Redde bridge, and bots on your other servers.
@@ -125,10 +125,10 @@ FIXES
 • Show cards keep their posters when you come back to a chat.
 • Deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A reply Hermes stops for taking too long ends in Redde too, with Retry.
 
-What's new on your Hermes takes the Redde plugin 1.32 to 1.41: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
+What's new on your Hermes takes the Redde plugin 1.32 to 1.42: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
 
 ## Before submitting 2.7
-- The build is 2.7 (299, uploaded 2026-11-23; 296 was pulled from review 2026-11-22 for the goal page, 297 on 2026-11-23 for lists with a look, show-card posters and the Dashboard's card fix; 298 was archived and never uploaded), iPhone and iPad, archived from main once everything is committed and pushed.
+- The build is 2.7 (301, uploaded 2026-11-23, for the new film and to-do lists, the deck's Done stamp and the same cards on every device; 299 uploaded 2026-11-23; 296 was pulled from review 2026-11-22 for the goal page, 297 on 2026-11-23 for lists with a look, show-card posters and the Dashboard's card fix; 298 was archived and never uploaded), iPhone and iPad, archived from main once everything is committed and pushed.
 - In-app What's New 2.7: fifteen items in 17 languages, the proactive ones first since 2026-11-23 (lists with a look, plans that happen, Plan For It, Follow-Through and bills/trips/meetings added that day) (agents asking each other, Ask Me First, goals you tick off, things to keep in mind, quieter on its own, skills hub, pictures in agent chats, saving pictures, briefings on Your Day, Report a Problem).
 - The Watch-only live call (53365bf) is left out: it has run only in the simulator. Try it on a real watch first (its socket rules differ), then add a line.
 - The relay is deployed for cleared notifications (2026-11-19). Plugin 1.36.0 (things to keep in mind, When You've Gone Quiet, backing off, goals that fade, Don't Suggest This; 1.35 goal steps yours or the agent's; 1.34 briefing choices on every device) and bridge 0.11 must be on main, and the plugin's GitHub release published at release.
