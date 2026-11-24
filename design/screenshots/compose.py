@@ -144,7 +144,7 @@ MEETING = ('ph-deck-3.png', (48, 1615, 1087, 2182), 66)
 # and a to-do list sorted by when (StoreProactiveShotsUITests, raws in tmp/shots-2.7p-raw).
 LEAVE = ('ph-leave27.png', (24, 176, 1296, 405), 56)        # Time to leave for Dentist
 DEAL = ('ph-purchase.png', (48, 411, 1272, 2061), 54)       # the agent's pick, the deal meter, Watch price
-BYWHEN = ('ph-bywhen-before.png', (60, 870, 1260, 2215), 60)  # House To-Dos: Overdue, Today, This week
+BYWHEN = ('ph-bywhen-before.png', (60, 780, 1260, 1900), 60)  # House To-Dos: Overdue, Today, This week
 
 def compose_cards(src, dst, headline, sub, bg, fg, subfg, pad, cards, blank_below=None):
     """A screen with cards from other screens set over its empty lower part, each turned a little
@@ -237,7 +237,7 @@ phone = [
    [(LEAVE, 0.90, (0.5, 0.085), -1.0)]),
   ('ph-goal',     '05-goals',    'Goals, step by step.',         'Tick off your steps as you go. Your agent works on its own and checks in on yours.', CORAL, WHITE, PEACH),
   ('ph-clean-before', '06-lists', 'Lists that keep up.',         'Films with their posters, to-dos sorted by when, and a reminder on the day.', PLUM, WHITE, LILAC,
-   [(BYWHEN, 0.66, (0.5, 0.83), 1.2)], 1900),
+   [(BYWHEN, 0.64, (0.5, 0.755), 1.2)], 1790),
   ('ph-shipped27-calm', '07-watch', 'It keeps watch.',          '“Tell me when it ships.” Prices, parcels and replies: your agent checks, and speaks up when it changes.', (24, 32, 46), WHITE, MIST,
    [(DEAL, 0.46, (0.5, 0.775), -1.2)], 1800),
   ('ph-inbox',    '08-inbox',    'Your inbox, sorted.',          'Seven piles and your own, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,

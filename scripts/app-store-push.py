@@ -61,8 +61,10 @@ LIMITS = {'promotionalText': 170, 'keywords': 100, 'description': 4000, 'whatsNe
 # full frame, 29.4 s; the forecast card (9 s in) is the frame shown before they play.
 # 2.7 (2026-11-22): the iPhone's is the agents cut (design/video/make_27.py), full frame, 29.4 s,
 # Claude Code's approval (15 s in) shown before it plays; the iPad keeps the day cut.
-PREVIEWS = [('IPHONE_67', [('design/redde-27-app-preview-iphone.mp4', '00:00:15:00')]),
-            ('IPAD_PRO_3GEN_129', [('design/redde-27-app-preview-ipad.mp4', '00:00:15:00')])]
+# 2.7 (2026-11-24): both are the proactive cut (design/video/make_27_proactive.py [ipad]), full
+# frame, 29.4 s, ending on the film list; the Montreal plan card (6 s in) is shown before they play.
+PREVIEWS = [('IPHONE_67', [('design/redde-27-proactive-app-preview-iphone.mp4', '00:00:06:00')]),
+            ('IPAD_PRO_3GEN_129', [('design/redde-27-proactive-app-preview-ipad.mp4', '00:00:06:00')])]
 # The Mac's (`--mac`): 2880 × 1800, App Store Connect's largest 16:10 size, made by
 # design/screenshots/mac.py.
 MAC = '--mac' in sys.argv
