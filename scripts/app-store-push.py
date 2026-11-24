@@ -308,8 +308,10 @@ def push_screenshots(loc, dry):
             {'data': [{'type': 'appScreenshots', 'id': i} for i in ids]})
 
 
+RELEASED = {'READY_FOR_SALE', 'READY_FOR_DISTRIBUTION', 'REPLACED_WITH_NEW_VERSION', 'REMOVED_FROM_SALE', 'DEVELOPER_REMOVED_FROM_SALE'}
 PLACEHOLDER = '<<REVIEW KEY>>'
-KEY_IN_NOTES = re.compile(r'API key:?\s*`?([^\s`,]+)')
+# A key's own length and letters: notes that say "the API key as typed" hold no key (2026-11-24).
+KEY_IN_NOTES = re.compile(r'API key:?\s*`?([A-Za-z0-9_\-]{20,})')
 
 
 def review_detail(version):
@@ -420,10 +422,18 @@ def submit(app, version, wanted, dry, attach_only=False):
         print('  build attached')
     if attach_only:
         return True
-    open_ones = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]={PLATFORM}&filter[state]=READY_FOR_REVIEW')['data']
+    # A rejected version goes back through the review that rejected it (UNRESOLVED_ISSUES): its
+    # item is marked resolved and the same submission sent again (the Mac's 2.7, 2026-11-24).
+    open_ones = api('GET', f'/v1/reviewSubmissions?filter[app]={app}&filter[platform]={PLATFORM}&filter[state]=READY_FOR_REVIEW,UNRESOLVED_ISSUES')['data']
     submission = open_ones[0] if open_ones else api('POST', '/v1/reviewSubmissions', {'data': {'type': 'reviewSubmissions',
         'attributes': {'platform': PLATFORM}, 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']
-    items = every(f"/v1/reviewSubmissions/{submission['id']}/items?fields[reviewSubmissionItems]=appStoreVersion&include=appStoreVersion")
+    print(f"  review submission: {submission['attributes'].get('state') or 'new'}")
+    items = every(f"/v1/reviewSubmissions/{submission['id']}/items?fields[reviewSubmissionItems]=state,appStoreVersion&include=appStoreVersion")
+    for item in items:
+        if (item['attributes'] or {}).get('state') == 'REJECTED':
+            api('PATCH', f"/v1/reviewSubmissionItems/{item['id']}", {'data': {'type': 'reviewSubmissionItems', 'id': item['id'],
+                'attributes': {'resolved': True}}})
+            print('  rejected item marked resolved')
     if not any((i.get('relationships', {}).get('appStoreVersion', {}).get('data') or {}).get('id') == version['id'] for i in items):
         api('POST', '/v1/reviewSubmissionItems', {'data': {'type': 'reviewSubmissionItems', 'relationships': {
             'reviewSubmission': {'data': {'type': 'reviewSubmissions', 'id': submission['id']}},
@@ -451,6 +461,11 @@ def main():
             print(f'  {folder}: {len(paths)} pictures of {size[0]}×{size[1]} as {kind}')
         return
     app = app_id()
+    if 'whatsNew' in fields and not any(state(v) in RELEASED for v in versions(app)):
+        # Never out on this platform yet (the Mac, 2026-11-24): its first version takes no What's
+        # New, and App Store Connect refuses the whole change with it in (409).
+        print("  whatsNew: left out, this platform's first version takes none")
+        del fields['whatsNew']
     if what == 'status':
         for v in versions(app)[:6]:
             print(f"  {v['attributes']['versionString']}: {state(v)}")
