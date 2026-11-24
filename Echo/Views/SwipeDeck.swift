@@ -43,6 +43,9 @@ struct SwipeDeck<Item: Identifiable & Equatable, Face: View, Menu: View, Footer:
     /// The card on its way off, and which way (1 right, -1 left).
     @State private var leaving: CGFloat = 0
     @State private var armed: CGFloat = 0
+    /// A button's own word and colour on the leaving card: two buttons can fly the same way and
+    /// mean different things (Done and Not Now on an idea, Done and Later on a briefing).
+    @State private var sent: (word: String, color: Color)?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let haptic = UIImpactFeedbackGenerator(style: .light)
 
@@ -70,7 +73,11 @@ struct SwipeDeck<Item: Identifiable & Equatable, Face: View, Menu: View, Footer:
             HStack(spacing: 26) {
                 ForEach(buttons.indices, id: \.self) { i in
                     let choice = buttons[i]
-                    round(choice) { if let top { send(top, to: choice.fly, then: choice.act) } }
+                    round(choice) {
+                        guard let top else { return }
+                        sent = (choice.label, choice.color)
+                        send(top, to: choice.fly, then: choice.act)
+                    }
                 }
             }
             .disabled(top == nil)
@@ -84,8 +91,8 @@ struct SwipeDeck<Item: Identifiable & Equatable, Face: View, Menu: View, Footer:
         let moved = isTop ? drag + leaving : 0
         return face(item, isTop, moved)
             // The stamp lands in the corner the card leaves behind, where the finger isn't (asked 2026-10-28).
-            .overlay(alignment: .topLeading) { if isTop { stamp(right.stamp, color: right.color, angle: -12).opacity(Double(max(0, moved) / Self.threshold)) } }
-            .overlay(alignment: .topTrailing) { if isTop { stamp(left.stamp, color: left.color, angle: 12).opacity(Double(max(0, -moved) / Self.threshold)) } }
+            .overlay(alignment: .topLeading) { if isTop { stamp(sent?.word ?? right.stamp, color: sent?.color ?? right.color, angle: -12).opacity(Double(max(0, moved) / Self.threshold)) } }
+            .overlay(alignment: .topTrailing) { if isTop { stamp(sent?.word ?? left.stamp, color: sent?.color ?? left.color, angle: 12).opacity(Double(max(0, -moved) / Self.threshold)) } }
             .shadow(color: .black.opacity(isTop ? 0.14 : 0.06), radius: isTop ? 10 : 4, y: isTop ? 5 : 2)
             .scaleEffect(1 - CGFloat(depth) * 0.05)
             .offset(y: CGFloat(depth) * 9)
@@ -145,7 +152,7 @@ struct SwipeDeck<Item: Identifiable & Equatable, Face: View, Menu: View, Footer:
             try? await Task.sleep(for: .milliseconds(230))
             var instant = Transaction()
             instant.disablesAnimations = true
-            withTransaction(instant) { drag = 0; leaving = 0 }
+            withTransaction(instant) { drag = 0; leaving = 0; sent = nil }
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { act(item) }
         }
     }
