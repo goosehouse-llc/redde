@@ -901,9 +901,7 @@ struct MessageRow: View, Equatable {
         if let conversation, !isLive {
             Button("Remember This", systemImage: "brain.head.profile") { conversation.send(AgentMemory.rememberMessage(PlainText.display(message.text))) }
             // What was done for this reply, kept to do again (asked 2026-11-04): the chat menu's, for one reply.
-            if conversation.connection.isHermes, !conversation.isIncognito, !conversation.isWorkerTranscript, !conversation.isStreaming {
-                Button("Make This a Routine…", systemImage: "repeat") { RoutineAsk.shared.reply = message.id }
-            }
+            MakeRoutineButton(message: message.id)
         }
         if let onRegenerate {
             Divider()
@@ -933,6 +931,8 @@ struct MessageRow: View, Equatable {
         }
         if let conversation, !isLive, message.role == .user {
             Button("Remember This", systemImage: "brain.head.profile") { conversation.send(AgentMemory.rememberMessage(message.text)) }
+            // This request, and what the agent did for it, kept to do again (asked 2026-11-24).
+            MakeRoutineButton(message: message.id)
         }
         Divider()
         Text(message.createdAt.formatted(date: .abbreviated, time: .shortened))

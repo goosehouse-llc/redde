@@ -91,6 +91,38 @@ final class ReplyActionsUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Quoting"].exists)
     }
 
+    /// A long press on the person's own message (asked 2026-11-24): Make This a Routine, named from
+    /// that message, which is the routine's request.
+    func testAPromptBecomesARoutine() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        // A Hermes chat (routines are Hermes's), on a port nothing answers.
+        app.launchArguments = ["-echo.demo", "-echo.demoShort", "-echo.clearDrafts", "-transport", "hermesSessions", "-gatewayURL", "http://127.0.0.1:9"]
+            + XCUIApplication.straightToChat
+        app.launch()
+        let prompt = app.text(containing: "remind me to call the vet")
+        XCTAssertTrue(prompt.waitForExistence(timeout: 15), "The demo prompt didn't appear")
+        prompt.press(forDuration: 1.0)
+        let item = app.buttons["Make This a Routine…"]
+        XCTAssertTrue(item.waitForExistence(timeout: 3), "No Make This a Routine in the prompt's menu")
+        item.tap()
+        XCTAssertTrue(app.navigationBars["Make This a Routine"].waitForExistence(timeout: 5), "The routine sheet didn't open")
+        let name = app.textFields["Name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 3), "No name field")
+        XCTAssertEqual(name.value as? String, "What's on my calendar tomorrow", "Not named from the prompt")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "prompt-routine"
+        shot.lifetime = .keepAlways
+        add(shot)
+        app.buttons["Cancel"].tap()
+        // A reply's More menu still has it, for that reply's request.
+        XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5), "No actions under the reply")
+        let more = app.buttons.matching(identifier: "More").allElementsBoundByIndex
+            .first { abs($0.frame.midY - app.buttons["Regenerate"].frame.midY) < 4 } ?? app.buttons["More"].firstMatch
+        more.tap()
+        XCTAssertTrue(app.buttons["Make This a Routine…"].waitForExistence(timeout: 3), "No Make This a Routine in the reply's menu")
+    }
+
     /// Quote, from a reply's More menu: the reply goes over the field with whose it is, the end
     /// of the chat stays in sight, and the quote can be taken away again.
     func testQuotingAReply() {

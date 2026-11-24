@@ -274,7 +274,7 @@ extension Conversation {
                 persist()
                 outcome = .completed
                 noteSeen(onlyOnScreen: true)
-                suggestFollowUps(question: unseen ? asked(before: replyID) ?? trimmed : trimmed, replyID: replyID, reply: replyText)
+                suggestFollowUps(question: unseen ? asked(for: replyID) ?? trimmed : trimmed, replyID: replyID, reply: replyText)
             } catch is CancellationError {
                 windowTask.cancel()
                 flushDeltas()

@@ -45,11 +45,11 @@ extension ContentView {
             if id != conversation.id, !conversation.isStreaming, let record = conversation.storeForContext.record(id: id) { conversation.load(record) }
             setDrawer(open: false)
         })
-        .sheet(isPresented: $makingRoutine, onDismiss: { routineAsk.reply = nil }) {
-            RoutineSheet(conversation: conversation, reply: routineAsk.reply)
+        .sheet(isPresented: $makingRoutine, onDismiss: { routineAsk.message = nil }) {
+            RoutineSheet(conversation: conversation, message: routineAsk.message)
         }
-        // From a reply's ⋯ menu: the same sheet, for that reply.
-        .onChange(of: routineAsk.reply) { _, reply in if reply != nil { makingRoutine = true } }
+        // From a message's menu, a reply's or the person's own: the same sheet, for that request.
+        .onChange(of: routineAsk.message) { _, message in if message != nil { makingRoutine = true } }
     }
 
     /// The screens the dev hooks open (screenshots, UI tests); none in a Release build.

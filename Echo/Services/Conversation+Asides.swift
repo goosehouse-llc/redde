@@ -10,15 +10,18 @@ extension Conversation {
         _ = send(String(localized: "Make this a routine: “\(name)”.", comment: "The message a chat's Make This a Routine sends, with the routine's name"))
     }
 
-    /// A card answered with a tap: `shown` as the person's message, `said` in its note.
-    /// What the user asked for a reply: their message just before it, in plain words, clipped.
-    func asked(before reply: UUID) -> String? {
-        guard let index = messages.firstIndex(where: { $0.id == reply }) else { return nil }
-        guard let mine = messages[..<index].last(where: { $0.role == .user }) else { return nil }
+    /// What the person asked, for Make This a Routine from a message's menu: their own message (a
+    /// long press on it, asked 2026-11-24), or for a reply their message just before it; in plain
+    /// words, clipped.
+    func asked(for id: UUID) -> String? {
+        guard let index = messages.firstIndex(where: { $0.id == id }) else { return nil }
+        let mine = messages[index].role == .user ? messages[index] : messages[..<index].last(where: { $0.role == .user })
+        guard let mine else { return nil }
         let text = RoutineNote.strip(mine.text).trimmingCharacters(in: .whitespacesAndNewlines)
         return text.isEmpty ? nil : String(text.prefix(300))
     }
 
+    /// A card answered with a tap: `shown` as the person's message, `said` in its note.
     func answerCard(_ card: ReplyCard, shown: String, said: String) {
         CardAnswers.shared.record(card.key, said: said)
         let question = AnsweredQuestions.question(of: card)

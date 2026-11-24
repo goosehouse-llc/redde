@@ -7,8 +7,9 @@ import SwiftUI
 /// to write, with its skill tool: the Hermes API has no other way to make one.
 struct RoutineSheet: View {
     let conversation: Conversation
-    /// From a reply's ⋯ menu (asked 2026-11-04): that reply, whose request becomes the routine.
-    var reply: UUID? = nil
+    /// From a message's menu: a reply's ⋯ (asked 2026-11-04), whose request becomes the routine,
+    /// or a long press on the person's own message (2026-11-24), which is the request.
+    var message: UUID? = nil
 
     enum Often: String, CaseIterable, Identifiable {
         case asked, daily, weekdays, weekly
@@ -87,15 +88,19 @@ struct RoutineSheet: View {
         }
     }
 
-    /// What was asked for the reply it was opened from.
-    private var asked: String? { reply.flatMap(conversation.asked(before:)) }
+    /// What was asked, for the message it was opened from.
+    private var asked: String? { message.flatMap(conversation.asked(for:)) }
 
-    /// A name from a request: its first line, cut at a word within 40 characters.
+    /// A name from a request: its first line, cut within 40 characters at the end of a clause when
+    /// one is well in ("What's on my calendar tomorrow, and remind me…" → "What's on my calendar
+    /// tomorrow", 2026-11-24), otherwise at a word.
     nonisolated static func name(from asked: String) -> String {
         let line = asked.split(separator: "\n").first.map(String.init) ?? asked
         guard line.count > 40 else { return line }
         let cut = line.prefix(40)
-        return String(cut[..<(cut.lastIndex(of: " ") ?? cut.endIndex)]).trimmingCharacters(in: .punctuationCharacters.union(.whitespaces))
+        let clause = cut.lastIndex { ",;:".contains($0) }.flatMap { cut.distance(from: cut.startIndex, to: $0) >= 12 ? $0 : nil }
+        let end = clause ?? cut.lastIndex(of: " ") ?? cut.endIndex
+        return String(cut[..<end]).trimmingCharacters(in: .punctuationCharacters.union(.whitespaces))
     }
 
     /// The cron schedule, and how it reads to the agent.
@@ -135,9 +140,25 @@ struct RoutineSheet: View {
     }
 }
 
-/// Make This a Routine from a reply's ⋯ menu: the reply it was asked from, for ContentView's sheet.
+/// Make This a Routine from a message's menu: the message it was asked from (a reply, or the
+/// person's own), for ContentView's sheet.
 @Observable
 final class RoutineAsk {
     static let shared = RoutineAsk()
-    var reply: UUID?
+    var message: UUID?
+}
+
+/// Make This a Routine… in a message's menu, a reply's or the person's own (`MessageRow`), on a
+/// Hermes chat that isn't incognito or a worker's, and not while a reply comes in. A view of its
+/// own so that only it, not every row, is drawn again when the chat starts or stops streaming.
+struct MakeRoutineButton: View {
+    let message: UUID
+    @Environment(Conversation.self) private var conversation: Conversation?
+
+    var body: some View {
+        if let conversation, conversation.connection.isHermes, !conversation.isIncognito, !conversation.isWorkerTranscript,
+           !conversation.isStreaming {
+            Button("Make This a Routine…", systemImage: "repeat") { RoutineAsk.shared.message = message }
+        }
+    }
 }
