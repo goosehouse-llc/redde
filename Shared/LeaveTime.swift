@@ -148,14 +148,19 @@ nonisolated enum LeaveTime {
         event.addingTimeInterval(-travel - spare(travel: travel, mode: mode, arriving: event, calendar: calendar))
     }
 
-    /// The line put first on the heads-up: "Leave by 2:05 PM · 25 min by car".
-    static func line(leave: Date, travel: TimeInterval, mode: Mode, now: Date = .now) -> String {
+    /// "25 min by car".
+    static func way(travel: TimeInterval, mode: Mode) -> String {
         let minutes = max(1, Int((travel / 60).rounded()))
-        let way = switch mode {
+        return switch mode {
         case .transit: String(localized: "\(minutes) min by transit")
         case .walking: String(localized: "\(minutes) min on foot")
         default: String(localized: "\(minutes) min by car")
         }
+    }
+
+    /// The line put first on the heads-up: "Leave by 2:05 PM · 25 min by car".
+    static func line(leave: Date, travel: TimeInterval, mode: Mode, now: Date = .now) -> String {
+        let way = way(travel: travel, mode: mode)
         if leave <= now.addingTimeInterval(60) { return String(localized: "Leave now · \(way)") }
         return String(localized: "Leave by \(leave.formatted(date: .omitted, time: .shortened)) · \(way)")
     }

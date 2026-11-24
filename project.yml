@@ -542,6 +542,8 @@ targets:
           - AgentAlarm.swift
           - EchoTurnAttributes.swift
           - ApprovalIntents.swift
+          # The Home Screen widgets' buttons: the iPhone's and iPad's.
+          - WidgetIntents.swift
     dependencies:
       # Opens a paired Hermes's notes with Redde closed (Contents/PlugIns).
       - target: EchoPushMac
@@ -623,6 +625,11 @@ targets:
       - path: EchoControls/StatusWidgets.swift
       - path: EchoControls/BoardWidget.swift
       - path: EchoControls/UpNextWidget.swift
+      - path: EchoControls/WidgetParts.swift
+      - path: EchoControls/ListsWidget.swift
+      - path: EchoControls/DayWidget.swift
+      - path: EchoControls/AgentsWidget.swift
+      - path: EchoControls/GoalsWidget.swift
     dependencies:
       - target: Echo
     settings:

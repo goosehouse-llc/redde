@@ -40,6 +40,8 @@ enum StatusWidgets {
         reload(NeedsYou.widgetKind)
         reload(ContextReading.widgetKind)
         reload(AgentBoard.widgetKind)
+        for kind in [WidgetKind.upNext, WidgetKind.lists, WidgetKind.day, WidgetKind.goals] { reload(kind) }
+        Task { @MainActor in WidgetWriter.agentsChanged() }   // its lines go, or come back
     }
 
     private static func reload(_ kind: String) { WidgetCenter.shared.reloadTimelines(ofKind: kind) }

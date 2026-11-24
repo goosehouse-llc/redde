@@ -305,6 +305,7 @@ final class ChatActivity {
 
     private func setLive(_ found: [String: Kind]) {
         for chat in live.keys where found[chat] == nil { settled[chat] = .now }
+        if found != live { WidgetWriter.agentsChanged() }   // Your Agents
         live = found
     }
 

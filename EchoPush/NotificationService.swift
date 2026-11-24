@@ -50,11 +50,19 @@ final class NotificationService: UNNotificationServiceExtension {
             // And what the agent wrote for its own widget in a turn the phone wasn't following.
             if AgentBoard.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: AgentBoard.widgetKind) }
             // And ideas it offered, for the chat list to show when Redde opens.
-            if AgentIdea.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind) }
+            // (Up Next and Your Day count them: `WidgetKind` in the app, `com.goosehouse.echo.day`.)
+            if AgentIdea.take(note) {
+                WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind)
+                WidgetCenter.shared.reloadTimelines(ofKind: "com.goosehouse.echo.day")
+            }
             WatchReport.take(note)   // and what a watch saw, for the Watches list
-            GoalReport.take(note)    // and a goal's check-in, for its card atop the chat list
+            // And a goal's check-in, for its card atop the chat list and the Goals widget.
+            if GoalReport.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: "com.goosehouse.echo.goals") }
             // And a briefing's whole text; a heads-up's with when to leave for its event.
-            if AgentBriefing.take(note) { WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind) }
+            if AgentBriefing.take(note) {
+                WidgetCenter.shared.reloadTimelines(ofKind: UpNext.widgetKind)
+                WidgetCenter.shared.reloadTimelines(ofKind: "com.goosehouse.echo.day")
+            }
             // Its banner without the model's narration ahead of the brief, as Redde shows it.
             if note.x == "brief" { content.body = DayBrief.withoutNarration(content.body) }
             // One job's notifications together in the list, and quiet for a job the person keeps

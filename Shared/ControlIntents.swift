@@ -76,6 +76,28 @@ nonisolated enum EchoURL {
         return id?.isEmpty == false ? id : nil
     }
 
+    /// The Home Screen widgets' links (2026-11-24): a bot's chat, a list, an idea to do, words
+    /// to start a new conversation with.
+    static func bot(_ profile: String) -> URL { link("bot", "profile", profile) }
+    static func list(_ id: String) -> URL { link("list", "id", id) }
+    static func idea(_ id: String) -> URL { link("idea", "id", id) }
+    static func ask(_ text: String) -> URL { link("ask", "text", text) }
+
+    private static func link(_ host: String, _ name: String, _ value: String) -> URL {
+        var comps = URLComponents()
+        comps.scheme = scheme
+        comps.host = host
+        comps.queryItems = [URLQueryItem(name: name, value: value)]
+        return comps.url ?? open
+    }
+
+    /// What a widget's link carries: `value(of: url, "list", "id")`.
+    static func value(of url: URL, _ host: String, _ name: String) -> String? {
+        guard url.scheme == scheme, url.host == host else { return nil }
+        let value = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == name }?.value
+        return value?.isEmpty == false ? value : nil
+    }
+
     /// Returns hands-free flag when the URL is a listen request, nil otherwise.
     static func parseListen(_ url: URL) -> Bool? {
         guard url.scheme == scheme, url.host == "listen" else { return nil }

@@ -105,17 +105,27 @@ extension Conversation {
         case .sudo: (kind, text) = (.sudo, "")
         case let .secret(request): (kind, text) = (.secret, request.prompt.isEmpty ? String(localized: "Value for \(request.envVar)", comment: "What the agent asks for when it needs a secret: an environment variable's value") : request.prompt)
         }
+        // A single question's choices, for buttons on the widget, and what it or the command is,
+        // so a tap there answers this one and no other.
+        var choices: [String]?
+        if case let .clarify(request) = interrupt, request.questions.count == 1, let question = request.questions.first, !question.multiSelect {
+            let given = question.choices.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            if !given.isEmpty, given.count <= 4 { choices = given }
+        }
         let key = NeedsYou.key(session: serverSessionID, conversation: id)
         waitingKey = key
+        WidgetWriter.agentsChanged()   // Your Agents: needs you
         StatusWidgets.waiting(WaitingRequest(id: key, kind: kind, title: hasMessages ? title : nil,
                                              text: String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(300)),
-                                             session: serverSessionID, since: .now, until: .now.addingTimeInterval(NeedsYou.lifetime(kind))),
+                                             session: serverSessionID, since: .now, until: .now.addingTimeInterval(NeedsYou.lifetime(kind)),
+                                             choices: choices, digest: text.isEmpty ? nil : PushNote.digest(of: text)),
                               in: widgetDefaults)
     }
 
     func settleWaiting() {
         guard let key = waitingKey else { return }
         waitingKey = nil
+        WidgetWriter.agentsChanged()
         if !leavingTurn { StatusWidgets.settled(key, in: widgetDefaults) }
     }
 

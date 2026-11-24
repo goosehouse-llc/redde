@@ -99,9 +99,9 @@ import WidgetKit
 ///   `-echo.demoAsksReviewOnly`: the email alone; `-echo.demoAsksBooking`: a text's review, then a booking's (rows).
 /// - `-echo.demoPhotos [n]`: messages with two photos, one, and n (five by default), to look at
 ///   how pictures are set out together and at the full-screen viewer.
-/// - `-echo.demoWidgets`: fill the "Needs you" and Context widgets with sample data (two requests
-///   that wait, a context about two thirds full), to look at them on the Home Screen.
-///   `-echo.demoWidgets clear` empties them again.
+/// - `-echo.demoWidgets [leaving|day]`: fill the Home Screen widgets with sample data
+///   (`DevHooks+Widgets.swift`: a question with choices and a command, a context about two thirds
+///   full, the day, lists, goals, agents). `-echo.demoWidgets clear` empties Needs You and Context.
 /// - `-echo.screen settings|sessions|setup|profiles|servers|model|tips|push|gateway|files`: open that
 ///   screen at launch (the last two want `-echo.demoGateway` and `-echo.demoFiles` without a server).
 /// - `-echo.screen comingUp`: Agent Activity on its Coming Up tab (2.4); with `-echo.demoComingUp`,
@@ -243,6 +243,9 @@ enum DevHooks {
         // A message quoting the first reply, the last one quoted in the composer, and suggested replies.
         if has("-echo.demoQuote") { conversation.seedQuoteDemo(far: has("-echo.demoQuoteFar")) }
         if has("-echo.demoLibrary") { conversation.seedDemoLibrary() }
+        #if os(iOS)
+        if has("-echo.demoWidgets") { seedWidgets() }
+        #endif
         if has("-echo.demoSaved") { conversation.seedDemoLibrary(savedFrom: settings.activeServerID) }
         if has("-echo.clearDrafts") { Drafts.shared.removeAll() }
         if let prefix = value("-echo.forget") {
@@ -336,14 +339,11 @@ enum DevHooks {
         if let kind = value("-echo.demoApprovalCard") { conversation.seedApprovalDemo(kind) }
         if has("-echo.demoPhotos") { conversation.seedPhotoDemo(count: value("-echo.demoPhotos").flatMap(Int.init) ?? 5) }
         if has("-echo.demoWidgets") {
-            NeedsYou.clear()
             ContextReading.clear()
-            if value("-echo.demoWidgets") != "clear" {
-                StatusWidgets.waiting(WaitingRequest(id: "demo-1", kind: .approval, title: "Clear out the old builds", text: "rm -rf ~/builds/2025-*",
-                                                     session: "demo-1", since: .now, until: .now.addingTimeInterval(NeedsYou.lifetime(.approval))))
-                StatusWidgets.waiting(WaitingRequest(id: "demo-2", kind: .question, title: "Move the blog to the new site",
-                                                     text: "Should the old addresses redirect at the server, or with a plugin?",
-                                                     session: "demo-2", since: .now, until: .now.addingTimeInterval(NeedsYou.lifetime(.question))))
+            if value("-echo.demoWidgets") == "clear" {
+                NeedsYou.clear()
+            } else {
+                // (Needs You's requests are `seedWidgets`'.)
                 StatusWidgets.reading(ContextReading(used: 84_600, window: 128_000, title: "Move the blog to the new site", date: .now))
             }
             WidgetCenter.shared.reloadAllTimelines()

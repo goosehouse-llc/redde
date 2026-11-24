@@ -80,23 +80,20 @@ struct UpNextTests {
     }
 
     @Test func theCardDrawsInEverySize() throws {
-        let empty = UpNextEntry(date: .now)
-        var hidden = UpNextEntry.sample
+        let empty = UpNextEntry(date: .now, plan: UpNextPlan(mode: .day, next: nil, later: [], leave: nil, note: nil))
+        var hidden = UpNextEntry.sample()
         hidden.hidesWords = true
-        for family in [WidgetFamily.systemSmall, .systemMedium, .accessoryRectangular, .accessoryInline] {
-            for (name, entry) in [("full", UpNextEntry.sample), ("empty", empty), ("hidden", hidden)] {
-                let size: CGSize = switch family {
-                case .systemMedium: CGSize(width: 364, height: 170)
-                case .accessoryRectangular: CGSize(width: 172, height: 76)
-                case .accessoryInline: CGSize(width: 240, height: 26)
-                default: CGSize(width: 170, height: 170)
-                }
-                let renderer = ImageRenderer(content: UpNextCard(entry: entry, family: family).frame(width: size.width, height: size.height))
-                renderer.scale = 2
-                let image = try #require(renderer.uiImage, "\(family) \(name)")
-                if let folder = ProcessInfo.processInfo.environment["BOARD_SHOTS"] {
-                    try image.pngData()?.write(to: URL(fileURLWithPath: folder).appendingPathComponent("upnext-\(family)-\(name).png"))
-                }
+        var hiddenLeaving = UpNextEntry.sample(leaving: true)
+        hiddenLeaving.hidesWords = true
+        var late = UpNextEntry.sample(leaving: true)
+        let past = late.date.addingTimeInterval(-60)
+        late.plan.leave?.leave = past
+        let entries = [("full", UpNextEntry.sample()), ("leaving", UpNextEntry.sample(leaving: true)), ("late", late), ("empty", empty),
+                       ("hidden", hidden), ("hidden-leaving", hiddenLeaving)]
+        for family in [WidgetFamily.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline] {
+            for (name, entry) in entries {
+                let image = try #require(WidgetDrawing.drawn(UpNextCard(entry: entry, family: family), family), "\(family) \(name)")
+                WidgetDrawing.keep(image, "upnext-\(family)-\(name)")
                 #expect(image.size.width > 0)
             }
         }

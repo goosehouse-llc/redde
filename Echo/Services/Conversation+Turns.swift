@@ -264,8 +264,8 @@ extension Conversation {
                 let replyText = messages.last { $0.id == replyID }?.text ?? ""
                 TurnActivity.shared.finish(reply: isIncognito ? IncognitoNote.replied : replyText)
                 if !replyText.isEmpty, shown, !settings.requireBiometrics, !isIncognito {   // a locked app shouldn't print replies on the Home Screen
-                    WidgetSnapshot.save(question: trimmed, reply: replyText)
-                    WidgetCenter.shared.reloadTimelines(ofKind: "com.goosehouse.echo.lastreply")
+                    WidgetSnapshot.save(question: trimmed, reply: replyText, agent: bot?.profile)
+                    WidgetWriter.agentsChanged()   // Your Agents (in Last Reply's place)
                 }
                 let incognito = isIncognito
                 Notifier.shared.notify(.replied, title: String(localized: "Redde replied"), body: incognito ? IncognitoNote.replied : PlainText.display(replyText),   // autoclosure: only stripped when a banner will post

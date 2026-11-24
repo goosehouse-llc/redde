@@ -181,17 +181,7 @@ struct ConversationsList: View {
         IdeasInbox.shared.remove(idea)
         Task {
             do {
-                if idea.profile != "default", let bot = botDirectory.roster?.bots.first(where: { $0.name == idea.profile }) {
-                    try await conversation.openBot(bot, mainName: settings.headerTitle)
-                } else if idea.profile != (settings.profileName ?? ProfileCatalog.defaultID) {
-                    // The agent that offered it, whichever profile the app is on (2026-10-29: Sol's
-                    // ideas went to the research profile the app was left on, and Claude Code
-                    // answered them without the calendar).
-                    ProfileCatalog.startConversation(on: idea.profile, conversation: conversation, settings: settings)
-                } else if conversation.bot != nil || conversation.elsewhere != nil || conversation.hasMessages || !conversation.outbox.isEmpty {
-                    conversation.reset()
-                }
-                conversation.send(AgentIdea.message(for: idea))
+                try await conversation.take(idea, settings: settings)
                 opened()
             } catch {
                 ledgerError = error.localizedDescription

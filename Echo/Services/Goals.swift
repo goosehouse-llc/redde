@@ -255,7 +255,10 @@ final class GoalsInbox {
         }
         #endif
         let now = GoalReport.showing()
-        if now != goals { goals = now }
+        if now != goals {
+            goals = now
+            WidgetWriter.reload(WidgetKind.goals)
+        }
     }
 
     /// A step ticked here: on the card and Today at once.

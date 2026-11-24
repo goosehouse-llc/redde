@@ -239,6 +239,7 @@ final class LeaveByAlerts {
         }
         LeaveBy.keep(plan.worked)
         next = LeaveBy.next(in: plan.worked, now: .now)
+        WidgetWriter.dayChanged()   // Up Next's leaving times (and the calendar, in a background refresh too)
         log.notice("run: \(events.count) events at an address, \(plan.alerts.count) alerts, \(plan.remove.count) taken away")
         #if DEBUG
         for alert in plan.alerts {

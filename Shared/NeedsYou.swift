@@ -19,6 +19,16 @@ nonisolated struct WaitingRequest: Codable, Sendable, Equatable, Identifiable {
     var since: Date
     /// When Hermes gives up waiting, as far as the phone can tell (`NeedsYou.lifetime`).
     var until: Date
+    /// A question's choices, for the widget's buttons (four at most); nil for one answered in words.
+    var choices: [String]? = nil
+    /// `PushNote.digest(of:)` the question or the command, so an answer from the widget goes to
+    /// that one and no other.
+    var digest: String? = nil
+
+    /// Can be answered with a tap on the widget: a question with a few short choices.
+    var answerable: Bool {
+        kind == .question && !(choices ?? []).isEmpty && digest != nil
+    }
 }
 
 /// What the "Needs you" widget shows: the requests waiting on the person, kept in the App Group.
@@ -121,8 +131,11 @@ nonisolated enum NeedsYou {
         // The request this note is about is over already, by the app's own account.
         if let over = settled(in: defaults)[session], over.kind == waiting, now.timeIntervalSince(over.at) < lifetime(waiting),
            sameWords(over.text, text) { return false }
+        let choices = (pushed.c ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }.prefix(4)
         return note(WaitingRequest(id: session, kind: waiting, title: pushed.t?.isEmpty == false ? pushed.t : nil,
-                                   text: String(text.prefix(300)), session: session, since: since, until: until), at: now, in: defaults)
+                                   text: String(text.prefix(300)), session: session, since: since, until: until,
+                                   choices: choices.isEmpty ? nil : Array(choices), digest: pushed.h?.isEmpty == false ? pushed.h : nil),
+                    at: now, in: defaults)
     }
 
     /// The app is locked behind Face ID (Settings → Privacy): the widgets then say that something
@@ -159,7 +172,15 @@ nonisolated enum NeedsYou {
         return (try? JSONDecoder().decode([WaitingRequest].self, from: data)) ?? []
     }
 
+    #if DEBUG
+    /// `-echo.demoWidgets` keeps its made-up requests on the widget: the app's own hold off.
+    nonisolated(unsafe) static var holding = false
+    #endif
+
     private static func save(_ requests: [WaitingRequest], in defaults: UserDefaults?) {
+        #if DEBUG
+        if holding { return }
+        #endif
         if requests.isEmpty { defaults?.removeObject(forKey: key); return }
         if let data = try? JSONEncoder().encode(requests) { defaults?.set(data, forKey: key) }
     }

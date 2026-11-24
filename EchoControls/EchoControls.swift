@@ -8,12 +8,17 @@ struct EchoControlsBundle: WidgetBundle {
         ListenControl()
         HandsFreeControl()
         CaptureControl()
-        LastReplyWidget()
-        QuickAskWidget()
+        // The Home Screen's, revamped 2026-11-24: Up Next, Needs You, Lists, Your Day, Your
+        // Agents (in Last Reply's place) and Goals; then the ones that were there before.
+        UpNextWidget()
         NeedsYouWidget()
+        ListsWidget()
+        DayWidget()
+        AgentsWidget()
+        GoalsWidget()
+        QuickAskWidget()
         ContextWidget()
         BoardWidget()
-        UpNextWidget()
         EchoTurnLiveActivity()
         AlarmCountdownActivity()
     }

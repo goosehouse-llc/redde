@@ -5,6 +5,8 @@ nonisolated struct WidgetSnapshot: Codable, Sendable, Equatable {
     var question: String
     var reply: String
     var date: Date
+    /// The bot whose chat it was in, by profile; nil for the main agent (Your Agents shows it as theirs).
+    var agent: String? = nil
 
     private static let key = "widgetSnapshot"
     private static var defaults: UserDefaults? { UserDefaults(suiteName: ShareInbox.appGroup) }
@@ -14,8 +16,8 @@ nonisolated struct WidgetSnapshot: Codable, Sendable, Equatable {
         return try? JSONDecoder().decode(WidgetSnapshot.self, from: data)
     }
 
-    static func save(question: String, reply: String) {
-        let snap = WidgetSnapshot(question: String(question.prefix(140)), reply: String(reply.prefix(600)), date: .now)
+    static func save(question: String, reply: String, agent: String? = nil) {
+        let snap = WidgetSnapshot(question: String(question.prefix(140)), reply: String(reply.prefix(600)), date: .now, agent: agent)
         if let data = try? JSONEncoder().encode(snap) { defaults?.set(data, forKey: key) }
     }
 

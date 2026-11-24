@@ -37,7 +37,10 @@ final class IdeasInbox {
         if DevHooks.has("-echo.demoIdeas") || DemoDay.on { return }
         #endif
         let now = AgentIdea.showing()
-        if now != ideas { withAnimation(.snappy) { ideas = now } }
+        if now != ideas {
+            withAnimation(.snappy) { ideas = now }
+            WidgetWriter.reload(WidgetKind.day)
+        }
         wakeForNextBack()
     }
 

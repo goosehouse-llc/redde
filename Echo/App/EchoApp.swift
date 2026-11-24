@@ -26,6 +26,8 @@ struct EchoApp: App {
         AgentCalls.shared.start()
         // Approve and Deny on the Live Activity run here, in the app, and answer the same way.
         ApprovalAnswer.deliver = { Notifier.shared.answerApproval(requestID: $0, choice: $1) }
+        // And the Home Screen widgets' buttons, which start the app the same way.
+        WidgetWriter.start()
         StatusWidgets.lockChanged(Settings.shared.requireBiometrics)   // a lock turned on before the widgets existed
         TipJar.shared.start()   // finish tips that completed while the app wasn't looking
         TurnActivity.shared.clearStrays()   // a reply's Live Activity left by a run that crashed or was closed
@@ -120,6 +122,7 @@ struct EchoApp: App {
                     IdeasInbox.shared.reload()   // ideas that came while Redde was closed
                     BriefingsInbox.shared.reload()   // and briefings
                     GoalsInbox.shared.reload()   // and goals' check-ins
+                    WidgetWriter.cameForward()   // widget taps it couldn't take, and the widgets' day and agents
                     HeldNote.seen()   // what came in quiet hours is here to see: no digest of it later
                     FeedbackFold.cameForward()   // a word on ideas or briefings that didn't reach the jobs yet
                     // With Current Location on, where the person is, for their next place question;

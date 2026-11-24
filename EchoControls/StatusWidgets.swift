@@ -25,6 +25,9 @@ struct NeedsYouEntry: TimelineEntry {
     }
 
     static let sample = NeedsYouEntry(date: .now, requests: [
+        WaitingRequest(id: "sample-q", kind: .question, title: String(localized: "Flights to Lisbon", comment: "Widget gallery: a sample conversation's title"),
+                       text: String(localized: "Both land before noon. Which one should I book?", comment: "Widget gallery: a sample question from the agent"),
+                       session: nil, since: .now, until: .now.addingTimeInterval(3600), choices: ["7:05 AM", "9:40 AM"], digest: "sample"),
         WaitingRequest(id: "sample", kind: .approval, title: String(localized: "Clear out the old builds", comment: "Widget gallery: a sample conversation's title"),
                        text: "rm -rf ~/builds/2025-*",
                        session: nil, since: .now, until: .now.addingTimeInterval(300)),
@@ -83,9 +86,36 @@ struct NeedsYouCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         case .systemMedium:
-            if requests.isEmpty { nothing } else { rows(2) }
+            if requests.isEmpty { nothing } else { rows(requests.first?.answerable == true && !hidesWords ? 1 : 2) }
+        case .systemLarge:
+            if requests.isEmpty { nothing } else { rows(4) }
         default:
             if let first { small(first) } else { nothing }
+        }
+    }
+
+    /// What can be done right here (2026-11-24): a question's choices, answered with a tap, the
+    /// app taking the answer to Hermes; for a command, Review, which opens it in Redde (a yes on
+    /// the Home Screen would skip Redde's own lock and the look at what it runs).
+    @ViewBuilder private func answers(_ request: WaitingRequest, most: Int) -> some View {
+        if request.answerable, !hidesWords, let choices = request.choices {
+            HStack(spacing: 6) {
+                ForEach(choices.prefix(most), id: \.self) { choice in
+                    Button(intent: AnswerFromWidgetIntent(request: request.id, choice: choice)) {
+                        Text(choice).font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity).padding(.vertical, 5)
+                    }
+                    .buttonStyle(.plain)
+                    .background(.tint.opacity(0.2), in: .capsule)
+                    .foregroundStyle(.tint)
+                }
+            }
+        } else if request.kind == .approval {
+            Link(destination: Self.destination(request)) {
+                Label { Text("Review", comment: "Needs You widget: opens the command waiting for approval in Redde") } icon: { Image(systemName: "eye") }
+                    .font(.caption.weight(.semibold)).padding(.horizontal, 12).padding(.vertical, 5)
+                    .background(.tint.opacity(0.2), in: .capsule)
+            }
         }
     }
 
@@ -97,11 +127,15 @@ struct NeedsYouCard: View {
                 .font(.footnote.weight(.semibold)).lineLimit(1).privacySensitive()
             Text(words(request))
                 .font(request.kind == .approval && !hidesWords ? .caption.monospaced() : .caption)
-                .lineLimit(3).privacySensitive()
+                .lineLimit(request.answerable && !hidesWords ? 2 : 3).privacySensitive()
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            Text(requests.count > 1 ? String(localized: "and \(requests.count - 1) more", comment: "Widget: further requests waiting, after the first")
-                 : String(localized: "since \(request.since.formatted(date: .omitted, time: .shortened))", comment: "Widget: the time a request started waiting"))
-                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            if request.answerable, !hidesWords, (request.choices?.count ?? 0) <= 2 {
+                answers(request, most: 2)
+            } else {
+                Text(requests.count > 1 ? String(localized: "and \(requests.count - 1) more", comment: "Widget: further requests waiting, after the first")
+                     : String(localized: "since \(request.since.formatted(date: .omitted, time: .shortened))", comment: "Widget: the time a request started waiting"))
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
         }
     }
 
@@ -129,12 +163,13 @@ struct NeedsYouCard: View {
                             Text(words(request))
                                 .font(request.kind == .approval && !hidesWords ? .caption.monospaced() : .caption)
                                 .foregroundStyle(.secondary).multilineTextAlignment(.leading)
-                                .lineLimit(requests.count == 1 ? 4 : 1).privacySensitive()
+                                .lineLimit(family == .systemLarge ? (requests.count == 1 ? 10 : 3) : requests.count == 1 || most == 1 ? 3 : 1).privacySensitive()
                         }
                     }
                     .foregroundStyle(Color.primary)   // a link's label would otherwise take the tint
                 }
                 .accessibilityElement(children: .combine)
+                if most == 1 || family == .systemLarge { answers(request, most: 4).padding(.leading, 26) }
             }
             Spacer(minLength: 0)
         }
@@ -183,8 +218,8 @@ struct NeedsYouWidget: Widget {
             NeedsYouWidgetView(entry: entry)
         }
         .configurationDisplayName("Needs you")
-        .description("A command waiting for your approval, or a question from your agent.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
+        .description("A question from your agent, answered with a tap, or a command waiting for your approval.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
 

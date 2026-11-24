@@ -222,7 +222,11 @@ final class BriefingsInbox {
         if DevHooks.has("-echo.demoBriefings") || DemoDay.on { return }
         #endif
         let now = Self.showing()
-        if now != briefings { withAnimation(.snappy) { briefings = now } }
+        if now != briefings {
+            withAnimation(.snappy) { briefings = now }
+            WidgetWriter.reload(WidgetKind.day)
+            WidgetWriter.reload(WidgetKind.upNext)
+        }
         wakeForNextBack()
     }
 

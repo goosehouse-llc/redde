@@ -823,6 +823,7 @@ final class BotDirectory {
         let unchanged = roster == self.roster && key == self.key
         self.roster = roster
         self.key = key
+        if !unchanged { WidgetWriter.agentsChanged() }   // Your Agents
         // Their names, for Siri ("Ask Claude in Redde"), and for the watch, when they changed: they
         // are read again every 15 seconds, and mostly they haven't.
         guard let roster, key == Settings.shared.connectionKey, !(unchanged && told == key) else { return }

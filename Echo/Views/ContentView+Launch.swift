@@ -62,6 +62,19 @@ extension ContentView {
             if url.scheme == EchoURL.scheme, url.host == "share" { consumeSharedItems() }
             // The "Needs you" widget: the conversation that waits, as a notification's tap opens it.
             if let session = EchoURL.parseSession(url) { router.requestSession(session) }
+            // The other widgets': a bot's chat (Your Agents), a list (Lists), an idea to do (Your
+            // Day), words for a new conversation (Up Next's Brief Me).
+            if let profile = EchoURL.value(of: url, "bot", "profile") { router.requestBot(profile) }
+            if let text = EchoURL.value(of: url, "ask", "text") { router.requestDraft(text: text, attachments: [], newConversation: true) }
+            if let id = EchoURL.value(of: url, "list", "id") {
+                setDrawer(open: true)   // its sheet is the chat list's
+                TodayLists.shared.shownID = id
+            }
+            if let id = EchoURL.value(of: url, "idea", "id"), let idea = AgentIdea.all().first(where: { $0.id == id }) {
+                IdeasInbox.shared.remove(idea)
+                if sizeClass != .regular, showConversations { setDrawer(open: false) }
+                Task { try? await conversation.take(idea) }
+            }
             // A setup link (redde.goosehouse.org/connect#… or redde://connect), from the Camera
             // or a tap: a setup code to confirm.
             // The same address carries a pairing link for notifications (`hermes redde-push pair`).
@@ -105,6 +118,7 @@ extension ContentView {
             if !open { Task { try? await Task.sleep(for: .milliseconds(600)); presentWhatsNewIfDue() } }
         }
         .onChange(of: conversation.isStreaming) { was, now in
+            WidgetWriter.agentsChanged()   // Your Agents: at work, or not
             if was, !now {
                 replyFinished()
                 handlePushRequests()   // a tap that waited for this reply (fast lane)
