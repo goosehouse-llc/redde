@@ -37,6 +37,7 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from . import posters, wire
 
@@ -567,6 +568,28 @@ def listing(home: Path) -> list[dict]:
 
 #: How a title's poster is found: (title, year or None, deadline) → its address or None. Tests swap it.
 FIND = lambda title, year, deadline: posters.lookup(title, year, None, deadline)   # noqa: E731
+
+
+def _find_on_tmdb(title: str, year: str | None, deadline: float, series: bool | None) -> str | None:
+    key = posters.KEY()
+    return posters.tmdb(title, year, series, deadline, key) if key else None
+
+
+#: 1.44.0: a poster found before there was a TMDb key, looked for there (2026-11-24: "refetch the
+#: old posters too"): FIND's shape and whether it's a series, TMDb's alone. KEYED says if there's a
+#: key. Tests swap both.
+FIND_AGAIN = _find_on_tmdb
+KEYED = lambda: bool(posters.KEY())   # noqa: E731
+#: The round of that look an item has had (`poster_again`). The first (marked `poster_tmdb`) took
+#: TMDb's most watched this week, and gave Home Alone and Love Actually TV shows' posters: those
+#: are looked at again.
+AGAIN = 2
+
+
+def _series_by(poster: str) -> bool | None:
+    """Whether the old poster was a series' or a film's, by where it came from."""
+    host = urlsplit(poster).hostname or ""
+    return True if host.endswith("tvmaze.com") else False if host.endswith(("wikimedia.org", "wikipedia.org")) else None
 #: Off the turn, in a thread; tests run it there and then.
 BACKGROUND = True
 _running: set[str] = set()
@@ -577,14 +600,18 @@ def _untried(kept: dict, now: float | None = None) -> list[dict]:
     if look(kept)["kind"] != "watch":
         return []
     now = time.time() if now is None else now
-    return [i for i in kept.get("items") or [] if i.get("id") and _wants_poster(i, now)][:POSTERS_AT_ONCE]
+    keyed = KEYED()
+    return [i for i in kept.get("items") or [] if i.get("id") and _wants_poster(i, now, keyed)][:POSTERS_AT_ONCE]
 
 
-def _wants_poster(item: dict, now: float) -> bool:
+def _wants_poster(item: dict, now: float, keyed: bool = False) -> bool:
     if not item.get("poster_tried"):
         return True
     if item.get("poster"):
-        return False
+        # Found elsewhere before there was a TMDb key, or by the first such look: looked for there, once (1.44.0).
+        if not keyed or (int(item["poster_again"]) if str(item.get("poster_again", "")).isdigit() else 0) >= AGAIN:
+            return False
+        return bool(item.get("poster_tmdb")) or not str(item["poster"]).startswith(posters.TMDB_IMAGES)
     misses = item.get("poster_misses")
     if not isinstance(misses, int):
         return True   # missed before 1.42.1
@@ -617,19 +644,21 @@ def _posters_later(home: Path, kept: dict) -> None:
 
 def fill_posters(home: Path, now: float | None = None) -> int:
     """Looks up the posters of every watch list's titles not tried yet, a few at once and for
-    POSTER_WAIT seconds at most, and keeps what was found: how many."""
+    POSTER_WAIT seconds at most, and keeps what was found: how many. With a TMDb key, a poster
+    found elsewhere before is looked for on TMDb once, and kept when TMDb has none."""
     at = int(now if now is not None else time.time())
     with _locked(home):
-        wanted = [(k["id"], i["id"], str(i.get("text") or "")) for k in load(home) for i in _untried(k, at)]
+        wanted = [(k["id"], i["id"], str(i.get("text") or ""), str(i.get("poster") or "")) for k in load(home) for i in _untried(k, at)]
     if not wanted:
         return 0
     deadline = time.monotonic() + POSTER_WAIT
-    titled = {}
-    for _, item, text in wanted:
+    titled, again = {}, {item: _series_by(had) for _, item, _, had in wanted if had}
+    for _, item, text, _ in wanted:
         year = _YEAR.search(text)
         titled[item] = (_YEAR.sub("", text).strip(), year.group(1) if year else None)
     with ThreadPoolExecutor(max_workers=3) as pool:
-        futures = {pool.submit(FIND, title, year, deadline): item for item, (title, year) in titled.items() if title}
+        futures = {(pool.submit(FIND_AGAIN, title, year, deadline, again[item]) if item in again else pool.submit(FIND, title, year, deadline)): item
+                   for item, (title, year) in titled.items() if title}
         done, _ = wait(futures, timeout=POSTER_WAIT + 1)
     found = {item: f.result() for f, item in futures.items() if f in done and f.exception() is None}
     asked = set(futures.values())
@@ -638,6 +667,13 @@ def fill_posters(home: Path, now: float | None = None) -> int:
         for k in lists:
             for i in k.get("items") or []:
                 if i.get("id") not in asked:
+                    continue
+                if i["id"] in again:
+                    if found.get(i["id"]):
+                        i["poster"] = found[i["id"]]
+                    if i["id"] in found:
+                        i["poster_again"] = AGAIN
+                        i.pop("poster_tmdb", None)
                     continue
                 if found.get(i["id"]):
                     i["poster"] = found[i["id"]]

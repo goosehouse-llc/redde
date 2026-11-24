@@ -21,16 +21,24 @@ each title's poster is read here, a few at once and for a few seconds at most:
   address alone.
 A dead poster with none found is taken off, so Redde doesn't try it. The fetching is products.py's:
 public addresses only, redirects followed by hand. `GET` is the only way out, swapped in tests.
+
+With a TMDb key of the person's own (1.44.0, 2026-11-24: "Let's do that with the key"), TMDb is
+asked first, for films and series alike: TMDB_API_KEY (or a read access token, TMDB_READ_ACCESS_TOKEN)
+in the main profile's .env or any other's. The poster is TMDb's and the title opens the film's page
+there. The key goes to api.themoviedb.org alone, never to the phone; with none, or no match, it's
+Wikipedia and TVmaze as before. There's no key shared in the plugin: TMDb's terms want each person's.
 """
 from __future__ import annotations
 
 import difflib
 import ipaddress
 import json
+import os
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, wait
-from urllib.parse import quote, urljoin, urlsplit
+from pathlib import Path
+from urllib.parse import quote, urlencode, urljoin, urlsplit
 
 from . import products
 
@@ -69,9 +77,10 @@ def own(url: str) -> bool:
     return address.is_private or address.is_loopback or address.is_link_local or address in products._CGNAT
 
 
-def _get(url: str, deadline: float) -> tuple[str, int, dict, bytes]:
+def _get(url: str, deadline: float, headers: dict | None = None) -> tuple[str, int, dict, bytes]:
     """("ok", status, headers, body) once redirects are followed; else (why, 0, {}, b"") with why
-    "dead" (the site isn't found), "refused" (not a public address) or "unknown"."""
+    "dead" (the site isn't found), "refused" (not a public address) or "unknown". `headers` are
+    added to the usual ones (TMDb's read access token)."""
     current = url
     for _ in range(products.MAX_REDIRECTS + 1):
         try:
@@ -83,13 +92,13 @@ def _get(url: str, deadline: float) -> tuple[str, int, dict, bytes]:
         except (OSError, ValueError):
             return "unknown", 0, {}, b""
         try:
-            status, headers, body = products.fetch_once(current, addresses, deadline, HEADERS)
+            status, answered, body = products.fetch_once(current, addresses, deadline, {**HEADERS, **(headers or {})})
         except Exception:
             return "unknown", 0, {}, b""
-        if status in (301, 302, 303, 307, 308) and headers.get("location"):
-            current = urljoin(current, headers["location"].strip())
+        if status in (301, 302, 303, 307, 308) and answered.get("location"):
+            current = urljoin(current, answered["location"].strip())
             continue
-        return "ok", status, headers, body
+        return "ok", status, answered, body
     return "unknown", 0, {}, b""
 
 
@@ -293,9 +302,86 @@ def _one(item: dict, deadline: float) -> str | None:
     return found or ("" if given else None)
 
 
+# MARK: TMDb, with the person's own key
+
+TMDB_NAMES = ("TMDB_API_KEY", "TMDB_KEY", "TMDB_API_TOKEN", "TMDB_READ_ACCESS_TOKEN", "TMDB_ACCESS_TOKEN", "TMDB_TOKEN",
+              "TMDB_BEARER_TOKEN")
+TMDB = "https://api.themoviedb.org/3/search/"
+TMDB_IMAGES = "https://image.tmdb.org/t/p/w500"
+_kept: tuple[float, str | None] = (0.0, None)
+
+
+def _root() -> Path:
+    """Hermes's home, the main one when this runs in a profile's."""
+    try:
+        from hermes_constants import get_hermes_home
+        home = Path(get_hermes_home())
+    except Exception:
+        home = Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes")
+    return home.parent.parent if home.parent.name == "profiles" else home
+
+
+def _key() -> str | None:
+    """The TMDb key, read from the .env files at most once a minute."""
+    global _kept
+    at, key = _kept
+    if time.monotonic() - at > 60 or not at:
+        from . import envs
+        try:
+            key = envs.key(_root(), TMDB_NAMES)
+        except OSError:
+            key = None
+        _kept = (time.monotonic(), key)
+    return key
+
+
+#: () -> the key or None; swapped in tests.
+KEY = _key
+
+
+def tmdb(title: str, year: str | None, series: bool | None, deadline: float, key: str) -> "Found | None":
+    """The title's poster on TMDb, found by its search: a film's, a series', or when it isn't known
+    which, the better known of the two named like it ("Severance" the series, not the 2006 film).
+    Its name must be like the title (`alike`), and its year within one of the year given. Better
+    known is more ratings, all-time: TMDb's popularity is what's watched this week, and put a
+    Korean show called "Home Alone" over the film (2026-11-24)."""
+    token = key.startswith("eyJ") and key.count(".") == 2   # a read access token, not an API key
+    best: tuple[tuple, str, str] | None = None
+    for kind in (["tv"] if series else ["movie"] if series is False else ["movie", "tv"]):
+        if time.monotonic() > deadline:
+            break
+        params = {"query": title, "include_adult": "false"} | ({} if token else {"api_key": key})
+        url = TMDB + kind + "?" + urlencode(params)
+        how, status, _, body = GET(url, deadline, {"Authorization": "Bearer " + key}) if token else GET(url, deadline)
+        if how != "ok" or status != 200:
+            if status in (401, 403):
+                return None   # (the key is wrong: Wikipedia and TVmaze, as with none)
+            continue
+        try:
+            results = (json.loads(body.decode("utf-8", "replace")) or {}).get("results") or []
+        except (ValueError, AttributeError):
+            continue
+        for found in results[:10]:
+            if not isinstance(found, dict) or not isinstance(found.get("poster_path"), str) or not str(found.get("id", "")).isdigit():
+                continue
+            names = [n for n in (found.get("title"), found.get("name"), found.get("original_title"), found.get("original_name")) if isinstance(n, str)]
+            score = max((alike(title, n) for n in names), default=0.0)
+            when = str(found.get("release_date") or found.get("first_air_date") or "")[:4]
+            if score < ALIKE or (year and when.isdigit() and abs(int(when) - int(year)) > 1):
+                continue
+            rank = (score > 0.97, bool(year and when == year), int(found.get("vote_count") or 0), float(found.get("popularity") or 0))
+            if best is None or rank > best[0]:
+                best = (rank, TMDB_IMAGES + found["poster_path"], f"https://www.themoviedb.org/{kind}/{found['id']}")
+    return Found.at(best[1], best[2]) if best else None
+
+
 def lookup(title: str, year: str | None, series: bool | None, deadline: float) -> str | None:
-    """A title's poster, with no key: a film's on Wikipedia, a series' on TVmaze, either when
-    it isn't known which (1.37.0: also for the films and series on a watch list, `lists.py`)."""
+    """A title's poster: on TMDb first with the person's key (1.44.0), then with no key, a film's
+    on Wikipedia, a series' on TVmaze, either when it isn't known which (1.37.0: also for the films
+    and series on a watch list, `lists.py`)."""
+    key = KEY()
+    if key and (found := tmdb(title, year, series, deadline, key)):
+        return found
     if series:
         return tvmaze(title, year, deadline) or wikipedia(title, year, series, deadline)
     if series is False:

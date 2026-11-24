@@ -3,6 +3,19 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.44.0 (2026-11-24)
+
+- Posters from TMDb, with your own key: put `TMDB_API_KEY=…` (or a read access token as
+  `TMDB_READ_ACCESS_TOKEN=…`) in Hermes's `.env`, and a show card's and a watch list's posters come
+  from TMDb first, a tap on the title opening its TMDb page. The key stays on your server: it goes
+  to TMDb alone, never to the phone. Without one, or when TMDb has no match, posters come from
+  Wikipedia and TVmaze as before.
+- With the key there, a watch list's posters found before it are looked for on TMDb once, next
+  time Redde shows the lists: TMDb's replaces the old one, and one TMDb doesn't have is kept. A
+  film's stays a film's and a series' a series'. When a title could be either, the one more people
+  have rated wins, not TMDb's most watched this week (a Korean show called "Home Alone" isn't the
+  film).
+
 ## 1.43.0 (2026-11-24)
 
 - A film or a series planned ("I'm going to watch Behind the Candelabra the day after

@@ -473,6 +473,13 @@ and to look the thing up first, never making up a price, a time, a status, a rat
 Pictures (a recipe's, a poster) show only with Link previews on in Redde; the cards never fetch
 anything themselves, and nothing on them books, buys or trades.
 
+A show card's and a watch list's posters are checked on this server before they go to the phone,
+and one that's missing or made up is looked for: on Wikipedia (films) and TVmaze (series), with no
+key. From 1.44.0, with a TMDb key of your own, TMDb is asked first: get one free at
+themoviedb.org (Settings › API) and add `TMDB_API_KEY=<key>` (or `TMDB_READ_ACCESS_TOKEN=<token>`)
+to `~/.hermes/.env`, or any profile's. It's read only here and sent only to api.themoviedb.org;
+the plugin ships with no key of its own, as TMDb's terms ask.
+
 From 1.10.0 a review may say its `kind` (`email`, `message`, `event`, `purchase`, `other`) and a `subtitle`
 ("From your Gmail · as you"): the app draws an email or a message as itself, who it's to, its
 subject and its words, and anything else as rows. Without a kind it goes by the fields' labels

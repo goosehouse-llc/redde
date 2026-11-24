@@ -23,6 +23,24 @@ def _env(path: Path, wanted) -> dict[str, str]:
     return found
 
 
+def key(root: Path, names: tuple[str, ...]) -> str | None:
+    """The first of `names` set in the environment or in a profile's .env (the main one first), for a
+    service that needs only a key (1.44.0: TMDb), or None."""
+    for name in names:
+        if os.environ.get(name, "").strip():
+            return os.environ[name].strip()
+    root = Path(root)
+    homes = [root]
+    if (root / "profiles").is_dir():
+        homes += [h for h in sorted((root / "profiles").iterdir()) if h.is_dir()]
+    for home in homes:
+        values = _env(home / ".env", lambda n: n in names)
+        found = next((values[n] for n in names if values.get(n)), None)
+        if found:
+            return found
+    return None
+
+
 def find(root: Path, urls: tuple[str, ...], keys: tuple[str, ...], users: tuple[str, ...] = (),
          key_pattern: str | None = None) -> dict | None:
     """{url, key, user, profile} from the first profile (the main one first) whose .env has an

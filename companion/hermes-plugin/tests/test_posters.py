@@ -33,10 +33,11 @@ def summary(description, image=POSTER):
 
 class PosterTests(unittest.TestCase):
     def setUp(self):
-        self.real = posters.GET
+        self.real, self.key = posters.GET, posters.KEY
+        posters.KEY = lambda: None   # (no TMDb key, whatever this computer has)
 
     def tearDown(self):
-        posters.GET = self.real
+        posters.GET, posters.KEY = self.real, self.key
 
     def show(self, **item):
         return {"type": "show", "title": "Thursday", "items": [{"title": "Donnie Brasco", "year": 1997, "format": "movie", **item}]}
@@ -166,6 +167,104 @@ class PosterTests(unittest.TestCase):
             self.assertLess(time.monotonic() - started, 2.0)
         finally:
             posters.WAIT = 6.0
+
+
+
+class TMDb:
+    """TMDb's search, answering by the kind asked and the query, and what each call carried."""
+    def __init__(self, movie=(), tv=(), status=200):
+        self.results, self.status, self.asked = {"movie": list(movie), "tv": list(tv)}, status, []
+
+    def __call__(self, url, deadline, headers=None):
+        self.asked.append((url, headers))
+        if url.startswith(posters.TMDB):
+            kind = url[len(posters.TMDB):].split("?")[0]
+            return "ok", self.status, {"content-type": "application/json"}, json.dumps({"results": self.results[kind]}).encode()
+        return "ok", 404, {"content-type": "text/html"}, b""
+
+
+class TMDbTests(unittest.TestCase):
+    """1.44.0, 2026-11-24: "Let's do that with the key". With the person's own TMDb key, TMDb first."""
+    KEY = "0123456789abcdef0123456789abcdef"
+
+    def setUp(self):
+        self.real, self.key = posters.GET, posters.KEY
+        posters.KEY = lambda: self.KEY
+
+    def tearDown(self):
+        posters.GET, posters.KEY = self.real, self.key
+
+    def find(self, title, year=None, series=None):
+        return posters.lookup(title, year, series, time.monotonic() + 5)
+
+    def test_a_film_comes_from_tmdb_with_its_page(self):
+        posters.GET = web = TMDb(movie=[{"id": 10719, "title": "Elf", "release_date": "2003-10-09", "poster_path": "/elf.jpg", "popularity": 40}])
+        found = self.find("Elf", "2003", False)
+        self.assertEqual(found, posters.TMDB_IMAGES + "/elf.jpg")
+        self.assertEqual(found.page, "https://www.themoviedb.org/movie/10719")
+        url, headers = web.asked[0]
+        self.assertIn("api_key=" + self.KEY, url)
+        self.assertIsNone(headers)
+
+    def test_a_read_access_token_goes_in_a_header_not_the_address(self):
+        token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJ4In0.c2lnbmF0dXJl"
+        posters.KEY = lambda: token
+        posters.GET = web = TMDb(movie=[{"id": 1, "title": "Elf", "release_date": "2003-10-09", "poster_path": "/elf.jpg"}])
+        self.assertTrue(self.find("Elf", None, False))
+        url, headers = web.asked[0]
+        self.assertNotIn(token, url)
+        self.assertEqual(headers, {"Authorization": "Bearer " + token})
+
+    def test_the_year_must_be_close_and_the_name_alike(self):
+        posters.GET = TMDb(movie=[{"id": 2, "title": "Elf", "release_date": "1987-01-01", "poster_path": "/old.jpg"},
+                                  {"id": 3, "title": "Elf Pets", "release_date": "2003-01-01", "poster_path": "/pets.jpg"}])
+        self.assertIsNone(self.find("Elf", "2003", False), "another year's, and another film's, aren't it")
+
+    def test_unknown_kind_takes_the_better_known(self):
+        posters.GET = TMDb(movie=[{"id": 4, "title": "Severance", "release_date": "2006-08-25", "poster_path": "/film.jpg", "popularity": 3, "vote_count": 600}],
+                           tv=[{"id": 95396, "name": "Severance", "first_air_date": "2022-02-17", "poster_path": "/series.jpg", "popularity": 200, "vote_count": 2500}])
+        found = self.find("Severance")
+        self.assertEqual(found, posters.TMDB_IMAGES + "/series.jpg")
+        self.assertEqual(found.page, "https://www.themoviedb.org/tv/95396")
+
+    def test_better_known_is_more_ratings_not_this_weeks_most_watched(self):
+        # 2026-11-24: a Korean show called "Home Alone" and a Chinese one called "Love Actually",
+        # on this week, took the films' places on a Christmas watch list.
+        posters.GET = TMDb(movie=[{"id": 771, "title": "Home Alone", "release_date": "1990-11-16", "poster_path": "/film.jpg", "popularity": 30, "vote_count": 11000}],
+                           tv=[{"id": 65282, "name": "Home Alone", "first_air_date": "2013-03-22", "poster_path": "/show.jpg", "popularity": 250, "vote_count": 40}])
+        found = self.find("Home Alone")
+        self.assertEqual(found.page, "https://www.themoviedb.org/movie/771")
+
+    def test_a_wrong_key_or_no_match_falls_back_to_wikipedia(self):
+        for web in (TMDb(status=401), TMDb()):
+            posters.GET = web
+            self.find("Donnie Brasco", "1997", False)
+            self.assertTrue(any(url.startswith(WIKI) for url, _ in web.asked), "Wikipedia after TMDb")
+
+    def test_no_key_no_tmdb(self):
+        posters.KEY = lambda: None
+        posters.GET = web = TMDb()
+        self.find("Elf", "2003", False)
+        self.assertFalse(any(url.startswith(posters.TMDB) for url, _ in web.asked))
+
+    def test_the_key_is_read_from_a_profiles_env(self):
+        import importlib
+        import os
+        import tempfile
+        from pathlib import Path
+        envs = importlib.import_module(plugin.__name__ + ".envs")
+        names = posters.TMDB_NAMES
+        saved = {n: os.environ.pop(n) for n in names if n in os.environ}
+        try:
+            with tempfile.TemporaryDirectory() as root:
+                (Path(root) / ".env").write_text("OPENAI_API_KEY=sk-x\n")
+                (Path(root) / "profiles" / "films").mkdir(parents=True)
+                (Path(root) / "profiles" / "films" / ".env").write_text("export TMDB_API_KEY='abc123'\n")
+                self.assertEqual(envs.key(Path(root), names), "abc123")
+                (Path(root) / ".env").write_text("TMDB_READ_ACCESS_TOKEN=main\n")
+                self.assertEqual(envs.key(Path(root), names), "main", "the main profile's first")
+        finally:
+            os.environ.update(saved)
 
 
 if __name__ == "__main__":

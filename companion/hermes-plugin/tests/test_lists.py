@@ -128,11 +128,13 @@ class ListLooksTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.home = Path(self.tmp.name)
-        self.asked = []
-        lists.BACKGROUND, lists.FIND = False, self.find
+        self.asked, self.again = [], []
+        self.real = lists.FIND_AGAIN, lists.KEYED
+        lists.BACKGROUND, lists.FIND, lists.KEYED = False, self.find, lambda: False
 
     def tearDown(self):
         lists.BACKGROUND, lists.FIND = True, lambda title, year, deadline: plugin.posters.lookup(title, year, None, deadline)
+        lists.FIND_AGAIN, lists.KEYED = self.real
         self.tmp.cleanup()
 
     def find(self, title, year, deadline):
@@ -192,6 +194,56 @@ class ListLooksTests(unittest.TestCase):
         self.assertEqual(self.asked, [("The polar express", None)])
         self.assertEqual(lists.listing(self.home)[0]["items"][0]["poster"], "https://upload.wikimedia.org/The_polar_express.jpg")
         self.assertNotIn("poster", listed[0]["items"][0], "the first look answers before the poster is in")
+
+    def test_old_posters_are_looked_for_on_tmdb_once_a_key_is_there(self):
+        # 1.44.0, 2026-11-24: "refetch the old posters too".
+        tmdb = plugin.posters.TMDB_IMAGES
+        lists.save(self.home, [{"id": "w", "title": "Christmas Movies", "kind": "watch", "items": [
+            {"id": "e", "text": "Elf (2003)", "done": False, "poster": "https://upload.wikimedia.org/Elf.jpg", "poster_tried": 1},
+            {"id": "b", "text": "A Very Brady Christmas", "done": False, "poster": "https://upload.wikimedia.org/Brady.jpg", "poster_tried": 1},
+            {"id": "h", "text": "Home Alone", "done": False, "poster": tmdb + "/home.jpg", "poster_tried": 1},
+            {"id": "x", "text": "Lost Film", "done": False, "poster_tried": 1, "poster_misses": lists.POSTER_TRIES}]}])
+
+        def again(title, year, deadline, series):
+            self.again.append((title, year))
+            self.assertIs(series, False, "a poster from Wikipedia is a film's")
+            return None if title == "A Very Brady Christmas" else f"{tmdb}/{title.replace(' ', '_')}.jpg"
+        lists.FIND_AGAIN = again
+        lists.fill_posters(self.home)
+        self.assertEqual(self.again, [], "no key, nothing asked again")
+
+        lists.KEYED = lambda: True
+        lists.fill_posters(self.home)
+        self.assertEqual(sorted(self.again), [("A Very Brady Christmas", None), ("Elf", "2003")], "TMDb's and the missed aren't asked")
+        self.assertEqual(self.asked, [], "and only TMDb is")
+        elf, brady, home_alone, lost = lists.listing(self.home)[0]["items"]
+        self.assertEqual(elf["poster"], tmdb + "/Elf.jpg")
+        self.assertEqual(brady["poster"], "https://upload.wikimedia.org/Brady.jpg", "kept when TMDb has none")
+        self.assertEqual(home_alone["poster"], tmdb + "/home.jpg")
+        self.assertNotIn("poster_again", elf, "for the plugin, not the phone")
+        lists.fill_posters(self.home)
+        self.assertEqual(len(self.again), 2, "once")
+
+    def test_posters_the_first_tmdb_look_took_are_looked_at_again(self):
+        # Its first round took TMDb's most watched this week: Home Alone got a Korean show's.
+        tmdb = plugin.posters.TMDB_IMAGES
+        lists.save(self.home, [{"id": "w", "title": "Christmas Movies", "kind": "watch", "items": [
+            {"id": "h", "text": "Home Alone", "done": False, "poster": tmdb + "/show.jpg", "poster_tried": 1, "poster_tmdb": 2},
+            {"id": "s", "text": "Severance", "done": False, "poster": "https://static.tvmaze.com/s.jpg", "poster_tried": 1}]}])
+        asked = {}
+
+        def again(title, year, deadline, series):
+            asked[title] = series
+            return f"{tmdb}/{title.replace(' ', '_')}.jpg"
+        lists.FIND_AGAIN, lists.KEYED = again, (lambda: True)
+        lists.fill_posters(self.home)
+        self.assertEqual(asked, {"Home Alone": None, "Severance": True}, "TVmaze's is a series'")
+        home_alone, _ = lists.load(self.home)[0]["items"]
+        self.assertEqual(home_alone["poster"], tmdb + "/Home_Alone.jpg")
+        self.assertNotIn("poster_tmdb", home_alone)
+        asked.clear()
+        lists.fill_posters(self.home)
+        self.assertEqual(asked, {}, "once")
 
     def test_other_lists_look_nothing_up(self):
         do(self.home, action="make", title="Groceries", items=["Milk"])
