@@ -15,31 +15,33 @@ From 2.7 (2026-11-22, "AI" moved into the name; before that the same day "Every 
 No other company's product names here or in the keywords (Claude Code, Codex, Hermes): Apple rejects them in metadata. Nor Apple's own: 2.6 (295) was rejected 2026-11-17 under 5.2.5 for "Voice Chat, Coding & CarPlay" (CarPlay in the subtitle); this subtitle went in that day and the same build was resubmitted. CarPlay named as a feature in the description passed.
 
 ## Promotional text (170, editable without a new build)
-New in 2.7: Redde gets ahead of you. It checks your plans against what you've told it, catches what's missing, and stays quiet until something needs you.
+New in 2.7: tell your agent what you're up to and it offers a plan. It follows up on bills, trips and promises, and stays quiet until something needs you.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name or subtitle)
 assistant,self-hosted,llm,bots,private,chatbot,local,homelab,coding,terminal,mcp,server,voice,chat
 
 ## Description (4000)
 
-Redde is a proactive AI agent app for iPhone, iPad and Mac, for your own agent: Hermes, the open-source agent, or Claude Code, Codex and other coding agents on your computer. It gets ahead of your day and speaks up when something needs you. Talk or type, watch it work, and give it a crew of bots.
+Redde is a proactive AI agent app for iPhone, iPad and Mac, for your own agent: Hermes, the open-source agent, or Claude Code, Codex and other coding agents on your computer. Tell it what you're up to and it works out how to help, then speaks up only when something needs you. Talk or type, watch it work, and give it a crew of bots.
 
 You bring the backend. Redde has no account and no analytics, and your conversations go only to your server, and to a voice service if you pick one.
 
 PROACTIVE
-• Morning Ideas, Heads-Ups before your events, a Week Ahead and an Evening Wrap-up arrive as cards. Leave-By Alerts tell you when to leave.
-• Things to keep in mind: say once what's always true for you, and it checks your plans against it and tells you what's missing or runs out.
-• Goals: agree a plan and tick off your steps while your agent works on its own and checks in on yours.
-• "Let me know when it ships": watches and follow-ups come back on their own. Gone quiet for a day? It speaks up only if something needs you.
-• It knows when to stay quiet: a daily limit, ideas you ignore come quietly, idle watches slow down.
-• Answers come as cards: your day, the weather, a map, prices, a list to tick off.
+• Plan for it: say "we're driving to Montreal Friday" and your agent offers what it can do, now or later. Tick what you want.
+• Follow-Through: bills before they're due, renewals, trip packing and check-in, late orders, return windows, and emails you promised or owe.
+• Morning Ideas, Heads-Ups, a Week Ahead and an Evening Wrap-up come as cards, and Leave-By Alerts say when to go.
+• Things to keep in mind: say once what's always true for you; it checks your plans against it.
+• Goals: agree a plan and tick off your steps.
+• "Let me know when it ships": watches and follow-ups come back on their own.
+• It knows when to be quiet: a daily limit, and ideas you ignore fade.
+• Answers come as cards: your day, the weather, a map, prices, a list.
 
 CODING AGENTS
-• Claude Code, Codex, Gemini CLI and other ACP agents, through the free Redde bridge on your Mac or Linux computer. Add more from the ACP registry.
+• Claude Code, Codex, Gemini CLI and other ACP agents, through the free Redde bridge on your Mac or Linux computer.
 • See each step and file change, approve commands and answer questions, by chat or voice, in the car too.
 
 BOTS
-• Each Hermes profile is a bot with a face, a voice and a chat of its own. Start from a template and make its job, model and tools your own.
+• Each Hermes profile is a bot with a face, a voice and a chat of its own. Start from a template.
 • Type @ to ask any agent, a bot or Claude Code; your agent can ask one too, if you say yes. Or put two to six bots in a group chat. Give one a schedule and its answer arrives as a notification.
 
 TALK, DON'T TYPE
@@ -78,32 +80,56 @@ Two pictures App Store Connect has taken since October 2026, on the version page
 The words in both sit inside the "art safe area" of Apple's templates. Use Preview in App Store Connect before submitting: it shows each on iPhone and iPad, both ways up.
 
 ## What's New in 2.7 (4000)
-Proactive: your agent gets ahead of your day and speaks up only when something needs you.
+Redde is proactive now. Tell your agent what you're up to and it works out how to help. It keeps track of what you said you'd do, and speaks up only when something needs you.
 
-• Things to keep in mind: tell your agent what's always true for you ("driving into France, I need 3-day car insurance"), or add it in Settings → Your Day. Heads-Ups and Morning Ideas check it against the days around each event and tell you when something is missing or runs out.
-• Plan for it: tell your agent what you're about to do ("we're driving to Montreal Friday"), tick what it offers to do, and tap Do These. What's for later comes back when it's time.
-• Plans that happen: tell your agent you'll watch a film with someone on Thanksgiving and it goes on your list with the date. Redde reminds you on the day, and the morning after checks: a film Jellyfin or Plex shows as played is ticked off, one that isn't comes back for another night.
-• Follow-Through: an email promise, a question unanswered, a reply you owe, a late delivery, a return window or a trial about to charge comes back only if it didn't happen. So does a film on your watch list new on Jellyfin, or a new season.
-• Bills before they're due and checked as paid; a passport or policy in time to renew; packing, check-in and receipts for a trip; what's open with people an hour before you meet; what you buy often, when it's due.
-• Quieter on its own: At Most a Day in Quiet Hours. Ideas you leave alone come quietly, and Don't Suggest This keeps an idea away for good. A watch that finds nothing slows, then pauses. A goal untouched for two weeks asks once, then pauses, with Keep Going.
+PLAN FOR IT
+• Say what you're about to do: "We're driving to Montreal Friday." Your agent offers a few things it can do, now or at the right time. Tick what you want and tap Do These. What's for later comes back when it's time.
+• Plans that happen: say you'll watch a film on Thanksgiving and it goes on your list with the date. You're reminded on the day. The morning after, a film Jellyfin or Plex shows as played is ticked off, and one that isn't comes back for another night.
+• Things to keep in mind: say once what's always true for you ("driving into France, I need 3-day car insurance"). Heads-Ups and Morning Ideas check the days around each event and tell you what's missing or runs out.
+
+FOLLOW-THROUGH
+• Bills come back before they're due, and again if no payment shows up.
+• A passport, policy or warranty comes back in time to renew.
+• Trips: a packing list, check-in the day before, receipts when you're back.
+• Meetings: what's open with someone, an hour before you meet.
+• Email: a promise you made, a question nobody answered, a reply you owe.
+• Orders: a late delivery, a return window closing, a trial about to charge.
+• Watching: a film on your list new on Jellyfin, or a new season.
+• What you buy often, when it's due.
+Switch them on or off in Settings → Your Day → Follow-Through.
+
+QUIETER ON ITS OWN
+• Set At Most a Day in Quiet Hours. Ideas you leave alone come quietly, and Don't Suggest This keeps one away for good.
+• A watch that finds nothing slows, then pauses. A goal untouched for two weeks asks once, then pauses.
 • When You've Gone Quiet, in Daily Jobs: after 12 to 72 hours without a word from you, your agent speaks up only if something needs you.
-• Goals you tick off: a goal's plan says which steps are yours and which your agent's. Tick yours off on the goal or its Today tile; your agent starts on its own steps once you agree the plan.
-• Every agent can ask every other by @mention: your Hermes bots, the agents on your Redde bridge (Claude Code, Codex and the rest) and the bots on your other servers. Tag one in your message, or let your agent ask one itself: the answer shows in your chat and your agent carries on with it.
-• Ask Me First, on from the start: before an agent asks another, or a Hermes bot hands its work to another, Redde asks you, with Ask or Don't on a card, in the chat or out loud. Switches in Settings → Replies & Writing.
-• Lists with a look: every list has an emoji and a color, from your agent or its title, and Change Look picks your own. A list of films or series is a wall of posters, stamped Watched as you go. Show cards find their posters too.
+
+GOALS AND LISTS
+• Goals you tick off: a goal's plan says which steps are yours and which your agent's. Tick yours off on the goal or its Today tile.
+• Lists with a look: every list has an emoji and a color. A list of films or series is a wall of posters, stamped Watched as you go.
+
+AGENTS TOGETHER
+• Every agent can ask every other by @mention: your Hermes bots, Claude Code, Codex and the rest on your Redde bridge, and bots on your other servers.
+• Ask Me First: before an agent asks another, Redde asks you, on a card or out loud. Switches in Settings → Replies & Writing.
+
+ALSO NEW
 • Skills from Hermes's skills hub, checked by its scanner before they go on.
-• Pictures in agent chats: what Claude Code or Codex sends or reads shows in the chat, and a file a reply names opens on your phone.
-• Briefings on Your Day: switch each one on or off in Settings → Your Day, the same on every device. Heads-Ups can watch only the calendars you pick. Delete a job from Coming Up.
+• Pictures in agent chats, and a file a reply names opens on your phone.
+• Briefings on Your Day: switch each on or off, the same on every device.
 • Clear a notification on one device and it's cleared on the others.
-• Report a Problem, at the bottom of Settings: a report of your setup with nothing private in it, to copy or open as a GitHub issue.
+• Notifications from your main agent use the name you gave it.
+• Report a Problem, at the bottom of Settings: a report with nothing private in it.
 • Hermes 0.23 and its Webapp supported.
-• Fixes: deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A reply Hermes stops for taking too long ends in Redde too, with Retry. Cards on the Dashboard show what the plugin looked up.
+
+FIXES
+• Long agent runs no longer leave a blank gap above their steps.
+• Show cards keep their posters when you come back to a chat.
+• Deleting a chat on the Dashboard closes its session first (GitHub #78). A failed schedule no longer notifies you where it shouldn't (#79). Chats stay with the right session on the Dashboard (#81). A listening language whose model isn't on the phone is downloaded, not shown as ready (#83). A reply Hermes stops for taking too long ends in Redde too, with Retry.
 
 What's new on your Hermes takes the Redde plugin 1.32 to 1.41: Settings → Redde Plugin offers the update. Pictures in agent chats take the Redde bridge 0.11.
 
 ## Before submitting 2.7
-- The build is 2.7 (298; 296 was pulled from review 2026-11-22 for the goal page, 297 on 2026-11-23 for lists with a look, show-card posters and the Dashboard's card fix), iPhone and iPad, archived from main once everything is committed and pushed.
-- In-app What's New 2.7: fourteen items in 17 languages (lists with a look, plans that happen, Follow-Through and bills/trips/meetings added 2026-11-23) (agents asking each other, Ask Me First, goals you tick off, things to keep in mind, quieter on its own, skills hub, pictures in agent chats, saving pictures, briefings on Your Day, Report a Problem).
+- The build is 2.7 (299, uploaded 2026-11-23; 296 was pulled from review 2026-11-22 for the goal page, 297 on 2026-11-23 for lists with a look, show-card posters and the Dashboard's card fix; 298 was archived and never uploaded), iPhone and iPad, archived from main once everything is committed and pushed.
+- In-app What's New 2.7: fifteen items in 17 languages, the proactive ones first since 2026-11-23 (lists with a look, plans that happen, Plan For It, Follow-Through and bills/trips/meetings added that day) (agents asking each other, Ask Me First, goals you tick off, things to keep in mind, quieter on its own, skills hub, pictures in agent chats, saving pictures, briefings on Your Day, Report a Problem).
 - The Watch-only live call (53365bf) is left out: it has run only in the simulator. Try it on a real watch first (its socket rules differ), then add a line.
 - The relay is deployed for cleared notifications (2026-11-19). Plugin 1.36.0 (things to keep in mind, When You've Gone Quiet, backing off, goals that fade, Don't Suggest This; 1.35 goal steps yours or the agent's; 1.34 briefing choices on every device) and bridge 0.11 must be on main, and the plugin's GitHub release published at release.
 - Run the unit tests and the whole UI suite, then put Release on an iPhone and an iPad and launch-check both.
@@ -114,6 +140,7 @@ What's new on your Hermes takes the Redde plugin 1.32 to 1.41: Settings → Redd
 - Keywords for 2.7: siri, shortcuts, watch and acp out (Apple's product names, and searches that bring nobody); mcp, client, server and kanban in. After the rename to "Redde: Proactive" / "Every AI Agent, one app" (2026-11-22): voice and chat in, code → coding (the old subtitle had them), client and kanban out.
 - Billed as proactive (2026-11-22): name "Redde: Proactive AI", subtitle "Every agent, one app" (both set in App Store Connect; the App Information record shows WAITING_FOR_REVIEW only because Mac 2.5 is in review), promo text, the description's opening and PROACTIVE section, and What's New led by the proactive items. Sent with `copy`.
 - Close GitHub #78, #79, #81 and #83 at release.
+- Rewritten 2026-11-23 to lead with Plan For It and Follow-Through: promo, description and What's New, sent with `copy`. Keywords unchanged. The App Preview for it is a separate cut, not uploaded until he has watched it.
 - Sent to App Store Connect 2026-11-22 (version 2.7 made): copy, the new 06-goals pictures, and the iPhone App Preview (redde-27). The iPad preview, the same agents take recorded on the 13" iPad and cut by `make_27.py ipad` (v27_ipad_cuts.py), replaced 2.3.1's day cut on 2026-11-22.
 
 ## What's New in 2.6 (4000)
