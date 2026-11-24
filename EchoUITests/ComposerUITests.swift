@@ -59,7 +59,9 @@ final class ComposerUITests: XCTestCase {
 
     /// Removes a conversation a test made, so the next run starts as this one did.
     private func delete(conversation title: String, in app: XCUIApplication) {
-        app.buttons["Conversations"].firstMatch.tap()
+        // The iPhone's list is behind a button; the iPad's is beside the chat.
+        let list = app.buttons["Conversations"].firstMatch
+        if list.exists, list.isHittable { list.tap() }
         app.deleteConversation(titled: title)
     }
 
@@ -147,6 +149,38 @@ final class ComposerUITests: XCTestCase {
         XCTAssertTrue(left.isEmpty || left == composer.placeholderValue, "The field kept \(left)")
         keep("sent by Return")
         delete(conversation: "sent by Return", in: app)
+    }
+
+    /// A new chat's first message typed on a keyboard (an iPad's Magic Keyboard), a key at a
+    /// time, and sent with Return, goes whole: it went as its first letter, "I" (2026-11-24).
+    func testAKeyboardsFirstMessageInANewChatGoesWhole() {
+        continueAfterFailure = false
+        let app = launch(["-echo.fresh", "-returnSends", "YES"])
+        _ = field(app)
+        let new = app.buttons["New conversation"].firstMatch
+        if new.waitForExistence(timeout: 5), new.isHittable { new.tap() }
+        let composer = field(app)
+        focus(composer, in: app)
+        // No apostrophe (the field makes it a curly one, and the match below is exact), and no day:
+        // a day puts a Calendar chip under the field, which draws the composer again.
+        let words = "Going to watch it soon"
+        composer.typeText(words)
+        XCTAssertEqual(composer.value as? String, words, "The field didn't take every key")
+        app.typeKey(XCUIKeyboardKey.return.rawValue, modifierFlags: [])
+        let sent = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", words)).firstMatch
+        // (Not the on-screen keyboard's G key.)
+        let alone = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'G' AND elementType != %d",
+                                                                          XCUIElement.ElementType.key.rawValue)).firstMatch
+        // Return or the send button, as on a keyboard either goes.
+        if !sent.waitForExistence(timeout: 3), !alone.exists {
+            let button = app.buttons["Send"].firstMatch
+            if button.exists, button.isHittable { button.tap() }
+        }
+        let found = sent.waitForExistence(timeout: 10)
+        keep("first message")
+        XCTAssertFalse(alone.exists, "The message went as its first letter")
+        XCTAssertTrue(found, "The message didn't go whole")
+        delete(conversation: words, in: app)
     }
 
     func testALongMessageOpensOnAPageOfItsOwn() {

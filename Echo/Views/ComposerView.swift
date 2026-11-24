@@ -793,9 +793,19 @@ struct ComposerView: View {
     }
     #endif
 
+    /// Sends what is in the field, a moment later. A keyboard's Return (`ReturnSends`'s key press)
+    /// and ⌘Return run their handlers while SwiftUI is still handling the key, and there the draft
+    /// reads as it stood when this view was last drawn. The composer is drawn again only when
+    /// `facts` change, which in a new chat was at its first letter: an iPad's Magic Keyboard sent
+    /// a whole first message as "I" (2026-11-24). Once the key is handled, the draft reads as it is.
     private func send() {
+        Task { sendNow() }
+    }
+
+    private func sendNow() {
         stopDictating()
-        guard hasDraft else { return }   // Return, set to send, on an empty field
+        // The draft itself, not `facts`: a second Return right behind the first finds it empty.
+        guard DraftFacts(draft).hasText || !pendingAttachments.isEmpty else { return }   // Return, set to send, on an empty field
         // Bare /model opens the picker; with an argument it stays a serve slash command.
         if draft.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "/model" {
             draft = ""

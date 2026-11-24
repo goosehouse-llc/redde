@@ -15,8 +15,6 @@
 	<!-- Voice mode, dictation, live voice calls; showing the agent something in voice mode. -->
 	<key>com.apple.security.device.audio-input</key>
 	<true/>
-	<key>com.apple.security.device.camera</key>
-	<true/>
 	<!-- Attaching a file, saving one a reply sent, exporting a conversation. -->
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>

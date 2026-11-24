@@ -133,6 +133,18 @@ COMINGUP = ('ph-comingup.png', (0, 189, 1320, 1600), 96)  # Agent Activity's Com
 INBOX = ('ph-inbox.png', (0, 189, 1320, 1230), 96)        # the Inbox: the piles and two emails
 GOAL = ('ph-goal.png', (0, 189, 1320, 2868), 96)          # a goal's page: progress, last check-in, plan
 MEMORY = ('ph-memory.png', (0, 189, 1320, 2600), 96)      # What Your Agent Remembers, in Paper White
+# 2.7 (2026-11-23): Plan For It and Follow-Through, from the video's demo scenes. The iPad's two
+# `-clear` raws are pad-plan and pad-follow with the conversation pane under the cards painted black.
+PLAN = ('ph-plan.png', (48, 905, 1272, 2311), 60)  # the plan card, four of five ticked
+BILL = ('ph-follow.png', (48, 1615, 1087, 2182), 66)      # the deck's first card
+PASSPORT = ('ph-deck-1.png', (48, 1615, 1087, 2182), 66)  # and the next three
+LISBON = ('ph-deck-2.png', (48, 1615, 1087, 2182), 66)
+MEETING = ('ph-deck-3.png', (48, 1615, 1087, 2182), 66)
+# 2.7, every slot proactive (2026-11-24): a Leave-By Alert's banner, a deal's card with Watch price,
+# and a to-do list sorted by when (StoreProactiveShotsUITests, raws in tmp/shots-2.7p-raw).
+LEAVE = ('ph-leave27.png', (24, 176, 1296, 405), 56)        # Time to leave for Dentist
+DEAL = ('ph-purchase.png', (48, 411, 1272, 2061), 54)       # the agent's pick, the deal meter, Watch price
+BYWHEN = ('ph-bywhen-before.png', (60, 870, 1260, 2215), 60)  # House To-Dos: Overdue, Today, This week
 
 def compose_cards(src, dst, headline, sub, bg, fg, subfg, pad, cards, blank_below=None):
     """A screen with cards from other screens set over its empty lower part, each turned a little
@@ -215,6 +227,24 @@ CORAL = (206, 92, 58); PEACH = (255, 222, 204); TEAL = (12, 84, 92); MINT = (178
 # the backend (iPad). Renumbered: answers 05 → 07, bots 06 → 08, approvals 08 → 09.
 # A slot with a list of cards is drawn by compose_cards.
 phone = [
+  # 2.7's set (2026-11-24, his "make sure the screenshots all depict good proactive use cases"):
+  # after the panorama (the plan typed, Lisbon said), 03 follow-through, 04 leave on time,
+  # 05 goals, 06 lists, 07 watches, 08 the inbox, 09 approvals. Agents, Today, answers, bots
+  # and privacy are out.
+  ('ph-follow',   '03-follow',   'It follows through.',          'Bills, renewals, trips, promises and meetings come back before they slip.', TEAL, WHITE, MINT,
+   [(BILL, 0.64, (0.47, 0.378), -1.2), (PASSPORT, 0.64, (0.53, 0.531), 1.2), (LISBON, 0.64, (0.47, 0.684), -1.2), (MEETING, 0.64, (0.53, 0.837), 1.2)], 770),
+  ('ph-day27',    '04-leave',    'Leave on time.',               'Your agent knows your day, and tells you when to go, traffic and all.', BLUE, WHITE, MIST,
+   [(LEAVE, 0.90, (0.5, 0.085), -1.0)]),
+  ('ph-goal',     '05-goals',    'Goals, step by step.',         'Tick off your steps as you go. Your agent works on its own and checks in on yours.', CORAL, WHITE, PEACH),
+  ('ph-clean-before', '06-lists', 'Lists that keep up.',         'Films with their posters, to-dos sorted by when, and a reminder on the day.', PLUM, WHITE, LILAC,
+   [(BYWHEN, 0.66, (0.5, 0.83), 1.2)], 1900),
+  ('ph-shipped27-calm', '07-watch', 'It keeps watch.',          '“Tell me when it ships.” Prices, parcels and replies: your agent checks, and speaks up when it changes.', (24, 32, 46), WHITE, MIST,
+   [(DEAL, 0.46, (0.5, 0.775), -1.2)], 1800),
+  ('ph-inbox',    '08-inbox',    'Your inbox, sorted.',          'Seven piles and your own, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,
+   [(READER, 0.80, (0.50, 0.66), -1.5)]),
+  ('ph-plan',     '03-plan',     'Say what you’re up to.',       'Your agent offers a plan. Tick what you want and it does it, now or at the right time.', BLUE, WHITE, MIST),
+  ('ph-follow',   '04-follow',   'It follows through.',          'Bills, renewals, trips, promises and meetings come back before they slip.', TEAL, WHITE, MINT,
+   [(BILL, 0.64, (0.47, 0.378), -1.2), (PASSPORT, 0.64, (0.53, 0.531), 1.2), (LISBON, 0.64, (0.47, 0.684), -1.2), (MEETING, 0.64, (0.53, 0.837), 1.2)], 770),
   ('ph-chat-dark', '01-hero',    'Your agent, in your pocket.',  'Voice or text, on your own server. Nothing in between.', BLUE, WHITE, MIST),
   ('ph-voice',    '02-voice',    'Just talk.',                   'An orb that moves with your voice. On-device speech, hands-free if you like.', (24, 32, 46), WHITE, MIST),
   # 2.6: other agents through the Redde bridge, shown with the demo agent built into Redde (StoreShotsUITests.testAgentAtWork).
@@ -232,6 +262,22 @@ phone = [
    [(REVIEW, 0.76, (0.50, 0.32), -1.5)]),
 ]
 pad = [
+  # 2.7's set, as the iPhone's (2026-11-24).
+  ('pad-follow-clear', '03-ipad-follow', 'It follows through.',      'Bills, renewals, trips, promises and meetings come back before they slip.', TEAL, WHITE, MINT,
+   [(BILL, 0.44, (0.64, 0.20), -1.2), (PASSPORT, 0.44, (0.69, 0.37), 1.2), (LISBON, 0.44, (0.64, 0.54), -1.2), (MEETING, 0.44, (0.69, 0.71), 1.2)]),
+  ('pad-leave27',      '04-ipad-leave',  'Leave on time.',           'Your agent knows your day, and tells you when to go, traffic and all.', BLUE, WHITE, MIST),
+  ('pad-today',        '05-ipad-goals',  'Goals, step by step.',     'Tick off your steps as you go. Your agent works on its own and checks in on yours.', CORAL, WHITE, PEACH,
+   [(GOAL, 0.40, (0.64, 0.58), -1.0)]),
+  ('pad-clean-before', '06-ipad-lists',  'Lists that keep up.',      'Films with their posters, to-dos sorted by when, and a reminder on the day.', PLUM, WHITE, LILAC,
+   [(BYWHEN, 0.36, (0.80, 0.72), 1.5)]),
+  ('pad-shipped27',    '07-ipad-watch',  'It keeps watch.',          '“Tell me when it ships.” Prices, parcels and replies: your agent checks, and speaks up when it changes.', (24, 32, 46), WHITE, MIST,
+   [(DEAL, 0.30, (0.80, 0.70), 1.2)]),
+  ('pad-today',        '08-ipad-inbox',  'Your inbox, sorted.',      'Seven piles and your own, sorted on your server. Nothing sends until you approve it.', BLUE, WHITE, MIST,
+   [(INBOX, 0.40, (0.60, 0.28), -1.5), (READER, 0.36, (0.70, 0.66), 1.5)]),
+  ('pad-plan-clear',   '03-ipad-plan',   'Say what you’re up to.',   'Your agent offers a plan. Tick what you want and it does it, now or at the right time.', BLUE, WHITE, MIST,
+   [(PLAN, 0.58, (0.663, 0.474), 0)]),
+  ('pad-follow-clear', '04-ipad-follow', 'It follows through.',      'Bills, renewals, trips, promises and meetings come back before they slip.', TEAL, WHITE, MINT,
+   [(BILL, 0.44, (0.64, 0.20), -1.2), (PASSPORT, 0.44, (0.69, 0.37), 1.2), (LISBON, 0.44, (0.64, 0.54), -1.2), (MEETING, 0.44, (0.69, 0.71), 1.2)]),
   ('pad-default-dark', '01-ipad',      'Built for iPad.',              'Sessions, scheduled jobs and the Kanban board beside the conversation.', BLUE, WHITE, MIST),
   ('pad-voice',        '02-ipad-voice','Just talk.',                   'An orb that moves with your voice. On-device speech, spoken replies, hands-free if you like.', (24, 32, 46), WHITE, MIST),
   ('pad-agent',        '03-ipad-agents', 'Claude Code, Codex and more.', 'Coding agents on your computer, through the free Redde bridge. See every change and approve it from your phone.', PAPER, INK, SAND),

@@ -46,11 +46,13 @@ API = 'https://api.appstoreconnect.apple.com'
 LOCALE = 'en-US'
 # Folder, the display type App Store Connect files it under, and the upload order.
 SETS = [
-    ('iphone-6.9', 'APP_IPHONE_67', ['pano-01a', 'pano-01b', '03-agents', '04-inbox', '05-today', '06-goals',
-                                    '07-answers', '08-bots', '09-approve', '10-privacy']),
-    ('ipad-13', 'APP_IPAD_PRO_3GEN_129', ['pano-01a', 'pano-01b', '03-ipad-agents', '04-ipad-inbox', '05-ipad-today',
-                                          '06-ipad-goals', '07-ipad-answers', '08-ipad-bots', '09-ipad-approve',
-                                          '10-ipad-privacy']),
+    # 2.7 (2026-11-24, his "make sure the screenshots all depict good proactive use cases"): what
+    # you're up to, typed or said; follow-through; leave on time; goals; lists; watches; the inbox;
+    # approvals (design/screenshots/compose.py and pano.py).
+    ('iphone-6.9', 'APP_IPHONE_67', ['pano-01a', 'pano-01b', '03-follow', '04-leave', '05-goals', '06-lists',
+                                    '07-watch', '08-inbox', '09-approve']),
+    ('ipad-13', 'APP_IPAD_PRO_3GEN_129', ['pano-01a', 'pano-01b', '03-ipad-follow', '04-ipad-leave', '05-ipad-goals',
+                                          '06-ipad-lists', '07-ipad-watch', '08-ipad-inbox', '09-ipad-approve']),
 ]
 LIMITS = {'promotionalText': 170, 'keywords': 100, 'description': 4000, 'whatsNew': 4000}
 # The App Preview videos, by the type App Store Connect files them under: each file (rendered by

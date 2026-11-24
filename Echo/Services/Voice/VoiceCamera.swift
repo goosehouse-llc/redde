@@ -37,10 +37,14 @@ final class VoiceCamera {
     private(set) var isAvailable = false
 
     private init() {
+        // Not on the Mac: it has no camera entitlement, which App Review asked about (2.5,
+        // 2026-11-24) and voice mode alone used, so the button stays hidden there.
+        #if !os(macOS)
         Task { [weak self] in
             let found = await Self.cameraExists()
             self?.isAvailable = found
         }
+        #endif
     }
 
     @concurrent private static func cameraExists() async -> Bool { AVCaptureDevice.default(for: .video) != nil }

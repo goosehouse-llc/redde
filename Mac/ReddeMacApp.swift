@@ -60,7 +60,7 @@ struct ReddeMacApp: App {
             let read = Keychain.read(account: account)
             let removed = Keychain.delete(account: account)
             Logger(subsystem: "com.goosehouse.echo", category: "keychain")
-                .notice("probe: wrote \(wrote), read \(read ?? "nothing", privacy: .public), removed \(removed)")
+                .notice("probe: wrote \(wrote), read \(read ?? "nothing", privacy: .public), removed \(removed), in the login keychain \(UserDefaults.standard.bool(forKey: "keychainInLoginKeychain"))")
         }
         #endif
     }

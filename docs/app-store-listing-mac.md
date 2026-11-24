@@ -11,7 +11,7 @@ Not claimed: voice mode, live voice, phone tools, notifications with Redde close
 push yet), CarPlay, the Watch, Siri, wake phrases, calls, alarms, the terminal.
 
 ## Promotional text (170, editable without a new build)
-New in 2.5: bots that work in the background, your agent's models and provider keys set from the Mac, bot photos, and chats that keep up with your other devices.
+New in 2.7: tell your agent what you're up to and it works out how to help. Plans, follow-through, goals you tick off, and agents that ask each other.
 
 ## Keywords (100, comma-separated, no spaces after commas; don't repeat words from the name)
 assistant,self-hosted,llm,bots,private,client,mac,macos,local,chatbot,homelab,desktop,ai
@@ -50,6 +50,40 @@ REQUIRES
 A Hermes agent (github.com/NousResearch/hermes-agent) or an OpenAI-compatible endpoint; bots need Hermes. Redde includes no model and no AI service of its own. macOS 26.
 
 Hermes is an open-source project by Nous Research. Redde is an independent client, not affiliated with it.
+
+## What's New in 2.7 (4000)
+Redde on the Mac catches up with the iPhone: your agent is proactive now, and 2.5's background work comes too.
+
+PLAN FOR IT
+• Say what you're up to ("We're driving to Montreal Friday") and your agent offers a few things it can do, now or at the right time. Tick what you want and click Do These.
+• Plans that happen: say you'll watch a film on Thanksgiving and it goes on your list with the date.
+
+FOLLOW-THROUGH
+• Bills, renewals, trips, meetings and promises in your email come back as ideas before they slip.
+
+GOALS AND LISTS
+• A goal's plan says which steps are yours and which your agent's. Tick yours off as you go.
+• Lists with an emoji and a color. Film lists show each poster. To-dos sort by when.
+
+AGENTS TOGETHER
+• Every agent can ask every other by @mention: your Hermes bots, Claude Code, Codex and the rest, and bots on your other servers. Ask Me First puts each request in front of you.
+• Workstreams: ask a bot to work on something in the background. It tells you when it's done or needs your approval.
+• Models & Providers: set your agent's models, fallbacks and provider keys from the Mac.
+
+ALSO NEW
+• Try Redde with no server: the Demo Agent, in Set Up Redde under Other Agents.
+• Skills from Hermes's skills hub, checked by its scanner before they go on.
+• Bot photos, briefings on Your Day, Report a Problem at the bottom of Settings.
+
+FIXES
+• An API key the Mac's Keychain wouldn't store no longer leaves chats without it: the first message got an error.
+
+What's new on your Hermes takes the Redde plugin 1.27 to 1.43.
+
+## Before submitting the Mac's 2.7
+- Mac 2.7 (303), the same build as the iPhone's 2.7 (303: 301 went to review before the Mac's camera came out, and was pulled 11-24). App Review rejected 2.5 (294) on 2026-11-24; this answers it (docs/app-review-notes-mac.md).
+- Claim only what's seen on a Mac, in the shots build (com.goosehouse.echo.shots, never demo flags on the Debug app): the plan card and Do These, Follow-Through ideas, Your Steps on a goal, list posters and By When, @mention of a coder agent with Ask Me First, workstreams, Models & Providers, the Demo Agent from a fresh setup, Report a Problem. Drop a line that isn't seen working.
+- The App Store's Mac version record is still 2.5 (REJECTED): its version string goes to 2.7 and build 303 is attached.
 
 ## What's New in 2.5 (4000)
 Bots that work in the background, and your models set from the Mac.

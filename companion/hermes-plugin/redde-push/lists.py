@@ -158,6 +158,12 @@ DESCRIPTION = (
 PLAN_NOTE = (f"[Redde: if they're planning something for a set time (a film to watch with someone, a book, a dinner, a "
              f"trip), keep it as a plan on one of their lists with {TOOL} 'plan' (item, when, with), not in a note: "
              "Redde reminds them on the day and checks afterwards that it happened.]")
+# A film or a series in the plan: its show card too, poster and all, beside the plan (asked
+# 2026-11-24, of "I'm going to watch Behind the Candelabra the day after Thanksgiving": the plan
+# was right, and the film's card should come with it).
+SHOW_NOTE = ("[Redde: if it's a film or a series, show it too, as a 'show' card with redde_show (title, year, format, "
+             "ratings, a short overview, where they can watch it), so they see its poster with the plan.]")
+_WATCHISH = re.compile(r"\b(?:watch|re-?watch|binge|see)\b", re.IGNORECASE)
 _PLANISH = re.compile(
     r"\b(?:watch|see|read|cook|make|play|visit|try|go to|have)\b.{0,80}?\b(?:tonight|tomorrow|this (?:weekend|week)|"
     r"next \w+|on (?:mon|tues|wednes|thurs|fri|satur|sun)day|(?:mon|tues|wednes|thurs|fri|satur|sun)day (?:night|evening)|"
@@ -684,7 +690,9 @@ def turn_note(message, platform: str = "") -> str | None:
     listish, planish = _LISTISH.search(text), _PLANISH.search(text)
     if not (listish or planish):
         return None
-    return " ".join(n for n in (NOTE if listish else None, PLAN_NOTE if planish else None) if n)
+    watching = planish and _WATCHISH.search(text)
+    return " ".join(n for n in (NOTE if listish else None, PLAN_NOTE if planish else None,
+                                SHOW_NOTE if watching else None) if n)
 
 
 def register(ctx, home_of) -> None:

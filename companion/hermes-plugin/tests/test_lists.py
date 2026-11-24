@@ -298,6 +298,14 @@ class PlanTests(unittest.TestCase):
         self.assertIn("'plan'", lists.turn_note("let's see Wicked friday night"))
         self.assertIsNone(lists.turn_note("I watched a film"))
 
+    def test_a_film_planned_comes_with_its_card(self):
+        said = lists.turn_note("I’m going to watch behind the candelabra the day after Thanksgiving")
+        self.assertIn("'plan'", said)
+        self.assertIn(lists.SHOW_NOTE, said)
+        self.assertIn(lists.SHOW_NOTE, lists.turn_note("let's see Wicked friday night"))
+        self.assertNotIn(lists.SHOW_NOTE, lists.turn_note("We're going to cook lasagna on Sunday night"))
+        self.assertNotIn(lists.SHOW_NOTE, lists.turn_note("make a to-do list"))
+
 
 if __name__ == "__main__":
     unittest.main()

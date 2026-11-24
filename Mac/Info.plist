@@ -33,8 +33,6 @@
 	</dict>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Redde can show your next event when you start a conversation, and attach a day's events to a message for your assistant. Events go only to your own server. With Leave-By Alerts on, Redde also reads your next events on this device and asks Apple Maps how long the way to their address takes, to tell you when to leave.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Redde uses the camera when you show your assistant something in voice mode. A picture goes only to the server you connect to.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>With Phone tools turned on, Redde looks up a contact when your assistant asks it to. What it finds goes only to the server you connect to.</string>
 	<key>NSLocalNetworkUsageDescription</key>

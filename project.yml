@@ -50,7 +50,7 @@ settings:
     SWIFT_TREAT_WARNINGS_AS_ERRORS: true
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: "2.7"
-    CURRENT_PROJECT_VERSION: "301"
+    CURRENT_PROJECT_VERSION: "303"
     ENABLE_USER_SCRIPT_SANDBOXING: true
     # Translations: every target's text is pulled into the String Catalog beside its code
     # (Localizable.xcstrings in each target's folder), which the build fills with the English.
@@ -566,7 +566,6 @@ targets:
         # The permission texts the Mac can ask with, as the iPhone's say them.
         NSMicrophoneUsageDescription: Redde listens so you can talk to your assistant. Speech is transcribed on this device and only your own server receives the text, unless you start a live voice call, which goes to the voice service you chose.
         NSSpeechRecognitionUsageDescription: Redde turns what you say into text on this Mac, so you can talk to your assistant.
-        NSCameraUsageDescription: Redde uses the camera when you show your assistant something in voice mode. A picture goes only to the server you connect to.
         # The AirPods' nod and shake (HeadGestures) is compiled in: App Store processing refused the
         # first upload (278, ITMS-90683) without it.
         NSMotionUsageDescription: Redde reads head movement from your AirPods so you can nod to approve, or shake your head to deny, a request from your assistant. It is read on this Mac and never stored or sent.

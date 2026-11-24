@@ -228,7 +228,11 @@ nonisolated enum Keychain {
         let toICloud = syncsToICloud && isSyncable(account: account)
         let stored = put(account, trimmed, synced: toICloud)
         if stored, toICloud { remove(account, synced: false) }
-        cache.withLock { $0[account] = stored ? .some(trimmed) : nil }
+        // Kept for this run even when the Keychain refused it. Setup's Test Connection uses the key
+        // as typed, and every chat reads it from here: with a refused write the test passed and the
+        // first chat went without a key (App Review on a Mac, 2.5, 2026-11-24: "an error message
+        // upon chat submission").
+        cache.withLock { $0[account] = .some(trimmed) }
         return stored
     }
 
@@ -249,9 +253,21 @@ nonisolated enum Keychain {
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        shut.withLock { $0 = status == errSecInteractionNotAllowed }
-        return switch status {
+        var status = SecItemCopyMatching(query as CFDictionary, &result)
+        #if os(macOS)
+        // Where `put` had to keep it. (A refused data protection keychain says "not found" when
+        // asked, measured 2026-11-24, so a write that went to the login keychain is what says so.)
+        if !synced, status == errSecMissingEntitlement || (status == errSecItemNotFound && keepsInLoginKeychain) {
+            var login = loginKeychain(query)
+            login[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail   // never a prompt
+            var found: AnyObject?
+            let there = SecItemCopyMatching(login as CFDictionary, &found)
+            if there == errSecSuccess || there == errSecItemNotFound { status = there; result = found }
+        }
+        #endif
+        let answer = status
+        shut.withLock { $0 = answer == errSecInteractionNotAllowed }
+        return switch answer {
         case errSecSuccess: (result as? Data).map { String(decoding: $0, as: UTF8.self) }
         case errSecItemNotFound: .some(nil)
         default: nil
@@ -267,30 +283,59 @@ nonisolated enum Keychain {
             kSecValueData as String: Data(value.utf8),
             kSecAttrAccessible as String: accessibility(of: account, synced: synced),
         ]
-        let update = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        if update == errSecSuccess { return true }
-        guard update == errSecItemNotFound else {
-            #if os(macOS)
-            Logger(subsystem: "com.goosehouse.echo", category: "keychain").error("update of \(account, privacy: .public) failed: \(update)")
-            #endif
-            return false
+        var status = upsert(query, attributes)
+        #if os(macOS)
+        // A Mac whose data protection keychain turns this app away (errSecMissingEntitlement: no
+        // keychain group of its own) keeps the item in the login keychain instead, this app's alone.
+        if status == errSecMissingEntitlement, !synced {
+            status = upsert(loginKeychain(query), [kSecValueData as String: Data(value.utf8)])
+            if status == errSecSuccess, !keepsInLoginKeychain { UserDefaults.standard.set(true, forKey: loginKeychainKey) }
         }
+        if status != errSecSuccess {
+            Logger(subsystem: "com.goosehouse.echo", category: "keychain").error("store of \(account, privacy: .public) failed: \(status)")
+        }
+        #endif
+        return status == errSecSuccess
+    }
+
+    /// The item updated, or added when there's none.
+    private static func upsert(_ query: [String: Any], _ attributes: [String: Any]) -> OSStatus {
+        let update = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        guard update == errSecItemNotFound else { return update }
         var add = query
         add.merge(attributes) { _, new in new }
-        #if os(macOS)
-        let added = SecItemAdd(add as CFDictionary, nil)
-        if added != errSecSuccess { Logger(subsystem: "com.goosehouse.echo", category: "keychain").error("add of \(account, privacy: .public) failed: \(added)") }
-        return added == errSecSuccess
-        #else
-        return SecItemAdd(add as CFDictionary, nil) == errSecSuccess
-        #endif
+        return SecItemAdd(add as CFDictionary, nil)
     }
 
     @discardableResult
     private static func remove(_ account: String, synced: Bool) -> Bool {
-        let status = SecItemDelete(baseQuery(account, synced: synced) as CFDictionary)
+        let query = baseQuery(account, synced: synced)
+        var status = SecItemDelete(query as CFDictionary)
+        #if os(macOS)
+        if !synced, status == errSecMissingEntitlement || keepsInLoginKeychain {
+            let there = SecItemDelete(loginKeychain(query) as CFDictionary)
+            if status != errSecSuccess { status = there }
+        }
+        #endif
         return status == errSecSuccess || status == errSecItemNotFound
     }
+
+    #if os(macOS)
+    /// Set once `put` kept something in the login keychain: from then on this Mac's app reads and
+    /// removes there too. Never set where the data protection keychain works (the App Store's
+    /// build, the Debug app), so their reads never touch the login keychain.
+    private static let loginKeychainKey = "keychainInLoginKeychain"
+    private static var keepsInLoginKeychain: Bool { UserDefaults.standard.bool(forKey: loginKeychainKey) }
+
+    /// The same item in the Mac's login keychain, where `put` keeps it when the data protection
+    /// keychain turns this app away.
+    private static func loginKeychain(_ query: [String: Any]) -> [String: Any] {
+        var query = query
+        query.removeValue(forKey: kSecUseDataProtectionKeychain as String)
+        query.removeValue(forKey: kSecAttrSynchronizable as String)
+        return query
+    }
+    #endif
 
     private static func baseQuery(_ account: String, synced: Bool) -> [String: Any] {
         onThisDevice([

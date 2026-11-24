@@ -97,6 +97,9 @@ struct TodayListView: View {
         #if os(iOS)
         .listStyle(.insetGrouped)
         .listSectionSpacing(14)
+        // The name close under the bar: a grouped list's first section keeps about 35 points
+        // above it, which left the top of the sheet empty (asked 2026-11-24).
+        .contentMargins(.top, 4, for: .scrollContent)
         #endif
         .scrollDismissesKeyboard(.interactively)
         .animation(.snappy(duration: 0.3), value: list.items)

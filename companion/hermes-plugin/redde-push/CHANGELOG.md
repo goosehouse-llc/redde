@@ -3,6 +3,11 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.43.0 (2026-11-24)
+
+- A film or a series planned ("I'm going to watch Behind the Candelabra the day after
+  Thanksgiving") comes with its show card, poster and where to watch it, beside the plan.
+
 ## 1.42.1 (2026-11-24)
 
 - A watch list's posters for titles typed by hand: a film's Wikipedia page was matched letter for

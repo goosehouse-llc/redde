@@ -374,7 +374,9 @@ struct ReturnSends: ViewModifier {
                     lineBreak()
                     return .handled
                 }
-                if canSend() { send() }
+                // Once the key is handled: inside this handler the draft reads as it stood when the
+                // composer was last drawn, which could be its first letter ("I", 2026-11-24).
+                Task { if canSend() { send() } }
                 return .handled
             }
             // The on-screen keyboard's Return types a line break the field keeps: it comes out

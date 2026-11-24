@@ -57,10 +57,12 @@ def pano(left_src, right_src, W, H, out_a, out_b, headline, sub, pad=False, righ
     canvas.convert('RGB').crop((W, 0, CW, H)).save(out_b, 'PNG', optimize=True)
     print(out_a, out_b)
 
-pano(f'{SHOTS}/ph-chat-hermes.png', f'{SHOTS}/ph-voice.png', 1320, 2868,
+# 2.7 (2026-11-24, every slot proactive): what you're up to, typed (the plan card) or said.
+SUB = 'Tell your agent what you’re up to.|It works out how to help.'
+pano(f'{SHOTS}/ph-plan.png', f'{SHOTS}/ph-voice27.png', 1320, 2868,
      f'{OUT}/iphone-6.9/pano-01a.png', f'{OUT}/iphone-6.9/pano-01b.png',
-     'Type it.|Or just say it.', 'One agent, two ways in.|The answer comes back either way.')
-pano(f'{SHOTS}/pad-hermes.png', f'{SHOTS}/pad-voice.png', 2064, 2752,
+     'Type it.|Or just say it.', SUB)
+pano(f'{SHOTS}/pad-plan.png', f'{SHOTS}/pad-voice27.png', 2064, 2752,
      f'{OUT}/ipad-13/pano-01a.png', f'{OUT}/ipad-13/pano-01b.png',
-     'Type it.|Or just say it.', 'One agent, two ways in.|The answer comes back either way.', pad=True,
+     'Type it.|Or just say it.', SUB, pad=True,
      right_panel=zoom.voice)   # 2.3: the iPad's voice screen restacked larger
