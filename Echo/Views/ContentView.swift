@@ -56,6 +56,8 @@ struct ContentView: View {
     /// "Start Fresh…" in a bot's chat: being asked about, and what went wrong.
     @State var confirmingFresh = false
     @State var freshProblem: String?
+    /// A bot's chat asked for from outside (Your Agents, a notification) that couldn't open: why.
+    @State var botProblem: String?
     @State var showSetup = false
     /// A setup link that was opened, up for confirmation.
     @State var setupCode: SetupCodeOffer?

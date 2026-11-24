@@ -51,6 +51,9 @@ nonisolated enum EchoURL {
     static let scheme = "echo"
     /// Just bring the app forward (widget tap on the last reply).
     static let open = URL(string: "echo://open")!
+    /// A new chat with the main agent, the keyboard up: Your Agents' Ask bar (a widget can't hold
+    /// a text field, so this is as close as typing on the Home Screen comes).
+    static let compose = URL(string: "echo://compose")!
 
     static func listen(handsFree: Bool) -> URL {
         var comps = URLComponents()

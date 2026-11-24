@@ -66,6 +66,8 @@ extension ContentView {
             // Day), words for a new conversation (Up Next's Brief Me).
             if let profile = EchoURL.value(of: url, "bot", "profile") { router.requestBot(profile) }
             if let text = EchoURL.value(of: url, "ask", "text") { router.requestDraft(text: text, attachments: [], newConversation: true) }
+            // Your Agents' Ask bar: a new chat with the main agent, ready to type in.
+            if url == EchoURL.compose { router.requestDraft(text: "", attachments: [], newConversation: true) }
             if let id = EchoURL.value(of: url, "list", "id") {
                 setDrawer(open: true)   // its sheet is the chat list's
                 TodayLists.shared.shownID = id
@@ -210,7 +212,10 @@ extension ContentView {
     /// behind as the draft of the one being left. Not when this one is empty anyway, and not on
     /// the fast lane while a reply streams: leaving would stop it (a Hermes turn goes on).
     private func startFreshForDraft() {
-        guard !conversation.messages.isEmpty || conversation.initialLoad != nil || !conversation.outbox.isEmpty,
+        // A new conversation asked for from outside is with the main agent: a bot's or a group's
+        // chat is left even when nothing has been said in it.
+        GroupDirectory.shared.open = nil
+        guard !conversation.messages.isEmpty || conversation.initialLoad != nil || !conversation.outbox.isEmpty || conversation.bot != nil,
               !conversation.isStreaming || settings.transport.hasLedger else { return }
         conversation.reset()
         bindDraft(to: Drafts.key(for: conversation))
@@ -290,6 +295,38 @@ extension ContentView {
         composerFocused = true
     }
 
+    /// A bot's chat from outside Redde: a schedule's notification (where its answer is), or its
+    /// face on Your Agents. Read again first when the app was started for it, and tried again for
+    /// a few seconds while the connection comes up: a tap that started Redde found no bots yet, or
+    /// a Dashboard not answering yet, and the chat that was open stayed, with nothing said
+    /// (2026-11-24, "clicking on individual bots does not open that bots chat"). Said when it can't.
+    private func openBotChat(_ profile: String) async {
+        // The main agent's face: back to a chat with it from a bot's or a group's; where it is already, nothing.
+        if profile == ProfileCatalog.defaultID {
+            guard conversation.bot != nil || GroupDirectory.shared.open != nil else { return }
+            startFreshForDraft()
+            return
+        }
+        let bots = BotDirectory.shared
+        var failure: Error?
+        for wait in [0.0, 1, 2, 4] {
+            if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+            if !bots.bots(for: settings.connectionKey).contains(where: { $0.name == profile }) { _ = try? await bots.refresh() }
+            guard let bot = bots.bots(for: settings.connectionKey).first(where: { $0.name == profile }) else { continue }
+            do {
+                GroupDirectory.shared.open = nil
+                try await conversation.openBot(bot, mainName: settings.headerTitle)
+                return
+            } catch is CancellationError {
+                return
+            } catch {
+                failure = error
+            }
+        }
+        Logger(subsystem: "com.goosehouse.echo", category: "launch").notice("a bot's chat didn't open from outside: \(failure.map { String(describing: $0) } ?? "not on the server", privacy: .public)")
+        botProblem = failure?.localizedDescription ?? String(localized: "\(profile) isn't on your server any more.")
+    }
+
     /// From a paired Hermes's notifications: a pairing link that was opened, confirmed in a sheet
     /// of its own (over the conversation, so other sheets make way as for a setup code), and a
     /// tapped notification's conversation, fetched from the server and shown.
@@ -329,14 +366,7 @@ extension ContentView {
         }
         if canLeave, let profile = router.consumeBot() {
             if sizeClass != .regular, showConversations { setDrawer(open: false) }
-            // Its chat, where the schedule's answer is; read again first when the app was started for it.
-            Task {
-                let bots = BotDirectory.shared
-                if !bots.bots(for: settings.connectionKey).contains(where: { $0.name == profile }) { _ = try? await bots.refresh() }
-                guard let bot = bots.bots(for: settings.connectionKey).first(where: { $0.name == profile }) else { return }
-                GroupDirectory.shared.open = nil
-                try? await conversation.openBot(bot, mainName: settings.headerTitle)
-            }
+            Task { await openBotChat(profile) }
         }
         if let room = router.consumeRoom() {
             if sizeClass != .regular, showConversations { setDrawer(open: false) }

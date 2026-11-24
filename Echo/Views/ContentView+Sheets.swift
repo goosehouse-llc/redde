@@ -161,6 +161,11 @@ extension ContentView {
             } message: {
                 Text(freshProblem ?? "")
             }
+            .alert("Couldn't open that chat", isPresented: Binding(get: { botProblem != nil }, set: { if !$0 { botProblem = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(botProblem ?? "")
+            }
             .sheet(item: $voicingBot) { BotVoicePicker(bot: $0, mainName: settings.headerTitle) }
             .sheet(isPresented: $voicingMain, onDismiss: { WatchLink.shared.push() }) {
                 NavigationStack {

@@ -79,7 +79,8 @@ struct AgentsCard: View {
         }
     }
 
-    private func link(_ agent: WidgetAgents.Agent) -> URL { agent.isMain ? EchoURL.open : EchoURL.bot(agent.id) }
+    /// Each face opens that agent's chat; the main agent's goes back to a chat with it when a bot's is open.
+    private func link(_ agent: WidgetAgents.Agent) -> URL { EchoURL.bot(agent.id) }
 
     /// The newest thing an agent said, for the line under the team.
     private var latest: WidgetAgents.Agent? {
@@ -213,22 +214,28 @@ struct AgentsCard: View {
         return who + AttributedString(words)
     }
 
-    /// The last thing said, and the microphone: Redde opens listening.
+    /// The last thing said (its agent's chat) or Ask (a new chat with the main agent, the keyboard
+    /// up), and the microphone: Redde opens listening.
     private func askBar(line: WidgetAgents.Agent?) -> some View {
-        Link(destination: EchoURL.listen(handsFree: false)) {
-            HStack(spacing: 8) {
-                if let line, let words = line.line {
+        HStack(spacing: 8) {
+            if let line, let words = line.line {
+                Link(destination: link(line)) {
                     Text(Self.said(line.name, words)).font(.caption).lineLimit(2).foregroundStyle(Color.primary).multilineTextAlignment(.leading)
-                } else {
-                    Text("Ask \(mainName)").font(.footnote).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading).contentShape(.rect)
                 }
-                Spacer(minLength: 4)
+            } else {
+                Link(destination: EchoURL.compose) {
+                    Text("Ask \(mainName)").font(.footnote).foregroundStyle(Color.secondary)   // the link's tint, else
+                        .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading).contentShape(.rect)
+                }
+            }
+            Link(destination: EchoURL.listen(handsFree: false)) {
                 Image(systemName: "mic.fill").font(.footnote.weight(.semibold)).foregroundStyle(.white)
                     .frame(width: 30, height: 30).background(.tint, in: .circle)
             }
-            .padding(.leading, 10).padding(.trailing, 4).padding(.vertical, 4)
-            .background(.quaternary.opacity(0.6), in: .capsule)
         }
+        .padding(.leading, 10).padding(.trailing, 4).padding(.vertical, 4)
+        .background(.quaternary.opacity(0.6), in: .capsule)
     }
 }
 
