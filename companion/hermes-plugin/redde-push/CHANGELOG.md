@@ -3,6 +3,17 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.42.1 (2026-11-24)
+
+- A watch list's posters for titles typed by hand: a film's Wikipedia page was matched letter for
+  letter after its first, so "The polar express" found none. Now the title is tried with its
+  words' capitals too, and then by Wikipedia's search, which takes a page only when it is named
+  like the title (a slip of the keyboard, not another film: "Wiked for Good" isn't The Flying
+  Ship, and Into the Spider-Verse isn't its sequel). For a title that could be either, a series of
+  that name on TVmaze comes before the search. Show cards' posters are found the same way.
+- A title with no poster found is looked for again 12 hours later, 4 times in all (a new film's
+  page may have none yet). One missed before this version is looked for again at once.
+
 ## 1.42.0 (2026-11-23)
 
 - Dates by hand: `redde_list` has `unplan`, which takes the date off one item with its reminder

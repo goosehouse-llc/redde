@@ -5,6 +5,7 @@ address for Donnie Brasco's poster from the film's id, and the card showed no po
 import json
 import time
 import unittest
+from urllib.parse import quote
 
 from test_calls import plugin
 
@@ -113,6 +114,46 @@ class PosterTests(unittest.TestCase):
         answer = json.loads(cards.handle({"cards": [self.show(poster="https://image.tmdb.org/t/p/w500/9366.jpg")]}))
         self.assertEqual(answer["cards"][0]["items"][0]["poster"], POSTER)
         self.assertTrue(answer["shown"][0].startswith("show: 1"))
+
+    # 1.42.1 (2026-11-24: a film typed into a watch list with its last word small got no poster).
+    SEARCH = "https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=5&srprop=&srinfo=suggestion&srsearch="
+
+    def search(self, *titles, suggestion=None):
+        found = {"query": {"search": [{"title": t} for t in titles], **({"searchinfo": {"suggestion": suggestion}} if suggestion else {})}}
+        return ("ok", 200, "application/json", json.dumps(found).encode())
+
+    def test_a_title_typed_with_small_letters_finds_its_page(self):
+        posters.GET = Web({WIKI + "The_Polar_Express_(film)": summary("2004 film by Robert Zemeckis")})
+        self.assertEqual(posters.lookup("The polar express", None, None, time.monotonic() + 5), POSTER)
+        self.assertEqual(posters.cased("the lord of the rings: the fellowship of the ring"), "The Lord of the Rings: The Fellowship of the Ring")
+        self.assertEqual(posters.cased("wicked: for good"), "Wicked: For Good")
+        self.assertEqual(posters.cased("WALL-E"), "WALL-E")
+
+    def test_the_search_finds_a_slip_of_the_keyboard_and_not_another_film(self):
+        posters.GET = web = Web({self.SEARCH + quote("Wiked for Good film"): self.search("The Flying Ship (animated film)", "Wicked: For Good"),
+                                 WIKI + "Wicked%3A_For_Good": summary("2025 film by Jon M. Chu"),
+                                 WIKI + "The_Flying_Ship_(animated_film)": summary("1979 film", "https://upload.wikimedia.org/ship.jpg")})
+        self.assertEqual(posters.lookup("Wiked for Good", None, None, time.monotonic() + 5), POSTER)
+        self.assertNotIn(WIKI + "The_Flying_Ship_(animated_film)", web.asked, "a page named unlike the title isn't taken")
+
+    def test_what_the_search_suggests_is_tried_when_no_page_is_the_title(self):
+        posters.GET = Web({self.SEARCH + quote("Zootopai 2 film"): self.search("Zoo (film)", suggestion="Zootopia 2 film"),
+                           self.SEARCH + quote("Zootopia 2 film"): self.search("Zootopia 2"),
+                           WIKI + "Zootopia_2": summary("2025 animated film")})
+        self.assertEqual(posters.lookup("Zootopai 2", None, None, time.monotonic() + 5), POSTER)
+
+    def test_a_series_by_its_name_comes_before_the_search(self):
+        shows = [{"show": {"name": "Severance", "premiered": "2022-02-18", "image": {"original": "https://static.tvmaze.com/sev.jpg"}}}]
+        posters.GET = web = Web({"https://api.tvmaze.com/search/shows?q=severance": ("ok", 200, "application/json", json.dumps(shows).encode()),
+                                 self.SEARCH + quote("severance film"): self.search("Severance (film)")})
+        self.assertEqual(posters.lookup("severance", None, None, time.monotonic() + 5), "https://static.tvmaze.com/sev.jpg")
+        self.assertFalse(any(url.startswith(self.SEARCH) for url in web.asked), "the search would take the film of that name")
+
+    def test_names_are_alike_by_their_words(self):
+        self.assertGreaterEqual(posters.alike("Zootopia two", "Zootopia 2 (2025 film)"), posters.ALIKE)
+        self.assertGreaterEqual(posters.alike("the lord of the rings the fellowship of the ring", "The Lord of the Rings: The Fellowship of the Ring"), posters.ALIKE)
+        self.assertLess(posters.alike("Wiked for Good", "The Flying Ship (animated film)"), posters.ALIKE)
+        self.assertLess(posters.alike("Spider-Man: Into the Spider-Verse", "Spider-Man: Beyond the Spider-Verse"), posters.ALIKE)
 
     def test_it_doesnt_wait_long(self):
         def slow(url, deadline):

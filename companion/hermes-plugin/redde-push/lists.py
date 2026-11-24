@@ -73,6 +73,10 @@ KIND_LOOKS = {"watch": ("🍿", "indigo"), "todo": ("✅", "blue"), "shopping": 
 _WORDS = [(re.compile(rf"\b(?:{w})", re.IGNORECASE), k, e, c) for w, k, e, c in LOOKS]
 #: A watch list's posters: at most this many looked up a time, for this long in all.
 POSTERS_AT_ONCE, POSTER_WAIT = 24, 20.0
+#: A title none was found for is looked for again this long after, this many times in all (1.42.1:
+#: a new film's page may have no poster yet, or a site be out of reach for a moment). One missed by
+#: an older plugin's search, which matched the page's name letter for letter, is looked for at once.
+POSTER_RETRY, POSTER_TRIES = 12 * 3600, 4
 _YEAR = re.compile(r"\s*\((1[89]\d\d|20\d\d)\)\s*$")
 
 #: What sounds like one of their lists, in English: cheap to look for, said in a turn's note only.
@@ -563,10 +567,22 @@ _running: set[str] = set()
 _running_lock = threading.Lock()
 
 
-def _untried(kept: dict) -> list[dict]:
+def _untried(kept: dict, now: float | None = None) -> list[dict]:
     if look(kept)["kind"] != "watch":
         return []
-    return [i for i in kept.get("items") or [] if i.get("id") and not i.get("poster_tried")][:POSTERS_AT_ONCE]
+    now = time.time() if now is None else now
+    return [i for i in kept.get("items") or [] if i.get("id") and _wants_poster(i, now)][:POSTERS_AT_ONCE]
+
+
+def _wants_poster(item: dict, now: float) -> bool:
+    if not item.get("poster_tried"):
+        return True
+    if item.get("poster"):
+        return False
+    misses = item.get("poster_misses")
+    if not isinstance(misses, int):
+        return True   # missed before 1.42.1
+    return misses < POSTER_TRIES and now - float(item["poster_tried"]) >= POSTER_RETRY
 
 
 def _posters_later(home: Path, kept: dict) -> None:
@@ -596,8 +612,9 @@ def _posters_later(home: Path, kept: dict) -> None:
 def fill_posters(home: Path, now: float | None = None) -> int:
     """Looks up the posters of every watch list's titles not tried yet, a few at once and for
     POSTER_WAIT seconds at most, and keeps what was found: how many."""
+    at = int(now if now is not None else time.time())
     with _locked(home):
-        wanted = [(k["id"], i["id"], str(i.get("text") or "")) for k in load(home) for i in _untried(k)]
+        wanted = [(k["id"], i["id"], str(i.get("text") or "")) for k in load(home) for i in _untried(k, at)]
     if not wanted:
         return 0
     deadline = time.monotonic() + POSTER_WAIT
@@ -610,7 +627,6 @@ def fill_posters(home: Path, now: float | None = None) -> int:
         done, _ = wait(futures, timeout=POSTER_WAIT + 1)
     found = {item: f.result() for f, item in futures.items() if f in done and f.exception() is None}
     asked = set(futures.values())
-    at = int(now if now is not None else time.time())
     with _locked(home):
         lists = load(home)
         for k in lists:
@@ -619,10 +635,14 @@ def fill_posters(home: Path, now: float | None = None) -> int:
                     continue
                 if found.get(i["id"]):
                     i["poster"] = found[i["id"]]
+                    i.pop("poster_misses", None)
                 if titled[i["id"]][1]:
                     i["year"] = int(titled[i["id"]][1])
                 if i["id"] in found:     # (one not back in time is tried again)
                     i["poster_tried"] = at
+                    if not found[i["id"]]:
+                        misses = i.get("poster_misses")
+                        i["poster_misses"] = (misses if isinstance(misses, int) else 0) + 1
         save(home, lists)
     return sum(1 for v in found.values() if v)
 

@@ -172,6 +172,27 @@ class ListLooksTests(unittest.TestCase):
         do(self.home, action="add", list="Christmas Movies", items=["Elf"])
         self.assertEqual(self.asked[-1], ("Elf", None))
 
+    def test_a_title_with_no_poster_is_looked_for_again_later_a_few_times(self):
+        # 1.42.1: a new film's page may have none yet; before, a miss was never tried again.
+        at = 1_795_000_000
+        lists.save(self.home, [{"id": "w", "title": "Christmas Movies", "kind": "watch",
+                                "items": [{"id": "b", "text": "A Very Brady Christmas", "done": False}]}])
+        lists.fill_posters(self.home, now=at)
+        lists.fill_posters(self.home, now=at + 3600)
+        self.assertEqual(len(self.asked), 1, "not at every look")
+        for n in range(1, lists.POSTER_TRIES + 2):
+            lists.fill_posters(self.home, now=at + n * lists.POSTER_RETRY)
+        self.assertEqual(len(self.asked), lists.POSTER_TRIES, "so many times in all")
+        self.assertNotIn("poster_misses", lists.listing(self.home)[0]["items"][0], "for the plugin, not the phone")
+
+    def test_one_missed_by_an_older_search_is_looked_for_at_once(self):
+        lists.save(self.home, [{"id": "w", "title": "Christmas Movies", "kind": "watch",
+                                "items": [{"id": "p", "text": "The polar express", "done": False, "poster_tried": 1_700_000_000}]}])
+        listed = lists.listing(self.home)
+        self.assertEqual(self.asked, [("The polar express", None)])
+        self.assertEqual(lists.listing(self.home)[0]["items"][0]["poster"], "https://upload.wikimedia.org/The_polar_express.jpg")
+        self.assertNotIn("poster", listed[0]["items"][0], "the first look answers before the poster is in")
+
     def test_other_lists_look_nothing_up(self):
         do(self.home, action="make", title="Groceries", items=["Milk"])
         lists.listing(self.home)

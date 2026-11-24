@@ -11,6 +11,8 @@ each title's poster is read here, a few at once and for a few seconds at most:
   summary's `originalimage`: "<title> (<year> film)", "<title> (film)", then the title alone when
   its page says it's a film); a series on TVmaze (its show's `image`, the year matched when given),
   where Wikipedia's pages for series mostly lead with no picture (Severance's has none);
+  and (1.42.1) a film typed by hand is tried with its words' capitals too ("The polar express"),
+  then by Wikipedia's search, a page taken only when it's named like the title (`alike`);
 - one that can't be told (slow, a wall) is left as the agent wrote it;
 - one on the person's own network (1.36.3: Sol gave Donnie Brasco's from the Jellyfin server,
   http://100.x… on the tailnet), http or https, isn't read here: it goes in `own_poster`, which
@@ -22,6 +24,7 @@ public addresses only, redirects followed by hand. `GET` is the only way out, sw
 """
 from __future__ import annotations
 
+import difflib
 import ipaddress
 import json
 import re
@@ -131,26 +134,117 @@ def _summary(page: str, deadline: float) -> dict | None:
     return found if isinstance(found, dict) and found.get("type") == "standard" else None
 
 
-def wikipedia(title: str, year: str | None, series: bool | None, deadline: float) -> str | None:
-    """The poster on the title's Wikipedia page, or None."""
+#: Words a title leaves small inside it ("The Lord of the Rings", "Gone with the Wind").
+_SMALL = frozenset("a an and as at but by for from in into nor of on or per the to vs via with".split())
+
+
+def cased(title: str, small: bool = True) -> str:
+    """The title as a film's is written: each word with a capital, the small ones inside it left as
+    they were (not first, last, or after a colon: "Wicked: For Good"), and capitals already there
+    kept ("WALL-E"). `small` False: every word with one. (1.42.1: a page's name is matched letter
+    for letter after its first, so "The Polar express", typed in Redde, found no poster.)"""
+    words = title.split(" ")
+    made = []
+    for n, word in enumerate(words):
+        inside = 0 < n < len(words) - 1 and not made[-1].endswith(":")
+        if not word or (small and inside and word.lower() in _SMALL):
+            made.append(word)
+        else:
+            made.append(word[0].upper() + word[1:])
+    return " ".join(made)
+
+
+def _picture(found: dict, year: str | None, bare: bool) -> "Found | None":
+    """A page's poster, when it is the title's: a page found by a bare name (or by a search) must
+    say it's a film or a series, of that year when one is given."""
+    said = str(found.get("description") or "")
+    if bare and not (_KIND.search(said) and (not year or year in said or not _YEAR.search(said))):
+        return None
+    picture = (found.get("originalimage") or found.get("thumbnail") or {}).get("source")
+    if isinstance(picture, str) and picture.startswith("https://"):
+        return Found.at(picture, ((found.get("content_urls") or {}).get("mobile") or {}).get("page")
+                        or ((found.get("content_urls") or {}).get("desktop") or {}).get("page"))
+    return None
+
+
+_NUMBERS = {"one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10"}
+#: How close a page found by the search must be named to the title asked for (1.42.1: "Wiked for
+#: Good" had the search's first page The Flying Ship, and a Spider-Verse film its sequel).
+ALIKE = 0.85
+
+
+def _bare(name: str) -> str:
+    """A name to compare: its "(2004 film)" off, small letters, "&" as "and", numbers as figures,
+    no punctuation or leading "the"."""
+    name = re.sub(r"\s*\([^)]*\)\s*$", "", name).lower().replace("&", " and ")
+    words = [_NUMBERS.get(w, w) for w in re.sub(r"[^\w]+", " ", name).split()]
+    return " ".join(words[1:] if words[:1] == ["the"] and len(words) > 1 else words)
+
+
+def alike(asked: str, page: str) -> float:
+    """How alike a title and a page's name are, 0 to 1: by their letters, and 0 when a word on either
+    side, small ones aside, is like none on the other (a sequel: "Into" isn't "Beyond")."""
+    one, other = _bare(asked), _bare(page)
+
+    def covered(words: list[str], by: list[str]) -> bool:
+        return all(any(difflib.SequenceMatcher(None, w, b).ratio() >= 0.75 for b in by) for w in words if w not in _SMALL)
+
+    if not (covered(one.split(), other.split()) and covered(other.split(), one.split())):
+        return 0.0
+    return difflib.SequenceMatcher(None, one, other).ratio()
+
+
+def _search(query: str, deadline: float) -> tuple[list[str], str | None]:
+    """Wikipedia's own search (1.42.1): the names of the first few pages, which it finds whatever
+    the letters' case and through most slips of the keyboard, and what it suggests instead."""
+    url = ("https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=5&srprop=&srinfo=suggestion&srsearch="
+           + quote(query))
+    how, status, _, body = GET(url, deadline)
+    if how != "ok" or status != 200:
+        return [], None
+    try:
+        found = (json.loads(body.decode("utf-8", "replace")) or {}).get("query") or {}
+    except (ValueError, AttributeError):
+        return [], None
+    names = [hit["title"] for hit in found.get("search") or [] if isinstance(hit, dict) and isinstance(hit.get("title"), str)]
+    suggested = (found.get("searchinfo") or {}).get("suggestion")
+    return names, suggested if isinstance(suggested, str) and suggested.strip() else None
+
+
+def wikipedia(title: str, year: str | None, series: bool | None, deadline: float, by_name: bool = True,
+              search: bool = True) -> str | None:
+    """The poster on the title's Wikipedia page, or None: by the page's name, the title as written
+    and then with its words' capitals (`by_name`), then by Wikipedia's search (`search`)."""
     kinds = ["TV series"] if series else ["film"] if series is False else ["film", "TV series"]
-    pages = [f"{title} ({year} {k})" for k in kinds if year] + [f"{title} ({k})" for k in kinds] + [title]
     plain = re.sub(r"\s+", " ", re.sub(r"[,!?]", "", title)).strip()   # "Love, Actually": the page is "Love Actually"
-    if plain and plain != title:
-        pages.append(plain)
-    for page in pages:
+    names = list(dict.fromkeys(n for n in (title, plain, cased(title), cased(title, small=False)) if n))
+    pages = [(f"{name} ({year} {k})", False) for name in names for k in kinds if year] \
+        + [(f"{name} ({k})", False) for name in names for k in kinds] + [(name, True) for name in names]
+    for page, bare in dict.fromkeys(pages) if by_name else ():
         if time.monotonic() > deadline:
             return None
         found = _summary(page, deadline)
-        if not found:
-            continue
-        said = str(found.get("description") or "")
-        if page in (title, plain) and not (_KIND.search(said) and (not year or year in said or not _YEAR.search(said))):
-            continue
-        picture = (found.get("originalimage") or found.get("thumbnail") or {}).get("source")
-        if isinstance(picture, str) and picture.startswith("https://"):
-            return Found.at(picture, ((found.get("content_urls") or {}).get("mobile") or {}).get("page")
-                            or ((found.get("content_urls") or {}).get("desktop") or {}).get("page"))
+        if found and (picture := _picture(found, year, bare)):
+            return picture
+    if not search:
+        return None
+    kind = "television series" if series else "film"
+    query = " ".join(w for w in (title, year, kind) if w)
+    for _ in range(2):   # the search, and once more by what it suggests when no page is the title
+        if time.monotonic() > deadline:
+            return None
+        hits, suggested = _search(query, deadline)
+        close = sorted((h for h in hits if alike(title, h) >= ALIKE), key=lambda h: -alike(title, h))
+        for page in close:
+            if time.monotonic() > deadline:
+                return None
+            found = _summary(page, deadline)
+            if found and (picture := _picture(found, year, True)):
+                return picture
+        if not suggested or suggested.lower() == query.lower():
+            return None
+        query = suggested
+        title = re.sub(rf"\s*\b{kind}\b\s*$", "", re.sub(rf"\s*\b{year}\b", "", suggested) if year else suggested, flags=re.I).strip() or title
     return None
 
 
@@ -204,7 +298,12 @@ def lookup(title: str, year: str | None, series: bool | None, deadline: float) -
     it isn't known which (1.37.0: also for the films and series on a watch list, `lists.py`)."""
     if series:
         return tvmaze(title, year, deadline) or wikipedia(title, year, series, deadline)
-    return wikipedia(title, year, series, deadline) or (tvmaze(title, year, deadline) if series is None else None)
+    if series is False:
+        return wikipedia(title, year, series, deadline)
+    # Either: a page by its name, a series by its name on TVmaze, and only then Wikipedia's search,
+    # which would take a film of the same name over the series ("Severance").
+    return (wikipedia(title, year, None, deadline, search=False) or tvmaze(title, year, deadline)
+            or wikipedia(title, year, None, deadline, by_name=False))
 
 
 def fill(card: dict) -> dict:
