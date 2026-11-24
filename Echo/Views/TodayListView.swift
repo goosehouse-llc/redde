@@ -24,6 +24,7 @@ struct TodayListView: View {
     @FocusState private var typing: Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         if let list = lists.shown {
@@ -273,6 +274,16 @@ struct TodayListView: View {
             }
         }
         .contextMenu {
+            // Out to a film's or a series' pages (asked 2026-11-24): its IMDb, its Wikipedia, where it's on.
+            if list.kind == .watch {
+                Section {
+                    ForEach(FilmLookUp.allCases) { site in
+                        Button { openURL(site.url(for: item)) } label: {
+                            Label { site.title } icon: { Image(systemName: site.symbol) }
+                        }
+                    }
+                }
+            }
             if list.groupsByWhen, !item.done {
                 Button { dating = item } label: {
                     Label {
@@ -576,6 +587,52 @@ private struct DayBadge: View {
         .frame(minWidth: 42)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(date, format: Date.FormatStyle().weekday(.wide).month(.wide).day()))
+    }
+}
+
+/// A film's or a series' pages out on the web, from its long press on a watch list (asked
+/// 2026-11-24, "search out to get details on the movie"): its IMDb, its Wikipedia, and where it's
+/// on (the TV app's search, as a show card's tap). Each is a search by its name and year, which
+/// the site's own page is a tap from: a list item keeps no page of its own, and opening a site's
+/// search needs no key, where reading IMDb's or TMDb's data from the server would.
+enum FilmLookUp: CaseIterable, Identifiable {
+    case imdb, wikipedia, watch
+
+    var id: Self { self }
+
+    var title: Text {
+        switch self {
+        case .imdb: Text(verbatim: "IMDb")
+        case .wikipedia: Text(verbatim: "Wikipedia")
+        case .watch: Text("Where can I watch it?", comment: "A chip under a show card: asks the agent where it streams")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .imdb: "star"
+        case .wikipedia: "book"
+        case .watch: "play.tv"
+        }
+    }
+
+    /// Its search, by its name and year ("Home Alone 1990"); Wikipedia's in the phone's language.
+    func url(for item: TodayList.Item, language: String = Locale.current.language.languageCode?.identifier ?? "en") -> URL {
+        let named = [item.name, item.year.map(String.init)].compactMap(\.self).joined(separator: " ")
+        var parts: URLComponents
+        switch self {
+        case .imdb:
+            parts = URLComponents(string: "https://www.imdb.com/find/")!
+            parts.queryItems = [URLQueryItem(name: "q", value: named), URLQueryItem(name: "s", value: "tt")]
+        case .wikipedia:
+            let site = language.allSatisfy(\.isLetter) && !language.isEmpty ? language : "en"
+            parts = URLComponents(string: "https://\(site).wikipedia.org/w/index.php")!
+            parts.queryItems = [URLQueryItem(name: "search", value: named)]
+        case .watch:
+            parts = URLComponents(string: "https://tv.apple.com/search")!
+            parts.queryItems = [URLQueryItem(name: "term", value: item.name)]
+        }
+        return parts.url!
     }
 }
 

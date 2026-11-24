@@ -334,4 +334,16 @@ struct TodayListsTests {
         await lists.refresh()
         #expect(asked == 0)
     }
+
+    /// A watch list's film, long-pressed (2026-11-24): its IMDb and Wikipedia by its name and year,
+    /// where it's on by its name; Wikipedia in the phone's language.
+    @Test func aFilmIsLookedUpByItsNameAndYear() {
+        let film = TodayList.Item(id: "a", text: "Home Alone (1990)", done: false, year: 1990)
+        #expect(FilmLookUp.imdb.url(for: film).absoluteString == "https://www.imdb.com/find/?q=Home%20Alone%201990&s=tt")
+        #expect(FilmLookUp.wikipedia.url(for: film, language: "fr").absoluteString == "https://fr.wikipedia.org/w/index.php?search=Home%20Alone%201990")
+        #expect(FilmLookUp.wikipedia.url(for: film, language: "").absoluteString.hasPrefix("https://en.wikipedia.org/"))
+        #expect(FilmLookUp.watch.url(for: film).absoluteString == "https://tv.apple.com/search?term=Home%20Alone")
+        let series = TodayList.Item(id: "b", text: "Pluribus", done: false)
+        #expect(FilmLookUp.imdb.url(for: series).absoluteString == "https://www.imdb.com/find/?q=Pluribus&s=tt")
+    }
 }
