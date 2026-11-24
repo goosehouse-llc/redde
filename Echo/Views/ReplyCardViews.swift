@@ -129,7 +129,7 @@ extension View {
     }
 }
 
-private struct CardInk: ViewModifier {
+struct CardInk: ViewModifier {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.theme) private var theme
 
@@ -155,6 +155,11 @@ private struct CardInk: ViewModifier {
     static func readable(_ accent: Color, drawnIn: ColorScheme, theme: ResolvedTheme) -> Color {
         let choice = Settings.shared.cardColor
         let solid = choice.solid != nil ? choice.color(in: theme) : nil
+        return readable(accent, drawnIn: drawnIn, on: solid)
+    }
+
+    /// The same on a given ground; with none, the system's (a list's rows, whatever the cards are).
+    static func readable(_ accent: Color, drawnIn: ColorScheme, on solid: Color? = nil) -> Color {
         let asked = Asked(accent: accent, drawnIn: drawnIn, ground: solid)
         if let known = found[asked] { return known }
         var env = EnvironmentValues()

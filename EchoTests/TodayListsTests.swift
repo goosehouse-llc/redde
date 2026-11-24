@@ -20,6 +20,115 @@ struct TodayListsTests {
         return lists
     }
 
+    /// The By When layout: Wednesday, November 25, 2026, 3 PM, a week that starts on Monday.
+    @Test func sortsWhatsLeftByWhen() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/New_York"))
+        calendar.firstWeekday = 2
+        func at(_ day: Int, _ hour: Int, month: Int = 11) throws -> Date {
+            try #require(calendar.date(from: DateComponents(year: 2026, month: month, day: day, hour: hour)))
+        }
+        let now = try at(25, 15)
+        let list = TodayList(id: "l", title: "To Do", items: [
+            .init(id: "none-1", text: "No day", done: false),
+            .init(id: "later", text: "Monday next week", done: false, when: try at(30, 0)),
+            .init(id: "sun", text: "Sunday night", done: false, when: try at(29, 23)),
+            .init(id: "fri", text: "Friday", done: false, when: try at(27, 9)),
+            .init(id: "evening", text: "This evening", done: false, when: try at(25, 19)),
+            .init(id: "morning", text: "Earlier today", done: false, when: try at(25, 8)),
+            .init(id: "late", text: "Last night", done: false, when: try at(24, 23)),
+            .init(id: "none-2", text: "No day either", done: false),
+            .init(id: "gone", text: "Finished", done: true, when: try at(25, 9)),
+        ], kind: .todo)
+        let groups = list.openByWhen(now: now, calendar: calendar)
+        #expect(groups.map(\.when) == [.overdue, .today, .thisWeek, .later, .anytime])
+        #expect(groups.map { $0.items.map(\.id) } == [["late"], ["morning", "evening"], ["fri", "sun"], ["later"], ["none-1", "none-2"]])
+    }
+
+    @Test func leavesOutEmptyGroupsAndNonToDoLists() {
+        let plain = TodayList(id: "l", title: "To Do", items: [.init(id: "a", text: "A", done: false)], kind: .todo)
+        #expect(plain.openByWhen().map(\.when) == [.anytime])
+        #expect(TodayList(id: "e", title: "Empty", items: []).openByWhen().isEmpty)
+        #expect(TodayList(id: "n", title: "Old", items: []).groupsByWhen)
+        for kind in [TodayList.Kind.watch, .shopping, .reading, .packing, .gifts] {
+            #expect(!TodayList(id: "k", title: "K", items: [], kind: kind).groupsByWhen)
+        }
+    }
+
+    @Test func aPlansTimeKeepsWhoItsWith() throws {
+        let when = try #require(TodayList.planDate("2026-11-26T19:30-05:00"))
+        let alone = TodayList.Item(id: "a", text: "A", done: false, when: when)
+        let together = TodayList.Item(id: "b", text: "B", done: false, when: when, company: "Robin")
+        #expect(TodayList.Item(id: "c", text: "C", done: false).timeAndCompany == nil)
+        #expect(alone.timeAndCompany == when.formatted(.dateTime.hour().minute()))
+        #expect(try #require(together.timeAndCompany).hasSuffix("Robin"))
+        #expect(try #require(together.plan).hasSuffix("Robin"))
+    }
+
+    private func sentChange(_ words: String?) throws -> JSONValue {
+        let sent = try #require(words)
+        var encoded = String(sent.dropFirst("lists do ".count)).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        encoded += String(repeating: "=", count: (4 - encoded.count % 4) % 4)
+        return try JSONDecoder().decode(JSONValue.self, from: try #require(Data(base64Encoded: encoded)))
+    }
+
+    private static let dated = """
+    redde-push lists {"lists": [{"id": "l1", "title": "To Do", "kind": "todo", "items": [
+      {"id": "a", "text": "Call", "done": false, "when": "2026-11-26T19:30-05:00", "with": "Robin"}]}]}
+    """
+
+    @Test func movingADateKeepsWhoItsWithAndRemovingItClearsBoth() async throws {
+        var asked: [String] = []
+        let lists = store { words in asked.append(words); return Self.dated }
+        await lists.refresh()
+        let list = try #require(lists.lists.first)
+        let moved = Date(timeIntervalSince1970: 1_800_000_000)
+        lists.setDate(moved, for: list.items[0], in: list)
+        #expect(lists.lists[0].items[0].when == moved, "moved here before the plugin answers")
+        try await Task.sleep(for: .milliseconds(200))
+        let plan = try sentChange(asked.last)
+        #expect(plan["action"]?.string == "plan")
+        #expect(plan["items"]?.array?.first?.string == "a")
+        #expect(plan["with"]?.string == "Robin")
+        #expect(TodayList.planDate(try #require(plan["when"]?.string)) == moved)
+
+        lists.setDate(nil, for: list.items[0], in: list)
+        #expect(lists.lists[0].items[0].when == nil && lists.lists[0].items[0].company == nil)
+        try await Task.sleep(for: .milliseconds(200))
+        let unplan = try sentChange(asked.last)
+        #expect(unplan["action"]?.string == "unplan")
+        #expect(unplan["when"] == nil)
+    }
+
+    @Test func anOlderPluginAsksForTheUpdateAndPutsTheDateBack() async throws {
+        let refused = Self.dated.replacingOccurrences(of: "]}]}", with: #"]}], "said": {"error": "Unknown action 'unplan': one of show."}}"#)
+        let lists = store { $0 == "lists list" ? Self.dated : refused }
+        await lists.refresh()
+        let list = try #require(lists.lists.first)
+        lists.setDate(nil, for: list.items[0], in: list)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(lists.problem?.contains("1.42") == true)
+        #expect(lists.lists[0].items[0].when != nil, "the plugin's answer stands")
+    }
+
+    @Test func theDatePickerOpensOnTheItemsDateOrTomorrowMorning() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/New_York"))
+        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: 25, hour: 15)))
+        let tomorrow = try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: 26, hour: 9)))
+        let ahead = now.addingTimeInterval(86_400 * 3), past = now.addingTimeInterval(-3_600)
+        #expect(TodayList.Item(id: "a", text: "A", done: false).suggestedDate(now: now, calendar: calendar) == tomorrow)
+        #expect(TodayList.Item(id: "b", text: "B", done: false, when: past).suggestedDate(now: now, calendar: calendar) == tomorrow)
+        #expect(TodayList.Item(id: "c", text: "C", done: false, when: ahead).suggestedDate(now: now, calendar: calendar) == ahead)
+        #expect(TodayList.planRange(now: now).upperBound == now.addingTimeInterval(60 * 86_400))
+    }
+
+    @Test func aDateGoesToThePluginInThePersonsOwnTime() throws {
+        let zone = try #require(TimeZone(identifier: "America/New_York"))
+        let date = try #require(TodayList.planDate("2026-11-26T19:30-05:00"))
+        #expect(TodayList.planText(date, timeZone: zone) == "2026-11-26T19:30:00-05:00")
+    }
+
     @Test func readsThePluginsAnswer() throws {
         let parsed = try #require(TodayList.parse(Self.answer))
         #expect(parsed.lists.map(\.title) == ["Groceries"])

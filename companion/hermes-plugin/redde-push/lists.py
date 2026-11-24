@@ -45,7 +45,7 @@ TOOL = "redde_list"
 FILE = "lists.json"
 #: At most this many lists, items on one, and characters in a title or an item.
 MOST, ITEMS, TITLE, TEXT = 30, 300, 60, 200
-ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "style", "plan", "delete")
+ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "style", "plan", "unplan", "delete")
 PLAN_TAG = "[redde-plan:"
 #: A plan this far ahead at most; the follow-through this long after a daytime plan, or the next
 #: morning at this hour for one from 5 pm.
@@ -149,7 +149,7 @@ DESCRIPTION = (
     "`kind` (watch: films and series, which Redde shows as posters, one title per item; todo, shopping, reading, "
     "packing, gifts, other), an `emoji` and a `color`; left out, they're guessed from the title. 'plan' (list, "
     "items: one item or its text, `when` ISO 8601 with offset, `with` who): Redde reminds them on the day and "
-    "afterwards checks it happened. Not your own todo tool (your plan for this turn) and not reminders.")
+    "afterwards checks it happened; 'unplan' (list, item) takes the date back off. Not your own todo tool (your plan for this turn) and not reminders.")
 
 PLAN_NOTE = (f"[Redde: if they're planning something for a set time (a film to watch with someone, a book, a dinner, a "
              f"trip), keep it as a plan on one of their lists with {TOOL} 'plan' (item, when, with), not in a note: "
@@ -377,6 +377,11 @@ def _change(home: Path, args: dict, by: str, now: float | None, touched: list[di
             if "error" in planned:
                 return {**planned, **_shown(kept)}
             said = planned
+        elif action == "unplan":
+            unplanned = _unplan(kept, args)
+            if "error" in unplanned:
+                return {**unplanned, **_shown(kept)}
+            said = unplanned
         elif action == "style":
             given = [k for k in ("kind", "emoji", "color") if args.get(k) is not None]
             if not given:
@@ -483,6 +488,23 @@ def _plan(kept: dict, args: dict, by: str, at: int) -> dict:
             "said": (f"Redde reminds them {'on the day' if before else 'no more today'} and checks on "
                      f"{after.strftime('%A %-d %B')} that it happened. If it isn't on their calendar, put it there "
                      "with your calendar tool too.")}
+
+
+def _unplan(kept: dict, args: dict) -> dict:
+    """Takes the date off one item (Remove Date in Redde, 1.42.0), with its reminder and check."""
+    found, _ = _picked(kept.get("items") or [], args.get("items"))
+    if len(found) != 1:
+        return {"error": "Say which one item to take the date off: its number or its words."}
+    item = found[0]
+    _, remove = _cron()
+    for old in item.get("plan_jobs") or []:
+        try:
+            remove and remove(old)
+        except Exception:
+            pass
+    for field in ("when", "with", "plan_jobs"):
+        item.pop(field, None)
+    return {"unplanned": item["text"], "said": "Its date, reminder and check are gone."}
 
 
 def _when_words(when: datetime) -> str:

@@ -24,10 +24,24 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
 
         /// "Thu, Nov 26, 7:30 PM · with Robin".
         var plan: String? {
-            guard let when else { return nil }
-            let at = when.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+            when.map { withCompany($0.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())) }
+        }
+
+        /// "7:30 PM · with Robin", for a row that shows its day on its own.
+        var timeAndCompany: String? {
+            when.map { withCompany($0.formatted(.dateTime.hour().minute())) }
+        }
+
+        private func withCompany(_ at: String) -> String {
             guard let company, !company.isEmpty else { return at }
             return at + " · " + String(localized: "with \(company)", comment: "A list item's plan: who it's with, after its date (\"Thu, Nov 26, 7:30 PM · with Robin\")")
+        }
+
+        /// Where the date picker opens: its own date while that's ahead, else tomorrow at 9.
+        func suggestedDate(now: Date = .now, calendar: Calendar = .current) -> Date {
+            if let when, when > now { return when }
+            let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+            return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) ?? tomorrow
         }
 
         /// Its name without the year it was written with ("Home Alone (1990)").
@@ -53,6 +67,39 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
 
     var open: [Item] { items.filter { !$0.done } }
     var finished: [Item] { items.filter(\.done) }
+
+    /// Where a to-do sits on its list's page (the By When layout, picked 2026-11-23).
+    enum When: Hashable, Sendable {
+        case overdue, today, thisWeek, later, anytime
+    }
+
+    struct WhenGroup: Identifiable, Equatable, Sendable {
+        let when: When
+        let items: [Item]
+        var id: When { when }
+    }
+
+    /// Lists of things to do, where a date is the point: not a shopping, packing or watch list.
+    var groupsByWhen: Bool { kind == nil || kind == .todo || kind == .other }
+
+    /// What's left, soonest first: overdue (before today; earlier today is still today), today, the
+    /// rest of this calendar week, later, and anytime (no date, in the list's own order). Groups
+    /// with nothing in them are left out.
+    func openByWhen(now: Date = .now, calendar: Calendar = .current) -> [WhenGroup] {
+        let today = calendar.startOfDay(for: now)
+        let weekEnd = calendar.dateInterval(of: .weekOfYear, for: now)?.end ?? today.addingTimeInterval(7 * 86_400)
+        let placed = Dictionary(grouping: open) { item -> When in
+            guard let date = item.when else { return .anytime }
+            if date < today { return .overdue }
+            if calendar.isDate(date, inSameDayAs: now) { return .today }
+            return date < weekEnd ? .thisWeek : .later
+        }
+        return [When.overdue, .today, .thisWeek, .later, .anytime].compactMap { when in
+            guard var items = placed[when] else { return nil }
+            if when != .anytime { items.sort { ($0.when ?? .distantFuture) < ($1.when ?? .distantFuture) } }
+            return WhenGroup(when: when, items: items)
+        }
+    }
 
     /// The plugin's `lists list` and `lists do` answers: "redde-push lists {…}". Nil for anything
     /// else (a plugin older than 1.20 answers with its usage).
@@ -83,6 +130,20 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
             if let date = reader.date(from: text) { return date }
         }
         return nil
+    }
+
+    /// A date as the plugin takes it, in the person's own time: "2026-11-26T19:30:00-05:00".
+    static func planText(_ date: Date, timeZone: TimeZone = .current) -> String {
+        let writer = DateFormatter()
+        writer.locale = Locale(identifier: "en_US_POSIX")
+        writer.timeZone = timeZone
+        writer.dateFormat = "yyyy-MM-dd'T'HH:mm:ssXXXXX"
+        return writer.string(from: date)
+    }
+
+    /// The dates a plan can take: from now to the plugin's limit, 60 days ahead.
+    static func planRange(now: Date = .now) -> ClosedRange<Date> {
+        now ... now.addingTimeInterval(60 * 86_400)
     }
 
     /// What the plugin said it did, from a `lists do` answer: `made` or `already_there` hold the id
@@ -134,6 +195,7 @@ final class TodayLists {
         #if DEBUG
         if Self.demo {
             lists = Self.demoLists
+            if DevHooks.value("-echo.demoLists") == "house" { lists.append(Self.demoDatedList) }
             available = true
             // `-echo.demoLists films`: the watch list open at launch.
             if let open = DevHooks.value("-echo.demoLists"), lists.contains(where: { $0.id == open }) { shownID = open }
@@ -326,6 +388,11 @@ final class TodayLists {
         return (output, parsed.lists)
     }
 
+    nonisolated private static var datesNeedUpdate: String {
+        String(localized: "Your Hermes needs Redde's plugin 1.42 or later for this. Update it in Settings › Redde Plugin.",
+               comment: "A to-do list's sheet: setting or removing a date on a server with an older plugin")
+    }
+
     nonisolated private struct Unreachable: LocalizedError {
         var errorDescription: String? {
             String(localized: "Couldn't reach your Hermes. Try again when Redde is connected.",
@@ -351,6 +418,21 @@ final class TodayLists {
         Task { await DeviceCalendar.tick(text, done: ticking) }
         apply(list.id, ["action": .string(item.done ? "uncheck" : "check"), "items": .array([.string(item.id)])]) { kept in
             if let i = kept.items.firstIndex(where: { $0.id == item.id }) { kept.items[i].done.toggle() }
+        }
+    }
+
+    /// Sets, moves or (with nil) takes off a to-do's date. The plugin keeps the reminder and the
+    /// check that go with it. Who it's with stays when the date moves.
+    func setDate(_ date: Date?, for item: TodayList.Item, in list: TodayList) {
+        var change: [String: JSONValue] = ["action": .string(date == nil ? "unplan" : "plan"), "items": .array([.string(item.id)])]
+        if let date {
+            change["when"] = .string(TodayList.planText(date))
+            if let company = item.company { change["with"] = .string(company) }
+        }
+        apply(list.id, change) { kept in
+            guard let i = kept.items.firstIndex(where: { $0.id == item.id }) else { return }
+            kept.items[i].when = date
+            if date == nil { kept.items[i].company = nil }
         }
     }
 
@@ -438,7 +520,10 @@ final class TodayLists {
                 problem = Self.tooOld
                 return
             }
-            if let error = parsed.error { problem = error }
+            if let error = parsed.error {
+                // (A plugin before 1.42 doesn't know `unplan`, before 1.38 `plan`.)
+                problem = error.hasPrefix("Unknown action") ? Self.datesNeedUpdate : error
+            }
             take(parsed.lists)
         } catch {
             problem = error.localizedDescription
@@ -464,5 +549,24 @@ final class TodayLists {
             .init(id: "t1", text: "Call the vet about Friday", done: false), .init(id: "t2", text: "Renew the car registration", done: false),
             .init(id: "t3", text: "Send Ana the photos", done: true)], kind: .todo, emoji: "✅", hue: .blue),
     ]
+
+    /// `-echo.demoLists house`: a made-up to-do list with something in every By When group.
+    static var demoDatedList: TodayList {
+        let calendar = Calendar.current
+        func day(_ offset: Int, _ hour: Int) -> Date? {
+            calendar.date(byAdding: .day, value: offset, to: calendar.startOfDay(for: .now))
+                .flatMap { calendar.date(bySettingHour: hour, minute: 0, second: 0, of: $0) }
+        }
+        return TodayList(id: "house", title: "House To-Dos", items: [
+            .init(id: "h1", text: "Pay the water bill", done: false, when: day(-1, 10)),
+            .init(id: "h2", text: "Call the dentist", done: false, when: day(0, 14)),
+            .init(id: "h3", text: "Renew the car registration", done: false, when: day(4, 9)),
+            .init(id: "h4", text: "Return the library books", done: false, when: day(5, 11), company: "Robin"),
+            .init(id: "h5", text: "Book the holiday flights", done: false, when: day(14, 18)),
+            .init(id: "h6", text: "Fix the bike's back brake", done: false),
+            .init(id: "h7", text: "Order a new air filter", done: false),
+            .init(id: "h8", text: "Clean the gutters", done: true),
+            .init(id: "h9", text: "Send Ana the signed copy", done: true)], kind: .todo, emoji: "🏠", hue: .green)
+    }
     #endif
 }

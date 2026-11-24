@@ -140,7 +140,8 @@ final class TodayStripUITests: XCTestCase {
 
     /// A watch list (2026-11-23, "make these lists a bit more fun"): its tile and page in its own
     /// colour with its emoji, its films as posters; one tapped is stamped Watched; Change Look opens.
-    func testAWatchListIsAWallOfPosters() {
+    /// A watch list opens as a clean list (2026-11-23): each title beside its poster, ticked as watched.
+    func testAWatchListIsACleanList() {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demo", "-echo.demoLists", "-echo.drawerPage", "today", "-linkPreviews", "YES"] + XCUIApplication.straightToChat
@@ -155,11 +156,11 @@ final class TodayStripUITests: XCTestCase {
         strip.name = "watch-list-tile"; strip.lifetime = .keepAlways; add(strip)
         reach(app, films)
         films.tap()
-        let elf = app.buttons.matching(NSPredicate(format: "label == %@", "Elf, 2003")).firstMatch
-        XCTAssertTrue(elf.waitForExistence(timeout: 5), "No poster for Elf")
+        let elf = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Elf, 2003")).firstMatch
+        XCTAssertTrue(elf.waitForExistence(timeout: 5), "No row for Elf")
         sleep(1)
-        let wall = XCTAttachment(screenshot: app.screenshot())
-        wall.name = "watch-list-page"; wall.lifetime = .keepAlways; add(wall)
+        let page = XCTAttachment(screenshot: app.screenshot())
+        page.name = "watch-list-page"; page.lifetime = .keepAlways; add(page)
         elf.tap()
         XCTAssertTrue(app.staticTexts["3 of 8 done"].waitForExistence(timeout: 5), "Watching one didn't count")
         app.buttons["Change Look"].firstMatch.tap()

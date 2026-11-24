@@ -242,6 +242,22 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(self.removed, ["j1", "j2"])
         self.assertEqual(len(lists.load(self.home)[0]["items"]), 1)
 
+    def test_unplan_takes_the_date_and_its_jobs_off(self):
+        lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
+        self.plan(items=["Elf"], when="2026-11-26T19:30:00-05:00", **{"with": "Robin"})
+        said = lists.change(self.home, {"action": "unplan", "list": "Movies", "items": ["1"]}, by="default", now=self.now)
+        self.assertEqual(said["unplanned"], "Elf")
+        self.assertEqual(self.removed, ["j1", "j2"])
+        item = lists.load(self.home)[0]["items"][0]
+        for field in ("when", "with", "plan_jobs"):
+            self.assertNotIn(field, item)
+        self.assertNotIn("planned", said["items"][0])
+
+    def test_unplan_needs_one_item_it_can_find(self):
+        lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
+        said = lists.change(self.home, {"action": "unplan", "list": "Movies", "items": ["Nothing like it"]}, by="default", now=self.now)
+        self.assertIn("error", said)
+
     def test_a_morning_plan_and_one_already_under_way(self):
         lists.change(self.home, {"action": "make", "title": "To Do", "items": ["Call the vet"]}, now=self.now)
         lists.change(self.home, {"action": "plan", "list": "To Do", "items": ["1"], "when": "2026-11-19T09:00:00-05:00"}, now=self.now)

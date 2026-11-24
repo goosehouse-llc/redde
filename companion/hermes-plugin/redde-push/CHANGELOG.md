@@ -3,6 +3,11 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.42.0 (2026-11-23)
+
+- Dates by hand: `redde_list` has `unplan`, which takes the date off one item with its reminder
+  and check. Redde's Set Date, Change Date and Remove Date on a to-do use `plan` and `unplan`.
+
 ## 1.41.0 (2026-11-23)
 
 - Plan For It (`cards.py`): told what they're about to do, with when ("We're driving to Montreal

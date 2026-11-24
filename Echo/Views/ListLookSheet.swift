@@ -142,7 +142,7 @@ struct ListLookSheet: View {
                         Text("Kind", comment: "A list's look: what the list is for")
                     }
                 } footer: {
-                    Text("Films & Shows lists show each title as its poster.", comment: "A list's look: under the kind picker")
+                    Text("Films & Shows lists show each title with its poster.", comment: "A list's look: under the kind picker")
                 }
             }
             .navigationTitle(Text("Change Look", comment: "A to-do list: choose its emoji, colour and kind"))

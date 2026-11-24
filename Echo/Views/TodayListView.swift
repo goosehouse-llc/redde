@@ -9,8 +9,9 @@ import SwiftUI
 ///
 /// From 2026-11-23 ("make these lists a bit more fun"): the list's colour washes the top of the
 /// page and fills its ring and ticks, its emoji sits by its name, a tick springs, a finished list
-/// throws its emoji about, and a watch list is a wall of posters, each stamped once watched.
-/// Change Look picks the emoji, the colour and the kind.
+/// throws its emoji about. Change Look picks the emoji, the colour and the kind. A watch list is a
+/// clean list of small posters under a thin progress bar (`FilmRow`; picked 2026-11-23 over the wall
+/// of posters it first was).
 struct TodayListView: View {
     @State private var lists = TodayLists.shared
     @State private var renaming = false
@@ -19,6 +20,7 @@ struct TodayListView: View {
     @State private var adding = ""
     @State private var doneFolded = false
     @State private var styling = false
+    @State private var dating: TodayList.Item?
     @FocusState private var typing: Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
@@ -38,6 +40,13 @@ struct TodayListView: View {
     private var mark: Color { lists.shown?.color ?? ColorScheme.checklistGreen }
 
     private func content(_ list: TodayList) -> some View {
+        listBody(list)
+            .sheet(item: $dating) { item in
+                DateSheet(item: item, mark: mark) { lists.setDate($0, for: item, in: list) }
+            }
+    }
+
+    private func listBody(_ list: TodayList) -> some View {
         List {
             Section {
                 header(list)
@@ -53,24 +62,12 @@ struct TodayListView: View {
             }
             .listSectionSeparator(.hidden)
 
-            Section {
-                if list.open.isEmpty, !list.items.isEmpty { allDone }
-                if list.kind == .watch {
-                    if !list.open.isEmpty { posters(list.open, in: list) }
-                } else {
-                    ForEach(list.open) { row($0, in: list) }
-                }
-                addRow(list)
-            }
+            openItems(list)
 
             if !list.finished.isEmpty {
                 Section {
                     if !doneFolded {
-                        if list.kind == .watch {
-                            posters(list.finished, in: list)
-                        } else {
-                            ForEach(list.finished) { row($0, in: list) }
-                        }
+                        ForEach(list.finished) { row($0, in: list) }
                     }
                 } header: {
                     doneHeader(list)
@@ -132,42 +129,89 @@ struct TodayListView: View {
 
     // MARK: Pieces
 
-    /// The name, large, how it stands, and the ring.
+    /// What's left, then the line to add to it. A to-do list with dates comes in groups by when;
+    /// with none, or any other kind of list, it's one panel.
+    @ViewBuilder
+    private func openItems(_ list: TodayList) -> some View {
+        let groups = list.groupsByWhen ? list.openByWhen() : []
+        if groups.contains(where: { $0.when != .anytime }) {
+            ForEach(groups) { group in
+                Section {
+                    ForEach(group.items) { item in
+                        row(item, in: list, group: group.when)
+                            .listRowBackground(group.when == .today ? mark.opacity(scheme == .dark ? 0.22 : 0.14) : nil)
+                    }
+                } header: {
+                    whenHeader(group.when)
+                }
+            }
+            Section { addRow(list) }
+        } else {
+            Section {
+                if list.open.isEmpty, !list.items.isEmpty { allDone }
+                ForEach(list.open) { row($0, in: list) }
+                addRow(list)
+            }
+        }
+    }
+
+    private func whenHeader(_ when: TodayList.When) -> some View {
+        Group {
+            switch when {
+            case .overdue: Text("Overdue", comment: "A to-do list: the group of items whose day has passed")
+            case .today: Text("Today", comment: "An agenda card's day")
+            case .thisWeek: Text("This week")
+            case .later: Text("Later")
+            case .anytime: Text("Anytime", comment: "A to-do list: the group of items with no day")
+            }
+        }
+        .chatFont(.title3, weight: .bold)
+        .foregroundStyle(when == .overdue ? AnyShapeStyle(CardInk.readable(.orange, drawnIn: scheme)) : when == .today ? AnyShapeStyle(CardInk.readable(mark, drawnIn: scheme)) : AnyShapeStyle(.primary))
+        .textCase(nil)
+    }
+
+    /// The name, large, how it stands, and the ring (a watch or to-do list: a thin bar under them).
     private func header(_ list: TodayList) -> some View {
         let done = list.finished.count, total = list.items.count
-        return HStack(alignment: .center, spacing: 14) {
-            if let emoji = list.emoji {
-                Button { styling = true } label: {
-                    Text(verbatim: emoji)
-                        .font(.system(size: 40))
-                        .frame(width: 64, height: 64)
-                        .background(mark.opacity(scheme == .dark ? 0.24 : 0.16), in: .rect(cornerRadius: 18))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Change Look", comment: "A to-do list: choose its emoji, colour and kind"))
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(list.title)
-                    .chatFont(.largeTitle, weight: .bold)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
-                    .accessibilityAddTraits(.isHeader)
-                Group {
-                    if total > 0, done == total {
-                        Text("All done", comment: "Today strip: a to-do list with every item checked off")
-                            .foregroundStyle(mark)
-                    } else {
-                        Text("\(done) of \(total) done", comment: "The agent's task list: tasks done of all tasks")
-                            .foregroundStyle(.secondary)
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 14) {
+                if let emoji = list.emoji {
+                    Button { styling = true } label: {
+                        Text(verbatim: emoji)
+                            .font(.system(size: 40))
+                            .frame(width: 64, height: 64)
+                            .background(mark.opacity(scheme == .dark ? 0.24 : 0.16), in: .rect(cornerRadius: 18))
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Change Look", comment: "A to-do list: choose its emoji, colour and kind"))
                 }
-                .chatFont(.subheadline, weight: .medium)
-                .monospacedDigit()
-                .contentTransition(.numericText(value: Double(done)))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(list.title)
+                        .chatFont(.largeTitle, weight: .bold)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .accessibilityAddTraits(.isHeader)
+                    Group {
+                        if total > 0, done == total {
+                            Text("All done", comment: "Today strip: a to-do list with every item checked off")
+                                .foregroundStyle(mark)
+                        } else {
+                            Text("\(done) of \(total) done", comment: "The agent's task list: tasks done of all tasks")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .chatFont(.subheadline, weight: .medium)
+                    .monospacedDigit()
+                    .contentTransition(.numericText(value: Double(done)))
+                }
+                Spacer(minLength: 8)
+                if total > 0, list.kind != .watch, !list.groupsByWhen {
+                    BigRing(done: done, total: total, mark: mark)
+                        .accessibilityHidden(true)
+                }
             }
-            Spacer(minLength: 8)
-            if total > 0 {
-                BigRing(done: done, total: total, mark: mark)
+            if total > 0, list.kind == .watch || list.groupsByWhen {
+                ThinBar(done: done, total: total, mark: mark)
                     .accessibilityHidden(true)
             }
         }
@@ -189,25 +233,33 @@ struct TodayListView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func row(_ item: TodayList.Item, in list: TodayList) -> some View {
+    private func row(_ item: TodayList.Item, in list: TodayList, group: TodayList.When? = nil) -> some View {
         Button { lists.toggle(item, in: list) } label: {
-            HStack(spacing: 14) {
-                Tick(on: item.done, mark: mark)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.text)
-                        .chatFont(.body)
-                        .strikethrough(item.done, color: .secondary)
-                        .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
-                    if let plan = item.plan {
-                        Label(plan, systemImage: "calendar")
-                            .chatFont(.caption, weight: .medium)
-                            .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(mark))
+            Group {
+                if list.kind == .watch {
+                    FilmRow(item: item, mark: mark)
+                } else if list.groupsByWhen {
+                    DatedRow(item: item, group: group, mark: mark)
+                } else {
+                    HStack(spacing: 14) {
+                        Tick(on: item.done, mark: mark)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.text)
+                                .chatFont(.body)
+                                .strikethrough(item.done, color: .secondary)
+                                .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                            if let plan = item.plan {
+                                Label(plan, systemImage: "calendar")
+                                    .chatFont(.caption, weight: .medium)
+                                    .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(mark))
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .padding(.vertical, 3)
+                    .frame(minHeight: 44)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.vertical, 3)
-            .frame(minHeight: 44)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -218,12 +270,32 @@ struct TodayListView: View {
             }
         }
         .contextMenu {
+            if list.groupsByWhen, !item.done {
+                Button { dating = item } label: {
+                    Label {
+                        if item.when == nil {
+                            Text("Set Date", comment: "A to-do's long-press menu: give it a day and time")
+                        } else {
+                            Text("Change Date", comment: "A to-do's long-press menu: move it to another day or time")
+                        }
+                    } icon: { Image(systemName: "calendar") }
+                }
+                .accessibilityIdentifier("list-set-date")
+                if item.when != nil {
+                    Button { lists.setDate(nil, for: item, in: list) } label: {
+                        Label { Text("Remove Date", comment: "A to-do: take its day and time off") } icon: { Image(systemName: "calendar.badge.minus") }
+                    }
+                    .accessibilityIdentifier("list-remove-date")
+                }
+            }
             Button(role: .destructive) { lists.remove([item], from: list) } label: {
                 Label { Text("Remove", comment: "A to-do list: take one item off it") } icon: { Image(systemName: "trash") }
             }
         }
         .accessibilityAddTraits(.isToggle)
-        .accessibilityValue(item.done ? Text("Done") : Text("Not done"))
+        .accessibilityValue(!item.done ? Text("Not done")
+                            : list.kind == .watch ? Text("Watched", comment: "A watch list: the stamp on a film or series already seen")
+                            : Text("Done"))
         .accessibilityHint(item.done ? Text("Puts it back on the list", comment: "VoiceOver hint: a checked-off to-do item")
                                      : Text("Checks it off", comment: "VoiceOver hint: a to-do item"))
         .accessibilityAction(named: Text("Remove", comment: "A to-do list: take one item off it")) { lists.remove([item], from: list) }
@@ -254,7 +326,11 @@ struct TodayListView: View {
         HStack(spacing: 8) {
             Button { doneFolded.toggle() } label: {
                 HStack(spacing: 6) {
-                    Text("Done", comment: "Closes the Work sheet")
+                    if list.kind == .watch {
+                        Text("Watched", comment: "A watch list: the stamp on a film or series already seen")
+                    } else {
+                        Text("Done", comment: "Closes the Work sheet")
+                    }
                     Text(list.finished.count, format: .number)
                         .monospacedDigit()
                         .padding(.horizontal, 7).padding(.vertical, 1)
@@ -304,23 +380,6 @@ struct TodayListView: View {
         }
     }
 
-    /// A watch list's titles: posters, as many across as fit; tap one to mark it watched.
-    private func posters(_ items: [TodayList.Item], in list: TodayList) -> some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 96, maximum: 150), spacing: 12, alignment: .top)], alignment: .leading, spacing: 16) {
-            ForEach(items) { item in
-                PosterTile(item: item, mark: mark) { lists.toggle(item, in: list) }
-                    .contextMenu {
-                        Button(role: .destructive) { lists.remove([item], from: list) } label: {
-                            Label { Text("Remove", comment: "A to-do list: take one item off it") } icon: { Image(systemName: "trash") }
-                        }
-                    }
-                    .accessibilityAction(named: Text("Remove", comment: "A to-do list: take one item off it")) { lists.remove([item], from: list) }
-            }
-        }
-        .padding(.vertical, 6)
-        .listRowInsets(EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14))
-    }
-
     /// What's typed goes on the list, and the field stays ready for the next.
     private func addTyped(to list: TodayList) {
         let text = adding.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -363,64 +422,205 @@ private struct BigRing: View {
     }
 }
 
-/// A film or a series on a watch list: its poster (or a film strip while it has none), its name and
-/// year under it; once watched, greyed with a stamp in the list's colour.
-private struct PosterTile: View {
-    let item: TodayList.Item
-    let mark: Color
-    let toggle: () -> Void
+/// A watch list's progress, under its name.
+private struct ThinBar: View {
+    var done: Int
+    var total: Int
+    var mark: Color
 
     var body: some View {
-        Button(action: toggle) {
-            VStack(alignment: .leading, spacing: 6) {
-                Color.clear
-                    .aspectRatio(2 / 3, contentMode: .fit)
-                    .overlay {
-                        GeometryReader { size in
-                            CardPicture(url: item.poster.flatMap(URL.init(string:)), symbol: "film", width: size.size.width, height: size.size.height,
-                                        fill: true, corner: 12, pixels: 360)
+        Capsule()
+            .fill(mark.opacity(0.22))
+            .frame(height: 6)
+            .overlay(alignment: .leading) {
+                GeometryReader { size in
+                    Capsule()
+                        .fill(mark)
+                        .frame(width: size.size.width * CGFloat(done) / CGFloat(max(total, 1)))
+                }
+            }
+            .animation(.snappy(duration: 0.3), value: done)
+    }
+}
+
+/// Picks a to-do's day and time, from now to the 60 days ahead the plugin can plan.
+private struct DateSheet: View {
+    let item: TodayList.Item
+    let mark: Color
+    let save: (Date?) -> Void
+    private let range: ClosedRange<Date>
+    @State private var date: Date
+    @Environment(\.dismiss) private var dismiss
+
+    init(item: TodayList.Item, mark: Color, save: @escaping (Date?) -> Void) {
+        self.item = item
+        self.mark = mark
+        self.save = save
+        let range = TodayList.planRange()
+        self.range = range
+        _date = State(initialValue: item.suggestedDate().clamped(to: range))
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    DatePicker(selection: $date, in: range, displayedComponents: .date) { Text("Date") }
+                        .datePickerStyle(.graphical)
+                    DatePicker(selection: $date, in: range, displayedComponents: .hourAndMinute) { Text("Time") }
+                } footer: {
+                    Text("Redde will remind you that day and check in afterward.",
+                         comment: "A to-do's date picker: what setting a date does")
+                }
+                if item.when != nil {
+                    Section {
+                        Button(role: .destructive) { finish(nil) } label: {
+                            Text("Remove Date", comment: "A to-do: take its day and time off")
                         }
-                    }
-                    .saturation(item.done ? 0 : 1)
-                    .opacity(item.done ? 0.55 : 1)
-                    .overlay(alignment: .center) {
-                        if item.done {
-                            Label { Text("Watched", comment: "A watch list: the stamp on a film or series already seen") } icon: { Image(systemName: "checkmark") }
-                                .font(.system(.caption, design: .rounded, weight: .heavy))
-                                .textCase(.uppercase)
-                                .padding(.horizontal, 8).padding(.vertical, 4)
-                                .foregroundStyle(.white)
-                                .background(mark, in: .rect(cornerRadius: 6))
-                                .rotationEffect(.degrees(-12))
-                                .transition(.scale(scale: 1.6).combined(with: .opacity))
-                        }
-                    }
-                    .shadow(color: .black.opacity(item.done ? 0 : 0.18), radius: 6, y: 3)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(item.name)
-                        .chatFont(.footnote, weight: .semibold)
-                        .lineLimit(2)
-                        .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
-                    if let year = item.year {
-                        Text(verbatim: String(year)).chatFont(.caption2).foregroundStyle(.secondary)
-                    }
-                    if let plan = item.plan {
-                        Label(plan, systemImage: "calendar")
-                            .chatFont(.caption2, weight: .semibold)
-                            .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(mark))
-                            .lineLimit(2)
+                        .accessibilityIdentifier("date-sheet-remove")
                     }
                 }
             }
-            .contentShape(.rect)
-            .animation(.spring(duration: 0.35, bounce: 0.4), value: item.done)
+            .tint(mark)
+            .navigationTitle(Text(verbatim: item.text))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { finish(date) }
+                        .accessibilityIdentifier("date-sheet-save")
+                }
+            }
         }
-        .buttonStyle(.plain)
-        .sensoryFeedback(trigger: item.done) { _, now in now ? .impact(weight: .medium) : .selection }
+        .presentationDetents([.height(650), .large])
+        #if os(iOS)
+        .presentationBackground(Color(uiColor: .systemGroupedBackground))
+        #endif
+    }
+
+    private func finish(_ picked: Date?) {
+        save(picked)
+        dismiss()
+    }
+}
+
+private extension Date {
+    func clamped(to range: ClosedRange<Date>) -> Date { Swift.min(Swift.max(self, range.lowerBound), range.upperBound) }
+}
+
+/// A to-do on a list sorted by when: its day on a small badge unless it's today, its time and who
+/// it's with, and the tick at the end.
+private struct DatedRow: View {
+    let item: TodayList.Item
+    let group: TodayList.When?
+    let mark: Color
+    @Environment(\.colorScheme) private var scheme
+
+    /// Today's row has a tinted panel behind it, where the list's colour wouldn't read.
+    private var detailStyle: AnyShapeStyle {
+        switch group {
+        case .overdue: AnyShapeStyle(CardInk.readable(.orange, drawnIn: scheme))
+        case .today: AnyShapeStyle(.primary)
+        default: AnyShapeStyle(CardInk.readable(mark, drawnIn: scheme))
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if !item.done, let date = item.when, let group, group != .today, group != .anytime {
+                DayBadge(date: date, showsMonth: group != .thisWeek, tint: group == .overdue ? CardInk.readable(.orange, drawnIn: scheme) : .primary)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.text)
+                    .chatFont(.body, weight: item.done ? .regular : .semibold)
+                    .strikethrough(item.done, color: .secondary)
+                    .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                if !item.done, let detail = item.timeAndCompany {
+                    Text(verbatim: detail)
+                        .chatFont(.footnote, weight: .medium)
+                        .foregroundStyle(detailStyle)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Tick(on: item.done, mark: mark)
+        }
+        .padding(.vertical, 3)
+        .frame(minHeight: 44)
+        // The task first for VoiceOver, then when: the badge comes first on screen.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: item.done ? item.text : [item.text, item.plan].compactMap { $0 }.joined(separator: ", ")))
+    }
+}
+
+/// "FRI 27" this week, "DEC 7" further off or overdue.
+private struct DayBadge: View {
+    let date: Date
+    let showsMonth: Bool
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(date, format: showsMonth ? Date.FormatStyle().month(.abbreviated) : Date.FormatStyle().weekday(.abbreviated))
+                .chatFont(.caption2, weight: .bold)
+                .textCase(.uppercase)
+                .foregroundStyle(tint == .primary ? AnyShapeStyle(.secondary) : AnyShapeStyle(tint))
+            Text(date, format: Date.FormatStyle().day())
+                .chatFont(.title3, weight: .heavy)
+                .foregroundStyle(tint)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .frame(minWidth: 42)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(date, format: Date.FormatStyle().weekday(.wide).month(.wide).day()))
+    }
+}
+
+/// A film or a series on a watch list, one row: a small poster (or a film strip while it has none),
+/// its name, its year and any plan, and the tick at the end. Once watched: smaller, grey, the year
+/// at the end, so a long list stays easy to scan.
+private struct FilmRow: View {
+    let item: TodayList.Item
+    let mark: Color
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+
+    /// "2019 · Thu, Nov 26, 7:30 PM · with Robin".
+    private var details: String {
+        [item.year.map(String.init), item.plan].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    var body: some View {
+        let width = (item.done ? 30 : 38) * min(scale, 1.5)
+        HStack(spacing: 12) {
+            CardPicture(url: item.poster.flatMap(URL.init(string:)), symbol: "film", width: width, height: width * 1.48,
+                        fill: true, corner: 6, pixels: 180)
+                .saturation(item.done ? 0 : 1)
+                .opacity(item.done ? 0.7 : 1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.name)
+                    .chatFont(item.done ? .subheadline : .body, weight: .semibold)
+                    .lineLimit(2)
+                    .foregroundStyle(item.done ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                if !item.done, !details.isEmpty {
+                    Text(verbatim: details)
+                        .chatFont(.footnote)
+                        .lineLimit(2)
+                        .foregroundStyle(item.plan == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(mark))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if item.done, let year = item.year {
+                Text(verbatim: String(year))
+                    .chatFont(.footnote)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+            Tick(on: item.done, mark: mark)
+        }
+        .padding(.vertical, 1)
+        .frame(minHeight: 44)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: [item.name, item.year.map(String.init), item.plan].compactMap { $0 }.joined(separator: ", ")))
-        .accessibilityAddTraits([.isButton, .isToggle])
-        .accessibilityValue(item.done ? Text("Watched", comment: "A watch list: the stamp on a film or series already seen") : Text("Not done"))
     }
 }
 

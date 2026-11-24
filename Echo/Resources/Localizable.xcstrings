@@ -325,6 +325,755 @@
         }
       }
     },
+    "Anytime" : {
+      "comment" : "A to-do list: the group of items with no day",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når som helst"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jederzeit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando sea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N’importe quand"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando vuoi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いつでも"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "언제든지"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når som helst"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wanneer je wilt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kiedykolwiek"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A qualquer hora"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В любое время"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När som helst"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her zaman"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Будь-коли"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "随时"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隨時"
+          }
+        }
+      }
+    },
+    "Change Date" : {
+      "comment" : "A to-do's long-press menu: move it to another day or time",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skift dato"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum ändern"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar fecha"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier la date"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia data"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日付を変更"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "날짜 변경"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endre dato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum wijzigen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmień datę"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alterar data"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить дату"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ändra datum"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarihi değiştir"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Змінити дату"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改日期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改日期"
+          }
+        }
+      }
+    },
+    "Overdue" : {
+      "comment" : "A to-do list: the group of items whose day has passed",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forfalden"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Überfällig"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrasado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En retard"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In ritardo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "期限切れ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기한 지남"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forfalt"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te laat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaległe"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrasado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просрочено"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Försenat"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gecikmiş"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прострочено"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已逾期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已逾期"
+          }
+        }
+      }
+    },
+    "Redde will remind you that day and check in afterward." : {
+      "comment" : "A to-do's date picker: what setting a date does",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde minder dig om det den dag og følger op bagefter."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde erinnert dich an dem Tag daran und fragt danach nach."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde te lo recordará ese día y te preguntará después."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde vous le rappellera ce jour-là et prendra des nouvelles ensuite."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde te lo ricorderà quel giorno e ti chiederà poi com'è andata."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde が当日にお知らせし、あとで確認します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde가 그날 알려 드리고 나중에 확인해 드립니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde minner deg på det den dagen og følger opp etterpå."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde herinnert je die dag eraan en vraagt er daarna naar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde przypomni Ci o tym tego dnia, a potem zapyta, jak poszło."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Redde vai lembrar você nesse dia e perguntar depois como foi."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde напомнит вам в этот день, а потом уточнит, как всё прошло."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde påminner dig den dagen och följer upp efteråt."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde o gün sana hatırlatır ve sonrasında nasıl gittiğini sorar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde нагадає вам цього дня, а потім уточнить, як усе минуло."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 会在当天提醒你，并在之后跟进。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde 會在當天提醒你，並在之後跟進。"
+          }
+        }
+      }
+    },
+    "Remove Date" : {
+      "comment" : "A to-do: take its day and time off",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fjern dato"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum entfernen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar fecha"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la date"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi data"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日付を削除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "날짜 삭제"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fjern dato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń datę"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover data"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убрать дату"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta bort datum"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarihi kaldır"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прибрати дату"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除日期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除日期"
+          }
+        }
+      }
+    },
+    "Set Date" : {
+      "comment" : "A to-do's long-press menu: give it a day and time",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angiv dato"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum festlegen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poner fecha"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir la date"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta data"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日付を設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "날짜 설정"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angi dato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum instellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw datę"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definir data"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Указать дату"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ange datum"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarih belirle"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вказати дату"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置日期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定日期"
+          }
+        }
+      }
+    },
+    "Your Hermes needs Redde's plugin 1.42 or later for this. Update it in Settings › Redde Plugin." : {
+      "comment" : "A to-do list's sheet: setting or removing a date on a server with an older plugin",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes skal have Redde-plugin 1.42 eller nyere til dette. Opdater det under Indstillinger › Redde-plugin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes braucht dafür das Redde-Plugin 1.42 oder neuer. Aktualisiere es unter Einstellungen › Redde-Plugin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes necesita el plugin de Redde 1.42 o posterior para esto. Actualízalo en Ajustes › Plugin de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes a besoin du plugin Redde 1.42 ou plus récent pour cela. Mettez-le à jour dans Réglages › Plugin Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo Hermes ha bisogno del plugin Redde 1.42 o successivo per questo. Aggiornalo in Impostazioni › Plugin Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これを使うには、HermesにRedde プラグイン 1.42 以降が必要です。設定 › Redde プラグインでアップデートしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 기능을 쓰려면 Hermes에 Redde 플러그인 1.42 이상이 필요합니다. 설정 › Redde 플러그인에서 업데이트하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes trenger Redde-tillegget 1.42 eller nyere for dette. Oppdater det under Innstillinger › Redde-tillegg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes heeft hiervoor Redde-plug-in 1.42 of nieuwer nodig. Werk hem bij via Instellingen › Redde-plug-in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes potrzebuje do tego wtyczki Redde 1.42 lub nowszej. Zaktualizuj ją w Ustawienia › Wtyczka Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes precisa do plugin do Redde 1.42 ou mais recente para isso. Atualize em Ajustes › Plugin do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для этого вашему Hermes нужен плагин Redde версии 1.42 или новее. Обновите его в Настройки › Плагин Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes behöver Redde-pluginen 1.42 eller senare för detta. Uppdatera den under Inställningar › Redde-plugin."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunun için Hermes'inde Redde eklentisi 1.42 veya üstü gerekir. Ayarlar › Redde Eklentisi'nden güncelle."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для цього вашому Hermes потрібен плагін Redde 1.42 або новіший. Оновіть його в Параметри › Плагін Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 需要 Redde 插件 1.42 或更高版本才能使用此功能。请在“设置 › Redde 插件”中更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 需要 Redde 外掛 1.42 或更新版本才能使用此功能。請在「設定 › Redde 外掛」中更新。"
+          }
+        }
+      }
+    },
     "… %lld more lines" : {
       "localizations" : {
         "da" : {
@@ -174535,109 +175284,109 @@
         }
       }
     },
-    "Every list has an emoji and a color, from your agent or its title, and Change Look picks your own. A list of films or series shows their posters, stamped Watched as you go. It takes the Redde plugin 1.37." : {
+    "Every list has an emoji and a color, from your agent or its title, and Change Look picks your own. Film and series lists show each poster beside its title. To-dos sort by when, and a long press sets a date. It takes the Redde plugin 1.42." : {
       "comment" : "What's New 2.7: lists with a look",
       "localizations" : {
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hver liste har en emoji og en farve, fra din agent eller dens titel, og Skift udseende vælger dine egne. En liste med film eller serier viser deres plakater, stemplet Set efterhånden. Det kræver Redde-plugin 1.37."
+            "value" : "Hver liste har en emoji og en farve, fra din agent eller dens titel, og Skift udseende vælger dine egne. Lister med film eller serier viser hver plakat ved titlen. To-dos sorteres efter tidspunkt, og et langt tryk sætter en dato. Det kræver Redde-plugin 1.42."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jede Liste hat ein Emoji und eine Farbe, von deinem Agenten oder aus ihrem Titel, und mit „Aussehen ändern“ wählst du eigene. Eine Liste mit Filmen oder Serien zeigt ihre Plakate, nach und nach als Gesehen gestempelt. Dafür braucht es das Redde-Plugin 1.37."
+            "value" : "Jede Liste hat ein Emoji und eine Farbe, von deinem Agenten oder aus ihrem Titel, und mit „Aussehen ändern“ wählst du eigene. Listen mit Filmen oder Serien zeigen jedes Plakat neben dem Titel. To-dos sortieren sich nach Datum, und langes Drücken legt ein Datum fest. Dafür braucht es das Redde-Plugin 1.42."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cada lista tiene un emoji y un color, de tu agente o de su título, y Cambiar aspecto elige los tuyos. Una lista de películas o series muestra sus pósteres, con el sello Vista a medida que avanzas. Requiere el plugin de Redde 1.37."
+            "value" : "Cada lista tiene un emoji y un color, de tu agente o de su título, y Cambiar aspecto elige los tuyos. Las listas de películas o series muestran cada póster junto a su título. Las tareas se ordenan por fecha, y una pulsación larga les pone una. Requiere el plugin de Redde 1.42."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chaque liste a un emoji et une couleur, donnés par votre agent ou tirés de son titre, et Changer l’apparence choisit les vôtres. Une liste de films ou de séries montre leurs affiches, tamponnées Vu au fil du temps. Il faut le plugin Redde 1.37."
+            "value" : "Chaque liste a un emoji et une couleur, donnés par votre agent ou tirés de son titre, et Changer l’apparence choisit les vôtres. Les listes de films ou de séries montrent chaque affiche à côté de son titre. Les tâches se trient par date, et un appui long en définit une. Il faut le plugin Redde 1.42."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ogni lista ha un’emoji e un colore, dal tuo agente o dal suo titolo, e Cambia aspetto sceglie i tuoi. Una lista di film o serie mostra le locandine, timbrate Visto man mano. Serve il plugin Redde 1.37."
+            "value" : "Ogni lista ha un’emoji e un colore, dal tuo agente o dal suo titolo, e Cambia aspetto sceglie i tuoi. Le liste di film o serie mostrano ogni locandina accanto al titolo. Le cose da fare si ordinano per data, e una pressione prolungata ne imposta una. Serve il plugin Redde 1.42."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "どのリストにも絵文字と色がつきます。エージェントかタイトルから決まり、「見た目を変更」で自分で選べます。映画やドラマのリストはポスターで並び、観たものには「視聴済み」のスタンプがつきます。Redde プラグイン 1.37 が必要です。"
+            "value" : "どのリストにも絵文字と色がつきます。エージェントかタイトルから決まり、「見た目を変更」で自分で選べます。映画やドラマのリストはタイトルの横にポスターが並びます。ToDoは期限順に並び、長押しで日付を設定できます。Redde プラグイン 1.42 が必要です。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "모든 목록에 이모지와 색이 생깁니다. 에이전트나 제목에서 정해지고, 모양 변경에서 직접 고를 수 있습니다. 영화나 시리즈 목록은 포스터로 보이고, 본 작품에는 봤음 도장이 찍힙니다. Redde 플러그인 1.37이 필요합니다."
+            "value" : "모든 목록에 이모지와 색이 생깁니다. 에이전트나 제목에서 정해지고, 모양 변경에서 직접 고를 수 있습니다. 영화나 시리즈 목록은 제목 옆에 포스터를 보여 줍니다. 할 일은 날짜순으로 정렬되고, 길게 누르면 날짜를 정할 수 있습니다. Redde 플러그인 1.42가 필요합니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hver liste har en emoji og en farge, fra agenten din eller tittelen, og Endre utseende lar deg velge selv. En liste med filmer eller serier viser plakatene, stemplet Sett etter hvert. Det krever Redde-plugin 1.37."
+            "value" : "Hver liste har en emoji og en farge, fra agenten din eller tittelen, og Endre utseende lar deg velge selv. Lister med filmer eller serier viser hver plakat ved tittelen. Gjøremål sorteres etter når, og et langt trykk setter en dato. Det krever Redde-plugin 1.42."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elke lijst heeft een emoji en een kleur, van je agent of uit de titel, en met Uiterlijk wijzigen kies je zelf. Een lijst met films of series toont hun posters, gestempeld als Gezien. Hiervoor is de Redde-plug-in 1.37 nodig."
+            "value" : "Elke lijst heeft een emoji en een kleur, van je agent of uit de titel, en met Uiterlijk wijzigen kies je zelf. Lijsten met films of series tonen elke poster naast de titel. Taken staan op datum, en lang drukken stelt er een in. Hiervoor is de Redde-plug-in 1.42 nodig."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Każda lista ma emoji i kolor, od agenta lub z tytułu, a w Zmień wygląd wybierzesz własne. Lista filmów lub seriali pokazuje ich plakaty, ze stemplem Obejrzane, gdy je zaliczasz. Wymaga wtyczki Redde 1.37."
+            "value" : "Każda lista ma emoji i kolor, od agenta lub z tytułu, a w Zmień wygląd wybierzesz własne. Listy filmów lub seriali pokazują każdy plakat obok tytułu. Zadania układają się według terminu, a długie przytrzymanie ustawia datę. Wymaga wtyczki Redde 1.42."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cada lista tem um emoji e uma cor, do seu agente ou do título, e Mudar aparência escolhe os seus. Uma lista de filmes ou séries mostra os pôsteres, carimbados Assistido conforme você avança. Requer o plugin Redde 1.37."
+            "value" : "Cada lista tem um emoji e uma cor, do seu agente ou do título, e Mudar aparência escolhe os seus. Listas de filmes ou séries mostram cada pôster ao lado do título. As tarefas se ordenam por data, e um toque longo define uma. Requer o plugin Redde 1.42."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "У каждого списка есть эмодзи и цвет — от агента или по названию, а в «Изменить вид» можно выбрать свои. Список фильмов или сериалов показывает их постеры с отметкой «Просмотрено». Нужен плагин Redde 1.37."
+            "value" : "У каждого списка есть эмодзи и цвет — от агента или по названию, а в «Изменить вид» можно выбрать свои. В списках фильмов и сериалов постер стоит рядом с названием. Задачи сортируются по сроку, а долгое нажатие задаёт дату. Нужен плагин Redde 1.42."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Varje lista har en emoji och en färg, från din agent eller titeln, och Ändra utseende låter dig välja själv. En lista med filmer eller serier visar affischerna, stämplade Sedd allteftersom. Det kräver Redde-pluginet 1.37."
+            "value" : "Varje lista har en emoji och en färg, från din agent eller titeln, och Ändra utseende låter dig välja själv. Listor med filmer eller serier visar varje affisch bredvid titeln. Att göra-punkter sorteras efter datum, och ett långt tryck sätter ett. Det kräver Redde-pluginet 1.42."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Her listenin bir emojisi ve rengi var; temsilcinizden ya da başlığından gelir, Görünümü Değiştir ile kendiniz seçersiniz. Film ve dizi listeleri afişleriyle görünür, izledikçe İzlendi damgası alır. Redde eklentisi 1.37 gerekir."
+            "value" : "Her listenin bir emojisi ve rengi var; temsilcinizden ya da başlığından gelir, Görünümü Değiştir ile kendiniz seçersiniz. Film ve dizi listeleri her afişi başlığının yanında gösterir. Yapılacaklar tarihe göre sıralanır, uzun basınca tarih belirlenir. Redde eklentisi 1.42 gerekir."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Кожен список має емодзі й колір — від агента або за назвою, а в «Змінити вигляд» можна обрати свої. Список фільмів чи серіалів показує їхні постери з позначкою «Переглянуто». Потрібен плагін Redde 1.37."
+            "value" : "Кожен список має емодзі й колір — від агента або за назвою, а в «Змінити вигляд» можна обрати свої. У списках фільмів і серіалів постер стоїть поруч із назвою. Завдання сортуються за строком, а довге натискання задає дату. Потрібен плагін Redde 1.42."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "每个列表都有表情和颜色，来自你的代理或列表标题，也可在“更改外观”中自选。影视列表以海报显示，看过的会盖上“已看”。需要 Redde 插件 1.37。"
+            "value" : "每个列表都有表情和颜色，来自你的代理或列表标题，也可在“更改外观”中自选。影视列表在标题旁显示海报。待办按时间排序，长按即可设置日期。需要 Redde 插件 1.42。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "每個列表都有表情符號和顏色，來自你的代理或列表標題，也可在「更改外觀」中自選。影視列表以海報顯示，看過的會蓋上「已看」。需要 Redde 外掛 1.37。"
+            "value" : "每個列表都有表情符號和顏色，來自你的代理或列表標題，也可在「更改外觀」中自選。影視列表在標題旁顯示海報。待辦按時間排序，長按即可設定日期。需要 Redde 外掛 1.42。"
           }
         }
       }
@@ -180734,19 +181483,19 @@
         }
       }
     },
-    "Films & Shows lists show each title as its poster." : {
+    "Films & Shows lists show each title with its poster." : {
       "comment" : "A list's look: under the kind picker",
       "localizations" : {
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lister med film og serier viser hver titel som sin plakat."
+            "value" : "Lister med film og serier viser hver titel med sin plakat."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Listen mit Filmen & Serien zeigen jeden Titel als Plakat."
+            "value" : "Listen mit Filmen & Serien zeigen jeden Titel mit seinem Plakat."
           }
         },
         "es" : {
@@ -180770,31 +181519,31 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "映画・ドラマのリストでは、各作品がポスターで表示されます。"
+            "value" : "映画・ドラマのリストでは、各作品がポスター付きで表示されます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "영화 및 시리즈 목록은 각 작품을 포스터로 보여 줍니다."
+            "value" : "영화 및 시리즈 목록은 각 작품을 포스터와 함께 보여 줍니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lister med filmer og serier viser hver tittel som plakaten sin."
+            "value" : "Lister med filmer og serier viser hver tittel med plakaten sin."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lijsten met films en series tonen elke titel als zijn poster."
+            "value" : "Lijsten met films en series tonen elke titel met zijn poster."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Listy filmów i seriali pokazują każdy tytuł jako plakat."
+            "value" : "Listy filmów i seriali pokazują każdy tytuł z plakatem."
           }
         },
         "pt-BR" : {
@@ -180806,13 +181555,13 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В списках фильмов и сериалов каждое название показано постером."
+            "value" : "В списках фильмов и сериалов каждое название показано с постером."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Listor med filmer och serier visar varje titel som sin affisch."
+            "value" : "Listor med filmer och serier visar varje titel med sin affisch."
           }
         },
         "tr" : {
@@ -180824,19 +181573,19 @@
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "У списках фільмів і серіалів кожну назву показано постером."
+            "value" : "У списках фільмів і серіалів кожну назву показано з постером."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "影视列表会以海报显示每部作品。"
+            "value" : "影视列表会为每部作品显示海报。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "影視列表會以海報顯示每部作品。"
+            "value" : "影視列表會為每部作品顯示海報。"
           }
         }
       }
