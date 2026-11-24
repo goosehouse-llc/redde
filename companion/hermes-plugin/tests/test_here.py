@@ -78,6 +78,31 @@ class WhereYouAreTests(unittest.TestCase):
             self.assertEqual(pusher.send(self.store.devices, core.note("reply", "chat-1", body="Done.")), 1)
             self.assertEqual(pushed, ["phone"])
 
+    def test_notes_the_app_keeps_reach_the_others_quietly(self):
+        pushed = []
+        with mock.patch.object(core, "push", lambda device, made, ttl=3600, call=False: pushed.append((device["id"], made.get("z")))):
+            pusher = core.Pusher(self.store)
+            self.store.set_here(["mac"], 10**10)
+            self.assertEqual(pusher.send(self.store.devices, core.note("routine", "chat-1", body="Your goal, checked.")), 3)
+            self.assertEqual(sorted(pushed), [("mac", None), ("pad", "away"), ("phone", "away")])
+            pushed.clear()
+            pusher.send(self.store.devices, core.note("reply", "chat-1", body="Done."))
+            self.assertEqual(pushed, [("mac", None)], "a reply still goes only where they are")
+
+    def test_with_none_in_use_nothing_goes_quietly(self):
+        self.assertEqual(self.store.elsewhere(self.store.devices, "ideas", now=1000), [])
+        self.store.set_here(["phone"], 1300, now=1000)
+        self.assertEqual(self.ids(self.store.elsewhere(self.store.devices, "ideas", now=1100)), ["mac", "pad"])
+        self.assertEqual(self.store.elsewhere(self.store.devices, "call", now=1100), [], "a call goes everywhere anyway")
+
+    def test_ideas_reach_the_others_quietly(self):
+        pushed = []
+        with mock.patch.object(plugin.ideas.core, "push", lambda device, made, ttl=3600, call=False: pushed.append((device["id"], made.get("z")))):
+            self.store.set_here(["pad"], 10**10)
+            said = plugin.ideas.offer(self.store, Path(self.home.name), "default", "Sol", [{"title": "Book the vet", "request": "Book the vet"}])
+        self.assertEqual(said["phones"], 3)
+        self.assertEqual(sorted(pushed), [("mac", "away"), ("pad", None), ("phone", "away")])
+
     def test_the_app_says_it_is_in_use(self):
         plugin._store, plugin._pusher = self.store, core.Pusher(self.store)
         try:

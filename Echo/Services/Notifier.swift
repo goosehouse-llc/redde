@@ -942,7 +942,9 @@ final class NoteClears {
         guard let reply = try? await command("cleared since \(since)") else { return }
         guard let found = Self.clearedSince(reply) else { return }
         defaults.set(found.now - 5, forKey: key)   // a little back, for a clear said as this was asked
-        if !found.ids.isEmpty { ClearedNotes.remove(found.ids) { _ in Task { @MainActor in BriefingsInbox.shared.reload() } } }
+        if !found.ids.isEmpty {
+            ClearedNotes.remove(found.ids) { _ in Task { @MainActor in BriefingsInbox.shared.reload(); IdeasInbox.shared.reload() } }
+        }
     }
 
     /// The plugin's answer to `cleared since`: its clock now, and the notes cleared since.
@@ -960,7 +962,7 @@ final class NoteClears {
               let (note, _) = PushSeal.note(from: payload, pairings: PushVault.load()),
               note.kind == .clear else { done(false); return }
         ClearedNotes.remove(note.clearedIDs) { _ in
-            Task { @MainActor in BriefingsInbox.shared.reload() }   // their briefings, read (`ClearedNotes`)
+            Task { @MainActor in BriefingsInbox.shared.reload(); IdeasInbox.shared.reload() }   // their briefings read, ideas gone (`ClearedNotes`)
             done(true)
         }
     }

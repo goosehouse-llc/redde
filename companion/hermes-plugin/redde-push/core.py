@@ -502,6 +502,23 @@ class Store:
             known = {d.get("id") for d in self.devices}
             return {d for d, u in (self._read("here.json").get("devices") or {}).items() if d in known and float(u) > now}
 
+    #: Notes whose words the app keeps (an idea's card, a goal's check-in, a briefing, what a watch
+    #: saw): the devices not in use get them too, quietly (`elsewhere`, 1.42.0), so every device
+    #: shows the same cards.
+    KEPT = frozenset({"ideas", "routine", "watch"})
+
+    def elsewhere(self, devices: list[dict], kind: str = "", now: float | None = None) -> list[dict]:
+        """The devices `where_you_are` leaves out that should still have this note, to keep: for a
+        note the app keeps (`KEPT`), each one not in use, while one is. Sent with `z` "away", which
+        the app delivers without a sound or a banner (asked 2026-11-23: the iPad and the iPhone
+        showed different ideas and goals, each having heard only while it was the one in use)."""
+        if kind not in self.KEPT or kind in self.EVERYWHERE:
+            return []
+        here = self.here(now)
+        if not here:
+            return []
+        return [d for d in devices if d.get("id") not in here]
+
     def where_you_are(self, devices: list[dict], kind: str = "", now: float | None = None) -> list[dict]:
         """`devices` less those not in use, while any paired device is in use: there, a note goes
         only where the person is. None of them may be (a chat muted on the Mac in use): then none,
@@ -981,13 +998,16 @@ class Pusher:
 
     def send(self, devices: list[dict], made: dict, tries: int = 2) -> int:
         """Sends now, to each phone in turn; forgets a phone the relay says is gone. Only to those
-        in use, while one is (`Store.where_you_are`)."""
-        devices = self.store.where_you_are(devices, made.get("k", ""))
+        in use, while one is (`Store.where_you_are`), and quietly to the others for a note the app
+        keeps (`Store.elsewhere`)."""
+        kind = made.get("k", "")
+        away = made if made.get("z") else {**made, "z": "away"}   # (a Drawer Only one is quiet already)
+        sends = [(d, made) for d in self.store.where_you_are(devices, kind)] + [(d, away) for d in self.store.elsewhere(devices, kind)]
         delivered = 0
-        for device in devices:
+        for device, words in sends:
             for attempt in range(1, tries + 1):
                 try:
-                    push(device, made, ttl=TTL.get(made.get("k"), 3600))
+                    push(device, words, ttl=TTL.get(made.get("k"), 3600))
                     delivered += 1
                     break
                 except Gone:

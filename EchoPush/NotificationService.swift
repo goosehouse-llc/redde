@@ -70,6 +70,9 @@ final class NotificationService: UNNotificationServiceExtension {
             choices = note.choiceCategory
             // Time to check the traffic for a Leave-By Alert (`LeaveCheck`).
             if note.kind == .leave, let wake = note.i, !wake.isEmpty { leaveCheck = wake }
+            // Heard on another device, the one in use (Only Where You Are, plugin 1.42): kept here
+            // so every device shows the same cards, and into the list without a sound or a banner.
+            if note.z == "away" { MutedChats.quiet(content) }
             // A chat the person muted (Mute… in Redde): in the list, without a sound or a banner.
             if MutedChats.isMuted(session: note.s, room: note.g, bot: note.p) { MutedChats.quiet(content) }
             // Quiet hours: what an agent sent on its own goes to the list only, and is told of

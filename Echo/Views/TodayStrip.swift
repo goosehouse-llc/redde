@@ -120,10 +120,25 @@ struct TodayStrip: View {
     static func refresh() async {
         CalendarUpNext.shared.refresh()
         BriefingsInbox.shared.reload()
-        GoalsInbox.shared.reload()
+        async let goals = Goals.refresh()
         async let lists: Void = TodayLists.shared.refresh()
         if MailCenter.shared.isSetUp { await MailCenter.shared.refreshStatus() }
+        _ = await goals
         await lists
+    }
+
+    @MainActor private static var lastForward: Date?
+
+    /// Back in front: the goals and the inbox's counts as the server has them now, for what another
+    /// device changed meanwhile (asked 2026-11-23: the iPad still showed a goal ended on the iPhone,
+    /// and other mail counts). Before, both waited for the Goals or Mail page, or a pull here. (The
+    /// lists are asked again by the chat list itself.) At most once a minute.
+    static func cameForward() async {
+        if let last = lastForward, last.timeIntervalSinceNow > -60 { return }
+        lastForward = .now
+        async let goals = Goals.refresh()
+        if MailCenter.shared.isSetUp { await MailCenter.shared.refreshStatus() }
+        _ = await goals
     }
 
     /// `keys` in the person's order: those they placed as they placed them, then the rest as the

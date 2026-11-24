@@ -714,8 +714,10 @@ nonisolated enum ClearedNotes {
                 (note.request.content.userInfo[PushNote.noteKey] as? String).map(wanted.contains) ?? false
             }.map(\.request.identifier)
             if !gone.isEmpty { UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: gone) }
-            // And their briefings on Today, read here as they were there (2026-11-21).
+            // And their briefings on Today, read here as they were there (2026-11-21), and the
+            // ideas dealt with there gone from the deck here (2026-11-23).
             AgentBriefing.markRead(notes: wanted)
+            AgentIdea.remove(cleared: wanted)
             done?(gone.count)
         }
     }

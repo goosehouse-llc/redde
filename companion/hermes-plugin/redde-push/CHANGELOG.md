@@ -7,6 +7,10 @@ Settings › Redde Plugin, to a Hermes whose plugin is older than the one the ap
 
 - Dates by hand: `redde_list` has `unplan`, which takes the date off one item with its reminder
   and check. Redde's Set Date, Change Date and Remove Date on a to-do use `plan` and `unplan`.
+- The same cards on every device: with Only Where You Are, a note the app keeps (an idea, a
+  goal's check-in, a briefing, what a watch saw) still goes to the devices not in use, with `z`
+  "away", and Redde puts it in Notification Center there without a sound or a banner. Before,
+  only the device in use heard, so the iPhone and the iPad showed different ideas and goals.
 
 ## 1.41.0 (2026-11-23)
 

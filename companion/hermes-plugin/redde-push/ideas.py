@@ -263,11 +263,12 @@ def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: fl
                          "them in words instead."}
     made = core.ideas_note(profile, name, kept, uuid.uuid4().hex[:16])
     quiet_if_ignored(home, profile, made)   # (left alone set after set: quietly, 1.36.0)
-    phones = store.where_you_are(phones, "ideas")
+    away = made if made.get("z") else {**made, "z": "away"}   # (the devices not in use, quietly: 1.42.0)
+    sends = [(d, made) for d in store.where_you_are(phones, "ideas")] + [(d, away) for d in store.elsewhere(phones, "ideas")]
     sent = 0
-    for device in phones:
+    for device, words in sends:
         try:
-            core.push(device, made, ttl=TTL)
+            core.push(device, words, ttl=TTL)
             sent += 1
         except core.Gone:
             store.remove(device["id"])

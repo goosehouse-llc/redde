@@ -105,6 +105,9 @@ final class IdeasInbox {
         #endif
         AgentIdea.remove(idea.id)
         LaterReminder.cancel(idea.id)
+        // Off the other devices' decks too (not for Later: a device asking what was cleared would
+        // take its own put-off card out).
+        NoteClears.shared.cleared([idea.clearID], server: nil)
         reload()
     }
 }

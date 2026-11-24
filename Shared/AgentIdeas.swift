@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// Things an agent could do for the person, offered as cards (`suggest_to_user`, Redde's plugin
@@ -83,6 +84,23 @@ nonisolated struct AgentIdea: Codable, Identifiable, Equatable, Sendable {
     /// Taken or put away: off the list.
     static func remove(_ id: String, in defaults: UserDefaults? = NeedsYou.shared) {
         save(all(in: defaults).filter { $0.id != id }, in: defaults)
+    }
+
+    /// The card's id as a note id (`PushNote.isNoteID`), the same on every device: what is told
+    /// to the plugin when it's taken or put away here, so it goes from the others too
+    /// (`NoteClears`, asked 2026-11-23: the iPad still showed ideas dealt with on the iPhone).
+    var clearID: String {
+        String(SHA256.hash(data: Data(("idea:" + id).utf8)).map { String(format: "%02x", $0) }.joined().prefix(12))
+    }
+
+    /// Cards dealt with on another device. True when one was here.
+    @discardableResult
+    static func remove(cleared ids: Set<String>, in defaults: UserDefaults? = NeedsYou.shared) -> Bool {
+        let kept = all(in: defaults)
+        let left = kept.filter { !ids.contains($0.clearID) }
+        guard left.count != kept.count else { return false }
+        save(left, in: defaults)
+        return true
     }
 
     private static func save(_ ideas: [AgentIdea], in defaults: UserDefaults?) {

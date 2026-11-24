@@ -58,6 +58,26 @@ struct AgentIdeasTests {
         for n in 0 ..< 30 { AgentIdea.take(try note([["r": "Idea \(n)"]], offer: "o\(n)"), in: store) }
         #expect(AgentIdea.all(in: store).count == AgentIdea.most)
     }
+
+    /// Taken or put away on one device, gone from the others (asked 2026-11-23: the iPad
+    /// still showed ideas dealt with on the iPhone): each card has a note id, the same on every
+    /// device, that the plugin's clears carry (`NoteClears`, `ClearedNotes`).
+    @Test func anIdeaDealtWithElsewhereGoesHere() throws {
+        let phone = defaults(), pad = defaults()
+        let offered = try note([["r": "Water the plants"], ["r": "Renew the domain"]], offer: "same-offer")
+        AgentIdea.take(offered, in: phone)
+        AgentIdea.take(offered, in: pad)
+        let onPhone = AgentIdea.all(in: phone), onPad = AgentIdea.all(in: pad)
+        #expect(onPhone.map(\.clearID) == onPad.map(\.clearID), "the same card, the same id, on both")
+        #expect(onPhone.allSatisfy { PushNote.isNoteID($0.clearID) }, "an id the plugin takes")
+        #expect(Set(onPhone.map(\.clearID)).count == 2)
+        let done = try #require(onPhone.first { $0.request == "Water the plants" })
+        #expect(AgentIdea.remove(cleared: [done.clearID], in: pad))
+        #expect(AgentIdea.all(in: pad).map(\.request) == ["Renew the domain"])
+        #expect(!AgentIdea.remove(cleared: [done.clearID], in: pad), "nothing left to take out")
+        #expect(!AgentIdea.remove(cleared: ["0123456789ab"], in: phone), "a briefing's clear leaves the ideas")
+        #expect(AgentIdea.all(in: phone).count == 2)
+    }
 }
 
 /// The ideas notification's title has a name and a count: its plural form goes by the count.
