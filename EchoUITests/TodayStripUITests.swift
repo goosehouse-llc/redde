@@ -138,6 +138,46 @@ final class TodayStripUITests: XCTestCase {
         done.name = "list-all-done"; done.lifetime = .keepAlways; add(done)
     }
 
+    /// 2026-11-24: "Allow to edit the todo items with a long press". Edit in an item's menu opens
+    /// its words in a sheet; Save puts the new ones on the list.
+    func testAnItemIsEditedFromItsLongPress() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoLists", "-echo.drawerPage", "today"] + XCUIApplication.straightToChat
+        app.launch()
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        let groceries = tile(app, "Groceries")
+        XCTAssertTrue(groceries.waitForExistence(timeout: 5), "No list tile")
+        reach(app, groceries)
+        groceries.tap()
+        func item(_ text: String) -> XCUIElement {
+            let all = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", text))
+            return all.allElementsBoundByIndex.first { $0.isHittable } ?? all.firstMatch
+        }
+        let milk = item("Oat milk")
+        XCTAssertTrue(milk.waitForExistence(timeout: 5), "The list didn't open")
+        milk.press(forDuration: 1.0)
+        let edit = app.buttons["list-edit"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 3), "No Edit in the item's menu")
+        let menu = XCTAttachment(screenshot: app.screenshot())
+        menu.name = "item-menu-edit"; menu.lifetime = .keepAlways; add(menu)
+        edit.tap()
+        let field = app.textViews["edit-item-field"].exists ? app.textViews["edit-item-field"] : app.textFields["edit-item-field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5), "The edit sheet didn't open")
+        XCTAssertEqual(field.value as? String, "Oat milk", "The field doesn't hold the item's words")
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 8) + "Almond milk, unsweetened")
+        let sheet = XCTAttachment(screenshot: app.screenshot())
+        sheet.name = "edit-item-sheet"; sheet.lifetime = .keepAlways; add(sheet)
+        app.buttons["edit-item-save"].tap()
+        XCTAssertTrue(item("Almond milk, unsweetened").waitForExistence(timeout: 5), "The new words aren't on the list")
+        XCTAssertFalse(item("Oat milk").exists, "The old words are still there")
+        XCTAssertTrue(app.staticTexts["2 of 5 done"].exists, "Editing changed what's done")
+        let after = XCTAttachment(screenshot: app.screenshot())
+        after.name = "item-edited"; after.lifetime = .keepAlways; add(after)
+    }
+
     /// A watch list (2026-11-23, "make these lists a bit more fun"): its tile and page in its own
     /// colour with its emoji, its films as posters; one tapped is stamped Watched; Change Look opens.
     /// A watch list opens as a clean list (2026-11-23): each title beside its poster, ticked as watched.

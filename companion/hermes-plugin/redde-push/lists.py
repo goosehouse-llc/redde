@@ -46,7 +46,8 @@ TOOL = "redde_list"
 FILE = "lists.json"
 #: At most this many lists, items on one, and characters in a title or an item.
 MOST, ITEMS, TITLE, TEXT = 30, 300, 60, 200
-ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "style", "plan", "unplan", "delete")
+ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "edit", "style", "plan", "unplan",
+           "delete")
 PLAN_TAG = "[redde-plan:"
 #: A plan this far ahead at most; the follow-through this long after a daytime plan, or the next
 #: morning at this hour for one from 5 pm.
@@ -142,14 +143,17 @@ def _styled(kept: dict, args: dict) -> list[str]:
 
 NOTE = (f"[Redde: their lists (to-do, groceries, packing…) live in Redde and show on their phone's Today row: keep them "
         f"with {TOOL} (find it with tool_search if it isn't among your tools). 'show' first when you don't know which "
-        "list they mean. Not your own todo tool, which is only your plan for this turn, and not reminders unless they "
-        "ask for a reminder.]")
+        "list they mean. Anything with a day or a time goes on with `when` (ISO 8601 with offset), so it shows under "
+        "that day. Not your own todo tool, which is only your plan for this turn, and not reminders unless they ask "
+        "for a reminder.]")
 
 DESCRIPTION = (
     "The user's own lists in Redde (to-do lists, groceries, packing, chores…), several by name, each shown as a tile "
     "on their phone's Today row until deleted. Actions: 'show' (every list, or one: `list`), 'make' (title, items), "
-    "'add' (list, items: texts), 'check' / 'uncheck' / 'remove' (list, items: numbers as 'show' gives them, or "
-    "their words), 'clear_done' (list: removes checked items), 'rename' (list, title), 'delete' (list). `list` is a "
+    "'add' (list, items: texts; give `when` for anything with a day or time, so it shows under that day), "
+    "'check' / 'uncheck' / 'remove' (list, items: numbers as 'show' gives them, or "
+    "their words), 'clear_done' (list: removes checked items), 'rename' (list, title), 'edit' (list, items: one, "
+    "title: its new words), 'delete' (list). `list` is a "
     "list's id or its title; with only one list it may be left out. 'make' and 'style' (list) take a look: "
     "`kind` (watch: films and series, which Redde shows as posters, one title per item; todo, shopping, reading, "
     "packing, gifts, other), an `emoji` and a `color`; left out, they're guessed from the title. 'plan' (list, "
@@ -164,6 +168,17 @@ PLAN_NOTE = (f"[Redde: if they're planning something for a set time (a film to w
 # was right, and the film's card should come with it).
 SHOW_NOTE = ("[Redde: if it's a film or a series, show it too, as a 'show' card with redde_show (title, year, format, "
              "ratings, a short overview, where they can watch it), so they see its poster with the plan.]")
+# An item added with its day or time only in its words (asked 2026-11-24, of "Black Friday subscription
+# sale starts 11/26 7PM EST" left undated at the top of To Do): the agent hears it, to give it a date.
+_MONTH = (r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|"
+          r"oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?")
+_DATED = re.compile(
+    r"\b(?:(?!24/7\b)\d{1,2}/\d{1,2}(?:/\d{2,4})?|\d{1,2}(?::\d\d)?\s?(?:am|pm)|today|tonight|tomorrow|"
+    r"(?:mon|tues|wednes|thurs|fri|satur|sun)day|"
+    rf"(?!may\b){_MONTH}\s\d{{1,2}}(?:st|nd|rd|th)?|\d{{1,2}}(?:st|nd|rd|th)?\s{_MONTH})(?!\w)", re.IGNORECASE)
+DATED_SAID = ("These name a day or a time in their words but have no date of their own, so they sit undated on the "
+              f"list. If one is for that day, give it its date with {TOOL} 'plan' (items: its number or words, `when` "
+              "ISO 8601 with offset): it goes under that day and Redde reminds them.")
 _WATCHISH = re.compile(r"\b(?:watch|re-?watch|binge|see)\b", re.IGNORECASE)
 _PLANISH = re.compile(
     r"\b(?:watch|see|read|cook|make|play|visit|try|go to|have)\b.{0,80}?\b(?:tonight|tomorrow|this (?:weekend|week)|"
@@ -349,11 +364,22 @@ def _change(home: Path, args: dict, by: str, now: float | None, touched: list[di
             texts = _texts(args.get("items"))
             if not texts:
                 return {"error": "Nothing to add: give items as texts."}
+            when = _when(args, at) if args.get("when") else None
+            if isinstance(when, str):
+                return {"error": when}
             room = ITEMS - len(items)
             if room <= 0:
                 return {"error": f"{kept.get('title')} has {ITEMS} items: clear the done ones first."}
-            items += _new_items(texts[:room], by, at)
-            said = {"added": len(texts[:room])}
+            new = _new_items(texts[:room], by, at)
+            items += new
+            said = {"added": len(new)}
+            if when:
+                with_ = _clean(args.get("with"), 60)
+                for item in new:
+                    said["said"] = _date(kept, item, when, with_, at)
+                said["planned"], said["when"] = [i["text"] for i in new], new[0]["when"]
+            elif dated := [i["text"] for i in new if _DATED.search(i["text"])]:
+                said["no_date"], said["said"] = dated, DATED_SAID
         elif action in ("check", "uncheck", "remove"):
             found, missed = _picked(items, args.get("items"))
             if not found:
@@ -383,6 +409,11 @@ def _change(home: Path, args: dict, by: str, now: float | None, touched: list[di
                 return {"error": "Give the new title."}
             kept["title"] = title
             said = {"renamed": title}
+        elif action == "edit":
+            edited = _edit(kept, args, at)
+            if "error" in edited:
+                return {**edited, **_shown(kept)}
+            said = edited
         elif action == "plan":
             planned = _plan(kept, args, by, at)
             if "error" in planned:
@@ -407,7 +438,7 @@ def _change(home: Path, args: dict, by: str, now: float | None, touched: list[di
             return {"deleted": kept.get("title"), "said": "Its tile is gone from their Today row."}
         kept["changed"] = at
         save(home, lists)
-        if action in ("add", "style"):
+        if action in ("add", "style", "edit"):
             touched.append(kept)
         return {**said, **_shown(kept)}
 
@@ -467,13 +498,28 @@ def _plan(kept: dict, args: dict, by: str, at: int) -> dict:
         found = _new_items(texts, by, at)
         kept["items"].append(found[0])
     item = found[0]
-    when = _moment(args.get("when"))
+    when = _when(args, at)
     if isinstance(when, str):
         return {"error": when}
-    now = datetime.fromtimestamp(at, timezone.utc)
-    if when - now > PLAN_AHEAD:
-        return {"error": "That's more than 60 days off: plan it nearer the time."}
     with_ = _clean(args.get("with"), 60)
+    said = _date(kept, item, when, with_, at)
+    return {"planned": item["text"], "when": item["when"], **({"with": with_} if with_ else {}), "said": said}
+
+
+def _when(args: dict, at: int) -> datetime | str:
+    """The time a plan or a dated item is for, or what's wrong with it."""
+    when = _moment(args.get("when"))
+    if isinstance(when, str):
+        return when
+    if when - datetime.fromtimestamp(at, timezone.utc) > PLAN_AHEAD:
+        return "That's more than 60 days off: plan it nearer the time."
+    return when
+
+
+def _date(kept: dict, item: dict, when: datetime, with_: str, at: int) -> str:
+    """Puts an item on its day, with the reminder and the check that go with it (any old ones
+    dropped): what Redde will do, for the agent."""
+    now = datetime.fromtimestamp(at, timezone.utc)
     make, remove = _cron()
     for old in item.get("plan_jobs") or []:
         try:
@@ -483,8 +529,7 @@ def _plan(kept: dict, args: dict, by: str, at: int) -> dict:
     item["when"], item["with"], item["plan_jobs"] = when.isoformat(timespec="minutes"), with_ or None, []
     before, after = plan_times(when, now)
     if make is None:
-        return {"planned": item["text"], "when": item["when"],
-                "said": "Kept on the list; this Hermes can't schedule the reminder or the check (no cron)."}
+        return "Kept on the list; this Hermes can't schedule the reminder or the check (no cron)."
     plan = uuid.uuid4().hex[:10]
     for moment, words in ((before, plan_reminder(kept, item, when)), (after, plan_check(kept, item, when))):
         if moment is None:
@@ -495,10 +540,30 @@ def _plan(kept: dict, args: dict, by: str, at: int) -> dict:
                 item["plan_jobs"].append(job["id"])
         except Exception:
             pass
-    return {"planned": item["text"], "when": item["when"], **({"with": with_} if with_ else {}),
-            "said": (f"Redde reminds them {'on the day' if before else 'no more today'} and checks on "
-                     f"{after.strftime('%A %-d %B')} that it happened. If it isn't on their calendar, put it there "
-                     "with your calendar tool too.")}
+    return (f"Redde reminds them {'on the day' if before else 'no more today'} and checks on "
+            f"{after.strftime('%A %-d %B')} that it happened. If it isn't on their calendar, put it there with your "
+            "calendar tool too.")
+
+
+def _edit(kept: dict, args: dict, at: int) -> dict:
+    """New words for one item (Edit in Redde's long-press menu, asked 2026-11-24). A film's poster is
+    looked for again under its new title; a dated item's reminder and check say the new words."""
+    found, _ = _picked(kept.get("items") or [], args.get("items"))
+    if len(found) != 1:
+        return {"error": "Say which one item to edit: its number or its words."}
+    words = _texts(args.get("title"))
+    if not words:
+        return {"error": "Give the item's new words as `title`."}
+    item, before = found[0], found[0].get("text")
+    if words[0] != before:
+        item["text"] = words[0]
+        for field in ("poster", "year", "poster_tried", "poster_misses", "poster_tmdb", "poster_again"):
+            item.pop(field, None)
+        if item.get("when"):
+            when, now = datetime.fromisoformat(item["when"]), datetime.fromtimestamp(at, timezone.utc)
+            if plan_times(when, now)[1] > now:
+                _date(kept, item, when, item.get("with") or "", at)
+    return {"edited": before, "now": item["text"]}
 
 
 def _unplan(kept: dict, args: dict) -> dict:

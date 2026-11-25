@@ -4,7 +4,7 @@ import SwiftUI
 /// Drawn as its own page (asked 2026-11-14: "make the to do list nicer to look at"; a card inside
 /// the sheet before): the list's name large beside a ring of how much is done, what's left on one
 /// panel with a line to add to it, and what's done below, folded away with a tap. Tap to check an
-/// item off, swipe or hold one to remove it; Clear Done, Rename and Delete in the menu. The same
+/// item off, swipe or hold one to remove it or change its words; Clear Done, Rename and Delete in the menu. The same
 /// changes an agent makes with `redde_list`, kept on the Hermes.
 ///
 /// From 2026-11-23 ("make these lists a bit more fun"): the list's colour washes the top of the
@@ -21,6 +21,7 @@ struct TodayListView: View {
     @State private var doneFolded = false
     @State private var styling = false
     @State private var dating: TodayList.Item?
+    @State private var editing: TodayList.Item?
     @FocusState private var typing: Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
@@ -44,6 +45,9 @@ struct TodayListView: View {
         listBody(list)
             .sheet(item: $dating) { item in
                 DateSheet(item: item, mark: mark) { lists.setDate($0, for: item, in: list) }
+            }
+            .sheet(item: $editing) { item in
+                EditItemSheet(item: item, mark: mark) { lists.edit(item, to: $0, in: list) }
             }
     }
 
@@ -284,6 +288,11 @@ struct TodayListView: View {
                     }
                 }
             }
+            // New words for it (asked 2026-11-24: "Allow to edit the todo items with a long press").
+            Button { editing = item } label: {
+                Label { Text("Edit") } icon: { Image(systemName: "pencil") }
+            }
+            .accessibilityIdentifier("list-edit")
             if list.groupsByWhen, !item.done {
                 Button { dating = item } label: {
                     Label {
@@ -312,6 +321,7 @@ struct TodayListView: View {
                             : Text("Done"))
         .accessibilityHint(item.done ? Text("Puts it back on the list", comment: "VoiceOver hint: a checked-off to-do item")
                                      : Text("Checks it off", comment: "VoiceOver hint: a to-do item"))
+        .accessibilityAction(named: Text("Edit")) { editing = item }
         .accessibilityAction(named: Text("Remove", comment: "A to-do list: take one item off it")) { lists.remove([item], from: list) }
     }
 
@@ -514,6 +524,69 @@ private struct DateSheet: View {
 
     private func finish(_ picked: Date?) {
         save(picked)
+        dismiss()
+    }
+}
+
+/// An item's words to change, in a field that grows with them (a long one like "Black Friday sale
+/// starts 11/26 7PM EST (runs to 11/29 7PM EST)" needs more than an alert's one line). Return saves.
+private struct EditItemSheet: View {
+    let item: TodayList.Item
+    let mark: Color
+    let save: (String) -> Void
+    @State private var text: String
+    @FocusState private var focused: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    init(item: TodayList.Item, mark: Color, save: @escaping (String) -> Void) {
+        self.item = item
+        self.mark = mark
+        self.save = save
+        _text = State(initialValue: item.text)
+    }
+
+    private var trimmed: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField(text: $text, axis: .vertical) { Text(verbatim: item.text) }
+                    .chatFont(.body)
+                    .lineLimit(1...8)
+                    .focused($focused)
+                    .submitLabel(.done)
+                    .accessibilityIdentifier("edit-item-field")
+            }
+            .tint(mark)
+            .navigationTitle(Text("Edit Item", comment: "A to-do list: the title of the sheet that changes one item's words"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { finish() }
+                        .fontWeight(.semibold)
+                        .disabled(trimmed.isEmpty)
+                        .accessibilityIdentifier("edit-item-save")
+                }
+            }
+            // An item is one line: Return saves it rather than starting another.
+            .onChange(of: text) { _, now in
+                guard now.contains("\n") else { return }
+                text = now.replacing("\n", with: " ")
+                finish()
+            }
+            .onAppear { focused = true }
+        }
+        .presentationDetents([.medium, .large])
+        #if os(iOS)
+        .presentationBackground(Color(uiColor: .systemGroupedBackground))
+        #endif
+        .macSheetSize(width: 460, height: 260)
+    }
+
+    private func finish() {
+        guard !trimmed.isEmpty else { return }
+        save(trimmed)
         dismiss()
     }
 }

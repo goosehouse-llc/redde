@@ -34,6 +34,18 @@ class ListsTests(unittest.TestCase):
         shown = do(self.home, action="show")
         self.assertEqual(shown["lists"][0]["items"], ["1. [ ] Milk", "2. [x] Eggs", "3. [x] Bread"])
 
+    def test_an_item_gets_new_words(self):
+        """2026-11-24: "Allow to edit the todo items with a long press"."""
+        do(self.home, action="make", title="To Do", items=["Dispute Hyat charge", "Stretch"])
+        edited = do(self.home, action="edit", list="To Do", items=["1"], title="  Dispute the Hyatt charge ")
+        self.assertEqual((edited["edited"], edited["now"]), ("Dispute Hyat charge", "Dispute the Hyatt charge"))
+        self.assertEqual(edited["items"][0], "1. [ ] Dispute the Hyatt charge")
+        item = lists.load(self.home)[0]["items"][0]
+        self.assertFalse(item["done"])
+        self.assertIn("error", do(self.home, action="edit", list="To Do", items=["Nothing like it"], title="x"))
+        self.assertIn("error", do(self.home, action="edit", list="To Do", items=["2"], title="  "))
+        self.assertEqual(lists.load(self.home)[0]["items"][1]["text"], "Stretch")
+
     def test_one_list_needs_no_name_and_two_do(self):
         do(self.home, action="make", title="To Do")
         self.assertEqual(do(self.home, action="add", items=["Call the vet"])["added"], 1)
@@ -245,6 +257,14 @@ class ListLooksTests(unittest.TestCase):
         lists.fill_posters(self.home)
         self.assertEqual(asked, {}, "once")
 
+    def test_a_film_edited_has_its_poster_looked_for_again(self):
+        do(self.home, action="make", title="Christmas Movies", items=["Home Alone 2"])
+        self.assertIn("poster", lists.load(self.home)[0]["items"][0])
+        do(self.home, action="edit", list="Christmas Movies", items=["1"], title="Elf (2003)")
+        self.assertEqual(self.asked[-1], ("Elf", "2003"))
+        item = lists.listing(self.home)[0]["items"][0]
+        self.assertEqual((item["text"], item["poster"], item["year"]), ("Elf (2003)", "https://upload.wikimedia.org/Elf.jpg", 2003))
+
     def test_other_lists_look_nothing_up(self):
         do(self.home, action="make", title="Groceries", items=["Milk"])
         lists.listing(self.home)
@@ -338,6 +358,48 @@ class PlanTests(unittest.TestCase):
         self.assertEqual((at1, at2), ("2026-11-19T07:00-05:00", "2026-11-19T12:00-05:00"))
         self.assertIn("Did Call the vet happen?", check)
         self.assertIn("calendar, mail", check)
+
+    def test_an_item_added_with_its_date_goes_under_that_day(self):
+        """2026-11-24: "Black Friday subscription sale starts 11/26 7PM EST" went on To Do with its date
+        only in its words, so it sat undated at the top instead of under Wednesday."""
+        lists.change(self.home, {"action": "make", "title": "To Do", "items": ["Stretch"]}, now=self.now)
+        said = lists.change(self.home, {"action": "add", "list": "To Do", "items": ["Black Friday sale starts"],
+                                        "when": "2026-11-26T19:00:00-05:00"}, by="default", now=self.now)
+        self.assertEqual((said["added"], said["planned"], said["when"]), (1, ["Black Friday sale starts"], "2026-11-26T19:00-05:00"))
+        self.assertIn("reminds them on the day", said["said"])
+        stretch, sale = lists.load(self.home)[0]["items"]
+        self.assertNotIn("when", stretch)
+        self.assertEqual((sale["when"], sale["plan_jobs"]), ("2026-11-26T19:00-05:00", ["j1", "j2"]))
+        self.assertEqual([at for _, at, _ in self.jobs], ["2026-11-26T10:00-05:00", "2026-11-27T10:00-05:00"])
+        self.assertIn("(planned 2026-11-26T19:00-05:00)", said["items"][1])
+
+    def test_a_date_only_in_the_words_is_said_back(self):
+        lists.change(self.home, {"action": "make", "title": "To Do"}, now=self.now)
+        sale = "Black Friday subscription sale starts 11/26 7PM EST (runs to 11/29 7PM EST)"
+        said = lists.change(self.home, {"action": "add", "list": "To Do", "items": [
+            sale, "Rest the apple wine batch (5 gal, EC-1118)", "Check business Apple application"]}, now=self.now)
+        self.assertEqual(said["no_date"], [sale])
+        self.assertIn("'plan'", said["said"])
+        self.assertEqual(self.jobs, [], "nothing dated on a guess")
+        for plain in ("Stretch", "Support 24/7", "Decide 3 things", "Market 5 items"):
+            self.assertNotIn("no_date", lists.change(self.home, {"action": "add", "list": "To Do", "items": [plain]}, now=self.now), plain)
+        for dated in ("Dentist Dec 3rd", "Pay rent 1 March", "Call mom Friday", "Meeting at 10:30am", "Bins out tomorrow"):
+            self.assertIn("no_date", lists.change(self.home, {"action": "add", "list": "To Do", "items": [dated]}, now=self.now), dated)
+
+    def test_adding_with_a_wrong_date_adds_nothing(self):
+        lists.change(self.home, {"action": "make", "title": "To Do"}, now=self.now)
+        said = lists.change(self.home, {"action": "add", "list": "To Do", "items": ["Sale"], "when": "2026-11-26T19:00"}, now=self.now)
+        self.assertIn("UTC offset", said["error"])
+        self.assertEqual(lists.load(self.home)[0]["items"], [])
+
+    def test_a_dated_item_edited_is_reminded_by_its_new_words(self):
+        lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
+        self.plan(items=["Elf"], when="2026-11-26T19:30:00-05:00", **{"with": "Robin"})
+        lists.change(self.home, {"action": "edit", "list": "Movies", "items": ["1"], "title": "Elf (2003)"}, now=self.now)
+        self.assertEqual(self.removed, ["j1", "j2"])
+        item = lists.load(self.home)[0]["items"][0]
+        self.assertEqual((item["when"], item["with"], item["plan_jobs"]), ("2026-11-26T19:30-05:00", "Robin", ["j3", "j4"]))
+        self.assertIn("7:30 PM: Elf (2003) with Robin", self.jobs[2][0])
 
     def test_what_wont_do(self):
         lists.change(self.home, {"action": "make", "title": "Movies"}, now=self.now)

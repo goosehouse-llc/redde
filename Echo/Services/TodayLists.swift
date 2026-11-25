@@ -302,6 +302,11 @@ final class TodayLists {
                comment: "A to-do list's sheet: setting or removing a date on a server with an older plugin")
     }
 
+    nonisolated private static var editNeedsUpdate: String {
+        String(localized: "Your Hermes needs Redde's plugin 1.45 or later to edit an item. Update it in Settings › Redde Plugin.",
+               comment: "A to-do list's sheet: editing an item's words on a server with an older plugin")
+    }
+
     nonisolated private struct Unreachable: LocalizedError {
         var errorDescription: String? {
             String(localized: "Couldn't reach your Hermes. Try again when Redde is connected.",
@@ -342,6 +347,22 @@ final class TodayLists {
             guard let i = kept.items.firstIndex(where: { $0.id == item.id }) else { return }
             kept.items[i].when = date
             if date == nil { kept.items[i].company = nil }
+        }
+    }
+
+    /// New words for one item (asked 2026-11-24: "Allow to edit the todo items with a long press").
+    /// A film's poster is looked for again under its new title. One brought from Reminders is
+    /// still known by its new words, so a tick there still ticks it here.
+    func edit(_ item: TodayList.Item, to text: String, in list: TodayList) {
+        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, text != item.text else { return }
+        var listed = self.listed
+        for (id, words) in listed where DeviceCalendar.folded(words) == DeviceCalendar.folded(item.text) { listed[id] = text }
+        if listed != self.listed { self.listed = listed }
+        apply(list.id, ["action": .string("edit"), "items": .array([.string(item.id)]), "title": .string(text)]) { kept in
+            guard let i = kept.items.firstIndex(where: { $0.id == item.id }) else { return }
+            kept.items[i].text = text
+            if kept.kind == .watch { kept.items[i].poster = nil; kept.items[i].year = nil }
         }
     }
 
@@ -404,11 +425,11 @@ final class TodayLists {
         args["list"] = .string(id)
         let encoded = Self.encode(args)
         guard !encoded.isEmpty else { return }
-        let before = sending
+        let before = sending, action = change["action"]?.string
         let task = Task { [weak self] in
             await before?.value
             guard let self else { return }
-            await self.send(encoded)
+            await self.send(encoded, action: action)
         }
         sending = task
         Task { [weak self] in
@@ -417,7 +438,7 @@ final class TodayLists {
         }
     }
 
-    private func send(_ encoded: String) async {
+    private func send(_ encoded: String, action: String?) async {
         guard await reachable() else {
             problem = String(localized: "Couldn't reach your Hermes, so this change is only on this device for now.",
                              comment: "A to-do list's sheet: a change that didn't reach the server")
@@ -430,8 +451,8 @@ final class TodayLists {
                 return
             }
             if let error = parsed.error {
-                // (A plugin before 1.42 doesn't know `unplan`, before 1.38 `plan`.)
-                problem = error.hasPrefix("Unknown action") ? Self.datesNeedUpdate : error
+                // (A plugin before 1.45 doesn't know `edit`, before 1.42 `unplan`, before 1.38 `plan`.)
+                problem = !error.hasPrefix("Unknown action") ? error : action == "edit" ? Self.editNeedsUpdate : Self.datesNeedUpdate
             }
             take(parsed.lists)
         } catch {

@@ -2029,6 +2029,113 @@
         }
       }
     },
+    "Your Hermes needs Redde's plugin 1.45 or later to edit an item. Update it in Settings › Redde Plugin." : {
+      "comment" : "A to-do list's sheet: editing an item's words on a server with an older plugin",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes skal have Redde-plugin 1.45 eller nyere for at redigere et punkt. Opdater det under Indstillinger › Redde-plugin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Hermes braucht das Redde-Plugin 1.45 oder neuer, um einen Eintrag zu bearbeiten. Aktualisiere es unter Einstellungen › Redde-Plugin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu Hermes necesita el plugin de Redde 1.45 o posterior para editar un elemento. Actualízalo en Ajustes › Plugin de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Hermes a besoin du plugin Redde 1.45 ou plus récent pour modifier un élément. Mettez-le à jour dans Réglages › Plugin Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo Hermes ha bisogno del plugin Redde 1.45 o successivo per modificare una voce. Aggiornalo in Impostazioni › Plugin Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目を編集するには、HermesにRedde プラグイン 1.45 以降が必要です。設定 › Redde プラグインでアップデートしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "항목을 편집하려면 Hermes에 Redde 플러그인 1.45 이상이 필요합니다. 설정 › Redde 플러그인에서 업데이트하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hermes trenger Redde-tillegget 1.45 eller nyere for å redigere et punkt. Oppdater det under Innstillinger › Redde-tillegg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Hermes heeft Redde-plug-in 1.45 of nieuwer nodig om een item te wijzigen. Werk hem bij via Instellingen › Redde-plug-in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój Hermes potrzebuje wtyczki Redde 1.45 lub nowszej, by edytować pozycję. Zaktualizuj ją w Ustawienia › Wtyczka Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu Hermes precisa do plugin do Redde 1.45 ou mais recente para editar um item. Atualize em Ajustes › Plugin do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы изменить пункт, вашему Hermes нужен плагин Redde версии 1.45 или новее. Обновите его в Настройки › Плагин Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din Hermes behöver Redde-pluginen 1.45 eller senare för att ändra en punkt. Uppdatera den under Inställningar › Redde-plugin."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir öğeyi düzenlemek için Hermes'inde Redde eklentisi 1.45 veya üstü gerekir. Ayarlar › Redde Eklentisi'nden güncelle."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Щоб редагувати пункт, вашому Hermes потрібен плагін Redde 1.45 або новіший. Оновіть його в Параметри › Плагін Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 需要 Redde 插件 1.45 或更高版本才能编辑项目。请在“设置 › Redde 插件”中更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的 Hermes 需要 Redde 外掛 1.45 或更新版本才能編輯項目。請在「設定 › Redde 外掛」中更新。"
+          }
+        }
+      }
+    },
     "… %lld more lines" : {
       "localizations" : {
         "da" : {
@@ -165123,6 +165230,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "編輯"
+          }
+        }
+      }
+    },
+    "Edit Item" : {
+      "comment" : "A to-do list: the title of the sheet that changes one item's words",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rediger punkt"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eintrag bearbeiten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar elemento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier l’élément"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifica voce"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目を編集"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "항목 편집"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rediger punkt"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item wijzigen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edytuj pozycję"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar item"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить пункт"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ändra punkt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öğeyi düzenle"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Редагувати пункт"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑项目"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯項目"
           }
         }
       }

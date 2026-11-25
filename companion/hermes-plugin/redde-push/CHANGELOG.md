@@ -3,6 +3,16 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.45.0 (2026-11-24)
+
+- Something with a day or a time put on a list (a bill due, a sale starting, an appointment) goes
+  under that day, with a reminder on the day: `redde_list` 'add' takes `when`, and the agent is
+  told to give it. One added with its date only in its words ("sale starts 11/26 7PM") is said back
+  to the agent, so it gives the item its date instead of leaving it undated at the top of the list.
+- A list item's words can be changed: Edit in its long-press menu in Redde, or `redde_list` 'edit'
+  (list, items: one, title: its new words). A film's poster is looked for again under its new
+  title, and a dated item's reminder and check say the new words.
+
 ## 1.44.0 (2026-11-24)
 
 - Posters from TMDb, with your own key: put `TMDB_API_KEY=…` (or a read access token as
