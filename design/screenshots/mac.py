@@ -67,16 +67,17 @@ def compose(src, dst, headline, sub, bg, fg, subfg):
 
 
 mac = [
-    ('mac-work',     '01-mac',         'Your agent, on your Mac.',   'Chats in the sidebar, the conversation beside them, on your own server.', PAPER, INK, SAND),
-    ('mac-bots',     '02-mac-bots',    'Meet the crew.',             'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
-    ('mac-crew',     '03-mac-crew',    'Talk to the whole crew.',    'Put bots in a group chat and they answer in turn.', (24, 32, 46), WHITE, MIST),
-    ('mac-rich',     '04-mac-rich',    'Answers with substance.',    'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
-    ('mac-settings', '05-mac-backend', 'Your backend, your rules.',  'Hermes, or any OpenAI-compatible model server. Servers and settings follow you from your iPhone with iCloud.', BLUE, WHITE, MIST),
-    # 2.7 (2026-11-24): the proactive set, the iPhone's words and colours (compose.py).
-    ('mac-plan',     '06-mac-plan',    'Say what you’re up to.',     'Your agent offers a plan. Tick what you want and it does it, now or at the right time.', BLUE, WHITE, MIST),
-    ('mac-follow',   '07-mac-follow',  'It follows through.',        'Bills, renewals, trips, promises and meetings come back before they slip.', TEAL, WHITE, MINT),
-    ('mac-goal',     '08-mac-goals',   'Goals, step by step.',       'Tick off your steps as you go. Your agent works on its own and checks in on yours.', CORAL, WHITE, PEACH),
-    ('mac-lists',    '09-mac-lists',   'Lists that keep up.',        'Films with their posters, to-dos sorted by when, and a reminder on the day.', PLUM, WHITE, LILAC),
+    # 2.7 (2026-11-24, his pick): the proactive set first, in the iPhone's words and colours (compose.py).
+    ('mac-plan',     '01-mac-plan',    'Say what you’re up to.',     'Your agent offers a plan. Tick what you want and it does it, now or at the right time.', BLUE, WHITE, MIST),
+    ('mac-follow',   '02-mac-follow',  'It follows through.',        'Bills, renewals, trips, promises and meetings come back before they slip.', TEAL, WHITE, MINT),
+    ('mac-goal',     '03-mac-goals',   'Goals, step by step.',       'Tick off your steps as you go. Your agent works on its own and checks in on yours.', CORAL, WHITE, PEACH),
+    ('mac-lists',    '04-mac-lists',   'Lists that keep up.',        'Films with their posters, to-dos sorted by when, and a reminder on the day.', PLUM, WHITE, LILAC),
+    # The 2.3 five, after them.
+    ('mac-work',     '05-mac',         'Your agent, on your Mac.',   'Chats in the sidebar, the conversation beside them, on your own server.', PAPER, INK, SAND),
+    ('mac-bots',     '06-mac-bots',    'Meet the crew.',             'Each Hermes profile is a bot, with a face, a voice and a chat of its own. Start one from a template.', PLUM, WHITE, LILAC),
+    ('mac-crew',     '07-mac-crew',    'Talk to the whole crew.',    'Put bots in a group chat and they answer in turn.', (24, 32, 46), WHITE, MIST),
+    ('mac-rich',     '08-mac-rich',    'Answers with substance.',    'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
+    ('mac-settings', '09-mac-backend', 'Your backend, your rules.',  'Hermes, or any OpenAI-compatible model server. Servers and settings follow you from your iPhone with iCloud.', BLUE, WHITE, MIST),
 ]
 if __name__ == '__main__':
     os.makedirs(f'{OUT}/mac', exist_ok=True)
