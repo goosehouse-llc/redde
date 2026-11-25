@@ -13,27 +13,33 @@ struct YourDaySettings: View {
     var body: some View {
         Section {
             AheadOfYourDayRow()
+                .settingRow(.aheadOfYourDay)
             NavigationLink { GoalsListView() } label: {
                 Label { Text("Goals", comment: "The chat list's section of the person's goals, and its page in Settings") } icon: { Image(systemName: "flag.checkered") }
             }
             .disabled(!canReachGateway)
+            .settingRow(.goals)
             NavigationLink { AgentActivityView(tab: .comingUp) } label: {
                 Label { Text("Activity", comment: "Settings › Your Day: what the agents will do next and what they did (Agent Activity)") } icon: { Image(systemName: "list.bullet.rectangle") }
             }
+            .settingRow(.activity)
         } footer: {
             Text("Ahead of Your Day turns the day's helpers on in one step. Activity shows what your agents will do next, and what they did.",
                  comment: "Settings › Your Day: under Ahead of Your Day, Goals and Activity")
         }
 
         BriefingSwitches(canReachGateway: canReachGateway)
+            .settingRow(.briefings)
 
         Section {
             NavigationLink { BriefingsList() } label: {
                 Label { Text("Past Briefings", comment: "Settings › Your Day: the list of every briefing kept, and the hidden jobs") } icon: { Image(systemName: "doc.text") }
             }
+            .settingRow(.pastBriefings)
             Toggle(isOn: $settings.briefingTapsOpenRun) {
                 Label { Text("Briefing Taps Open the Run", comment: "Settings › Your Day: a briefing's notification opens the scheduled run's chat, not the briefing") } icon: { Image(systemName: "bubble.left.and.text.bubble.right") }
             }
+            .settingRow(.briefingTaps)
         } footer: {
             Text("With Briefing Taps Open the Run on, a briefing's notification opens the chat its run was in, to ask on there. The main agent's briefings, with Redde's plugin 1.21.1 or later.",
                  comment: "Settings › Your Day › Every Day: footer, about Briefing Taps Open the Run")
@@ -42,20 +48,25 @@ struct YourDaySettings: View {
         Section {
             NavigationLink { WatchesView() } label: { Label("Watches & Follow-ups", systemImage: "eye") }
                 .disabled(!canReachGateway)
+                .settingRow(.watches)
             NavigationLink { TriggersView() } label: { Label("Triggers from Your iPhone", systemImage: "bolt.badge.clock") }
+                .settingRow(.triggers)
             NavigationLink { KeepInMindView() } label: {
                 Label { Text("Things to Keep in Mind", comment: "Settings › Your Day: facts about the person that Heads-Ups and Morning Ideas check") } icon: { Image(systemName: "pin") }
             }
             .disabled(!canReachGateway)
+            .settingRow(.keepInMind)
             NavigationLink { FollowThroughView() } label: {
                 Label { Text("Follow-Through", comment: "Settings › Your Day: what the agent follows up on from mail and watch lists") } icon: { Image(systemName: "arrow.triangle.2.circlepath") }
             }
             .disabled(!canReachGateway)
             .accessibilityIdentifier("follow-through")
+            .settingRow(.followThrough)
             // Location: a page of the first screen since 2026-11-15 (`LocationSettingsView`).
             #if os(iOS)
             if HealthDays.available {
                 NavigationLink { HealthDaysView() } label: { Label("Health", systemImage: "heart.text.square") }
+                    .settingRow(.health)
             }
             #endif
         } header: {
@@ -67,7 +78,9 @@ struct YourDaySettings: View {
 
         Section {
             NavigationLink { BeforeActingView() } label: { Label("Before Acting", systemImage: "hand.raised") }
+                .settingRow(.beforeActing)
             NavigationLink { ApprovalHistoryView() } label: { Label("Approval History", systemImage: "checkmark.shield") }
+                .settingRow(.approvalHistory)
         } header: {
             Text("Asking First", comment: "Settings › Your Day: Before Acting and Approval History")
         } footer: {
@@ -155,6 +168,7 @@ struct LocationSettingsView: View {
                 NavigationLink { PlacesView() } label: {
                     Label(String(localized: "places.title", defaultValue: "Places", comment: "Settings: places the iPhone notices arriving at or leaving"), systemImage: "mappin.and.ellipse")
                 }
+                .settingRow(.places)
             } footer: {
                 Text("Home, Work, the gym: arriving or leaving tells the agent you choose, with what you wrote for it.",
                      comment: "Settings › Location: under Places")

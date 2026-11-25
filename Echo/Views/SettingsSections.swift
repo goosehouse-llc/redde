@@ -8,6 +8,7 @@ struct NameSettings: View {
         Section {
             TextField("Redde", text: $settings.displayName)
                 .textInputAutocapitalization(.words)
+                .settingRow(.name)
         } header: {
             Text("Name")
         } footer: {
@@ -64,6 +65,7 @@ struct AppearanceSettings: View {
                     Text("\(settings.theme.label), \(settings.appearance.label.lowercased())")
                 }
             }
+            .settingRow(.theme)
 
             DisclosureGroup(isExpanded: $showColors) {
                 ColorPicker("Accent", selection: accent, supportsOpacity: false)
@@ -89,6 +91,7 @@ struct AppearanceSettings: View {
                     .accessibilityHidden(true)
                 }
             }
+            .settingRow(.colors)
 
             DisclosureGroup(isExpanded: $showFonts) {
                 ForEach(ChatFont.allCases) { font in
@@ -121,11 +124,13 @@ struct AppearanceSettings: View {
                     Text(settings.chatFont.label)
                 }
             }
+            .settingRow(.font)
             // Beside the font: the two say how the conversation reads.
             Picker("Chat text size", selection: $settings.chatTextSize) {
                 ForEach(Array(Settings.chatTextSizes), id: \.self) { Text(ChatTextSize.label($0)).tag($0) }
             }
             .pickerStyle(.menu)
+            .settingRow(.chatTextSize)
 
             Toggle(isOn: $settings.botFaces) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -134,6 +139,7 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            .settingRow(.botFaces)
             // Pictures from Hermes: Settings → Replies & Writing. Calendar Events: Settings → Calendars.
             Picker(selection: $settings.cardColor) {
                 ForEach(Settings.CardColor.allCases) { choice in
@@ -150,6 +156,7 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            .settingRow(.cards)
             Picker(selection: $settings.todayColor) {
                 ForEach(Settings.TodayColor.allCases) { choice in
                     if case let .color(card) = choice, let color = card.color(in: active) {
@@ -166,6 +173,7 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            .settingRow(.todayTiles)
             Picker(selection: $settings.cardAppearance) {
                 ForEach(Settings.Appearance.allCases) { Text($0 == .system ? String(localized: "Automatic", comment: "Card Appearance: cards light or dark as the app is") : $0.label).tag($0) }
             } label: {
@@ -178,6 +186,7 @@ struct AppearanceSettings: View {
                 }
             }
             .disabled(settings.cardColor.solid != nil)
+            .settingRow(.cardAppearance)
             Toggle(isOn: $settings.botColors) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Bot colors in their chats")
@@ -185,11 +194,13 @@ struct AppearanceSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            .settingRow(.botColors)
             // What the chat list shows (bots, projects, the cards above the conversations):
             // Settings → Chat List. Link previews: Replies & Writing. The voice orb: Voice. The
             // CarPlay looks: CarPlay (2026-11-15).
             #if os(iOS)
             AppIconSettings()
+                .settingRow(.appIcon)
             #endif
         } header: {
             Text("Appearance")
@@ -248,6 +259,7 @@ struct ComposerSettings: View {
         Section {
             // On even with no model: a reply that lists choices still gets them as chips.
             Toggle("Suggest Replies", isOn: $settings.suggestFollowUps)
+                .settingRow(.suggestReplies)
             if settings.suggestFollowUps, fastLaneSet, FollowUps.onDeviceAvailable {
                 Picker(String(localized: "Written By", comment: "Settings › Replies & Writing: which model writes the suggested replies, this device's (Apple Intelligence) or the OpenAI-compatible connection's"),
                        selection: $settings.suggestionsFromFastLane) {
@@ -269,14 +281,17 @@ struct ComposerSettings: View {
         }
         // Agents asking each other by @name (2.7; three switches 11-17).
         AgentsTalkSection()
+            .settingRow(.agentsTalk)
         // What comes under a reply: cards, maps and their units (on Settings → Agent until 2026-11-15).
         Section {
             Toggle(isOn: Binding(get: { Settings.shared.replyCards }, set: { Settings.shared.replyCards = $0 })) {
                 Label("Cards in replies", systemImage: "map")
             }
+            .settingRow(.cardsInReplies)
             Toggle(isOn: Binding(get: { Settings.shared.addressMaps }, set: { Settings.shared.addressMaps = $0 })) {
                 Label("Maps for addresses", systemImage: "mappin.and.ellipse")
             }
+            .settingRow(.addressMaps)
             Picker(selection: Binding(get: { Settings.shared.measureUnits }, set: { Settings.shared.measureUnits = $0 })) {
                 Text(MeasureUnits.usesUS(.automatic) ? String(localized: "Automatic (US)") : String(localized: "Automatic (Metric)"))
                     .tag(MeasureUnits.automatic)
@@ -285,6 +300,7 @@ struct ComposerSettings: View {
             } label: {
                 Label("Units", systemImage: "ruler")
             }
+            .settingRow(.units)
         } footer: {
             Text("Your agent can show a map, places, the weather and the time under its reply, through Redde's Hermes plugin. The weather comes from Open-Meteo. Off, it isn't offered them, which makes every prompt a little shorter. With Maps for addresses on, a reply or a heads-up that names a street address gets a map of it, found by Apple Maps.")
         }
@@ -297,6 +313,7 @@ struct ComposerSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            .settingRow(.linkPreviews)
             Toggle(isOn: $settings.botPictures) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Pictures from Hermes")
@@ -304,6 +321,7 @@ struct ComposerSettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            .settingRow(.botPictures)
         }
         Section {
             Picker("Return key", selection: $settings.returnSends) {
@@ -311,6 +329,7 @@ struct ComposerSettings: View {
                 Text("Sends").tag(true)
             }
             .pickerStyle(.menu)
+            .settingRow(.returnKey)
         } header: {
             Text("Writing")
         } footer: {
@@ -338,6 +357,7 @@ struct ConnectionGroup: View {
                         Label("Server", systemImage: "server.rack")
                     }
                 }
+                .settingRow(.server)
                 if settings.transport.isHermes {
                     NavigationLink { ProfilePickerView() } label: {
                         LabeledContent {
@@ -346,6 +366,7 @@ struct ConnectionGroup: View {
                             Label("Profile", systemImage: "person.2")
                         }
                     }
+                    .settingRow(.profile)
                 }
             }
             NavigationLink(value: SettingsPage.connection) {
@@ -410,7 +431,7 @@ struct AgentGroup: View {
                 // A row of its own, not inside Agent (asked 2026-10-23): it is on the server, and
                 // much of Redde comes through it.
                 if page == .agent {
-                    ReddePluginLink().id("plugin")
+                    ReddePluginLink().settingRow(.plugin)
                 }
             }
         } header: {
@@ -463,10 +484,13 @@ struct TransportSettings: View {
         // Another kind of connection on a server in use becomes a new server (`ServerSwitcher.choose`).
         TransportPicker(selection: Binding(get: { settings.transport },
                                            set: { ServerSwitcher.choose($0, conversation: conversation, settings: settings) }))
+            .settingRow(.connectionKind)
         Section {
             Button("Set up connection…", systemImage: "network") { showSetup = true }
+                .settingRow(.setUpConnection)
             Button("Set up another device…", systemImage: "qrcode") { sharing = settings.activeServer }
                 .sheet(item: $sharing) { SetupCodeView(server: $0) }
+                .settingRow(.setUpDevice)
         } footer: {
             // Kept in sight while the server is used with no sign-in (asked 2026-10-30).
             if settings.serveOpenAccess, settings.serveUsername.isEmpty, !settings.serveURL.isEmpty {
@@ -492,6 +516,7 @@ struct ModelSettings: View {
                     Label("Model", systemImage: "cpu")
                 }
             }
+            .settingRow(.model)
             // Keys, endpoints, the default, fallback and helper models on the server (2026-11-11).
             if settings.transport.isHermes {
                 NavigationLink {
@@ -499,6 +524,7 @@ struct ModelSettings: View {
                 } label: {
                     Label("Models & Providers", systemImage: "square.stack.3d.up")
                 }
+                .settingRow(.modelsProviders)
             }
         } footer: {
             if settings.transport != .chatCompletions {
@@ -530,6 +556,7 @@ struct CurrentLocationSection: View {
             })) {
                 Label("Current Location", systemImage: "location")
             }
+            .settingRow(.currentLocation)
             if Settings.shared.currentLocation { status }
         } footer: {
             Text("Only when you ask about places, directions, maps or the weather does your agent hear roughly where you are, the neighborhood and town. It goes to your own server and nowhere else.")
@@ -594,6 +621,7 @@ struct LeaveByAlertsSection: View {
             })) {
                 Label("Leave-By Alerts", systemImage: symbol)
             }
+            .settingRow(.leaveBy)
             if Settings.shared.leaveByAlerts {
                 if showsWay {
                     Picker("Getting There", selection: $mode) {
@@ -691,6 +719,7 @@ struct AgentSettings<Details: View>: View {
         Section {
             NavigationLink { SkillsView() } label: { Label("Skills", systemImage: "sparkles") }
                 .disabled(!canReachGateway)
+                .settingRow(.skills)
         } footer: {
             Text("What Redde knows how to do. Create and edit from here; changes are live on the next turn.")
         }
@@ -698,6 +727,7 @@ struct AgentSettings<Details: View>: View {
         Section {
             NavigationLink { ToolsView() } label: { Label("Tools", systemImage: "wrench.and.screwdriver") }
                 .disabled(!canReachGateway)
+                .settingRow(.tools)
         } footer: {
             Text("Toolsets enabled on the gateway. Read through the Hermes API key or the Hermes Dashboard login, whichever is set.")
         }
@@ -705,12 +735,14 @@ struct AgentSettings<Details: View>: View {
         Section {
             NavigationLink { PluginsView(profile: nil, owner: String(localized: "Your agent")) } label: { Label("Plugins", systemImage: "puzzlepiece.extension") }
                 .disabled(!canEditFiles)
+                .settingRow(.plugins)
         } footer: {
             canEditFiles ? Text("Find and install Hermes plugins from Nous Research's catalog, and switch them on and off.") : Text("Find and install Hermes plugins: needs the Hermes Dashboard login.")
         }
 
         Section {
             NavigationLink { KeyRequestsView() } label: { Label("Keys Asked For", systemImage: "key") }
+                .settingRow(.keysAskedFor)
         } footer: {
             Text("When an agent needs a key, it asks here, not in a chat. What you paste goes sealed straight into that profile's .env on your Hermes.")
         }
@@ -726,11 +758,13 @@ struct AgentSettings<Details: View>: View {
                                       purpose: String(localized: "The agent's persona: who Redde is, how it speaks, what it values."))
             } label: { Label("SOUL.md", systemImage: "person.text.rectangle") }
             .disabled(!canEditFiles)
+            .settingRow(.soul)
             NavigationLink {
                 ContextFileEditorView(title: "ENVIRONMENT.md", file: "ENVIRONMENT.md",
                                       purpose: String(localized: "Standing facts about your setup: machines, services, names, conventions."))
             } label: { Label("ENVIRONMENT.md", systemImage: "server.rack") }
             .disabled(!canEditFiles)
+            .settingRow(.environment)
         } header: {
             Text("Context files")
         } footer: {
@@ -741,6 +775,7 @@ struct AgentSettings<Details: View>: View {
         Section {
             // What it remembers, entry by entry (2.4); MEMORY.md and USER.md themselves are under it.
             NavigationLink { MemoryView() } label: { Label("What Your Agent Remembers", systemImage: "brain.head.profile") }
+                .settingRow(.memory)
         } header: {
             Text("Memory")
         } footer: {
@@ -753,6 +788,7 @@ struct AgentSettings<Details: View>: View {
         Section {
             NavigationLink { FilesView() } label: { Label("Files", systemImage: "folder") }
                 .disabled(!canBrowseFiles)
+                .settingRow(.files)
         } footer: {
             canBrowseFiles
                 ? Text("The folders on the Hermes host: look at files, change text ones, upload from this iPhone, make folders and delete.")
@@ -762,6 +798,7 @@ struct AgentSettings<Details: View>: View {
         #if os(iOS)
         Section {
             NavigationLink { TerminalSettingsView() } label: { Label("Terminal", systemImage: "apple.terminal") }
+                .settingRow(.terminal)
         } footer: {
             Text("A shell on your Hermes server over SSH, signed in with a key made on this iPhone. Also in a chat's More menu, in the chat's folder.")
         }
@@ -774,6 +811,7 @@ struct AgentSettings<Details: View>: View {
                 Label("Usage", systemImage: "chart.bar")
             }
             .disabled(!canReachGateway)
+            .settingRow(.usage)
         } footer: {
             canEditFiles
                 ? Text("What your agents used and what it cost: by day, bot, model and conversation.")
@@ -783,6 +821,7 @@ struct AgentSettings<Details: View>: View {
         Section {
             NavigationLink { GatewayView() } label: { Label("Gateway", systemImage: "gearshape.2") }
                 .disabled(!canAdminister)
+                .settingRow(.gateway)
         } footer: {
             canAdminister
                 ? Text("The Hermes server itself: what it is connected to, its MCP servers and logs, and restarting or updating it.")
@@ -870,6 +909,7 @@ struct VoiceSettings: View {
                     Text(Self.modeName(settings.voiceEngine.live)).lineLimit(1)
                 }
             }
+            .settingRow(.voiceMode)
         } header: {
             Text("Voice mode")
         } footer: {
@@ -885,6 +925,7 @@ struct VoiceSettings: View {
             NavigationLink { AgentCallsSettingsView() } label: {
                 LabeledContent("Calls from Agents", value: settings.agentCalls ? String(localized: "On") : String(localized: "Off"))
             }
+            .settingRow(.agentCalls)
         } footer: {
             Text(String(localized: "An agent you allow rings this device like a phone call when something shouldn't wait.", comment: "Footer under Calls from Agents, in Settings › Voice (an iPhone or an iPad)"))
         }
@@ -897,6 +938,7 @@ struct VoiceSettings: View {
                 Text("ElevenLabs").tag(Settings.ReplyVoice.elevenLabs)
             }
             .adaptiveSegmented()
+            .settingRow(.readingVoice)
             if settings.replyVoice == .hermes {
                 HermesVoiceRows()
             }
@@ -932,6 +974,7 @@ struct VoiceSettings: View {
                         (settings.useKokoro ? Text("Always your Kokoro voice") : Text("Always \(listeningLanguageName)")).tag(false)
                     }
                     .pickerStyle(.menu)
+                    .settingRow(.voiceForReplies)
                 }
                 // Applies to Kokoro and the built-in fallback voice alike.
                 VStack(alignment: .leading, spacing: 2) {
@@ -941,8 +984,10 @@ struct VoiceSettings: View {
                     Slider(value: $settings.voiceSpeed, in: 0.5...2.0, step: 0.05)
                         .accessibilityLabel("Voice speed")
                 }
+                .settingRow(.voiceSpeed)
             }
             Toggle("Earpiece when raised to your ear", isOn: $settings.earpieceAtEar)
+                .settingRow(.earpiece)
         } header: {
             Text("Reading voice")
         } footer: {
@@ -957,6 +1002,7 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
+            .settingRow(.listeningLanguage)
             NavigationLink {
                 ReplyLanguageView()
             } label: {
@@ -965,6 +1011,7 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
+            .settingRow(.replyLanguage)
             NavigationLink {
                 SpokenPrefixesView()
             } label: {
@@ -973,6 +1020,7 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
+            .settingRow(.spokenPrefixes)
             NavigationLink {
                 WakePhraseSettings()
             } label: {
@@ -980,6 +1028,7 @@ struct VoiceSettings: View {
                     Text(wakeSummary).lineLimit(1)
                 }
             }
+            .settingRow(.wakePhrase)
         } header: {
             Text("Listening")
         } footer: {
@@ -987,18 +1036,21 @@ struct VoiceSettings: View {
         }
         Section {
             Toggle("Start voice mode in hands-free", isOn: $settings.handsFreeByDefault)
+                .settingRow(.handsFree)
             Picker("Talk over replies", selection: $settings.talkOver) {
                 Text("Off").tag(Settings.TalkOver.off)
                 Text("With headphones").tag(Settings.TalkOver.headphones)
                 Text("Headphones and speaker").tag(Settings.TalkOver.everywhere)
             }
             .pickerStyle(.menu)
+            .settingRow(.talkOver)
             if settings.talkOver != .off {
                 Picker("Interrupt with", selection: $settings.interruption) {
                     Text("Anything you say").tag(Settings.Interruption.speech)
                     Text("Only “stop”").tag(Settings.Interruption.stopWord)
                 }
                 .pickerStyle(.menu)
+                .settingRow(.interruptWith)
             }
             NavigationLink {
                 StopPhrasesView()
@@ -1008,6 +1060,7 @@ struct VoiceSettings: View {
                         .lineLimit(1)
                 }
             }
+            .settingRow(.stopPhrases)
             Picker("Thinking sound", selection: Binding(
                 get: { settings.thinkingSound },
                 set: { choice in
@@ -1020,7 +1073,9 @@ struct VoiceSettings: View {
                 Text("Always").tag(Settings.ThinkingSound.always)
             }
             .pickerStyle(.menu)
+            .settingRow(.thinkingSound)
             Toggle("New conversation in voice mode", isOn: $settings.newConversationForVoice)
+                .settingRow(.newVoiceConversation)
         } header: {
             Text("Talking")
         } footer: {
@@ -1028,6 +1083,7 @@ struct VoiceSettings: View {
         }
         Section {
             Toggle("Answer requests by voice", isOn: $settings.answerRequestsByVoice)
+                .settingRow(.answerByVoice)
             if settings.answerRequestsByVoice, HeadGestures.isAvailable {
                 Toggle("Nod or shake to answer", isOn: Binding(
                     get: { settings.answerRequestsByNod },
@@ -1042,6 +1098,7 @@ struct VoiceSettings: View {
                             motionRefused = true
                         }
                     }))
+                .settingRow(.nodToAnswer)
                 if motionRefused {
                     Button("Allow Motion & Fitness for Redde…") {
                         if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
@@ -1060,6 +1117,7 @@ struct VoiceSettings: View {
         // settings: Settings → CarPlay; where Redde opens: Settings → General.
         Section {
             VoiceOrbSettings()
+                .settingRow(.voiceOrb)
         }
     }
 }
@@ -1082,7 +1140,9 @@ struct GeneralSettings: View {
                 Text("Voice").tag(Settings.LaunchScreen.voice)
             }
             .pickerStyle(.menu)
+            .settingRow(.whenOpens)
             Toggle("Listen whenever Redde opens", isOn: $settings.listenOnOpen)
+                .settingRow(.listenOnOpen)
         } header: {
             Text("When Redde opens")
         } footer: {
@@ -1103,9 +1163,11 @@ struct CarPlaySettings: View {
     var body: some View {
         Section {
             CarPlayCardSettings()
+                .settingRow(.carPlayCards)
             CarPlayVoiceSettings()
+                .settingRow(.carPlayVoice)
             // The Bots tab is there with Bots on the Dashboard (or the Hermes API through its login).
-            if BotDirectory.available(settings) { CarPlayBotSettings() }
+            if BotDirectory.available(settings) { CarPlayBotSettings().settingRow(.carPlayBots) }
         }
         Section {
             Toggle(isOn: $settings.stopAndSkipInCar) {
@@ -1115,7 +1177,9 @@ struct CarPlaySettings: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            .settingRow(.stopAndSkip)
             Toggle("Short answers in the car", isOn: $settings.shortAnswersInCar)
+                .settingRow(.shortAnswers)
         } header: {
             Text("In the car")
         } footer: {
@@ -1138,19 +1202,24 @@ struct NotificationSettings: View {
                     if on { Task { settings.notifyInBackground = await Notifier.shared.requestAuthorization() } }
                     else { settings.notifyInBackground = false }
                 }))
+            .settingRow(.alertsWhileOpen)
             Toggle("Announce on AirPods", isOn: $settings.announceOnAirPods)
                 .disabled(!settings.notifyInBackground)
+                .settingRow(.announce)
             Toggle("Alert Sound", isOn: $settings.notificationSound)
+                .settingRow(.alertSound)
         } header: {
             Text(String(localized: "Alerts", comment: "Section header in Settings › Notifications: notifications Redde and your Hermes send"))
         } footer: {
             Text("When an agent needs you or a reply finishes while you're in another app. Redde sends these itself, so they stop once it's closed. “Announce on AirPods” marks them time-sensitive, so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and they reach you in a Focus. “Alert Sound” off makes every alert silent, your Hermes's too; they still appear.")
         }
         QuietHoursSection()
+            .settingRow(.quietHours)
         Section {
             NavigationLink { PushSettingsView() } label: {
                 LabeledContent("Alerts When Redde Is Closed", value: PushService.shared.pairings.contains(where: \.isPaired) ? String(localized: "On") : String(localized: "Off"))
             }
+            .settingRow(.push)
         } footer: {
             Text(String(localized: "Your Hermes sends them instead once Redde is closed, to each iPhone, iPad and Mac you pair.", comment: "Footer under Alerts When Redde Is Closed, in Settings › Notifications"))
         }
@@ -1159,9 +1228,11 @@ struct NotificationSettings: View {
         // wording"): Redde's Live Activity, and iOS's own "<agent> is working" card.
         Section {
             Toggle("Live Activities", isOn: $settings.showLiveActivity)
+                .settingRow(.liveActivities)
             #if os(iOS)
             Toggle(String(localized: "“\(settings.headerTitle) Is Working” Card", comment: "Settings › Notifications: iOS's card while a reply streams in the background, with the agent's name"),
                    isOn: $settings.keepRepliesInBackground)
+            .settingRow(.workingCard)
             #endif
         } header: {
             Text(String(localized: "While an Agent Works", comment: "Section header in Settings › Notifications: what shows on screen while a reply is worked on"))
@@ -1184,8 +1255,10 @@ struct SiriSettings: View {
     var body: some View {
         Section {
             Toggle("Let Siri use Redde", isOn: $settings.siriAIEnabled)
+                .settingRow(.letSiri)
             if settings.siriAIEnabled {
                 Toggle("Drafts in a new conversation", isOn: $settings.siriDraftsInNewConversation)
+                    .settingRow(.siriDrafts)
             }
         } header: {
             Text("Siri")
@@ -1208,6 +1281,7 @@ struct MetricsSettings: View {
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.trailing)
             }
+            .settingRow(.contextWindow)
         } header: {
             Text("Metrics")
         } footer: {
@@ -1233,12 +1307,14 @@ struct ICloudSettings: View {
                 }
             }
             .disabled(sync.phase == .looking)
+            .settingRow(.icloud)
             // The same look everywhere, or each device its own (asked 2026-11-25).
             if sync.phase == .on {
                 Toggle(isOn: $sync.syncsLook) {
                     Text("Sync Appearance", comment: "Settings › iCloud: the switch that gives every device the same theme, colors and text size")
                 }
                 .accessibilityIdentifier("icloud-sync-appearance")
+                .settingRow(.syncAppearance)
             }
         } header: {
             Text("iCloud")
@@ -1276,6 +1352,7 @@ struct LockSettings: View {
                 }))
             // The banner's Reply action follows the lock: registered again when it changes.
             .onChange(of: settings.requireBiometrics) { Notifier.shared.registerCategories() }
+            .settingRow(.appLock)
             if settings.requireBiometrics {
                 Picker("Lock after", selection: $settings.lockGraceSeconds) {
                     Text("Immediately").tag(0.0)
@@ -1284,6 +1361,7 @@ struct LockSettings: View {
                     Text("15 minutes").tag(900.0)
                     Text("1 hour").tag(3600.0)
                 }
+                .settingRow(.lockAfter)
             }
         } header: {
             Text("Lock")
@@ -1307,15 +1385,20 @@ struct AboutSettings: View {
 
         Section {
             NavigationLink { TipJarView() } label: { Label("Support Redde", systemImage: "heart") }
+                .settingRow(.supportRedde)
             Link(destination: URL(string: "https://apps.apple.com/app/id6810900557?action=write-review")!) {
                 Label("Rate Redde on the App Store", systemImage: "star")
             }
+            .settingRow(.rateRedde)
             if let release = WhatsNew.highlights(of: WhatsNew.currentVersion) {
                 NavigationLink("What's New in Redde") { WhatsNewView(release: release) }
+                    .settingRow(.whatsNew)
             }
             NavigationLink("Acknowledgements") { AcknowledgementsView() }
+                .settingRow(.acknowledgements)
             NavigationLink { DiagnosticsView() } label: { Label("Report a Problem", systemImage: "ladybug") }
                 .accessibilityIdentifier("about.report")
+                .settingRow(.reportProblem)
             Button {
                 UIPasteboard.general.string = SettingsView.versionLine
                 copiedVersion = true
@@ -1327,6 +1410,7 @@ struct AboutSettings: View {
             }
             .buttonStyle(.plain)
             .accessibilityHint("Copies the version for a bug report")
+            .settingRow(.version)
         }
     }
 }
@@ -1342,6 +1426,7 @@ struct ResetSettings: View {
     var body: some View {
         Section {
             Button("Erase everything…", role: .destructive) { confirming = true }
+                .settingRow(.erase)
         } footer: {
             Text("Deletes every conversation and attachment on this device, forgets all servers, keys and passwords, and returns the settings to their defaults. Nothing on your servers is touched, and Sync with iCloud turns off first, so your other devices keep theirs.")
         }

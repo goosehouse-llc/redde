@@ -99,6 +99,7 @@ struct PhoneToolsSettingsView: View {
                 } footer: {
                     Text("“Ask each time” puts every request to you first. “Allow reading” lets it look things up without asking; adding, changing and deleting are still put to you, and deleting photos is put to you by iOS with the photos shown. Files are Redde's folder in the Files app, under On My \(device). The widget is Redde's own, “From Your Agent”, which you add to your Home Screen: allowed, your agent writes on it without asking, also while Redde is closed if this \(device) is paired for notifications. A call is put to you by iOS before it goes out, and a message is written for you to send: Redde asks about neither, and can send nothing. In Apple Home, “Allow” lets it change things too, except locks, garage doors, doors, windows and the alarm, which it always asks about.")
                 }
+                .settingRow(.phoneAreas)
 
                 Section {
                     Toggle("Keep a Copy", isOn: Binding(get: { settings.phoneTools.wantsCopy }, set: { on in
@@ -109,6 +110,7 @@ struct PhoneToolsSettingsView: View {
                             Task { await service.wipeCopies(); copies = nil }
                         }
                     }))
+                    .settingRow(.keepACopy)
                     if settings.phoneTools.wantsCopy {
                         Button {
                             Task { await service.refreshCopies(); copies = await service.copyStatus() }

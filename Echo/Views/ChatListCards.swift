@@ -116,6 +116,7 @@ struct ChatListCardsSettingsView: View {
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                         }
+                        .settingRow(.showBots)
                     }
                     if settings.transport == .hermesServe {
                         Toggle(isOn: $settings.projectsInChatList) {
@@ -125,6 +126,7 @@ struct ChatListCardsSettingsView: View {
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                         }
+                        .settingRow(.projects)
                     }
                 }
             }
@@ -145,6 +147,7 @@ struct ChatListCardsSettingsView: View {
                 Text("Each shows only when it has something in it. Tap a section's title in the chat list to fold it away to a count.",
                      comment: "Settings › Chat List: footer under the cards")
             }
+            .settingRow(.topCards)
             UpNextTileSection()
             RemindersOnTheirDaySection()
         }
@@ -182,6 +185,7 @@ struct UpNextTileSection: View {
                     }
                 } icon: { Image(systemName: "calendar") }
             }
+            .settingRow(.upNext)
         } footer: {
             if settings.todayUpNext, calendarRefused {
                 Text("Up Next needs full access to your calendars. Allow it in Settings, under Privacy & Security › Calendars.",
@@ -203,6 +207,7 @@ struct RemindersOnTheirDaySection: View {
             Toggle(isOn: Binding(get: { addsReminders }, set: { addsReminders = $0; TodayLists.shared.addsReminders = $0 })) {
                 Text("Reminders on Their Day", comment: "Settings › Chat List and Settings › Calendars: put Apple Reminders on a list when they're due")
             }
+            .settingRow(.remindersOnDay)
             if addsReminders {
                 TextField(String(localized: "List", comment: "Settings › Chat List and Settings › Calendars: which list reminders go on"),
                           text: Binding(get: { listName }, set: { listName = $0; TodayLists.shared.remindersList = $0 }),

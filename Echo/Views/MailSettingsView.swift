@@ -36,6 +36,7 @@ struct MailSettingsView: View {
                 Button { adding = true } label: {
                     Label { Text("Add Email Account", comment: "Email settings: add an account") } icon: { Image(systemName: "plus.circle") }
                 }
+                .settingRow(.addEmail)
             } header: {
                 Text("Accounts", comment: "Email settings: section")
             } footer: {
@@ -47,13 +48,16 @@ struct MailSettingsView: View {
                     NavigationLink { InboxView() } label: {
                         Label { Text("Inbox", comment: "Email settings: open the inbox") } icon: { Image(systemName: "tray") }
                     }
+                    .settingRow(.inbox)
                     NavigationLink { MailRulesView() } label: {
                         Label { Text("Rules", comment: "Email settings: the rules page") } icon: { Image(systemName: "line.3.horizontal.decrease.circle") }
                     }
+                    .settingRow(.mailRules)
                     if center.status?.hasPiles == true {
                         NavigationLink { MailPilesView() } label: {
                             Label { Text("Piles", comment: "Email piles page: title") } icon: { Image(systemName: "square.stack") }
                         }
+                        .settingRow(.piles)
                     }
                     if center.accounts.count > 1 {
                         // What the Inbox opens on, kept until changed here or in its menu (11-06).
@@ -62,6 +66,7 @@ struct MailSettingsView: View {
                         } label: {
                             Label { Text("Inbox Shows", comment: "Email settings: which account the Inbox shows") } icon: { Image(systemName: "tray.2") }
                         }
+                        .settingRow(.inboxShows)
                     }
                     Toggle(isOn: Binding(get: { center.status?.triage != "off" }, set: { on in Task { await center.setTriage(on) } })) {
                         VStack(alignment: .leading, spacing: 2) {
@@ -72,6 +77,7 @@ struct MailSettingsView: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
+                    .settingRow(.sortMail)
                 }
             }
 

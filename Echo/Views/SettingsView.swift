@@ -16,6 +16,8 @@ struct SettingsView: View {
     @State private var secretSaved = false
     /// The page open over the first screen, if any.
     @State private var path: [SettingsPage] = []
+    /// What is searched for (`SettingsSearch`): while there is any, the results stand in for the rows.
+    @State private var query = ""
     #if DEBUG
     /// `-echo.settingsAnchor plugins|catalog|tools` (`PluginsDemo`).
     @State private var demoPage: String?
@@ -32,18 +34,32 @@ struct SettingsView: View {
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
             Form {
-                NameSettings()
-                ConnectionGroup()
-                ModelSettings()
-                AgentGroup()
-                Section {
-                    ForEach(SettingsPage.appPages) { page in
-                        NavigationLink(value: page) { Label(page.title, systemImage: page.symbol) }
+                if query.trimmingCharacters(in: .whitespaces).isEmpty {
+                    NameSettings()
+                    ConnectionGroup()
+                    ModelSettings()
+                    AgentGroup()
+                    Section {
+                        ForEach(SettingsPage.appPages) { page in
+                            NavigationLink(value: page) { Label(page.title, systemImage: page.symbol) }
+                        }
+                    } header: {
+                        Text("The App", comment: "Settings: header of the group of pages about the app itself (General, Appearance, Chat List, Voice…)")
                     }
-                } header: {
-                    Text("The App", comment: "Settings: header of the group of pages about the app itself (General, Appearance, Chat List, Voice…)")
+                    AboutSettings()
+                } else {
+                    SettingsSearchResults(query: query, open: open)
                 }
-                AboutSettings()
+            }
+            #if os(iOS)
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always))
+            #else
+            .searchable(text: $query)
+            #endif
+            // A result for a row of this screen: scrolled to once the rows are back.
+            .onChange(of: SettingsFocus.shared.target) { _, target in
+                guard let target, target.entry.page == nil else { return }
+                Task { await SettingsFocus.shared.arrive(on: nil) { proxy.scrollTo($0, anchor: .center) } }
             }
             #if DEBUG
             // Dev hooks: `-echo.settingsAnchor` opens Agent on the context and memory files,
@@ -60,7 +76,7 @@ struct SettingsView: View {
                 if ["plugins", "catalog", "tools", "mcp"].contains(anchor) {
                     demoPage = anchor
                 } else if anchor == "plugin" {
-                    proxy.scrollTo(anchor, anchor: .center)
+                    proxy.scrollTo(SettingsRow.plugin.anchor, anchor: .center)
                 } else if anchor == "icloud" {
                     path = [.general]
                 } else if anchor == "voice" {
@@ -81,14 +97,16 @@ struct SettingsView: View {
             #endif
             }
             .navigationDestination(for: SettingsPage.self) { page in
-                switch page {
-                // The pages that were already screens of their own, with their own forms.
-                case .email: MailSettingsView()
-                case .phoneTools: PhoneToolsSettingsView()
-                case .calendars: CalendarsSettingsView()
-                case .location: LocationSettingsView()
-                case .chatList: ChatListCardsSettingsView()
-                default: SettingsPageForm(page: page) { pageContent(page) }
+                SettingsFound(page: page) {
+                    switch page {
+                    // The pages that were already screens of their own, with their own forms.
+                    case .email: MailSettingsView()
+                    case .phoneTools: PhoneToolsSettingsView()
+                    case .calendars: CalendarsSettingsView()
+                    case .location: LocationSettingsView()
+                    case .chatList: ChatListCardsSettingsView()
+                    default: SettingsPageForm(page: page) { pageContent(page) }
+                    }
                 }
             }
             .sheet(isPresented: $showSetup) { SetupView() }
@@ -114,6 +132,15 @@ struct SettingsView: View {
         .preferredColorScheme(Settings.shared.effectiveColorScheme)
     }
 
+    /// A search result: its page, on the row it is for; a row of this screen, scrolled to here.
+    private func open(_ hit: SettingsSearch.Hit) {
+        SettingsFocus.shared.target = hit.row
+        if let page = hit.page {
+            path = [page]
+        } else {
+            query = ""
+        }
+    }
 
     @ViewBuilder
     private func pageContent(_ page: SettingsPage) -> some View {
@@ -250,6 +277,7 @@ private struct ConnectionSettingsPage: View {
                 ConnectionDetailsView(hasStoredKey: $access.hasStoredKey,
                                       hasServePassword: $access.hasServePassword, saved: $saved)
             } label: { Label("Connection details", systemImage: "key") }
+            .settingRow(.connectionDetails)
         } footer: {
             Text("URLs, keys and logins for every connection, including ones you aren't using right now. The Hermes Dashboard login also unlocks the context and memory files, and files the agent sends, while you chat over the Hermes API.")
         }

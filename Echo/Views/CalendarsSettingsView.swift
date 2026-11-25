@@ -42,6 +42,7 @@ struct CalendarsSettingsView: View {
                     limiting = !all
                     if all { settings.agendaCalendars = [] }
                 }))
+                .settingRow(.allCalendars)
             } footer: {
                 limiting
                     ? Text("Only the calendars switched on here. With none on, all of them. Phone tools read and add to only these on this device.")
@@ -75,6 +76,7 @@ struct CalendarsSettingsView: View {
                         if !newEvents.isEmpty, !writable.contains(where: { $0.title == newEvents }) { Text(newEvents).tag(newEvents) }
                     }
                     .onChange(of: newEvents) { settings.newEventsCalendar = newEvents }
+                    .settingRow(.newEvents)
                 } footer: {
                     Text("Where an event your agent adds goes, unless you ask for another calendar. Calendar's Default is the one set in Settings → Apps → Calendar.")
                 }
@@ -96,6 +98,7 @@ struct CalendarsSettingsView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
+                .settingRow(.eventColors)
             }
             // The calendar in the chat list too (also on Settings → Chat List): the next event as a
             // Today tile, and reminders on a list on their day.
