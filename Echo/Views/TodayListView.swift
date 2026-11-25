@@ -11,7 +11,7 @@ import SwiftUI
 /// page and fills its ring and ticks, its emoji sits by its name, a tick springs, a finished list
 /// throws its emoji about. Change Look picks the emoji, the colour and the kind. A watch list is a
 /// clean list of small posters under a thin progress bar (`FilmRow`; picked 2026-11-23 over the wall
-/// of posters it first was).
+/// of posters it first was), or, picked in Change Look, tickets to tear off (`TicketRow`, 2026-11-25).
 struct TodayListView: View {
     @State private var lists = TodayLists.shared
     @State private var renaming = false
@@ -22,6 +22,8 @@ struct TodayListView: View {
     @State private var styling = false
     @State private var dating: TodayList.Item?
     @State private var editing: TodayList.Item?
+    @State private var settings = Settings.shared
+    @State private var stubsOpen = false
     @FocusState private var typing: Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
@@ -36,6 +38,11 @@ struct TodayListView: View {
             }
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
+    }
+
+    /// A watch list drawn as tickets (its Change Look's Layout).
+    private func tickets(_ list: TodayList) -> Bool {
+        list.kind == .watch && settings.filmLayout(forList: list.id) == .tickets
     }
 
     /// The marks: the list's colour, else the checklists' "done" green.
@@ -69,7 +76,19 @@ struct TodayListView: View {
 
             openItems(list)
 
-            if !list.finished.isEmpty {
+            if !list.finished.isEmpty, tickets(list) {
+                Section {
+                    if stubsOpen {
+                        ForEach(list.finished) { row($0, in: list) }
+                    } else {
+                        StubPile(items: list.finished)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets())
+                    }
+                } header: {
+                    stubsHeader(list)
+                }
+            } else if !list.finished.isEmpty {
                 Section {
                     if !doneFolded {
                         ForEach(list.finished) { row($0, in: list) }
@@ -142,7 +161,13 @@ struct TodayListView: View {
     @ViewBuilder
     private func openItems(_ list: TodayList) -> some View {
         let groups = list.groupsByWhen ? list.openByWhen() : []
-        if groups.contains(where: { $0.when != .anytime }) {
+        if tickets(list) {
+            Section {
+                if list.open.isEmpty, !list.items.isEmpty { allDone }
+                ForEach(list.open) { ticketRow($0, in: list) }
+            }
+            Section { addRow(list) }
+        } else if groups.contains(where: { $0.when != .anytime }) {
             ForEach(groups) { group in
                 Section {
                     ForEach(group.items) { item in
@@ -203,6 +228,12 @@ struct TodayListView: View {
                         if total > 0, done == total {
                             Text("All done", comment: "Today strip: a to-do list with every item checked off")
                                 .foregroundStyle(mark)
+                        } else if tickets(list) {
+                            // "3 tickets left · 5 used".
+                            Text(verbatim: [String(localized: "\(total - done) tickets left", comment: "Ticket Stubs: under a watch list's name, how many films aren't watched yet"),
+                                            String(localized: "\(done) used", comment: "Ticket Stubs: under a watch list's name, after the tickets left: how many films are watched")]
+                                .joined(separator: " · "))
+                                .foregroundStyle(.secondary)
                         } else {
                             Text("\(done) of \(total) done", comment: "The agent's task list: tasks done of all tasks")
                                 .foregroundStyle(.secondary)
@@ -218,7 +249,7 @@ struct TodayListView: View {
                         .accessibilityHidden(true)
                 }
             }
-            if total > 0, list.kind == .watch || list.groupsByWhen {
+            if total > 0, list.kind == .watch && !tickets(list) || list.groupsByWhen {
                 ThinBar(done: done, total: total, mark: mark)
                     .accessibilityHidden(true)
             }
@@ -272,6 +303,33 @@ struct TodayListView: View {
         }
         .buttonStyle(.plain)
         .sensoryFeedback(trigger: item.done) { _, now in now ? .impact(weight: .light) : .selection }
+        .modifier(ItemActions(item: item, list: list, tickets: tickets(list), editing: $editing, dating: $dating))
+    }
+
+    /// A film still to watch on a list drawn as tickets: a tap plans its night, its stub's tick
+    /// tears it off.
+    private func ticketRow(_ item: TodayList.Item, in list: TodayList) -> some View {
+        TicketRow(item: item, mark: mark, plan: { dating = item }, tear: { lists.toggle(item, in: list) })
+            .modifier(ItemActions(item: item, list: list, tickets: true, editing: $editing, dating: $dating))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+    }
+}
+
+/// What every item has, whatever its row looks like: swipe or hold to remove it, hold to change
+/// its words (a film's pages too, and a date where the list keeps them), and the same for VoiceOver.
+private struct ItemActions: ViewModifier {
+    let item: TodayList.Item
+    let list: TodayList
+    let tickets: Bool
+    @Binding var editing: TodayList.Item?
+    @Binding var dating: TodayList.Item?
+    @State private var lists = TodayLists.shared
+    @Environment(\.openURL) private var openURL
+
+    func body(content: Content) -> some View {
+        content
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) { lists.remove([item], from: list) } label: {
                 Label { Text("Remove", comment: "A to-do list: take one item off it") } icon: { Image(systemName: "trash") }
@@ -293,7 +351,7 @@ struct TodayListView: View {
                 Label { Text("Edit") } icon: { Image(systemName: "pencil") }
             }
             .accessibilityIdentifier("list-edit")
-            if list.groupsByWhen, !item.done {
+            if list.groupsByWhen || tickets, !item.done {
                 Button { dating = item } label: {
                     Label {
                         if item.when == nil {
@@ -324,7 +382,9 @@ struct TodayListView: View {
         .accessibilityAction(named: Text("Edit")) { editing = item }
         .accessibilityAction(named: Text("Remove", comment: "A to-do list: take one item off it")) { lists.remove([item], from: list) }
     }
+}
 
+extension TodayListView {
     private func addRow(_ list: TodayList) -> some View {
         HStack(spacing: 14) {
             Image(systemName: "plus.circle.fill")
@@ -368,6 +428,32 @@ struct TodayListView: View {
             .buttonStyle(.plain)
             .accessibilityValue(doneFolded ? Text("\(list.finished.count) of \(list.items.count) done") : Text(verbatim: ""))
             Spacer()
+            Button { lists.clearDone(in: list) } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Clear Done", comment: "A to-do list: remove the items checked off"))
+        }
+        .chatFont(.subheadline, weight: .semibold)
+        .foregroundStyle(.secondary)
+        .textCase(nil)
+    }
+
+    /// "Used Stubs" over the pile, See All to have them as rows (to put one back), and Clear Done.
+    private func stubsHeader(_ list: TodayList) -> some View {
+        HStack(spacing: 12) {
+            Text("Used Stubs", comment: "Ticket Stubs: the heading over the films already watched, shown as torn-off stubs")
+            Spacer()
+            Button { stubsOpen.toggle() } label: {
+                if stubsOpen {
+                    Text("Show Less", comment: "Watches: folds a watch's report back to a few lines")
+                } else {
+                    Text("See All \(list.finished.count)", comment: "Ticket Stubs: shows every watched film as a row, beside the pile of used stubs")
+                }
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(CardInk.readable(mark, drawnIn: scheme))
+            .accessibilityIdentifier("stubs-see-all")
             Button { lists.clearDone(in: list) } label: {
                 Image(systemName: "trash")
             }

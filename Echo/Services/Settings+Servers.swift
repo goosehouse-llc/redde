@@ -217,6 +217,7 @@ extension Settings {
         cardColor = .plain
         todayColor = .plain
         todayTileColors = [:]
+        listLayouts = [:]
         todayTileOrder = []
         todayUpNext = false
         cardAppearance = .system

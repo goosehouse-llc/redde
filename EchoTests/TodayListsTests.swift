@@ -346,4 +346,24 @@ struct TodayListsTests {
         let series = TodayList.Item(id: "b", text: "Pluribus", done: false)
         #expect(FilmLookUp.imdb.url(for: series).absoluteString == "https://www.imdb.com/find/?q=Pluribus&s=tt")
     }
+
+    /// The Ticket Stubs layout (2026-11-25): picked per watch list, a Clean List until then, kept
+    /// with the look so Sync Appearance carries it, and back to the default it's as if never set.
+    @Test func aWatchListsLayoutIsPickedPerListAndSyncsWithTheLook() {
+        let settings = Settings(defaults: UserDefaults(suiteName: "list-layouts-\(UUID().uuidString)")!)
+        #expect(settings.filmLayout(forList: "films") == .list)
+        settings.setFilmLayout(.tickets, forList: "films")
+        #expect(settings.filmLayout(forList: "films") == .tickets)
+        #expect(settings.filmLayout(forList: "other") == .list, "one list's pick is its own")
+        #expect(settings.storedValue(Settings.Keys.listLayouts) as? [String: String] == ["films": "tickets"])
+        settings.setFilmLayout(.list, forList: "films")
+        #expect(settings.listLayouts.isEmpty)
+
+        #expect(Settings.syncedKeys.contains(Settings.Keys.listLayouts) && Settings.lookKeys.contains(Settings.Keys.listLayouts))
+        settings.applySynced(Settings.Keys.listLayouts, ["films": "tickets", "old": "nonsense"])
+        #expect(settings.filmLayout(forList: "films") == .tickets)
+        #expect(settings.filmLayout(forList: "old") == .list, "a layout it doesn't know is the default")
+        settings.applySynced(Settings.Keys.listLayouts, nil)
+        #expect(settings.filmLayout(forList: "films") == .list)
+    }
 }

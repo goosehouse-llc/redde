@@ -82,6 +82,7 @@ extension Settings {
         static let cardColor = "cardColor"
         static let todayColor = "todayColor"
         static let todayTileColors = "todayTileColors"
+        static let listLayouts = "listLayouts"
         static let todayTileOrder = "todayTileOrder"
         static let todayUpNext = "todayUpNext"
         static let cardAppearance = "cardAppearance"
@@ -131,7 +132,7 @@ extension Settings {
     /// Siri, Phone tools, what needs a permission of the device (notifications, motion), and the
     /// push relay.
     static let syncedKeys: [String] = [
-        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.todayTileOrder, Keys.todayUpNext, Keys.cardAppearance, Keys.agendaCalendars, Keys.newEventsCalendar, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
+        Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.listLayouts, Keys.todayTileOrder, Keys.todayUpNext, Keys.cardAppearance, Keys.agendaCalendars, Keys.newEventsCalendar, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.pinnedModels, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
         Keys.suggestFollowUps, Keys.agentsAskEachOther, Keys.hermesBotsTalk, Keys.askBeforeAgentsAsk, Keys.suggestionsFromFastLane, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
@@ -148,7 +149,7 @@ extension Settings {
     /// the voice orb. Everything else on `syncedKeys` still goes between its devices.
     static let lookKeys: Set<String> = [
         Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.botFaces,
-        Keys.eventColor, Keys.cardColor, Keys.cardAppearance, Keys.todayColor, Keys.todayTileColors, Keys.voiceOrb, Keys.orbLight,
+        Keys.eventColor, Keys.cardColor, Keys.cardAppearance, Keys.todayColor, Keys.todayTileColors, Keys.listLayouts, Keys.voiceOrb, Keys.orbLight,
     ]
 
     /// A synced setting as it is saved here, for `CloudSync` to send.
@@ -172,6 +173,7 @@ extension Settings {
         case Keys.cardColor: cardColor = pick(CardColor.plain)
         case Keys.todayColor: todayColor = pick(TodayColor.plain)
         case Keys.todayTileColors: todayTileColors = value as? [String: String] ?? [:]
+        case Keys.listLayouts: listLayouts = value as? [String: String] ?? [:]
         case Keys.todayTileOrder: todayTileOrder = value as? [String] ?? []
         case Keys.todayUpNext: todayUpNext = flag()
         case Keys.cardAppearance: cardAppearance = pick(Appearance.system)

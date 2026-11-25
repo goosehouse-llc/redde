@@ -184,7 +184,8 @@ final class TodayStripUITests: XCTestCase {
     func testAWatchListIsACleanList() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-echo.demo", "-echo.demoLists", "-echo.drawerPage", "today", "-linkPreviews", "YES"] + XCUIApplication.straightToChat
+        app.launchArguments = ["-echo.demo", "-echo.demoLists", "-echo.drawerPage", "today", "-linkPreviews", "YES",
+                               "-listLayouts", "<dict/>"] + XCUIApplication.straightToChat
         app.launch()
         XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
@@ -217,6 +218,72 @@ final class TodayStripUITests: XCTestCase {
         sleep(1)
         let look = XCTAttachment(screenshot: app.screenshot())
         look.name = "change-look"; look.lifetime = .keepAlways; add(look)
+    }
+
+    /// The Ticket Stubs layout (2026-11-25): picked in Change Look, a stub's tick tears it off, a
+    /// ticket's tap plans its night, and the watched pile opens into rows.
+    func testAWatchListAsTicketStubs() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoLists", "-echo.drawerPage", "today", "-linkPreviews", "YES",
+                               "-listLayouts", "<dict/>"] + XCUIApplication.straightToChat
+        app.launch()
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        let films = tile(app, "Christmas Movies")
+        XCTAssertTrue(films.waitForExistence(timeout: 5), "No watch list tile")
+        reach(app, films)
+        films.tap()
+        XCTAssertTrue(app.staticTexts["2 of 8 done"].waitForExistence(timeout: 5), "The list didn't open as a Clean List")
+
+        app.buttons["Change Look"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Change Look"].waitForExistence(timeout: 5), "Change Look didn't open")
+        let layout = app.segmentedControls["list-layout"]
+        if !layout.waitForExistence(timeout: 3) { app.swipeUp() }
+        XCTAssertTrue(layout.waitForExistence(timeout: 3), "No Layout picker for a watch list")
+        layout.buttons["Ticket Stubs"].tap()
+        app.navigationBars["Change Look"].buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["6 tickets left · 2 used"].waitForExistence(timeout: 5), "The list isn't drawn as tickets")
+        sleep(1)
+        let page = XCTAttachment(screenshot: app.screenshot())
+        page.name = "ticket-stubs"; page.lifetime = .keepAlways; add(page)
+
+        // The stub's tick, at the ticket's end: torn off, it's watched.
+        let elf = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Elf, 2003")).firstMatch
+        XCTAssertTrue(elf.waitForExistence(timeout: 5), "No ticket for Elf")
+        elf.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertTrue(app.staticTexts["5 tickets left · 3 used"].waitForExistence(timeout: 5), "Tearing the stub didn't count it watched")
+
+        // The rest of a ticket plans its night.
+        let alone = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Home Alone, 1990")).firstMatch
+        XCTAssertTrue(alone.waitForExistence(timeout: 5), "No ticket for Home Alone")
+        alone.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).tap()
+        XCTAssertTrue(app.buttons["date-sheet-save"].waitForExistence(timeout: 5), "A ticket's tap didn't open its night")
+        let night = XCTAttachment(screenshot: app.screenshot())
+        night.name = "ticket-plan-a-night"; night.lifetime = .keepAlways; add(night)
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["date-sheet-save"].waitForNonExistence(timeout: 5), "The night's sheet didn't close")
+
+        // The used stubs, then as rows.
+        let seeAll = app.buttons["stubs-see-all"]
+        if !seeAll.isHittable { app.swipeUp() }
+        XCTAssertTrue(seeAll.waitForExistence(timeout: 5), "No See All by the used stubs")
+        let pile = XCTAttachment(screenshot: app.screenshot())
+        pile.name = "used-stubs"; pile.lifetime = .keepAlways; add(pile)
+        seeAll.tap()
+        XCTAssertTrue(app.buttons["Show Less"].waitForExistence(timeout: 5), "See All didn't open the stubs as rows")
+
+        // Back to a Clean List, which is also how the next test finds it.
+        let look = app.buttons["Change Look"].firstMatch
+        for _ in 0 ..< 3 where !look.exists || !look.isHittable { app.swipeDown() }
+        look.tap()
+        XCTAssertTrue(app.navigationBars["Change Look"].waitForExistence(timeout: 5), "Change Look didn't open again")
+        if !layout.waitForExistence(timeout: 3) { app.swipeUp() }
+        XCTAssertTrue(layout.waitForExistence(timeout: 3), "No Layout picker the second time")
+        layout.buttons["List"].tap()
+        app.navigationBars["Change Look"].buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["3 of 8 done"].waitForExistence(timeout: 5), "List didn't bring the Clean List back")
     }
 
     func testAGoalTileOpensTheGoal() {

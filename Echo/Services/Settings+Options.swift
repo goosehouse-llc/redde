@@ -195,6 +195,13 @@ extension Settings {
         }
     }
 
+    /// How a watch list is drawn, picked in its Change Look (2026-11-25, trying the Ticket Stubs
+    /// mockup): the Clean List of small posters, or each film a ticket to tear off, with the
+    /// watched ones a pile of used stubs.
+    enum FilmLayout: String, CaseIterable, Sendable {
+        case list, tickets
+    }
+
     /// Settings → Appearance → Today Tiles (asked 2026-11-11: "allow me the option to change the
     /// color of the Today tabs in the drawer"): the chat list's Today tiles on the theme's surface,
     /// each washed in its own kind's colour (the inbox the accent, a list green, a briefing
@@ -232,6 +239,16 @@ extension Settings {
     /// The colour a Today tile is drawn in.
     func todayColor(forTile key: String) -> TodayColor {
         todayTileColors[key].flatMap(TodayColor.init(rawValue:)) ?? todayColor
+    }
+
+    /// How a watch list is drawn: a Clean List unless Change Look says otherwise.
+    func filmLayout(forList id: String) -> FilmLayout {
+        listLayouts[id].flatMap(FilmLayout.init(rawValue:)) ?? .list
+    }
+
+    func setFilmLayout(_ layout: FilmLayout, forList id: String) {
+        // The default isn't kept, so a list that goes back to it is as if never changed.
+        listLayouts[id] = layout == .list ? nil : layout.rawValue
     }
 
     /// The appearance a card is drawn in, nil for the app's.

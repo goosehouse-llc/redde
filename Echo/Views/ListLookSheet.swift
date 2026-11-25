@@ -74,6 +74,7 @@ struct ListLookSheet: View {
     let list: TodayList
     @State private var lists = TodayLists.shared
     @State private var typed = ""
+    @State private var settings = Settings.shared
     @Environment(\.dismiss) private var dismiss
 
     private static let emojis = ["🎄", "🎃", "🎉", "🍿", "🎬", "📺", "🛒", "🥦", "✅", "🧹", "📚", "🧳",
@@ -143,6 +144,25 @@ struct ListLookSheet: View {
                     }
                 } footer: {
                     Text("Films & Shows lists show each title with its poster.", comment: "A list's look: under the kind picker")
+                }
+
+                // A watch list as a clean list or as tickets (2026-11-25), on every device of theirs.
+                if shown.kind == .watch {
+                    Section {
+                        Picker(selection: Binding(get: { settings.filmLayout(forList: shown.id) },
+                                                  set: { settings.setFilmLayout($0, forList: shown.id) })) {
+                            Text("List", comment: "A watch list's layout: small posters in rows").tag(Settings.FilmLayout.list)
+                            Text("Ticket Stubs", comment: "A watch list's layout: each film a ticket to tear off, watched ones a pile of used stubs")
+                                .tag(Settings.FilmLayout.tickets)
+                        } label: {
+                            Text("Layout", comment: "A list's look: how a watch list is drawn")
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .accessibilityIdentifier("list-layout")
+                    } header: {
+                        Text("Layout", comment: "A list's look: how a watch list is drawn")
+                    }
                 }
             }
             .navigationTitle(Text("Change Look", comment: "A to-do list: choose its emoji, colour and kind"))

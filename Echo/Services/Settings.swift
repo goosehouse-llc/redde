@@ -300,6 +300,11 @@ final class Settings: ServeEndpoint {
     var todayTileColors: [String: String] {
         didSet { store(todayTileColors, forKey: Keys.todayTileColors) }
     }
+    /// How each watch list is drawn, by the list's id: a `FilmLayout` raw value; a list not in it
+    /// is a Clean List (`filmLayout(forList:)`).
+    var listLayouts: [String: String] {
+        didSet { store(listLayouts, forKey: Keys.listLayouts) }
+    }
     /// The Today tiles' order as the person arranged it (asked 2026-11-12), by tile key. A tile
     /// not in it comes after those that are, in the strip's own order. Empty: the strip's order.
     var todayTileOrder: [String] {
@@ -714,6 +719,7 @@ final class Settings: ServeEndpoint {
         cardColor = CardColor(rawValue: defaults.string(forKey: Keys.cardColor) ?? "") ?? .plain
         todayColor = TodayColor(rawValue: defaults.string(forKey: Keys.todayColor) ?? "") ?? .plain
         todayTileColors = defaults.dictionary(forKey: Keys.todayTileColors) as? [String: String] ?? [:]
+        listLayouts = defaults.dictionary(forKey: Keys.listLayouts) as? [String: String] ?? [:]
         todayTileOrder = defaults.stringArray(forKey: Keys.todayTileOrder) ?? []
         todayUpNext = defaults.bool(forKey: Keys.todayUpNext)
         cardAppearance = Appearance(rawValue: defaults.string(forKey: Keys.cardAppearance) ?? "") ?? .system
