@@ -70,7 +70,9 @@ PREVIEWS = [('IPHONE_67', [('design/redde-27-proactive-app-preview-iphone.mp4', 
 MAC = '--mac' in sys.argv
 PLATFORM = 'MAC_OS' if MAC else 'IOS'
 if MAC:
-    SETS = [('mac', 'APP_DESKTOP', ['01-mac', '02-mac-bots', '03-mac-crew', '04-mac-rich', '05-mac-backend'])]
+    # 2.7 (2026-11-24): the proactive four after the first five (design/screenshots/mac.py).
+    SETS = [('mac', 'APP_DESKTOP', ['01-mac', '02-mac-bots', '03-mac-crew', '04-mac-rich', '05-mac-backend',
+                                    '06-mac-plan', '07-mac-follow', '08-mac-goals', '09-mac-lists'])]
     PREVIEWS = []
 LISTING = 'app-store-listing-mac.md' if MAC else 'app-store-listing.md'
 NOTES = 'app-review-notes-mac.md' if MAC else 'app-review-notes.md'

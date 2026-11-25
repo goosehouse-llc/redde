@@ -1,5 +1,5 @@
 """The Mac App Store's pictures: a window of the Mac app (captured by `screencapture -o -l<window>`,
-so without the system's shadow) under a headline, on 2880 × 1800, the largest 16:10 size App Store
+or by the app itself with ScreenCaptureKit, without the system's shadow either way) under a headline, on 2880 × 1800, the largest 16:10 size App Store
 Connect takes. The headlines and colours are the iPad set's (compose.py).
 
     python3 design/screenshots/mac.py <folder of window captures> design/screenshots
@@ -14,6 +14,7 @@ FONT = '/System/Library/Fonts/SFNS.ttf'
 BLUE = (30, 111, 217); PAPER = (239, 235, 226); INK = (27, 29, 58); CHAR = (29, 28, 27); BONE = (237, 232, 208)
 WHITE = (255, 255, 255); MIST = (200, 214, 240); SAND = (100, 96, 88); ASH = (170, 165, 158)
 PLUM = (44, 30, 78); LILAC = (206, 192, 246)
+CORAL = (206, 92, 58); PEACH = (255, 222, 204); TEAL = (12, 84, 92); MINT = (178, 228, 226)
 
 
 def font(size, bold=True):
@@ -71,6 +72,11 @@ mac = [
     ('mac-crew',     '03-mac-crew',    'Talk to the whole crew.',    'Put bots in a group chat and they answer in turn.', (24, 32, 46), WHITE, MIST),
     ('mac-rich',     '04-mac-rich',    'Answers with substance.',    'Code, tables, diagrams and math, rendered on the spot.', CHAR, BONE, ASH),
     ('mac-settings', '05-mac-backend', 'Your backend, your rules.',  'Hermes, or any OpenAI-compatible model server. Servers and settings follow you from your iPhone with iCloud.', BLUE, WHITE, MIST),
+    # 2.7 (2026-11-24): the proactive set, the iPhone's words and colours (compose.py).
+    ('mac-plan',     '06-mac-plan',    'Say what you’re up to.',     'Your agent offers a plan. Tick what you want and it does it, now or at the right time.', BLUE, WHITE, MIST),
+    ('mac-follow',   '07-mac-follow',  'It follows through.',        'Bills, renewals, trips, promises and meetings come back before they slip.', TEAL, WHITE, MINT),
+    ('mac-goal',     '08-mac-goals',   'Goals, step by step.',       'Tick off your steps as you go. Your agent works on its own and checks in on yours.', CORAL, WHITE, PEACH),
+    ('mac-lists',    '09-mac-lists',   'Lists that keep up.',        'Films with their posters, to-dos sorted by when, and a reminder on the day.', PLUM, WHITE, LILAC),
 ]
 if __name__ == '__main__':
     os.makedirs(f'{OUT}/mac', exist_ok=True)
