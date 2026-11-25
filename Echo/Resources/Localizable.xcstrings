@@ -439579,6 +439579,220 @@
         }
       }
     },
+    "Sync Appearance" : {
+      "comment" : "Settings › iCloud: the switch that gives every device the same theme, colors and text size",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synkroniser udseende"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erscheinungsbild synchronisieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar aspecto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser l’apparence"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza aspetto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外観を同期"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모양 동기화"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synkroniser utseende"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniseer weergave"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj wygląd"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar aparência"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать оформление"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synka utseende"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görünümü Eşzamanla"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронізувати вигляд"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步外观"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步外觀"
+          }
+        }
+      }
+    },
+    "With Sync Appearance off, this device keeps its own theme, colors, font and text size. Turned back on, it takes the look your other devices share." : {
+      "comment" : "Settings › iCloud: under the Sync Appearance switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Synkroniser udseende slået fra beholder denne enhed sit eget tema, sine egne farver, skrifttype og tekststørrelse. Slået til igen får den det udseende, dine andre enheder deler."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ist „Erscheinungsbild synchronisieren“ aus, behält dieses Gerät sein eigenes Design, seine Farben, Schrift und Textgröße. Wieder eingeschaltet, übernimmt es das Erscheinungsbild deiner anderen Geräte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Sincronizar aspecto desactivado, este dispositivo conserva su propio tema, colores, tipo de letra y tamaño de texto. Al volver a activarlo, adopta el aspecto que comparten tus otros dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec Synchroniser l’apparence désactivé, cet appareil garde son propre thème, ses couleurs, sa police et sa taille de texte. Réactivé, il reprend l’apparence partagée par vos autres appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con Sincronizza aspetto disattivato, questo dispositivo mantiene tema, colori, font e dimensione del testo propri. Riattivato, prende l’aspetto condiviso dagli altri dispositivi."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「外観を同期」をオフにすると、このデバイスは独自のテーマ、カラー、フォント、文字サイズを保ちます。再びオンにすると、ほかのデバイスで共有している外観になります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모양 동기화를 끄면 이 기기는 자체 테마, 색상, 서체, 텍스트 크기를 유지합니다. 다시 켜면 다른 기기들이 공유하는 모양을 가져옵니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Synkroniser utseende av beholder denne enheten sitt eget tema, sine egne farger, skrift og tekststørrelse. Slått på igjen får den utseendet de andre enhetene dine deler."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met Synchroniseer weergave uit houdt dit apparaat zijn eigen thema, kleuren, lettertype en tekstgrootte. Weer aan neemt het de weergave over die je andere apparaten delen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy Synchronizuj wygląd jest wyłączone, to urządzenie zachowuje własny motyw, kolory, czcionkę i rozmiar tekstu. Po ponownym włączeniu przejmuje wygląd wspólny dla Twoich innych urządzeń."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Sincronizar aparência desativado, este dispositivo mantém o próprio tema, cores, fonte e tamanho do texto. Ao reativar, ele adota a aparência compartilhada pelos seus outros dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда «Синхронизировать оформление» выключено, это устройство сохраняет свою тему, цвета, шрифт и размер текста. После включения оно берёт оформление, общее для ваших других устройств."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Med Synka utseende avstängt behåller den här enheten sitt eget tema, sina färger, typsnitt och textstorlek. Påslaget igen tar den det utseende som dina andra enheter delar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görünümü Eşzamanla kapalıyken bu aygıt kendi temasını, renklerini, yazı tipini ve metin boyutunu korur. Yeniden açıldığında diğer aygıtlarının paylaştığı görünümü alır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли «Синхронізувати вигляд» вимкнено, цей пристрій зберігає власну тему, кольори, шрифт і розмір тексту. Після ввімкнення він бере вигляд, спільний для ваших інших пристроїв."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭“同步外观”后，此设备保留自己的主题、颜色、字体和文字大小。重新打开后，它会采用你其他设备共享的外观。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉「同步外觀」後，此裝置保留自己的主題、顏色、字體和文字大小。重新開啟後，會採用你其他裝置共用的外觀。"
+          }
+        }
+      }
+    },
     "System" : {
       "comment" : "Appearance: follow the iPhone's light or dark setting",
       "localizations" : {

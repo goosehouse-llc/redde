@@ -142,6 +142,15 @@ extension Settings {
         Keys.botOrder, Keys.botSections, Keys.apiBots, Keys.botVoices, Keys.mutes, Keys.wakePhrases,
     ]
 
+    /// The look: what a device with Sync Appearance off keeps to itself (asked 2026-11-25: "allow
+    /// device sync between devices but still allow for diff themes"). Its theme and colours, light
+    /// or dark, font and text size, the cards' and Today tiles' colours, bot faces and colours, and
+    /// the voice orb. Everything else on `syncedKeys` still goes between its devices.
+    static let lookKeys: Set<String> = [
+        Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.botFaces,
+        Keys.eventColor, Keys.cardColor, Keys.cardAppearance, Keys.todayColor, Keys.todayTileColors, Keys.voiceOrb, Keys.orbLight,
+    ]
+
     /// A synced setting as it is saved here, for `CloudSync` to send.
     func storedValue(_ key: String) -> Any? { defaults.object(forKey: key) }
 

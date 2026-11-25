@@ -1233,6 +1233,13 @@ struct ICloudSettings: View {
                 }
             }
             .disabled(sync.phase == .looking)
+            // The same look everywhere, or each device its own (asked 2026-11-25).
+            if sync.phase == .on {
+                Toggle(isOn: $sync.syncsLook) {
+                    Text("Sync Appearance", comment: "Settings › iCloud: the switch that gives every device the same theme, colors and text size")
+                }
+                .accessibilityIdentifier("icloud-sync-appearance")
+            }
         } header: {
             Text("iCloud")
         } footer: {
@@ -1243,7 +1250,13 @@ struct ICloudSettings: View {
             case .looking:
                 Text("Looking in iCloud for what your other devices put there…")
             default:
-                Text("Your servers with their keys and passwords, and your settings, on every iPhone, iPad and Mac signed in to your Apple Account. Keys and passwords go through iCloud Keychain, end-to-end encrypted. Which server and profile each device is on, App Lock, Siri, Phone tools, notifications and browser sign-ins stay on each device. Turn it on first where your settings are as you want them.")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Your servers with their keys and passwords, and your settings, on every iPhone, iPad and Mac signed in to your Apple Account. Keys and passwords go through iCloud Keychain, end-to-end encrypted. Which server and profile each device is on, App Lock, Siri, Phone tools, notifications and browser sign-ins stay on each device. Turn it on first where your settings are as you want them.")
+                    if sync.phase == .on {
+                        Text("With Sync Appearance off, this device keeps its own theme, colors, font and text size. Turned back on, it takes the look your other devices share.",
+                             comment: "Settings › iCloud: under the Sync Appearance switch")
+                    }
+                }
             }
         }
         .id("icloud")

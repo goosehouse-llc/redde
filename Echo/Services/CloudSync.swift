@@ -42,6 +42,17 @@ final class CloudSync {
     private(set) var phase: Phase = .off
     var isOn: Bool { defaults.bool(forKey: Keychain.syncKey) }
 
+    /// Sync Appearance: the look (`Settings.lookKeys`) goes between this device and the others.
+    /// Off, this device keeps its own: none of it goes up, and none of theirs comes down. Back on,
+    /// it takes the look the others share (`shareLook`). Kept on each device.
+    var syncsLook: Bool {
+        didSet {
+            guard syncsLook != oldValue else { return }
+            defaults.set(!syncsLook, forKey: Self.ownLookKey)
+            if syncsLook { shareLook() }
+        }
+    }
+
     /// Moves the app to another server (`ServerSwitcher`, with the open conversation).
     @ObservationIgnored var switchServer: (UUID) -> Void = { id in
         guard let conversation = Conversation.current else { return }
@@ -56,6 +67,8 @@ final class CloudSync {
     /// Here: the servers this device has seen in iCloud. One of them gone from this device's list
     /// was removed here.
     private static let knownKey = "iCloudSync.knownServers"
+    /// Here: this device keeps its own look (Sync Appearance off).
+    static let ownLookKey = "iCloudSync.ownLook"
 
     @ObservationIgnored private let settings: Settings
     @ObservationIgnored private let cloud: CloudValues
@@ -79,6 +92,7 @@ final class CloudSync {
         self.signedIn = signedIn
         self.lookFor = lookFor
         self.moveSecrets = moveSecrets
+        syncsLook = !defaults.bool(forKey: Self.ownLookKey)
     }
 
     /// At launch: with sync on, what changed elsewhere since is taken, and changes are followed.
@@ -202,8 +216,14 @@ final class CloudSync {
 
     // MARK: - Settings
 
+    /// Whether a setting goes between devices: one of `syncedKeys`, and not the look on a device
+    /// that keeps its own.
+    private func carries(_ key: String) -> Bool {
+        Settings.syncedKeys.contains(key) && (syncsLook || !Settings.lookKeys.contains(key))
+    }
+
     private func send(_ key: String) {
-        guard Settings.syncedKeys.contains(key) else { return }
+        guard carries(key) else { return }
         let value = settings.storedValue(key)
         let cloudKey = Self.settingPrefix + key
         if Self.same(value, cloud.object(forKey: cloudKey)) { return }
@@ -211,10 +231,25 @@ final class CloudSync {
     }
 
     private func take(_ key: String) {
-        guard Settings.syncedKeys.contains(key) else { return }
+        guard carries(key) else { return }
         let value = cloud.object(forKey: Self.settingPrefix + key)
         guard value != nil, !Self.same(value, settings.storedValue(key)) else { return }
         settings.applySynced(key, value)
+    }
+
+    /// Sync Appearance back on: this device takes the look the others share, or, when none of them
+    /// shares one (each kept its own), puts its own in iCloud for them.
+    private func shareLook() {
+        guard isOn, phase == .on else { return }
+        let look = Settings.syncedKeys.filter(Settings.lookKeys.contains)
+        if look.contains(where: { cloud.object(forKey: Self.settingPrefix + $0) != nil }) {
+            applying = true
+            defer { applying = false }
+            for key in look { take(key) }
+        } else {
+            for key in look { send(key) }
+        }
+        cloud.synchronize()
     }
 
     /// Everything in iCloud, taken: at launch, and when a device joins.

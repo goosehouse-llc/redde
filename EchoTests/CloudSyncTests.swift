@@ -96,6 +96,56 @@ struct CloudSyncTests {
         #expect(cloud.drain().isEmpty, "what Redde does on opening stays on each device")
     }
 
+    /// 2026-11-25: "allow device sync between devices but still allow for diff themes".
+    @Test func aDeviceWithItsOwnLookKeepsItAndStillSyncsTheRest() async throws {
+        let cloud = Cloud()
+        let phone = try phone(cloud)
+        await phone.sync.turnOn()
+        let pad = try device(cloud)
+        await pad.sync.turnOn()
+        #expect(pad.settings.theme == .slate && pad.sync.syncsLook, "the look syncs until it's turned off")
+        pad.sync.syncsLook = false
+        _ = cloud.drain()
+
+        pad.settings.theme = .paper
+        pad.settings.chatTextSize = 2
+        #expect(cloud.drain().isEmpty, "the iPad's own look stays on the iPad")
+        #expect(cloud.values["setting.theme"] as? String == "slate")
+
+        phone.settings.theme = .amber
+        phone.settings.appearance = .dark
+        phone.settings.stopPhrases = ["basta"]
+        pad.sync.changedElsewhere(reason: NSUbiquitousKeyValueStoreServerChange, keys: cloud.drain())
+        #expect(pad.settings.theme == .paper && pad.settings.appearance == .system && pad.settings.chatTextSize == 2,
+                "the iPhone's look doesn't come down")
+        #expect(pad.settings.stopPhrases == ["basta"], "everything else still does")
+
+        // At the next launch too, and a new CloudSync reads the choice back.
+        let again = CloudSync(settings: pad.settings, cloud: cloud, defaults: pad.settings.defaults, signedIn: { true },
+                              lookFor: .milliseconds(20), moveSecrets: { _ in })
+        #expect(!again.syncsLook)
+        again.start()
+        #expect(pad.settings.theme == .paper)
+    }
+
+    @Test func syncAppearanceBackOnTakesTheLookTheOthersShare() async throws {
+        let cloud = Cloud()
+        let phone = try phone(cloud)
+        await phone.sync.turnOn()
+        let pad = try device(cloud)
+        await pad.sync.turnOn()
+        pad.sync.syncsLook = false
+        pad.settings.theme = .paper
+        phone.settings.theme = .terminal
+        _ = cloud.drain()
+
+        pad.sync.syncsLook = true
+        #expect(pad.settings.theme == .terminal, "the iPhone's look, taken")
+        #expect(cloud.drain().isEmpty, "taking it sends nothing back")
+        pad.settings.theme = .arcade
+        #expect(cloud.values["setting.theme"] as? String == "arcade", "and the iPad's changes go up again")
+    }
+
     @Test func eachDeviceKeepsItsOwnProfileOnAServerAndFollowsItsConnection() async throws {
         let cloud = Cloud()
         let phone = try phone(cloud)
