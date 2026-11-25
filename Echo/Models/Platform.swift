@@ -119,9 +119,63 @@ extension View {
         font(.system(size: size, weight: weight, design: design))
         #endif
     }
+
+    /// A sheet's size on the Mac, where a sheet takes its content's size and a list or a scroll
+    /// view has none: a list's sheet and a goal's page came up 80 points tall (2026-11-24, as
+    /// the model picker had on 11-03). Nothing on the iPhone and iPad.
+    func macSheetSize(width: CGFloat = 520, height: CGFloat = 680) -> some View {
+        #if os(macOS)
+        frame(minWidth: width - 60, idealWidth: width, minHeight: height - 120, idealHeight: height)
+        #else
+        self
+        #endif
+    }
+
+    /// A page pushed inside the sidebar: a drawer place (Today, Planned, Board, Made, Bots) or a
+    /// project folder. On the Mac its own back row and title: on macOS 27, while the system's
+    /// back button is up, a page a sidebar's NavigationStack pushes is given no height, and every
+    /// one came up blank (2026-11-24; the same in a bare SwiftUI app). Nothing on the iPhone and iPad.
+    func sidebarPage(_ title: Text) -> some View {
+        #if os(macOS)
+        modifier(MacSidebarPage(title: title))
+        #else
+        self
+        #endif
+    }
 }
 
 #if os(macOS)
+/// `sidebarPage` on the Mac: a back chevron and the page's title over it, the system's back
+/// button hidden (which is what gives the page its height back).
+private struct MacSidebarPage: ViewModifier {
+    let title: Text
+    @Environment(\.dismiss) private var dismiss
+
+    func body(content: Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.backward")
+                        .fontWeight(.semibold)
+                        .frame(width: 24, height: 24)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.borderless)
+                // Back is always to the chat list.
+                .help(Text("Chats"))
+                .accessibilityLabel(Text("Chats"))
+                title.font(.title3.bold()).lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 4)
+            .padding(.bottom, 6)
+            content.frame(maxHeight: .infinity)
+        }
+        .navigationBarBackButtonHidden()
+    }
+}
+
 /// `chatFont` on the Mac: the style's size on a Mac (or the set size), times the theme's text
 /// zoom; at Actual Size the font it always was.
 private struct ZoomedFont: ViewModifier {

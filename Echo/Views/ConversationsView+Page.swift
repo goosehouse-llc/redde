@@ -280,12 +280,13 @@ extension ConversationsList {
         // The theme's page behind the chats (2.4: Paper and Paper White looked half done on the
         // system's white); a theme that leaves the page to the system keeps the list as it was.
         .themedPage(settings.theme.listPage)
-        .navigationDestination(item: $drawerPage) { drawerDestination($0) }
+        .navigationDestination(item: $drawerPage) { drawerDestination($0).sidebarPage(Text($0.title)) }
         .task(id: "\(isShowing)|\(scenePhase == .active && pace.onScreen)") { await watchDrawerWaits() }
         .navigationDestination(for: ProjectRoute.self) { route in
             if let project = projects.first(where: { $0.id == route.id }) {
                 ProjectSessionsView(project: project, open: load, currentID: conversation.serverSessionID,
                                     startNew: { startNew(in: $0) }, refreshes: viaServe)
+                    .sidebarPage(Text(project.label))
             }
         }
         .environment(\.editMode, .constant(selecting || arrangingBots ? .active : .inactive))
@@ -377,10 +378,11 @@ extension ConversationsList {
             usesLedger ? Text("They are removed from the Redde ledger for every client.") : Text("This only removes them from this phone.")
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
-        .sheet(isPresented: $addingGoal) { NewGoalSheet() }
+        .sheet(isPresented: $addingGoal) { NewGoalSheet().macSheetSize() }
         // A list's tile on the Today row (`TodayStrip`): the list, to check off and add to.
         .sheet(isPresented: Binding(get: { TodayLists.shared.shownID != nil }, set: { if !$0 { TodayLists.shared.shownID = nil } })) {
             NavigationStack { TodayListView() }
+                .macSheetSize()
         }
         // The person's lists, when the chat list shows and when Redde comes back to the front.
         .task(id: "\(settings.connectionKey)|\(scenePhase == .active)") {
@@ -397,6 +399,7 @@ extension ConversationsList {
                 GoalView(goalID: goal.id)
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { shownGoal = nil } } }
             }
+            .macSheetSize(width: 600, height: 760)
         }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search conversations")
         .modifier(ListSearchCarry(query: $query, wide: wide))
