@@ -21,8 +21,12 @@ struct LockScreenView: View {
                     Label("Unlock with \(AppLock.biometryName)", systemImage: AppLock.biometrySymbol)
                         .font(.body.weight(.semibold))
                         .padding(.horizontal, 18).padding(.vertical, 10)
+                        // The theme's words for its accent (2026-11-25: white on Arcade's lime was
+                        // hard to read; `ProminentButton` does the same for the filled buttons).
+                        .foregroundStyle(theme.userText)
                 }
                 .buttonStyle(.glassProminent)
+                .tint(theme.accent)
                 .disabled(lock.authenticating)
                 if let error = lock.lastError {
                     Text(error).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal)
