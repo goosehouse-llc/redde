@@ -3,6 +3,14 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.50.0 (2026-11-26)
+
+- Films on the calendar: the app can now put a watch list's films and series with a night on the
+  phone's calendar itself, and keep the event in step with the list. It says so with `lists nights
+  on` (again each day; `off` when switched off). While it does, a night planned on a watch list tells
+  the agent to leave the calendar to Redde, and the morning-after card asks for another night on the
+  list rather than on the calendar, so there's one event, not two. To-dos are as they were.
+
 ## 1.49.0 (2026-11-26)
 
 - A reply that was only the agent's plan ("Robin's letting me know they're going mini golfing today…

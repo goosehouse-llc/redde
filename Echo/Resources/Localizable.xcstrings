@@ -4197,6 +4197,327 @@
         }
       }
     },
+    "Films on Your Calendar" : {
+      "comment" : "Settings › Chat List and Settings › Calendars: put a watch list's films with a night on the calendar",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Film i din kalender"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filme in deinem Kalender"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Películas en tu calendario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Films dans votre calendrier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Film nel tuo calendario"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "映画をカレンダーに追加"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "영화를 캘린더에 추가"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmer i kalenderen din"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Films in je agenda"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmy w kalendarzu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmes no seu calendário"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фильмы в календаре"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmer i din kalender"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmler takviminizde"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фільми в календарі"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把电影加入日历"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把電影加入行事曆"
+          }
+        }
+      }
+    },
+    "Films on Your Calendar needs full access to your calendars. Allow it in Settings, under Privacy & Security › Calendars." : {
+      "comment" : "Settings › Chat List and Settings › Calendars: Films on Your Calendar is on but calendar access was refused",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Film i din kalender kræver fuld adgang til dine kalendere. Tillad det i Indstillinger under Anonymitet & sikkerhed › Kalendere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„Filme in deinem Kalender“ braucht vollen Zugriff auf deine Kalender. Erlaube ihn in den Einstellungen unter Datenschutz & Sicherheit › Kalender."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Películas en tu calendario necesita acceso completo a tus calendarios. Permítelo en Ajustes, en Privacidad y seguridad › Calendarios."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Films dans votre calendrier a besoin d’un accès complet à vos calendriers. Autorisez-le dans Réglages, sous Confidentialité et sécurité › Calendriers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Film nel tuo calendario richiede l’accesso completo ai tuoi calendari. Consentilo in Impostazioni, in Privacy e sicurezza › Calendari."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「映画をカレンダーに追加」にはカレンダーへのフルアクセスが必要です。設定の「プライバシーとセキュリティ」›「カレンダー」で許可してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "영화를 캘린더에 추가하려면 캘린더 전체 접근 권한이 필요합니다. 설정의 개인정보 보호 및 보안 › 캘린더에서 허용하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmer i kalenderen din trenger full tilgang til kalenderne dine. Tillat det i Innstillinger under Personvern og sikkerhet › Kalendere."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Films in je agenda heeft volledige toegang tot je agenda’s nodig. Sta het toe in Instellingen, onder Privacy en beveiliging › Agenda’s."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmy w kalendarzu wymagają pełnego dostępu do kalendarzy. Zezwól na to w Ustawieniach, w sekcji Prywatność i ochrona › Kalendarze."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmes no seu calendário precisa de acesso total aos seus calendários. Permita em Ajustes, em Privacidade e Segurança › Calendários."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для «Фильмов в календаре» нужен полный доступ к календарям. Разрешите его в Настройках, в разделе «Конфиденциальность и безопасность» › «Календари»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmer i din kalender behöver full åtkomst till dina kalendrar. Tillåt det i Inställningar under Integritet och säkerhet › Kalendrar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmler takviminizde, takvimlerinize tam erişim gerektirir. Ayarlar’da Gizlilik ve Güvenlik › Takvimler altında izin verin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для «Фільмів у календарі» потрібен повний доступ до календарів. Дозвольте його в Параметрах, у розділі «Приватність і безпека» › «Календарі»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“把电影加入日历”需要完全访问你的日历。请在“设置”的“隐私与安全性”›“日历”中允许。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「把電影加入行事曆」需要完整取用你的行事曆。請在「設定」的「隱私權與安全性」›「行事曆」中允許。"
+          }
+        }
+      }
+    },
+    "From your %@ list in Redde." : {
+      "comment" : "The notes of a calendar event Redde makes for a film planned for a night on a watch list",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fra din liste %@ i Redde."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus deiner Liste „%@“ in Redde."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tu lista %@ en Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De votre liste %@ dans Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dalla tua lista %@ in Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde のリスト「%@」より。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde의 %@ 목록에서."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fra listen din %@ i Redde."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uit je lijst %@ in Redde."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z Twojej listy %@ w Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da sua lista %@ no Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из вашего списка «%@» в Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Från din lista %@ i Redde."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redde’deki %@ listenizden."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "З вашого списку «%@» у Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来自 Redde 中你的“%@”列表。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來自 Redde 中你的「%@」列表。"
+          }
+        }
+      }
+    },
     "Gives it a day" : {
       "comment" : "VoiceOver hint: a to-do with no day on the Week layout",
       "localizations" : {
@@ -6879,6 +7200,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "英里, 公里, 華氏, 攝氏, 公制"
+          }
+        }
+      }
+    },
+    "movies, watch list, movie night, calendar events" : {
+      "comment" : "Settings search: other words for Settings › Chat List › Films on Your Calendar, comma-separated",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "film, seliste, filmaften, kalenderbegivenheder"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filme, Watchlist, Filmabend, Kalendertermine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "películas, lista para ver, noche de cine, eventos del calendario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "films, liste à regarder, soirée film, événements du calendrier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "film, lista da guardare, serata film, eventi del calendario"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "映画, ウォッチリスト, 映画の夜, カレンダーの予定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "영화, 시청 목록, 영화의 밤, 캘린더 일정"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "filmer, seliste, filmkveld, kalenderhendelser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "films, kijklijst, filmavond, agenda-items"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "filmy, lista do obejrzenia, wieczór filmowy, wydarzenia w kalendarzu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "filmes, lista para assistir, noite de cinema, eventos do calendário"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "фильмы, список к просмотру, киновечер, события календаря"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "filmer, tittlista, filmkväll, kalenderhändelser"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "filmler, izleme listesi, film gecesi, takvim etkinlikleri"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "фільми, список до перегляду, кіновечір, події календаря"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "电影, 片单, 观影之夜, 日历日程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電影, 片單, 電影之夜, 行事曆行程"
           }
         }
       }
@@ -12864,6 +13292,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "週檢視"
+          }
+        }
+      }
+    },
+    "When a film or series on a watch list is given a night, it goes on your calendar too. Change the night and the event moves; take the night off, or tick the film off first, and it goes." : {
+      "comment" : "Settings › Chat List and Settings › Calendars: under Films on Your Calendar",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når en film eller serie på en seliste får en aften, kommer den også i din kalender. Flyt aftenen, så flytter begivenheden med; fjern aftenen, eller sæt hak ved filmen før, så forsvinder den."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekommt ein Film oder eine Serie auf einer Watchlist einen Abend, kommt er auch in deinen Kalender. Verschiebst du den Abend, wandert der Termin mit; nimmst du den Abend weg oder hakst den Film vorher ab, verschwindet er."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando una película o serie de una lista para ver recibe una noche, también va a tu calendario. Cambia la noche y el evento se mueve; quita la noche, o marca la película antes, y desaparece."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand un film ou une série d’une liste à regarder reçoit une soirée, il s’ajoute aussi à votre calendrier. Changez la soirée et l’événement suit ; retirez la soirée, ou cochez le film avant, et il disparaît."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando a un film o a una serie di una lista da guardare viene data una serata, finisce anche nel tuo calendario. Cambia la serata e l’evento si sposta; togli la serata, o spunta prima il film, e sparisce."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ウォッチリストの映画やシリーズに日時を決めると、カレンダーにも追加されます。日時を変えると予定も移動し、日時を外すか先にチェックを付けると予定は消えます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시청 목록의 영화나 시리즈에 날짜를 정하면 캘린더에도 추가됩니다. 날짜를 바꾸면 일정도 옮겨지고, 날짜를 빼거나 그 전에 영화를 체크하면 일정이 사라집니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når en film eller serie på en seliste får en kveld, havner den også i kalenderen din. Flytt kvelden, så flyttes hendelsen; ta bort kvelden, eller kryss av filmen før, så forsvinner den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krijgt een film of serie op een kijklijst een avond, dan komt die ook in je agenda. Verzet je de avond, dan verschuift het evenement mee; haal je de avond weg of vink je de film eerder af, dan verdwijnt het."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy film lub serial z listy do obejrzenia dostanie wieczór, trafia też do kalendarza. Zmień wieczór, a wydarzenie się przesunie; usuń wieczór albo odhacz film wcześniej, a zniknie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando um filme ou série de uma lista para assistir ganha uma noite, ele vai também para o seu calendário. Mude a noite e o evento acompanha; tire a noite, ou marque o filme antes, e ele some."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда фильму или сериалу из списка к просмотру назначают вечер, он появляется и в календаре. Перенесите вечер — событие переедет; уберите вечер или отметьте фильм раньше — оно исчезнет."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När en film eller serie på en tittlista får en kväll hamnar den också i din kalender. Flytta kvällen så flyttas händelsen; ta bort kvällen, eller bocka av filmen innan, så försvinner den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İzleme listesindeki bir film ya da diziye bir akşam verildiğinde takviminize de eklenir. Akşamı değiştirirseniz etkinlik de taşınır; akşamı kaldırırsanız ya da filmi önceden işaretlerseniz silinir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли фільму чи серіалу зі списку до перегляду призначають вечір, він з’являється й у календарі. Перенесіть вечір — подія переїде; приберіть вечір або позначте фільм раніше — вона зникне."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片单里的电影或剧集定了时间，也会加入你的日历。改了时间，日程跟着移；去掉时间，或提前勾掉这部电影，日程就会删除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片單裡的電影或影集定了時間，也會加入你的行事曆。改了時間，行程跟著移；拿掉時間，或提前勾掉這部電影，行程就會刪除。"
           }
         }
       }

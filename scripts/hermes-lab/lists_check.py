@@ -11,6 +11,7 @@ usage: lists_check.py   (a lab up with the push scenario)
 import asyncio
 import base64
 import json
+from datetime import datetime, timedelta
 import time
 
 import check
@@ -54,6 +55,21 @@ async def main():
            "the app's `lists do` checks Eggs off, and says the lists as they are now", answer)
     again = parsed(await say(dash, "lists list")) or {}
     report([i["done"] for i in again["lists"][0]["items"]] == [False, True], "and it stays checked", again)
+
+    # 1.50.0: the phone says it puts a watch list's nights on its calendar, and the agent is told so.
+    def do(change):
+        return "lists do " + base64.urlsafe_b64encode(json.dumps(change).encode()).decode().rstrip("=")
+    on = parsed(await say(dash, "lists nights on")) or {}
+    report(on.get("nights") is True, "the app's `lists nights on`", on)
+    made = parsed(await say(dash, do({"action": "make", "title": "Lab Movies", "items": ["Elf"], "kind": "watch"}))) or {}
+    films = next((l for l in made.get("lists") or [] if l.get("title") == "Lab Movies"), {})
+    night = (datetime.now().astimezone() + timedelta(days=2)).replace(hour=20, minute=0, second=0, microsecond=0)
+    planned = parsed(await say(dash, do({"action": "plan", "list": films.get("id"), "items": ["Elf"],
+                                         "when": night.isoformat()}))) or {}
+    report("Redde puts it on their calendar itself" in (planned.get("said") or {}).get("said", ""),
+           "a film's night planned then leaves the calendar to Redde", planned.get("said"))
+    off = parsed(await say(dash, "lists nights off")) or {}
+    report(off.get("nights") is False, "and `lists nights off`", off)
     await dash.ws.close()
 
 

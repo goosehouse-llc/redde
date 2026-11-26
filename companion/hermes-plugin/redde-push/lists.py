@@ -22,6 +22,13 @@ follow-up is set (`followups.py`): on the day, a card reminding them; after it (
 for an evening plan), a follow-through run that finds out with the agent's own tools whether it
 happened (for a film or a series, whether their media server shows it as played), ticks it off if
 it did, and offers it back as a card to find another time if it didn't.
+
+Nights on the calendar (1.50.0, asked 2026-11-26: "When a movie on list is given a time and date,
+have it added to the calendar"): Redde puts a watch list's films and series with a night on the
+phone's calendar itself and keeps the event in step with the list. The app says so with
+`lists nights on` (again each day while it does; `off` when it's switched off), and while it does,
+a night planned on a watch list tells the agent to leave the calendar to Redde, so there's one
+event, not two (`calendar_by_app`).
 """
 
 from __future__ import annotations
@@ -44,6 +51,10 @@ from . import posters, wire
 TOOLSET = "redde_ideas"
 TOOL = "redde_list"
 FILE = "lists.json"
+#: When a phone last said it puts a watch list's nights on its calendar (1.50.0).
+NIGHTS = "nights.json"
+#: How long a phone's word lasts: it says it again each day it opens Redde.
+NIGHTS_FOR = 14 * 86400
 #: At most this many lists, items on one, and characters in a title or an item.
 MOST, ITEMS, TITLE, TEXT = 30, 300, 60, 200
 ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "edit", "style", "plan", "unplan",
@@ -214,6 +225,28 @@ def _locked(home: Path):
         handle.close()
 
 
+def calendar_by_app(home: Path | None, at: float | None = None) -> bool:
+    """Whether a phone puts a watch list's nights on its calendar itself: said in the last two weeks."""
+    if home is None:
+        return False
+    try:
+        said = json.loads((Path(home) / "redde-push" / NIGHTS).read_text())
+        return bool(said.get("on")) and (at if at is not None else time.time()) - float(said.get("at") or 0) < NIGHTS_FOR
+    except (OSError, ValueError, TypeError, AttributeError):
+        return False
+
+
+def nights(home: Path, on: bool, at: float | None = None) -> None:
+    """The phone's word: it puts the nights on its calendar (on), or no longer does (off)."""
+    target = Path(home) / "redde-push" / NIGHTS
+    if not on:
+        target.unlink(missing_ok=True)
+        return
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps({"on": True, "at": int(at if at is not None else time.time())}))
+    os.chmod(target, 0o600)
+
+
 def load(home: Path) -> list[dict]:
     try:
         data = json.loads(path(home).read_text())
@@ -381,7 +414,7 @@ def _change(home: Path, args: dict, by: str, now: float | None, touched: list[di
             if when:
                 with_ = _clean(args.get("with"), 60)
                 for item in new:
-                    said["said"] = _date(kept, item, when, with_, at)
+                    said["said"] = _date(kept, item, when, with_, at, home)
                 said["planned"], said["when"] = [i["text"] for i in new], new[0]["when"]
             elif dated := [i["text"] for i in new if _DATED.search(i["text"])]:
                 said["no_date"], said["said"] = dated, DATED_SAID
@@ -415,12 +448,12 @@ def _change(home: Path, args: dict, by: str, now: float | None, touched: list[di
             kept["title"] = title
             said = {"renamed": title}
         elif action == "edit":
-            edited = _edit(kept, args, at)
+            edited = _edit(kept, args, at, home)
             if "error" in edited:
                 return {**edited, **_shown(kept)}
             said = edited
         elif action == "plan":
-            planned = _plan(kept, args, by, at)
+            planned = _plan(kept, args, by, at, home)
             if "error" in planned:
                 return {**planned, **_shown(kept)}
             said = planned
@@ -507,7 +540,7 @@ def plan_times(when: datetime, now: datetime) -> tuple[datetime | None, datetime
     return (before if before > now else None), after
 
 
-def _plan(kept: dict, args: dict, by: str, at: int) -> dict:
+def _plan(kept: dict, args: dict, by: str, at: int, home: Path | None = None) -> dict:
     refs = args.get("items")
     found, _ = _picked(kept.get("items") or [], refs)
     if not found:
@@ -521,7 +554,7 @@ def _plan(kept: dict, args: dict, by: str, at: int) -> dict:
     if isinstance(when, str):
         return {"error": when}
     with_ = _clean(args.get("with"), 60)
-    said = _date(kept, item, when, with_, at)
+    said = _date(kept, item, when, with_, at, home)
     return {"planned": item["text"], "when": item["when"], **({"with": with_} if with_ else {}), "said": said}
 
 
@@ -535,10 +568,14 @@ def _when(args: dict, at: int) -> datetime | str:
     return when
 
 
-def _date(kept: dict, item: dict, when: datetime, with_: str, at: int) -> str:
+def _date(kept: dict, item: dict, when: datetime, with_: str, at: int, home: Path | None = None) -> str:
     """Puts an item on its day, with the reminder and the check that go with it (any old ones
-    dropped): what Redde will do, for the agent."""
+    dropped): what Redde will do, for the agent. A watch list's night goes on the calendar by the
+    phone, when a phone says it does that (`calendar_by_app`), else by the agent."""
     now = datetime.fromtimestamp(at, timezone.utc)
+    by_app = look(kept)["kind"] == "watch" and calendar_by_app(home, at)
+    calendar = ("Redde puts it on their calendar itself and moves it with the plan: don't add it with a calendar "
+                "tool." if by_app else "If it isn't on their calendar, put it there with your calendar tool too.")
     make, remove = _cron()
     for old in item.get("plan_jobs") or []:
         try:
@@ -548,9 +585,9 @@ def _date(kept: dict, item: dict, when: datetime, with_: str, at: int) -> str:
     item["when"], item["with"], item["plan_jobs"] = when.isoformat(timespec="minutes"), with_ or None, []
     before, after = plan_times(when, now)
     if make is None:
-        return "Kept on the list; this Hermes can't schedule the reminder or the check (no cron)."
+        return "Kept on the list; this Hermes can't schedule the reminder or the check (no cron). " + calendar
     plan = uuid.uuid4().hex[:10]
-    for moment, words in ((before, plan_reminder(kept, item, when)), (after, plan_check(kept, item, when))):
+    for moment, words in ((before, plan_reminder(kept, item, when)), (after, plan_check(kept, item, when, by_app))):
         if moment is None:
             continue
         try:
@@ -560,11 +597,10 @@ def _date(kept: dict, item: dict, when: datetime, with_: str, at: int) -> str:
         except Exception:
             pass
     return (f"Redde reminds them {'on the day' if before else 'no more today'} and checks on "
-            f"{after.strftime('%A %-d %B')} that it happened. If it isn't on their calendar, put it there with your "
-            "calendar tool too.")
+            f"{after.strftime('%A %-d %B')} that it happened. " + calendar)
 
 
-def _edit(kept: dict, args: dict, at: int) -> dict:
+def _edit(kept: dict, args: dict, at: int, home: Path | None = None) -> dict:
     """New words for one item (Edit in Redde's long-press menu, asked 2026-11-24). A film's poster is
     looked for again under its new title; a dated item's reminder and check say the new words."""
     found, _ = _picked(kept.get("items") or [], args.get("items"))
@@ -581,7 +617,7 @@ def _edit(kept: dict, args: dict, at: int) -> dict:
         if item.get("when"):
             when, now = datetime.fromisoformat(item["when"]), datetime.fromtimestamp(at, timezone.utc)
             if plan_times(when, now)[1] > now:
-                _date(kept, item, when, item.get("with") or "", at)
+                _date(kept, item, when, item.get("with") or "", at, home)
     return {"edited": before, "now": item["text"]}
 
 
@@ -615,14 +651,16 @@ def plan_reminder(kept: dict, item: dict, when: datetime) -> str:
             f"\"You planned it\", request \"{ready}\". Nothing else. If a tool isn't among yours, find it with tool_search.")
 
 
-def plan_check(kept: dict, item: dict, when: datetime) -> str:
+def plan_check(kept: dict, item: dict, when: datetime, by_app: bool = False) -> str:
     name, with_ = item["text"], f" with {item['with']}" if item.get("with") else ""
     watch = look(kept)["kind"] == "watch"
     how = ("It's a film or a series: see whether their media server (Jellyfin, Plex) shows it played since then; if "
            "you can't reach it yourself, ask the bot that can with an @mention." if watch else
            "Look for signs it was done in what your tools can see: their calendar, mail, reminders, messages.")
     question = f"Did you watch {name}?" if watch else f"Did {name} happen?"
-    again = (f"We haven't watched {name} yet: find another night{with_} and put it on my calendar" if watch
+    # (With the phone putting a watch list's nights on its calendar, the new night is all the agent gives.)
+    again = (f"We haven't watched {name} yet: find another night{with_} and plan it on my list" if watch and by_app
+             else f"We haven't watched {name} yet: find another night{with_} and put it on my calendar" if watch
              else f"{name} didn't happen: find another time{with_} and put it on my calendar")
     return (f"{PLAN_TAG}{kept['id']}:{item['id']}] Follow-through for the user: they planned {name}{with_} for "
             f"{_when_words(when)}, on their list '{kept.get('title')}' (list {kept['id']}, item {item['id']}). If it's "
@@ -778,9 +816,13 @@ def fill_posters(home: Path, now: float | None = None) -> int:
 
 def slash(home: Path, words: list[str]) -> str:
     """`/redde-push lists list`: "redde-push lists <JSON>", every list. `lists do <base64url JSON>`:
-    one change, `redde_list`'s arguments (items by id), then the lists as they are now."""
+    one change, `redde_list`'s arguments (items by id), then the lists as they are now. `lists nights
+    on|off`: the phone puts a watch list's nights on its calendar itself, or no longer does (1.50.0)."""
     if words == ["list"]:
         return wire.reply("lists", {"lists": listing(home), "can": CAN})
+    if len(words) == 2 and words[0] == "nights" and words[1] in ("on", "off"):
+        nights(home, words[1] == "on")
+        return wire.reply("lists", {"nights": words[1] == "on"})
     if len(words) == 2 and words[0] == "do":
         try:
             raw = words[1] + "=" * (-len(words[1]) % 4)

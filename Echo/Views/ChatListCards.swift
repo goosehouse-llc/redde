@@ -150,6 +150,7 @@ struct ChatListCardsSettingsView: View {
             .settingRow(.topCards)
             UpNextTileSection()
             RemindersOnTheirDaySection()
+            FilmNightsSection()
         }
         .navigationTitle(Text("Chat List", comment: "Settings page: what the chat list shows: bots, projects, the cards and Today tiles above the conversations"))
         #if os(iOS)
@@ -193,6 +194,49 @@ struct UpNextTileSection: View {
             }
         }
         .onAppear { calendarRefused = settings.todayUpNext && !CalendarUpNext.shared.canRead }
+    }
+}
+
+/// A watch list's films and series with a night, on the calendar (2026-11-26, `FilmNights`). On by
+/// default; it does nothing without full access to the calendar. On Settings → Chat List and
+/// Settings → Calendars.
+struct FilmNightsSection: View {
+    @State private var on = true
+    /// Turned on, and calendar access is refused.
+    @State private var refused = false
+
+    var body: some View {
+        Section {
+            Toggle(isOn: Binding(get: { on }, set: { turn($0) })) {
+                Label {
+                    Text("Films on Your Calendar", comment: "Settings › Chat List and Settings › Calendars: put a watch list's films with a night on the calendar")
+                } icon: { Image(systemName: "popcorn") }
+            }
+            .settingRow(.filmNights)
+        } footer: {
+            if on, refused {
+                Text("Films on Your Calendar needs full access to your calendars. Allow it in Settings, under Privacy & Security › Calendars.",
+                     comment: "Settings › Chat List and Settings › Calendars: Films on Your Calendar is on but calendar access was refused")
+            } else {
+                Text("When a film or series on a watch list is given a night, it goes on your calendar too. Change the night and the event moves; take the night off, or tick the film off first, and it goes.",
+                     comment: "Settings › Chat List and Settings › Calendars: under Films on Your Calendar")
+            }
+        }
+        .onAppear {
+            on = TodayLists.shared.addsNights
+            refused = on && FilmNights.refused
+        }
+    }
+
+    private func turn(_ value: Bool) {
+        on = value
+        TodayLists.shared.addsNights = value
+        Task {
+            if value { _ = await DeviceCalendar.allowed(.event) }
+            refused = value && FilmNights.refused
+            await TodayLists.shared.tellNights()
+            TodayLists.shared.placeFilmNights()
+        }
     }
 }
 

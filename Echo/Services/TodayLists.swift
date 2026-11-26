@@ -94,6 +94,11 @@ final class TodayLists {
     @ObservationIgnored var settingsStore: UserDefaults = .standard
     /// One change at a time, in the order they were made.
     @ObservationIgnored private var sending: Task<Void, Never>?
+    /// A watch list's nights onto the calendar (`FilmNights`; made-up ones in tests), one pass at a time.
+    @ObservationIgnored var placeNights: @Sendable ([TodayList], Set<String>) async -> Void = { await FilmNights.place($0, known: $1) }
+    @ObservationIgnored var canPlaceNights: () -> Bool = { FilmNights.canPlace }
+    @ObservationIgnored private var placing: Task<Void, Never>?
+    @ObservationIgnored private var placeAgain = false
 
     private static let key = "todayLists"
 
@@ -146,6 +151,7 @@ final class TodayLists {
         if fresh != lists { lists = fresh }
         if let id = shownID, !fresh.contains(where: { $0.id == id }) { shownID = nil }
         keep()
+        placeFilmNights()
     }
 
     /// Asks the plugin for every list. Says nothing when there's no Dashboard or the plugin is older.
@@ -162,6 +168,62 @@ final class TodayLists {
         guard sending == nil else { return }
         take(parsed.lists)
         await addDueReminders()
+        await tellNights()
+    }
+
+    // MARK: A watch list's nights on the calendar
+
+    static let nightsKey = "lists.nights"
+    private static let knownListsKey = "lists.nightsKnown"
+    private static let toldKey = "lists.nightsTold"
+
+    /// Settings › Chat List and Settings › Calendars: films and series with a night go on the calendar.
+    var addsNights: Bool {
+        get { settingsStore.object(forKey: Self.nightsKey) as? Bool ?? true }
+        set { settingsStore.set(newValue, forKey: Self.nightsKey) }
+    }
+
+    /// The lists this server has had: a night of one gone is taken off the calendar, one of
+    /// another server's lists is left alone.
+    private func knownLists() -> Set<String> {
+        var known = settingsStore.dictionary(forKey: Self.knownListsKey) as? [String: [String]] ?? [:]
+        let ids = Set(known[server()] ?? []).union(lists.map(\.id))
+        if ids.count != known[server()]?.count {
+            known[server()] = Array(ids).sorted().suffix(200).map { $0 }
+            settingsStore.set(known, forKey: Self.knownListsKey)
+        }
+        return ids
+    }
+
+    /// Puts the watch lists' nights on the calendar as they are now, after whatever pass is under way.
+    func placeFilmNights() {
+        guard addsNights, canPlaceNights() else { return }
+        if placing != nil { placeAgain = true; return }
+        placing = Task { [weak self] in
+            repeat {
+                guard let self else { return }
+                self.placeAgain = false
+                await self.placeNights(self.lists, self.knownLists())
+            } while self?.placeAgain == true
+            self?.placing = nil
+        }
+    }
+
+    /// Waits for the calendar pass under way (tests).
+    func settleNights() async { await placing?.value }
+
+    /// Tells the plugin (1.50) whether this device puts the nights on the calendar, so the agent
+    /// doesn't add one too: when it changes, and each day while it does, as the plugin's word lasts
+    /// two weeks. A plugin before 1.50 answers with its usage, which is no matter.
+    func tellNights(now: Date = .now) async {
+        let on = addsNights && canPlaceNights()
+        var told = settingsStore.dictionary(forKey: Self.toldKey) as? [String: Double] ?? [:]
+        let last = told[server()]   // when it was last told on; 0 when told off
+        if on, let last, last > 0, now.timeIntervalSince1970 - last < 20 * 3600 { return }
+        if !on, last == nil || last == 0 { return }
+        guard await reachable(), (try? await plugin("lists nights " + (on ? "on" : "off"))) != nil else { return }
+        told[server()] = on ? now.timeIntervalSince1970 : 0
+        settingsStore.set(told, forKey: Self.toldKey)
     }
 
     // MARK: Reminders on their day

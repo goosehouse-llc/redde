@@ -99,14 +99,7 @@ nonisolated enum DeviceCalendar {
                     throw DeviceToolError("There is no calendar called \"\(named)\" that can be added to. The ones that can: \(names.isEmpty ? "none" : names).")
                 }
                 event.calendar = calendar
-            } else if let chosen = CalendarChoice.newEvents,
-                      let calendar = store.calendars(for: .event).first(where: { $0.allowsContentModifications && $0.title.caseInsensitiveCompare(chosen) == .orderedSame }) {
-                // The calendar chosen for new events in Settings → Agent → Calendars, ahead of the
-                // Calendar app's default; chosen there, it may be added to even when it isn't shown.
-                event.calendar = calendar
-            } else if let calendar = store.defaultCalendarForNewEvents, writable.contains(where: { $0.calendarIdentifier == calendar.calendarIdentifier }) {
-                event.calendar = calendar
-            } else if let calendar = writable.first {
+            } else if let calendar = newEventsCalendar(in: store) {
                 event.calendar = calendar
             } else {
                 throw DeviceToolError(CalendarChoice.chosen.isEmpty ? "The iPhone has no calendar to add events to."
@@ -117,6 +110,21 @@ nonisolated enum DeviceCalendar {
             PhoneMade.note(.init(kind: .event, id: event.eventIdentifier ?? "", title: title, at: start, added: .now))
             return .object(["added": describe(event)])
         }
+    }
+
+    /// Where a new event goes when none is named: the calendar chosen for new events in Settings →
+    /// Agent → Calendars, ahead of the Calendar app's default (chosen there, it may be added to even
+    /// when it isn't shown); else the default, or the first, of those the agent may use.
+    static func newEventsCalendar(in store: EKEventStore) -> EKCalendar? {
+        if let chosen = CalendarChoice.newEvents,
+           let calendar = store.calendars(for: .event).first(where: { $0.allowsContentModifications && $0.title.caseInsensitiveCompare(chosen) == .orderedSame }) {
+            return calendar
+        }
+        let writable = (shared(in: store) ?? store.calendars(for: .event)).filter(\.allowsContentModifications)
+        if let calendar = store.defaultCalendarForNewEvents, writable.contains(where: { $0.calendarIdentifier == calendar.calendarIdentifier }) {
+            return calendar
+        }
+        return writable.first
     }
 
     /// A colour as "#RRGGBB" in sRGB.

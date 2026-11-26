@@ -17,6 +17,9 @@ struct TodayListsTests {
         lists.defaults = UserDefaults(suiteName: "TodayListsTests-\(UUID().uuidString)")
         lists.plugin = plugin
         lists.reachable = { true }
+        // (Never this simulator's own calendar: FilmNightsTests.)
+        lists.canPlaceNights = { false }
+        lists.placeNights = { _, _ in }
         return lists
     }
 

@@ -101,9 +101,10 @@ struct CalendarsSettingsView: View {
                 .settingRow(.eventColors)
             }
             // The calendar in the chat list too (also on Settings → Chat List): the next event as a
-            // Today tile, and reminders on a list on their day.
+            // Today tile, reminders on a list on their day, and a watch list's nights on the calendar.
             UpNextTileSection()
             RemindersOnTheirDaySection()
+            FilmNightsSection()
         }
         .navigationTitle("Calendars")
         .navigationBarTitleDisplayMode(.inline)

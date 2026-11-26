@@ -29,7 +29,7 @@ enum SettingsRow: String, CaseIterable, Identifiable {
     // Appearance.
     case theme, colors, font, chatTextSize, botFaces, cards, todayTiles, cardAppearance, botColors, appIcon
     // Chat List.
-    case showBots, projects, topCards, upNext, remindersOnDay
+    case showBots, projects, topCards, upNext, remindersOnDay, filmNights
     // Replies & Writing.
     case suggestReplies, agentsTalk, cardsInReplies, addressMaps, units, linkPreviews, botPictures, returnKey
     // Voice.
@@ -180,6 +180,8 @@ enum SettingsRow: String, CaseIterable, Identifiable {
         case .topCards: Entry(page: .chatList, title: String(localized: "Top of the Chat List"), inner: ChatListCard.allCases.map(\.title))
         case .upNext: Entry(page: .chatList, title: String(localized: "Up Next"))
         case .remindersOnDay: Entry(page: .chatList, title: String(localized: "Reminders on Their Day"))
+        case .filmNights: Entry(page: .chatList, title: String(localized: "Films on Your Calendar"),
+                                words: String(localized: "movies, watch list, movie night, calendar events", comment: "Settings search: other words for Settings › Chat List › Films on Your Calendar, comma-separated"))
 
         case .suggestReplies: Entry(page: .writing, title: String(localized: "Suggest Replies"))
         case .agentsTalk: Entry(page: .writing, title: String(localized: "Agents Talking to Each Other"),

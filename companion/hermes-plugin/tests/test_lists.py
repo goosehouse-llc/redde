@@ -347,6 +347,43 @@ class PlanTests(unittest.TestCase):
         self.assertIn(item["id"], check, "the check ticks off this item")
         self.assertIn("(planned 2026-11-26T19:30-05:00 with Robin)", said["items"][1])
 
+    def test_with_the_phone_putting_nights_on_its_calendar_the_agent_leaves_it(self):
+        # 1.50.0 (2026-11-26): "When a movie on list is given a time and date, have it added to the calendar".
+        lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
+        lists.change(self.home, {"action": "make", "title": "Chores", "items": ["Gutters"], "kind": "todo"}, now=self.now)
+        said = self.plan(items=["Elf"], when="2026-11-26T19:30:00-05:00")
+        self.assertIn("put it there with your calendar tool", said["said"], "no phone has said so: the agent's job")
+        lists.nights(self.home, True, at=self.now)
+        self.assertTrue(lists.calendar_by_app(self.home, self.now))
+        self.jobs.clear()
+        said = self.plan(items=["Elf"], when="2026-11-27T20:00:00-05:00", **{"with": "Robin"})
+        self.assertIn("Redde puts it on their calendar itself", said["said"])
+        self.assertIn("don't add it with a calendar tool", said["said"])
+        check = self.jobs[-1][0]
+        self.assertIn("find another night with Robin and plan it on my list", check)
+        self.assertNotIn("put it on my calendar", check)
+        chore = lists.change(self.home, {"action": "plan", "list": "Chores", "items": ["Gutters"],
+                                         "when": "2026-11-28T10:00:00-05:00"}, by="default", now=self.now)
+        self.assertIn("put it there with your calendar tool", chore["said"], "only a watch list's nights")
+        added = lists.change(self.home, {"action": "add", "list": "Movies", "items": ["Klaus"],
+                                         "when": "2026-11-29T19:00:00-05:00"}, by="default", now=self.now)
+        self.assertIn("Redde puts it on their calendar itself", added["said"], "a film added with its night too")
+        # The phone's word lasts two weeks, and goes with `off`.
+        self.assertFalse(lists.calendar_by_app(self.home, self.now + lists.NIGHTS_FOR + 1))
+        lists.nights(self.home, False)
+        self.assertFalse(lists.calendar_by_app(self.home, self.now))
+        self.assertFalse(lists.calendar_by_app(None))
+
+    def test_the_phone_says_it_puts_the_nights_on_its_calendar(self):
+        self.assertIn('"nights": true', lists.slash(self.home, ["nights", "on"]))
+        self.assertTrue(lists.calendar_by_app(self.home))
+        self.assertIn('"nights": false', lists.slash(self.home, ["nights", "off"]))
+        self.assertFalse(lists.calendar_by_app(self.home))
+        self.assertFalse((self.home / "redde-push" / lists.NIGHTS).exists())
+        self.assertIn("for the Redde app", lists.slash(self.home, ["nights", "maybe"]))
+        (self.home / "redde-push" / lists.NIGHTS).write_text("not json")
+        self.assertFalse(lists.calendar_by_app(self.home))
+
     def test_planning_again_drops_the_old_jobs(self):
         lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
         self.plan(items=["1"], when="2026-11-26T19:30:00-05:00")
