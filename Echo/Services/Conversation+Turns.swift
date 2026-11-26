@@ -365,10 +365,18 @@ extension Conversation {
             // them, and appending first would duplicate the whole reply.
             clearStatus()
             markFirstToken(replyID)
+            // What streamed that the final text leaves out is working text, kept as a note (a plan
+            // Hermes's stall guard took up, on a Hermes API that sent no note for it: `StreamedText`).
+            let shown = (messages.first { $0.id == replyID }?.text ?? "") + (pendingFor == replyID ? pendingText : "")
+            let left = StreamedText.head(of: shown, before: text)
             discardPendingText(for: replyID)
             // Inline data-URL images become photo attachments, like a received MMS.
             let (clean, images) = InlineImages.extract(from: text)
-            update(replyID) { $0.text = clean; $0.attachments = images }
+            update(replyID) { message in
+                if let left { message.notes.append(WorkingNote(text: left, afterTools: message.tools.count)) }
+                message.text = clean
+                message.attachments = images
+            }
         case let .interim(text, alreadyStreamed):
             // Working text beside a tool call: it goes with the steps, and the reply starts again.
             flushDeltas()

@@ -39,7 +39,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import asks, calls, cards, core, facts, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, qr, remember, remind, rooms, routines, silence, turnnote, waiting, watches, wire, work, work_runs
+from . import asks, calls, cards, core, facts, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, planonly, qr, remember, remind, rooms, routines, silence, turnnote, waiting, watches, wire, work, work_runs
 from . import models as model_settings   # (the Models & Providers route, 1.26.0)
 from . import tasks as task_reports   # (reports of handed-off tasks, 1.27.0)
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
@@ -1091,6 +1091,9 @@ def register(ctx) -> None:
         register_middleware("llm_execution", remind.Reminders(_main_home, lambda: _store_in(_main_home()), _remind).turn)
         # A job that waits for them to go quiet, answered here until they have (silence.py, 1.36.0).
         register_middleware("llm_execution", silence.QuietWakes(_main_home).turn)
+        # A reply that was only the plan, left for Hermes's stall guard to take up; a scheduled run's
+        # plan to say nothing answered [SILENT] (planonly.py, 1.49.0). Last: it sees the model's own answer.
+        register_middleware("llm_execution", planonly.PlanOnly().turn)
     ctx.register_command("redde-push", _slash, description="Used by the Redde app to follow a conversation",
                          args_hint="watch <session> <device> | rooms <device> <room,...>")
     # Phone tools (device.py): offered to the agent only for what the phone has turned on.

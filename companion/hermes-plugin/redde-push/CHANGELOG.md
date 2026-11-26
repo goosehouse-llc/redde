@@ -3,6 +3,16 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.49.0 (2026-11-26)
+
+- A reply that was only the agent's plan ("Robin's letting me know they're going mini golfing today…
+  Let me respond warmly… No tools needed"), written when a model's thinking is off, no longer ends
+  the turn: Hermes's own stall guard takes it up, so the plan shows as working text and the agent
+  goes on to do what it said or answer. Once a turn, and only with Hermes's `agent.stall_guards` on
+  (its default).
+- A scheduled run that answers with its plan to say nothing ("…I'll respond [SILENT] since
+  everything is handled.") is kept quiet, as a bare "[SILENT]" is, instead of sent.
+
 ## 1.48.0 (2026-11-26)
 
 - Days out: told in passing of a day out today or tonight ("We're going mini golfing today", "Taking

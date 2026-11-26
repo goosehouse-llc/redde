@@ -214,9 +214,11 @@ nonisolated struct HermesServeTransport: HermesTransport {
             if let t = p["text"]?.string { continuation.yield(.reasoningDelta(t)) }
         case "message.interim":
             // What streamed so far was working text beside a tool call: the answer starts again.
-            let streamed = p["already_streamed"]?.bool ?? true
+            // (Also when the note's words go on from what streamed: `StreamedText`.)
+            let note = p["text"]?.string ?? ""
+            let streamed = (p["already_streamed"]?.bool ?? true) || StreamedText.continues(turn.streamed, in: note)
             if streamed { turn.streamed = "" }
-            continuation.yield(.interim(text: p["text"]?.string ?? "", alreadyStreamed: streamed))
+            continuation.yield(.interim(text: note, alreadyStreamed: streamed))
         case "tool.start":
             let name = p["name"]?.string ?? "tool"
             continuation.yield(.toolStarted(name: name, preview: p["context"]?.string, args: ToolActivity.args(name, p["args"])))

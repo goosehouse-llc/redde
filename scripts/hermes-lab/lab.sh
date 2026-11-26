@@ -19,6 +19,7 @@
 #   scripts/hermes-lab/lab.sh lists [tag ...]      the person's lists: redde_list in a turn, the app's lists list / lists do
 #   scripts/hermes-lab/lab.sh followthrough [tag ...]  Follow-Through: bills, trips, meetings, usual buys, Paperless (in the day)
 #   scripts/hermes-lab/lab.sh plan [tag ...]        Plan For It: the turn's note, the card's answer, a later pick sent at its time
+#   scripts/hermes-lab/lab.sh planonly [tag ...]    a reply that was only the plan goes on to the answer (Hermes 0.22+)
 #   scripts/hermes-lab/lab.sh work [tag ...]       workstreams: redde_work starts a hidden chat that works, ends and reports back
 #   scripts/hermes-lab/lab.sh workapi [tag ...]    the same over the Hermes API: run by the gateway, answered from the Work sheet
 #   scripts/hermes-lab/lab.sh runon [tag ...]      a job's own model (Run On): set over the Dashboard, by the plugin from a mark, and back
@@ -776,6 +777,24 @@ followthrough() {
   echo "\nAll checks passed."
 }
 
+# A reply that was only the plan (the plugin's planonly.py, 1.49.0): the stub's "lab:plan" answers
+# with a plan and nothing else, the plugin hands it to Hermes's stall guard, and the app has the
+# answer as the reply and the plan as a working note, live and read back, on both connections
+# (HermesLabPlanOnlyTests). Plugin middleware needs Hermes 0.22 or later.
+planonly() {
+  local tags=("${@:-v0.22.2 v0.23.2}") failed=()
+  tags=(${=tags})
+  app_prepare HermesLabPlanOnlyTests || exit 1
+  for tag in $tags; do
+    echo "===== Hermes $tag / push (plan only)"
+    if ! up "$tag" push; then failed+=("$tag (lab)"); continue; fi
+    app_check || failed+=("$tag")
+  done
+  down
+  if (( ${#failed} )); then echo "\nFAILED: $failed"; exit 1; fi
+  echo "\nAll checks passed."
+}
+
 # Plan For It (plan_check.py, plugin 1.41.0): the turn's note on "we're driving to … Friday", the
 # card's answer as Redde sends it, its later pick kept and sent to a paired stand-in phone at its time.
 plan() {
@@ -1087,6 +1106,7 @@ case "${1:-}" in
   lists) shift; lists "$@" ;;
   followthrough) shift; followthrough "$@" ;;
   plan) shift; plan "$@" ;;
+  planonly) shift; planonly "$@" ;;
   work) shift; work "$@" ;;
   workapi) shift; workapi "$@" ;;
   runon) shift; runon "$@" ;;

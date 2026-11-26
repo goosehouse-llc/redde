@@ -88,7 +88,60 @@ extension Conversation {
             default: continue
             }
         }
+        return Self.foldingContinuations(out)
+    }
+
+    /// Hermes's word to the model to go on in the same turn ("[System: Continue now. …]", from its
+    /// stall guard, which Redde's plugin 1.49.0 hands a reply that was only the plan): a user row of
+    /// Hermes's own, not the person's.
+    nonisolated static func isContinuation(_ text: String) -> Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("[System:")
+    }
+
+    /// A transcript read back as it showed live: Hermes's word to go on left out, and the reply
+    /// before it (the plan) a working note of the answer after it, not a reply of its own.
+    nonisolated static func foldingContinuations(_ messages: [Message]) -> [Message] {
+        var out: [Message] = []
+        var carried: Message?
+        for var message in messages {
+            if message.role == .user, isContinuation(message.text) {
+                if let last = out.last, last.role == .assistant {
+                    out.removeLast()
+                    carried = carried.map { joined($0, then: last) } ?? last
+                }
+                continue
+            }
+            if let plan = carried {
+                carried = nil
+                if message.role == .assistant { message = joined(plan, then: message) } else { out.append(plan) }
+            } else if message.role == .assistant, let last = out.last, last.role == .assistant,
+                      last.text.trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix(goingOn) {
+                // The Dashboard's history leaves Hermes's word out: the plugin's ending says it.
+                out.removeLast()
+                message = joined(last, then: message)
+            }
+            out.append(message)
+        }
+        if let carried { out.append(carried) }
         return out
+    }
+
+    /// How the plugin ends a reply that was only the plan, for Hermes's stall guard (never streamed).
+    private nonisolated static let goingOn = "Let me now do that."
+
+    private nonisolated static func joined(_ plan: Message, then answer: Message) -> Message {
+        var answer = answer
+        var said = plan.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if said.hasSuffix(goingOn) {
+            said = String(said.dropLast(goingOn.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        var notes = plan.notes
+        if !said.isEmpty { notes.append(WorkingNote(text: said, afterTools: plan.tools.count)) }
+        answer.notes = notes + answer.notes.map { WorkingNote(text: $0.text, afterTools: $0.afterTools + plan.tools.count) }
+        answer.tools = plan.tools + answer.tools
+        answer.reasoning = [plan.reasoning, answer.reasoning].filter { !$0.isEmpty }.joined(separator: "\n\n")
+        answer.beginsAssistantTurn = plan.beginsAssistantTurn
+        return answer
     }
 
     nonisolated static func mapStored(_ stored: [HermesSessionsAPI.StoredMessage]) -> [Message] {
@@ -149,7 +202,7 @@ extension Conversation {
             }
         }
         // Drop trailing tool-only assistant rows that never produced text (interrupted runs).
-        return out.filter { !($0.role == .assistant && $0.text.isEmpty && $0.tools.isEmpty) }
+        return Self.foldingContinuations(out).filter { !($0.role == .assistant && $0.text.isEmpty && $0.tools.isEmpty) }
     }
 }
 

@@ -50,6 +50,50 @@ nonisolated enum TurnEvent: Sendable, Equatable {
     case done
 }
 
+/// What a reply has streamed since its last working note, so a note whose words go on from it
+/// counts as streamed. Hermes says so only when the two match exactly: a plan its stall guard took
+/// up (Redde's plugin 1.49.0) carries "Let me now do that.", never streamed, and a note cut short in
+/// the stream is sent again whole. Taken for unstreamed, the plan stayed as the reply's text and
+/// came again as a note.
+nonisolated struct StreamedText: Sendable {
+    private(set) var text = ""
+
+    /// The event, a working note marked streamed when it goes on from what streamed.
+    mutating func pass(_ event: TurnEvent) -> TurnEvent {
+        switch event {
+        case let .textDelta(delta):
+            text += delta
+        case let .textFinal(final):
+            text = final
+        case let .interim(note, already):
+            let streamed = already || Self.continues(text, in: note)
+            if streamed { text = "" }
+            if streamed, !already { return .interim(text: note, alreadyStreamed: true) }
+        default:
+            break
+        }
+        return event
+    }
+
+    /// What streamed before a reply's final text that the final text leaves out: Hermes 0.23.2's
+    /// Hermes API sends no working note for a plan its stall guard took up, so the plan and the
+    /// answer stream as one and the finished reply is the answer alone. Nil when nothing is left out.
+    static func head(of shown: String, before final: String) -> String? {
+        let shown = shown.trimmingCharacters(in: .whitespacesAndNewlines), final = final.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !final.isEmpty, shown.count > final.count, shown.hasSuffix(final) else { return nil }
+        let head = String(shown.dropLast(final.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        return head.isEmpty ? nil : head
+    }
+
+    /// Whether `note` is what streamed (`shown`), going on or cut short past its first words.
+    static func continues(_ shown: String, in note: String) -> Bool {
+        let shown = shown.trimmingCharacters(in: .whitespacesAndNewlines), note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !shown.isEmpty, !note.isEmpty else { return false }
+        let common = zip(shown, note).prefix { $0 == $1 }.count
+        return common >= min(shown.count, 100)
+    }
+}
+
 /// One tool call as shown in the transcript.
 nonisolated struct ToolActivity: Identifiable, Equatable, Sendable, Codable {
     enum Status: String, Codable, Sendable { case running, completed, failed }

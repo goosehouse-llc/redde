@@ -70,6 +70,10 @@ with that report in it answers "Summary for you: …".
 And one for what goes with a message for the model alone (the plugin's turn notes, issue 72): a
 message with "lab:heard" in it is answered "[heard: <the message as it reached the model>]".
 
+And one for a reply that is only the plan (lab.sh planonly, the plugin's 1.49.0): "lab:plan" is
+answered with what Sol wrote on 2026-11-26, a plan and nothing else, and Hermes's word to go on
+("[System: Continue now. …]") after it with "[answered after the plan]".
+
 usage: stub_llm.py <port> <name> <model,model,...>
 """
 import json
@@ -126,6 +130,9 @@ PHONE_SAID = (('"added"', "[phone: added]"), ("file_path", "[phone: file]"), ('"
               ("didn't answer", "[phone: no answer]"), ("turned off", "[phone: off]"), ('"shown"', "[cards: shown]"),
               ('"ringing"', "[call: ringing]"), ("call again in about", "[call: not now]"), ("let you call", "[call: not let]"),
               ("ready for calls", "[call: not ready]"))
+#: "lab:plan": Sol's answer of 2026-11-26 (names changed), the plan and nothing else.
+PLAN_ONLY = ("Robin's letting me know they're going mini golfing today — just sharing an update. This is a conversational "
+             "remark, not a task request. Let me respond warmly.\n\nNo tools needed — just an appropriate conversational response.")
 #: How many more times each "lab:hiccup" message is answered with a failure.
 HICCUPS = {}
 #: What a message makes the endpoint answer in place of a completion.
@@ -403,6 +410,11 @@ class Handler(BaseHTTPRequestHandler):
                 text = "[file seen]" if "lab-file-token" in just_said or "lab-clip.mp4" in just_said else "[file missing]"
             if "lab:heard" in just_said:
                 text = "[heard: " + just_said + "]"
+            if "lab:plan" in just_said:
+                text = PLAN_ONLY
+            elif just_said.lstrip().startswith("[System: Continue now") and any(
+                    "lab:plan" in said(m) for m in messages if m.get("role") == "user"):
+                text = "[answered after the plan]"
             # Workstreams (lab.sh work): the workstream's own answer to its brief, then the agent's
             # word on its report in the chat that started it.
             if "lab:work-brief" in just_said:

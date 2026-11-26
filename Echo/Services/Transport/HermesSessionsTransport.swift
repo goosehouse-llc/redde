@@ -132,7 +132,8 @@ nonisolated struct HermesSessionsTransport: HermesTransport {
                 var runID: String?
                 do {
                     guard let started = try await runs.start(try Self.runBody(request, sessionID: sessionID), key: request.turnKey) else {
-                        for try await event in chat.chatStream(request, sessionID: sessionID, apiKey: apiKey) { continuation.yield(event) }
+                        var seen = StreamedText()
+                        for try await event in chat.chatStream(request, sessionID: sessionID, apiKey: apiKey) { continuation.yield(seen.pass(event)) }
                         continuation.finish()
                         return
                     }
@@ -921,6 +922,7 @@ nonisolated struct HermesRuns: Sendable {
         private let yield: @Sendable (TurnEvent) -> Void
         private var _cursor: Int?
         private var asked: Set<String> = []
+        private var streamed = StreamedText()
 
         init(yield: @escaping @Sendable (TurnEvent) -> Void) { self.yield = yield }
 
@@ -944,7 +946,8 @@ nonisolated struct HermesRuns: Sendable {
             if case let .interrupt(.approval(request), _) = event {
                 guard lock.withLock({ asked.insert(request.id).inserted }) else { return }
             }
-            yield(event)
+            // A working note whose words go on from what streamed is that text (`StreamedText`).
+            yield(lock.withLock { streamed.pass(event) })
         }
     }
 
