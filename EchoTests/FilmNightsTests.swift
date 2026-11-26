@@ -151,6 +151,7 @@ struct FilmNightsTests {
         store.reachable = { true }
         store.dueReminders = { _ in [] }
         store.canPlaceNights = { true }
+        store.onPhone = true
         let placings = Placings()
         store.placeNights = { lists, known in placings.lists.append(lists); placings.known.append(known) }
         return (store, placings)
@@ -191,6 +192,24 @@ struct FilmNightsTests {
         await old.refresh()
         await old.settleNights()
         #expect(!old.ownsNights && oldPlacings.lists.isEmpty)
+        // Updated: the next look asks again and keeps it, not 12 hours on.
+        old.plugin = { words in words.hasPrefix("lists nights") ? #"redde-push lists {"nights": true, "by": "x", "mine": true}"# : Self.answer }
+        await old.refresh()
+        await old.settleNights()
+        #expect(old.ownsNights)
+        #expect(oldPlacings.lists.count == 1)
+    }
+
+    @Test func onByDefaultOnAnIPhoneOnly() {
+        // Asked 2026-11-26, the iPhone by default: the iPad leaves the calendar to the phone unless switched on there.
+        let (phone, _) = lists(answer: { Self.answer })
+        phone.onPhone = true
+        #expect(phone.addsNights)
+        let (pad, _) = lists(answer: { Self.answer })
+        pad.onPhone = false
+        #expect(!pad.addsNights)
+        pad.addsNights = true
+        #expect(pad.addsNights)
     }
 
     @Test func thePluginIsAskedTwiceADayAndLetGoWhenItsSwitchedOff() async {

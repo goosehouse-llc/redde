@@ -1,5 +1,8 @@
 import Foundation
 import Observation
+#if os(iOS)
+import UIKit
+#endif
 
 extension TodayList {
     /// The plugin's `lists list` and `lists do` answers: "redde-push lists {…}". Nil for anything
@@ -179,11 +182,22 @@ final class TodayLists {
     private static let claimKey = "lists.nightsClaim"
     private static let deviceKey = "lists.nightsDevice"
 
-    /// Settings › Chat List and Settings › Calendars: films and series with a night go on the calendar.
+    /// Settings › Chat List and Settings › Calendars: films and series with a night go on the
+    /// calendar. On by default on an iPhone only (asked 2026-11-26: the iPhone by default): an iPad or a
+    /// Mac with the phone's calendar already leaves it to the phone, unless switched on there.
     var addsNights: Bool {
-        get { settingsStore.object(forKey: Self.nightsKey) as? Bool ?? true }
+        get { settingsStore.object(forKey: Self.nightsKey) as? Bool ?? onPhone }
         set { settingsStore.set(newValue, forKey: Self.nightsKey) }
     }
+
+    /// This is an iPhone (made-up in tests).
+    @ObservationIgnored var onPhone: Bool = {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+        #else
+        false
+        #endif
+    }()
 
     /// The lists this server has had: a night of one gone is taken off the calendar, one of
     /// another server's lists is left alone.
@@ -235,7 +249,7 @@ final class TodayLists {
     /// should leave the calendar to Redde: every 12 hours while on, as the plugin keeps it for the
     /// one that asks again within three days, then gives it to whichever asks next. Switched off on
     /// the device that keeps it, it lets it go. A plugin before 1.51 doesn't say whose it is: then no
-    /// device keeps it, so none doubles another's.
+    /// device keeps it, so none doubles another's, and each look asks again.
     func tellNights(now: Date = .now) async {
         let on = addsNights && canPlaceNights()
         let claim = claims[server()]
@@ -249,7 +263,9 @@ final class TodayLists {
             return
         }
         guard await reachable(), let output = try? await plugin("lists nights on " + nightsDevice) else { return }
-        let mine = PluginReply.json(output, "lists")?["mine"]?.bool == true
+        // A plugin before 1.51 says nothing of whose it is: asked again at the next look, so the
+        // plugin's update counts at once (2026-11-26: both devices waited 12 hours after it).
+        guard let mine = PluginReply.json(output, "lists")?["mine"]?.bool else { claims[server()] = nil; return }
         let was = ownsNights
         claims[server()] = ["at": now.timeIntervalSince1970, "mine": mine ? 1 : 0]
         if mine, !was { placeFilmNights() }

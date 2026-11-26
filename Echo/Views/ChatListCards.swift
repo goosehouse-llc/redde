@@ -198,8 +198,8 @@ struct UpNextTileSection: View {
 }
 
 /// A watch list's films and series with a night, on the calendar (2026-11-26, `FilmNights`). On by
-/// default; it does nothing without full access to the calendar. On Settings → Chat List and
-/// Settings → Calendars.
+/// default on an iPhone, off on an iPad or a Mac (`TodayLists.addsNights`); it does nothing without
+/// full access to the calendar. On Settings → Chat List and Settings → Calendars.
 struct FilmNightsSection: View {
     @State private var on = true
     /// Turned on, and calendar access is refused.
