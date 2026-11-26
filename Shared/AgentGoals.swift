@@ -35,6 +35,32 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
     /// plugin, or one that hasn't asked.
     var quietDays: Int?
     var faded: Bool?
+    /// The goal's log (plugin 1.47, the Check-in Log and This Week layouts): its check-ins, newest
+    /// last; what they told Redde about it, their answers too; the choice its last check-in asked.
+    var checkins: [CheckIn]? = nil
+    var notes: [Note]? = nil
+    var question: Question? = nil
+
+    nonisolated struct CheckIn: Codable, Equatable, Sendable {
+        var at: Date
+        var done: Int
+        var total: Int
+        var headline: String
+        var next: String?
+        var details: String?
+    }
+
+    /// Something they told Redde about the goal; `question` when it answered the check-in's.
+    nonisolated struct Note: Codable, Equatable, Sendable {
+        var at: Date
+        var text: String
+        var question: String?
+    }
+
+    nonisolated struct Question: Codable, Equatable, Sendable {
+        var text: String
+        var choices: [String]
+    }
 
     /// Asked about or paused for the quiet: the goal's page offers Keep Going.
     var goneQuiet: Bool { (quietDays ?? 0) > 0 || faded == true }
@@ -46,6 +72,8 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
         /// Whose step it is (plugin 1.35): "you" for the person's, ticked off in Redde; "agent" for
         /// the agent's, a card on the Kanban board. Nil from an older plugin.
         var who: String?
+        /// When it was done (plugin 1.47), as far as the plugin knows.
+        var at: Date? = nil
 
         /// The person's to tick: theirs, or, from an older plugin, one with no card on the board.
         var isYours: Bool { who == "you" || (who == nil && cardID == nil) }
@@ -226,6 +254,20 @@ nonisolated struct GoalReport: Codable, Identifiable, Equatable, Sendable {
     }
 
     /// A step ticked on this device (`setStep`), kept so the chat list and Today show it at once.
+    /// Told Redde here (`Goals.tell`): the note in the goal's log at once, and an answered question over.
+    static func told(_ id: String, _ note: Note, in defaults: UserDefaults? = NeedsYou.shared) {
+        var kept = all(in: defaults)
+        guard var report = kept[id] else { return }
+        report.told(note)
+        kept[id] = report
+        save(kept, in: defaults)
+    }
+
+    mutating func told(_ note: Note) {
+        notes = (notes ?? []) + [note]
+        if note.question != nil { question = nil }
+    }
+
     static func setStep(_ id: String, _ index: Int, done: Bool, in defaults: UserDefaults? = NeedsYou.shared) {
         var kept = all(in: defaults)
         guard var report = kept[id] else { return }

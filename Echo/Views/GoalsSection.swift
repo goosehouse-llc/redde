@@ -94,7 +94,7 @@ struct GoalCard: View {
                     Text(goal.agent.isEmpty ? Settings.shared.headerTitle : goal.agent)
                     if let target = goal.target {
                         Text(verbatim: "·")
-                        Text("By \(target.formatted(.dateTime.month(.abbreviated).day()))", comment: "A goal's card: its target date, e.g. By Mar 1")
+                        Text(goalBy(target.formatted(.dateTime.month(.abbreviated).day())))
                     }
                 }
                 .font(.caption)

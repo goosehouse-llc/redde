@@ -3,6 +3,16 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.47.0 (2026-11-25)
+
+- A goal keeps its log for Redde's goal layouts: its last 12 check-ins (how far along, what each
+  said, and its report), and when each step was done.
+- A check-in can ask a choice only the person can make, on one more line: "ASK: <question> |
+  <choice> | <choice>" (2 to 4 choices). Redde shows the choices as buttons on the goal's page; the
+  briefing still asks in words. A check-in that asks nothing ends an older question.
+- What the person tells Redde about a goal, and their answer to its question, is kept with the goal
+  (`/redde-push goals note|answer`) and handed to its next check-in.
+
 ## 1.46.0 (2026-11-25)
 
 - A to-do can carry a help line: a few words of what the agent could do for it ("Find their number

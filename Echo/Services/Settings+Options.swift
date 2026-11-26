@@ -210,6 +210,16 @@ extension Settings {
         case byWhen, nextUp, help, week, notepad
     }
 
+    /// How a goal's page is drawn (2026-11-25, "Build them. Trail first" after the goal page
+    /// mockups): Trail (the default: the plan as a trail to the goal's date, what waits on the
+    /// person where the trail has got to), This Week (their next step large, what the agent asks),
+    /// Who Does What (the plan in two lanes, theirs and the agent's), Check-in Log (what the agent
+    /// said each time and what they told it) or List (the page as it was, in sections). Kept with
+    /// `listLayouts`, under the goal's `goalKey`.
+    enum GoalLayout: String, CaseIterable, Sendable {
+        case trail, week, lanes, log, list
+    }
+
     /// Settings → Appearance → Today Tiles (asked 2026-11-11: "allow me the option to change the
     /// color of the Today tabs in the drawer"): the chat list's Today tiles on the theme's surface,
     /// each washed in its own kind's colour (the inbox the accent, a list green, a briefing
@@ -266,6 +276,18 @@ extension Settings {
 
     func setTodoLayout(_ layout: TodoLayout, forList id: String) {
         listLayouts[id] = layout == .byWhen ? nil : layout.rawValue
+    }
+
+    /// A goal's place in `listLayouts`: its id, kept apart from the lists' ids.
+    static func goalKey(_ id: String) -> String { "goal:" + id }
+
+    /// How a goal's page is drawn: the Trail unless its Layout menu says otherwise.
+    func goalLayout(forGoal id: String) -> GoalLayout {
+        listLayouts[Self.goalKey(id)].flatMap(GoalLayout.init(rawValue:)) ?? .trail
+    }
+
+    func setGoalLayout(_ layout: GoalLayout, forGoal id: String) {
+        listLayouts[Self.goalKey(id)] = layout == .trail ? nil : layout.rawValue
     }
 
     /// The appearance a card is drawn in, nil for the app's.

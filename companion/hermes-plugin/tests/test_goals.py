@@ -397,6 +397,77 @@ class GoalTests(RoutinesTests):
             plugin._home = original
         self.assertEqual(resumed, ["job1"])
 
+    def test_a_check_ins_question_with_choices_is_read(self):
+        asked, rest = goals.question("Good week.\n**ASK: Aim for an hour, or just finish? | Under an hour | Just finish**\nRest tomorrow.")
+        self.assertEqual(asked, {"q": "Aim for an hour, or just finish?", "choices": ["Under an hour", "Just finish"]})
+        self.assertEqual(rest, "Good week.\nRest tomorrow.")
+        self.assertEqual(len(goals.question("ASK: Which? | a | b | c | d | e | f")[0]["choices"]), goals.CHOICES)
+        self.assertIsNone(goals.question("ASK: Which one? | only this")[0], "a choice takes two")
+        self.assertIsNone(goals.question("Nothing to ask.")[0])
+
+    def test_a_check_in_is_kept_in_the_goals_log_with_its_question(self):
+        goals.save(self.root, [{"id": "g1", "title": "Run a 10K", "steps": [], "question": {"q": "Old?", "choices": ["a", "b"]}}])
+        home = self.goal_job(last="2026-11-02T09:00:00")
+        self.watch.look()
+        self.output(home, "## Response\n\nPROGRESS: 2/5 | Two runs | Book the race\n\nASK: Aim for an hour? | Under an hour | Just finish")
+        self.goal_job(last="2026-11-09T09:00:00")
+        self.watch.look()
+        kept = goals.load(self.root)[0]
+        self.assertEqual(kept["question"]["choices"], ["Under an hour", "Just finish"], "the new question, the old one over")
+        self.assertEqual([(c["done"], c["headline"]) for c in kept["checkins"]], [(2, "Two runs")])
+        self.assertTrue(self.sent[0][1]["b"].endswith("Aim for an hour?"), "the briefing still asks, in words")
+        for n in range(goals.CHECKINS + 2):
+            goals.remember(self.root, "g1", {"done": 2, "total": 5, "headline": f"Week {n}", "next": ""}, at=2_000_000_000 + n)
+        kept = goals.load(self.root)[0]
+        self.assertEqual(len(kept["checkins"]), goals.CHECKINS, "the last dozen")
+        self.assertNotIn("question", kept, "a check-in that asks nothing ends the question")
+
+    def test_what_they_tell_redde_goes_to_the_next_check_in(self):
+        goal = goals.set_up(self.root, "default", "Run a 10K", None, [{"title": "Run 5K", "who": "you"}], make=self.made(), board=no_board)["set"]
+        goals.remember(self.root, goal, {"done": 0, "total": 1, "headline": "Starting", "next": ""}, asked={"q": "Aim for an hour?", "choices": ["Yes", "No"]},
+                       at=time.time() - 60)
+        self.assertTrue(goals.tell(self.root, goal, "Ran 4 km, knee fine"))
+        self.assertTrue(goals.tell(self.root, goal, "Yes", answering=True))
+        self.assertFalse(goals.tell(self.root, goal, "   "))
+        self.assertFalse(goals.tell(self.root, "nope", "Hello"))
+        kept = goals.load(self.root)[0]
+        self.assertNotIn("question", kept, "answered")
+        self.assertEqual([(n.get("q"), n["text"]) for n in kept["notes"]], [(None, "Ran 4 km, knee fine"), ("Aim for an hour?", "Yes")])
+        note = goals.checkin_note(self.root, self.jobs[0]["prompt"], "cron", board=no_board)
+        self.assertIn('They told Redde: "Ran 4 km, knee fine".', note)
+        self.assertIn('They answered your question "Aim for an hour?": "Yes".', note)
+        self.assertIn("ASK: <question> | <choice> | <choice>", note)
+        goals.remember(self.root, goal, {"done": 1, "total": 1, "headline": "Done", "next": ""}, at=time.time() + 5)
+        self.assertNotIn("They told Redde", goals.checkin_note(self.root, self.jobs[0]["prompt"], "cron", board=no_board),
+                         "heard by the check-in after them, not again")
+
+    def test_a_step_done_keeps_when(self):
+        goal = goals.set_up(self.root, "default", "Run a 10K", None, [{"title": "Run 5K", "who": "you"}, {"title": "Find a race", "who": "agent"}],
+                            make=self.made(), board=no_board)["set"]
+        goals.tick(self.root, goal, 1, True)
+        goals.update(self.root, goal, done=[2], board=no_board)
+        steps = goals.load(self.root)[0]["steps"]
+        self.assertTrue(all(isinstance(s.get("at"), int) for s in steps))
+        listed = goals.listing(routines.Stores(self.root))[0]
+        self.assertEqual([("at" in s) for s in listed["steps"]], [True, True])
+        self.assertEqual((listed["checkins"], listed["notes"], listed["question"]), ([], [], None))
+        goals.tick(self.root, goal, 1, False)
+        self.assertNotIn("at", goals.load(self.root)[0]["steps"][0], "a tick taken back")
+
+    def test_the_app_tells_a_goal_over_the_dashboard(self):
+        goal = goals.set_up(self.root, "default", "Run a 10K", make=self.made(), board=no_board)["set"]
+        original = plugin._home
+        plugin._home = lambda: self.root
+        try:
+            words = core.b64u("Ran 4 km".encode())
+            self.assertEqual(plugin._tell_goal_slash("note", ["default", goal, words]), f"redde-push goals told {goal}")
+            self.assertEqual(plugin._tell_goal_slash("answer", ["default", "nope", words]), "redde-push goals unknown")
+            self.assertNotIn("told", plugin._tell_goal_slash("note", ["default", goal, "%%%"]), "nothing to say, nothing kept")
+            self.assertIn("for the Redde app", plugin._tell_goal_slash("note", ["../x", goal, words]))
+        finally:
+            plugin._home = original
+        self.assertEqual(goals.load(self.root)[0]["notes"][0]["text"], "Ran 4 km")
+
     def test_the_tool_stays_small(self):
         made = {}
         ctx = types.SimpleNamespace(register_tool=lambda **kw: made.update(kw))

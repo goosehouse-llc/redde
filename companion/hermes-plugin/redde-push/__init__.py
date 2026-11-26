@@ -714,6 +714,10 @@ def _slash(raw_args: str = "") -> str:
     if words[:2] == ["goals", "keep"]:
         # Keep a goal that went quiet going (goals.py, 1.36.0): its quiet starts again, a pause ends.
         return _keep_goal_slash(words[2:])
+    if words[:2] in (["goals", "note"], ["goals", "answer"]):
+        # What they told Redde about a goal, or their answer to its question (goals.py, 1.47.0):
+        # `goals note|answer <profile> <goal> <text, base64url>`, for its next check-in.
+        return _tell_goal_slash(words[1], words[2:])
     if words[:2] == ["goals", "end"]:
         # End a goal: its check-in job deleted, the goal marked ended (goals.py).
         return _end_goal_slash(words[2:])
@@ -870,6 +874,20 @@ def _keep_goal_slash(words: list[str], resume=None) -> str:
     root = calls.caller(_home())[1]
     kept = goals.keep(root if words[0] == "default" else root / "profiles" / words[0], words[1], resume)
     return f"redde-push goals kept {words[1]}" if kept else "redde-push goals unknown"
+
+
+def _tell_goal_slash(how: str, words: list[str]) -> str:
+    """`/redde-push goals note|answer <profile> <goal> <base64url>`: "redde-push goals told <goal>",
+    or "redde-push goals unknown"."""
+    if len(words) != 3 or not calls.PROFILE.fullmatch(words[0]) or not goals.goal_id(f"[redde-goal:{words[1]}]"):
+        return "redde-push goals: this command is for the Redde app."
+    try:
+        text = core.unb64u(words[2]).decode()
+    except Exception:
+        return "redde-push goals: this command is for the Redde app."
+    root = calls.caller(_home())[1]
+    told = goals.tell(root if words[0] == "default" else root / "profiles" / words[0], words[1], text, answering=how == "answer")
+    return f"redde-push goals told {words[1]}" if told else "redde-push goals unknown"
 
 
 def _end_goal_slash(words: list[str], remove=None) -> str:

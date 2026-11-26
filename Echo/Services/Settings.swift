@@ -301,7 +301,8 @@ final class Settings: ServeEndpoint {
         didSet { store(todayTileColors, forKey: Keys.todayTileColors) }
     }
     /// How each list is drawn, by the list's id: a `FilmLayout` raw value for a watch list, a
-    /// `TodoLayout` one for a to-do list; a list not in it has its kind's default.
+    /// `TodoLayout` one for a to-do list; a list not in it has its kind's default. A goal's page
+    /// is here too, under `goalKey(_:)`, as a `GoalLayout`.
     var listLayouts: [String: String] {
         didSet { store(listLayouts, forKey: Keys.listLayouts) }
     }

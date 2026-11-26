@@ -246,3 +246,100 @@ struct GoalPlanTests {
         #expect(plan.waiting.isEmpty && plan.extra.isEmpty)
     }
 }
+
+/// The goal page's layouts (2026-11-25, "Build them. Trail first"): the Trail's stops, the Check-in
+/// Log's entries, and plugin 1.47's log, notes, question and step dates read from its list.
+struct GoalLayoutsTests {
+    private func card(_ id: String, _ status: String, _ at: Double = 0) -> KanbanTask {
+        KanbanTask(.object(["id": .string(id), "title": .string("Card \(id)"), "status": .string(status),
+                            "tenant": .string("redde-goal-g"), "created_at": .number(at)]))!
+    }
+
+    @Test func theTrailFoldsWhatsLongDoneAndStopsWhereItWaits() {
+        let steps: [GoalReport.Step] = [
+            .init(title: "Plan", cardID: "p", done: true, who: "agent"),
+            .init(title: "Shoes", done: true, who: "you"),
+            .init(title: "5 km", done: true, who: "you"),
+            .init(title: "Book", done: true, who: "you"),
+            .init(title: "Pace", cardID: "a", done: false, who: "agent"),
+            .init(title: "Long run", done: false, who: "you"),
+            .init(title: "Race", done: false, who: "you"),
+        ]
+        let plan = GoalPlan(steps: steps, cards: [card("p", "done", 1), card("a", "blocked", 2), card("ask", "review", 3)])
+        let trail = GoalTrail(plan, shown: 2)
+        #expect(trail.folded.map(\.title) == ["Plan", "Shoes"], "the oldest done steps folded into one stop")
+        #expect(trail.stops.map(\.id) == ["step-2", "step-3", "ask", "step-4", "step-5", "step-6"],
+                "the agent's own card that waits on them where the trail has got to")
+        #expect(trail.stops.map(\.kind) == [.done, .done, .waiting, .waiting, .next, .later])
+        #expect(trail.here == 2)
+        #expect(trail.finish == "step-6")
+        #expect(GoalTrail(plan).folded.isEmpty, "four done and three shown: nothing worth folding one away")
+    }
+
+    @Test func daysLeftCountsWholeDays() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/Chicago"))
+        let late = try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: 25, hour: 23)))
+        let early = try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: 26, hour: 1)))
+        #expect(GoalTrail.daysLeft(to: early, now: late, calendar: calendar) == 1)
+        #expect(GoalTrail.daysLeft(to: late, now: late, calendar: calendar) == 0)
+        #expect(GoalTrail.daysLeft(to: late, now: early, calendar: calendar) == -1)
+    }
+
+    @Test func theLogIsNewestFirstWithNotesAndStepsDone() {
+        var goal = GoalReport(id: "g", title: "Run", agent: "Sol", profile: "default", done: 1, total: 2,
+                              headline: "Two runs.", at: Date(timeIntervalSince1970: 2_000), failed: false)
+        goal.details = "Tuesday 4 km, Thursday 5 km."
+        goal.steps = [.init(title: "Shoes", done: true, who: "you", at: Date(timeIntervalSince1970: 1_800)),
+                      .init(title: "Plan", cardID: "p", done: true, who: "agent"),
+                      .init(title: "Race", done: false, who: "you")]
+        goal.checkins = [.init(at: Date(timeIntervalSince1970: 1_000), done: 0, total: 2, headline: "A plan."),
+                         .init(at: Date(timeIntervalSince1970: 2_000), done: 1, total: 2, headline: "Two runs.")]
+        goal.notes = [.init(at: Date(timeIntervalSince1970: 1_500), text: "Hills were hard")]
+        let entries = GoalLog.entries(goal)
+        #expect(entries.map(\.at.timeIntervalSince1970) == [2_000, 1_800, 1_500, 1_000])
+        #expect(entries.first?.kind == .checkIn(.init(at: Date(timeIntervalSince1970: 2_000), done: 1, total: 2, headline: "Two runs.",
+                                                      details: "Tuesday 4 km, Thursday 5 km.")),
+                "the newest check-in has its whole report, as its note brought it")
+        #expect(entries[1].kind == .step(title: "Shoes", yours: true), "a step done with no date isn't in the log")
+
+        goal.checkins = nil
+        goal.notes = nil
+        goal.steps = nil
+        #expect(GoalLog.entries(goal).map(\.at.timeIntervalSince1970) == [2_000], "an older plugin: the last check-in alone")
+    }
+
+    @Test func thePluginsLogNotesAndQuestionAreRead() throws {
+        let listed = try #require(Goals.parse(list: """
+            redde-push goals [{"id":"g9","profile":"default","title":"Run a 10K","steps":[
+              {"title":"Shoes","who":"you","done":true,"at":1800},{"title":"Race","who":"you","done":false}],
+             "progress":{"done":1,"total":2,"headline":"Two runs.","at":2000},
+             "checkins":[{"done":0,"total":2,"headline":"A plan.","next":"Shoes","at":1000},{"done":1,"total":2,"headline":"Two runs.","at":2000},
+                         {"headline":"no time"}],
+             "notes":[{"at":1500,"text":"Hills were hard"},{"at":2100,"text":"Sunday","q":"Saturday or Sunday?"},{"at":2200,"text":""}],
+             "question":{"q":"Which pace?","choices":["6:00","5:40"],"at":2000}}]
+            """))
+        let g = try #require(listed.first)
+        #expect(g.steps?.map(\.at) == [Date(timeIntervalSince1970: 1_800), nil])
+        #expect(g.checkins?.map(\.headline) == ["A plan.", "Two runs."], "a check-in with no time is dropped")
+        #expect(g.checkins?.first?.next == "Shoes")
+        #expect(g.notes?.map(\.text) == ["Hills were hard", "Sunday"], "an empty note is dropped")
+        #expect(g.notes?.last?.question == "Saturday or Sunday?")
+        #expect(g.question == .init(text: "Which pace?", choices: ["6:00", "5:40"]))
+
+        let one = try #require(Goals.parse(list: #"[{"id":"g1","title":"T","question":{"q":"Only one?","choices":["Yes"]}}]"#)?.first)
+        #expect(one.question == nil, "a question needs two choices")
+        let old = try #require(Goals.parse(list: #"[{"id":"g2","title":"T"}]"#)?.first)
+        #expect(old.checkins == nil && old.notes == nil && old.question == nil, "an older plugin's list")
+    }
+
+    @Test func anAnswerEndsTheQuestionAndIsKeptInTheLog() {
+        var goal = GoalReport(id: "g", title: "Run", agent: "Sol", profile: nil, done: 0, total: 0, headline: "", at: .now, failed: false)
+        goal.question = .init(text: "Which pace?", choices: ["6:00", "5:40"])
+        goal.told(.init(at: .now, text: "I ran 4 km"))
+        #expect(goal.question != nil, "a note isn't an answer")
+        goal.told(.init(at: .now, text: "6:00", question: "Which pace?"))
+        #expect(goal.question == nil)
+        #expect(goal.notes?.map(\.text) == ["I ran 4 km", "6:00"])
+    }
+}

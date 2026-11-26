@@ -85,8 +85,20 @@ enum Goals {
             let steps = (g["steps"]?.array ?? []).compactMap { s -> GoalReport.Step? in
                 guard let title = s["title"]?.string, !title.isEmpty else { return nil }
                 return GoalReport.Step(title: title, cardID: (s["card"] ?? s["card_id"])?.string?.nilIfEmpty, done: s["done"]?.bool ?? false,
-                                       who: s["who"]?.string)
+                                       who: s["who"]?.string, at: CronJob.date(s["at"]))
             }
+            // Its log and question (plugin 1.47).
+            let checkins = (g["checkins"]?.array ?? []).compactMap { c -> GoalReport.CheckIn? in
+                guard let at = CronJob.date(c["at"]) else { return nil }
+                return GoalReport.CheckIn(at: at, done: c["done"]?.int ?? 0, total: c["total"]?.int ?? 0, headline: c["headline"]?.string ?? "",
+                                          next: c["next"]?.string?.nilIfEmpty, details: c["details"]?.string?.nilIfEmpty)
+            }
+            let notes = (g["notes"]?.array ?? []).compactMap { n -> GoalReport.Note? in
+                guard let at = CronJob.date(n["at"]), let text = n["text"]?.string, !text.isEmpty else { return nil }
+                return GoalReport.Note(at: at, text: text, question: n["q"]?.string?.nilIfEmpty)
+            }
+            let choices = (g["question"]?["choices"]?.array ?? []).compactMap { $0.string?.nilIfEmpty }
+            let question = g["question"]?["q"]?.string?.nilIfEmpty.flatMap { choices.count >= 2 ? GoalReport.Question(text: $0, choices: choices) : nil }
             // The plan's own count where there is one (the person's ticks and the board's cards, plugin
             // 1.35), else what the last check-in said.
             let done = steps.isEmpty ? progress?["done"]?.int ?? 0 : steps.filter(\.done).count
@@ -100,7 +112,8 @@ enum Goals {
                               details: progress?["details"]?.string?.nilIfEmpty,
                               at: CronJob.date(progress?["at"]) ?? .distantPast, failed: false, job: g["job"]?.string,
                               target: date(g["by"] ?? g["target"]), steps: steps.isEmpty ? nil : steps,
-                              quietDays: g["quiet"]?.int.flatMap { $0 > 0 ? $0 : nil }, faded: g["faded"]?.bool == true ? true : nil)
+                              quietDays: g["quiet"]?.int.flatMap { $0 > 0 ? $0 : nil }, faded: g["faded"]?.bool == true ? true : nil,
+                              checkins: checkins.isEmpty ? nil : checkins, notes: notes.isEmpty ? nil : notes, question: question)
         }
     }
 
@@ -182,6 +195,28 @@ enum Goals {
             : String(localized: "Keeping a quiet goal going takes the Redde plugin 1.36: update it in Settings › Redde Plugin.", comment: "Keep Going on a quiet goal didn't work: the plugin is too old")
     }
 
+    /// Something they tell Redde about the goal, or their answer to its question (plugin 1.47:
+    /// `goals note|answer <profile> <goal> <words, base64url>`), for its next check-in. Nil when it
+    /// was said; else why not.
+    @MainActor
+    static func tell(_ goal: GoalReport, _ text: String, answering: Bool) async -> String? {
+        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        let note = GoalReport.Note(at: .now, text: text, question: answering ? goal.question?.text : nil)
+        #if DEBUG
+        if demo { GoalsInbox.shared.told(goal.id, note); return nil }
+        #endif
+        let line = "goals \(answering ? "answer" : "note") \(goal.profile ?? "default") \(goal.id) \(PushSeal.base64URL(Data(text.utf8)))"
+        let reply = try? await PushService.command(over: .shared)(line)
+        if reply?.hasPrefix("redde-push goals told ") == true {
+            GoalsInbox.shared.told(goal.id, note)
+            return nil
+        }
+        return reply == nil
+            ? String(localized: "Couldn't reach your Hermes. Try again in a moment.", comment: "A goal's step couldn't be ticked: the server didn't answer")
+            : String(localized: "Telling your agent about a goal takes the Redde plugin 1.47: update it in Settings › Redde Plugin.", comment: "A note or an answer on a goal's page didn't go: the plugin is too old")
+    }
+
     /// The goal's check-in job in a list.
     static func job(of goal: GoalReport, in jobs: [CronJob]) -> CronJob? {
         jobs.first { $0.id == goal.job } ?? jobs.first { GoalReport.id(inJobName: $0.name) == goal.id }
@@ -208,13 +243,26 @@ enum Goals {
                    """,
                    at: .now.addingTimeInterval(-3_600 * 5), failed: false, job: "jg10k",
                    target: Calendar.current.date(byAdding: .day, value: 118, to: .now),
-                   steps: [.init(title: "Pick a 12-week plan", cardID: "k1", done: true, who: "agent"),
-                           .init(title: "Get fitted for running shoes", done: true, who: "you"),
-                           .init(title: "First 5 km without stopping", done: true, who: "you"),
+                   steps: [.init(title: "Pick a 12-week plan", cardID: "k1", done: true, who: "agent", at: .now.addingTimeInterval(-86_400 * 22)),
+                           .init(title: "Get fitted for running shoes", done: true, who: "you", at: .now.addingTimeInterval(-86_400 * 15)),
+                           .init(title: "First 5 km without stopping", done: true, who: "you", at: .now.addingTimeInterval(-86_400 * 8)),
                            .init(title: "Find the Riverside 10K's early entry", cardID: "k4", done: false, who: "agent"),
                            .init(title: "Long run at 8 km", done: false, who: "you"),
                            .init(title: "Taper week", done: false, who: "you"),
-                           .init(title: "Race day", done: false, who: "you")]),
+                           .init(title: "Race day", done: false, who: "you")],
+                   // (plugin 1.47: the log, a note of theirs, and the last check-in's question)
+                   checkins: [
+                       .init(at: .now.addingTimeInterval(-86_400 * 21 - 3_600 * 5), done: 1, total: 7,
+                             headline: "A 12-week plan to March, three runs a week.", next: "Get fitted for running shoes"),
+                       .init(at: .now.addingTimeInterval(-86_400 * 14 - 3_600 * 5), done: 2, total: 7,
+                             headline: "Shoes fitted, and week one of the plan done.", next: "Run 5 km without stopping"),
+                       .init(at: .now.addingTimeInterval(-86_400 * 7 - 3_600 * 5), done: 3, total: 7,
+                             headline: "Two runs; the 5 km went without a stop.", next: "A long run at 6 km on Sunday"),
+                       .init(at: .now.addingTimeInterval(-3_600 * 5), done: 3, total: 7,
+                             headline: "Three runs this week, the long one at 6 km.", next: "Book the Riverside 10K before early entry closes Friday"),
+                   ],
+                   notes: [.init(at: .now.addingTimeInterval(-86_400 * 3), text: "Ran 4 km on Thursday, and the hills felt easier.")],
+                   question: .init(text: "Saturday or Sunday for the 8 km long run?", choices: ["Saturday", "Sunday"])),
         GoalReport(id: "gspanish", title: "Order dinner in Spanish in Madrid", agent: "Scout", profile: "scout", done: 1, total: 5,
                    headline: "Day 12 of the app streak; the menu words are next.", next: "Twenty minutes on food words tonight",
                    at: .now.addingTimeInterval(-86_400 * 2), failed: false, job: "jgspanish",
@@ -279,6 +327,18 @@ final class GoalsInbox {
         if let i = goals.firstIndex(where: { $0.id == id }) { goals[i].quietDays = nil; goals[i].faded = nil }
     }
     #endif
+
+    /// Told here: in the goal's log at once.
+    func told(_ id: String, _ note: GoalReport.Note) {
+        #if DEBUG
+        if Goals.demo {
+            if let i = goals.firstIndex(where: { $0.id == id }) { goals[i].told(note) }
+            return
+        }
+        #endif
+        GoalReport.told(id, note)
+        reload()
+    }
 
     /// Ended here: off the list at once.
     func end(_ id: String) {
@@ -363,5 +423,100 @@ nonisolated struct GoalPlan: Equatable {
         guard isPlan else { return nil }
         let steps = (waiting + open + done).filter { $0.step != nil }
         return (steps.filter(\.done).count, steps.count)
+    }
+}
+
+/// A goal's plan as a trail (2026-11-25, the goal page mockups' B, "Trail the best"): its steps in
+/// their order from the first to the last, the last one the finish. What waits on the person is a
+/// stop where the trail has got to, the agent's own waiting cards with it; the person's first open
+/// step is "next". A long run of steps done at the start folds into one stop.
+nonisolated struct GoalTrail: Equatable {
+    enum Kind: Equatable {
+        case done
+        /// Blocked, Review or Triage: it can't go on without the person.
+        case waiting
+        /// The person's first step still to do.
+        case next
+        /// The agent's step, on its board.
+        case agent
+        /// The person's, after the next one.
+        case later
+    }
+
+    struct Stop: Equatable, Identifiable {
+        var row: GoalPlan.Row
+        var kind: Kind
+        var id: String { row.id }
+    }
+
+    /// The steps done at the start beyond the last `shown` of them: one "N done" stop.
+    var folded: [GoalPlan.Row] = []
+    var stops: [Stop] = []
+    /// The stop the trail has got to (the first not done); nil when every one is done.
+    var here: Int?
+    /// The plan's last step, drawn as the finish with the goal's date.
+    var finish: String?
+
+    init(_ plan: GoalPlan, shown: Int = 3) {
+        let offPlan = plan.waiting.filter { $0.step == nil }
+        var stops: [Stop]
+        if plan.isPlan {
+            let steps = (plan.waiting + plan.open + plan.done).filter { $0.step != nil }.sorted { ($0.step ?? 0) < ($1.step ?? 0) }
+            let waiting = Set(plan.waiting.map(\.id))
+            stops = steps.map { row in
+                Stop(row: row, kind: row.done ? .done : waiting.contains(row.id) ? .waiting : row.yours ? .later : .agent)
+            }
+            finish = steps.last?.id
+        } else {
+            stops = plan.done.map { Stop(row: $0, kind: .done) } + plan.open.map { Stop(row: $0, kind: .agent) }
+        }
+        let reached = stops.firstIndex { $0.kind != .done } ?? stops.endIndex
+        stops.insert(contentsOf: offPlan.map { Stop(row: $0, kind: .waiting) }, at: reached)
+        if let next = stops.firstIndex(where: { $0.kind == .later }) { stops[next].kind = .next }
+        let lead = stops.prefix { $0.kind == .done }.count
+        if lead > shown + 1 {
+            folded = stops.prefix(lead - shown).map(\.row)
+            stops.removeFirst(lead - shown)
+        }
+        self.stops = stops
+        here = stops.firstIndex { $0.kind != .done }
+    }
+
+    /// Whole days from today to the goal's date: 0 on the day, below 0 after it.
+    static func daysLeft(to target: Date, now: Date = .now, calendar: Calendar = .current) -> Int {
+        calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: target)).day ?? 0
+    }
+}
+
+/// The Check-in Log layout's entries (2026-11-25, the goal mockups' E): the agent's check-ins,
+/// what they told Redde and the steps done, newest first. With no log from the plugin (before
+/// 1.47), the last check-in alone.
+nonisolated enum GoalLog {
+    enum Kind: Equatable {
+        case checkIn(GoalReport.CheckIn)
+        case note(GoalReport.Note)
+        case step(title: String, yours: Bool)
+    }
+
+    struct Entry: Identifiable, Equatable {
+        var at: Date
+        var kind: Kind
+        var id: String
+    }
+
+    static func entries(_ goal: GoalReport) -> [Entry] {
+        var checkins = goal.checkins ?? []
+        if checkins.isEmpty, !goal.headline.isEmpty, goal.at > .distantPast {
+            checkins = [.init(at: goal.at, done: goal.done, total: goal.total, headline: goal.headline, next: goal.next, details: goal.details)]
+        } else if let last = checkins.indices.last, checkins[last].details == nil, abs(checkins[last].at.timeIntervalSince(goal.at)) < 60 {
+            checkins[last].details = goal.details   // (the newest's whole report, as the note brought it)
+        }
+        var all = checkins.map { Entry(at: $0.at, kind: .checkIn($0), id: "c\(Int($0.at.timeIntervalSince1970))") }
+        all += (goal.notes ?? []).enumerated().map { n, note in Entry(at: note.at, kind: .note(note), id: "n\(n)-\(Int(note.at.timeIntervalSince1970))") }
+        all += (goal.steps ?? []).enumerated().compactMap { i, step in
+            guard step.done, let at = step.at else { return nil }
+            return Entry(at: at, kind: .step(title: step.title, yours: step.isYours), id: "s\(i)")
+        }
+        return all.sorted { $0.at > $1.at }
     }
 }

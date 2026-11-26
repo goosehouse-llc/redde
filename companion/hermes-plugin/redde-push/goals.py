@@ -49,6 +49,14 @@ _ID = re.compile(r"\[redde-goal:([A-Za-z0-9_-]{1,40})\]")
 #: The check-in's first line: "PROGRESS: 3/7 | Ran 5K on Saturday | Book the race".
 # How much of a check-in's report beyond its PROGRESS line is kept for the goal's page.
 DETAILS_LIMIT = 3000
+#: The goal's log in Redde (1.47.0, the Check-in Log layout): the last CHECKINS check-ins, newest
+#: last, each report cut to DETAILS_KEPT; and what they told Redde about the goal, the last NOTES,
+#: each at most NOTE_LIMIT, handed to the check-in after it.
+CHECKINS, DETAILS_KEPT = 12, 1200
+NOTES, NOTE_LIMIT = 12, 500
+#: A check-in's question with choices (1.47.0, the This Week layout): one line "ASK: <question> |
+#: <choice> | <choice>", 2 to CHOICES choices of at most CHOICE characters, shown as buttons.
+CHOICES, CHOICE = 4, 40
 #: A goal that has gone quiet (1.36.0, after hermes-muse's goals that fade, 2026-11-22): nothing
 #: ticked, added or moved for QUIET days, and its next check-in asks once whether they still want
 #: it; still nothing FADE days after that, and its check-ins pause (never end: Redde offers Pick It
@@ -202,9 +210,27 @@ def progress(answer: str) -> tuple[dict | None, str]:
     return found, rest
 
 
-def remember(home: Path, goal: str, found: dict, at: float | None = None) -> bool:
-    """Keeps a check-in's progress on the goal; whether there was such a goal. More steps done than
-    the last check-in said is the goal moving."""
+def question(answer: str) -> tuple[dict | None, str]:
+    """A check-in's ASK line (1.47.0): {q, choices} and the answer without it; None when it has no
+    such line, or one with fewer than two choices."""
+    lines = (answer or "").splitlines()
+    for number, line in enumerate(lines):
+        bare = line.strip().strip("*_").strip()
+        if bare[:4].lower() != "ask:":
+            continue
+        parts = [part.strip(" *_") for part in bare[4:].split("|")]
+        choices = [choice[:CHOICE] for choice in parts[1:] if choice][:CHOICES]
+        if not parts[0] or len(choices) < 2:
+            continue
+        return {"q": parts[0][:200], "choices": choices}, "\n".join(lines[:number] + lines[number + 1:]).strip()
+    return None, (answer or "").strip()
+
+
+def remember(home: Path, goal: str, found: dict, at: float | None = None, asked: dict | None = None) -> bool:
+    """Keeps a check-in's progress on the goal, in its log too, and the question it asked (or none:
+    an older one is over); whether there was such a goal. More steps done than the last check-in
+    said is the goal moving."""
+    stamp = int(at or time.time())
     with _locked(home):
         goals = load(home)
         for kept in goals:
@@ -212,10 +238,41 @@ def remember(home: Path, goal: str, found: dict, at: float | None = None) -> boo
                 before = kept.get("progress") or {}
                 if int(found.get("done") or 0) > int(before.get("done") or 0) and before:
                     moved(kept, at)
-                kept["progress"] = {**found, "at": int(at or time.time())}
+                kept["progress"] = {**found, "at": stamp}
+                entry = {key: found.get(key) for key in ("done", "total", "headline", "next")}
+                if found.get("details"):
+                    entry["details"] = str(found["details"])[:DETAILS_KEPT]
+                log = [c for c in kept.get("checkins") or [] if c.get("at") != stamp]
+                kept["checkins"] = (log + [{**entry, "at": stamp}])[-CHECKINS:]
+                if asked:
+                    kept["question"] = {**asked, "at": stamp}
+                else:
+                    kept.pop("question", None)
                 save(home, goals)
                 return True
     return False
+
+
+def tell(home: Path, goal: str, text: str, answering: bool = False, at: float | None = None) -> bool:
+    """Something they told Redde about the goal (1.47.0): a note, or their answer to the check-in's
+    question (which is then over). Kept in its log and handed to the next check-in; the goal moves.
+    Whether there was such a goal and something to say."""
+    text = " ".join(str(text or "").split())[:NOTE_LIMIT]
+    if not text:
+        return False
+    with _locked(home):
+        goals = load(home)
+        kept = next((g for g in goals if g.get("id") == goal and not g.get("ended")), None)
+        if kept is None:
+            return False
+        said = {"at": int(at or time.time()), "text": text}
+        asked = kept.pop("question", None) if answering else None
+        if asked:
+            said["q"] = asked.get("q")
+        kept["notes"] = ((kept.get("notes") or []) + [said])[-NOTES:]
+        moved(kept, at)
+        save(home, goals)
+    return True
 
 
 def moved(kept: dict, at: float | None = None) -> None:
@@ -368,12 +425,17 @@ def checkin_note(home: Path, message, platform: str = "", board=None) -> str | N
     late = (" The target date has passed: ask them whether to end it or set a new date."
             if kept.get("by") and str(kept["by"]) < date.today().isoformat() else "")
     late += fade_note(home, found)
-    return (f"[Redde: goal \"{kept.get('title')}\".{by}{said} Steps: " + "; ".join(lines) + f".{late} "
+    since = float(last.get("at") or 0)
+    told = "".join(f" They answered your question \"{n.get('q')}\": \"{n.get('text')}\"." if n.get("q")
+                   else f" They told Redde: \"{n.get('text')}\"."
+                   for n in kept.get("notes") or [] if float(n.get("at") or 0) > since)
+    return (f"[Redde: goal \"{kept.get('title')}\".{by}{said} Steps: " + "; ".join(lines) + f".{told}{late} "
             "Check how it is going with your tools and what you know. Start your answer with one line exactly "
             "\"PROGRESS: <steps done>/<steps> | <a few words on how it's going> | <the next step>\", then at most "
             f"three short lines for them.{ask} Mark your own steps done with {TOOL} action \"update\" only when your tools have finished them: a step "
-            "that happens in their life is never done because you set a reminder or a schedule for it. Anything that needs "
-            "their approval or a choice, offer with suggest_to_user. Not Hermes's /goal command.]")
+            "that happens in their life is never done because you set a reminder or a schedule for it. A choice only they can "
+            "make: one more line \"ASK: <question> | <choice> | <choice>\" (2-4 choices of a few words; Redde shows them as "
+            "buttons). Anything that needs their approval, offer with suggest_to_user. Not Hermes's /goal command.]")
 
 
 # ---- the Kanban board (where this Hermes has one) ------------------------------------------------
@@ -531,7 +593,7 @@ def update(home: Path, goal: str, done=None, add=None, by: str | None = None, ev
             for number in numbers or []:
                 try:
                     if int(number) >= 1:
-                        steps[int(number) - 1]["done"] = value
+                        _done(steps[int(number) - 1], value)
                 except (ValueError, TypeError, IndexError):
                     pass
         added = planned(add)[:max(0, STEPS - len(steps))]
@@ -560,6 +622,15 @@ def update(home: Path, goal: str, done=None, add=None, by: str | None = None, ev
     return {"updated": goal, "steps_done": f"{finished}/{total}"}
 
 
+def _done(step: dict, done: bool) -> None:
+    """A step done (when, for the goal's page: 1.47.0) or not done after all."""
+    step["done"] = done
+    if done:
+        step["at"] = step.get("at") or int(time.time())
+    else:
+        step.pop("at", None)
+
+
 def tick(home: Path, goal: str, number: int, done: bool, board=None) -> bool:
     """The person ticked one of their steps in Redde (or took the tick back); whether there was
     such a step. A step kept before 1.35 whose card was still held in triage becomes theirs, and
@@ -573,7 +644,7 @@ def tick(home: Path, goal: str, number: int, done: bool, board=None) -> bool:
         step = steps[number - 1]
         card = str(step.get("card") or "")
         stray = card if done and card and owner(step, _card_statuses(goal, board) if "who" not in step else None) == "you" else ""
-        step["done"] = done
+        _done(step, done)
         if done:
             moved(kept)
         if stray:
@@ -638,17 +709,24 @@ def listing(stores) -> list[dict]:
             statuses = _card_statuses(kept["id"]) if carded else {}
             last = kept.get("progress") or {}
             ran = _seconds(job.get("last_run_at"))
+            log = list(kept.get("checkins") or [])
+            asked = kept.get("question")
             if job.get("id") and ran and ran > float(last.get("at") or 0):
-                read, _ = progress(stores.output(home, str(job["id"])))
+                read, rest = progress(stores.output(home, str(job["id"])))
                 if read:
                     last = {**read, "at": int(ran)}
+                    asked, _ = question(rest)
+                    log = (log + [{**last, "at": int(ran)}])[-CHECKINS:]
             found.append({"id": kept["id"], "profile": profile, "title": kept.get("title"), "by": kept.get("by"),
                           "every": kept.get("every"), "job": str(job.get("id") or kept.get("job") or ""),
                           "next": job.get("next_run_at"), "paused": job.get("state") == "paused" or job.get("enabled") is False,
                           "steps": [{"title": s.get("title"), "card": s.get("card"), "who": owner(s, statuses),
-                                     "done": bool(s.get("done")) or (owner(s, statuses) == "agent" and statuses.get(str(s.get("card") or "")) == "done")}
+                                     "done": bool(s.get("done")) or (owner(s, statuses) == "agent" and statuses.get(str(s.get("card") or "")) == "done"),
+                                     **({"at": s["at"]} if s.get("at") and s.get("done") else {})}
                                     for s in kept.get("steps") or []],
                           "progress": last or None,
+                          # The goal's log and its question (1.47.0): check-ins newest last, what they told Redde.
+                          "checkins": log, "notes": kept.get("notes") or [], "question": asked,
                           # Gone quiet (1.36.0): days since anything happened, once the question was asked,
                           # and whether its check-ins were paused for it.
                           "quiet": quiet_days(kept) if kept.get("asked") or kept.get("faded") else 0,

@@ -3,11 +3,14 @@ import XCTest
 /// The chat list's Today strip (2026-11-06): the inbox, briefings and goals as tiles; a tap opens one.
 @MainActor
 final class TodayStripUITests: XCTestCase {
-    private func openDrawer() -> XCUIApplication {
+    /// The demo goal's page as the List it was before the Trail (2026-11-25).
+    private static let goalAsList = ["-listLayouts", "<dict><key>goal:g10k</key><string>list</string></dict>"]
+
+    private func openDrawer(_ more: [String] = []) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-echo.demo", "-echo.demoGoals", "-echo.demoBriefings", "day", "-echo.drawerPage", "today"]
-            + XCUIApplication.straightToChat
+            + more + XCUIApplication.straightToChat
         app.launch()
         // (the chat's own scroll view isn't always one XCTest finds, 2026-11-22: the composer instead)
         XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
@@ -33,7 +36,7 @@ final class TodayStripUITests: XCTestCase {
     /// sense"): theirs a checklist, ticked on the goal's page and the count follows at once; the
     /// Today tile's check ticks off the next one without opening the goal.
     func testTheirStepsAreTickedOnTheGoalAndFromToday() {
-        let app = openDrawer()
+        let app = openDrawer(Self.goalAsList)
         let goal = tile(app, "Run a 10K by March")
         XCTAssertTrue(goal.waitForExistence(timeout: 10), "No goal tile")
         XCTAssertTrue(app.staticTexts["Next: Long run at 8 km"].exists || tile(app, "Long run at 8 km").exists,
@@ -469,8 +472,110 @@ final class TodayStripUITests: XCTestCase {
         }
     }
 
+    /// A goal's page as a trail, its default (2026-11-25, "Build them. Trail first" after the goal
+    /// mockups): the days to its date, what waits on them where the trail has got to, their next
+    /// step ticked on the trail, the finish at the end, and List back from the Layout menu.
+    func testAGoalAsATrail() {
+        let app = openGoal(as: "trail")   // (pinned: a run's own pick of List at its end is kept)
+        XCTAssertTrue(app.staticTexts["days to go"].waitForExistence(timeout: 5), "No days to the goal's date")
+        XCTAssertTrue(app.buttons["goal-trail-waiting"].exists, "Nothing says what waits on them")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Which pace'")).firstMatch.exists, "A blocked step doesn't say why")
+        XCTAssertTrue(app.buttons["Answer"].exists && app.buttons["Go Ahead"].exists, "A blocked step's buttons don't say what they do")
+        XCTAssertFalse(app.staticTexts["Needs You"].exists, "The List's sections are on the trail")
+        shot(app, "goal-trail-top")
+        app.buttons["goal-trail-waiting"].tap()
+        let next = app.buttons["goal-step-5"]   // Long run at 8 km, their next step
+        for _ in 0 ..< 4 where !(next.exists && next.isHittable) { app.swipeUp() }
+        XCTAssertTrue(next.isHittable, "Their next step isn't on the trail")
+        XCTAssertEqual(next.value as? String, "Not done")
+        next.tap()
+        let ticked = NSPredicate(format: "value == 'Done'")
+        XCTAssertEqual(XCTWaiter().wait(for: [expectation(for: ticked, evaluatedWith: next)], timeout: 5), .completed, "Their next step couldn't be ticked")
+        XCTAssertTrue(app.buttons["goal-step-7"].exists, "The finish isn't on the trail")
+        app.swipeUp()
+        shot(app, "goal-trail-bottom")
+        next.tap()   // the tick taken back
+        app.swipeDown(); app.swipeDown()
+        app.buttons["goal-layout"].tap()
+        app.buttons["List"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Needs You"].waitForExistence(timeout: 5), "List didn't come back from the Layout menu")
+        shot(app, "goal-list")
+    }
+
+    /// The goal's page, opened from its tile in the drawer, in one layout.
+    private func openGoal(as layout: String) -> XCUIApplication {
+        let app = openDrawer(["-listLayouts", "<dict><key>goal:g10k</key><string>\(layout)</string></dict>"])
+        let goal = tile(app, "Run a 10K by March")
+        XCTAssertTrue(goal.waitForExistence(timeout: 10), "No goal tile")
+        reach(app, goal)
+        goal.tap()
+        return app
+    }
+
+    func testAGoalAsThisWeek() {
+        let app = openGoal(as: "week")
+        let done = app.buttons["goal-week-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "No I Did It for their next step")
+        XCTAssertTrue(app.staticTexts["Long run at 8 km"].exists, "Their next step isn't large at the top")
+        XCTAssertTrue(app.staticTexts["Three runs this week, the long one at 6 km."].exists, "The last check-in isn't there as a message")
+        XCTAssertTrue(app.staticTexts["Saturday or Sunday for the 8 km long run?"].exists, "The check-in's question isn't there")
+        XCTAssertTrue(app.buttons["Something Else…"].exists, "No way to answer in their own words")
+        shot(app, "goal-week-top")
+        app.buttons["Sunday"].tap()
+        let answered = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'You answered'")).firstMatch
+        XCTAssertTrue(answered.waitForExistence(timeout: 5), "Their answer wasn't taken")
+        XCTAssertFalse(app.buttons["Saturday"].exists, "The question stayed after it was answered")
+        done.tap()
+        XCTAssertTrue(app.staticTexts["Taper week"].waitForExistence(timeout: 5), "I Did It didn't move them to their next step")
+        let plan = app.buttons["goal-whole-plan"]
+        for _ in 0 ..< 4 where !(plan.exists && plan.isHittable) { app.swipeUp() }
+        plan.tap()
+        XCTAssertTrue(app.staticTexts["Pick a 12-week plan"].waitForExistence(timeout: 5), "The whole plan didn't open")
+        shot(app, "goal-week-plan")
+    }
+
+    func testAGoalAsWhoDoesWhat() {
+        let app = openGoal(as: "lanes")
+        let lane = app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'You · '")).firstMatch
+        XCTAssertTrue(lane.waitForExistence(timeout: 5), "No count of their steps")
+        let next = app.buttons["goal-step-5"]
+        XCTAssertTrue(next.exists, "Their next step isn't in their lane")
+        XCTAssertTrue(app.staticTexts["Done \(Date.now.addingTimeInterval(-86_400 * 8).formatted(.dateTime.month(.abbreviated).day()))"].exists,
+                      "A done step doesn't say when")
+        shot(app, "goal-lanes-top")
+        for _ in 0 ..< 4 where !next.isHittable { app.swipeUp() }
+        XCTAssertEqual(next.value as? String, "Not done")
+        next.tap()
+        XCTAssertEqual(XCTWaiter().wait(for: [expectation(for: NSPredicate(format: "value == 'Done'"), evaluatedWith: next)], timeout: 5), .completed,
+                       "Their step couldn't be ticked in its lane")
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Answer"].exists, "What waits on them isn't under the lanes")
+        shot(app, "goal-lanes-bottom")
+    }
+
+    func testAGoalAsACheckInLog() {
+        let app = openGoal(as: "log")
+        XCTAssertTrue(app.staticTexts["Three runs this week, the long one at 6 km."].waitForExistence(timeout: 5), "No last check-in")
+        XCTAssertTrue(app.staticTexts["A 12-week plan to March, three runs a week."].exists || { app.swipeUp(); return app.staticTexts["A 12-week plan to March, three runs a week."].exists }(),
+                      "The older check-ins aren't in the log")
+        app.swipeDown()
+        let waiting = app.buttons["goal-log-waiting"]
+        XCTAssertTrue(waiting.exists, "Nothing says what waits on them")
+        XCTAssertFalse(app.buttons["Go Ahead"].exists, "What waits on them isn't folded")
+        shot(app, "goal-log-top")
+        waiting.tap()
+        XCTAssertTrue(app.buttons["Go Ahead"].waitForExistence(timeout: 5), "What waits on them didn't open")
+        let field = app.textFields["goal-note"].exists ? app.textFields["goal-note"] : app.textViews["goal-note"]
+        XCTAssertTrue(field.exists, "No field to tell the agent how it's going")
+        field.tap()
+        field.typeText("Did 7 km today")
+        app.buttons["goal-note-send"].tap()
+        XCTAssertTrue(app.staticTexts["Did 7 km today"].waitForExistence(timeout: 5), "Their note isn't in the log")
+        shot(app, "goal-log-note")
+    }
+
     func testAGoalTileOpensTheGoal() {
-        let app = openDrawer()
+        let app = openDrawer(Self.goalAsList)
         let goal = tile(app, "Run a 10K by March")
         XCTAssertTrue(goal.waitForExistence(timeout: 5), "No goal tile")
         reach(app, goal)

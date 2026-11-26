@@ -716,9 +716,14 @@ class Routines:
                         # A goal's check-in: its progress kept, and a briefing with the goal's id and progress.
                         found, rest = goals.progress(words) if not failed else (None, words)
                         goal = goals.goal_id(name) or ""
+                        # A choice it asks them to make (1.47.0): buttons on the goal's page; the
+                        # question stays in the briefing as words.
+                        asked, rest = goals.question(rest) if found else (None, rest)
+                        if asked:
+                            rest = f"{rest}\n\n{asked['q']}".strip()
                         if found:
                             # The rest of the report too, as written (a table, a list), for the goal's page.
-                            goals.remember(home, goal, {**found, "details": rest[:goals.DETAILS_LIMIT]} if rest else found)
+                            goals.remember(home, goal, {**found, "details": rest[:goals.DETAILS_LIMIT]} if rest else found, asked=asked)
                         body = rest if failed or not found else "\n".join(
                             line for line in ([found["headline"], f"Next: {found['next']}" if found["next"] else ""] + [rest]) if line)
                         # Told to pause for the quiet (1.36.0): paused now that it has said so.
