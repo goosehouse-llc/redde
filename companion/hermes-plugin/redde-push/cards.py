@@ -1448,6 +1448,23 @@ def _turn_note(home: Path, message, platform: str = "", at: datetime | None = No
     if "[Redde card " not in text and "?" not in text and _DOING.search(text) and _SOON.search(text) \
             and not _ASKS_LIST.search(text) and not _ASKS_FOR.search(text):
         return PLAN_NOTE
+    # A day out today, said in passing ("We're going mini golfing today"): what helps them go in the
+    # reply, and the photos from it afterwards as a card (outings.py, 1.48.0).
+    if "[Redde card " not in text and "?" not in text and not gated(home) and not _ASKS_LIST.search(text) \
+            and not _ASKS_FOR.search(text):
+        from . import outings
+        tz = forecast.zone(preferences(home).get("tz"))
+        found = outings.find(text, (at or datetime.now().astimezone()).astimezone(tz).replace(tzinfo=None) if tz else at)
+        if found:
+            from .calls import caller
+            root = caller(Path(home))[1]
+            try:
+                outings.remember(root, found)
+            except Exception:
+                log.debug("redde-push: keeping an outing failed", exc_info=True)
+            line = (f"Where the person is, it is now {forecast.time_said(None, tz, at).split(': ', 1)[1]} ({tz.key})."
+                    if tz is not None else f"On this server it is now {datetime.now():%A %-d %B %Y, %H:%M}.")
+            return outings.note(TOOL, outings.photos_on(root), line)
     # A card's answer is the go-ahead itself, not a new ask.
     calendar_asked = bool(_ASKS_CALENDAR.search(text)) and not _PUTS_ON_CALENDAR.search(text)
     # "What's the weather tomorrow" is the weather's, unless the calendar is named too.

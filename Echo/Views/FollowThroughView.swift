@@ -33,6 +33,7 @@ struct FollowThrough: Equatable {
     var trips = true
     var arrivals = true
     var habits = true
+    var outings = true
     /// The profile whose .env has Paperless's address and key; nil when none has.
     var paperless: String?
     var items: [Item] = []
@@ -52,6 +53,7 @@ struct FollowThrough: Equatable {
         made.arrivals = switches["arrivals"] ?? true
         made.trips = switches["trips"] ?? true
         made.habits = switches["habits"] ?? true
+        made.outings = switches["outings"] ?? true
         if let found = root["paperless"] as? [String: Any], found["found"] as? Bool == true {
             made.paperless = found["profile"] as? String
         }
@@ -168,6 +170,10 @@ struct FollowThroughView: View {
                     toggle(\.habits, "habits", Text("Usual Buys", comment: "Follow-Through: the habits switch"),
                            Text("What you tick off a shopping list every so often, offered back when it's about due.", comment: "Follow-Through: under the habits switch"),
                            symbol: "cart.badge.plus")
+                    // (plugin 1.48.0: an older one has no such switch, and its answer leaves it on)
+                    toggle(\.outings, "outings", Text("Days Out", comment: "Follow-Through: the outings switch"),
+                           Text("When you say you're off somewhere today, the photos from it afterwards, the best few ready to share. Needs Photos in Phone Tools.", comment: "Follow-Through: under the outings switch"),
+                           symbol: "figure.walk.motion")
                     toggle(\.arrivals, "arrivals", Text("New to Watch", comment: "Follow-Through: the arrivals switch"),
                            Text("A film on your watch list new on Jellyfin, a new season of a series you finished.", comment: "Follow-Through: under the arrivals switch"),
                            symbol: "sparkles.tv")

@@ -3,6 +3,15 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.48.0 (2026-11-26)
+
+- Days out: told in passing of a day out today or tonight ("We're going mini golfing today", "Taking
+  the kids to the zoo this afternoon"), the agent answers with what helps them go, briefly: the
+  place's holiday hours on a holiday, the weather while they're out, somewhere near if they haven't
+  said where. No plan card, reminder or list. Afterwards, at about 5 PM (the next morning for an
+  evening out), Redde offers one card with the photos from it, the best few ready to share, when
+  the phone's Photos tool is on. Follow-Through's Days Out switch turns the card off.
+
 ## 1.47.0 (2026-11-25)
 
 - A goal keeps its log for Redde's goal layouts: its last 12 check-ins (how far along, what each

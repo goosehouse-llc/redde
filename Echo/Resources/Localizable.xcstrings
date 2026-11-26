@@ -3448,6 +3448,113 @@
         }
       }
     },
+    "Days Out" : {
+      "comment" : "Follow-Through: the outings switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udflugter"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausflüge"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salidas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorties"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uscite"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お出かけ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나들이"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utflukter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uitjes"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypady"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passeios"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прогулки"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utflykter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gezmeler"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прогулянки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外出"
+          }
+        }
+      }
+    },
     "days to go" : {
       "comment" : "A goal's trail: beside its count of days to its date, e.g. 118 days to go",
       "localizations" : {
@@ -12757,6 +12864,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "週檢視"
+          }
+        }
+      }
+    },
+    "When you say you're off somewhere today, the photos from it afterwards, the best few ready to share. Needs Photos in Phone Tools." : {
+      "comment" : "Follow-Through: under the outings switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du siger, at du skal ud i dag, billederne fra det bagefter, de bedste klar til at dele. Kræver Fotos under Telefonværktøjer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du sagst, dass du heute unterwegs bist, danach die Fotos davon, die besten bereit zum Teilen. Braucht Fotos in den Telefon-Tools."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando dices que hoy sales a algún sitio, después las fotos, las mejores listas para compartir. Necesita Fotos en Herramientas del teléfono."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand vous dites que vous sortez aujourd’hui, les photos ensuite, les meilleures prêtes à partager. Demande Photos dans Outils du téléphone."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando dici che oggi esci, dopo le foto, le migliori pronte da condividere. Richiede Foto negli Strumenti del telefono."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日出かけると話すと、あとでその写真から良いものを共有できる形で用意します。デバイスツールの写真が必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "오늘 어딘가 간다고 말하면, 나중에 그때 사진 중 가장 좋은 것을 공유하기 좋게 보여 줍니다. 휴대폰 도구의 사진이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du sier at du skal ut i dag, bildene derfra etterpå, de beste klare til å deles. Krever Bilder i Telefonverktøy."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je zegt dat je vandaag ergens heen gaat, daarna de foto’s ervan, de beste klaar om te delen. Vereist Foto’s in Telefoontools."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy powiesz, że dziś gdzieś wychodzisz, potem zdjęcia z wypadu, najlepsze gotowe do udostępnienia. Wymaga Zdjęć w Narzędziach telefonu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando você diz que vai sair hoje, depois as fotos do passeio, as melhores prontas para compartilhar. Requer Fotos em Ferramentas do Telefone."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда вы говорите, что сегодня куда-то идёте, потом — фото оттуда, лучшие, готовые к отправке. Нужны Фото в инструментах телефона."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När du säger att du ska iväg i dag, bilderna därifrån efteråt, de bästa redo att dela. Kräver Bilder i Telefonverktyg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün bir yere gideceğini söylediğinde, sonrasında oradan en iyi fotoğraflar paylaşmaya hazır. Telefon Araçları’nda Fotoğraflar gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коли ви кажете, що сьогодні кудись ідете, потім — фото звідти, найкращі, готові до надсилання. Потрібні Фотографії в інструментах телефона."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当你说今天要出门，之后会给你那次的照片，挑出最好的几张，方便分享。需要在手机工具中开启照片。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當你說今天要出門，之後會給你那次的照片，挑出最好的幾張，方便分享。需要在手機工具中開啟照片。"
           }
         }
       }

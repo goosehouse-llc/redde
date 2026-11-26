@@ -37,6 +37,12 @@ struct FollowThroughTests {
         #expect(shown.items[6].title == "Lease review" && shown.items[6].start == Date(timeIntervalSince1970: 1_795_930_000))
     }
 
+    /// Days Out (plugin 1.48): its switch read like the others'; an older plugin's answer has none, so it shows on.
+    @Test func readsTheDaysOutSwitch() throws {
+        #expect(try #require(FollowThrough.parse(#"redde-push follow {"switches": {"outings": false}}"#)).outings == false)
+        #expect(try #require(FollowThrough.parse(Self.answer)).outings)
+    }
+
     @Test func anOlderPluginsAnswerIsNone() {
         #expect(FollowThrough.parse("redde-push: unknown command follow") == nil)
         #expect(FollowThrough.parse(#"redde-push follow {"switches": {}}"#)?.items == [])

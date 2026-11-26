@@ -593,11 +593,12 @@ class Routines:
                 # Follow-through's cards come due (followthrough.py), Jellyfin's arrivals (arrivals.py).
                 with self.store.rooms_lock("follow") as mine:
                     if mine and self.store.devices:
-                        from . import arrivals, followthrough, habits, paper
+                        from . import arrivals, followthrough, habits, outings, paper
                         paper.look(self.stores.root)
                         followthrough.due(self.stores.root, self._follow_offer, self._inbox_ids)
                         arrivals.look(self.stores.root, self._follow_offer)
                         habits.look(self.stores.root, self._follow_offer)
+                        outings.look(self.stores.root, self._follow_offer)
             except Exception:
                 log.debug("redde-push: follow-through failed", exc_info=True)
             try:

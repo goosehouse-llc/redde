@@ -38,7 +38,7 @@ from . import dates, wire
 log = logging.getLogger("redde_push.followthrough")
 
 FILE = "followthrough.json"
-SWITCHES = ("mail", "orders", "trips", "arrivals", "habits")
+SWITCHES = ("mail", "orders", "trips", "arrivals", "habits", "outings")
 #: Which switch each kind of item is under.
 GROUPS = {"promise": "mail", "waiting": "mail", "owed": "mail", "meeting": "mail", "delivery": "orders",
           "return": "orders", "trial": "orders", "bill": "orders", "expiry": "orders", "trip": "trips",
