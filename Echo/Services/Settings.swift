@@ -300,8 +300,8 @@ final class Settings: ServeEndpoint {
     var todayTileColors: [String: String] {
         didSet { store(todayTileColors, forKey: Keys.todayTileColors) }
     }
-    /// How each watch list is drawn, by the list's id: a `FilmLayout` raw value; a list not in it
-    /// is a Clean List (`filmLayout(forList:)`).
+    /// How each list is drawn, by the list's id: a `FilmLayout` raw value for a watch list, a
+    /// `TodoLayout` one for a to-do list; a list not in it has its kind's default.
     var listLayouts: [String: String] {
         didSet { store(listLayouts, forKey: Keys.listLayouts) }
     }

@@ -87,6 +87,25 @@ class ListsTests(unittest.TestCase):
         self.assertEqual(len(kept["items"]), 2)
         self.assertEqual(len(kept["items"][1]["text"]), lists.TEXT)
 
+    def test_a_to_do_gets_a_help_line(self):
+        """1.46.0 (2026-11-25, the Agent Can Help layout): what the agent could do for a to-do, shown
+        under it in Redde; taken off with '' or by new words."""
+        do(self.home, action="make", title="House To-Dos", items=["Call the dentist", "Fix the bike"])
+        said = do(self.home, action="help", list="House To-Dos", items=["1"], help="  Find their number and hours ")
+        self.assertEqual((said["help"], said["for"]), ("Find their number and hours", ["Call the dentist"]))
+        self.assertEqual(said["items"][0], "1. [ ] Call the dentist (you could: Find their number and hours)")
+        listed = lists.listing(self.home)[0]["items"]
+        self.assertEqual(listed[0]["help"], "Find their number and hours")
+        self.assertNotIn("help", listed[1])
+        self.assertLessEqual(len(do(self.home, action="help", list="House To-Dos", items=["2"], help="x" * 200)["help"]), lists.HELP)
+        do(self.home, action="help", list="House To-Dos", items=["2"], help="")
+        self.assertNotIn("help", lists.listing(self.home)[0]["items"][1])
+        do(self.home, action="edit", list="House To-Dos", items=["1"], title="Call the vet")
+        self.assertNotIn("help", lists.listing(self.home)[0]["items"][0])
+        self.assertIn("error", do(self.home, action="help", list="House To-Dos", items=["Nothing like it"], help="Hm"))
+        listed = json.loads(lists.slash(self.home, ["list"]).removeprefix("redde-push lists "))
+        self.assertEqual(listed["can"], ["help"], "the app hears it can offer help lines")
+
     def test_the_apps_command(self):
         listed = lists.slash(self.home, ["list"])
         self.assertTrue(listed.startswith("redde-push lists "))

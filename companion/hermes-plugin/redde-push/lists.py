@@ -47,7 +47,9 @@ FILE = "lists.json"
 #: At most this many lists, items on one, and characters in a title or an item.
 MOST, ITEMS, TITLE, TEXT = 30, 300, 60, 200
 ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "edit", "style", "plan", "unplan",
-           "delete")
+           "help", "delete")
+#: A to-do's help line at most this long: what the agent could do for it (1.46.0).
+HELP = 80
 PLAN_TAG = "[redde-plan:"
 #: A plan this far ahead at most; the follow-through this long after a daytime plan, or the next
 #: morning at this hour for one from 5 pm.
@@ -144,21 +146,23 @@ def _styled(kept: dict, args: dict) -> list[str]:
 NOTE = (f"[Redde: their lists (to-do, groceries, packing…) live in Redde and show on their phone's Today row: keep them "
         f"with {TOOL} (find it with tool_search if it isn't among your tools). 'show' first when you don't know which "
         "list they mean. Anything with a day or a time goes on with `when` (ISO 8601 with offset), so it shows under "
-        "that day. Not your own todo tool, which is only your plan for this turn, and not reminders unless they ask "
+        "that day. A to-do you could do part of yourself (find a number or hours, look up what's needed, compare, "
+        "book, draft) gets a help line with 'help': a few words of what you'd do, which they tap to have you do it. "
+        "Not your own todo tool, which is only your plan for this turn, and not reminders unless they ask "
         "for a reminder.]")
 
 DESCRIPTION = (
-    "The user's own lists in Redde (to-do lists, groceries, packing, chores…), several by name, each shown as a tile "
-    "on their phone's Today row until deleted. Actions: 'show' (every list, or one: `list`), 'make' (title, items), "
+    "The user's own lists in Redde (to-dos, groceries, packing…), several by name, each a tile on their phone's "
+    "Today row. Actions: 'show' (every list, or one: `list`), 'make' (title, items), "
     "'add' (list, items: texts; give `when` for anything with a day or time, so it shows under that day), "
     "'check' / 'uncheck' / 'remove' (list, items: numbers as 'show' gives them, or "
     "their words), 'clear_done' (list: removes checked items), 'rename' (list, title), 'edit' (list, items: one, "
-    "title: its new words), 'delete' (list). `list` is a "
-    "list's id or its title; with only one list it may be left out. 'make' and 'style' (list) take a look: "
+    "title: its new words), 'help' (list, items, `help`: a few words of what you could do for it; '' clears), "
+    "'delete' (list). `list`: id or title (optional with one list). 'make' and 'style' (list) take a look: "
     "`kind` (watch: films and series, which Redde shows as posters, one title per item; todo, shopping, reading, "
     "packing, gifts, other), an `emoji` and a `color`; left out, they're guessed from the title. 'plan' (list, "
     "items: one item or its text, `when` ISO 8601 with offset, `with` who): Redde reminds them on the day and "
-    "afterwards checks it happened; 'unplan' (list, item) takes the date back off. Not your own todo tool (your plan for this turn) and not reminders.")
+    "afterwards checks it happened; 'unplan' (list, item) takes the date back off. Not your own todo tool, nor reminders.")
 
 PLAN_NOTE = (f"[Redde: if they're planning something for a set time (a film to watch with someone, a book, a dinner, a "
              f"trip), keep it as a plan on one of their lists with {TOOL} 'plan' (item, when, with), not in a note: "
@@ -290,7 +294,8 @@ def _picked(items: list[dict], refs) -> tuple[list[dict], list[str]]:
 def _shown(kept: dict) -> dict:
     items = kept.get("items") or []
     return {"id": kept["id"], "title": kept.get("title"), **look(kept),
-            "items": [f"{n}. [{'x' if i.get('done') else ' '}] {i.get('text')}{_planned(i)}" for n, i in enumerate(items, 1)],
+            "items": [f"{n}. [{'x' if i.get('done') else ' '}] {i.get('text')}{_planned(i)}"
+                      f"{' (you could: ' + i['help'] + ')' if i.get('help') else ''}" for n, i in enumerate(items, 1)],
             "open": sum(1 for i in items if not i.get("done")), "done": sum(1 for i in items if i.get("done"))}
 
 
@@ -419,6 +424,20 @@ def _change(home: Path, args: dict, by: str, now: float | None, touched: list[di
             if "error" in planned:
                 return {**planned, **_shown(kept)}
             said = planned
+        elif action == "help":
+            found, missed = _picked(items, args.get("items"))
+            if not found:
+                return {"error": "Say which items: their numbers or words.", **_shown(kept)}
+            line = _clean(args.get("help"), HELP)
+            for item in found:
+                if line:
+                    item["help"] = line
+                else:
+                    item.pop("help", None)
+            said = {"help": line, "for": [i.get("text") for i in found],
+                    "said": "Redde shows it under each, for them to tap." if line else "Taken off."}
+            if missed:
+                said["not_found"] = missed
         elif action == "unplan":
             unplanned = _unplan(kept, args)
             if "error" in unplanned:
@@ -557,7 +576,7 @@ def _edit(kept: dict, args: dict, at: int) -> dict:
     item, before = found[0], found[0].get("text")
     if words[0] != before:
         item["text"] = words[0]
-        for field in ("poster", "year", "poster_tried", "poster_misses", "poster_tmdb", "poster_again"):
+        for field in ("poster", "year", "poster_tried", "poster_misses", "poster_tmdb", "poster_again", "help"):
             item.pop(field, None)
         if item.get("when"):
             when, now = datetime.fromisoformat(item["when"]), datetime.fromtimestamp(at, timezone.utc)
@@ -616,6 +635,9 @@ def plan_check(kept: dict, item: dict, when: datetime) -> str:
 
 # ---- for the app ---------------------------------------------------------------------------------
 
+#: What the app may offer of these lists beyond their items (1.46.0): help lines.
+CAN = ["help"]
+
 def listing(home: Path) -> list[dict]:
     """Every list, as kept, for the phone's Today row: oldest first (the order they were made). A
     watch list with titles not yet looked up sets their posters looking."""
@@ -624,7 +646,7 @@ def listing(home: Path) -> list[dict]:
         _posters_later(home, k)
     return [{"id": k["id"], "title": k.get("title") or "", "changed": k.get("changed") or k.get("made"), **look(k),
              "items": [{"id": i.get("id"), "text": i.get("text") or "", "done": bool(i.get("done")),
-                        **{f: i[f] for f in ("poster", "year", "when", "with") if i.get(f)}}
+                        **{f: i[f] for f in ("poster", "year", "when", "with", "help") if i.get(f)}}
                        for i in k.get("items") or [] if i.get("id")]}
             for k in kept]
 
@@ -758,7 +780,7 @@ def slash(home: Path, words: list[str]) -> str:
     """`/redde-push lists list`: "redde-push lists <JSON>", every list. `lists do <base64url JSON>`:
     one change, `redde_list`'s arguments (items by id), then the lists as they are now."""
     if words == ["list"]:
-        return wire.reply("lists", {"lists": listing(home)})
+        return wire.reply("lists", {"lists": listing(home), "can": CAN})
     if len(words) == 2 and words[0] == "do":
         try:
             raw = words[1] + "=" * (-len(words[1]) % 4)
@@ -766,7 +788,7 @@ def slash(home: Path, words: list[str]) -> str:
         except (ValueError, UnicodeDecodeError):
             return "redde-push lists: this command is for the Redde app."
         said = change(home, args, by="phone")
-        return wire.reply("lists", {"said": said, "lists": listing(home)})
+        return wire.reply("lists", {"said": said, "lists": listing(home), "can": CAN})
     return "redde-push lists: this command is for the Redde app."
 
 
@@ -815,6 +837,7 @@ def register(ctx, home_of) -> None:
                                             "color": {"type": "string", "enum": list(COLORS)},
                                             "when": {"type": "string"},
                                             "with": {"type": "string"},
+                                            "help": {"type": "string"},
                                             "items": {"type": "array", "items": {"type": "string"},
                                                       "description": "Texts to add, or the items' numbers or words"}},
                              "required": ["action"]}}

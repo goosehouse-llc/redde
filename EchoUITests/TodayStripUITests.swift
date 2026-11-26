@@ -286,6 +286,158 @@ final class TodayStripUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["3 of 8 done"].waitForExistence(timeout: 5), "List didn't bring the Clean List back")
     }
 
+    /// 2026-11-25, "add shelf as well": a watch list as a shelf of large posters to swipe through.
+    func testAWatchListAsAShelf() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.demoLists", "-echo.drawerPage", "today", "-linkPreviews", "YES",
+                               "-listLayouts", "<dict/>"] + XCUIApplication.straightToChat
+        app.launch()
+        XCTAssertTrue(app.composerField.waitForExistence(timeout: 15), "The chat didn't open")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        let films = tile(app, "Christmas Movies")
+        XCTAssertTrue(films.waitForExistence(timeout: 5), "No watch list tile")
+        reach(app, films)
+        films.tap()
+        XCTAssertTrue(app.staticTexts["2 of 8 done"].waitForExistence(timeout: 5), "The list didn't open as a Clean List")
+
+        app.buttons["Change Look"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Change Look"].waitForExistence(timeout: 5), "Change Look didn't open")
+        let layout = app.segmentedControls["list-layout"]
+        if !layout.waitForExistence(timeout: 3) { app.swipeUp() }
+        XCTAssertTrue(layout.waitForExistence(timeout: 3), "No Layout picker for a watch list")
+        layout.buttons["Shelf"].tap()
+        app.navigationBars["Change Look"].buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["6 to watch · 2 watched"].waitForExistence(timeout: 5), "The list isn't drawn as a shelf")
+        sleep(2)
+        let page = XCTAttachment(screenshot: app.screenshot())
+        page.name = "shelf"; page.lifetime = .keepAlways; add(page)
+
+        // Watched: it leaves the shelf, the next comes to the middle.
+        let watched = app.buttons["shelf-watched"]
+        XCTAssertTrue(watched.waitForExistence(timeout: 5), "No Watched button")
+        watched.tap()
+        XCTAssertTrue(app.staticTexts["5 to watch · 3 watched"].waitForExistence(timeout: 5), "Watched didn't count it")
+        // A swipe brings the next poster to the middle.
+        let plan = app.buttons["shelf-plan"]
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.42))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.42)))
+        sleep(1)
+        let swiped = XCTAttachment(screenshot: app.screenshot())
+        swiped.name = "shelf-swiped"; swiped.lifetime = .keepAlways; add(swiped)
+        plan.tap()
+        XCTAssertTrue(app.buttons["date-sheet-save"].waitForExistence(timeout: 5), "Plan a Night didn't open the night")
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["date-sheet-save"].waitForNonExistence(timeout: 5), "The night's sheet didn't close")
+
+        // The watched row, under it.
+        let seeAll = app.buttons["stubs-see-all"]
+        if !seeAll.isHittable { app.swipeUp() }
+        XCTAssertTrue(seeAll.waitForExistence(timeout: 5), "No See All by the watched ones")
+        let row = XCTAttachment(screenshot: app.screenshot())
+        row.name = "shelf-watched-row"; row.lifetime = .keepAlways; add(row)
+
+        // Back to a Clean List.
+        let look = app.buttons["Change Look"].firstMatch
+        for _ in 0 ..< 3 where !look.exists || !look.isHittable { app.swipeDown() }
+        look.tap()
+        XCTAssertTrue(app.navigationBars["Change Look"].waitForExistence(timeout: 5), "Change Look didn't open again")
+        if !layout.waitForExistence(timeout: 3) { app.swipeUp() }
+        layout.buttons["List"].tap()
+        app.navigationBars["Change Look"].buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["3 of 8 done"].waitForExistence(timeout: 5), "List didn't bring the Clean List back")
+    }
+
+    /// 2026-11-25, "build the todo list mockups too": a to-do list in each of its layouts, picked
+    /// in Change Look, then back to By When.
+    func testAToDoListsLayouts() {
+        continueAfterFailure = false
+        let app = openHouse(layouts: "<dict/>")
+        XCTAssertTrue(app.staticTexts["2 of 9 done"].waitForExistence(timeout: 5), "The house list didn't open by when")
+
+        pick(app, "Next Up")
+        let done = app.buttons["next-up-done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "No Next Up card")
+        XCTAssertTrue(app.staticTexts["After That"].exists, "Nothing after the next one")
+        sleep(1)
+        shot(app, "todo-next-up")
+        done.tap()
+        XCTAssertTrue(app.staticTexts["3 of 9 done"].waitForExistence(timeout: 5), "Mark Done didn't check it off")
+        app.buttons["next-up-later"].tap()
+        XCTAssertTrue(app.buttons["Pick a Date…"].waitForExistence(timeout: 5), "Later has no menu")
+        app.buttons["Pick a Date…"].tap()
+        XCTAssertTrue(app.buttons["date-sheet-save"].waitForExistence(timeout: 5), "Pick a Date didn't open the date")
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["date-sheet-save"].waitForNonExistence(timeout: 5), "The date's sheet didn't close")
+
+        pick(app, "Agent Can Help")
+        XCTAssertTrue(app.buttons["help-h3"].waitForExistence(timeout: 5), "No help line on the registration")
+        XCTAssertTrue(app.staticTexts["Just You"].exists, "No Just You")
+        XCTAssertTrue(app.staticTexts["6 left · can help with 3"].exists, "The header doesn't say what it can help with")
+        sleep(1)
+        shot(app, "todo-agent-can-help")
+
+        pick(app, "Week")
+        XCTAssertTrue(app.staticTexts["No Day Yet"].waitForExistence(timeout: 5), "No undated cards on the week")
+        sleep(1)
+        shot(app, "todo-week")
+
+        pick(app, "Notepad")
+        let pad = app.textFields.matching(NSPredicate(format: "placeholderValue == %@", "add something…")).firstMatch
+        if !pad.waitForExistence(timeout: 3) { app.swipeUp() }
+        XCTAssertTrue(pad.waitForExistence(timeout: 5), "No pad to write on")
+        sleep(1)
+        shot(app, "todo-notepad")
+
+        pick(app, "By When")
+        XCTAssertTrue(app.staticTexts["Overdue"].waitForExistence(timeout: 5) || app.staticTexts["Today"].exists, "By When didn't come back")
+    }
+
+    /// A help line tapped: the list goes, and the agent is asked in a new conversation.
+    func testAHelpLineAsksTheAgent() {
+        continueAfterFailure = false
+        let app = openHouse(layouts: "<dict><key>house</key><string>help</string></dict>")
+        let line = app.buttons["help-h2"]
+        XCTAssertTrue(line.waitForExistence(timeout: 8), "No help line on the dentist")
+        line.tap()
+        XCTAssertTrue(line.waitForNonExistence(timeout: 5), "The list didn't close")
+        let asked = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "you offered to help: Find their number and hours")).firstMatch
+        XCTAssertTrue(asked.waitForExistence(timeout: 8), "The agent wasn't asked")
+        shot(app, "todo-help-asked")
+    }
+
+    /// The made-up House To-Dos, open at launch over the chat list (its sheet is the list's, as a
+    /// Lists widget's tap opens it; over a parked list it would be disabled).
+    private func openHouse(layouts: String) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-echo.demo", "-echo.screen", "sessions", "-echo.demoLists", "house", "-linkPreviews", "YES",
+                               "-listLayouts", layouts] + XCUIApplication.straightToChat
+        app.launch()
+        XCTAssertTrue(app.buttons["Change Look"].firstMatch.waitForExistence(timeout: 15), "The house list didn't open")
+        XCTAssertTrue(app.buttons["Change Look"].firstMatch.isEnabled, "The house list opened disabled")
+        return app
+    }
+
+    /// A to-do layout picked in Change Look.
+    private func pick(_ app: XCUIApplication, _ name: String) {
+        let look = app.buttons["Change Look"].firstMatch
+        for _ in 0 ..< 3 where !look.exists || !look.isHittable { app.swipeDown() }
+        look.tap()
+        XCTAssertTrue(app.navigationBars["Change Look"].waitForExistence(timeout: 5), "Change Look didn't open")
+        let option = app.navigationBars["Change Look"].exists ? app.buttons[name].firstMatch : app.buttons[name]
+        for _ in 0 ..< 2 where !option.exists || !option.isHittable { app.swipeUp() }
+        XCTAssertTrue(option.waitForExistence(timeout: 3), "No \(name) in Layout")
+        option.tap()
+        app.navigationBars["Change Look"].buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["Change Look"].waitForNonExistence(timeout: 5), "Change Look didn't close")
+    }
+
+    private func shot(_ app: XCUIApplication, _ name: String) {
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = name; shot.lifetime = .keepAlways; add(shot)
+    }
+
     func testAGoalTileOpensTheGoal() {
         let app = openDrawer()
         let goal = tile(app, "Run a 10K by March")

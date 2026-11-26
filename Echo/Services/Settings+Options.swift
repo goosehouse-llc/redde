@@ -196,10 +196,18 @@ extension Settings {
     }
 
     /// How a watch list is drawn, picked in its Change Look (2026-11-25, trying the Ticket Stubs
-    /// mockup): the Clean List of small posters, or each film a ticket to tear off, with the
-    /// watched ones a pile of used stubs.
+    /// mockup, then "add shelf as well"): the Clean List of small posters, each film a ticket to
+    /// tear off with the watched ones a pile of used stubs, or a shelf of large posters to swipe.
     enum FilmLayout: String, CaseIterable, Sendable {
-        case list, tickets
+        case list, tickets, shelf
+    }
+
+    /// How a to-do list is drawn, picked in its Change Look (2026-11-25, "build the todo list
+    /// mockups too"): By When (the default), Next Up (the next thing large, the rest after it),
+    /// Agent Can Help (what the agent can do part of, apart from what's just theirs), Week (a
+    /// week strip and timeline) or Notepad (a yellow legal pad). Kept with `listLayouts`.
+    enum TodoLayout: String, CaseIterable, Sendable {
+        case byWhen, nextUp, help, week, notepad
     }
 
     /// Settings → Appearance → Today Tiles (asked 2026-11-11: "allow me the option to change the
@@ -249,6 +257,15 @@ extension Settings {
     func setFilmLayout(_ layout: FilmLayout, forList id: String) {
         // The default isn't kept, so a list that goes back to it is as if never changed.
         listLayouts[id] = layout == .list ? nil : layout.rawValue
+    }
+
+    /// How a to-do list is drawn: By When unless Change Look says otherwise.
+    func todoLayout(forList id: String) -> TodoLayout {
+        listLayouts[id].flatMap(TodoLayout.init(rawValue:)) ?? .byWhen
+    }
+
+    func setTodoLayout(_ layout: TodoLayout, forList id: String) {
+        listLayouts[id] = layout == .byWhen ? nil : layout.rawValue
     }
 
     /// The appearance a card is drawn in, nil for the app's.

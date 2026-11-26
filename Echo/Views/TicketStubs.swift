@@ -29,18 +29,44 @@ nonisolated struct TicketPiece: Shape {
     var corner: CGFloat = 16
     var notch: CGFloat = 9
 
+    /// Drawn straight, in lines and arcs: cutting the notches out of a rounded rectangle was a
+    /// path subtraction each time a ticket came on screen (2026-11-25, scrolling smoothness).
     func path(in rect: CGRect) -> Path {
-        let outer = corner, inner: CGFloat = 0
-        let shape = UnevenRoundedRectangle(
-            topLeadingRadius: tear == .leading ? inner : outer, bottomLeadingRadius: tear == .leading ? inner : outer,
-            bottomTrailingRadius: tear == .trailing ? inner : outer, topTrailingRadius: tear == .trailing ? inner : outer,
-            style: .continuous
-        ).path(in: rect)
-        let x = tear == .leading ? rect.minX : rect.maxX
-        var holes = Path()
-        holes.addEllipse(in: CGRect(x: x - notch, y: rect.minY - notch, width: notch * 2, height: notch * 2))
-        holes.addEllipse(in: CGRect(x: x - notch, y: rect.maxY - notch, width: notch * 2, height: notch * 2))
-        return shape.subtracting(holes)
+        let r = min(corner, rect.width / 2, rect.height / 2), n = min(notch, rect.width / 2, rect.height / 2)
+        let (left, right, top, bottom) = (rect.minX, rect.maxX, rect.minY, rect.maxY)
+        var path = Path()
+        if tear == .trailing {
+            path.move(to: CGPoint(x: left + r, y: top))
+            path.addLine(to: CGPoint(x: right - n, y: top))
+            path.addRelativeArc(center: CGPoint(x: right, y: top), radius: n, startAngle: .degrees(180), delta: .degrees(-90))
+            path.addLine(to: CGPoint(x: right, y: bottom - n))
+            path.addRelativeArc(center: CGPoint(x: right, y: bottom), radius: n, startAngle: .degrees(270), delta: .degrees(-90))
+            path.addArc(tangent1End: CGPoint(x: left, y: bottom), tangent2End: CGPoint(x: left, y: top), radius: r)
+            path.addArc(tangent1End: CGPoint(x: left, y: top), tangent2End: CGPoint(x: right, y: top), radius: r)
+        } else {
+            path.move(to: CGPoint(x: left + n, y: top))
+            path.addArc(tangent1End: CGPoint(x: right, y: top), tangent2End: CGPoint(x: right, y: bottom), radius: r)
+            path.addArc(tangent1End: CGPoint(x: right, y: bottom), tangent2End: CGPoint(x: left, y: bottom), radius: r)
+            path.addLine(to: CGPoint(x: left + n, y: bottom))
+            path.addRelativeArc(center: CGPoint(x: left, y: bottom), radius: n, startAngle: .degrees(0), delta: .degrees(-90))
+            path.addLine(to: CGPoint(x: left, y: top + n))
+            path.addRelativeArc(center: CGPoint(x: left, y: top), radius: n, startAngle: .degrees(90), delta: .degrees(-90))
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// A whole ticket's paper, the body and (while it's on) the stub: one shape, so one shadow.
+nonisolated struct TicketPaperShape: Shape {
+    var stub: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = TicketPiece(tear: .trailing).path(in: CGRect(x: rect.minX, y: rect.minY, width: rect.width - stub, height: rect.height))
+        if stub > 0 {
+            path.addPath(TicketPiece(tear: .leading).path(in: CGRect(x: rect.maxX - stub, y: rect.minY, width: stub, height: rect.height)))
+        }
+        return path
     }
 }
 
@@ -66,12 +92,11 @@ struct TicketRow: View {
                 HStack(spacing: 0) {
                     CardPicture(url: item.poster.flatMap(URL.init(string:)), symbol: "film", width: poster, height: height,
                                 fill: true, corner: 0, pixels: 300)
+                        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 16, style: .circular))
                     words
                         .padding(.leading, 14).padding(.trailing, 8).padding(.vertical, 12)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 }
-                .background(TicketPaper.paper)
-                .clipShape(TicketPiece(tear: .trailing))
                 .contentShape(TicketPiece(tear: .trailing))
             }
             .buttonStyle(.plain)
@@ -83,8 +108,13 @@ struct TicketRow: View {
                 .opacity(torn ? 0 : 1)
         }
         .frame(height: height)
-        .compositingGroup()
-        .shadow(color: .black.opacity(0.14), radius: 6, y: 2)
+        // The paper and its shadow under it all, one shape: a shadow on the whole row (poster and
+        // words too, `compositingGroup`) was drawn off screen in every frame it moved.
+        .background {
+            TicketPaperShape(stub: torn ? 0 : stub)
+                .fill(TicketPaper.paper)
+                .shadow(color: .black.opacity(0.14), radius: 6, y: 2)
+        }
         #if os(iOS)
         .contentShape(.contextMenuPreview, .rect(cornerRadius: 16))
         #endif
@@ -148,8 +178,7 @@ struct TicketRow: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(TicketPaper.paper)
-        .clipShape(TicketPiece(tear: .leading))
+        .background(TicketPiece(tear: .leading).fill(TicketPaper.paper))
         .overlay(alignment: .leading) {
             Perforation()
                 .stroke(TicketPaper.perforation, style: StrokeStyle(lineWidth: 2, dash: [5, 4]))

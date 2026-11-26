@@ -68,6 +68,28 @@ extension TodayList.Kind {
     }
 }
 
+extension Settings.TodoLayout {
+    var name: Text {
+        switch self {
+        case .byWhen: Text("By When", comment: "A to-do list's layout: grouped into Overdue, Today, This Week, Later and Anytime")
+        case .nextUp: Text("Next Up", comment: "A to-do list's layout: the next thing to do large, the rest after it")
+        case .help: Text("Agent Can Help", comment: "A to-do list's layout: what the agent can do part of, apart from what's just yours")
+        case .week: Text("Week", comment: "A to-do list's layout: a week strip and a timeline of what's on each day")
+        case .notepad: Text("Notepad", comment: "A to-do list's layout: a yellow legal pad, things crossed off by hand")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .byWhen: "calendar.day.timeline.left"
+        case .nextUp: "arrow.right.circle"
+        case .help: "bolt"
+        case .week: "calendar"
+        case .notepad: "pencil.and.list.clipboard"
+        }
+    }
+}
+
 /// A list's look (2026-11-23): its emoji, its colour and its kind, the same 'style' an agent gives
 /// with `redde_list`. Each pick goes at once.
 struct ListLookSheet: View {
@@ -154,12 +176,33 @@ struct ListLookSheet: View {
                             Text("List", comment: "A watch list's layout: small posters in rows").tag(Settings.FilmLayout.list)
                             Text("Ticket Stubs", comment: "A watch list's layout: each film a ticket to tear off, watched ones a pile of used stubs")
                                 .tag(Settings.FilmLayout.tickets)
+                            Text("Shelf", comment: "A watch list's layout: one large poster at a time, swiped through")
+                                .tag(Settings.FilmLayout.shelf)
                         } label: {
                             Text("Layout", comment: "A list's look: how a watch list is drawn")
                         }
                         .pickerStyle(.segmented)
                         .labelsHidden()
                         .accessibilityIdentifier("list-layout")
+                    } header: {
+                        Text("Layout", comment: "A list's look: how a watch list is drawn")
+                    }
+                }
+
+                // A to-do list in one of five layouts (2026-11-25, "build the todo list mockups too").
+                if shown.groupsByWhen {
+                    Section {
+                        Picker(selection: Binding(get: { settings.todoLayout(forList: shown.id) },
+                                                  set: { settings.setTodoLayout($0, forList: shown.id) })) {
+                            ForEach(Settings.TodoLayout.allCases, id: \.self) { layout in
+                                Label { layout.name } icon: { Image(systemName: layout.symbol) }.tag(layout)
+                            }
+                        } label: {
+                            Text("Layout", comment: "A list's look: how a watch list is drawn")
+                        }
+                        .pickerStyle(.inline)
+                        .labelsHidden()
+                        .accessibilityIdentifier("todo-layout")
                     } header: {
                         Text("Layout", comment: "A list's look: how a watch list is drawn")
                     }

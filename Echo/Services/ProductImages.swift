@@ -33,7 +33,10 @@ final class ProductImages {
     var fetch: @Sendable (URL) async -> Data? = { await ProductImages.download($0) }
 
     init() {
-        cache.countLimit = 60
+        // By their memory, not a count: 60 pictures was fewer than a long film list's posters at
+        // its row's size and its tile's, so scrolling back up fetched and drew them again (2026-11-25).
+        cache.totalCostLimit = 48 << 20
+        cache.countLimit = 500
         #if DEBUG && canImport(UIKit)
         // The demo's products are drawn here, and nothing is fetched (`-echo.demoCards purchase`).
         if DevHooks.has("-echo.demoCards") || DevHooks.has("-echo.demoLists") { fetch = { await ProductImages.demo($0) } }
@@ -53,6 +56,14 @@ final class ProductImages {
 
     private static func key(_ url: URL, _ side: CGFloat) -> String { "\(Int(side))|" + url.absoluteString }
 
+    /// About what a picture takes in memory, drawn.
+    private static func bytes(_ image: UIImage) -> Int {
+        #if canImport(UIKit)
+        if let cg = image.cgImage { return cg.bytesPerRow * cg.height }
+        #endif
+        return Int(image.size.width * image.size.height * 4)
+    }
+
     /// The picture, `side` pixels across at most, fetched once however many cards ask for it; nil
     /// if it can't be had.
     func image(_ url: URL, side: CGFloat = ProductImages.side) async -> UIImage? {
@@ -69,7 +80,7 @@ final class ProductImages {
         let image = await task.value
         loading[key] = nil
         if let image {
-            cache.setObject(image, forKey: key as NSString)
+            cache.setObject(image, forKey: key as NSString, cost: Self.bytes(image))
             failed[url] = nil
         } else {
             failed[url] = now()
@@ -117,7 +128,7 @@ final class ProductImages {
     #if DEBUG && canImport(UIKit)
     /// `-echo.demoCards purchase`: each product drawn as a picture of its own, from its address
     /// (its colour), with no network.
-    nonisolated static func demo(_ url: URL) async -> Data? {
+    @concurrent nonisolated static func demo(_ url: URL) async -> Data? {
         try? await Task.sleep(for: .milliseconds(250))
         // `-echo.demoCards recipe` and `show`: a dish and posters, drawn the same way.
         if url.path.contains("/recipes/") { return demoDish() }

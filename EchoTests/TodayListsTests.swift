@@ -365,5 +365,54 @@ struct TodayListsTests {
         #expect(settings.filmLayout(forList: "old") == .list, "a layout it doesn't know is the default")
         settings.applySynced(Settings.Keys.listLayouts, nil)
         #expect(settings.filmLayout(forList: "films") == .list)
+        settings.setFilmLayout(.shelf, forList: "films")
+        #expect(settings.filmLayout(forList: "films") == .shelf, "2026-11-25: \"add shelf as well\"")
+    }
+
+    /// 2026-11-25, "build the todo list mockups too": a to-do list's layout, By When unless picked,
+    /// kept in the same per-list setting as a watch list's (one list has one kind at a time).
+    @Test func aToDoListsLayoutIsPickedPerList() {
+        let settings = Settings(defaults: UserDefaults(suiteName: "todo-layouts-\(UUID().uuidString)")!)
+        #expect(settings.todoLayout(forList: "house") == .byWhen)
+        for layout in Settings.TodoLayout.allCases {
+            settings.setTodoLayout(layout, forList: "house")
+            #expect(settings.todoLayout(forList: "house") == layout)
+        }
+        #expect(settings.listLayouts == ["house": "notepad"])
+        #expect(settings.filmLayout(forList: "house") == .list, "a to-do layout isn't a film one")
+        settings.setTodoLayout(.byWhen, forList: "house")
+        #expect(settings.listLayouts.isEmpty, "the default isn't kept")
+        settings.setFilmLayout(.tickets, forList: "films")
+        #expect(settings.todoLayout(forList: "films") == .byWhen, "nor a film layout a to-do one")
+    }
+
+    /// 2026-11-25, "make the order of the movies in the list go by date set": a watch list's films
+    /// with a night come first, soonest first, then the rest in the list's own order; other lists
+    /// keep theirs.
+    @Test func filmsGoByTheirNight() {
+        let day = Date(timeIntervalSince1970: 1_800_000_000)
+        let films: [TodayList.Item] = [
+            .init(id: "a", text: "Elf", done: false),
+            .init(id: "b", text: "Heat", done: false, when: day.addingTimeInterval(3 * 86_400)),
+            .init(id: "c", text: "Scrooged", done: true, when: day),
+            .init(id: "d", text: "Die Hard", done: false),
+            .init(id: "e", text: "Home Alone", done: false, when: day.addingTimeInterval(86_400)),
+        ]
+        let watch = TodayList(id: "w", title: "Movies", items: films, kind: .watch)
+        #expect(watch.open.map(\.id) == ["e", "b", "a", "d"])
+        let todo = TodayList(id: "t", title: "To Do", items: films, kind: .todo)
+        #expect(todo.open.map(\.id) == ["a", "b", "d", "e"], "a to-do list's own order is By When's business")
+    }
+
+    /// Plugin 1.46: a to-do's help line, and the answer saying the plugin keeps them.
+    @Test func helpLinesAreReadAndTheirPluginKnown() throws {
+        let answer = #"redde-push lists {"lists": [{"id": "house", "title": "House To-Dos", "items": ["#
+            + #"{"id": "a", "text": "Call the dentist", "done": false, "help": "Find their number and hours"}, "#
+            + #"{"id": "b", "text": "Fix the bike", "done": false, "help": ""}]}], "can": ["help"]}"#
+        let items = try #require(TodayList.parse(answer)).lists[0].items
+        #expect(items[0].help == "Find their number and hours")
+        #expect(items[1].help == nil, "an empty line is none")
+        #expect(TodayList.helps(answer))
+        #expect(!TodayList.helps(Self.answer), "an older plugin's answer has no `can`")
     }
 }

@@ -381,8 +381,16 @@ extension ConversationsList {
         .sheet(isPresented: $addingGoal) { NewGoalSheet().macSheetSize() }
         // A list's tile on the Today row (`TodayStrip`): the list, to check off and add to.
         .sheet(isPresented: Binding(get: { TodayLists.shared.shownID != nil }, set: { if !$0 { TodayLists.shared.shownID = nil } })) {
-            NavigationStack { TodayListView() }
-                .macSheetSize()
+            NavigationStack {
+                // A help line tapped (Agent Can Help): a new conversation with the agent, open.
+                TodayListView(ask: { words in
+                    TodayLists.shared.shownID = nil
+                    if conversation.hasMessages || !conversation.outbox.isEmpty { conversation.reset() }
+                    conversation.send(words)
+                    opened()
+                })
+            }
+            .macSheetSize()
         }
         // The person's lists, when the chat list shows and when Redde comes back to the front.
         .task(id: "\(settings.connectionKey)|\(scenePhase == .active)") {

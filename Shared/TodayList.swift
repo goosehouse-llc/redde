@@ -23,6 +23,8 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
         /// A plan (plugin 1.38): when, and with whom. Redde reminds them on the day and checks after.
         var when: Date? = nil
         var company: String? = nil
+        /// What the agent could do for it (plugin 1.46): "Find their number and hours".
+        var help: String? = nil
 
         /// "Thu, Nov 26, 7:30 PM · with Robin".
         var plan: String? {
@@ -67,7 +69,21 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
     var emoji: String? = nil
     var hue: Hue? = nil
 
-    var open: [Item] { items.filter { !$0.done } }
+    /// What's left. On a watch list the films with a night set come first, soonest first, then the
+    /// rest in the list's own order (asked 2026-11-25: "make the order of the movies in the list go
+    /// by date set"); the page, its tile and the Lists widget all go by it.
+    var open: [Item] {
+        let open = items.filter { !$0.done }
+        guard kind == .watch, open.contains(where: { $0.when != nil }) else { return open }
+        return open.enumerated().sorted { a, b in
+            switch (a.element.when, b.element.when) {
+            case let (x?, y?) where x != y: x < y
+            case (.some, nil): true
+            case (nil, .some): false
+            default: a.offset < b.offset
+            }
+        }.map(\.element)
+    }
     var finished: [Item] { items.filter(\.done) }
 
     /// Where a to-do sits on its list's page (the By When layout, picked 2026-11-23).

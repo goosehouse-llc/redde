@@ -24,6 +24,11 @@ struct TodayListView: View {
     @State private var editing: TodayList.Item?
     @State private var settings = Settings.shared
     @State private var stubsOpen = false
+    /// The Week layout's day picked on its strip: only that day's to-dos.
+    @State private var weekDay: Date?
+    /// Sends words to the agent in a new conversation and opens it (the Agent Can Help layout's
+    /// help lines); nil where that can't be done from here.
+    var ask: ((String) -> Void)? = nil
     @FocusState private var typing: Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
@@ -43,6 +48,16 @@ struct TodayListView: View {
     /// A watch list drawn as tickets (its Change Look's Layout).
     private func tickets(_ list: TodayList) -> Bool {
         list.kind == .watch && settings.filmLayout(forList: list.id) == .tickets
+    }
+
+    /// A watch list drawn as a shelf of large posters.
+    private func shelf(_ list: TodayList) -> Bool {
+        list.kind == .watch && settings.filmLayout(forList: list.id) == .shelf
+    }
+
+    /// A to-do list's layout; nil for a list of another kind.
+    private func todoLayout(_ list: TodayList) -> Settings.TodoLayout? {
+        list.groupsByWhen ? settings.todoLayout(forList: list.id) : nil
     }
 
     /// The marks: the list's colour, else the checklists' "done" green.
@@ -76,10 +91,14 @@ struct TodayListView: View {
 
             openItems(list)
 
-            if !list.finished.isEmpty, tickets(list) {
+            if !list.finished.isEmpty, tickets(list) || shelf(list) {
                 Section {
                     if stubsOpen {
                         ForEach(list.finished) { row($0, in: list) }
+                    } else if shelf(list) {
+                        WatchedRow(items: list.finished)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets())
                     } else {
                         StubPile(items: list.finished)
                             .listRowBackground(Color.clear)
@@ -88,7 +107,7 @@ struct TodayListView: View {
                 } header: {
                     stubsHeader(list)
                 }
-            } else if !list.finished.isEmpty {
+            } else if !list.finished.isEmpty, todoLayout(list) != .notepad {   // (the pad keeps them, crossed off)
                 Section {
                     if !doneFolded {
                         ForEach(list.finished) { row($0, in: list) }
@@ -167,6 +186,25 @@ struct TodayListView: View {
                 ForEach(list.open) { ticketRow($0, in: list) }
             }
             Section { addRow(list) }
+        } else if shelf(list) {
+            Section {
+                if list.open.isEmpty, !list.items.isEmpty { allDone }
+                if !list.open.isEmpty {
+                    FilmShelf(items: list.open, mark: mark, plan: { dating = $0 }, watched: { lists.toggle($0, in: list) }) { item in
+                        ListItemActions(item: item, list: list, tickets: true, editing: $editing, dating: $dating)
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 8, trailing: 0))
+                }
+            }
+            Section { addRow(list) }
+        } else if let layout = todoLayout(list), layout != .byWhen {
+            switch layout {
+            case .nextUp: nextUp(list)
+            case .help: helpItems(list)
+            case .week: weekItems(list)
+            default: notepad(list)
+            }
         } else if groups.contains(where: { $0.when != .anytime }) {
             ForEach(groups) { group in
                 Section {
@@ -228,6 +266,18 @@ struct TodayListView: View {
                         if total > 0, done == total {
                             Text("All done", comment: "Today strip: a to-do list with every item checked off")
                                 .foregroundStyle(mark)
+                        } else if shelf(list) {
+                            // "3 to watch · 5 watched".
+                            Text(verbatim: [String(localized: "\(total - done) to watch", comment: "Today strip: how many films or series on a watch list aren't watched yet"),
+                                            String(localized: "\(done) watched", comment: "Shelf: under a watch list's name, after the films to watch: how many are watched")]
+                                .joined(separator: " · "))
+                                .foregroundStyle(.secondary)
+                        } else if todoLayout(list) == .help {
+                            // "6 left · can help with 3".
+                            Text(verbatim: [String(localized: "\(total - done) left", comment: "Agent Can Help: under a to-do list's name, how many to-dos are still to do"),
+                                            String(localized: "can help with \(list.open.filter { $0.help != nil }.count)", comment: "Agent Can Help: under a to-do list's name, after the to-dos left: how many the agent could do part of")]
+                                .joined(separator: " · "))
+                                .foregroundStyle(.secondary)
                         } else if tickets(list) {
                             // "3 tickets left · 5 used".
                             Text(verbatim: [String(localized: "\(total - done) tickets left", comment: "Ticket Stubs: under a watch list's name, how many films aren't watched yet"),
@@ -249,7 +299,7 @@ struct TodayListView: View {
                         .accessibilityHidden(true)
                 }
             }
-            if total > 0, list.kind == .watch && !tickets(list) || list.groupsByWhen {
+            if total > 0, list.kind == .watch && settings.filmLayout(forList: list.id) == .list || list.groupsByWhen {
                 ThinBar(done: done, total: total, mark: mark)
                     .accessibilityHidden(true)
             }
@@ -281,7 +331,7 @@ struct TodayListView: View {
                     DatedRow(item: item, group: group, mark: mark)
                 } else {
                     HStack(spacing: 14) {
-                        Tick(on: item.done, mark: mark)
+                        ListTick(on: item.done, mark: mark)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.text)
                                 .chatFont(.body)
@@ -303,14 +353,14 @@ struct TodayListView: View {
         }
         .buttonStyle(.plain)
         .sensoryFeedback(trigger: item.done) { _, now in now ? .impact(weight: .light) : .selection }
-        .modifier(ItemActions(item: item, list: list, tickets: tickets(list), editing: $editing, dating: $dating))
+        .modifier(ListItemActions(item: item, list: list, tickets: tickets(list), editing: $editing, dating: $dating))
     }
 
     /// A film still to watch on a list drawn as tickets: a tap plans its night, its stub's tick
     /// tears it off.
     private func ticketRow(_ item: TodayList.Item, in list: TodayList) -> some View {
         TicketRow(item: item, mark: mark, plan: { dating = item }, tear: { lists.toggle(item, in: list) })
-            .modifier(ItemActions(item: item, list: list, tickets: true, editing: $editing, dating: $dating))
+            .modifier(ListItemActions(item: item, list: list, tickets: true, editing: $editing, dating: $dating))
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
@@ -319,12 +369,14 @@ struct TodayListView: View {
 
 /// What every item has, whatever its row looks like: swipe or hold to remove it, hold to change
 /// its words (a film's pages too, and a date where the list keeps them), and the same for VoiceOver.
-private struct ItemActions: ViewModifier {
+struct ListItemActions: ViewModifier {
     let item: TodayList.Item
     let list: TodayList
     let tickets: Bool
     @Binding var editing: TodayList.Item?
     @Binding var dating: TodayList.Item?
+    /// The row checks it off when tapped (a card with buttons of its own doesn't).
+    var toggles = true
     @State private var lists = TodayLists.shared
     @Environment(\.openURL) private var openURL
 
@@ -373,12 +425,13 @@ private struct ItemActions: ViewModifier {
                 Label { Text("Remove", comment: "A to-do list: take one item off it") } icon: { Image(systemName: "trash") }
             }
         }
-        .accessibilityAddTraits(.isToggle)
-        .accessibilityValue(!item.done ? Text("Not done")
+        .accessibilityAddTraits(toggles ? .isToggle : [])
+        .accessibilityValue(!toggles ? Text(verbatim: "") : !item.done ? Text("Not done")
                             : list.kind == .watch ? Text("Watched", comment: "A watch list: the stamp on a film or series already seen")
                             : Text("Done"))
-        .accessibilityHint(item.done ? Text("Puts it back on the list", comment: "VoiceOver hint: a checked-off to-do item")
-                                     : Text("Checks it off", comment: "VoiceOver hint: a to-do item"))
+        .accessibilityHint(!toggles ? Text(verbatim: "")
+                           : item.done ? Text("Puts it back on the list", comment: "VoiceOver hint: a checked-off to-do item")
+                                       : Text("Checks it off", comment: "VoiceOver hint: a to-do item"))
         .accessibilityAction(named: Text("Edit")) { editing = item }
         .accessibilityAction(named: Text("Remove", comment: "A to-do list: take one item off it")) { lists.remove([item], from: list) }
     }
@@ -439,10 +492,15 @@ extension TodayListView {
         .textCase(nil)
     }
 
-    /// "Used Stubs" over the pile, See All to have them as rows (to put one back), and Clear Done.
+    /// "Used Stubs" over the pile (a shelf's "Watched" over its row), See All to have them as rows
+    /// (to put one back), and Clear Done.
     private func stubsHeader(_ list: TodayList) -> some View {
         HStack(spacing: 12) {
-            Text("Used Stubs", comment: "Ticket Stubs: the heading over the films already watched, shown as torn-off stubs")
+            if shelf(list) {
+                Text("Watched", comment: "A watch list: the stamp on a film or series already seen")
+            } else {
+                Text("Used Stubs", comment: "Ticket Stubs: the heading over the films already watched, shown as torn-off stubs")
+            }
             Spacer()
             Button { stubsOpen.toggle() } label: {
                 if stubsOpen {
@@ -497,6 +555,243 @@ extension TodayListView {
         lists.add(text, to: list)
         adding = ""
         typing = true
+    }
+}
+
+/// An open to-do and the group it's in by when (its row's day badge goes by it).
+private struct Placed: Identifiable {
+    let when: TodayList.When
+    let item: TodayList.Item
+    var id: String { item.id }
+
+    static func all(_ list: TodayList) -> [Placed] {
+        list.openByWhen().flatMap { group in group.items.map { Placed(when: group.when, item: $0) } }
+    }
+}
+
+/// A to-do list's other layouts (`Settings.TodoLayout`; the pieces are in TodoLayouts.swift).
+extension TodayListView {
+    /// Next Up: the soonest to-do large, Mark Done or Later on it, then the rest.
+    @ViewBuilder
+    fileprivate func nextUp(_ list: TodayList) -> some View {
+        let order = Placed.all(list)
+        if let first = order.first {
+            Section {
+                NextUpCard(item: first.item, mark: mark, done: { lists.toggle(first.item, in: list) },
+                           tomorrow: { if let day = Self.tomorrow(for: first.item) { lists.setDate(day, for: first.item, in: list) } },
+                           pick: { dating = first.item })
+                    .modifier(ListItemActions(item: first.item, list: list, tickets: false, editing: $editing, dating: $dating, toggles: false))
+                    .id(first.item.id)
+                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .scale(scale: 0.9).combined(with: .opacity)))
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+            }
+            Section {
+                ForEach(order.dropFirst()) { row($0.item, in: list, group: $0.when) }
+                addRow(list)
+            } header: {
+                if order.count > 1 {
+                    Text("After That", comment: "Next Up: the heading over the to-dos after the next one")
+                        .chatFont(.title3, weight: .bold)
+                        .foregroundStyle(.primary)
+                        .textCase(nil)
+                }
+            }
+        } else {
+            Section {
+                if !list.items.isEmpty { allDone }
+                addRow(list)
+            }
+        }
+    }
+
+    /// Later on Next Up: tomorrow, at its own time or nine.
+    fileprivate static func tomorrow(for item: TodayList.Item, now: Date = .now) -> Date? {
+        let calendar = Calendar.current
+        guard let day = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) else { return nil }
+        let time = item.when.map { calendar.dateComponents([.hour, .minute], from: $0) }
+        return calendar.date(bySettingHour: time?.hour ?? 9, minute: time?.minute ?? 0, second: 0, of: day)
+    }
+
+    /// Agent Can Help: the to-dos the agent can do part of, each with what it would do, a tap
+    /// away; then the ones that are just yours.
+    @ViewBuilder
+    fileprivate func helpItems(_ list: TodayList) -> some View {
+        let order = Placed.all(list)
+        let helped = order.filter { $0.item.help != nil }, yours = order.filter { $0.item.help == nil }
+        Section {
+            ForEach(helped) { placed in
+                let item = placed.item
+                HelpCard(item: item, mark: mark, toggle: { lists.toggle(item, in: list) },
+                         ask: ask.map { ask in { ask(Self.helpWords(item, in: list)) } })
+                    .modifier(ListItemActions(item: item, list: list, tickets: false, editing: $editing, dating: $dating, toggles: false))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0))
+            }
+            if !lists.helps {
+                Text("Help lines need the Redde plugin 1.46 or later on your Hermes.", comment: "Agent Can Help: under its heading when the server's plugin is too old for it")
+                    .chatFont(.footnote)
+                    .foregroundStyle(.secondary)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+            } else if let ask, !order.isEmpty {
+                Button { ask(Self.lookOverWords(list)) } label: {
+                    Label {
+                        Text("Ask \(settings.headerTitle) What It Can Help With", comment: "Agent Can Help: has the agent go over the list and say what it could do (%@ is the agent's name)")
+                    } icon: { Image(systemName: "sparkles") }
+                        .chatFont(.subheadline, weight: .semibold)
+                        .foregroundStyle(CardInk.readable(mark, drawnIn: scheme))
+                        .frame(maxWidth: .infinity, minHeight: 46)
+                        .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(CardInk.readable(mark, drawnIn: scheme).opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])) }
+                        .contentShape(.rect(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("help-look-over")
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0))
+            }
+        } header: {
+            Label { Text("Agent Can Help", comment: "A to-do list's layout: what the agent can do part of, apart from what's just yours") } icon: { Image(systemName: "bolt.fill") }
+                .chatFont(.title3, weight: .bold)
+                .foregroundStyle(CardInk.readable(mark, drawnIn: scheme))
+                .textCase(nil)
+        }
+        Section {
+            if order.isEmpty, !list.items.isEmpty { allDone }
+            ForEach(yours) { row($0.item, in: list, group: $0.when) }
+            addRow(list)
+        } header: {
+            if !yours.isEmpty {
+                Text("Just You", comment: "Agent Can Help: the heading over the to-dos only the person can do")
+                    .chatFont(.title3, weight: .bold)
+                    .foregroundStyle(.primary)
+                    .textCase(nil)
+            }
+        }
+    }
+
+    /// What a tap on a help line says to the agent.
+    fileprivate static func helpWords(_ item: TodayList.Item, in list: TodayList) -> String {
+        String(localized: "“\(item.text)” is on my \(list.title) list, and you offered to help: \(item.help ?? ""). Please go ahead.",
+               comment: "Agent Can Help: sent to the agent when a to-do's help line is tapped (the to-do, the list's name, the help line)")
+    }
+
+    /// What Ask … What It Can Help With says to the agent.
+    fileprivate static func lookOverWords(_ list: TodayList) -> String {
+        String(localized: "Please look over my \(list.title) list. Give each to-do you could do part of yourself a help line (redde_list 'help'), and say which you took on.",
+               comment: "Agent Can Help: sent to the agent to go over a to-do list; keep redde_list 'help' as it is")
+    }
+
+    /// Week: this week's strip, a timeline of what has a day, and the to-dos with none.
+    @ViewBuilder
+    fileprivate func weekItems(_ list: TodayList) -> some View {
+        let calendar = Calendar.current
+        let dated = list.open.filter { $0.when != nil }.sorted { ($0.when ?? .distantFuture) < ($1.when ?? .distantFuture) }
+        let shown = weekDay.map { day in dated.filter { $0.when.map { calendar.isDate($0, inSameDayAs: day) } ?? false } } ?? dated
+        let loose = list.open.filter { $0.when == nil }
+        Section {
+            TodoWeekStrip(days: Self.weekDays(), busy: Set(dated.compactMap { $0.when.map(calendar.startOfDay) }), picked: $weekDay, mark: mark)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
+        }
+        Section {
+            if list.open.isEmpty, !list.items.isEmpty { allDone }
+            if shown.isEmpty, let day = weekDay {
+                Text("Nothing on \(day.formatted(.dateTime.weekday(.wide)))", comment: "Week: a day picked on the strip with no to-dos (%@ is the day)")
+                    .chatFont(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .listRowBackground(Color.clear)
+            }
+            ForEach(Array(shown.enumerated()), id: \.element.id) { n, item in
+                TimelineRow(item: item, mark: mark, first: n == 0, last: n == shown.count - 1, toggle: { lists.toggle(item, in: list) })
+                    .modifier(ListItemActions(item: item, list: list, tickets: false, editing: $editing, dating: $dating))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 0))
+            }
+        } header: {
+            if !shown.isEmpty {
+                Group {
+                    if let weekDay {
+                        Text(weekDay, format: .dateTime.weekday(.wide).month(.wide).day())
+                    } else {
+                        Text("Coming Up", comment: "Agent Activity's first tab: what the agents will do on their own")
+                    }
+                }
+                .chatFont(.title3, weight: .bold)
+                .foregroundStyle(.primary)
+                .textCase(nil)
+            }
+        }
+        if !loose.isEmpty, weekDay == nil {
+            Section {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    ForEach(loose) { item in
+                        LooseCard(item: item, mark: mark, plan: { dating = item }, toggle: { lists.toggle(item, in: list) })
+                            .modifier(ListItemActions(item: item, list: list, tickets: false, editing: $editing, dating: $dating, toggles: false))
+                    }
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
+            } header: {
+                Text("No Day Yet", comment: "Week: the heading over the to-dos with no day; a tap on one gives it a day")
+                    .chatFont(.title3, weight: .bold)
+                    .foregroundStyle(.primary)
+                    .textCase(nil)
+            }
+        }
+        Section { addRow(list) }
+    }
+
+    /// The seven days of this calendar week, each at its start.
+    fileprivate static func weekDays(now: Date = .now) -> [Date] {
+        let calendar = Calendar.current
+        let start = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? calendar.startOfDay(for: now)
+        return (0 ..< 7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
+    }
+
+    /// Notepad: the list written on a yellow pad, in its own order, things crossed off where they are.
+    fileprivate func notepad(_ list: TodayList) -> some View {
+        Section {
+            PadBinding()
+                .listRowBackground(PadPaper.binding)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+            ForEach(list.items) { item in
+                Button { lists.toggle(item, in: list) } label: { PadRow(item: item).contentShape(.rect) }
+                    .buttonStyle(.plain)
+                    .sensoryFeedback(trigger: item.done) { _, now in now ? .impact(weight: .light) : .selection }
+                    .modifier(ListItemActions(item: item, list: list, tickets: false, editing: $editing, dating: $dating))
+                    .listRowBackground(PadRowBackground())
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparatorTint(PadPaper.rule)
+                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+            }
+            HStack(spacing: 0) {
+                Image(systemName: "plus")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(PadPaper.faded)
+                    .frame(width: PadPaper.marginX)
+                    .accessibilityHidden(true)
+                TextField(text: $adding, prompt: Text("add something…", comment: "Notepad: the line at the bottom of the pad to write a new to-do on").foregroundStyle(PadPaper.faded)) {
+                    Text("Add an item", comment: "A to-do list: the field to type a new item in")
+                }
+                .font(PadPaper.hand(21))
+                .foregroundStyle(PadPaper.ink)
+                .tint(PadPaper.red)
+                .focused($typing)
+                .submitLabel(.done)
+                .onSubmit { addTyped(to: list) }
+                .padding(.leading, 14)
+            }
+            .frame(minHeight: 54)
+            .contentShape(.rect)
+            .onTapGesture { typing = true }
+            .listRowBackground(PadRowBackground())
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+        }
     }
 }
 
@@ -715,7 +1010,7 @@ private struct DatedRow: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Tick(on: item.done, mark: mark)
+            ListTick(on: item.done, mark: mark)
         }
         .padding(.vertical, 3)
         .frame(minHeight: 44)
@@ -811,10 +1106,14 @@ private struct FilmRow: View {
     var body: some View {
         let width = (item.done ? 30 : 38) * min(scale, 1.5)
         HStack(spacing: 12) {
-            CardPicture(url: item.poster.flatMap(URL.init(string:)), symbol: "film", width: width, height: width * 1.48,
-                        fill: true, corner: 6, pixels: 180)
-                .saturation(item.done ? 0 : 1)
-                .opacity(item.done ? 0.7 : 1)
+            let picture = CardPicture(url: item.poster.flatMap(URL.init(string:)), symbol: "film", width: width, height: width * 1.48,
+                                      fill: true, corner: 6, pixels: 180)
+            // Greyed only once watched: a saturation filter, even at 1, was one more pass per row.
+            if item.done {
+                picture.saturation(0).opacity(0.7)
+            } else {
+                picture
+            }
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name)
                     .chatFont(item.done ? .subheadline : .body, weight: .semibold)
@@ -834,7 +1133,7 @@ private struct FilmRow: View {
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
-            Tick(on: item.done, mark: mark)
+            ListTick(on: item.done, mark: mark)
         }
         .padding(.vertical, 1)
         .frame(minHeight: 44)
@@ -885,7 +1184,7 @@ private struct ListBurst: View {
 }
 
 /// An item's circle on the page: open, or filled green with a tick.
-private struct Tick: View {
+struct ListTick: View {
     var on: Bool
     var mark: Color
     @Environment(\.colorScheme) private var scheme

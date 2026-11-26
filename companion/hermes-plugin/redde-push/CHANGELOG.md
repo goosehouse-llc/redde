@@ -3,6 +3,13 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.46.0 (2026-11-25)
+
+- A to-do can carry a help line: a few words of what the agent could do for it ("Find their number
+  and hours"). The agent gives one with `redde_list` 'help' (list, items, help) when it adds or
+  sees a to-do it could do part of, and Redde's Agent Can Help layout shows it under the to-do, for
+  a tap to have the agent do it. New words for an item take its help line off.
+
 ## 1.45.0 (2026-11-24)
 
 - Something with a day or a time put on a list (a bill due, a sale starting, an appointment) goes

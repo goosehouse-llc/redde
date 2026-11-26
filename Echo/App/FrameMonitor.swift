@@ -146,15 +146,21 @@ final class FrameMonitor: NSObject {
     private var scrolling: (view: UIScrollView, start: CFTimeInterval, seconds: Double, from: CGFloat, reach: CGFloat)?
     private var during: (late: Int, lateMS: Double, cpu: Double, began: Date)?
 
-    /// Scrolls the tallest scroll view on screen up and back by itself (`-echo.autoScroll`).
+    /// Scrolls the tallest scroll view on screen up and back by itself (`-echo.autoScroll`); with a
+    /// sheet up, the sheet's (a list's page over the chat, 2026-11-25).
     func autoScroll(for seconds: Double) {
         let windows = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }
         func scrollViews(in view: UIView) -> [UIScrollView] {
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrollViews)
         }
-        guard let view = windows.flatMap({ scrollViews(in: $0) })
-            .filter({ $0.window != nil && !$0.isHidden && $0.bounds.height > 300 })
-            .max(by: { $0.contentSize.height < $1.contentSize.height }) else {
+        func front(_ controller: UIViewController?) -> UIViewController? {
+            controller?.presentedViewController.flatMap(front) ?? controller
+        }
+        let sheets = windows.compactMap { window in front(window.rootViewController).flatMap { $0 === window.rootViewController ? nil : $0.view } }
+        let tall = { (views: [UIScrollView]) in
+            views.filter { $0.window != nil && !$0.isHidden && $0.bounds.height > 300 }.max(by: { $0.contentSize.height < $1.contentSize.height })
+        }
+        guard let view = tall(sheets.flatMap(scrollViews)) ?? tall(windows.flatMap { scrollViews(in: $0) }) else {
             log.notice("autoscroll: no scroll view"); return
         }
         // Away from whichever end it is at, and back.

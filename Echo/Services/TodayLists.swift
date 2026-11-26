@@ -13,13 +13,19 @@ extension TodayList {
                 let poster = i["poster"]?.string.flatMap { ReplyCards.https(.string($0)) ?? URL(string: $0).flatMap(ReplyCards.ownNetwork)?.absoluteString }
                 return Item(id: id, text: i["text"]?.string ?? "", done: i["done"]?.bool ?? false, poster: poster,
                             year: i["year"]?.number.flatMap(\.nearestInt), when: i["when"]?.string.flatMap(planDate),
-                            company: i["with"]?.string.flatMap { $0.isEmpty ? nil : String($0.prefix(60)) })
+                            company: i["with"]?.string.flatMap { $0.isEmpty ? nil : String($0.prefix(60)) },
+                            help: i["help"]?.string.flatMap { $0.isEmpty ? nil : String($0.prefix(80)) })
             }
             let emoji = l["emoji"]?.string.flatMap { $0.count == 1 && $0.unicodeScalars.contains { $0.properties.isEmoji && $0.value > 0x238C } ? $0 : nil }
             return TodayList(id: id, title: l["title"]?.string ?? "", items: items, kind: l["kind"]?.string.flatMap(Kind.init(rawValue:)),
                              emoji: emoji, hue: l["color"]?.string.flatMap(Hue.init(rawValue:)))
         }
         return (lists, json["said"]?["error"]?.string)
+    }
+
+    /// The plugin keeps help lines (1.46): its lists answer says so.
+    static func helps(_ output: String) -> Bool {
+        PluginReply.json(output, "lists")?["can"]?.array?.contains { $0.string == "help" } ?? false
     }
 
     /// A plan's time as the plugin keeps it: "2026-11-26T19:30-05:00", seconds or not.
@@ -68,6 +74,8 @@ final class TodayLists {
     /// The plugin answered for lists on this server (1.20 or later, over the Dashboard): what
     /// Make It a List and Add to a List wait for, so neither is offered where it can't work.
     private(set) var available = false
+    /// The plugin keeps a to-do's help line (1.46): what the Agent Can Help layout asks the agent for.
+    private(set) var helps = false
     /// The list open in its sheet.
     var shownID: String?
     /// The last change that didn't reach the Hermes, said in the list's sheet.
@@ -99,7 +107,12 @@ final class TodayLists {
         if Self.demo {
             lists = Self.demoLists
             if DevHooks.value("-echo.demoLists") == "house" { lists.append(Self.demoDatedList) }
+            // `-echo.demoFilms N`: N more made-up films on the watch list, to measure a long one scrolling.
+            if let more = DevHooks.value("-echo.demoFilms").flatMap(Int.init), let at = lists.firstIndex(where: { $0.id == "films" }) {
+                lists[at].items += Self.demoFilms(more)
+            }
             available = true
+            helps = true
             // `-echo.demoLists films`: the watch list open at launch.
             if let open = DevHooks.value("-echo.demoLists"), lists.contains(where: { $0.id == open }) { shownID = open }
             return
@@ -144,6 +157,7 @@ final class TodayLists {
         guard await reachable(), let output = try? await plugin("lists list") else { return }
         guard let parsed = TodayList.parse(output) else { available = false; return }   // a plugin older than 1.20
         available = true
+        helps = TodayList.helps(output)
         // (A change sent meanwhile is newer than this answer: its own answer will say the lists.)
         guard sending == nil else { return }
         take(parsed.lists)
@@ -481,6 +495,19 @@ final class TodayLists {
     ]
 
     /// `-echo.demoLists house`: a made-up to-do list with something in every By When group.
+    /// Made-up films with made-up posters, every fifth with a night set (`-echo.demoFilms`).
+    static func demoFilms(_ count: Int) -> [TodayList.Item] {
+        let words = ["Paper Moons", "Northbound", "The Lantern Keeper", "The Quiet Floor", "Snow on Maple Street", "Hollow Pines",
+                     "Salt and Cedar", "Midnight Orchard", "Glass Harbor", "The Long Thaw", "Copper Sky", "Winter Station"]
+        return (0 ..< count).map { n in
+            let title = words[n % words.count] + (n < words.count ? "" : " \(n / words.count + 1)")
+            return .init(id: "fx\(n)", text: title, done: n % 7 == 6,
+                         poster: "https://demo.example/posters/\(title.lowercased().filter { $0.isLetter || $0 == " " }.replacingOccurrences(of: " ", with: "-")).jpg",
+                         year: 1950 + (n * 7) % 74,
+                         when: n % 5 == 2 ? Calendar.current.date(byAdding: .day, value: 2 + n % 20, to: Calendar.current.startOfDay(for: .now))?.addingTimeInterval(20 * 3600) : nil)
+        }
+    }
+
     static var demoDatedList: TodayList {
         let calendar = Calendar.current
         func day(_ offset: Int, _ hour: Int) -> Date? {
@@ -489,12 +516,12 @@ final class TodayLists {
         }
         return TodayList(id: "house", title: "House To-Dos", items: [
             .init(id: "h1", text: "Pay the water bill", done: false, when: day(-1, 10)),
-            .init(id: "h2", text: "Call the dentist", done: false, when: day(0, 14)),
-            .init(id: "h3", text: "Renew the car registration", done: false, when: day(4, 9)),
+            .init(id: "h2", text: "Call the dentist", done: false, when: day(0, 14), help: "Find their number and hours"),
+            .init(id: "h3", text: "Renew the car registration", done: false, when: day(4, 9), help: "Look up what you need to renew"),
             .init(id: "h4", text: "Return the library books", done: false, when: day(5, 11), company: "Robin"),
             .init(id: "h5", text: "Book the holiday flights", done: false, when: day(14, 18)),
             .init(id: "h6", text: "Fix the bike's back brake", done: false),
-            .init(id: "h7", text: "Order a new air filter", done: false),
+            .init(id: "h7", text: "Order a new air filter", done: false, help: "Compare the right size and prices"),
             .init(id: "h8", text: "Clean the gutters", done: true),
             .init(id: "h9", text: "Send Ana the signed copy", done: true)], kind: .todo, emoji: "🏠", hue: .green)
     }
