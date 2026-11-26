@@ -438,6 +438,37 @@ final class TodayStripUITests: XCTestCase {
         shot.name = name; shot.lifetime = .keepAlways; add(shot)
     }
 
+    /// 2026-11-25: "In the movies list when I change the icon for the list the app crashes" — a new
+    /// emoji picked in Change Look on a green list (the colour of one with none picked), in each of a
+    /// watch list's layouts, and the app still there. The crash was the green's light/dark closure,
+    /// main-actor by default, resolved on SwiftUI's async render thread as the pick animated.
+    func testAWatchListsIconChangesInEachLayout() {
+        continueAfterFailure = false
+        for layout in ["list", "tickets", "shelf"] {
+            let app = XCUIApplication()
+            app.launchArguments = ["-echo.demo", "-echo.screen", "sessions", "-echo.demoLists", "films", "-linkPreviews", "YES",
+                                   "-listLayouts", "<dict><key>films</key><string>\(layout)</string></dict>"] + XCUIApplication.straightToChat
+            app.launch()
+            let look = app.buttons["Change Look"].firstMatch
+            XCTAssertTrue(look.waitForExistence(timeout: 15), "The film list didn't open (\(layout))")
+            look.tap()
+            XCTAssertTrue(app.navigationBars["Change Look"].waitForExistence(timeout: 5), "Change Look didn't open (\(layout))")
+            // Green, the colour of a list with none picked, is the one drawn light or dark (`shade`).
+            app.buttons["Green"].firstMatch.tap()
+            sleep(1)
+            for emoji in ["🍿", "🎬", "📺"] {
+                app.buttons[emoji].firstMatch.tap()
+                sleep(1)
+                XCTAssertEqual(app.state, .runningForeground, "Picking \(emoji) closed the app (\(layout))")
+            }
+            app.navigationBars["Change Look"].buttons["Done"].tap()
+            sleep(2)
+            XCTAssertEqual(app.state, .runningForeground, "Closing Change Look closed the app (\(layout))")
+            XCTAssertTrue(app.staticTexts["Christmas Movies"].exists, "The list's page is gone (\(layout))")
+            app.terminate()
+        }
+    }
+
     func testAGoalTileOpensTheGoal() {
         let app = openDrawer()
         let goal = tile(app, "Run a 10K by March")

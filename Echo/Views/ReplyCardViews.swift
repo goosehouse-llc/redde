@@ -783,8 +783,10 @@ extension PlaceLookup.Away {
     }
 }
 
-/// A colour with one value in light mode and another in dark.
-func shade(light: (Double, Double, Double), dark: (Double, Double, Double)) -> Color {
+/// A colour with one value in light mode and another in dark. `nonisolated` so its closure is too:
+/// SwiftUI resolves colours on its async render thread while some changes animate, and a
+/// main-actor closure there stops the app (2026-11-25, picking a green list's emoji).
+nonisolated func shade(light: (Double, Double, Double), dark: (Double, Double, Double)) -> Color {
     #if canImport(UIKit)
     Color(uiColor: UIColor { traits in
         let c = traits.userInterfaceStyle == .dark ? dark : light
