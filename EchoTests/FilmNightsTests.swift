@@ -52,6 +52,31 @@ struct FilmNightsTests {
         FilmNights.wanted([Self.watch(items)], now: Self.now)
     }
 
+    @Test func theAddressIsOnTheNotesLastLineToo() throws {
+        let elf = try #require(wanted([.init(id: "a", text: "Elf", done: false, when: Self.night)]).first)
+        #expect(FilmNights.notes(nil, for: elf) == "From your Christmas Movies list in Redde.\nredde://list/l1/a")
+        #expect(FilmNights.notes("Bring popcorn", for: elf) == "Bring popcorn\nredde://list/l1/a", "their notes kept")
+        #expect(FilmNights.notes("Bring popcorn\nredde://list/old/a\n", for: elf) == "Bring popcorn\nredde://list/l1/a")
+        #expect(FilmNights.key(inNotes: "Bring popcorn\nredde://list/l1/a") == "l1/a")
+        #expect(FilmNights.key(inNotes: "From your list in Redde.") == nil)
+    }
+
+    @Test func onesMadeWithOnlyTheNotesLineAreKnownAndMadeOne() throws {
+        // 6b1efc5 on an iPhone and an iPad opened together: two of every film, their URLs maybe lost.
+        let elf = wanted([.init(id: "a", text: "Elf", done: false, when: Self.night)])
+        let notes = elf[0].notes
+        #expect(FilmNights.made(title: "🎄 Elf", start: Self.night, notes: notes, for: elf)?.key == "l1/a")
+        #expect(FilmNights.made(title: "🎄 Elf", start: Self.night, notes: notes + " Bring popcorn", for: elf) == nil, "notes of their own: not ours")
+        #expect(FilmNights.made(title: "Dinner", start: Self.night, notes: notes, for: elf) == nil)
+        #expect(FilmNights.made(title: "🎄 Elf", start: Self.night.addingTimeInterval(3600), notes: notes, for: elf) == nil)
+        var phone = Self.placed("l1/a", at: Self.night, id: "p", external: "A")
+        var pad = Self.placed("l1/a", at: Self.night, id: "q", external: "B")
+        phone.marked = false
+        pad.marked = false
+        #expect(FilmNights.steps(wanted: elf, placed: [pad, phone], others: [], known: ["l1"], now: Self.now)
+                == [.remove(id: "q"), .update(id: "p", elf[0], length: 7200, retitle: false)], "one left, its address added")
+    }
+
     @Test func addedOnceThenLeftAsItIs() {
         let elf = wanted([.init(id: "a", text: "Elf", done: false, when: Self.night)])
         #expect(FilmNights.steps(wanted: elf, placed: [], others: [], known: ["l1"], now: Self.now) == [.add(elf[0])])
@@ -115,11 +140,14 @@ struct FilmNightsTests {
         var known: [Set<String>] = []
     }
 
-    private func lists(answer: @escaping () -> String, asked: @escaping (String) -> Void = { _ in }) -> (TodayLists, Placings) {
+    private func lists(answer: @escaping () -> String, mine: Bool = true, asked: @escaping (String) -> Void = { _ in }) -> (TodayLists, Placings) {
         let store = TodayLists()
         store.defaults = UserDefaults(suiteName: "FilmNightsTests-\(UUID().uuidString)")
         store.settingsStore = UserDefaults(suiteName: "FilmNightsTests-settings-\(UUID().uuidString)")!
-        store.plugin = { words in asked(words); return words.hasPrefix("lists nights") ? "redde-push lists {\"nights\": true}" : answer() }
+        store.plugin = { words in
+            asked(words)
+            return words.hasPrefix("lists nights") ? #"redde-push lists {"nights": true, "by": "x", "mine": \#(mine)}"# : answer()
+        }
         store.reachable = { true }
         store.dueReminders = { _ in [] }
         store.canPlaceNights = { true }
@@ -146,18 +174,39 @@ struct FilmNightsTests {
         #expect(placings.lists.count == 2, "switched off: the calendar is left as it is")
     }
 
-    @Test func thePluginIsToldOnceADayAndWhenItsSwitchedOff() async {
+    @Test func onlyTheDeviceThePluginGivesItToKeepsTheCalendar() async {
+        // 1.51: the iPad, asking after the iPhone, leaves the calendar to it.
+        var asked: [String] = []
+        let (pad, placings) = lists(answer: { Self.answer }, mine: false, asked: { asked.append($0) })
+        await pad.refresh()
+        await pad.settleNights()
+        #expect(!pad.ownsNights)
+        #expect(placings.lists.isEmpty)
+        pad.addsNights = false
+        await pad.tellNights(now: .now.addingTimeInterval(13 * 3600))
+        #expect(!asked.contains { $0.hasPrefix("lists nights off") }, "not its to let go")
+        // A plugin before 1.51 says nothing of whose it is: no device keeps it.
+        let (old, oldPlacings) = lists(answer: { Self.answer })
+        old.plugin = { words in words.hasPrefix("lists nights") ? "redde-push lists: this command is for the Redde app." : Self.answer }
+        await old.refresh()
+        await old.settleNights()
+        #expect(!old.ownsNights && oldPlacings.lists.isEmpty)
+    }
+
+    @Test func thePluginIsAskedTwiceADayAndLetGoWhenItsSwitchedOff() async {
         var asked: [String] = []
         let (store, _) = lists(answer: { Self.answer }, asked: { asked.append($0) })
         await store.tellNights(now: Self.now)
         await store.tellNights(now: Self.now.addingTimeInterval(3600))
-        #expect(asked == ["lists nights on"])
-        await store.tellNights(now: Self.now.addingTimeInterval(21 * 3600))
-        #expect(asked == ["lists nights on", "lists nights on"])
+        #expect(asked.count == 1 && asked[0].hasPrefix("lists nights on ") && asked[0].count > "lists nights on ".count + 30)
+        #expect(store.ownsNights)
+        await store.tellNights(now: Self.now.addingTimeInterval(13 * 3600))
+        #expect(asked.count == 2 && asked[1] == asked[0], "the same device each time")
         store.addsNights = false
-        await store.tellNights(now: Self.now.addingTimeInterval(22 * 3600))
-        await store.tellNights(now: Self.now.addingTimeInterval(23 * 3600))
-        #expect(asked.last == "lists nights off" && asked.count == 3)
+        await store.tellNights(now: Self.now.addingTimeInterval(14 * 3600))
+        await store.tellNights(now: Self.now.addingTimeInterval(15 * 3600))
+        #expect(asked.count == 3 && asked[2] == asked[0].replacingOccurrences(of: "nights on", with: "nights off"))
+        #expect(!store.ownsNights)
         // Never on, never told.
         var none: [String] = []
         let (quiet, _) = lists(answer: { Self.answer }, asked: { none.append($0) })
@@ -195,6 +244,29 @@ struct FilmNightsTests {
         _ = await FilmNights.place(lists(later), known: [list])
         #expect(await mine().map(\.start) == [later])
         _ = await FilmNights.place(lists(later, done: true), known: [list])
+        #expect(await mine().isEmpty)
+
+        // Two made by 6b1efc5 on two devices, kept without their URL: made one, its address added.
+        let night2 = night.addingTimeInterval(2 * 86_400)
+        let wanted2 = FilmNights.wanted(lists(night2), now: .now)
+        await CalendarReader.shared.read { store in
+            for _ in 0 ..< 2 {
+                let event = EKEvent(eventStore: store)
+                event.calendar = DeviceCalendar.newEventsCalendar(in: store)
+                event.title = wanted2[0].title
+                event.startDate = night2
+                event.endDate = night2.addingTimeInterval(FilmNights.length)
+                event.notes = wanted2[0].notes
+                try? store.save(event, span: .thisEvent, commit: true)
+            }
+        }
+        _ = await FilmNights.place(lists(night2), known: [list])
+        let left = await CalendarReader.shared.read { store in
+            store.events(matching: store.predicateForEvents(withStart: night2.addingTimeInterval(-60), end: night2.addingTimeInterval(60), calendars: nil))
+                .filter { $0.title == wanted2[0].title }.map { $0.notes ?? "" }
+        }
+        #expect(left == [wanted2[0].notes + "\nredde://list/\(list)/a"])
+        _ = await FilmNights.place([], known: [list])
         #expect(await mine().isEmpty)
     }
 }

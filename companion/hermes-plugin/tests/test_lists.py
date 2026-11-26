@@ -384,6 +384,28 @@ class PlanTests(unittest.TestCase):
         (self.home / "redde-push" / lists.NIGHTS).write_text("not json")
         self.assertFalse(lists.calendar_by_app(self.home))
 
+    def test_one_device_at_a_time_keeps_the_calendar(self):
+        # 1.51.0: an iPhone and an iPad opened together each put every film on the calendar.
+        now = self.now
+        self.assertTrue(lists.nights(self.home, True, at=now, device="phone")["mine"])
+        self.assertEqual(lists.nights(self.home, True, at=now + 5, device="pad"), {"nights": True, "by": "phone", "mine": False})
+        self.assertTrue(lists.nights(self.home, True, at=now + 86400, device="phone")["mine"], "the one asks again")
+        self.assertFalse(lists.nights(self.home, True, at=now + 86400 + 60, device="pad")["mine"])
+        self.assertTrue(lists.calendar_by_app(self.home, now + 86400))
+        # Off from the other device leaves it with the one; off from the one frees it.
+        self.assertEqual(lists.nights(self.home, False, at=now + 86400 + 90, device="pad")["mine"], False)
+        self.assertTrue(lists.calendar_by_app(self.home, now + 86400))
+        self.assertEqual(lists.nights(self.home, False, at=now + 86400 + 120, device="phone"), {"nights": False})
+        self.assertTrue(lists.nights(self.home, True, at=now + 86400 + 150, device="pad")["mine"])
+        # Not asked again for three days: whichever asks next.
+        later = now + 86400 + 150 + lists.NIGHTS_LEASE + 1
+        self.assertTrue(lists.nights(self.home, True, at=later, device="phone")["mine"])
+        # Over the command (the clock's own time), the device's name kept to letters, digits and dashes.
+        lists.nights(self.home, False)
+        said = json.loads(lists.slash(self.home, ["nights", "on", "pad;rm -rf"]).removeprefix("redde-push lists "))
+        self.assertEqual((said["by"], said["mine"]), ("padrm-rf", True))
+        self.assertIn('"mine": false', lists.slash(self.home, ["nights", "on", "phone"]))
+
     def test_planning_again_drops_the_old_jobs(self):
         lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
         self.plan(items=["1"], when="2026-11-26T19:30:00-05:00")

@@ -175,7 +175,9 @@ final class TodayLists {
 
     static let nightsKey = "lists.nights"
     private static let knownListsKey = "lists.nightsKnown"
-    private static let toldKey = "lists.nightsTold"
+    /// Per server: when this device last asked to keep the calendar, and whether it does (1.51).
+    private static let claimKey = "lists.nightsClaim"
+    private static let deviceKey = "lists.nightsDevice"
 
     /// Settings › Chat List and Settings › Calendars: films and series with a night go on the calendar.
     var addsNights: Bool {
@@ -195,9 +197,26 @@ final class TodayLists {
         return ids
     }
 
-    /// Puts the watch lists' nights on the calendar as they are now, after whatever pass is under way.
+    /// This device, to the plugin: made once, kept here only (not synced, as each device is its own).
+    private var nightsDevice: String {
+        if let id = settingsStore.string(forKey: Self.deviceKey), !id.isEmpty { return id }
+        let id = UUID().uuidString.lowercased()
+        settingsStore.set(id, forKey: Self.deviceKey)
+        return id
+    }
+
+    private var claims: [String: [String: Double]] {
+        get { settingsStore.dictionary(forKey: Self.claimKey) as? [String: [String: Double]] ?? [:] }
+        set { settingsStore.set(newValue, forKey: Self.claimKey) }
+    }
+
+    /// The plugin said this device is the one that keeps the calendar for this server.
+    var ownsNights: Bool { claims[server()]?["mine"] == 1 }
+
+    /// Puts the watch lists' nights on the calendar as they are now, after whatever pass is under way;
+    /// only on the device that keeps the calendar.
     func placeFilmNights() {
-        guard addsNights, canPlaceNights() else { return }
+        guard addsNights, canPlaceNights(), ownsNights else { return }
         if placing != nil { placeAgain = true; return }
         placing = Task { [weak self] in
             repeat {
@@ -212,18 +231,28 @@ final class TodayLists {
     /// Waits for the calendar pass under way (tests).
     func settleNights() async { await placing?.value }
 
-    /// Tells the plugin (1.50) whether this device puts the nights on the calendar, so the agent
-    /// doesn't add one too: when it changes, and each day while it does, as the plugin's word lasts
-    /// two weeks. A plugin before 1.50 answers with its usage, which is no matter.
+    /// Asks the plugin (1.51) to be the device that keeps the calendar, which also tells it the agent
+    /// should leave the calendar to Redde: every 12 hours while on, as the plugin keeps it for the
+    /// one that asks again within three days, then gives it to whichever asks next. Switched off on
+    /// the device that keeps it, it lets it go. A plugin before 1.51 doesn't say whose it is: then no
+    /// device keeps it, so none doubles another's.
     func tellNights(now: Date = .now) async {
         let on = addsNights && canPlaceNights()
-        var told = settingsStore.dictionary(forKey: Self.toldKey) as? [String: Double] ?? [:]
-        let last = told[server()]   // when it was last told on; 0 when told off
-        if on, let last, last > 0, now.timeIntervalSince1970 - last < 20 * 3600 { return }
-        if !on, last == nil || last == 0 { return }
-        guard await reachable(), (try? await plugin("lists nights " + (on ? "on" : "off"))) != nil else { return }
-        told[server()] = on ? now.timeIntervalSince1970 : 0
-        settingsStore.set(told, forKey: Self.toldKey)
+        let claim = claims[server()]
+        if on, let at = claim?["at"], now.timeIntervalSince1970 - at < 12 * 3600 { return }
+        if !on {
+            guard let claim else { return }
+            if claim["mine"] == 1 {
+                guard await reachable(), (try? await plugin("lists nights off " + nightsDevice)) != nil else { return }
+            }
+            claims[server()] = nil
+            return
+        }
+        guard await reachable(), let output = try? await plugin("lists nights on " + nightsDevice) else { return }
+        let mine = PluginReply.json(output, "lists")?["mine"]?.bool == true
+        let was = ownsNights
+        claims[server()] = ["at": now.timeIntervalSince1970, "mine": mine ? 1 : 0]
+        if mine, !was { placeFilmNights() }
     }
 
     // MARK: Reminders on their day

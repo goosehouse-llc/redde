@@ -29,6 +29,12 @@ phone's calendar itself and keeps the event in step with the list. The app says 
 `lists nights on` (again each day while it does; `off` when it's switched off), and while it does,
 a night planned on a watch list tells the agent to leave the calendar to Redde, so there's one
 event, not two (`calendar_by_app`).
+
+One device at a time (1.51.0, the same day: an iPhone and an iPad opened together each put every
+film on the calendar before either saw the other's). `lists nights on <device>` asks to be the one;
+the plugin, under the lists' lock, gives it to the first to ask and keeps it theirs while they ask
+again within three days (`NIGHTS_LEASE`), then to whichever asks next. The answer says whether it's
+the asker's (`mine`), and only that device changes the calendar.
 """
 
 from __future__ import annotations
@@ -55,6 +61,8 @@ FILE = "lists.json"
 NIGHTS = "nights.json"
 #: How long a phone's word lasts: it says it again each day it opens Redde.
 NIGHTS_FOR = 14 * 86400
+#: How long the device that keeps the calendar stays the one without asking again (1.51.0).
+NIGHTS_LEASE = 3 * 86400
 #: At most this many lists, items on one, and characters in a title or an item.
 MOST, ITEMS, TITLE, TEXT = 30, 300, 60, 200
 ACTIONS = ("show", "make", "add", "check", "uncheck", "remove", "clear_done", "rename", "edit", "style", "plan", "unplan",
@@ -236,15 +244,32 @@ def calendar_by_app(home: Path | None, at: float | None = None) -> bool:
         return False
 
 
-def nights(home: Path, on: bool, at: float | None = None) -> None:
-    """The phone's word: it puts the nights on its calendar (on), or no longer does (off)."""
+def nights(home: Path, on: bool, at: float | None = None, device: str = "") -> dict:
+    """The phone's word: it puts the nights on its calendar (on), or no longer does (off). With a
+    device, one at a time: the first to ask, while it asks again within `NIGHTS_LEASE`. What's kept
+    after, with `mine` for the asker."""
     target = Path(home) / "redde-push" / NIGHTS
-    if not on:
-        target.unlink(missing_ok=True)
-        return
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps({"on": True, "at": int(at if at is not None else time.time())}))
-    os.chmod(target, 0o600)
+    now = int(at if at is not None else time.time())
+    with _locked(home):
+        try:
+            kept = json.loads(target.read_text())
+            kept = kept if isinstance(kept, dict) else {}
+        except (OSError, ValueError):
+            kept = {}
+        by = str(kept.get("by") or "")
+        held = bool(kept.get("on")) and by and now - float(kept.get("at") or 0) < NIGHTS_LEASE
+        if not on:
+            if not device or not held or by == device:
+                target.unlink(missing_ok=True)
+                return {"nights": False}
+            return {"nights": True, "by": by, "mine": False}   # (another device still does it)
+        if device and held and by != device:
+            return {"nights": True, "by": by, "mine": False}
+        kept = {"on": True, "at": now, **({"by": device} if device else {})}
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(kept))
+        os.chmod(target, 0o600)
+        return {"nights": True, **({"by": device, "mine": True} if device else {})}
 
 
 def load(home: Path) -> list[dict]:
@@ -817,12 +842,13 @@ def fill_posters(home: Path, now: float | None = None) -> int:
 def slash(home: Path, words: list[str]) -> str:
     """`/redde-push lists list`: "redde-push lists <JSON>", every list. `lists do <base64url JSON>`:
     one change, `redde_list`'s arguments (items by id), then the lists as they are now. `lists nights
-    on|off`: the phone puts a watch list's nights on its calendar itself, or no longer does (1.50.0)."""
+    on|off [device]`: the phone puts a watch list's nights on its calendar itself, or no longer does
+    (1.50.0); with its device, whether it's the one that does (1.51.0)."""
     if words == ["list"]:
         return wire.reply("lists", {"lists": listing(home), "can": CAN})
-    if len(words) == 2 and words[0] == "nights" and words[1] in ("on", "off"):
-        nights(home, words[1] == "on")
-        return wire.reply("lists", {"nights": words[1] == "on"})
+    if len(words) in (2, 3) and words[0] == "nights" and words[1] in ("on", "off"):
+        device = re.sub(r"[^A-Za-z0-9-]", "", words[2])[:64] if len(words) == 3 else ""
+        return wire.reply("lists", nights(home, words[1] == "on", device=device))
     if len(words) == 2 and words[0] == "do":
         try:
             raw = words[1] + "=" * (-len(words[1]) % 4)

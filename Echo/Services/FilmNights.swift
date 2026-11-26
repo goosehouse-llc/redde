@@ -8,12 +8,16 @@ import Foundation
 /// night is taken off, or the film is ticked or taken off the list before it. A night already past
 /// is left as it is.
 ///
-/// Redde's events carry the item in their URL (`redde://list/<list>/<item>`), and only those are
-/// moved or deleted, and only for a list this server has (`known`): another server's stay. One the
-/// agent added before, at the same time with the film's name, is taken over rather than doubled.
-/// Every device does the same; two made at once, before iCloud brought one to the other, are made
-/// one again by keeping the one whose identifier on the calendar's server sorts first, which every
-/// device sees alike. The plugin is told (`lists nights`, 1.50), so the agent leaves it to Redde.
+/// Redde's events carry the item's address (`redde://list/<list>/<item>`) as their URL and on the
+/// last line of their notes, as not every calendar keeps a URL (1.51), and only those are moved or
+/// deleted, and only for a list this server has (`known`): another server's stay. One the agent
+/// added before, at the same time with the film's name, is taken over rather than doubled.
+///
+/// One device keeps the calendar (`TodayLists.ownsNights`, the plugin's `lists nights on <device>`,
+/// 1.51): on 2026-11-26 an iPhone and an iPad opened together each put every film on it before
+/// either saw the other's. Copies there are anyway (those, made by 6b1efc5 with only the notes
+/// line, or two from a hand-over) are made one by keeping the one whose identifier on the
+/// calendar's server sorts first. The plugin is told, so the agent leaves the calendar to Redde.
 nonisolated enum FilmNights {
     /// A night as it should be on the calendar.
     struct Night: Equatable, Sendable {
@@ -37,6 +41,8 @@ nonisolated enum FilmNights {
         var title: String
         var start: Date
         var end: Date
+        /// The item's address is on its notes' last line (it may have only its URL, or neither).
+        var marked: Bool = true
     }
 
     /// An event not Redde's at the time of a night.
@@ -77,6 +83,12 @@ nonisolated enum FilmNights {
         return parts.count == 2 ? "\(parts[0])/\(parts[1])" : nil
     }
 
+    /// The list and item an event of Redde's is for, from the address in its notes.
+    static func key(inNotes notes: String?) -> String? {
+        guard let notes, let found = notes.firstMatch(of: /redde:\/\/list\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)/) else { return nil }
+        return "\(found.1)/\(found.2)"
+    }
+
     /// The nights the watch lists have still to come: not ticked off, with a time ahead.
     static func wanted(_ lists: [TodayList], now: Date) -> [Night] {
         lists.filter { $0.kind == .watch }.flatMap { list in
@@ -107,7 +119,7 @@ nonisolated enum FilmNights {
                 steps += mine.dropFirst().map { .remove(id: $0.id) }
                 let moved = abs(kept.start.timeIntervalSince(night.start)) >= 60
                 let retitle = !folded(kept.title).contains(folded(night.name))
-                if moved || retitle {
+                if moved || retitle || !kept.marked {
                     steps.append(.update(id: kept.id, night, length: max(kept.end.timeIntervalSince(kept.start), 60), retitle: retitle))
                 }
                 continue
@@ -151,9 +163,11 @@ nonisolated enum FilmNights {
             let found = store.events(matching: store.predicateForEvents(withStart: now, end: now.addingTimeInterval(reach), calendars: nil))
             var placed: [Placed] = [], others: [Other] = []
             for event in found {
-                if let key = key(of: event.url) {
+                let noted = key(inNotes: event.notes)
+                if let key = noted ?? key(of: event.url) ?? made(event, for: nights)?.key {
                     placed.append(Placed(id: event.eventIdentifier ?? "", external: event.calendarItemExternalIdentifier ?? "",
-                                         key: key, title: event.title ?? "", start: event.startDate, end: event.endDate))
+                                         key: key, title: event.title ?? "", start: event.startDate, end: event.endDate,
+                                         marked: noted == key))
                 } else if !event.isAllDay, nights.contains(where: { abs(event.startDate.timeIntervalSince($0.start)) < 60 }) {
                     others.append(Other(id: event.eventIdentifier ?? "", title: event.title ?? "", start: event.startDate,
                                         editable: event.calendar?.allowsContentModifications == true))
@@ -197,7 +211,30 @@ nonisolated enum FilmNights {
         event.startDate = night.start
         event.endDate = night.start.addingTimeInterval(length)
         event.isAllDay = false
-        if event.notes?.isEmpty ?? true { event.notes = night.notes }
+        event.notes = notes(event.notes, for: night)
         event.url = url(list: night.list, item: night.item)
+    }
+
+    /// The notes with the item's address as their last line: the night's own line when there are
+    /// none, the person's kept, an address from before the film moved list replaced.
+    static func notes(_ notes: String?, for night: Night) -> String {
+        let address = url(list: night.list, item: night.item)?.absoluteString ?? ""
+        var lines = (notes ?? "").components(separatedBy: "\n").filter { key(inNotes: $0) == nil }
+        while lines.last?.trimmingCharacters(in: .whitespaces).isEmpty == true { lines.removeLast() }
+        if lines.isEmpty { lines = [night.notes] }
+        return (lines + [address]).joined(separator: "\n")
+    }
+
+    /// The night an event made by 6b1efc5 is for, which some calendars kept without its URL: at the
+    /// night's time, with the film's name and only the night's own notes.
+    static func made(_ event: EKEvent, for nights: [Night]) -> Night? {
+        made(title: event.title ?? "", start: event.startDate, notes: event.notes, for: nights)
+    }
+
+    static func made(title: String, start: Date, notes: String?, for nights: [Night]) -> Night? {
+        let notes = (notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return nights.first { night in
+            abs(start.timeIntervalSince(night.start)) < 60 && notes == night.notes && folded(title).contains(folded(night.name))
+        }
     }
 }

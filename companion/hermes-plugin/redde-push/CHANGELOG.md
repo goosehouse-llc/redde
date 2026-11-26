@@ -3,6 +3,13 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.51.0 (2026-11-26)
+
+- Films on the calendar, one device at a time: an iPhone and an iPad opened together each put every
+  film on the calendar. `lists nights on <device>` now gives the calendar to the first device that
+  asks and keeps it theirs while they ask again within three days, then to whichever asks next; the
+  answer says whose it is, and only that device changes the calendar. `off` from it lets it go.
+
 ## 1.50.0 (2026-11-26)
 
 - Films on the calendar: the app can now put a watch list's films and series with a night on the
