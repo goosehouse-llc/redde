@@ -218,6 +218,113 @@
         }
       }
     },
+    "%@ is following up" : {
+      "comment" : "Follow-Through: someone writing again with no reply yet",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ rykker"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hakt nach"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ insiste"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vous relance"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ti sollecita"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@から催促"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 님의 후속 메일"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ purrer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vraagt na"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ się dopytuje"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ está cobrando"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ напоминает"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ påminner"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hatırlatıyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ нагадує"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@在催问"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@在催問"
+          }
+        }
+      }
+    },
     "%@ is waiting on you" : {
       "comment" : "A goal's Who Does What: over the steps that wait on the person; the agent's name",
       "localizations" : {
@@ -1304,6 +1411,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "依你平常的間隔快到時間卻還沒預約的理髮、牙醫、獸醫等，以及看醫生之後要跟進的事。需要行事曆的完整取用權限。"
+          }
+        }
+      }
+    },
+    "A new sign-in, a password or two-step change, a phone number taken off an account: one card for the ones that come together, asking if it was you. Say it was, and that device's sign-ins go quiet." : {
+      "comment" : "Follow-Through: under the security switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et nyt login, en ændret adgangskode eller totrinsbekræftelse, et telefonnummer fjernet fra en konto: ét kort for dem, der kommer samtidig, der spørger, om det var dig. Siger du ja, bliver den enheds logins stille."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine neue Anmeldung, ein geändertes Passwort oder eine geänderte Bestätigung in zwei Schritten, eine von einem Konto entfernte Telefonnummer: eine Karte für alles, was zusammen kommt, mit der Frage, ob du das warst. Sagst du ja, bleiben die Anmeldungen dieses Geräts still."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un inicio de sesión nuevo, un cambio de contraseña o de verificación en dos pasos, un número de teléfono quitado de una cuenta: una tarjeta para los que llegan juntos, preguntando si fuiste tú. Si dices que sí, los inicios de sesión de ese dispositivo dejan de avisar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une nouvelle connexion, un mot de passe ou une validation en deux étapes modifiés, un numéro de téléphone retiré d’un compte : une seule carte pour ceux qui arrivent ensemble, qui vous demande si c’était vous. Dites oui, et les connexions de cet appareil ne seront plus signalées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nuovo accesso, una password o la verifica in due passaggi cambiate, un numero di telefono tolto da un account: una sola scheda per quelli che arrivano insieme, che chiede se eri tu. Se dici di sì, gli accessi da quel dispositivo non vengono più segnalati."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいサインイン、パスワードや2段階認証の変更、アカウントから削除された電話番号。まとめて届いたものは1枚のカードにして、あなたかどうかを尋ねます。あなただと答えると、そのデバイスからのサインインは知らせなくなります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 로그인, 비밀번호나 2단계 인증 변경, 계정에서 삭제된 전화번호. 함께 온 것들은 카드 한 장으로 묶어 본인이었는지 묻습니다. 본인이라고 하면 그 기기의 로그인은 더 이상 알리지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En ny pålogging, endret passord eller totrinnsbekreftelse, et telefonnummer fjernet fra en konto: ett kort for dem som kommer samtidig, som spør om det var deg. Sier du ja, blir påloggingene fra den enheten stille."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een nieuwe aanmelding, een gewijzigd wachtwoord of tweestapsverificatie, een telefoonnummer dat van een account is gehaald: één kaart voor wat tegelijk binnenkomt, met de vraag of jij het was. Zeg je ja, dan blijven aanmeldingen van dat apparaat stil."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe logowanie, zmiana hasła lub weryfikacji dwuetapowej, numer telefonu usunięty z konta: jedna karta dla tych, które przychodzą razem, z pytaniem, czy to ty. Jeśli tak, logowania z tego urządzenia przestaną być zgłaszane."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um novo login, uma senha ou verificação em duas etapas alterada, um número de telefone tirado de uma conta: um só cartão para os que chegam juntos, perguntando se foi você. Se disser que sim, os logins desse dispositivo deixam de ser avisados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый вход, смена пароля или двухэтапной проверки, номер телефона, удалённый из аккаунта: одна карточка для того, что пришло вместе, с вопросом, были ли это вы. Ответите «да», и о входах с этого устройства больше не будет напоминаний."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En ny inloggning, ett ändrat lösenord eller tvåstegsverifiering, ett telefonnummer borttaget från ett konto: ett kort för dem som kommer samtidigt, som frågar om det var du. Säger du ja blir inloggningar från den enheten tysta."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni bir oturum açma, parola ya da iki adımlı doğrulama değişikliği, bir hesaptan kaldırılan telefon numarası: birlikte gelenler için tek bir kart, siz olup olmadığınızı sorar. Siz olduğunuzu söylerseniz o cihazın oturum açmaları artık bildirilmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новий вхід, зміна пароля чи двоетапної перевірки, номер телефону, видалений з акаунта: одна картка для того, що прийшло разом, з питанням, чи це були ви. Скажете «так» — і про входи з цього пристрою більше не нагадуватиме."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的登录、密码或两步验证的更改、从账户中删除的电话号码：一起到来的合成一张卡片，问是不是你本人。回答是，那台设备的登录就不再提醒。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的登入、密碼或兩步驟驗證的變更、從帳號中移除的電話號碼：一起到來的合成一張卡片，問是不是你本人。回答是，那台裝置的登入就不再提醒。"
           }
         }
       }
@@ -2695,6 +2909,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更大的文字, 更小的文字, 字級"
+          }
+        }
+      }
+    },
+    "Bounced: %@" : {
+      "comment" : "Follow-Through: mail that didn't arrive, with who it was to",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kom retur: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unzustellbar: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rebotado: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non distribué : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non recapitata: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不達：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "반송됨: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kom i retur: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onbestelbaar: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niedostarczone: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não entregue: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не доставлено: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Studsade: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teslim edilemedi: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не доставлено: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "被退回：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "被退回：%@"
           }
         }
       }
@@ -4300,6 +4621,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ 完成"
+          }
+        }
+      }
+    },
+    "Draft waiting" : {
+      "comment" : "Follow-Through: a draft reply to them hasn't been sent",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kladde venter"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entwurf wartet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrador pendiente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brouillon en attente"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bozza in attesa"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きあり"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "초안 있음"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utkast venter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concept klaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czeka szkic"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rascunho pendente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Есть черновик"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utkast väntar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taslak bekliyor"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Є чернетка"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "草稿未发"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "草稿未寄"
           }
         }
       }
@@ -9876,6 +10304,113 @@
         }
       }
     },
+    "Security Notices" : {
+      "comment" : "Follow-Through: the security switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sikkerhedsbeskeder"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sicherheitshinweise"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisos de seguridad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertes de sécurité"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisi di sicurezza"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セキュリティ通知"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보안 알림"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sikkerhetsvarsler"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beveiligingsmeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia o bezpieczeństwie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisos de segurança"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомления безопасности"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Säkerhetsmeddelanden"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güvenlik Bildirimleri"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сповіщення безпеки"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全通知"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全通知"
+          }
+        }
+      }
+    },
     "See All %lld" : {
       "comment" : "Ticket Stubs: shows every watched film as a row, beside the pile of used stubs",
       "localizations" : {
@@ -13292,6 +13827,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "用過的票根"
+          }
+        }
+      }
+    },
+    "Was this you?" : {
+      "comment" : "Follow-Through: security notices from the mail, asking if it was them",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Var det dig?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warst du das?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Fuiste tú?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C’était vous ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eri tu?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたでしたか？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "본인이었나요?"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Var det deg?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was jij dit?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czy to ty?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foi você?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это были вы?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Var det du?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu siz miydiniz?"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це були ви?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是你吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是你嗎？"
           }
         }
       }
@@ -536794,109 +537436,109 @@
         }
       }
     },
-    "What you said you'd send, questions waiting on an answer, mail you owe a reply, and what's open with the people you're about to meet." : {
+    "What you said you'd send, questions waiting on an answer, mail you owe a reply or that's being followed up, mail that bounced, and what's open with the people you're about to meet." : {
       "comment" : "Follow-Through: under the mail switch",
       "localizations" : {
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Det, du sagde, du ville sende, spørgsmål, der venter på svar, mails, du skylder et svar, og det, der er åbent med de mennesker, du snart skal mødes med."
+            "value" : "Det, du sagde, du ville sende, spørgsmål, der venter på svar, mails, du skylder et svar, eller hvor nogen rykker, mails, der kom retur, og det, der er åbent med de mennesker, du snart skal mødes med."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Was du schicken wolltest, Fragen, die auf eine Antwort warten, E-Mails, auf die du noch antworten musst, und was mit den Leuten offen ist, die du gleich triffst."
+            "value" : "Was du schicken wolltest, Fragen, die auf eine Antwort warten, E-Mails, auf die du noch antworten musst oder bei denen jemand nachhakt, E-Mails, die zurückkamen, und was mit den Leuten offen ist, die du gleich triffst."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lo que dijiste que enviarías, preguntas que esperan respuesta, correos que debes responder, y lo pendiente con las personas con las que vas a reunirte."
+            "value" : "Lo que dijiste que enviarías, preguntas que esperan respuesta, correos que debes responder o por los que te insisten, correos que rebotaron, y lo pendiente con las personas con las que vas a reunirte."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ce que vous avez dit que vous enverriez, les questions qui attendent une réponse, les e-mails auxquels vous devez répondre, et ce qui reste en suspens avec les personnes que vous allez voir."
+            "value" : "Ce que vous avez dit que vous enverriez, les questions qui attendent une réponse, les e-mails auxquels vous devez répondre ou pour lesquels on vous relance, les e-mails revenus non distribués, et ce qui reste en suspens avec les personnes que vous allez voir."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ciò che hai detto che avresti mandato, domande in attesa di risposta, email a cui devi rispondere, e ciò che è ancora aperto con le persone che stai per incontrare."
+            "value" : "Ciò che hai detto che avresti mandato, domande in attesa di risposta, email a cui devi rispondere o per cui ti sollecitano, email tornate indietro, e ciò che è ancora aperto con le persone che stai per incontrare."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "送ると言ったもの、答えを待つ質問、返信すべきメール、そしてこれから会う人との未解決のこと。"
+            "value" : "送ると言ったもの、答えを待つ質問、返信すべきメールや催促されているメール、戻ってきたメール、そしてこれから会う人との未解決のこと。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "보내겠다고 한 것, 답을 기다리는 질문, 답장해야 할 메일, 그리고 곧 만날 사람들과 아직 남은 일."
+            "value" : "보내겠다고 한 것, 답을 기다리는 질문, 답장해야 하거나 재촉받는 메일, 반송된 메일, 그리고 곧 만날 사람들과 아직 남은 일."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Det du sa du skulle sende, spørsmål som venter på svar, e-post du skylder svar på, og det som er åpent med dem du snart skal møte."
+            "value" : "Det du sa du skulle sende, spørsmål som venter på svar, e-post du skylder svar på eller blir purret på, e-post som kom i retur, og det som er åpent med dem du snart skal møte."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wat je zei dat je zou sturen, vragen die op een antwoord wachten, mail waarop je nog moet antwoorden, en wat er openstaat met de mensen die je zo gaat zien."
+            "value" : "Wat je zei dat je zou sturen, vragen die op een antwoord wachten, mail waarop je nog moet antwoorden of waarover iemand navraag doet, mail die terugkwam, en wat er openstaat met de mensen die je zo gaat zien."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To, co masz wysłać, pytania czekające na odpowiedź, maile, na które trzeba odpowiedzieć, i otwarte sprawy z osobami, z którymi zaraz się spotkasz."
+            "value" : "To, co masz wysłać, pytania czekające na odpowiedź, maile, na które trzeba odpowiedzieć albo o które ktoś się dopytuje, maile, które wróciły, i otwarte sprawy z osobami, z którymi zaraz się spotkasz."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O que você disse que enviaria, perguntas esperando resposta, e-mails que você precisa responder, e o que está em aberto com as pessoas que você vai encontrar."
+            "value" : "O que você disse que enviaria, perguntas esperando resposta, e-mails que você precisa responder ou sobre os quais estão cobrando, e-mails que voltaram, e o que está em aberto com as pessoas que você vai encontrar."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "То, что вы обещали отправить, вопросы без ответа, письма, на которые вы должны ответить, и незакрытые дела с теми, с кем у вас скоро встреча."
+            "value" : "То, что вы обещали отправить, вопросы без ответа, письма, на которые вы должны ответить или о которых вам напоминают, вернувшиеся письма и незакрытые дела с теми, с кем у вас скоро встреча."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Det du sa att du skulle skicka, frågor som väntar på svar, e-post du är skyldig ett svar och det som är öppet med dem du snart ska träffa."
+            "value" : "Det du sa att du skulle skicka, frågor som väntar på svar, e-post du är skyldig ett svar eller blir påmind om, e-post som studsade och det som är öppet med dem du snart ska träffa."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Göndereceğinizi söylediğiniz şeyler, yanıt bekleyen sorular, yanıt borçlu olduğunuz e-postalar ve birazdan buluşacağınız kişilerle açık kalan konular."
+            "value" : "Göndereceğinizi söylediğiniz şeyler, yanıt bekleyen sorular, yanıt borçlu olduğunuz ya da hatırlatılan e-postalar, geri dönen e-postalar ve birazdan buluşacağınız kişilerle açık kalan konular."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Те, що ви обіцяли надіслати, запитання без відповіді, листи, на які ви маєте відповісти, і незакриті справи з тими, з ким у вас скоро зустріч."
+            "value" : "Те, що ви обіцяли надіслати, запитання без відповіді, листи, на які ви маєте відповісти або про які вам нагадують, листи, що повернулися, і незакриті справи з тими, з ким у вас скоро зустріч."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你说过要发送的东西、等待答复的问题、该回复的邮件，以及和即将见面的人之间未了的事。"
+            "value" : "你说过要发送的东西、等待答复的问题、该回复或被催问的邮件、被退回的邮件，以及和即将见面的人之间未了的事。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你說過要寄出的東西、等待答覆的問題、你該回覆的郵件，以及和即將見面的人之間未了的事。"
+            "value" : "你說過要寄出的東西、等待答覆的問題、你該回覆或被催問的郵件、被退回的郵件，以及和即將見面的人之間未了的事。"
           }
         }
       }

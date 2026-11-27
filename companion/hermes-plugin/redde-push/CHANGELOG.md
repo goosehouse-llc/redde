@@ -3,6 +3,21 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.55.0 (2026-11-27)
+
+- Three more from the mail, under Follow-Through (`mailwatch.py`):
+  - Security notices: a new sign-in, a password or two-step change, a phone number or email
+    changed on an account, a new payee. The ones that come together are one "Was this you?" card,
+    a quarter of an hour after the first, from 7 am to 9 pm. Taken, the agent asks which were you;
+    those you say were (`redde_mail` `was_me`) keep that service's sign-ins on that device quiet
+    for six months. Codes you asked for aren't notices. A new Security Notices switch.
+  - Bounces: mail you sent that didn't arrive gets a card two hours on, unless it has gone again
+    (to that address, or with that subject), offering to find the right address. Only for someone
+    you've written to or heard from, so not spam sent in your name.
+  - Follow-ups: someone writing again ("just following up", "any update?") with no reply gone
+    gets a card half an hour on, saying whether a draft to them is waiting, in Drafts or in
+    Redde, in place of the reply-owed card.
+
 ## 1.54.0 (2026-11-26)
 
 - Appointments that come round again (`appointments.py`): Redde on the phone reads its calendar

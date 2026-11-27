@@ -17,6 +17,9 @@ Orders, from receipts and shipping mail:
 - return windows: "Return by December 15": five days before, unless it's gone back.
 - free trials and renewals: "Your trial ends December 1… then $14.99/month": three days before.
 
+1.55.0 (`mailwatch.py`): security notices ("Was this you?"), mail that bounced, and someone
+following up with no reply gone.
+
 English only; nothing here reads a whole mailbox, only what each look brings. Each is one item in
 followthrough.json (main home), settled, offered or dropped once; the app lists them and can drop
 one, and switches each kind off (`/redde-push follow …`). Jellyfin's arrivals are `arrivals.py`'s.
@@ -38,11 +41,12 @@ from . import dates, wire
 log = logging.getLogger("redde_push.followthrough")
 
 FILE = "followthrough.json"
-SWITCHES = ("mail", "orders", "trips", "arrivals", "habits", "outings", "appointments")
+SWITCHES = ("mail", "orders", "trips", "arrivals", "habits", "outings", "appointments", "security")
 #: Which switch each kind of item is under.
 GROUPS = {"promise": "mail", "waiting": "mail", "owed": "mail", "meeting": "mail", "delivery": "orders",
           "return": "orders", "trial": "orders", "bill": "orders", "expiry": "orders", "trip": "trips",
-          "planned": "plans"}   # (no switch of its own: they picked it)
+          "planned": "plans",   # (no switch of its own: they picked it)
+          "security": "security", "bounce": "mail", "followup": "mail"}
 #: Days before a card: a question unanswered, a reply owed, a late delivery; a return window and a
 #: trial ahead.
 WAITING, OWED, LATE, RETURN_AHEAD, TRIAL_AHEAD = 4, 3, 2, 5, 3
@@ -255,8 +259,14 @@ def from_sent(data: dict, message: dict, me: str, now: float) -> list[str]:
     for item in data["items"].values():
         if item.get("state") != "open" or float(item.get("made") or 0) >= when:
             continue
-        if item["kind"] in ("promise", "owed") and item.get("who") in to:
+        if item["kind"] in ("promise", "owed", "followup") and item.get("who") in to:
             _settle(item, "sent", now)
+        elif item["kind"] == "bounce":
+            # (sent again: to them, or the same subject to anyone; a bounce read before its sent mail
+            # has the subject last sent to them)
+            subject = item.get("subject") or ((data.get("people") or {}).get(item.get("who")) or {}).get("subject")
+            if item.get("who") in to or (subject and _subject(message.get("subject")) == subject):
+                _settle(item, "sent again", now)
     for person in people[:3]:
         _remember_person(data, person, "", _subject(message.get("subject")), when, "out")
     if not people or len(people) > 3 or message.get("bulk"):
@@ -598,6 +608,8 @@ def run_note(home: Path, message, platform: str = "") -> str | None:
             lines.append(f"they're waiting on {who} about \"{item.get('subject')}\"")
         elif item["kind"] == "owed":
             lines.append(f"they owe {who} a reply to \"{item.get('subject')}\"")
+        elif item["kind"] == "followup":
+            lines.append(f"{who} is following up on \"{item.get('subject')}\", no reply yet")
         if len(lines) >= 8:
             break
     if not lines:
@@ -658,15 +670,28 @@ def after_sync(inbox, account, new: list[dict], texts: dict, now: float | None =
     with _locked(home):
         data = load(home)
         switches = data["switches"]
-        if not (switches["mail"] or switches["orders"] or switches["trips"]):
+        if not (switches["mail"] or switches["orders"] or switches["trips"] or switches["security"]):
             return
+        from . import mailwatch
         me = (account.address or "").lower()
+        drafts = mailwatch.drafts_to(inbox, account)
         for message in new:
             if message.get("address") == me:
                 continue
             text = texts.get(message.get("id")) or message.get("_text") or ""
+            before = dict((data.get("people") or {}).get((message.get("address") or "").lower()) or {})
             if switches["mail"]:
                 from_inbox(data, message, now)
+                if mailwatch.bounceish(message):
+                    if not text and account.via == "gmail_api":
+                        text = _gmail_text(inbox, account, message)
+                    mailwatch.from_bounce(data, message, text, me, now)
+                else:
+                    mailwatch.from_followup(data, message, text or message.get("snippet") or "", before, now, drafts)
+            if switches["security"] and mailwatch.noticeish(message):
+                if not text and account.via == "gmail_api":
+                    text = _gmail_text(inbox, account, message)
+                mailwatch.from_security(data, message, text or message.get("snippet") or "", now)
             if (switches["orders"] or switches["trips"] or switches["mail"]) and orderish(message):
                 if not text and account.via == "gmail_api":
                     text = _gmail_text(inbox, account, message)
@@ -881,6 +906,8 @@ def meeting_card(item: dict, data: dict) -> dict | None:
                 said.append(f"waiting on {first} about \"{open_.get('subject')}\"")
             elif open_["kind"] == "owed":
                 said.append(f"{first}'s \"{open_.get('subject')}\" needs a reply")
+            elif open_["kind"] == "followup":
+                said.append(f"{first} is following up on \"{open_.get('subject')}\"")
         last = known.get(address)
         if last and float(item.get("start") or 0) - float(last.get("date") or 0) < 30 * 86400:
             said.append(f"last email \"{last.get('subject')}\"")
@@ -920,7 +947,7 @@ def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
                 continue
             if not switches.get(GROUPS.get(item["kind"], "mail"), True):
                 continue
-            if item["kind"] not in ("meeting", "planned") and not hourly:
+            if item["kind"] not in ("meeting", "planned", "security") and not hourly:
                 continue
             if item["kind"] == "delivery" and not item.get("today_said") and item.get("today", 0) <= now < item.get("due", 0) \
                     and _day(now).isoformat() == item.get("day"):
@@ -944,12 +971,16 @@ def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
                 cards.append(made)
                 picked.append((item, "step"))
                 continue
-            if item["kind"] == "owed" and ids is None and mailbox is not None:
+            if item["kind"] in ("owed", "followup") and ids is None and mailbox is not None:
                 try:
                     ids = set(mailbox())
                 except Exception:
                     ids = None
-            made = card(item, ids)
+            if item["kind"] in ("security", "bounce", "followup"):
+                from . import mailwatch
+                made = mailwatch.card(item, data, ids)
+            else:
+                made = card(item, ids)
             if made is None:
                 _settle(item, "dealt with", now)
                 continue
@@ -986,10 +1017,18 @@ def listing(home: Path) -> dict:
     shown = []
     for i in items[:100]:
         shown.append({k: i.get(k) for k in ("id", "kind", "name", "who", "subject", "said", "shop", "what", "order", "day",
-                                             "price", "amount", "autopay", "thing", "place", "flight", "back", "title")
-                       if i.get(k) is not None} | {"due": int(i.get("due") or 0)}
+                                             "price", "amount", "autopay", "thing", "place", "flight", "back", "title",
+                                             "reason", "draft")
+                       if i.get(k) is not None} | {"due": int(i.get("due") or 0)} | _listed(i)
                      | ({"start": int(i["start"])} if i.get("start") else {}))
     return {"switches": data["switches"], "items": shown}
+
+
+def _listed(item: dict) -> dict:
+    if item["kind"] != "security":
+        return {}
+    from . import mailwatch
+    return mailwatch.listed(item)
 
 
 def slash(home: Path, words: list[str]) -> str:

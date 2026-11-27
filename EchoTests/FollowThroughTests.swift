@@ -49,6 +49,22 @@ struct FollowThroughTests {
         #expect(try #require(FollowThrough.parse(Self.answer)).appointments)
     }
 
+    /// Security notices, bounces and follow-ups (plugin 1.55): the security switch, and the three in words.
+    @Test func readsTheMailWatchKinds() throws {
+        #expect(try #require(FollowThrough.parse(#"redde-push follow {"switches": {"security": false}}"#)).security == false)
+        #expect(try #require(FollowThrough.parse(Self.answer)).security, "an older plugin's answer leaves it on")
+        let shown = try #require(FollowThrough.parse("""
+        redde-push follow {"switches": {"security": true}, "items": [
+          {"id": "s1", "kind": "security", "shop": "Google, X", "count": 2, "due": 1795820000},
+          {"id": "b1", "kind": "bounce", "name": "Acme Bids", "who": "bids@acme.example", "subject": "RFP", "reason": "no_address", "due": 1795821000},
+          {"id": "f1", "kind": "followup", "name": "Dana Ruiz", "who": "dana@acme.example", "subject": "Bid", "draft": "mailbox", "due": 1795822000},
+          {"id": "f2", "kind": "followup", "name": "Bo", "who": "bo@example.com", "subject": "Dates", "due": 1795823000}]}
+        """))
+        #expect(shown.items.map(\.title) == ["Was this you?", "Bounced: Acme", "Dana is following up", "Bo is following up"])
+        #expect(shown.items.map(\.detail) == ["Google, X", "RFP", "Bid · Draft waiting", "Dates"])
+        #expect(shown.items[0].count == 2 && shown.items.map(\.symbol).allSatisfy { $0 != "circle" })
+    }
+
     @Test func anOlderPluginsAnswerIsNone() {
         #expect(FollowThrough.parse("redde-push: unknown command follow") == nil)
         #expect(FollowThrough.parse(#"redde-push follow {"switches": {}}"#)?.items == [])

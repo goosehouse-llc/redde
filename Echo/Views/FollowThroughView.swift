@@ -26,6 +26,9 @@ struct FollowThrough: Equatable {
         var back: Date?
         var meetingTitle: String?
         var start: Date?
+        // 1.55: a follow-up's draft waiting ("mailbox" or "redde"), a security card's notices
+        var draft: String?
+        var count: Int?
     }
 
     var mail = true
@@ -36,6 +39,8 @@ struct FollowThrough: Equatable {
     var outings = true
     /// Appointments that come round again (plugin 1.54, `Appointments`).
     var appointments = true
+    /// Security notices from the mail, "Was this you?" (plugin 1.55, `mailwatch.py`).
+    var security = true
     /// The profile whose .env has Paperless's address and key; nil when none has.
     var paperless: String?
     var items: [Item] = []
@@ -57,6 +62,7 @@ struct FollowThrough: Equatable {
         made.habits = switches["habits"] ?? true
         made.outings = switches["outings"] ?? true
         made.appointments = switches["appointments"] ?? true
+        made.security = switches["security"] ?? true
         if let found = root["paperless"] as? [String: Any], found["found"] as? Bool == true {
             made.paperless = found["profile"] as? String
         }
@@ -76,7 +82,8 @@ struct FollowThrough: Equatable {
                         amount: row["amount"] as? String, thing: row["thing"] as? String, place: row["place"] as? String,
                         flight: row["flight"] as? String, back: (row["back"] as? String).flatMap(day.date(from:)),
                         meetingTitle: row["title"] as? String,
-                        start: (row["start"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue) })
+                        start: (row["start"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue) },
+                        draft: row["draft"] as? String, count: (row["count"] as? NSNumber)?.intValue)
         }
         return made
     }
@@ -102,6 +109,9 @@ extension FollowThrough.Item {
         case "trip": "airplane"
         case "meeting": "person.2"
         case "planned": "list.bullet.clipboard"
+        case "security": "lock.shield"
+        case "bounce": "envelope.arrow.triangle.branch"
+        case "followup": "hand.wave"
         default: "circle"
         }
     }
@@ -121,6 +131,9 @@ extension FollowThrough.Item {
         case "trip": place.map { String(localized: "Trip to \($0)", comment: "Follow-Through: a trip, with where to") }
             ?? String(localized: "A trip", comment: "Follow-Through: a trip with no place known")
         case "meeting", "planned": meetingTitle ?? ""
+        case "security": String(localized: "Was this you?", comment: "Follow-Through: security notices from the mail, asking if it was them")
+        case "bounce": String(localized: "Bounced: \(first)", comment: "Follow-Through: mail that didn't arrive, with who it was to")
+        case "followup": String(localized: "\(first) is following up", comment: "Follow-Through: someone writing again with no reply yet")
         default: subject ?? ""
         }
     }
@@ -147,6 +160,11 @@ extension FollowThrough.Item {
             return what.map { String(localized: "For \($0) · \(at)", comment: "Follow-Through: a plan's action for later, with the plan and when") } ?? at
         case "meeting":
             return start?.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()) ?? date
+        case "security": return shop ?? ""
+        case "bounce": return subject ?? ""
+        case "followup":
+            let waiting = draft == nil ? nil : String(localized: "Draft waiting", comment: "Follow-Through: a draft reply to them hasn't been sent")
+            return [subject, waiting].compactMap { $0 }.joined(separator: " · ")
         default: return ""
         }
     }
@@ -162,8 +180,12 @@ struct FollowThroughView: View {
             if let shown {
                 Section {
                     toggle(\.mail, "mail", Text("Promises & Replies", comment: "Follow-Through: the mail switch"),
-                           Text("What you said you'd send, questions waiting on an answer, mail you owe a reply, and what's open with the people you're about to meet.", comment: "Follow-Through: under the mail switch"),
+                           Text("What you said you'd send, questions waiting on an answer, mail you owe a reply or that's being followed up, mail that bounced, and what's open with the people you're about to meet.", comment: "Follow-Through: under the mail switch"),
                            symbol: "envelope.badge")
+                    // (plugin 1.55.0; an older one has no such switch, and its answer leaves it on)
+                    toggle(\.security, "security", Text("Security Notices", comment: "Follow-Through: the security switch"),
+                           Text("A new sign-in, a password or two-step change, a phone number taken off an account: one card for the ones that come together, asking if it was you. Say it was, and that device's sign-ins go quiet.", comment: "Follow-Through: under the security switch"),
+                           symbol: "lock.shield")
                     toggle(\.orders, "orders", Text("Orders, Bills & Renewals", comment: "Follow-Through: the orders switch"),
                            Text("Deliveries running late, return windows closing, trials about to charge, bills before they're due and paid after, and what runs out: a passport, a policy, a warranty.", comment: "Follow-Through: under the orders switch"),
                            symbol: "shippingbox")
