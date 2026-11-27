@@ -29,6 +29,8 @@ struct FollowThrough: Equatable {
         // 1.55: a follow-up's draft waiting ("mailbox" or "redde"), a security card's notices
         var draft: String?
         var count: Int?
+        // 1.56: a bill's banking day to pay by, when its own day banks are shut
+        var payBy: Date?
     }
 
     var mail = true
@@ -83,7 +85,8 @@ struct FollowThrough: Equatable {
                         flight: row["flight"] as? String, back: (row["back"] as? String).flatMap(day.date(from:)),
                         meetingTitle: row["title"] as? String,
                         start: (row["start"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue) },
-                        draft: row["draft"] as? String, count: (row["count"] as? NSNumber)?.intValue)
+                        draft: row["draft"] as? String, count: (row["count"] as? NSNumber)?.intValue,
+                        payBy: (row["pay_by"] as? String).flatMap(day.date(from:)))
         }
         return made
     }
@@ -150,6 +153,10 @@ extension FollowThrough.Item {
             return date + then
         case "bill":
             let owed = amount.map { $0 + " · " } ?? ""
+            if let payBy {
+                let by = payBy.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+                return owed + String(localized: "pay by \(by)", comment: "Follow-Through: a bill due on a day banks are shut, paid by the banking day before")
+            }
             return owed + String(localized: "due \(date)", comment: "Follow-Through: a bill's day due")
         case "expiry": return String(localized: "Expires \(date)", comment: "Follow-Through: when something runs out")
         case "trip":

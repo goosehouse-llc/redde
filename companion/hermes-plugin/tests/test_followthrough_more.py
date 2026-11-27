@@ -68,9 +68,10 @@ class BillTests(Base):
         self.assertEqual(self.due("2026-11-30T12:00"), [])
         (remind,) = self.due("2026-12-01T10:30")
         self.assertEqual(remind["title"], "Pay City Electric $84.20 by Friday")
-        (check,) = self.due("2026-12-06T10:30")
+        self.assertEqual(self.due("2026-12-06T10:30"), [], "two banking days after a Friday: the Tuesday")
+        (check,) = self.due("2026-12-08T10:30")
         self.assertEqual(check["title"], "Did the City Electric bill get paid?")
-        self.assertEqual(self.due("2026-12-07T10:30"), [], "both steps said")
+        self.assertEqual(self.due("2026-12-09T10:30"), [], "both steps said")
 
     def test_a_payment_confirmation_settles_it_and_autopay_is_only_checked(self):
         self.read(mail("billing@cityelectric.com", "Your bill", name="City Electric"),

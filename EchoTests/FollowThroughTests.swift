@@ -65,6 +65,14 @@ struct FollowThroughTests {
         #expect(shown.items[0].count == 2 && shown.items.map(\.symbol).allSatisfy { $0 != "circle" })
     }
 
+    /// A bill due on a day banks are shut (plugin 1.56): its row says the banking day to pay by.
+    @Test func aBillPaidByTheBankingDayBefore() throws {
+        let shown = try #require(FollowThrough.parse("""
+        redde-push follow {"items": [{"id": "b1", "kind": "bill", "shop": "City Electric", "amount": "$84.20", "day": "2026-11-26", "pay_by": "2026-11-25", "due": 1795820000}]}
+        """))
+        #expect(shown.items[0].payBy != nil && shown.items[0].detail.hasPrefix("$84.20 · pay by "))
+    }
+
     @Test func anOlderPluginsAnswerIsNone() {
         #expect(FollowThrough.parse("redde-push: unknown command follow") == nil)
         #expect(FollowThrough.parse(#"redde-push follow {"switches": {}}"#)?.items == [])

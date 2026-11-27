@@ -3,6 +3,18 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.56.0 (2026-11-27)
+
+- Deadlines as they really fall (`deadlines.py`):
+  - A bill due on a day banks are shut (a weekend, or a US bank holiday when this Hermes's time
+    zone is in the US) is to be paid by the banking day before, and its card says why
+    ("Thursday is Thanksgiving: banks are closed"). Its reminder comes a day earlier for each bank
+    holiday in between, and the paid-check two banking days after its day.
+  - A renewal, trial end or bill written in another time zone ("renews at 00:00 UTC", "due by
+    5 PM PT", "December 1 (UTC)") keeps that moment: its day is the one it falls on here, and its
+    card gives the time here and as written ("At 7 PM Monday your time (12:00 AM UTC)").
+  - More renewal wording is read: "renewal date", "auto-renews".
+
 ## 1.55.0 (2026-11-27)
 
 - Three more from the mail, under Follow-Through (`mailwatch.py`):

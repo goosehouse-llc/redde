@@ -18,7 +18,8 @@ Orders, from receipts and shipping mail:
 - free trials and renewals: "Your trial ends December 1… then $14.99/month": three days before.
 
 1.55.0 (`mailwatch.py`): security notices ("Was this you?"), mail that bounced, and someone
-following up with no reply gone.
+following up with no reply gone. 1.56.0 (`deadlines.py`): bills by banking days (weekends, bank
+holidays), and renewals and bills written in another time zone, at their time here.
 
 English only; nothing here reads a whole mailbox, only what each look brings. Each is one item in
 followthrough.json (main home), settled, offered or dropped once; the app lists them and can drop
@@ -36,7 +37,7 @@ import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from . import dates, wire
+from . import dates, deadlines, wire
 
 log = logging.getLogger("redde_push.followthrough")
 
@@ -84,7 +85,8 @@ _RETURN = re.compile(r"\b(?:return (?:by|before|until|through|window closes(?: o
                      r"eligible for (?:a )?return (?:until|through|by)|return it by|returns? accepted (?:until|through))\b", re.IGNORECASE)
 _TRIAL = re.compile(r"\b(?:trial (?:ends|expires|will end|period ends)(?: on)?|free trial (?:until|through|ends)|"
                     r"(?:will )?renews? (?:automatically )?on|will be (?:charged|billed) on|next (?:billing|payment|charge) (?:date|on)(?: is)?|"
-                    r"subscription (?:renews|will renew)(?: on)?|first (?:payment|charge) (?:on|date))\b", re.IGNORECASE)
+                    r"subscription (?:renews|will renew)(?: on)?|first (?:payment|charge) (?:on|date)|"
+                    r"renewal date(?: is)?:?|auto-?renews?(?: on)?)\b", re.IGNORECASE)
 _PRICE = re.compile(r"(?:[$€£]\s?\d{1,4}(?:[.,]\d{2})?|\d{1,4}(?:[.,]\d{2})?\s?(?:USD|EUR|GBP))(?:\s?(?:/|per|a)\s?(?:mo(?:nth)?|yr|year|week))?", re.IGNORECASE)
 _ORDER_NO = re.compile(r"\border\s*(?:#|no\.?|number)?\s*:?\s*#?([A-Z0-9][A-Z0-9-]{4,24})\b", re.IGNORECASE)
 _SUBJECT_NOISE = re.compile(r"^(?:re|fwd?|shipped|ordered|delivered|arriving[^:]*|your order(?: of)?|order confirmation|"
@@ -380,9 +382,14 @@ def from_order(data: dict, message: dict, text: str, now: float) -> tuple[list[s
     if ends and ref < ends <= ref + timedelta(days=400):
         price = _PRICE.search(body)
         service = shop if shop != "the shop" else what
+        # (1.56.0: "renews at 00:00 UTC" is the evening before, here)
+        zoned = deadlines.zoned(body, _TRIAL, ends, ref)
+        here = _day(zoned["at"]) if zoned else ends
         item = {"id": _id("trial", domain, ends), "kind": "trial", "shop": service, "domain": domain,
-                "what": what, "day": ends.isoformat(), "price": price.group(0).strip() if price else None,
-                "made": when, "due": _at(ends - timedelta(days=TRIAL_AHEAD), 10)}
+                "what": what, "day": here.isoformat(), "price": price.group(0).strip() if price else None,
+                "made": when, "due": _at(here - timedelta(days=TRIAL_AHEAD), 10)}
+        if zoned:
+            item.update(at=zoned["at"], zone_said=zoned["said"])
         if _keep(data, item):
             made.append(item["id"])
     return made, came
@@ -420,14 +427,26 @@ def from_bill(data: dict, message: dict, text: str, now: float, shop: str | None
         return []
     amount = _AMOUNT.search(body) or _PRICE.search(body)
     auto = bool(_AUTOPAY.search(body))
-    item = {"id": _id("bill", domain or shop, day), "kind": "bill", "shop": shop, "domain": domain,
+    key = day
+    zoned = deadlines.zoned(body, _DUE, day, ref)
+    day = _day(zoned["at"]) if zoned else day
+    # (1.56.0: paid by the banking day before a day banks are shut; reminded earlier over a bank
+    # holiday; checked two banking days after, when a payment would have posted)
+    days = deadlines.bill_days(day, BILL_AHEAD, BILL_AFTER)
+    item = {"id": _id("bill", domain or shop, key), "kind": "bill", "shop": shop, "domain": domain,
             "what": _subject(subject) if subject else shop, "amount": (amount.group(1) if amount and amount.lastindex else
                                                                        amount.group(0) if amount else None),
             "autopay": auto, "day": day.isoformat(), "made": when}
-    steps = [("verify", _at(day + timedelta(days=BILL_AFTER), 10))]
-    if not auto and now < _at(day, 19):
+    if zoned:
+        item.update(at=zoned["at"], zone_said=zoned["said"])
+    if not auto and days["pay_by"] != day:
+        item["pay_by"] = days["pay_by"].isoformat()
+    if not auto and days["closed"]:
+        item["closed"] = days["closed"]
+    steps = [("verify", _at(days["verify"], 10))]
+    if not auto and now < _at(days["pay_by"], 19):
         # (a bill that comes in less than three days before its day is reminded now, not never)
-        steps.append(("remind", max(_at(day - timedelta(days=BILL_AHEAD), 10), now)))
+        steps.append(("remind", max(_at(days["remind"], 10), now)))
     if data["items"].get(item["id"]):
         return []
     _keep(data, _steps(item, steps, now))
@@ -828,6 +847,13 @@ def card(item: dict, mailbox: dict | None = None) -> dict | None:
                            "how in my email."}
     if kind == "trial":
         then = f", then {item['price']}" if item.get("price") else ""
+        if item.get("at"):
+            here = deadlines.at_said(float(item["at"]), _when)
+            return {"title": f"{item.get('shop')} renews {_when(item.get('day'))}"[:60],
+                    "why": f"At {here} your time ({item.get('zone_said')}){then}"[:140],
+                    "request": f"My {item.get('shop')} trial or subscription renews at {here} my time ({item.get('zone_said')}, "
+                               f"{item.get('day')} here){then}. Find how to cancel it in my email, and tell me what it costs "
+                               "if I keep it."}
         return {"title": f"{item.get('shop')} renews {_when(item.get('day'))}"[:60],
                 "why": f"Your trial or plan ends {item.get('day')}{then}"[:140],
                 "request": f"My {item.get('shop')} trial or subscription renews on {item.get('day')}{then}. Find how to "
@@ -850,10 +876,14 @@ def step_card(item: dict, step: str, data: dict) -> dict | None:
     if kind == "bill":
         amount = f" {item['amount']}" if item.get("amount") else ""
         if step == "remind":
-            return {"title": f"Pay {item.get('shop')}{amount} by {_when(item.get('day'))}"[:60],
-                    "why": f"{item.get('what')}"[:140],
-                    "request": f"Help me pay my {item.get('shop')} bill{amount}, due {item.get('day')}: find it in my email "
-                               "or my documents and tell me how to pay it."}
+            by = item.get("pay_by") or item.get("day")
+            closed = deadlines.closed_said(item.get("closed"), _when)
+            time_said = f" at {_clock(float(item['at']))} my time ({item.get('zone_said')})" if item.get("at") else ""
+            return {"title": f"Pay {item.get('shop')}{amount} by {_when(by)}"[:60],
+                    "why": (closed or (f"Due {item.get('zone_said')}" if item.get("at") else f"{item.get('what')}"))[:140],
+                    "request": f"Help me pay my {item.get('shop')} bill{amount}, due {item.get('day')}{time_said}"
+                               + (f" ({closed}, so by {by})" if closed else "")
+                               + ": find it in my email or my documents and tell me how to pay it."}
         return {"title": f"Did the {item.get('shop')} bill get paid?"[:60],
                 "why": ("It's on autopay, but no confirmation came" if item.get("autopay") else
                         f"It was due {item.get('day')}, and no payment confirmation came")[:140],
@@ -1018,7 +1048,7 @@ def listing(home: Path) -> dict:
     for i in items[:100]:
         shown.append({k: i.get(k) for k in ("id", "kind", "name", "who", "subject", "said", "shop", "what", "order", "day",
                                              "price", "amount", "autopay", "thing", "place", "flight", "back", "title",
-                                             "reason", "draft")
+                                             "reason", "draft", "pay_by")
                        if i.get(k) is not None} | {"due": int(i.get("due") or 0)} | _listed(i)
                      | ({"start": int(i["start"])} if i.get("start") else {}))
     return {"switches": data["switches"], "items": shown}
