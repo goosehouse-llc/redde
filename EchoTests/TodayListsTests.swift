@@ -147,7 +147,8 @@ struct TodayListsTests {
     /// lists have none, and a poster that isn't https or on their own network is dropped.
     @Test func readsAListsLookAndPosters() throws {
         let answer = #"redde-push lists {"lists": [{"id": "w", "title": "Christmas Movies", "kind": "watch", "emoji": "🎄", "color": "red", "items": ["#
-            + #"{"id": "a", "text": "Home Alone (1990)", "done": false, "poster": "https://upload.wikimedia.org/h.jpg", "year": 1990},"#
+            + #"{"id": "a", "text": "Home Alone (1990)", "done": false, "poster": "https://upload.wikimedia.org/h.jpg", "year": 1990, "#
+            + #""plot": "Kevin is left behind at Christmas.", "page": "https://www.themoviedb.org/movie/771"},"#
             + #"{"id": "b", "text": "Elf", "done": true, "poster": "http://img.example.com/elf.jpg"},"#
             + #"{"id": "c", "text": "Die Hard", "done": false, "poster": "http://100.101.12.34:8096/Items/d/Images/Primary", "when": "2026-11-26T19:30-05:00", "with": "Robin"}]},"#
             + #"{"id": "o", "title": "Odd", "kind": "boat", "emoji": "hello", "color": "plaid", "items": []}]}"#
@@ -158,6 +159,8 @@ struct TodayListsTests {
         #expect(films.items[0].year == 1990 && films.items[0].name == "Home Alone")
         #expect(films.items[2].when == Date(timeIntervalSince1970: 1_795_739_400) && films.items[2].company == "Robin", "a plan (plugin 1.38)")
         #expect(films.items[0].when == nil && films.items[0].plan == nil)
+        #expect(films.items[0].plot == "Kevin is left behind at Christmas." && films.items[0].page == "https://www.themoviedb.org/movie/771", "plugin 1.52")
+        #expect(films.items[1].plot == nil && films.items[1].page == nil)
         #expect(lists[1].kind == nil && lists[1].emoji == nil && lists[1].hue == nil, "what it can't use is left out")
         let old = try #require(TodayList.parse(Self.answer)).lists[0]
         #expect(old.kind == nil && old.emoji == nil)
@@ -338,16 +341,21 @@ struct TodayListsTests {
         #expect(asked == 0)
     }
 
-    /// A watch list's film, long-pressed (2026-11-24): its IMDb and Wikipedia by its name and year,
+    /// A watch list's film, long-pressed (2026-11-24): its TMDb and Wikipedia by its name and year,
     /// where it's on by its name; Wikipedia in the phone's language.
     @Test func aFilmIsLookedUpByItsNameAndYear() {
         let film = TodayList.Item(id: "a", text: "Home Alone (1990)", done: false, year: 1990)
-        #expect(FilmLookUp.imdb.url(for: film).absoluteString == "https://www.imdb.com/find/?q=Home%20Alone%201990&s=tt")
+        #expect(FilmLookUp.tmdb.url(for: film).absoluteString == "https://www.themoviedb.org/search?query=Home%20Alone%201990")
+        var found = film
+        found.page = "https://www.themoviedb.org/movie/771"
+        #expect(FilmLookUp.tmdb.url(for: found).absoluteString == "https://www.themoviedb.org/movie/771", "its own page, where the plugin found it")
+        found.page = "https://en.wikipedia.org/wiki/Home_Alone"
+        #expect(FilmLookUp.tmdb.url(for: found).host() == "www.themoviedb.org", "a page elsewhere: TMDb's search")
         #expect(FilmLookUp.wikipedia.url(for: film, language: "fr").absoluteString == "https://fr.wikipedia.org/w/index.php?search=Home%20Alone%201990")
         #expect(FilmLookUp.wikipedia.url(for: film, language: "").absoluteString.hasPrefix("https://en.wikipedia.org/"))
         #expect(FilmLookUp.watch.url(for: film).absoluteString == "https://tv.apple.com/search?term=Home%20Alone")
         let series = TodayList.Item(id: "b", text: "Pluribus", done: false)
-        #expect(FilmLookUp.imdb.url(for: series).absoluteString == "https://www.imdb.com/find/?q=Pluribus&s=tt")
+        #expect(FilmLookUp.tmdb.url(for: series).absoluteString == "https://www.themoviedb.org/search?query=Pluribus")
     }
 
     /// The Ticket Stubs layout (2026-11-25): picked per watch list, a Clean List until then, kept

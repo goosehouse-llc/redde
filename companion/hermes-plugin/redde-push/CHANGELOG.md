@@ -3,6 +3,13 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.52.0 (2026-11-26)
+
+- A watch list's films and series now keep what they're about and their page with their poster:
+  TMDb's overview and page with a key, else Wikipedia's summary or TVmaze's. Redde shows the plot
+  under the poster on a Shelf, and its long press opens the title's TMDb page. A TMDb poster found
+  before is looked up there once more for its plot.
+
 ## 1.51.0 (2026-11-26)
 
 - Films on the calendar, one device at a time: an iPhone and an iPad opened together each put every

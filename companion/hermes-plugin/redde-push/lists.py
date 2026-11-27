@@ -637,7 +637,7 @@ def _edit(kept: dict, args: dict, at: int, home: Path | None = None) -> dict:
     item, before = found[0], found[0].get("text")
     if words[0] != before:
         item["text"] = words[0]
-        for field in ("poster", "year", "poster_tried", "poster_misses", "poster_tmdb", "poster_again", "help"):
+        for field in ("poster", "year", "poster_tried", "poster_misses", "poster_tmdb", "poster_again", "help", "plot", "page", "plot_tried"):
             item.pop(field, None)
         if item.get("when"):
             when, now = datetime.fromisoformat(item["when"]), datetime.fromtimestamp(at, timezone.utc)
@@ -709,7 +709,7 @@ def listing(home: Path) -> list[dict]:
         _posters_later(home, k)
     return [{"id": k["id"], "title": k.get("title") or "", "changed": k.get("changed") or k.get("made"), **look(k),
              "items": [{"id": i.get("id"), "text": i.get("text") or "", "done": bool(i.get("done")),
-                        **{f: i[f] for f in ("poster", "year", "when", "with", "help") if i.get(f)}}
+                        **{f: i[f] for f in ("poster", "year", "when", "with", "help", "plot", "page") if i.get(f)}}
                        for i in k.get("items") or [] if i.get("id")]}
             for k in kept]
 
@@ -756,6 +756,10 @@ def _untried(kept: dict, now: float | None = None) -> list[dict]:
 
 def _wants_poster(item: dict, now: float, keyed: bool = False) -> bool:
     if not item.get("poster_tried"):
+        return True
+    # A TMDb poster from before 1.52.0 has no plot: looked for there once more for it.
+    if keyed and item.get("poster") and not item.get("plot") and not item.get("plot_tried") \
+            and str(item["poster"]).startswith(posters.TMDB_IMAGES):
         return True
     if item.get("poster"):
         # Found elsewhere before there was a TMDb key, or by the first such look: looked for there, once (1.44.0).
@@ -818,6 +822,8 @@ def fill_posters(home: Path, now: float | None = None) -> int:
             for i in k.get("items") or []:
                 if i.get("id") not in asked:
                     continue
+                if i["id"] in found:
+                    _about(i, found[i["id"]], at)
                 if i["id"] in again:
                     if found.get(i["id"]):
                         i["poster"] = found[i["id"]]
@@ -837,6 +843,16 @@ def fill_posters(home: Path, now: float | None = None) -> int:
                         i["poster_misses"] = (misses if isinstance(misses, int) else 0) + 1
         save(home, lists)
     return sum(1 for v in found.values() if v)
+
+
+def _about(item: dict, found, at: int) -> None:
+    """What the film is about and its page, where the look found them (1.52.0: under its poster on
+    a shelf; the page, TMDb's with a key, is what Redde's long press opens)."""
+    item["plot_tried"] = at
+    if getattr(found, "plot", None):
+        item["plot"] = found.plot
+    if getattr(found, "page", None):
+        item["page"] = found.page
 
 
 def slash(home: Path, words: list[str]) -> str:

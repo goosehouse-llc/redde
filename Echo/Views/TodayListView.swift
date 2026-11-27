@@ -388,7 +388,7 @@ struct ListItemActions: ViewModifier {
             }
         }
         .contextMenu {
-            // Out to a film's or a series' pages (asked 2026-11-24): its IMDb, its Wikipedia, where it's on.
+            // Out to a film's or a series' pages (asked 2026-11-24): its TMDb, its Wikipedia, where it's on.
             if list.kind == .watch {
                 Section {
                     ForEach(FilmLookUp.allCases) { site in
@@ -1045,18 +1045,19 @@ private struct DayBadge: View {
 }
 
 /// A film's or a series' pages out on the web, from its long press on a watch list (asked
-/// 2026-11-24, "search out to get details on the movie"): its IMDb, its Wikipedia, and where it's
-/// on (the TV app's search, as a show card's tap). Each is a search by its name and year, which
-/// the site's own page is a tap from: a list item keeps no page of its own, and opening a site's
-/// search needs no key, where reading IMDb's or TMDb's data from the server would.
+/// 2026-11-24, "search out to get details on the movie"): its TMDb, its Wikipedia, and where it's
+/// on (the TV app's search, as a show card's tap). TMDb, where its poster and plot come from with
+/// the person's key, in place of IMDb (2026-11-26: "i thought we went with TMDB instead of IMDb"):
+/// its own page there when the plugin found it (1.52), else TMDb's search. The rest are searches
+/// by its name and year, the site's own page a tap away.
 enum FilmLookUp: CaseIterable, Identifiable {
-    case imdb, wikipedia, watch
+    case tmdb, wikipedia, watch
 
     var id: Self { self }
 
     var title: Text {
         switch self {
-        case .imdb: Text(verbatim: "IMDb")
+        case .tmdb: Text(verbatim: "TMDb")
         case .wikipedia: Text(verbatim: "Wikipedia")
         case .watch: Text("Where can I watch it?", comment: "A chip under a show card: asks the agent where it streams")
         }
@@ -1064,7 +1065,7 @@ enum FilmLookUp: CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
-        case .imdb: "star"
+        case .tmdb: "film"
         case .wikipedia: "book"
         case .watch: "play.tv"
         }
@@ -1075,9 +1076,10 @@ enum FilmLookUp: CaseIterable, Identifiable {
         let named = [item.name, item.year.map(String.init)].compactMap(\.self).joined(separator: " ")
         var parts: URLComponents
         switch self {
-        case .imdb:
-            parts = URLComponents(string: "https://www.imdb.com/find/")!
-            parts.queryItems = [URLQueryItem(name: "q", value: named), URLQueryItem(name: "s", value: "tt")]
+        case .tmdb:
+            if let page = item.page.flatMap(URL.init(string:)), page.host() == "www.themoviedb.org" { return page }
+            parts = URLComponents(string: "https://www.themoviedb.org/search")!
+            parts.queryItems = [URLQueryItem(name: "query", value: named)]
         case .wikipedia:
             let site = language.allSatisfy(\.isLetter) && !language.isEmpty ? language : "en"
             parts = URLComponents(string: "https://\(site).wikipedia.org/w/index.php")!

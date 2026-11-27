@@ -237,7 +237,7 @@ class ListLooksTests(unittest.TestCase):
 
         def again(title, year, deadline, series):
             self.again.append((title, year))
-            self.assertIs(series, False, "a poster from Wikipedia is a film's")
+            self.assertIs(series, None if title == "Home Alone" else False, "a poster from Wikipedia is a film's")
             return None if title == "A Very Brady Christmas" else f"{tmdb}/{title.replace(' ', '_')}.jpg"
         lists.FIND_AGAIN = again
         lists.fill_posters(self.home)
@@ -245,15 +245,53 @@ class ListLooksTests(unittest.TestCase):
 
         lists.KEYED = lambda: True
         lists.fill_posters(self.home)
-        self.assertEqual(sorted(self.again), [("A Very Brady Christmas", None), ("Elf", "2003")], "TMDb's and the missed aren't asked")
+        self.assertEqual(sorted(self.again), [("A Very Brady Christmas", None), ("Elf", "2003"), ("Home Alone", None)],
+                         "the missed isn't asked; TMDb's own only for its plot (1.52.0)")
         self.assertEqual(self.asked, [], "and only TMDb is")
         elf, brady, home_alone, lost = lists.listing(self.home)[0]["items"]
         self.assertEqual(elf["poster"], tmdb + "/Elf.jpg")
         self.assertEqual(brady["poster"], "https://upload.wikimedia.org/Brady.jpg", "kept when TMDb has none")
-        self.assertEqual(home_alone["poster"], tmdb + "/home.jpg")
+        self.assertEqual(home_alone["poster"], tmdb + "/Home_Alone.jpg", "looked at for its plot: poster and plot from the one look")
         self.assertNotIn("poster_again", elf, "for the plugin, not the phone")
         lists.fill_posters(self.home)
-        self.assertEqual(len(self.again), 2, "once")
+        self.assertEqual(len(self.again), 3, "once")
+
+    def test_a_film_keeps_what_its_about_and_its_page(self):
+        # 1.52.0, 2026-11-26: "under the poster art, add a little plot description"; TMDb's page for the long press.
+        tmdb = plugin.posters.TMDB_IMAGES
+        found = plugin.posters.Found.at(tmdb + "/elf.jpg", "https://www.themoviedb.org/movie/10719",
+                                        "Buddy, raised by elves at the North Pole, goes to New York to find his father.")
+        lists.FIND = lambda title, year, deadline: found if title == "Elf" else None
+        do(self.home, action="make", title="Christmas Movies", items=["Elf", "Klaus"])
+        elf, klaus = lists.listing(self.home)[0]["items"]
+        self.assertEqual(elf["plot"], found.plot)
+        self.assertEqual(elf["page"], "https://www.themoviedb.org/movie/10719")
+        self.assertNotIn("plot", klaus)
+        # Renamed: looked up again, the old plot gone with the old poster.
+        lists.FIND = lambda title, year, deadline: None
+        do(self.home, action="edit", list="Christmas Movies", items=["Elf"], title="Elf (2003 film)")
+        self.assertNotIn("plot", lists.listing(self.home)[0]["items"][0])
+
+    def test_a_tmdb_poster_from_before_gets_its_plot_once(self):
+        tmdb = plugin.posters.TMDB_IMAGES
+        lists.save(self.home, [{"id": "w", "title": "Christmas Movies", "kind": "watch", "items": [
+            {"id": "h", "text": "Home Alone", "done": False, "poster": tmdb + "/home.jpg", "poster_tried": 1, "poster_again": 2}]}])
+        asked = []
+
+        def again(title, year, deadline, series):
+            asked.append(title)
+            return plugin.posters.Found.at(tmdb + "/home.jpg", "https://www.themoviedb.org/movie/771",
+                                           "Eight-year-old Kevin is accidentally left behind when his family flies to Paris.")
+        lists.FIND_AGAIN, lists.KEYED = again, (lambda: False)
+        lists.fill_posters(self.home)
+        self.assertEqual(asked, [], "no key: TMDb can't be asked")
+        lists.KEYED = lambda: True
+        lists.fill_posters(self.home)
+        lists.fill_posters(self.home)
+        self.assertEqual(asked, ["Home Alone"], "once")
+        home = lists.listing(self.home)[0]["items"][0]
+        self.assertTrue(home["plot"].startswith("Eight-year-old Kevin"))
+        self.assertEqual((home["poster"], home["page"]), (tmdb + "/home.jpg", "https://www.themoviedb.org/movie/771"))
 
     def test_posters_the_first_tmdb_look_took_are_looked_at_again(self):
         # Its first round took TMDb's most watched this week: Home Alone got a Korean show's.

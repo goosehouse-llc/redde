@@ -17,7 +17,9 @@ extension TodayList {
                 return Item(id: id, text: i["text"]?.string ?? "", done: i["done"]?.bool ?? false, poster: poster,
                             year: i["year"]?.number.flatMap(\.nearestInt), when: i["when"]?.string.flatMap(planDate),
                             company: i["with"]?.string.flatMap { $0.isEmpty ? nil : String($0.prefix(60)) },
-                            help: i["help"]?.string.flatMap { $0.isEmpty ? nil : String($0.prefix(80)) })
+                            help: i["help"]?.string.flatMap { $0.isEmpty ? nil : String($0.prefix(80)) },
+                            plot: i["plot"]?.string.flatMap { $0.isEmpty ? nil : String($0.prefix(500)) },
+                            page: i["page"]?.string.flatMap { $0.hasPrefix("https://") ? $0 : nil })
             }
             let emoji = l["emoji"]?.string.flatMap { $0.count == 1 && $0.unicodeScalars.contains { $0.properties.isEmoji && $0.value > 0x238C } ? $0 : nil }
             return TodayList(id: id, title: l["title"]?.string ?? "", items: items, kind: l["kind"]?.string.flatMap(Kind.init(rawValue:)),
@@ -483,7 +485,7 @@ final class TodayLists {
         apply(list.id, ["action": .string("edit"), "items": .array([.string(item.id)]), "title": .string(text)]) { kept in
             guard let i = kept.items.firstIndex(where: { $0.id == item.id }) else { return }
             kept.items[i].text = text
-            if kept.kind == .watch { kept.items[i].poster = nil; kept.items[i].year = nil }
+            if kept.kind == .watch { kept.items[i].poster = nil; kept.items[i].year = nil; kept.items[i].plot = nil; kept.items[i].page = nil }
         }
     }
 
@@ -585,13 +587,25 @@ final class TodayLists {
     /// `-echo.demoLists`: two made-up lists, for screenshots.
     static var demo: Bool { DevHooks.has("-echo.demoLists") }
 
+    /// What each demo film is about, as the plugin keeps it (1.52): under its poster on a shelf.
+    static let demoPlots = [
+        "Donnie Brasco": "An FBI agent goes undercover in a New York Mafia family and grows close to the hitman who vouches for him.",
+        "Home Alone": "Left behind when his family flies to Paris for Christmas, eight-year-old Kevin defends the house from two burglars.",
+        "Elf": "Raised by elves at the North Pole, Buddy travels to New York to find the father he never knew.",
+        "It's a Wonderful Life": "On Christmas Eve, an angel shows a despairing George Bailey what his town would have been without him.",
+        "Die Hard": "A New York cop visiting Los Angeles for Christmas takes on the men who seize his wife's office tower.",
+        "Love Actually": "Ten loosely linked London love stories unfold in the five weeks before Christmas.",
+        "Scrooged": "A cold-hearted TV executive is visited by three ghosts while he stages a live Christmas Carol.",
+        "The Polar Express": "A boy who doubts Santa boards a mysterious train bound for the North Pole on Christmas Eve.",
+    ]
+
     static let demoLists: [TodayList] = [
         TodayList(id: "films", title: "Christmas Movies", items: [
             ("Donnie Brasco", 1997, false), ("Home Alone", 1990, false), ("Elf", 2003, false), ("It's a Wonderful Life", 1946, true), ("Die Hard", 1988, false),
             ("Love Actually", 2003, false), ("Scrooged", 1988, true), ("The Polar Express", 2004, false)].enumerated().map { n, film in
                 .init(id: "f\(n)", text: film.0, done: film.2, poster: "https://demo.example/posters/\(film.0.lowercased().filter { $0.isLetter || $0 == " " }.replacingOccurrences(of: " ", with: "-")).jpg",
                       year: film.1, when: n == 0 ? Calendar.current.date(byAdding: .day, value: 3, to: Calendar.current.startOfDay(for: .now))?.addingTimeInterval(19.5 * 3600) : nil,
-                      company: n == 0 ? "Robin" : nil) }, kind: .watch, emoji: "🎄", hue: .red),
+                      company: n == 0 ? "Robin" : nil, plot: demoPlots[film.0]) }, kind: .watch, emoji: "🎄", hue: .red),
         TodayList(id: "groceries", title: "Groceries", items: [
             .init(id: "g1", text: "Oat milk", done: false), .init(id: "g2", text: "Eggs", done: true),
             .init(id: "g3", text: "Sourdough", done: false), .init(id: "g4", text: "Lemons", done: false),

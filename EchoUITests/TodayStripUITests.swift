@@ -207,13 +207,15 @@ final class TodayStripUITests: XCTestCase {
         page.name = "watch-list-page"; page.lifetime = .keepAlways; add(page)
         // A long press goes out to its pages (2026-11-24).
         elf.press(forDuration: 1.0)
-        for site in ["IMDb", "Wikipedia", "Where can I watch it?"] {
+        for site in ["TMDb", "Wikipedia", "Where can I watch it?"] {
             XCTAssertTrue(app.buttons[site].waitForExistence(timeout: 3), "No \(site) in the film's menu")
         }
         let menu = XCTAttachment(screenshot: app.screenshot())
         menu.name = "film-look-up"; menu.lifetime = .keepAlways; add(menu)
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()   // the dimmed list's header (the status bar doesn't close it)
-        XCTAssertTrue(app.buttons["IMDb"].waitForNonExistence(timeout: 3), "The film's menu didn't close")
+        // The dimmed sheet's top, above its title: the status bar doesn't close it, and lower down
+        // the menu itself may be (it opens over the title).
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.1)).tap()
+        XCTAssertTrue(app.buttons["TMDb"].waitForNonExistence(timeout: 3), "The film's menu didn't close")
         elf.tap()
         XCTAssertTrue(app.staticTexts["3 of 8 done"].waitForExistence(timeout: 5), "Watching one didn't count")
         app.buttons["Change Look"].firstMatch.tap()
@@ -313,6 +315,9 @@ final class TodayStripUITests: XCTestCase {
         layout.buttons["Shelf"].tap()
         app.navigationBars["Change Look"].buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["6 to watch · 2 watched"].waitForExistence(timeout: 5), "The list isn't drawn as a shelf")
+        // What it's about, under its name (2026-11-26, plugin 1.52).
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "goes undercover in a New York Mafia family")).firstMatch
+            .waitForExistence(timeout: 5), "No plot under the poster")
         sleep(2)
         let page = XCTAttachment(screenshot: app.screenshot())
         page.name = "shelf"; page.lifetime = .keepAlways; add(page)

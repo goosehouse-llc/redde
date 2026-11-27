@@ -25,6 +25,10 @@ nonisolated struct TodayList: Codable, Equatable, Identifiable, Sendable {
         var company: String? = nil
         /// What the agent could do for it (plugin 1.46): "Find their number and hours".
         var help: String? = nil
+        /// A film's or a series' plot, and its page (TMDb's, with the person's key), from where its
+        /// poster was found (plugin 1.52): under its poster on a shelf, and its long press.
+        var plot: String? = nil
+        var page: String? = nil
 
         /// "Thu, Nov 26, 7:30 PM · with Robin".
         var plan: String? {

@@ -2,8 +2,9 @@ import SwiftUI
 
 /// The Shelf layout of a watch list (2026-11-25, "add shelf as well", the movie list mockups' B):
 /// one large poster at a time, swiped through, the next ones peeking either side; its name, year
-/// and night under it, Plan a Night and Watched for the one in the middle, and dots for where you
-/// are. Picked per list in Change Look (`Settings.FilmLayout.shelf`).
+/// and night under it, then a few lines of what it's about (2026-11-26, plugin 1.52), Plan a Night
+/// and Watched for the one in the middle, and dots for where you are. Picked per list in Change
+/// Look (`Settings.FilmLayout.shelf`).
 struct FilmShelf<Actions: ViewModifier>: View {
     let items: [TodayList.Item]
     let mark: Color
@@ -59,6 +60,16 @@ struct FilmShelf<Actions: ViewModifier>: View {
                             .chatFont(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
+                    }
+                    // What it's about: room for three lines whenever any film has a plot, so the
+                    // buttons stay put as the shelf is swiped.
+                    if items.contains(where: { $0.plot != nil }) {
+                        Text(verbatim: item.plot ?? "")
+                            .chatFont(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3, reservesSpace: true)
+                            .padding(.top, 6)
                     }
                 }
                 .padding(.horizontal, 16)

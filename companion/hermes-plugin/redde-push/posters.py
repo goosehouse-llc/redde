@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import difflib
 import ipaddress
+import html
 import json
 import os
 import re
@@ -106,14 +107,35 @@ GET = _get
 
 
 class Found(str):
-    """A poster's address, with the page it was found on (1.40.1: the card's title opens it)."""
+    """A poster's address, with the page it was found on (1.40.1: the card's title opens it) and,
+    where that page says, what the film or series is about (1.52.0: under its poster on a shelf)."""
     page: str | None = None
+    plot: str | None = None
 
     @classmethod
-    def at(cls, picture: str, page) -> "Found":
+    def at(cls, picture: str, page, plot=None) -> "Found":
         made = cls(picture)
         made.page = page if isinstance(page, str) and page.startswith("https://") else None
+        made.plot = about(plot)
         return made
+
+
+#: How much of a plot is kept: a few lines under a poster.
+PLOT = 420
+
+
+def about(text) -> str | None:
+    """A plot as a few plain sentences: tags and spaces tidied, cut at a sentence near PLOT."""
+    if not isinstance(text, str):
+        return None
+    text = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", text)).split())
+    if len(text) < 20:
+        return None
+    if len(text) > PLOT:
+        cut = text[:PLOT]
+        end = max(cut.rfind(". "), cut.rfind("! "), cut.rfind("? "))
+        text = cut[:end + 1] if end > PLOT // 3 else cut.rsplit(" ", 1)[0] + "…"
+    return text
 
 
 def state(url: str, deadline: float) -> str:
@@ -172,7 +194,7 @@ def _picture(found: dict, year: str | None, bare: bool) -> "Found | None":
     picture = (found.get("originalimage") or found.get("thumbnail") or {}).get("source")
     if isinstance(picture, str) and picture.startswith("https://"):
         return Found.at(picture, ((found.get("content_urls") or {}).get("mobile") or {}).get("page")
-                        or ((found.get("content_urls") or {}).get("desktop") or {}).get("page"))
+                        or ((found.get("content_urls") or {}).get("desktop") or {}).get("page"), found.get("extract"))
     return None
 
 
@@ -275,7 +297,7 @@ def tvmaze(title: str, year: str | None, deadline: float) -> str | None:
             continue
         picture = (show.get("image") or {}).get("original") or (show.get("image") or {}).get("medium")
         if isinstance(picture, str) and picture.startswith("https://"):
-            return Found.at(picture, show.get("url"))
+            return Found.at(picture, show.get("url"), show.get("summary"))
     return None
 
 
@@ -346,7 +368,7 @@ def tmdb(title: str, year: str | None, series: bool | None, deadline: float, key
     known is more ratings, all-time: TMDb's popularity is what's watched this week, and put a
     Korean show called "Home Alone" over the film (2026-11-24)."""
     token = key.startswith("eyJ") and key.count(".") == 2   # a read access token, not an API key
-    best: tuple[tuple, str, str] | None = None
+    best: tuple[tuple, str, str, str | None] | None = None
     for kind in (["tv"] if series else ["movie"] if series is False else ["movie", "tv"]):
         if time.monotonic() > deadline:
             break
@@ -371,8 +393,9 @@ def tmdb(title: str, year: str | None, series: bool | None, deadline: float, key
                 continue
             rank = (score > 0.97, bool(year and when == year), int(found.get("vote_count") or 0), float(found.get("popularity") or 0))
             if best is None or rank > best[0]:
-                best = (rank, TMDB_IMAGES + found["poster_path"], f"https://www.themoviedb.org/{kind}/{found['id']}")
-    return Found.at(best[1], best[2]) if best else None
+                best = (rank, TMDB_IMAGES + found["poster_path"], f"https://www.themoviedb.org/{kind}/{found['id']}",
+                        found.get("overview"))
+    return Found.at(best[1], best[2], best[3]) if best else None
 
 
 def lookup(title: str, year: str | None, series: bool | None, deadline: float) -> str | None:

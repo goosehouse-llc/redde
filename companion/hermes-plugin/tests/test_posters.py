@@ -206,6 +206,18 @@ class TMDbTests(unittest.TestCase):
         self.assertIn("api_key=" + self.KEY, url)
         self.assertIsNone(headers)
 
+    def test_a_film_comes_with_what_its_about(self):
+        # 1.52.0: a few lines under the poster on a shelf.
+        plot = ("Buddy, a human raised as an elf at the North Pole, travels to New York City to find his real father. " * 6).strip()
+        posters.GET = TMDb(movie=[{"id": 10719, "title": "Elf", "release_date": "2003-10-09", "poster_path": "/elf.jpg", "overview": plot}])
+        found = self.find("Elf", "2003", False)
+        self.assertTrue(found.plot.startswith("Buddy, a human raised as an elf"))
+        self.assertLessEqual(len(found.plot), posters.PLOT)
+        self.assertTrue(found.plot.endswith("father."), "cut at a sentence")
+        self.assertEqual(posters.about("<p>A <b>retired</b> detective &amp; his dog.</p>"), "A retired detective & his dog.")
+        self.assertIsNone(posters.about("Short."))
+        self.assertIsNone(posters.about(None))
+
     def test_a_read_access_token_goes_in_a_header_not_the_address(self):
         token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJ4In0.c2lnbmF0dXJl"
         posters.KEY = lambda: token
