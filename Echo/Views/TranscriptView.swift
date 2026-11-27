@@ -429,6 +429,7 @@ struct TranscriptView: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 0) {
                     reconnectBanner
+                    SideChatStrip(conversation: conversation)
                     CatchingUpStrip(step: conversation.catchingUp)
                     HandoffStrip(conversation: conversation)
                     WorkStrip(conversation: conversation)

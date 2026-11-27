@@ -432,6 +432,113 @@
         }
       }
     },
+    "%@ What you ask for always comes: replies, reminders, briefings, Heads-Ups and watches." : {
+      "comment" : "Agents Bring Up: footer; the first part says what the chosen level does",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Det, du beder om, kommer altid: svar, påmindelser, briefinger, Forvarsler og overvågninger."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Was du anforderst, kommt immer: Antworten, Erinnerungen, Briefings, Vorabhinweise und Beobachtungen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Lo que pides siempre llega: respuestas, recordatorios, informes, Avisos y vigilancias."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Ce que vous demandez arrive toujours : réponses, rappels, briefings, Alertes et surveillances."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Ciò che chiedi arriva sempre: risposte, promemoria, briefing, Avvisi e controlli."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 頼んだものは必ず届きます：返信、リマインダー、ブリーフィング、事前のお知らせ、見守り。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 직접 요청한 것은 항상 옵니다: 답장, 미리 알림, 브리핑, 사전 알림, 지켜보기."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Det du ber om, kommer alltid: svar, påminnelser, briefinger, Forvarsler og overvåkinger."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Wat je vraagt, komt altijd: antwoorden, herinneringen, briefings, Seintjes en bewakingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ To, o co prosisz, przychodzi zawsze: odpowiedzi, przypomnienia, briefingi, Zapowiedzi i obserwacje."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ O que você pede sempre chega: respostas, lembretes, briefings, Avisos e monitoramentos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ То, о чём вы просите, приходит всегда: ответы, напоминания, сводки, Предупреждения и отслеживания."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Det du ber om kommer alltid: svar, påminnelser, briefingar, Förvarningar och bevakningar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ İstedikleriniz her zaman gelir: yanıtlar, anımsatıcılar, brifingler, Hatırlatmalar ve izlemeler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Те, про що ви просите, надходить завжди: відповіді, нагадування, зведення, Попередження й відстеження."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 你要求的内容总会送达：回复、提醒事项、简报、提前提醒和关注。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 你要求的內容總會送達：回覆、提醒事項、簡報、事前提醒和關注。"
+          }
+        }
+      }
+    },
     "%@ · %lld of %lld" : {
       "comment" : "A goal's Who Does What: the agent's steps done, of its; the agent's name",
       "localizations" : {
@@ -1219,6 +1326,347 @@
         }
       }
     },
+    "%lld had already changed or gone." : {
+      "comment" : "Forget a Topic: memories that weren't there any more",
+      "localizations" : {
+        "da" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld var allerede ændret eller væk."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld var allerede ændret eller væk."
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld hatte sich schon geändert oder war weg."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld hatten sich schon geändert oder waren weg."
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld ya había cambiado o desaparecido."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld ya habían cambiado o desaparecido."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld avait déjà changé ou disparu."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld avaient déjà changé ou disparu."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld avaient déjà changé ou disparu."
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld era già cambiato o sparito."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld erano già cambiati o spariti."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld erano già cambiati o spariti."
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld件はすでに変わっているか、なくなっていました。"
+                }
+              }
+            }
+          }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld개는 이미 바뀌었거나 없어졌습니다."
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld var allerede endret eller borte."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld var allerede endret eller borte."
+                }
+              }
+            }
+          }
+        },
+        "nl" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld was al veranderd of weg."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld waren al veranderd of weg."
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld już się zmienił lub zniknął."
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld już się zmieniły lub zniknęły."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld już się zmieniło lub zniknęło."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld już się zmieniło lub zniknęło."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld já tinha mudado ou sumido."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld já tinham mudado ou sumido."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld já tinham mudado ou sumido."
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld уже изменилось или исчезло."
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld уже изменились или исчезли."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld уже изменились или исчезли."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld уже изменились или исчезли."
+                }
+              }
+            }
+          }
+        },
+        "sv" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld hade redan ändrats eller försvunnit."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld hade redan ändrats eller försvunnit."
+                }
+              }
+            }
+          }
+        },
+        "tr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tanesi zaten değişmiş ya da gitmişti."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tanesi zaten değişmiş ya da gitmişti."
+                }
+              }
+            }
+          }
+        },
+        "uk" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вже змінився або зник."
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вже змінилися або зникли."
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вже змінилися або зникли."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вже змінилися або зникли."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 条已经改动或不在了。"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 條已經改動或不在了。"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld left" : {
       "comment" : "Agent Can Help: under a to-do list's name, how many to-dos are still to do",
       "localizations" : {
@@ -1999,6 +2447,365 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld 則回覆"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld side chats" : {
+      "comment" : "Over a chat: how many side chats were started from it; a menu of them",
+      "localizations" : {
+        "da" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sidechat"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sidechats"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nebenchat"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Nebenchats"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld side chat"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld side chats"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chat aparte"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chats aparte"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld discussion à part"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld discussions à part"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld discussions à part"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chat a parte"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chat a parte"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chat a parte"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "サイドチャット%lld件"
+                }
+              }
+            }
+          }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "사이드 채팅 %lld개"
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sidechat"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sidechatter"
+                }
+              }
+            }
+          }
+        },
+        "nl" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld zijchat"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld zijchats"
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld czat poboczny"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld czaty poboczne"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld czatów pobocznych"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld czatu pobocznego"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chat paralelo"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chats paralelos"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chats paralelos"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld побочный чат"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld побочных чата"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld побочных чатов"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld побочного чата"
+                }
+              }
+            }
+          }
+        },
+        "sv" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sidochatt"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sidochattar"
+                }
+              }
+            }
+          }
+        },
+        "tr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld yan sohbet"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld yan sohbet"
+                }
+              }
+            }
+          }
+        },
+        "uk" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld побічний чат"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld побічні чати"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld побічних чатів"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld побічного чату"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 个旁支聊天"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 個旁支聊天"
                 }
               }
             }
@@ -3329,6 +4136,113 @@
         }
       }
     },
+    "A person, a place, an old job…" : {
+      "comment" : "Forget a Topic: the topic field's placeholder",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En person, et sted, et gammelt job …"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Person, ein Ort, ein alter Job …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una persona, un lugar, un antiguo trabajo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une personne, un lieu, un ancien emploi…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una persona, un luogo, un vecchio lavoro…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "人、場所、前の仕事…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사람, 장소, 예전 직장…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En person, et sted, en gammel jobb …"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een persoon, een plek, een oude baan…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osoba, miejsce, dawna praca…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma pessoa, um lugar, um emprego antigo…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Человек, место, прежняя работа…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En person, en plats, ett gammalt jobb …"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir kişi, bir yer, eski bir iş…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Людина, місце, колишня робота…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一个人、一个地方、以前的工作……"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一個人、一個地方、以前的工作……"
+          }
+        }
+      }
+    },
     "A watch makes a sound only for a find it marks urgent. What's In the Summary arrives without a sound or a banner, into the list, and is told of together at the summary times." : {
       "comment" : "Settings › Notifications › How Notifications Come: footer",
       "localizations" : {
@@ -3967,6 +4881,434 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "代理可幫忙"
+          }
+        }
+      }
+    },
+    "Agents Bring Up" : {
+      "comment" : "Settings › Your Day: one dial for what every agent brings up on its own",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenternes eget initiativ"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eigeninitiative der Agenten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciativa de los agentes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Initiatives des agents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniziativa degli agenti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントからの提案"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트의 먼저 제안"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentenes eget initiativ"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Initiatief van agents"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicjatywa agentów"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciativa dos Agentes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Инициатива агентов"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenternas eget initiativ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Girişimi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ініціатива агентів"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体主动提起"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理主動提起"
+          }
+        }
+      }
+    },
+    "Agents bring up nothing on their own: no ideas or Follow-Through cards, and Morning Ideas and When You've Gone Quiet don't run. A sign-in that may not be you, and plans you made, still come." : {
+      "comment" : "Agents Bring Up: under Off",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenterne tager intet op af sig selv: ingen idéer eller Følg med-kort, og Morgenidéer og Når du ikke har skrevet længe kører ikke. Et login, der måske ikke er dig, og planer, du selv har lagt, kommer stadig."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Agenten bringen nichts von sich aus zur Sprache: keine Ideen und keine Nachverfolgung-Karten, und Morgenideen und „Wenn du länger nicht schreibst“ laufen nicht. Eine Anmeldung, die vielleicht nicht von dir ist, und Pläne, die du gemacht hast, kommen weiterhin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los agentes no sacan nada por su cuenta: ni ideas ni tarjetas de Pendientes, y no se ejecutan Ideas matutinas ni Cuando llevas tiempo sin escribir. Un inicio de sesión que quizá no seas tú y los planes que hiciste siguen llegando."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les agents n’abordent rien d’eux-mêmes : ni idées ni cartes de Suivi, et Idées du matin et Après un long silence ne tournent pas. Une connexion qui n’est peut-être pas vous, et les projets que vous avez faits, arrivent quand même."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli agenti non propongono nulla di loro iniziativa: niente idee né schede di Monitoraggio, e Idee del mattino e Quando non scrivi da un po’ non vengono eseguite. Un accesso che forse non è tuo e i piani che hai fatto arrivano comunque."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントは自分からは何も持ち出しません。アイデアや抜け漏れチェックのカードは届かず、「朝のアイデア」と「しばらく連絡がないとき」も動きません。あなたではないかもしれないサインインと、あなたが立てた予定は届きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 먼저 아무것도 꺼내지 않습니다. 아이디어나 끝까지 챙기기 카드가 오지 않고, 아침 아이디어와 ‘한동안 메시지가 없을 때’도 실행되지 않습니다. 본인이 아닐 수 있는 로그인과 직접 세운 계획은 계속 알려 드립니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentene tar ikke opp noe av seg selv: ingen idéer eller Følg med-kort, og Morgenidéer og Når du ikke har skrevet på en stund kjører ikke. En pålogging som kanskje ikke er deg, og planer du har lagt, kommer fortsatt."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agents brengen niets uit zichzelf ter sprake: geen ideeën of Bijhouden-kaarten, en Ochtendideeën en Als je even niet schrijft draaien niet. Een aanmelding die misschien niet van jou is, en plannen die je zelf maakte, komen nog wel."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenci nie poruszają niczego sami z siebie: żadnych pomysłów ani kart Dopilnowania, a Poranne pomysły i Gdy dłuższy czas nie piszesz się nie uruchamiają. Logowanie, które może nie być Twoje, i plany, które sam ułożysz, nadal przychodzą."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os agentes não trazem nada por conta própria: nem ideias nem cartões de Pendências, e Ideias Matinais e Quando Você Fica Sem Escrever não rodam. Um login que talvez não seja você e os planos que você fez continuam chegando."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агенты ничего не предлагают сами: ни идей, ни карточек «На контроле», а «Утренние идеи» и «Если вы давно не писали» не запускаются. Вход, который, возможно, сделали не вы, и ваши собственные планы по-прежнему приходят."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenterna tar inte upp något på eget initiativ: inga idéer eller Håll koll-kort, och Morgonidéer och När du inte har skrivit på ett tag körs inte. En inloggning som kanske inte är du, och planer du själv har gjort, kommer ändå."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanlar kendiliğinden hiçbir şey açmaz: fikir ya da Sonuç Takibi kartı gelmez, Sabah Fikirleri ve Uzun Süre Yazmadığınızda çalışmaz. Siz olmayabilecek bir oturum açma ile kendi yaptığınız planlar yine gelir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Агенти нічого не пропонують самі: ні ідей, ні карток «На контролі», а «Ранкові ідеї» та «Коли ви давно не писали» не запускаються. Вхід, який, можливо, зробили не ви, і ваші власні плани й далі надходять."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能体不会主动提起任何事：没有想法或落实追踪卡片，“早间想法”和“当你久未发消息时”也不会运行。可能不是你本人的登录，以及你自己定的计划，仍会通知你。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理不會主動提起任何事：沒有點子或落實追蹤卡片，「晨間點子」和「當你久未傳訊息時」也不會執行。可能不是你本人的登入，以及你自己訂的計畫，仍會通知你。"
+          }
+        }
+      }
+    },
+    "Agents Bring Up takes the Redde plugin 1.58: update it in Settings › Redde Plugin." : {
+      "comment" : "Agents Bring Up: the plugin is too old",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenternes eget initiativ kræver Redde-plugin 1.58: opdater det i Indstillinger › Redde-plugin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eigeninitiative der Agenten braucht das Redde-Plugin 1.58: Aktualisiere es unter Einstellungen › Redde-Plugin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciativa de los agentes requiere el plugin de Redde 1.58: actualízalo en Ajustes › Plugin de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Initiatives des agents nécessite le plugin Redde 1.58 : mettez-le à jour dans Réglages › Plugin Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniziativa degli agenti richiede il plugin Redde 1.58: aggiornalo in Impostazioni › Plugin Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「エージェントからの提案」にはReddeプラグイン1.58が必要です。設定 › Reddeプラグインでアップデートしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘에이전트의 먼저 제안’에는 Redde 플러그인 1.58이 필요합니다. 설정 › Redde 플러그인에서 업데이트하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentenes eget initiativ krever Redde-tillegg 1.58: oppdater det i Innstillinger › Redde-tillegg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Initiatief van agents vereist Redde-plug-in 1.58: werk hem bij in Instellingen › Redde-plug-in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicjatywa agentów wymaga wtyczki Redde 1.58: zaktualizuj ją w Ustawieniach › Wtyczka Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciativa dos Agentes exige o plugin do Redde 1.58: atualize em Ajustes › Plugin do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для функции «Инициатива агентов» нужен плагин Redde 1.58: обновите его в разделе Настройки › Плагин Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenternas eget initiativ kräver Redde-tillägg 1.58: uppdatera det i Inställningar › Redde-tillägg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Girişimi için Redde Eklentisi 1.58 gerekir: Ayarlar › Redde Eklentisi bölümünden güncelleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для функції «Ініціатива агентів» потрібен плагін Redde 1.58: оновіть його в Параметри › Плагін Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“智能体主动提起”需要 Redde插件 1.58：请在“设置 › Redde插件”中更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「代理主動提起」需要 Redde 外掛 1.58：請在「設定 › Redde 外掛」中更新。"
+          }
+        }
+      }
+    },
+    "Also Ask Your Agent to Forget It in %@" : {
+      "comment" : "Forget a Topic: a message to the agent for its memory provider; the provider's name",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bed også din agent om at glemme det i %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auch deinen Agenten bitten, es in %@ zu vergessen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedir también a tu agente que lo olvide en %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander aussi à votre agent de l’oublier dans %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi anche al tuo agente di dimenticarlo in %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@でも忘れるようエージェントに頼む"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@에서도 잊도록 에이전트에게 요청"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Be også agenten din glemme det i %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag je agent het ook in %@ te vergeten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poproś też agenta, by zapomniał o tym w %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedir Também ao Seu Agente Para Esquecer em %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попросить агента забыть это и в %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Be också din agent glömma det i %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanınızdan %@ içinde de Unutmasını İsteyin"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попросити агента забути це і в %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同时让智能体在 %@ 中忘掉"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同時請代理在 %@ 中忘掉"
           }
         }
       }
@@ -7391,6 +8733,113 @@
         }
       }
     },
+    "Don't Suggest Ideas About It" : {
+      "comment" : "Forget a Topic: also block ideas about the topic",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foreslå ikke idéer om det"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Ideen dazu vorschlagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sugerir ideas sobre esto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne pas suggérer d’idées à ce sujet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non suggerire idee su questo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これについて提案しない"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 주제는 추천 안 함"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ikke foreslå idéer om det"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen ideeën hierover voorstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie proponuj pomysłów na ten temat"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não Sugerir Ideias Sobre Isso"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не предлагать идеи об этом"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Föreslå inga idéer om det"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bununla İlgili Fikir Önerme"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не пропонувати ідей про це"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要建议相关想法"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要建議相關點子"
+          }
+        }
+      }
+    },
     "Done %@" : {
       "comment" : "A goal's Who Does What: when a step was done, e.g. Done Nov 2",
       "localizations" : {
@@ -7922,6 +9371,862 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "「把電影加入行事曆」需要完整取用你的行事曆。請在「設定」的「隱私權與安全性」›「行事曆」中允許。"
+          }
+        }
+      }
+    },
+    "Find What They Remember" : {
+      "comment" : "Forget a Topic: looks for the topic in every agent's memory",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find det, de husker"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suchen, was sie sich merken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar lo que recuerdan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouver ce dont ils se souviennent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova ciò che ricordano"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "覚えていることを探す"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기억하는 내용 찾기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finn det de husker"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek wat ze onthouden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź, co pamiętają"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontrar o Que Eles Lembram"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найти, что они помнят"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta det de minns"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırladıklarını Bul"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Знайти, що вони пам’ятають"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查找它们记住的内容"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查找它們記得的內容"
+          }
+        }
+      }
+    },
+    "Forget" : {
+      "comment" : "Forget a Topic: the button, nothing ticked",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergessen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olvidar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oublier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dimentica"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘れる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "잊기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergeet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapomnij"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquecer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыть"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glöm"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unut"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забути"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉"
+          }
+        }
+      }
+    },
+    "Forget %lld" : {
+      "comment" : "Forget a Topic: the button, with how many are ticked",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem %lld"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld vergessen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olvidar %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oublier %lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dimentica %lld"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld件を忘れる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld개 잊기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem %lld"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergeet %lld"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapomnij %lld"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquecer %lld"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыть %lld"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glöm %lld"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Tanesini Unut"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забути %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉 %lld 条"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉 %lld 條"
+          }
+        }
+      }
+    },
+    "Forget a Topic" : {
+      "comment" : "The page that lets every agent forget one topic",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem et emne"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Thema vergessen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olvidar un tema"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oublier un sujet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dimentica un argomento"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "話題を忘れる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주제 잊기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem et emne"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een onderwerp vergeten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapomnij temat"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquecer um Assunto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыть тему"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glöm ett ämne"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir Konuyu Unut"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забути тему"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉一个话题"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉一個話題"
+          }
+        }
+      }
+    },
+    "Forget a Topic takes the Redde plugin 1.58: update it in Settings › Redde Plugin." : {
+      "comment" : "Forget a Topic: the plugin is too old",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem et emne kræver Redde-plugin 1.58: opdater det i Indstillinger › Redde-plugin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Thema vergessen braucht das Redde-Plugin 1.58: Aktualisiere es unter Einstellungen › Redde-Plugin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olvidar un tema requiere el plugin de Redde 1.58: actualízalo en Ajustes › Plugin de Redde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oublier un sujet nécessite le plugin Redde 1.58 : mettez-le à jour dans Réglages › Plugin Redde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dimentica un argomento richiede il plugin Redde 1.58: aggiornalo in Impostazioni › Plugin Redde."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「話題を忘れる」にはReddeプラグイン1.58が必要です。設定 › Reddeプラグインでアップデートしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘주제 잊기’에는 Redde 플러그인 1.58이 필요합니다. 설정 › Redde 플러그인에서 업데이트하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem et emne krever Redde-tillegg 1.58: oppdater det i Innstillinger › Redde-tillegg."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een onderwerp vergeten vereist Redde-plug-in 1.58: werk hem bij in Instellingen › Redde-plug-in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funkcja Zapomnij temat wymaga wtyczki Redde 1.58: zaktualizuj ją w Ustawieniach › Wtyczka Redde."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquecer um Assunto exige o plugin do Redde 1.58: atualize em Ajustes › Plugin do Redde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для функции «Забыть тему» нужен плагин Redde 1.58: обновите его в разделе Настройки › Плагин Redde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glöm ett ämne kräver Redde-tillägg 1.58: uppdatera det i Inställningar › Redde-tillägg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir Konuyu Unut için Redde Eklentisi 1.58 gerekir: Ayarlar › Redde Eklentisi bölümünden güncelleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для функції «Забути тему» потрібен плагін Redde 1.58: оновіть його в Параметри › Плагін Redde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“忘掉一个话题”需要 Redde插件 1.58：请在“设置 › Redde插件”中更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「忘掉一個話題」需要 Redde 外掛 1.58：請在「設定 › Redde 外掛」中更新。"
+          }
+        }
+      }
+    },
+    "Forget a Topic…" : {
+      "comment" : "Memory: opens Forget a Topic",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem et emne …"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Thema vergessen …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olvidar un tema…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oublier un sujet…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dimentica un argomento…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "話題を忘れる…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "주제 잊기…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem et emne …"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een onderwerp vergeten…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapomnij temat…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquecer um Assunto…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыть тему…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glöm ett ämne …"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir Konuyu Unut…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забути тему…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉一个话题…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉一個話題…"
+          }
+        }
+      }
+    },
+    "Forget everything about “%@” in your long-term memory (%@): delete each memory about it with %@'s own tools, then tell me in a line how many you deleted." : {
+      "comment" : "Forget a Topic: the message to the agent for a memory provider; the topic, then the provider's name twice",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem alt om “%1$@” i din langtidshukommelse (%2$@): slet hver hukommelse om det med %3$@s egne værktøjer, og fortæl mig så på én linje, hvor mange du slettede."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergiss alles über „%1$@“ in deinem Langzeitgedächtnis (%2$@): Lösche jede Erinnerung daran mit den eigenen Werkzeugen von %3$@ und sag mir dann in einer Zeile, wie viele du gelöscht hast."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olvida todo sobre «%1$@» en tu memoria a largo plazo (%2$@): borra cada recuerdo sobre ello con las herramientas de %3$@ y dime en una línea cuántos borraste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oublie tout ce qui concerne « %1$@ » dans ta mémoire à long terme (%2$@) : supprime chaque souvenir à ce sujet avec les outils de %3$@, puis dis-moi en une ligne combien tu en as supprimé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dimentica tutto su «%1$@» nella tua memoria a lungo termine (%2$@): elimina ogni ricordo che lo riguarda con gli strumenti di %3$@, poi dimmi in una riga quanti ne hai eliminati."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長期記憶（%2$@）にある「%1$@」についての内容をすべて忘れてください。%3$@のツールで関連する記憶を一つずつ削除し、いくつ削除したかを1行で教えてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "장기 기억(%2$@)에서 ‘%1$@’에 관한 모든 것을 잊어 줘. %3$@의 도구로 관련 기억을 하나씩 지우고, 몇 개를 지웠는지 한 줄로 알려 줘."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glem alt om «%1$@» i langtidsminnet ditt (%2$@): slett hvert minne om det med verktøyene til %3$@, og si så på én linje hvor mange du slettet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergeet alles over ‘%1$@’ in je langetermijngeheugen (%2$@): verwijder elke herinnering erover met de eigen tools van %3$@ en vertel me daarna in één regel hoeveel je hebt verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapomnij wszystko o „%1$@” w swojej pamięci długotrwałej (%2$@): usuń każde wspomnienie na ten temat narzędziami %3$@, a potem napisz w jednym zdaniu, ile usunąłeś."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esqueça tudo sobre “%1$@” na sua memória de longo prazo (%2$@): apague cada memória sobre isso com as ferramentas do %3$@ e depois me diga em uma linha quantas apagou."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забудь всё о «%1$@» в своей долговременной памяти (%2$@): удали каждое воспоминание об этом инструментами %3$@, а потом одной строкой скажи, сколько удалил."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glöm allt om ”%1$@” i ditt långtidsminne (%2$@): radera varje minne om det med %3$@s egna verktyg och berätta sedan på en rad hur många du raderade."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzun süreli belleğindeki (%2$@) “%1$@” ile ilgili her şeyi unut: bununla ilgili her anıyı %3$@ araçlarıyla sil, sonra kaç tane sildiğini bana tek satırda söyle."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забудь усе про «%1$@» у своїй довготривалій пам’яті (%2$@): видали кожен спогад про це інструментами %3$@, а тоді одним рядком скажи, скільки видалив."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉你的长期记忆（%2$@）中关于“%1$@”的一切：用 %3$@ 自己的工具逐条删除相关记忆，然后用一句话告诉我删了几条。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "忘掉你的長期記憶（%2$@）中關於「%1$@」的一切：用 %3$@ 自己的工具逐條刪除相關記憶，然後用一句話告訴我刪了幾條。"
+          }
+        }
+      }
+    },
+    "Forgot %lld." : {
+      "comment" : "Forget a Topic: how many memories were let go",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glemte %lld."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld vergessen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se olvidaron %lld."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld oublié(s)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dimenticati: %lld."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld件を忘れました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld개를 잊었습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glemte %lld."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld vergeten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapomniano: %lld."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld esquecido(s)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыто: %lld."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glömde %lld."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld tanesi unutuldu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забуто: %lld."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已忘掉 %lld 条。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已忘掉 %lld 條。"
           }
         }
       }
@@ -9008,6 +11313,113 @@
         }
       }
     },
+    "How much your agents bring up on their own." : {
+      "comment" : "Agents Bring Up: footer while it loads",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvor meget dine agenter tager op af sig selv."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie viel deine Agenten von sich aus zur Sprache bringen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuánto sacan tus agentes por su cuenta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que vos agents abordent d’eux-mêmes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quanto propongono i tuoi agenti di loro iniziativa."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントが自分から持ち出す量。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 먼저 꺼내는 정도."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hvor mye agentene dine tar opp av seg selv."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoeveel je agents uit zichzelf ter sprake brengen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ile Twoi agenci poruszają sami z siebie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quanto seus agentes trazem por conta própria."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сколько ваши агенты предлагают сами."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hur mycket dina agenter tar upp på eget initiativ."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanlarınızın kendiliğinden ne kadar şey açtığı."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скільки ваші агенти пропонують самі."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体主动提起的多少。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理主動提起的多寡。"
+          }
+        }
+      }
+    },
     "How Notifications Come" : {
       "comment" : "Settings › Notifications: section header, a level for each kind of notification",
       "localizations" : {
@@ -9218,6 +11630,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "我做到了"
+          }
+        }
+      }
+    },
+    "Ideas, Follow-Through cards and check-ins as they come up." : {
+      "comment" : "Agents Bring Up: under Normal",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idéer, Følg med-kort og statustjek, når de dukker op."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideen, Nachverfolgung-Karten und Check-ins, sobald sie anstehen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideas, tarjetas de Pendientes y revisiones según vayan surgiendo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idées, cartes de Suivi et points d’étape au fil de l’eau."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idee, schede di Monitoraggio e verifiche man mano che arrivano."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アイデア、抜け漏れチェックのカード、進捗確認を、出てきたときに。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아이디어, 끝까지 챙기기 카드, 체크인을 생길 때마다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idéer, Følg med-kort og statussjekker etter hvert som de dukker opp."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideeën, Bijhouden-kaarten en check-ins zodra ze opkomen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomysły, karty Dopilnowania i podsumowania, gdy się pojawią."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideias, cartões de Pendências e check-ins conforme surgem."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Идеи, карточки «На контроле» и проверки по мере появления."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idéer, Håll koll-kort och avstämningar när de dyker upp."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fikirler, Sonuç Takibi kartları ve durum kontrolleri ortaya çıktıkça."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ідеї, картки «На контролі» та перевірки, щойно з’являються."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "想法、落实追踪卡片和进展检查，出现时就提。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點子、落實追蹤卡片和進度檢查，出現時就提。"
           }
         }
       }
@@ -10398,6 +12917,113 @@
         }
       }
     },
+    "Less Often" : {
+      "comment" : "Agents Bring Up: only what matters soon",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sjældnere"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seltener"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con menos frecuencia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moins souvent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meno spesso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "少なめ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "적게"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sjeldnere"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minder vaak"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rzadziej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Menos Frequência"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Реже"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mer sällan"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha Seyrek"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рідше"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "少一些"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "少一些"
+          }
+        }
+      }
+    },
     "levels, important, too many, banner, summary, urgent" : {
       "comment" : "Settings search: other words for Settings › Notifications › How Notifications Come, comma-separated",
       "localizations" : {
@@ -10826,6 +13452,113 @@
         }
       }
     },
+    "Looks through what every agent remembers about you and your Things to Keep in Mind. Nothing goes until you choose Forget." : {
+      "comment" : "Forget a Topic: under the topic field",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gennemgår det, hver agent husker om dig, og dine Ting at huske. Intet forsvinder, før du vælger Glem."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durchsucht, was sich jeder Agent über dich merkt, und deine Liste „Zu beachten“. Nichts wird gelöscht, bis du „Vergessen“ wählst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisa lo que cada agente recuerda de ti y tus Cosas que recordar. No se borra nada hasta que eliges Olvidar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parcourt ce dont chaque agent se souvient à votre sujet et vos À ne pas oublier. Rien ne disparaît avant que vous choisissiez Oublier."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca in ciò che ogni agente ricorda di te e nelle tue Cose da ricordare. Non sparisce nulla finché non scegli Dimentica."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "各エージェントがあなたについて覚えていることと「覚えておくこと」を調べます。「忘れる」を選ぶまで何も消えません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "각 에이전트가 기억하는 내용과 ‘기억할 것’을 살펴봅니다. ‘잊기’를 선택하기 전에는 아무것도 지워지지 않습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Går gjennom det hver agent husker om deg, og Ting å huske. Ingenting forsvinner før du velger Glem."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doorzoekt wat elke agent over je onthoudt en je Om te onthouden. Er verdwijnt niets tot je Vergeet kiest."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przegląda to, co każdy agent pamięta o Tobie, i Twoje Warto pamiętać. Nic nie znika, dopóki nie wybierzesz Zapomnij."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procura no que cada agente lembra sobre você e nos seus Lembretes Fixos. Nada é apagado até você escolher Esquecer."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просматривает, что каждый агент помнит о вас, и ваш список «Что учитывать». Ничего не удаляется, пока вы не выберете «Забыть»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Går igenom det varje agent minns om dig och dina Att tänka på. Inget försvinner förrän du väljer Glöm."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her ajanın sizin hakkınızda hatırladıklarına ve Akılda Tutulacaklar’a bakar. Unut’u seçene kadar hiçbir şey silinmez."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переглядає, що кожен агент пам’ятає про вас, і ваш список «Що враховувати». Нічого не зникає, доки ви не виберете «Забути»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看每个智能体记住的关于你的内容和“需要留意的事”。在你选择“忘掉”之前，什么都不会删除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看每個代理記得的關於你的內容和「需要留意的事」。在你選擇「忘掉」之前，什麼都不會刪除。"
+          }
+        }
+      }
+    },
     "mail, Gmail, IMAP, Outlook" : {
       "comment" : "Settings search: other words for Settings › Email › Add Email Account, comma-separated",
       "localizations" : {
@@ -11147,6 +13880,220 @@
         }
       }
     },
+    "More ideas, nice-to-know ones too. Ideas you leave alone take longer to go quiet." : {
+      "comment" : "Agents Bring Up: under More Often",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flere idéer, også dem, der er rare at vide. Idéer, du lader ligge, er længere om at blive stille."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr Ideen, auch solche, die man einfach gern weiß. Ideen, die du liegen lässt, werden erst später leise."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más ideas, también las que conviene saber. Las ideas que dejas pasar tardan más en llegar en silencio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus d’idées, y compris celles bonnes à savoir. Les idées que vous laissez de côté mettent plus longtemps à devenir discrètes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più idee, anche quelle utili da sapere. Le idee che lasci stare ci mettono di più ad arrivare in silenzio."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アイデアを多めに。知っておくと良いことも届きます。放っておいたアイデアが通知なしになるまでの間隔も長くなります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아이디어를 더 많이, 알아 두면 좋은 것도 보냅니다. 그냥 둔 아이디어가 조용해지기까지 더 오래 걸립니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flere idéer, også det som er greit å vite. Idéer du lar ligge, bruker lengre tid på å bli stille."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meer ideeën, ook leuk-om-te-weten. Ideeën die je laat liggen worden pas later stil."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Więcej pomysłów, także takich, które warto znać. Pomysły, które zostawiasz, później zaczynają przychodzić po cichu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais ideias, inclusive as boas de saber. Ideias que você deixa de lado demoram mais para chegar em silêncio."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Больше идей, в том числе просто полезных. Идеи, которые вы не трогаете, дольше не становятся беззвучными."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fler idéer, även sådant som är bra att veta. Idéer du låter vara tar längre tid på sig att bli tysta."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha çok fikir, bilmesi iyi olanlar da. Elinizi sürmediğiniz fikirlerin sessize geçmesi daha uzun sürer."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Більше ідей, зокрема просто корисних. Ідеї, яких ви не чіпаєте, довше не стають тихими."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多想法，包括值得一知的。你不理会的想法要更久才会改为静默。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多點子，包括值得一知的。你不理會的點子要更久才會改為靜默。"
+          }
+        }
+      }
+    },
+    "More Often" : {
+      "comment" : "Agents Bring Up: more ideas, nice-to-know ones too",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oftere"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öfter"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con más frecuencia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus souvent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più spesso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多め"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "많이"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oftere"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaker"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Częściej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com Mais Frequência"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаще"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oftare"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha Sık"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частіше"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多一些"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多一些"
+          }
+        }
+      }
+    },
     "movies, watch list, movie night, calendar events" : {
       "comment" : "Settings search: other words for Settings › Chat List › Films on Your Calendar, comma-separated",
       "localizations" : {
@@ -11250,6 +14197,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "電影, 片單, 電影之夜, 行事曆行程"
+          }
+        }
+      }
+    },
+    "New conversations won't know it. Chats already open keep what they started with until they end." : {
+      "comment" : "Forget a Topic: after forgetting",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler kender det ikke. Chats, der allerede er åbne, beholder det, de startede med, til de slutter."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Unterhaltungen wissen es nicht. Bereits offene Chats behalten bis zu ihrem Ende, womit sie angefangen haben."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las conversaciones nuevas no lo sabrán. Los chats ya abiertos conservan lo que tenían al empezar hasta que terminen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les nouvelles conversations ne le sauront pas. Les discussions déjà ouvertes gardent ce qu’elles avaient au départ jusqu’à leur fin."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le nuove conversazioni non lo sapranno. Le chat già aperte mantengono ciò con cui sono iniziate finché non finiscono."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい会話では知られません。すでに開いているチャットは、終わるまで始めたときの内容を保ちます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 대화에서는 알지 못합니다. 이미 열려 있는 채팅은 끝날 때까지 처음 시작할 때의 내용을 유지합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nye samtaler vet det ikke. Chatter som allerede er åpne, beholder det de startet med til de avsluttes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe gesprekken weten het niet. Chats die al open zijn, houden wat ze bij de start hadden tot ze eindigen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe rozmowy nie będą tego wiedzieć. Już otwarte czaty zachowują to, z czym się zaczęły, aż do końca."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversas novas não vão saber. Chats já abertos mantêm o que tinham no início até terminarem."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые разговоры этого не узнают. Уже открытые чаты сохраняют то, с чем начались, до своего конца."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nya konversationer vet det inte. Chattar som redan är öppna behåller det de började med tills de slutar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni konuşmalar bunu bilmeyecek. Zaten açık sohbetler bitene kadar başladıkları bilgiyi korur."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нові розмови цього не знатимуть. Уже відкриті чати зберігають те, з чим почалися, до свого кінця."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新对话不会知道。已经打开的聊天在结束前仍保留开始时的内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新對話不會知道。已經打開的聊天在結束前仍保留開始時的內容。"
           }
         }
       }
@@ -11789,6 +14843,113 @@
         }
       }
     },
+    "Normal" : {
+      "comment" : "Agents Bring Up: as agents always have",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標準"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보통"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normaal"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normalnie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обычно"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normalt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Звичайно"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正常"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正常"
+          }
+        }
+      }
+    },
     "Notepad" : {
       "comment" : "A to-do list's layout: a yellow legal pad, things crossed off by hand",
       "localizations" : {
@@ -11999,6 +15160,327 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@沒有安排"
+          }
+        }
+      }
+    },
+    "Nothing your agents remember mentions “%@”." : {
+      "comment" : "Forget a Topic: no match",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intet, dine agenter husker, nævner “%@”."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nichts, was sich deine Agenten merken, erwähnt „%@“."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada de lo que recuerdan tus agentes menciona «%@»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien de ce dont se souviennent vos agents ne mentionne « %@ »."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niente di ciò che ricordano i tuoi agenti parla di «%@»."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エージェントが覚えていることに「%@」は出てきません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "에이전트가 기억하는 내용 중 ‘%@’에 관한 것은 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingenting agentene dine husker, nevner «%@»."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niets wat je agents onthouden noemt ‘%@’."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nic z tego, co pamiętają Twoi agenci, nie wspomina o „%@”."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada do que seus agentes lembram menciona “%@”."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ничто из того, что помнят ваши агенты, не упоминает «%@»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inget som dina agenter minns nämner ”%@”."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanlarınızın hatırladıklarında “%@” geçmiyor."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ніщо з того, що пам’ятають ваші агенти, не згадує «%@»."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的智能体记住的内容里没有提到“%@”。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的代理記得的內容裡沒有提到「%@」。"
+          }
+        }
+      }
+    },
+    "Only what matters soon: bills, trips, dates and what's due today or tomorrow, and at most one set of ideas a day from each agent." : {
+      "comment" : "Agents Bring Up: under Less Often",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kun det, der snart betyder noget: regninger, rejser, datoer og det, der skal ske i dag eller i morgen, og højst ét sæt idéer om dagen fra hver agent."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur, was bald zählt: Rechnungen, Reisen, Termine und was heute oder morgen fällig ist, und höchstens eine Runde Ideen am Tag von jedem Agenten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo lo que importa pronto: facturas, viajes, fechas y lo que vence hoy o mañana, y como mucho una tanda de ideas al día de cada agente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seulement ce qui compte bientôt : factures, voyages, dates et ce qui est prévu aujourd’hui ou demain, et au plus une série d’idées par jour de chaque agent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo ciò che conta a breve: bollette, viaggi, date e ciò che scade oggi o domani, e al massimo un gruppo di idee al giorno da ciascun agente."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "近いうちに大事なことだけ：請求、旅行、日付、今日か明日に期限が来ること。アイデアは各エージェントから1日1回までです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "곧 중요한 것만: 청구서, 여행, 날짜, 오늘이나 내일까지인 일. 아이디어는 에이전트마다 하루 한 번까지입니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bare det som snart betyr noe: regninger, reiser, datoer og det som skal skje i dag eller i morgen, og høyst ett sett idéer om dagen fra hver agent."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen wat binnenkort telt: rekeningen, reizen, datums en wat vandaag of morgen moet, en hooguit één reeks ideeën per dag van elke agent."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko to, co wkrótce ważne: rachunki, podróże, daty i to, co przypada dziś lub jutro, a od każdego agenta najwyżej jeden zestaw pomysłów dziennie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Só o que importa em breve: contas, viagens, datas e o que vence hoje ou amanhã, e no máximo um conjunto de ideias por dia de cada agente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Только то, что скоро важно: счета, поездки, даты и то, что нужно сегодня или завтра, и не больше одной подборки идей в день от каждого агента."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bara det som snart spelar roll: räkningar, resor, datum och det som ska ske i dag eller i morgon, och högst en omgång idéer om dagen från varje agent."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yalnızca yakında önemli olanlar: faturalar, yolculuklar, tarihler ve bugün ya da yarın yapılması gerekenler; her ajandan günde en fazla bir fikir grubu."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лише те, що скоро важливо: рахунки, поїздки, дати й те, що треба сьогодні чи завтра, і щонайбільше одна добірка ідей на день від кожного агента."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只提即将要紧的事：账单、出行、日期以及今天或明天到期的事；每个智能体每天最多一组想法。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只提即將要緊的事：帳單、出遊、日期以及今天或明天到期的事；每個代理每天最多一組點子。"
+          }
+        }
+      }
+    },
+    "Only your agent can reach its long-term memory, so it gets a message in a new chat." : {
+      "comment" : "Forget a Topic: under the provider switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kun din agent kan nå sin langtidshukommelse, så den får en besked i en ny chat."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur dein Agent kommt an sein Langzeitgedächtnis, deshalb bekommt er eine Nachricht in einem neuen Chat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo tu agente puede acceder a su memoria a largo plazo, así que recibe un mensaje en un chat nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seul votre agent a accès à sa mémoire à long terme : il reçoit donc un message dans une nouvelle discussion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo il tuo agente può accedere alla sua memoria a lungo termine, quindi riceve un messaggio in una nuova chat."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長期記憶にアクセスできるのはエージェントだけなので、新しいチャットでメッセージを送ります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "장기 기억에는 에이전트만 접근할 수 있어서 새 채팅으로 메시지를 보냅니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bare agenten din når langtidsminnet sitt, så den får en melding i en ny chat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen je agent kan bij zijn langetermijngeheugen, dus hij krijgt een bericht in een nieuwe chat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko Twój agent ma dostęp do swojej pamięci długotrwałej, więc dostaje wiadomość w nowym czacie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Só o seu agente acessa a memória de longo prazo dele, então ele recebe uma mensagem em um chat novo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ к долговременной памяти есть только у агента, поэтому он получит сообщение в новом чате."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bara din agent når sitt långtidsminne, så den får ett meddelande i en ny chatt."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzun süreli belleğine yalnızca ajanınız ulaşabilir, bu yüzden yeni bir sohbette ona mesaj gider."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ до довготривалої пам’яті має лише агент, тож він отримає повідомлення в новому чаті."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有智能体能访问自己的长期记忆，所以会在新聊天里给它发一条消息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有代理能存取自己的長期記憶，所以會在新聊天裡傳一則訊息給它。"
           }
         }
       }
@@ -12853,6 +16335,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請看看我的%@清單。凡是你自己能做一部分的待辦，都給它加一行幫忙提示（redde_list 'help'），並告訴我你接了哪些。"
+          }
+        }
+      }
+    },
+    "proactive, ideas, suggestions, less, quiet" : {
+      "comment" : "Settings search: other words for Settings › Your Day › Agents Bring Up, comma-separated",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proaktiv, idéer, forslag, mindre, stille"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proaktiv, Ideen, Vorschläge, weniger, leise"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proactivo, ideas, sugerencias, menos, silencio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proactif, idées, suggestions, moins, discret"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proattivo, idee, suggerimenti, meno, silenzio"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロアクティブ, アイデア, 提案, 少なく, 静か"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "능동, 아이디어, 제안, 적게, 조용"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proaktiv, idéer, forslag, mindre, stille"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proactief, ideeën, suggesties, minder, stil"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proaktywnie, pomysły, sugestie, mniej, cisza"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proativo, ideias, sugestões, menos, silêncio"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "проактивно, идеи, предложения, меньше, тихо"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proaktiv, idéer, förslag, mindre, tyst"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "proaktif, fikirler, öneriler, daha az, sessiz"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "проактивно, ідеї, пропозиції, менше, тихо"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主动, 想法, 建议, 少, 安静"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主動, 點子, 建議, 少, 安靜"
           }
         }
       }
@@ -14457,6 +18046,327 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "片架"
+          }
+        }
+      }
+    },
+    "Side chat" : {
+      "comment" : "Over a chat: a side chat with nothing to name it by",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidechat"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nebenchat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat aparte"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussion à part"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat a parte"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サイドチャット"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사이드 채팅"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidechat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zijchat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czat poboczny"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat paralelo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Побочный чат"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidochatt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yan sohbet"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Побічний чат"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旁支聊天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旁支聊天"
+          }
+        }
+      }
+    },
+    "Side Chat" : {
+      "comment" : "A message's menu: a new chat about this message, apart from this one",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidechat"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nebenchat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat aparte"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussion à part"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat a parte"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サイドチャット"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사이드 채팅"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidechat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zijchat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czat poboczny"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat Paralelo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Побочный чат"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidochatt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yan Sohbet"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Побічний чат"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旁支聊天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旁支聊天"
+          }
+        }
+      }
+    },
+    "Side chat from “%@” · Back" : {
+      "comment" : "Over a side chat: the chat it came from, tap to go back",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidechat fra “%@” · Tilbage"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nebenchat aus „%@“ · Zurück"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat aparte de «%@» · Volver"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussion à part de « %@ » · Retour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat a parte da «%@» · Indietro"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@」からのサイドチャット · 戻る"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘%@’에서 시작한 사이드 채팅 · 돌아가기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidechat fra «%@» · Tilbake"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zijchat uit ‘%@’ · Terug"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czat poboczny z „%@” · Wróć"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat paralelo de “%@” · Voltar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Побочный чат из «%@» · Назад"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidochatt från ”%@” · Tillbaka"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” sohbetinden yan sohbet · Geri"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Побічний чат із «%@» · Назад"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来自“%@”的旁支聊天 · 返回"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來自「%@」的旁支聊天 · 返回"
           }
         }
       }

@@ -624,11 +624,17 @@ class Routines:
 
     def _follow_offer(self, cards: list[dict]) -> bool:
         """Follow-through's cards, to the main agent's ideas on every paired phone, marked as loud as
-        the loudest asks (`followthrough.LOUD`)."""
-        from . import ideas
-        levels = [str(c.pop("level", "") or "") for c in cards]
+        the loudest asks (`followthrough.LOUD`). Those Agents Bring Up holds back (`proactive`,
+        1.58.0) count as said: they don't come later in a heap when it's turned up again."""
+        from . import ideas, proactive
+        dial = proactive.level(self.stores.root)
+        marks = [(str(c.pop("level", "") or ""), str(c.pop("kind", "") or "")) for c in cards]
+        cards = [c for c, (level, kind) in zip(cards, marks) if proactive.card_allowed(dial, kind, level)]
+        if not cards:
+            return True
+        levels = [level for (level, kind) in marks if proactive.card_allowed(dial, kind, level)]
         level = "now" if "now" in levels else "look" if "look" in levels else ""
-        answer = ideas.offer(self.store, self.stores.root, "default", "Redde", cards, level=level)
+        answer = ideas.offer(self.store, self.stores.root, "default", "Redde", cards, level=level, dialed=True)
         return "sent" in answer
 
     def _inbox_ids(self) -> set:

@@ -11,6 +11,9 @@ struct YourDaySettings: View {
     @State private var settings = Settings.shared
 
     var body: some View {
+        AgentsBringUpSection(canReachGateway: canReachGateway)
+            .settingRow(.agentsBringUp)
+
         Section {
             AheadOfYourDayRow()
                 .settingRow(.aheadOfYourDay)

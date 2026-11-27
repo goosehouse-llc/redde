@@ -16,6 +16,7 @@ struct MemoryView: View {
     @State private var search = ""
     @State private var undo: (target: AgentMemory.Target, id: AgentMemoryModel.Row.ID, text: String)?
     @State private var importing = false
+    @State private var forgettingTopic = false
     @State private var confirmingDiscard = false
     @FocusState private var focused: AgentMemoryModel.Row.ID?
 
@@ -33,6 +34,8 @@ struct MemoryView: View {
                 Section {
                     Text("Your agent's memory is read through the Hermes Dashboard. Add its login in Settings › Connection › Connection details to see it here.")
                         .foregroundStyle(.secondary)
+                    // (Forget a Topic goes through Redde's plugin: on either connection, 1.58.0.)
+                    Button(String(localized: "Forget a Topic…", comment: "Memory: opens Forget a Topic"), systemImage: "eye.slash") { forgettingTopic = true }
                 }
             } else {
                 intro
@@ -57,6 +60,11 @@ struct MemoryView: View {
         .task { if model.files.isEmpty { await model.load() } }
         .sheet(isPresented: $importing) {
             NavigationStack { MemoryImportView(profile: profile, model: model) }
+        }
+        .sheet(isPresented: $forgettingTopic) {
+            NavigationStack {
+                ForgetTopicView(forgotten: { Task { if !model.needsLogin, !model.dirty { await model.load() } } })
+            }
         }
         .confirmationDialog("Discard your changes?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
             Button("Discard Changes", role: .destructive) { model.discard() }
@@ -197,11 +205,13 @@ struct MemoryView: View {
         ToolbarItem(placement: .secondaryAction) {
             Menu {
                 Button("Import from ChatGPT or Claude…", systemImage: "square.and.arrow.down") { importing = true }
+                    .disabled(model.needsLogin)
+                Button(String(localized: "Forget a Topic…", comment: "Memory: opens Forget a Topic"), systemImage: "eye.slash") { forgettingTopic = true }
+                    .disabled(model.dirty)
                 if model.dirty {
                     Button("Discard Changes", systemImage: "arrow.uturn.backward", role: .destructive) { confirmingDiscard = true }
                 }
             } label: { Label("More", systemImage: "ellipsis.circle") }
-            .disabled(model.needsLogin)
         }
     }
 }

@@ -1026,6 +1026,7 @@ def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
             level = LOUD.get(item["kind"], "look" if how == "today" else "")
             if level:
                 made["level"] = level
+            made["kind"] = item["kind"]   # (for Agents Bring Up, 1.58.0: popped before it's sent)
         if cards and offer(cards):
             data["offered"] = sent + [now] * sum(i["kind"] != "planned" for i, _ in picked)
             for item, how in picked:

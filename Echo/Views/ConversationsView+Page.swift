@@ -524,7 +524,8 @@ extension ConversationsList {
             .union(conversation.isIncognito ? [conversation.serverSessionID].compactMap(\.self) : [])
         // A bot's chat is its bot's, in the Bots section, never a row: on the Dashboard it is hidden,
         // and one made over the Hermes API before 2026-10-29 isn't.
-        var listed = ledger.filter { !incognito.contains($0.id) && $0.title != BotChat.title }
+        let sides = SideChats.shared, connection = settings.connectionKey
+        var listed = ledger.filter { !incognito.contains($0.id) && $0.title != BotChat.title && !sides.isSide($0.id, connection: connection) }
         // The bots' chats come in among them too, by when they were last used, labelled (asked
         // 2026-11-04): from the roster, which has each one's last line and time.
         var bots: [String: HermesBot] = [:]

@@ -22,7 +22,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import remind
+from . import proactive, remind
 
 log = logging.getLogger("redde_push")
 
@@ -122,6 +122,9 @@ class QuietWakes:
                 return next_call(request)
         try:
             found = remind.find(self.root_of(), session)
+            if found and proactive.stands_down(proactive.level(self.root_of()), found[2]):
+                # Agents Bring Up is Off (1.58.0): a run only there to suggest things ends here.
+                return remind.as_response("[SILENT]", str(context.get("api_mode") or ""))
             wait = hours(found[2]) if found else None
             if wait is None:
                 return next_call(request)

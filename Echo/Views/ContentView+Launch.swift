@@ -106,6 +106,7 @@ extension ContentView {
         .onChange(of: router.pendingRoom) { handlePushRequests() }
         .onChange(of: router.pendingBot) { handlePushRequests() }
         .onChange(of: router.pendingGoalChat) { handleGoalChat() }
+        .onChange(of: router.pendingSideChat) { handleSideChat() }
         .onChange(of: lock.isLocked) { _, locked in
             // A Siri / control / share request that arrived while locked runs once unlocked.
             if !locked { consumeControlRequest(); handleLaunchRequest(); handleWake(); handleCaptureRequest(); consumeSharedItems(); handleDraftRequest(); handleSetupCode(); handlePushRequests(); handleCallScreen() }
@@ -280,6 +281,24 @@ extension ContentView {
                 Logger(subsystem: "com.goosehouse.echo", category: "goals").error("couldn't open the goal's chat: \(error.localizedDescription)")
             }
         }
+    }
+
+    /// A side chat about one message (`SideChats`): a new chat with the same agent, the message
+    /// quoted above the field, kept as the side chat of the one it came from once it's sent. Only
+    /// from the main agent's own chats with a session, and not while a reply on the fast lane runs.
+    private func handleSideChat() {
+        guard !lock.isLocked, let request = router.consumeSideChat() else { return }
+        guard let parent = conversation.serverSessionID, conversation.bot == nil, conversation.elsewhere == nil,
+              !conversation.isStreaming || settings.transport.hasLedger else { return }
+        let link = SideChats.Link(parent: parent, title: conversation.title, about: SideChats.about(request.quote), at: .now)
+        showVoice = false
+        setDrawer(open: false)
+        GroupDirectory.shared.open = nil
+        conversation.reset()
+        bindDraft(to: Drafts.key(for: conversation))
+        conversation.sideOf = link
+        conversation.quoting = QuotedText(text: SideChats.quote(request.quote), speaker: request.speaker)
+        composerFocused = true
     }
 
     /// Siri AI's "draft a message": the text lands in the open conversation's composer, or a new

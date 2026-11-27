@@ -40,8 +40,16 @@ final class Conversation {
                 models.set(unsentModel, connection: settings.connectionKey, session: serverSessionID)
                 self.unsentModel = nil
             }
+            // A side chat's first message made its session: it's kept as the side chat of the one
+            // it came from (`SideChats`).
+            if oldValue == nil, let serverSessionID, let sideOf {
+                SideChats.shared.add(serverSessionID, connection: settings.connectionKey, link: sideOf)
+                self.sideOf = nil
+            }
         }
     }
+    /// A side chat started here and not yet sent: the chat it came from (`SideChats`).
+    var sideOf: SideChats.Link?
     /// The kind of connection `serverSessionID` belongs to. A server's connection type can change
     /// under an open chat (Settings → Connection): a Hermes session id then means nothing to an
     /// ACP agent, and the reverse (Claude Code refused one as "not a UUID", 11-12).

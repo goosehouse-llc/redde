@@ -39,7 +39,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import asks, calls, cards, core, facts, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, planonly, qr, remember, remind, rooms, routines, silence, turnnote, waiting, watches, wire, work, work_runs
+from . import asks, calls, cards, core, facts, followups, goals, handoffs, headsup, ideas, keys, leave, lists, longterm, mail, planonly, proactive, qr, remember, remind, rooms, routines, silence, turnnote, waiting, watches, wire, work, work_runs
 from . import models as model_settings   # (the Models & Providers route, 1.26.0)
 from . import tasks as task_reports   # (reports of handed-off tasks, 1.27.0)
 from . import device as phone_tools   # (`device` is a paired phone, in this file)
@@ -353,6 +353,8 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
     try:
         # A run that offers ideas: what they said not to suggest (ideas.py, 1.36.0).
         notes.append(ideas.run_note(calls.caller(_home())[1], user_message, platform))
+        # And how high a bar Agents Bring Up sets (proactive.py, 1.58.0).
+        notes.append(proactive.run_note(calls.caller(_home())[1], user_message, platform))
     except Exception:
         log.debug("redde-push: ideas note failed", exc_info=True)
     try:
@@ -360,6 +362,9 @@ def _on_turn(session_id: str = "", platform: str = "", turn_id: str = "", user_m
         # how to check them; a message that sounds like one, that it can be kept.
         notes.append(facts.run_note(calls.caller(_home())[1], user_message, platform))
         notes.append(facts.turn_note(said, platform))
+        # Asked to forget a whole topic (forget.py, 1.58.0).
+        from . import forget
+        notes.append(forget.turn_note(said, platform))
     except Exception:
         log.debug("redde-push: facts note failed", exc_info=True)
     try:
@@ -708,6 +713,9 @@ def _slash(raw_args: str = "") -> str:
     if words[:1] == ["facts"]:
         # Things to keep in mind (facts.py, 1.36.0): `facts list`, `facts add|remove <text, base64url>`.
         return _facts_slash(words[1:])
+    if words[:1] == ["proactive"]:
+        # Agents Bring Up (proactive.py, 1.58.0): `proactive`, `proactive set off|less|normal|more`.
+        return proactive.slash(calls.caller(_home())[1], words[1:])
     if words[:1] == ["ideas"] and len(words) in (2, 3) and words[1] in ("blocked", "block", "unblock"):
         # Don't Suggest This (ideas.py, 1.36.0): `ideas block|unblock <heading, base64url>`, and
         # `ideas blocked` for the list, as base64url JSON.
@@ -733,6 +741,11 @@ def _slash(raw_args: str = "") -> str:
         # Follow-through (followthrough.py, 1.39.0): what's being followed, its switches, drop one.
         from . import followthrough
         return followthrough.slash(calls.caller(_home())[1], words[1:])
+    if words[:2] in (["memory", "find"], ["memory", "forget"]):
+        # Forget a Topic (forget.py, 1.58.0): every agent's memory and Things to Keep in Mind.
+        from . import forget
+        named = longterm.provider(_config())
+        return forget.slash(calls.caller(_home())[1], words[1:], longterm.PROVIDER_NAMES.get(named, named.title()) if named else None)
     if words[:1] == ["memory"]:
         # An import's facts to long-term memory (longterm.py): which store, and a memory MCP server
         # written to with no model call.

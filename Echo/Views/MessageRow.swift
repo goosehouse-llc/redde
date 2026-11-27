@@ -344,6 +344,12 @@ struct MessageRow: View, Equatable {
         .sheet(item: $patchStep) { PatchView(title: $0.preview ?? BotMessages.stepName($0) ?? $0.name, patch: $0.output ?? "") }
     }
 
+    /// A side chat (`SideChats`) from the main agent's own chats that have a session, not from a
+    /// bot's, a group's or another profile's.
+    static func offersSideChat(_ conversation: Conversation) -> Bool {
+        conversation.serverSessionID != nil && conversation.bot == nil && conversation.elsewhere == nil && !conversation.isIncognito
+    }
+
     /// The composer takes the keyboard, for the message that quotes.
     private func focusComposer() {
         LaunchRouter.shared.requestDraft(text: "", attachments: [])
@@ -887,6 +893,11 @@ struct MessageRow: View, Equatable {
         Button("Copy reply", systemImage: "doc.on.doc") { copy(message.text) }
         if let conversation, !isLive, !conversation.isWorkerTranscript {
             Button("Quote", systemImage: "text.quote") { conversation.quote(message, speaker: replySpeaker ?? settings.headerTitle); focusComposer() }
+            if Self.offersSideChat(conversation) {
+                Button(String(localized: "Side Chat", comment: "A message's menu: a new chat about this message, apart from this one"), systemImage: "bubble.left.and.bubble.right") {
+                    LaunchRouter.shared.requestSideChat(quote: message.text, speaker: replySpeaker ?? settings.headerTitle)
+                }
+            }
         }
         if !message.reasoning.isEmpty {
             Button("Copy thinking", systemImage: "brain") { copy(message.reasoning) }
@@ -918,6 +929,11 @@ struct MessageRow: View, Equatable {
             Button("Quote", systemImage: "text.quote") {
                 conversation.quote(message, speaker: nil, mine: true)
                 focusComposer()
+            }
+            if !isLive, Self.offersSideChat(conversation) {
+                Button(String(localized: "Side Chat", comment: "A message's menu: a new chat about this message, apart from this one"), systemImage: "bubble.left.and.bubble.right") {
+                    LaunchRouter.shared.requestSideChat(quote: message.text, speaker: String(localized: "You"))
+                }
             }
         }
         // Selected in a copy of its own, as a reply is: the transcript's text isn't selectable.

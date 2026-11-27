@@ -23,7 +23,7 @@ import time
 import uuid
 from pathlib import Path
 
-from . import core
+from . import core, proactive
 from .calls import caller
 from .routines import Stores
 
@@ -35,6 +35,7 @@ MOST = 5
 #: How many times an hour one agent may send ideas: enough to try it out, not enough for a loop
 #: to fill the phone (3 turned the owner's tries away, 2026-10-28).
 HOURLY = 10
+DAY = 86400
 #: How long Apple keeps trying a phone that is off, in seconds: ideas for the day are good all day.
 TTL = 43200
 
@@ -77,13 +78,13 @@ def from_answer(text: str) -> list[dict]:
     return cleaned(found)
 
 
-def sent_lately(home: Path, profile: str, now: float) -> list[float]:
-    """When this agent sent ideas in the last hour."""
+def sent_lately(home: Path, profile: str, now: float, within: float = 3600) -> list[float]:
+    """When this agent sent ideas in the last hour (or `within` seconds, up to a day)."""
     try:
         seen = json.loads((home / "redde-push" / "ideas.json").read_text())
     except Exception:
         seen = {}
-    return [t for t in seen.get(profile, []) if now - t < 3600]
+    return [t for t in seen.get(profile, []) if now - t < within]
 
 
 def remember(home: Path, profile: str, now: float) -> None:
@@ -92,7 +93,7 @@ def remember(home: Path, profile: str, now: float) -> None:
         seen = json.loads(path.read_text())
     except Exception:
         seen = {}
-    seen[profile] = sent_lately(home, profile, now) + [now]
+    seen[profile] = sent_lately(home, profile, now, DAY) + [now]   # (a day's: Agents Bring Up's Less, 1.58.0)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".new")
     tmp.write_text(json.dumps(seen))
@@ -208,14 +209,14 @@ def untouched(home: Path, profile: str) -> int:
     return int(_untouched(home).get(profile) or 0)
 
 
-def quiet_if_ignored(home: Path, profile: str, made: dict) -> bool:
-    """Counts a set of ideas going out, and makes it quiet (`z` "drawer") when the ones before it
-    were left alone; whether it is quiet."""
+def quiet_if_ignored(home: Path, profile: str, made: dict, ignored: int = IGNORED) -> bool:
+    """Counts a set of ideas going out, and makes it quiet (`z` "drawer") when the `ignored` ones
+    before it were left alone; whether it is quiet."""
     kept = _untouched(home)
     left = int(kept.get(profile) or 0)
     kept[profile] = left + 1
     _keep_untouched(home, kept)
-    if left >= IGNORED:
+    if left >= ignored:
         made["z"] = "drawer"
         return True
     return False
@@ -245,10 +246,18 @@ def cleaned(ideas) -> list[dict]:
     return kept[:MOST]
 
 
-def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: float | None = None, level: str = "") -> dict:
+def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: float | None = None, level: str = "",
+          dialed: bool = False) -> dict:
     """Sends the ideas to every paired phone; what the tool answers. `level` (`core.LEVELS`): how
-    loud they ask to be, for Redde's own cards (a security notice's "now")."""
+    loud they ask to be, for Redde's own cards (a security notice's "now"). `dialed`: Redde's own
+    cards, already through Agents Bring Up (`proactive.card_allowed`); an agent's own ideas go
+    through it here."""
     now = time.time() if now is None else now
+    dial = proactive.level(home)
+    if not dialed:
+        refused = proactive.ideas_refused(dial, level, len(sent_lately(home, profile, now, DAY)))
+        if refused:
+            return {"error": refused}
     given = cleaned(ideas)
     kept = wanted(home, given)
     if given and not kept:
@@ -264,7 +273,7 @@ def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: fl
                          "them in words instead."}
     made = core.marked(core.ideas_note(profile, name, kept, uuid.uuid4().hex[:16]), level)
     if made.get("l") != "now":
-        quiet_if_ignored(home, profile, made)   # (left alone set after set: quietly, 1.36.0)
+        quiet_if_ignored(home, profile, made, proactive.ignored_before_quiet(dial, IGNORED))   # (left alone set after set: quietly, 1.36.0)
     away = made if made.get("z") else {**made, "z": "away"}   # (the devices not in use, quietly: 1.42.0)
     sends = [(d, made) for d in store.where_you_are(phones, "ideas")] + [(d, away) for d in store.elsewhere(phones, "ideas")]
     sent = 0

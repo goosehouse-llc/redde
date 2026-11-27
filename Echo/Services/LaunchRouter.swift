@@ -79,6 +79,24 @@ final class LaunchRouter {
         return pendingDraft
     }
 
+    /// A side chat about one message (`SideChats`): its words, as the new chat quotes them.
+    struct SideChatRequest: Equatable {
+        var quote: String
+        var speaker: String?
+        var issuedAt: Date
+    }
+
+    private(set) var pendingSideChat: SideChatRequest?
+
+    func requestSideChat(quote: String, speaker: String?) {
+        pendingSideChat = SideChatRequest(quote: quote, speaker: speaker, issuedAt: .now)
+    }
+
+    func consumeSideChat() -> SideChatRequest? {
+        defer { pendingSideChat = nil }
+        return pendingSideChat
+    }
+
     /// A setup link that was opened: shown for confirmation, never applied here.
     private(set) var pendingSetupCode: SetupCodeOffer?
     @ObservationIgnored private var lastSetupRequest: (result: Result<SetupCode, SetupCode.ParseError>, at: Date)?

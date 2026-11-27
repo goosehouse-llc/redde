@@ -3,6 +3,33 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.58.0 (2026-11-27)
+
+- Agents Bring Up (`proactive.py`): one dial, kept on this Hermes for every agent and every device,
+  for how much the agents bring up on their own. `/redde-push proactive` reads it,
+  `/redde-push proactive set off|less|normal|more` sets it.
+  - Off: no idea cards, and no Follow-Through, Days Out, usual-buy, appointment or Jellyfin cards
+    (Follow-Through still keeps its list). Morning Ideas, Routine Suggestions and Gone Quiet end
+    before any model is called. A card marked "now" (a sign-in that may not be them, a plan at its
+    time) still comes.
+  - Less: only cards marked "now" or "look" and Follow-Through's money, travel and date-bound
+    kinds, at most one set of ideas a day from each agent, and the runs that offer ideas are told
+    to clear a high bar or offer nothing.
+  - Normal: as before.
+  - More: those runs may offer up to five ideas, nice-to-know ones too, and ideas left alone go quiet
+    after six sets instead of three.
+  - What they asked for is never held back: replies, reminders, briefings, Heads-Ups, watches, mail
+    rules, approvals and questions.
+- Forget a Topic (`forget.py`): `/redde-push memory find <topic>` lists every agent's memory entries
+  (USER.md and MEMORY.md) and the Things to Keep in Mind that mention a topic, and
+  `/redde-push memory forget <JSON>` removes exactly the ones listed (both base64url), under the
+  lock Hermes's own memory tool takes, optionally blocking ideas about the topic too. A memory
+  provider's name comes back so Redde can ask the agent itself. New conversations start without it;
+  open ones keep what they began with.
+- A person's own message asking to forget a whole topic ("forget everything about…") tells the
+  agent to let go of all of it: memory entries, Things to Keep in Mind and its long-term memory.
+  "Don't forget…" is left alone.
+
 ## 1.57.0 (2026-11-27)
 
 - Notes say how loudly they ask to be shown (`l`), for Redde's notification levels: "now" for

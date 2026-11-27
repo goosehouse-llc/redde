@@ -16,7 +16,7 @@ enum SettingsRow: String, CaseIterable, Identifiable {
     // Agent.
     case skills, tools, plugins, keysAskedFor, soul, environment, memory, files, terminal, usage, gateway
     // Your Day.
-    case aheadOfYourDay, goals, activity, briefings, pastBriefings, briefingTaps, watches, triggers, keepInMind
+    case agentsBringUp, aheadOfYourDay, goals, activity, briefings, pastBriefings, briefingTaps, watches, triggers, keepInMind
     case followThrough, health, beforeActing, approvalHistory
     // Email.
     case addEmail, inbox, mailRules, piles, inboxShows, sortMail
@@ -122,6 +122,8 @@ enum SettingsRow: String, CaseIterable, Identifiable {
         case .triggers: Entry(page: .day, title: String(localized: "Triggers from Your iPhone"),
                               words: String(localized: "automation, arriving home, Focus", comment: "Settings search: other words for Settings › Your Day › Triggers from Your iPhone, comma-separated"))
         case .keepInMind: Entry(page: .day, title: String(localized: "Things to Keep in Mind"))
+        case .agentsBringUp: Entry(page: .day, title: String(localized: "Agents Bring Up"),
+                                   words: String(localized: "proactive, ideas, suggestions, less, quiet", comment: "Settings search: other words for Settings › Your Day › Agents Bring Up, comma-separated"))
         case .followThrough: Entry(page: .day, title: String(localized: "Follow-Through"))
         case .health: Entry(page: .day, title: String(localized: "Health"))
         case .beforeActing: Entry(page: .day, title: String(localized: "Before Acting"),

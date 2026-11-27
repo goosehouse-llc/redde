@@ -343,6 +343,7 @@ extension Conversation {
         noteSeen()   // the one being left
         answeringCall = nil
         quoting = nil   // a quote is for the chat it was taken in
+        sideOf = nil   // (a side chat set up after this, in `ContentView.handleSideChat`)
         unsentModel = nil   // the one being left's, never sent
         identity += 1
         ledgerWatch?.cancel()
