@@ -285,10 +285,45 @@ class ArrivalTests(unittest.TestCase):
 
     def test_off_and_at_night(self):
         self.assertEqual(self.look("2026-11-24T22:00"), [])
-        self.assertEqual(self.asked, [])
+        self.assertFalse([u for u in self.asked if "SortBy=DateCreated" in u], "no library look at night (only what was played)")
         follow.slash(self.home, ["set", "arrivals", "off"])
-        self.assertEqual(self.look("2026-11-24T10:00"), [])
+        self.asked.clear()
+        self.assertEqual(self.look("2026-11-25T10:00"), [])
         self.assertEqual(self.asked, [])
+
+    def test_a_film_played_on_jellyfin_is_ticked_off_at_any_hour(self):
+        """1.57.0 (2026-11-27): "i watched planes trains and automobiles, and donnie brasco last
+        night, but they did not tick off on the movies list"."""
+        lists.change(self.home, {"action": "add", "list": "Movies", "items": ["Planes, Trains and Automobiles", "Donnie Brasco (1997)", "Jaws"]},
+                     now=at("2026-11-20T10:00"))
+        plays = {"u1": [{"Name": "Planes, Trains & Automobiles", "ProductionYear": 1987,
+                         "UserData": {"LastPlayedDate": "2026-11-27T02:14:33.1234567Z"}}],
+                 "u2": [{"Name": "Donnie Brasco", "ProductionYear": 1997, "UserData": {"LastPlayedDate": "2026-11-27T04:40:00.0000000Z"}},
+                        {"Name": "Jaws", "ProductionYear": 1975, "UserData": {"LastPlayedDate": "2019-07-04T20:00:00Z"}}]}
+
+        def fetch(url, headers):
+            self.asked.append(url)
+            if url.endswith("/Users"):
+                return [{"Id": "u1", "Name": "sam"}, {"Id": "u2", "Name": "robin"}]
+            for user, items in plays.items():
+                if f"/Users/{user}/Items" in url:
+                    return {"Items": items}
+            return {"Items": self.library}
+        arrivals.FETCH = fetch
+        self.assertEqual(self.look("2026-11-27T01:00"), [], "nothing to say")
+        (movies,) = lists.load(self.home)
+        done = {i["text"]: i["done"] for i in movies["items"]}
+        self.assertTrue(done["Planes, Trains and Automobiles"], "& and the comma aside, on the first user's account")
+        self.assertTrue(done["Donnie Brasco (1997)"], "on the second's")
+        self.assertFalse(done["Jaws"], "played before it went on the list: one to see again")
+        self.assertFalse(done["Elf (2003)"])
+
+    def test_a_title_is_found_without_its_punctuation(self):
+        lists.change(self.home, {"action": "add", "list": "Movies", "items": ["Planes, Trains & Automobiles (1987)"]})
+        said = lists.change(self.home, {"action": "check", "list": "Movies", "items": ["planes trains and automobiles"]})
+        self.assertEqual(said.get("checked"), ["Planes, Trains & Automobiles (1987)"])
+        self.assertIn("tick it off", lists.turn_note("We watched Donnie Brasco last night"))
+        self.assertIsNone(lists.turn_note("I watched a film"))
 
 
 

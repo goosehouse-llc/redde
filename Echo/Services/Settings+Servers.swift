@@ -209,6 +209,7 @@ extension Settings {
         announceOnAirPods = false
         briefingTapsOpenRun = false
         notificationSound = true
+        noteLevels = ""
         returnSends = false
         chatTextSize = 0
         chatFont = .theme

@@ -503,6 +503,14 @@ final class Settings: ServeEndpoint {
             if self === Settings.shared { NotificationSound.isOn = notificationSound }
         }
     }
+    /// How loudly each kind of notification comes, and the summary times (`NoteLevels`, as JSON;
+    /// empty, as Redde starts). Kept in the app group as well, for the notification extension.
+    var noteLevels: String {
+        didSet {
+            store(noteLevels, forKey: Keys.noteLevels)
+            if self === Settings.shared { NoteLevels.mirror(noteLevels) }
+        }
+    }
     var earpieceAtEar: Bool {
         didSet { store(earpieceAtEar, forKey: Keys.earpieceAtEar) }
     }
@@ -713,6 +721,7 @@ final class Settings: ServeEndpoint {
         announceOnAirPods = defaults.bool(forKey: Keys.announceOnAirPods)
         briefingTapsOpenRun = defaults.bool(forKey: Keys.briefingTapsOpenRun)
         notificationSound = defaults.object(forKey: Keys.notificationSound) as? Bool ?? true
+        noteLevels = defaults.string(forKey: Keys.noteLevels) ?? ""
         returnSends = defaults.bool(forKey: Keys.returnSends)
         chatTextSize = min(max(defaults.integer(forKey: Keys.chatTextSize), Self.chatTextSizes.lowerBound), Self.chatTextSizes.upperBound)
         botColors = defaults.object(forKey: Keys.botColors) as? Bool ?? true
@@ -790,7 +799,10 @@ final class Settings: ServeEndpoint {
 
     /// The main agent's name where the notification extension can read it. Not a test's settings.
     private func noteMainAgentName() {
-        if defaults === UserDefaults.standard { MainAgentName.save(displayName) }
+        if defaults === UserDefaults.standard {
+            MainAgentName.save(displayName)
+            NoteLevels.mirror(noteLevels)   // (and the levels: one set before the mirror, or by iCloud while closed)
+        }
     }
 
     // MARK: - iCloud

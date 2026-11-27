@@ -703,6 +703,7 @@ struct UnopenedNoteTests {
 
     @Test func withTheSoundOffItsBannerIsSilent() throws {
         let h = NotifierTests.Harness(appActive: true)
+        h.settings.noteLevels = NoteLevels(chosen: ["replies": .sound]).text   // (a reply is Banner Only as Redde starts)
         _ = h.notifier.presentUnopened(Vector.payload, vault: { [Vector.pairing] }, confirm: { _, _ in })
         #expect(h.center.added.last?.content.sound != nil)
         h.settings.notificationSound = false

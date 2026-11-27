@@ -291,8 +291,24 @@ struct NotifierTests {
         #expect(request.content.interruptionLevel == .timeSensitive)
     }
 
+    /// Notification levels (2026-11-27): a reply comes as a banner without a sound as Redde starts,
+    /// what needs the person with one; what the extension kept to the list stays there over Redde.
+    @Test func aReplyComesAsTheLevelSays() {
+        let h = Harness()
+        h.notifier.notify(.replied, title: "t", body: "Done.")
+        #expect(h.center.added.last?.content.sound == nil && h.center.added.last?.content.interruptionLevel == .active)
+        h.notifier.notifyApproval(ApprovalRequest(id: "req1", command: "rm -rf /tmp/x", description: nil, choices: ["once", "deny"]))
+        #expect(h.center.added.last?.content.sound != nil, "an approval: with a sound")
+        h.settings.noteLevels = NoteLevels(chosen: ["replies": .sound]).text
+        h.notifier.notify(.replied, title: "t", body: "Done again.")
+        #expect(h.center.added.last?.content.sound != nil)
+        #expect(h.notifier.presentation(pushKind: "reply", sessionID: "another", passive: true) == [.list])
+        #expect(h.notifier.presentation(pushKind: "reply", sessionID: "another", silent: true) == [.banner, .list])
+    }
+
     @Test func withTheSoundOffEveryNotificationIsSilentAndStillShown() {
         let h = Harness()
+        h.settings.noteLevels = NoteLevels(chosen: ["replies": .sound]).text   // (a reply is Banner Only as Redde starts)
         h.notifier.notify(.replied, title: "t", body: "Done.")
         #expect(h.center.added.last?.content.sound != nil, "a sound unless it is turned off")
         #expect(h.notifier.presentation(pushKind: "reply", sessionID: "another").contains(.sound))

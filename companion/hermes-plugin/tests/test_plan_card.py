@@ -114,7 +114,8 @@ class PlanCardTests(unittest.TestCase):
             follow.due(root, lambda c: sent.append(c) or True, now=at("2026-11-27T07:01:00-05:00"))
             (card,) = sent[0]
             self.assertEqual(card, {"title": "Leave-By alert", "why": "You planned it for Driving to Montreal · Friday",
-                                    "request": "Tell me when to leave for Montreal"})
+                                    "request": "Tell me when to leave for Montreal", "level": "now"},
+                         "a pick at the time they chose, heard (1.57.0)")
             self.assertEqual(follow.listing(root)["items"], [], "said once")
 
     def test_a_later_pick_comes_back_on_a_day_of_many_suggestions(self):

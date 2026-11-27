@@ -76,6 +76,7 @@ class SecurityTests(Base):
         self.assertIn(f"(id {made}.1)", card["request"])
         self.assertIn("redde_mail was_me", card["request"])
         self.assertLessEqual(len(card["request"]), 300, "the phone keeps 300 characters")
+        self.assertEqual(card["level"], "now", "a security notice asks to be heard (1.57.0)")
         self.assertEqual(self.due("2026-11-27T11:00"), [], "once")
 
     def test_notices_that_come_together_are_one_card_in_the_wider_day(self):

@@ -76,6 +76,61 @@ struct ProactiveQuietTests {
         #expect(HeldNote.all(in: defaults).isEmpty)
     }
 
+    /// Notification levels (2026-11-27): each kind in its group, and the plugin's marks (1.57) over the kind's.
+    @Test func eachNoteIsInItsGroup() throws {
+        let groups: [([String: Any], NoteGroup?)] = [
+            (["k": "approval"], .needsYou), (["k": "call"], .needsYou), (["k": "group_wait"], .needsYou),
+            (["k": "work", "w": "needs"], .needsYou), (["k": "work", "w": "done"], .finds),
+            (["k": "reply"], .replies), (["k": "failed"], .replies), (["k": "group"], .groups),
+            (["k": "watch"], .finds), (["k": "watch", "l": "now"], .needsYou), (["k": "mail"], .finds),
+            (["k": "routine", "x": "brief"], .background), (["k": "routine", "x": "brief", "u": "2026-11-27T10:00"], .finds),
+            (["k": "routine", "x": "brief", "l": "now"], .needsYou), (["k": "routine", "x": "brief", "o": "g1"], .background),
+            (["k": "ideas"], .background), (["k": "ideas", "l": "look"], .finds), (["k": "ideas", "l": "now"], .needsYou),
+            (["k": "widget"], nil), (["k": "clear"], nil), (["k": "something-newer"], nil)]
+        for (fields, group) in groups {
+            var json: [String: Any] = ["v": 1]
+            json.merge(fields) { _, new in new }
+            #expect(NoteGroup.of(try note(json)) == group, "\(fields)")
+        }
+    }
+
+    @Test func levelsStartQuietForWhatAgentsDoAndKeepWhatNeedsYouHeard() {
+        let standard = NoteLevels()
+        #expect(standard.level(.needsYou) == .sound && standard.level(.replies) == .silent && standard.level(.background) == .summary)
+        let picked = NoteLevels(text: NoteLevels(chosen: ["needsYou": .summary, "background": .sound]).text)
+        #expect(picked.level(.needsYou) == .sound, "what needs the person is never only in a summary")
+        #expect(picked.level(.background) == .sound)
+        #expect(NoteLevels(text: "") == NoteLevels() && NoteLevels(text: "{nonsense") == NoteLevels())
+    }
+
+    @Test func theNextSummaryIsOutsideTheQuiet() {
+        let levels = NoteLevels()   // 8:00, 12:00, 18:00
+        let night = QuietHours(on: true, start: 22 * 60, end: 7 * 60)
+        #expect(levels.nextSummary(after: at(7, 30), quiet: night, calendar: calendar) == at(8))
+        #expect(levels.nextSummary(after: at(8), quiet: night, calendar: calendar) == at(12), "not the one going off now")
+        #expect(levels.nextSummary(after: at(18, 30), quiet: night, calendar: calendar) == at(8, day: 29))
+        let lateMorning = QuietHours(on: true, start: 0, end: 9 * 60)
+        #expect(levels.nextSummary(after: at(6), quiet: lateMorning, calendar: calendar) == at(12), "8:00 is in the quiet")
+        let allDay = QuietHours(on: true, start: 6 * 60, end: 23 * 60)
+        #expect(levels.nextSummary(after: at(7), quiet: allDay, calendar: calendar) == at(23), "every time in the quiet: its end")
+    }
+
+    @Test func aSummaryTellsOnlyWhatCameSinceTheLastOne() throws {
+        let defaults = UserDefaults(suiteName: "summary-\(UUID().uuidString)")!
+        let brief = try note(["v": 1, "k": "routine", "x": "brief", "t": "Weather before your day"])
+        #expect(HeldNote.wait(brief, until: at(8), afterQuiet: false, now: at(6, 41), in: defaults, schedule: false) == at(8))
+        #expect(HeldNote.wait(try note(["v": 1, "k": "ideas", "d": "Sol"]), until: at(12), afterQuiet: false, now: at(7, 30),
+                              in: defaults, schedule: false) == at(8), "the one set for sooner")
+        #expect(HeldNote.all(in: defaults).count == 2)
+        #expect(HeldNote.wait(try note(["v": 1, "k": "reply", "t": "Lease"]), until: at(12), afterQuiet: false, now: at(9),
+                              in: defaults, schedule: false) == at(12))
+        let held = HeldNote.all(in: defaults)
+        #expect(held.map(\.kind) == [.reply], "the 8:00 summary told the others")
+        let words = HeldNote.digest(held, afterQuiet: false)
+        #expect(words.title == "Your summary" && words.body.contains("1"))
+        #expect(HeldNote.digest(held).title == "While it was quiet")
+    }
+
     @Test func aPlaceSaysWhereTheUserIsAndNothingMore() {
         let home = WatchedPlace(name: "Home", latitude: 40.7, longitude: -74, arrive: PlaceAction(profile: "ops", message: "Turn on the hall light."))
         let arrived = home.message(arrived: true)

@@ -37,7 +37,7 @@ enum SettingsRow: String, CaseIterable, Identifiable {
     case spokenPrefixes, wakePhrase, handsFree, talkOver, interruptWith, stopPhrases, thinkingSound
     case newVoiceConversation, answerByVoice, nodToAnswer, voiceOrb
     // Notifications.
-    case alertsWhileOpen, announce, alertSound, quietHours, push, liveActivities, workingCard
+    case alertsWhileOpen, announce, alertSound, noteLevels, summaryTimes, quietHours, push, liveActivities, workingCard
     // CarPlay.
     case carPlayCards, carPlayVoice, carPlayBots, stopAndSkip, shortAnswers
     // Siri.
@@ -228,6 +228,11 @@ enum SettingsRow: String, CaseIterable, Identifiable {
         case .announce: Entry(page: .notifications, title: String(localized: "Announce on AirPods"))
         case .alertSound: Entry(page: .notifications, title: String(localized: "Alert Sound"),
                                 words: String(localized: "silent, sound, mute", comment: "Settings search: other words for Settings › Notifications › Alert Sound, comma-separated"))
+        case .noteLevels: Entry(page: .notifications, title: String(localized: "How Notifications Come", comment: "Settings › Notifications: section header, a level for each kind of notification"),
+                                inner: NoteGroup.allCases.map(\.name),
+                                words: String(localized: "levels, important, too many, banner, summary, urgent", comment: "Settings search: other words for Settings › Notifications › How Notifications Come, comma-separated"))
+        case .summaryTimes: Entry(page: .notifications, title: String(localized: "Summary Times", comment: "Settings › Notifications: section header, when the summary of what waited comes"),
+                                  words: String(localized: "digest, scheduled summary", comment: "Settings search: other words for Settings › Notifications › Summary Times, comma-separated"))
         case .quietHours: Entry(page: .notifications, title: String(localized: "Quiet Hours"),
                                 inner: [String(localized: "At Most a Day", comment: "Settings › Notifications › Quiet Hours: how many notifications agents may send on their own each day")],
                                 words: String(localized: "do not disturb, night", comment: "Settings search: other words for Settings › Notifications › Quiet Hours, comma-separated"))

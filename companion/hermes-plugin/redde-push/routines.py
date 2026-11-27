@@ -623,9 +623,12 @@ class Routines:
         return "sent" in answer
 
     def _follow_offer(self, cards: list[dict]) -> bool:
-        """Follow-through's cards, to the main agent's ideas on every paired phone."""
+        """Follow-through's cards, to the main agent's ideas on every paired phone, marked as loud as
+        the loudest asks (`followthrough.LOUD`)."""
         from . import ideas
-        answer = ideas.offer(self.store, self.stores.root, "default", "Redde", cards)
+        levels = [str(c.pop("level", "") or "") for c in cards]
+        level = "now" if "now" in levels else "look" if "look" in levels else ""
+        answer = ideas.offer(self.store, self.stores.root, "default", "Redde", cards, level=level)
         return "sent" in answer
 
     def _inbox_ids(self) -> set:
@@ -704,15 +707,17 @@ class Routines:
                             continue
                         if not failed:
                             watches.found_something(home, str(job["id"]))
+                        # Opened URGENT: (1.57.0): with a sound, the word left off.
+                        loud, words = watches.urgent(words) if not failed else (False, words)
                         # A watch on email where the agent can't read any (Redde 2.4's templates):
                         # said once, as such, and the watch paused until there is a way.
                         blind = not failed and watches.no_email(words)
                         if blind:
                             watches.pause(home, str(job["id"]))
-                        outgoing.append((profile, core.watch_note(profile, self.stores.name(home, profile), watches.title(name),
-                                                                  watches.NO_EMAIL_SAID if blind else words,
-                                                                  watches.watch_id(name) or "", failed=failed,
-                                                                  why="noemail" if blind else "")))
+                        made = core.watch_note(profile, self.stores.name(home, profile), watches.title(name),
+                                               watches.NO_EMAIL_SAID if blind else words,
+                                               watches.watch_id(name) or "", failed=failed, why="noemail" if blind else "")
+                        outgoing.append((profile, core.marked(made) if loud and not blind else made))
                         continue
                     if aiming:
                         # A goal's check-in: its progress kept, and a briefing with the goal's id and progress.
@@ -774,11 +779,13 @@ class Routines:
                     from . import headsup   # (here: headsup's own imports reach back to this module)
                     event = headsup.recall(home, str(job.get("name") or "")) if told else {}
                     words, weather = weather_line(words) if told and not failed else (words, "")
-                    outgoing.append((profile, core.routine_note(profile, self.stores.name(home, profile), untagged(str(job.get("name") or "")),
-                                                                words, failed=failed, brief=str(job["id"]) if told else "",
-                                                                starts=str(event.get("starts") or ""), where=str(event.get("where") or ""),
-                                                                session=run_session(home, str(job["id"]), _instant(last)) if told else "",
-                                                                weather=weather)))
+                    made = core.routine_note(profile, self.stores.name(home, profile), untagged(str(job.get("name") or "")),
+                                             words, failed=failed, brief=str(job["id"]) if told else "",
+                                             starts=str(event.get("starts") or ""), where=str(event.get("where") or ""),
+                                             session=run_session(home, str(job["id"]), _instant(last)) if told else "",
+                                             weather=weather)
+                    # A reminder they set (one a Hermes without middleware runs on its model): with a sound.
+                    outgoing.append((profile, core.marked(made) if told and not failed and remind.what(job) else made))
             self.store.set_routine_runs(now)
         sent = 0
         for profile, made in outgoing:

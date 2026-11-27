@@ -106,7 +106,8 @@ def _remind(profile: str, home: Path, job: dict, text: str) -> int:
     main, pusher = _state()
     sender = pusher if store is main else core.Pusher(store, title_of=_title)
     title = routines.untagged(remind.plain(str(job.get("name") or "")))
-    made = core.routine_note(profile, routines.Stores(root).name(home, profile), title, text, brief=str(job.get("id") or ""))
+    made = core.marked(core.routine_note(profile, routines.Stores(root).name(home, profile), title, text,
+                                         brief=str(job.get("id") or "")))   # (one they set: with a sound, 1.57.0)
     routines.quiet_if_drawer_only(store, profile, made)
     return sender.send(targets, made)
 

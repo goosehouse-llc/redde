@@ -1213,6 +1213,10 @@ struct NotificationSettings: View {
         } footer: {
             Text("When an agent needs you or a reply finishes while you're in another app. Redde sends these itself, so they stop once it's closed. “Announce on AirPods” marks them time-sensitive, so Siri can read them aloud through AirPods (turn on Announce Notifications for Redde in the iPhone's Settings) and they reach you in a Focus. “Alert Sound” off makes every alert silent, your Hermes's too; they still appear.")
         }
+        NotificationLevelsSection()
+            .settingRow(.noteLevels)
+        SummaryTimesSection()
+            .settingRow(.summaryTimes)
         QuietHoursSection()
             .settingRow(.quietHours)
         Section {
@@ -1497,6 +1501,95 @@ struct ThemeSwatch: View {
             .padding(7)
         }
         .frame(width: 52, height: 40)
+    }
+}
+
+/// Settings → Notifications → How Notifications Come (`NoteLevels`, 2026-11-27: "so many infact that
+/// I stopped reviewing them all"): a level for each kind, synced with iCloud.
+struct NotificationLevelsSection: View {
+    @State private var settings = Settings.shared
+
+    private var levels: NoteLevels { NoteLevels(text: settings.noteLevels) }
+
+    var body: some View {
+        Section {
+            ForEach(NoteGroup.allCases, id: \.self) { group in
+                Picker(selection: Binding(get: { levels.level(group) }, set: { picked in
+                    var changed = levels
+                    changed.chosen[group.rawValue] = picked
+                    settings.noteLevels = changed.text
+                })) {
+                    ForEach(group.levels, id: \.self) { level in
+                        Text(level.name).tag(level)
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(group.name)
+                        Text(group.about)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .accessibilityIdentifier("level-\(group.rawValue)")
+            }
+        } header: {
+            Text(String(localized: "How Notifications Come", comment: "Settings › Notifications: section header, a level for each kind of notification"))
+        } footer: {
+            Text(String(localized: "A watch makes a sound only for a find it marks urgent. What's In the Summary arrives without a sound or a banner, into the list, and is told of together at the summary times.",
+                        comment: "Settings › Notifications › How Notifications Come: footer"))
+        }
+    }
+}
+
+/// Settings → Notifications → Summary Times (`NoteLevels.summaries`).
+struct SummaryTimesSection: View {
+    @State private var settings = Settings.shared
+
+    private var levels: NoteLevels { NoteLevels(text: settings.noteLevels) }
+
+    var body: some View {
+        Section {
+            ForEach(Array(levels.times.enumerated()), id: \.offset) { index, _ in
+                DatePicker(String(localized: "Summary \(index + 1)", comment: "Settings › Notifications › Summary Times: one of the times, e.g. Summary 2"),
+                           selection: time(index), displayedComponents: .hourAndMinute)
+            }
+            .onDelete { gone in
+                var changed = levels
+                var times = changed.times
+                guard times.count > 1 else { return }
+                times.remove(atOffsets: gone)
+                changed.summaries = times
+                settings.noteLevels = changed.text
+            }
+            if levels.times.count < NoteLevels.mostTimes {
+                Button(String(localized: "Add a Summary Time", comment: "Settings › Notifications › Summary Times: a button")) {
+                    var changed = levels
+                    let last = changed.times.last ?? 12 * 60
+                    changed.summaries = changed.times + [min(last + 3 * 60, 23 * 60)]
+                    settings.noteLevels = changed.text
+                }
+            }
+        } header: {
+            Text(String(localized: "Summary Times", comment: "Settings › Notifications: section header, when the summary of what waited comes"))
+        } footer: {
+            Text(String(localized: "At each time, one notification says what waited for it, if anything did. One that falls in your quiet hours comes when they end. Swipe a time to take it away.",
+                        comment: "Settings › Notifications › Summary Times: footer"))
+        }
+    }
+
+    private func time(_ index: Int) -> Binding<Date> {
+        Binding(get: {
+            let minutes = levels.times.indices.contains(index) ? levels.times[index] : 12 * 60
+            return Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: .now) ?? .now
+        }, set: { date in
+            var changed = levels
+            var times = changed.times
+            guard times.indices.contains(index) else { return }
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            times[index] = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+            changed.summaries = times
+            settings.noteLevels = changed.text
+        })
     }
 }
 

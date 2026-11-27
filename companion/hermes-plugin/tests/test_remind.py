@@ -166,6 +166,7 @@ class ReaderTests(unittest.TestCase):
                   {**STRETCH, "id": "c0c0c0c0c0c0", "last_run_at": "2026-11-03T20:05:19-05:00"}])
         self.watch.look()
         self.assertEqual([(m["t"], m["b"], m["i"]) for m in self.sent], [("Stretch", "Reminder: stretch.", "c0c0c0c0c0c0")])
+        self.assertEqual(self.sent[0]["l"], "now", "one they set: with a sound (1.57.0)")
 
     def test_marks_are_kept_a_day(self):
         self.store.tell_reminder("default|x")

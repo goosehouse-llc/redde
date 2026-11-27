@@ -377,7 +377,7 @@ class PlanTests(unittest.TestCase):
         self.assertIn("7:30 PM: Donnie Brasco with Robin", remind)
         self.assertIn("Get Donnie Brasco ready to play", remind)
         self.assertIn("shows it played", check)
-        self.assertIn("@mention", check)
+        self.assertIn("message_agent", check, "a cron run can't @mention (1.57.0)")
         self.assertIn("Did you watch Donnie Brasco?", check)
         self.assertIn("find another night with Robin", check)
         item = lists.listing(self.home)[0]["items"][1]

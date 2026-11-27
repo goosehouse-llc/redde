@@ -245,8 +245,9 @@ def cleaned(ideas) -> list[dict]:
     return kept[:MOST]
 
 
-def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: float | None = None) -> dict:
-    """Sends the ideas to every paired phone; what the tool answers."""
+def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: float | None = None, level: str = "") -> dict:
+    """Sends the ideas to every paired phone; what the tool answers. `level` (`core.LEVELS`): how
+    loud they ask to be, for Redde's own cards (a security notice's "now")."""
     now = time.time() if now is None else now
     given = cleaned(ideas)
     kept = wanted(home, given)
@@ -261,8 +262,9 @@ def offer(store: core.Store, home: Path, profile: str, name: str, ideas, now: fl
     if not phones:
         return {"error": "No iPhone is paired with Redde's notifications here, so the ideas can't reach them. Tell "
                          "them in words instead."}
-    made = core.ideas_note(profile, name, kept, uuid.uuid4().hex[:16])
-    quiet_if_ignored(home, profile, made)   # (left alone set after set: quietly, 1.36.0)
+    made = core.marked(core.ideas_note(profile, name, kept, uuid.uuid4().hex[:16]), level)
+    if made.get("l") != "now":
+        quiet_if_ignored(home, profile, made)   # (left alone set after set: quietly, 1.36.0)
     away = made if made.get("z") else {**made, "z": "away"}   # (the devices not in use, quietly: 1.42.0)
     sends = [(d, made) for d in store.where_you_are(phones, "ideas")] + [(d, away) for d in store.elsewhere(phones, "ideas")]
     sent = 0

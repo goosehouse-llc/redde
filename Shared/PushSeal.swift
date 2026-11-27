@@ -139,6 +139,10 @@ nonisolated struct PushNote: Codable, Equatable, Sendable {
     /// A briefing of a job set to Drawer Only on one of the person's devices (Redde's plugin
     /// 1.34): "drawer". It comes quietly, and the job is kept to the drawer here too.
     var z: String?
+    /// How loudly it asks to be shown (Redde's plugin 1.57, `core.LEVELS`): "now", it needs the
+    /// person (a reminder they set, a watch's URGENT find, a security notice); "look", it's about
+    /// today (a meeting's prep). `NoteGroup.of` reads it; without it, the note's kind decides.
+    var l: String?
 
     nonisolated struct Idea: Codable, Equatable, Sendable {
         var t: String?

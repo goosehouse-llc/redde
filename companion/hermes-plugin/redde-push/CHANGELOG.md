@@ -3,6 +3,28 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.57.0 (2026-11-27)
+
+- Notes say how loudly they ask to be shown (`l`), for Redde's notification levels: "now" for
+  a reminder the person set, a watch's find that opens URGENT:, a "Was this you?" security notice,
+  and a plan's step at the time they picked; "look" for a meeting's prep and a parcel coming today.
+  Everything else follows the phone's level for its kind. An older Redde leaves the mark unread.
+- A watch's run is told when to open with URGENT: (it needs them today: a deadline, money, their
+  security, someone waiting); the word is left off what the phone shows.
+- A set of ideas asking to be heard is never quieted by the back-off for ideas left alone.
+- A film or series on a watch list that Jellyfin shows played since it went on the list is ticked
+  off, at any hour, with no model, by whichever of the server's users played it (or the one
+  JELLYFIN_USER names), under the same switch as Jellyfin's arrivals. Before, only a planned night's
+  morning check, by the model, ever looked.
+- Ticking by words finds a title without its punctuation, a leading The or its year ("planes trains
+  and automobiles" is "Planes, Trains & Automobiles (1987)"), and "we watched … last night" tells
+  the agent to tick it off. A planned night's check asks the agent with Jellyfin by message_agent.
+
+## 1.56.1 (2026-11-27)
+
+- A watch whose run answers "[NOTHING NEW]" (in brackets, or in backticks) no longer sends a
+  notification: it counts as a run that found nothing, as "NOTHING NEW" always did.
+
 ## 1.56.0 (2026-11-27)
 
 - Deadlines as they really fall (`deadlines.py`):

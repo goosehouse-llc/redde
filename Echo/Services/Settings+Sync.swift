@@ -75,6 +75,7 @@ extension Settings {
         static let announceOnAirPods = "announceOnAirPods"
         static let briefingTapsOpenRun = "briefingTapsOpenRun"
         static let notificationSound = "notificationSound"
+        static let noteLevels = "noteLevels"
         static let returnSends = "returnSends"
         static let chatTextSize = "chatTextSize"
         static let botColors = "botColors"
@@ -135,7 +136,7 @@ extension Settings {
         Keys.displayName, Keys.theme, Keys.themeColors, Keys.appearance, Keys.chatTextSize, Keys.chatFont, Keys.botColors, Keys.eventColor, Keys.cardColor, Keys.todayColor, Keys.todayTileColors, Keys.listLayouts, Keys.todayTileOrder, Keys.todayUpNext, Keys.cardAppearance, Keys.agendaCalendars, Keys.newEventsCalendar, Keys.linkPreviews, Keys.addressMaps, Keys.botFaces, Keys.botPictures, Keys.replyCards, Keys.returnSends,
         Keys.voiceOrb, Keys.orbLight, Keys.carPlayCards, Keys.carPlayVoice, Keys.carPlayBots, Keys.showBots, Keys.projectsInChatList, Keys.notifyWhereYouAre, Keys.hiddenChatListCards,
         Keys.fastLaneURL, Keys.fastLaneModel, Keys.pinnedModels, Keys.reasoningEffort, Keys.replyLanguage, Keys.measureUnits, Keys.contextWindow,
-        Keys.suggestFollowUps, Keys.agentsAskEachOther, Keys.hermesBotsTalk, Keys.askBeforeAgentsAsk, Keys.suggestionsFromFastLane, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
+        Keys.suggestFollowUps, Keys.agentsAskEachOther, Keys.hermesBotsTalk, Keys.askBeforeAgentsAsk, Keys.suggestionsFromFastLane, Keys.showLiveActivity, Keys.keepRepliesInBackground, Keys.notificationSound, Keys.noteLevels, Keys.announceOnAirPods, Keys.briefingTapsOpenRun, Keys.earpieceAtEar,
         Keys.handsFreeByDefault, Keys.newConversationForVoice, Keys.talkOver, Keys.interruption, Keys.stopAndSkipInCar, Keys.stopPhrases,
         Keys.answerRequestsByVoice, Keys.shortAnswersInCar, Keys.thinkingSound, Keys.voiceEngine, Keys.liveVoice, Keys.liveVoices, Keys.liveHangUp, Keys.liveWhenLocked, Keys.liveGroupCalls,
         Keys.replyVoice, Keys.kokoroURL, Keys.speechModel,
@@ -210,6 +211,7 @@ extension Settings {
         case Keys.showLiveActivity: showLiveActivity = flag(true)
         case Keys.keepRepliesInBackground: keepRepliesInBackground = flag(true)
         case Keys.notificationSound: notificationSound = flag(true)
+        case Keys.noteLevels: noteLevels = text()
         case Keys.announceOnAirPods: announceOnAirPods = flag()
         case Keys.briefingTapsOpenRun: briefingTapsOpenRun = flag()
         case Keys.earpieceAtEar: earpieceAtEar = flag(true)

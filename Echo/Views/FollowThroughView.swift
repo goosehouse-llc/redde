@@ -211,7 +211,7 @@ struct FollowThroughView: View {
                            Text("A haircut, the dentist or the vet about due by your usual gap with nothing booked, and after a doctor's visit, what to follow up. Needs full access to your calendars.", comment: "Follow-Through: under the appointments switch"),
                            symbol: "calendar.badge.clock")
                     toggle(\.arrivals, "arrivals", Text("New to Watch", comment: "Follow-Through: the arrivals switch"),
-                           Text("A film on your watch list new on Jellyfin, a new season of a series you finished.", comment: "Follow-Through: under the arrivals switch"),
+                           Text("A film on your watch list new on Jellyfin, a new season of a series you finished, and what you’ve played on Jellyfin ticked off your list.", comment: "Follow-Through: under the arrivals switch"),
                            symbol: "sparkles.tv")
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {

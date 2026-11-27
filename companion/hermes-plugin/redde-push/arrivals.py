@@ -33,6 +33,8 @@ URL_NAMES = ("JELLYFIN_URL", "JELLYFIN_SERVER_URL", "JELLYFIN_BASE_URL", "JELLYF
 KEY_NAMES = ("JELLYFIN_API_KEY", "JELLYFIN_TOKEN", "JELLYFIN_KEY", "JELLYFIN_ACCESS_TOKEN")
 USER_NAMES = ("JELLYFIN_USER", "JELLYFIN_USERNAME", "JELLYFIN_USER_ID")
 EVERY, SERIES_EVERY, SERIES_AT_ONCE, CARDS_AT_ONCE = 1800, 86400, 8, 3
+#: Whose plays tick a watch list off, when JELLYFIN_USER names none: every user, up to this many.
+USERS_AT_MOST = 6
 SOON, LATELY = 30, 14
 TIMEOUT = 10.0
 
@@ -148,6 +150,56 @@ def new_on_server(server: dict, data: dict, watching: list[tuple[dict, dict]]) -
     return cards
 
 
+def _played_at(text) -> float | None:
+    """Jellyfin's time ("2026-11-27T02:14:33.1234567Z") as a timestamp."""
+    try:
+        return datetime.fromisoformat(re.sub(r"\.\d+", "", str(text or "")).replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def watched(root: Path, server: dict, watching: list[tuple[dict, dict]]) -> list[str]:
+    """Watch-list films and series Jellyfin shows played since they went on the list, ticked off,
+    with no model (1.57.0, asked 2026-11-27: "i watched planes trains and automobiles, and donnie
+    brasco last night, but they did not tick off on the movies list"; only a planned night's check,
+    by the model, ever looked). Played by any of the server's users (a film night is watched on
+    whoever's account), or by the one JELLYFIN_USER names. One played before it went on the list
+    is one to see again, and stays. What was ticked."""
+    waiting = [(kept, item) for kept, item in watching if not item.get("done")]
+    if not waiting:
+        return []
+    if server.get("user"):
+        users = [u for u in [_user(server)] if u]
+    else:
+        got = _jellyfin(server, "/Users")
+        users = [u["Id"] for u in got if isinstance(u, dict) and u.get("Id")][:USERS_AT_MOST] if isinstance(got, list) else []
+    plays: dict[str, tuple[float, int | None]] = {}
+    for user in users:
+        got = _jellyfin(server, f"/Users/{user}/Items?Recursive=true&IncludeItemTypes=Movie,Series&Filters=IsPlayed"
+                                "&SortBy=DatePlayed&SortOrder=Descending&Limit=60&Fields=ProductionYear,UserData")
+        for media in (got or {}).get("Items") or [] if isinstance(got, dict) else []:
+            if not isinstance(media, dict) or not media.get("Name"):
+                continue
+            at = _played_at((media.get("UserData") or {}).get("LastPlayedDate"))
+            key = norm(media["Name"])
+            if at and at > plays.get(key, (0.0, None))[0]:
+                plays[key] = (at, media.get("ProductionYear"))
+    from . import lists
+    ticked = []
+    for kept, item in waiting:
+        found = plays.get(norm(item.get("text")))
+        if not found:
+            continue
+        at, year = found
+        wanted = _year(item)
+        if (wanted and year and abs(int(wanted) - int(year)) > 1) or at <= float(item.get("added") or 0):
+            continue
+        said = lists.change(root, {"action": "check", "list": kept["id"], "items": [item["id"]]}, by="jellyfin")
+        if said.get("checked"):
+            ticked.append(str(item.get("text")))
+    return ticked
+
+
 def _seasons(name: str, deadline: float) -> list[dict] | None:
     from . import posters
     how, status_, _, body = posters.GET("https://api.tvmaze.com/singlesearch/shows?q=" + urllib.parse.quote(name)
@@ -200,11 +252,23 @@ def look(root: Path, offer, now: float | None = None) -> int:
     """One look, when due and in the day: cards sent through `offer(cards) -> bool`. How many."""
     from . import followthrough
     now = now or time.time()
-    if not followthrough.DAY_FROM <= datetime.fromtimestamp(now).hour < followthrough.DAY_TO:
-        return 0
     if not followthrough.on(root, "arrivals"):
         return 0
     data = _state(root)
+    # What's been watched, ticked off: at any hour, with nothing to say (1.57.0).
+    if now - float(data.get("watched_at") or 0) >= EVERY:
+        data["watched_at"] = now
+        server = find(root)
+        if server:
+            try:
+                ticked = watched(root, server, _watch_items(root))
+                if ticked:
+                    log.info("redde-push: ticked off %d played on Jellyfin", len(ticked))
+            except Exception:
+                log.debug("redde-push: Jellyfin plays look failed", exc_info=True)
+        _save(root, data)
+    if not followthrough.DAY_FROM <= datetime.fromtimestamp(now).hour < followthrough.DAY_TO:
+        return 0
     if now - float(data.get("at") or 0) < EVERY:
         return 0
     data["at"] = now

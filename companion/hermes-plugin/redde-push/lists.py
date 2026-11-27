@@ -209,6 +209,11 @@ DATED_SAID = ("These name a day or a time in their words but have no date of the
               f"list. If one is for that day, give it its date with {TOOL} 'plan' (items: its number or words, `when` "
               "ISO 8601 with offset): it goes under that day and Redde reminds them.")
 _WATCHISH = re.compile(r"\b(?:watch|re-?watch|binge|see)\b", re.IGNORECASE)
+#: Saying they've watched something, and when (1.57.0): it may be on a watch list to tick off.
+_WATCHED = re.compile(r"\b(?:watched|saw|finished)\b.{0,80}?\b(?:last night|yesterday|earlier|tonight|this (?:morning|"
+                      r"afternoon|evening)|over the weekend|on (?:mon|tues|wednes|thurs|fri|satur|sun)day)\b", re.IGNORECASE)
+WATCHED_NOTE = (f"[Redde: if what they watched is on one of their watch lists, tick it off with {TOOL} 'check' "
+                "(find it with tool_search if it isn't among your tools).]")
 _PLANISH = re.compile(
     r"\b(?:watch|see|read|cook|make|play|visit|try|go to|have)\b.{0,80}?\b(?:tonight|tomorrow|this (?:weekend|week)|"
     r"next \w+|on (?:mon|tues|wednes|thurs|fri|satur|sun)day|(?:mon|tues|wednes|thurs|fri|satur|sun)day (?:night|evening)|"
@@ -348,6 +353,14 @@ def _picked(items: list[dict], refs) -> tuple[list[dict], list[str]]:
             if hit is None and folded:
                 loose = [i for i in items if folded in str(i.get("text") or "").casefold()]
                 hit = loose[0] if len(loose) == 1 else None
+            if hit is None and folded:
+                # Its words without the punctuation, a leading The or a year: "planes trains and
+                # automobiles" is "Planes, Trains & Automobiles (1987)" (1.57.0).
+                from .arrivals import norm
+                key = norm(words)
+                same = [i for i in items if key and norm(i.get("text")) == key] or \
+                    [i for i in items if key and key in norm(i.get("text"))]
+                hit = same[0] if len(same) == 1 else None
         if hit is None:
             missed.append(str(ref))
         elif hit not in found:
@@ -719,7 +732,7 @@ def plan_check(kept: dict, item: dict, when: datetime, by_app: bool = False) -> 
     name, with_ = item["text"], f" with {item['with']}" if item.get("with") else ""
     watch = look(kept)["kind"] == "watch"
     how = ("It's a film or a series: see whether their media server (Jellyfin, Plex) shows it played since then; if "
-           "you can't reach it yourself, ask the bot that can with an @mention." if watch else
+           "you can't reach it yourself, ask the agent that can with message_agent." if watch else
            "Look for signs it was done in what your tools can see: their calendar, mail, reminders, messages.")
     question = f"Did you watch {name}?" if watch else f"Did {name} happen?"
     # (With the phone putting a watch list's nights on its calendar, the new night is all the agent gives.)
@@ -938,12 +951,12 @@ def turn_note(message, platform: str = "") -> str | None:
     text = _text(message)
     if not text or text.lstrip().startswith("["):
         return None
-    listish, planish = _LISTISH.search(text), _PLANISH.search(text)
-    if not (listish or planish):
+    listish, planish, done = _LISTISH.search(text), _PLANISH.search(text), _WATCHED.search(text)
+    if not (listish or planish or done):
         return None
     watching = planish and _WATCHISH.search(text)
     return " ".join(n for n in (NOTE if listish else None, PLAN_NOTE if planish else None,
-                                SHOW_NOTE if watching else None) if n)
+                                SHOW_NOTE if watching else None, WATCHED_NOTE if done else None) if n)
 
 
 def register(ctx, home_of) -> None:

@@ -949,6 +949,12 @@ def meeting_card(item: dict, data: dict) -> dict | None:
                        "I promised them and what I'm waiting on from them."}
 
 
+#: Cards that ask to be heard (1.57.0, `core.LEVELS`): a security notice and a plan's step at the
+#: time the person picked, now; a meeting's prep, before it starts. (A parcel's "today" card too,
+#: "look".) The rest wait for the phone's level for ideas: its summary, as Redde starts.
+LOUD = {"security": "now", "planned": "now", "meeting": "look"}
+
+
 def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
     """Cards for what's come due; `offer(ideas) -> bool` sends them (`ideas.offer`). In the day, a set
     an hour, so many a day; a meeting's in a wider day and not kept to the hour. `mailbox() -> set`
@@ -1016,6 +1022,10 @@ def due(home: Path, offer, mailbox=None, now: float | None = None) -> int:
                 continue
             cards.append(made)
             picked.append((item, "due"))
+        for made, (item, how) in zip(cards, picked):
+            level = LOUD.get(item["kind"], "look" if how == "today" else "")
+            if level:
+                made["level"] = level
         if cards and offer(cards):
             data["offered"] = sent + [now] * sum(i["kind"] != "planned" for i, _ in picked)
             for item, how in picked:

@@ -626,6 +626,22 @@ def host_name() -> str:
     return clipped(socket.gethostname().split(".")[0], 40) or "Hermes"
 
 
+#: How a note asks to be shown (1.57.0, asked 2026-11-27: "so many notifications ... I stopped
+#: reviewing them all"): `l` "now", it needs the person (a reminder they set, a watch's URGENT find,
+#: a security notice, a plan's step at the time they picked), with a sound even when the phone keeps
+#: the rest of its kind quiet; "look", it's about today (a meeting's prep, a parcel coming today),
+#: with a banner even when the rest of its kind waits for the phone's summary. Without it, the
+#: phone's levels for the note's kind decide. An older Redde leaves it unread.
+LEVELS = ("now", "look")
+
+
+def marked(made: dict, level: str = "now") -> dict:
+    """The note, marked `l` with how it asks to be shown (`LEVELS`)."""
+    if level in LEVELS:
+        made["l"] = level
+    return made
+
+
 def clipped(text: str, limit: int, lines: bool = False) -> str:
     """`text` cut to `limit` characters; on one line unless `lines`."""
     text = str(text or "").strip() if lines else " ".join(str(text or "").split())

@@ -309,6 +309,10 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let sealed = info[PushNote.sealedKey] as? String
         let leaving = notification.request.identifier.hasPrefix(LeaveTime.reminderPrefix)
         let urgent = notification.request.content.interruptionLevel == .timeSensitive
+        // Put in the list only by the extension (a summary's kind, quiet hours, a muted chat), or
+        // without a sound (Banner Only): the same over Redde (`NoteLevels`).
+        let passive = notification.request.content.interruptionLevel == .passive
+        let silent = notification.request.content.sound == nil
         // iOS's own; called once on every branch below, on the main actor.
         nonisolated(unsafe) let show = completionHandler
         Task { @MainActor in
@@ -326,7 +330,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             if kind == nil, let sealed {
                 show(self.presentUnopened(sealed))
             } else {
-                show(self.presentation(pushKind: kind, sessionID: sessionID, room: room, bot: bot))
+                show(self.presentation(pushKind: kind, sessionID: sessionID, room: room, bot: bot, passive: passive, silent: silent))
             }
         }
     }
@@ -354,14 +358,22 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let content = UNMutableNotificationContent()
         content.sound = sound
         guard note.fill(content) else { return shown }
-        guard !presentation(pushKind: note.k, sessionID: note.s, room: note.g, bot: note.p).isEmpty else { return [] }
+        // As the extension would have it (`NoteLevels`): in the list only, or without a sound.
+        let level = NoteLevels(text: settings.noteLevels).level(of: note)
+        let waits = QuietHours.waits(note) && NoteGroup.of(note) != .needsYou && QuietHours.load().covers(.now)
+        if level == .summary || waits { MutedChats.quiet(content) } else if level == .silent { content.sound = nil }
+        guard !presentation(pushKind: note.k, sessionID: note.s, room: note.g, bot: note.p, passive: level == .summary || waits,
+                            silent: level == .silent).isEmpty else { return [] }
         center.add(UNNotificationRequest(identifier: "redde.push.\(UUID().uuidString)", content: content, trigger: nil)) { [weak self] error in
             if let error { Task { @MainActor in self?.log.error("notify failed: \(error.localizedDescription)") } }
         }
         return []
     }
 
-    func presentation(pushKind kind: String?, sessionID: String?, room: String? = nil, bot: String? = nil) -> UNNotificationPresentationOptions {
+    /// `passive`: the extension put it in the list only (a summary's kind, quiet hours, a muted
+    /// chat); `silent`: Banner Only. Each is shown so over Redde too.
+    func presentation(pushKind kind: String?, sessionID: String?, room: String? = nil, bot: String? = nil,
+                      passive: Bool = false, silent: Bool = false) -> UNNotificationPresentationOptions {
         guard let kind else { return [] }
         PushService.shared.reload()   // the first note from a pairing confirms it
         // A task's: the chat on screen asks for the report the plugin may have kept (`TaskReports`).
@@ -376,18 +388,14 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         // A chat the person muted: in the list, not over the screen.
         if MutedChats.isMuted(session: sessionID, room: room, bot: bot) { return [.list] }
         if PushNote.Kind(rawValue: kind) == .widget { return [] }   // it is on the widget; nothing to say with Redde in front
-        // Quiet hours: what an agent sent on its own goes to the list, not over the screen.
-        if QuietHours.waits(kind: PushNote.Kind(rawValue: kind)), QuietHours.load().covers(.now) {
-            if PushNote.Kind(rawValue: kind) == .ideas { IdeasInbox.shared.reload() }
-            if PushNote.Kind(rawValue: kind) == .routine { BriefingsInbox.shared.reload(); GoalsInbox.shared.reload() }
-            return [.list]
-        }
         // Ideas: on the chat list now (the extension kept them), and said in a banner.
         if PushNote.Kind(rawValue: kind) == .ideas { IdeasInbox.shared.reload() }
         // A key asked for: the list in Settings is fetched afresh (the banner opens its card).
         if PushNote.Kind(rawValue: kind) == .key { Task { await KeyRequests.shared.reload() } }
         if PushNote.Kind(rawValue: kind) == .routine { BriefingsInbox.shared.reload(); GoalsInbox.shared.reload() }
-        return shown
+        // Quiet hours, a summary's kind: to the list, not over the screen (the extension decided).
+        if passive { return [.list] }
+        return silent ? [.banner, .list] : shown
     }
 
     /// A notification's sound, or none: Settings › Voice › Notification sound.
@@ -761,7 +769,21 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         content.userInfo = userInfo
         if let messageEntityID { SiriHooks.annotateReply(content, messageEntityID: messageEntityID) }
         // A bot's chat the person muted: quietly, in the list only.
-        if let bot = conversation?.bot, Mutes.isMuted(bot: bot.profile, settings: settings) { MutedChats.quiet(content) }
+        if let bot = conversation?.bot, Mutes.isMuted(bot: bot.profile, settings: settings) {
+            MutedChats.quiet(content)
+        } else {
+            // As the person has replies (or what needs them) come (`NoteLevels`).
+            let levels = NoteLevels(text: settings.noteLevels)
+            switch levels.level(kind == .interrupt ? .needsYou : .replies) {
+            case .sound: break
+            case .silent: content.sound = nil
+            case .summary:
+                MutedChats.quiet(content)
+                content.threadIdentifier = HeldNote.thread
+                HeldNote.wait(HeldNote(kind: .reply, title: title, at: .now),
+                              until: levels.nextSummary(after: .now, quiet: QuietHours.load()), afterQuiet: false)
+            }
+        }
         // Distinct per request so two approvals in one turn both show; replies/failures replace their kind.
         let suffix = userInfo["requestID"].map { ".\($0)" } ?? ""
         let request = UNNotificationRequest(identifier: "redde.\(kind.rawValue)\(suffix)", content: content, trigger: nil)

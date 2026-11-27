@@ -30,6 +30,34 @@ class WatchTests(RoutinesTests):
         made = self.sent[0][1]
         self.assertEqual((made["k"], made["t"], made["i"], made["b"]), ("watch", "Blue kettle price", "w1", "It dropped to $39 (was $49)."))
 
+    def test_an_urgent_find_is_marked_and_the_word_left_off(self):
+        """1.57.0 (2026-11-27): a watch's find comes with the phone's level for watches, a banner with
+        no sound as Redde starts, unless it opens URGENT:."""
+        home = self.watch_job(last="2026-10-28T07:00:00")
+        self.watch.look()
+        self.output(home, "# Cron Job\n\n## Response\n\n**URGENT:** Ally says your account is down to $12 and rent goes out tomorrow.")
+        self.watch_job(last="2026-10-28T08:00:00")
+        self.watch.look()
+        made = self.sent[-1][1]
+        self.assertEqual((made.get("l"), made["b"]), ("now", "Ally says your account is down to $12 and rent goes out tomorrow."))
+        self.output(home, "# Cron Job\n\n## Response\n\nUrgent emails: Credit One confirmed your dispute.")
+        self.watch_job(last="2026-10-28T09:00:00")
+        self.watch.look()
+        self.assertNotIn("l", self.sent[-1][1], "a watch named Urgent emails isn't an URGENT find")
+
+    def test_urgent_is_said_in_capitals_with_a_colon_or_brackets(self):
+        for answer in ("URGENT: x", "**URGENT:** x", "[URGENT] x", "URGENT — x", "> URGENT: x"):
+            self.assertEqual(watches.urgent(answer), (True, "x"), answer)
+        for answer in ("Urgent emails: none new", "Nothing urgent.", "URGENTLY x", "The URGENT: one"):
+            self.assertFalse(watches.urgent(answer)[0], answer)
+
+    def test_a_look_is_told_when_to_say_urgent(self):
+        home = self.watch_job(last="2026-10-28T07:00:00")
+        stores = routines.Stores(self.root)
+        self.assertIn("start with URGENT:", watches.turn_note(home, stores, ASKED))
+        self.output(home, "## Response\n\nIt's $49.")
+        self.assertIn("start with URGENT:", watches.turn_note(home, stores, ASKED))
+
     def test_a_watch_that_couldnt_look_says_why_where_it_asks_to(self):
         self.watch_job(last="2026-10-28T07:00:00")
         self.watch.look()
@@ -52,7 +80,7 @@ class WatchTests(RoutinesTests):
         self.assertIsNone(watches.turn_note(home, stores, "What's the weather?"))
 
     def test_quiet_answers(self):
-        for answer in ("NOTHING NEW", "Nothing new.", "**NOTHING NEW**"):
+        for answer in ("NOTHING NEW", "Nothing new.", "**NOTHING NEW**", "[NOTHING NEW]", "`NOTHING NEW`"):
             self.assertTrue(watches.quiet(answer), answer)
         self.assertFalse(watches.quiet("Nothing new on the kettle, but the toaster dropped to $20."[:0] + "The toaster dropped."))
 

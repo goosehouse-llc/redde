@@ -28,6 +28,21 @@ TAG = "[redde-watch:"
 QUIET = "NOTHING NEW"
 #: Hermes's own word for a run with nothing to deliver.
 SILENT = "[SILENT]"
+#: What opens a find that can't wait (1.57.0): sent with a sound. Anything else a watch finds comes
+#: with the phone's level for watches (a banner without one, as Redde starts).
+URGENT = "URGENT:"
+_URGENT = re.compile(r"^[\s*_#>`]*(?:\[URGENT\]|URGENT[*_`]*\s*[:\-–—])[*_`]*\s*")
+URGENT_SAID = (f" If it needs them today (a deadline, money, their security, someone waiting on them), start with "
+               f"{URGENT} and they hear it with a sound; anything else reaches them without one.")
+
+
+def urgent(answer: str) -> tuple[bool, str]:
+    """Whether a find opens URGENT: (in capitals: "Urgent emails: none" isn't), and the answer
+    without the word."""
+    found = _URGENT.match(answer or "")
+    if not found:
+        return False, answer
+    return True, (answer[found.end():].strip() or answer)
 _ID = re.compile(r"\[redde-watch:([A-Za-z0-9_-]{1,40})\]")
 
 
@@ -70,7 +85,9 @@ def quiet(answer: str) -> bool:
     """The run found nothing worth telling: NOTHING NEW or [SILENT], or a first paragraph that opens
     by saying only that nothing changed (after any lead-in) and doesn't turn it with a "but"."""
     said = answer.strip()
-    if said.upper().startswith(SILENT) or said.strip(".!*_ ").upper().startswith(QUIET):
+    # (11-27: "[NOTHING NEW]", in brackets like [SILENT], went out as a notification: 46 of an
+    # urgent-email watch's 77 in twelve days)
+    if said.upper().startswith(SILENT) or said.strip(".!*_`[]() ").upper().startswith(QUIET):
         return True
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", said) if p.strip()]
     while paragraphs and _LEAD_IN.match(paragraphs[0].strip("*_#> ")):
@@ -196,12 +213,12 @@ def turn_note(home: Path, stores, message) -> str | None:
             return (f"[Redde: this is the first look at this watch. Answer {SILENT} unless something needs acting on "
                     "now; whatever else you answer goes to the agent it is handed to.]")
         return ("[Redde: this is the first look at this watch. Tell the user briefly what you find now, so they "
-                "know it is being watched.]")
+                f"know it is being watched.{URGENT_SAID}]")
     answer, when = told
     ago = max(1, round((time.time() - when) / 3600))
     return (f"[Redde: the last time you had something to say about this watch, about {ago} hour"
             f"{'s' if ago != 1 else ''} ago, you said: \"{answer[:600]}\". Answer {quiet} unless it has changed "
-            "since in a way that matters.]")
+            f"since in a way that matters.{'' if hands_off(job) else URGENT_SAID}]")
 
 
 # ---- watches the agent sets itself (asked 2026-10-28, "proactive": "when the agent says I'll keep an eye on it")
