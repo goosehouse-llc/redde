@@ -392,9 +392,13 @@ extension ConversationsList {
             }
             .macSheetSize()
         }
-        // The person's lists, when the chat list shows and when Redde comes back to the front.
+        // The person's lists, when the chat list shows and when Redde comes back to the front; and
+        // what the calendar says of their appointments, at most every six hours (plugin 1.54).
         .task(id: "\(settings.connectionKey)|\(scenePhase == .active)") {
-            if scenePhase == .active { await TodayLists.shared.refresh() }
+            if scenePhase == .active {
+                await TodayLists.shared.refresh()
+                await Appointments.send()
+            }
         }
         .onChange(of: GoalsInbox.shared.opening, initial: true) { _, id in
             guard let id else { return }

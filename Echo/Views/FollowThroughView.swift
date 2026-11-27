@@ -34,6 +34,8 @@ struct FollowThrough: Equatable {
     var arrivals = true
     var habits = true
     var outings = true
+    /// Appointments that come round again (plugin 1.54, `Appointments`).
+    var appointments = true
     /// The profile whose .env has Paperless's address and key; nil when none has.
     var paperless: String?
     var items: [Item] = []
@@ -54,6 +56,7 @@ struct FollowThrough: Equatable {
         made.trips = switches["trips"] ?? true
         made.habits = switches["habits"] ?? true
         made.outings = switches["outings"] ?? true
+        made.appointments = switches["appointments"] ?? true
         if let found = root["paperless"] as? [String: Any], found["found"] as? Bool == true {
             made.paperless = found["profile"] as? String
         }
@@ -174,6 +177,10 @@ struct FollowThroughView: View {
                     toggle(\.outings, "outings", Text("Days Out", comment: "Follow-Through: the outings switch"),
                            Text("When you say you're off somewhere today, the photos from it afterwards, the best few ready to share. Needs Photos in Phone Tools.", comment: "Follow-Through: under the outings switch"),
                            symbol: "figure.walk.motion")
+                    // (plugin 1.54.0; the phone sends what it found of them, `Appointments.send`)
+                    toggle(\.appointments, "appointments", Text("Appointments", comment: "Follow-Through: the appointments switch"),
+                           Text("A haircut, the dentist or the vet about due by your usual gap with nothing booked, and after a doctor's visit, what to follow up. Needs full access to your calendars.", comment: "Follow-Through: under the appointments switch"),
+                           symbol: "calendar.badge.clock")
                     toggle(\.arrivals, "arrivals", Text("New to Watch", comment: "Follow-Through: the arrivals switch"),
                            Text("A film on your watch list new on Jellyfin, a new season of a series you finished.", comment: "Follow-Through: under the arrivals switch"),
                            symbol: "sparkles.tv")

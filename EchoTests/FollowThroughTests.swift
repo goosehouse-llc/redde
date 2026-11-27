@@ -43,6 +43,12 @@ struct FollowThroughTests {
         #expect(try #require(FollowThrough.parse(Self.answer)).outings)
     }
 
+    /// Appointments (plugin 1.54): the same.
+    @Test func readsTheAppointmentsSwitch() throws {
+        #expect(try #require(FollowThrough.parse(#"redde-push follow {"switches": {"appointments": false}}"#)).appointments == false)
+        #expect(try #require(FollowThrough.parse(Self.answer)).appointments)
+    }
+
     @Test func anOlderPluginsAnswerIsNone() {
         #expect(FollowThrough.parse("redde-push: unknown command follow") == nil)
         #expect(FollowThrough.parse(#"redde-push follow {"switches": {}}"#)?.items == [])

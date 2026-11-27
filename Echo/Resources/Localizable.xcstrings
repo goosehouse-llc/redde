@@ -1201,6 +1201,113 @@
         }
       }
     },
+    "A haircut, the dentist or the vet about due by your usual gap with nothing booked, and after a doctor's visit, what to follow up. Needs full access to your calendars." : {
+      "comment" : "Follow-Through: under the appointments switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En klipning, tandlægen eller dyrlægen, når det nærmer sig efter dit sædvanlige mellemrum og intet er booket, og efter et lægebesøg, hvad der skal følges op. Kræver fuld adgang til dine kalendere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Friseur, Zahnarzt oder Tierarzt, wenn es nach deinem üblichen Abstand wieder Zeit ist und nichts gebucht ist, und nach einem Arztbesuch, was noch zu erledigen ist. Braucht vollen Zugriff auf deine Kalender."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un corte de pelo, el dentista o el veterinario cuando toca según tu intervalo habitual y no hay nada reservado, y tras una visita al médico, lo que queda por hacer. Necesita acceso completo a tus calendarios."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coiffeur, dentiste ou vétérinaire quand c’est bientôt le moment selon votre rythme habituel et que rien n’est réservé, et après une visite chez le médecin, ce qui reste à faire. Demande un accès complet à vos calendriers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un taglio di capelli, il dentista o il veterinario quando è quasi ora secondo il tuo intervallo abituale e non c’è niente prenotato, e dopo una visita medica, cosa resta da fare. Richiede l’accesso completo ai tuoi calendari."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いつもの間隔からそろそろ時期なのに予約がない散髪・歯医者・獣医など、そして通院のあとのフォローアップ。カレンダーへのフルアクセスが必要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "평소 간격으로 보아 때가 됐는데 예약이 없는 이발, 치과, 동물병원 같은 일정과, 병원 진료 후 챙길 일. 캘린더 전체 접근 권한이 필요합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hårklipp, tannlegen eller dyrlegen når det nærmer seg etter det vanlige mellomrommet ditt og ingenting er bestilt, og etter et legebesøk, hva som må følges opp. Krever full tilgang til kalenderne dine."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een knipbeurt, de tandarts of de dierenarts als het volgens je gebruikelijke tussenpoos weer tijd is en er niets geboekt staat, en na een doktersbezoek wat er nog moet gebeuren. Vereist volledige toegang tot je agenda’s."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fryzjer, dentysta czy weterynarz, gdy według twojego zwykłego odstępu zbliża się termin, a nic nie jest umówione, a po wizycie u lekarza — co trzeba dalej załatwić. Wymaga pełnego dostępu do kalendarzy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um corte de cabelo, o dentista ou o veterinário quando estiver na hora pelo seu intervalo de sempre e nada estiver marcado, e depois de uma consulta médica, o que falta fazer. Requer acesso total aos seus calendários."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стрижка, стоматолог или ветеринар, когда по вашему обычному интервалу подходит срок, а записи нет, и после визита к врачу — что нужно сделать дальше. Нужен полный доступ к календарям."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En klippning, tandläkaren eller veterinären när det börjar bli dags enligt ditt vanliga intervall och inget är bokat, och efter ett läkarbesök, vad som behöver följas upp. Kräver full åtkomst till dina kalendrar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her zamanki aralığına göre vakti gelen ama randevusu alınmamış saç kesimi, diş hekimi ya da veteriner, ve doktor ziyaretinden sonra yapılacaklar. Takvimlerine tam erişim gerekir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стрижка, стоматолог чи ветеринар, коли за вашим звичним інтервалом настає час, а запису немає, і після візиту до лікаря — що треба зробити далі. Потрібен повний доступ до календарів."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按你平常的间隔快到时间却还没预约的理发、牙医、兽医等，以及看医生之后要跟进的事。需要对日历的完全访问权限。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依你平常的間隔快到時間卻還沒預約的理髮、牙醫、獸醫等，以及看醫生之後要跟進的事。需要行事曆的完整取用權限。"
+          }
+        }
+      }
+    },
     "add something…" : {
       "comment" : "Notepad: the line at the bottom of the pad to write a new to-do on",
       "localizations" : {
@@ -1839,6 +1946,113 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple Intelligence, Spotlight"
+          }
+        }
+      }
+    },
+    "Appointments" : {
+      "comment" : "Follow-Through: the appointments switch",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aftaler"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rendez-vous"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appuntamenti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "予約"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "예약"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avtaler"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afspraken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wizyty"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consultas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записи"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bokningar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Randevular"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записи"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预约"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預約"
           }
         }
       }

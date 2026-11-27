@@ -38,7 +38,7 @@ from . import dates, wire
 log = logging.getLogger("redde_push.followthrough")
 
 FILE = "followthrough.json"
-SWITCHES = ("mail", "orders", "trips", "arrivals", "habits", "outings")
+SWITCHES = ("mail", "orders", "trips", "arrivals", "habits", "outings", "appointments")
 #: Which switch each kind of item is under.
 GROUPS = {"promise": "mail", "waiting": "mail", "owed": "mail", "meeting": "mail", "delivery": "orders",
           "return": "orders", "trial": "orders", "bill": "orders", "expiry": "orders", "trip": "trips",
@@ -993,7 +993,8 @@ def listing(home: Path) -> dict:
 
 
 def slash(home: Path, words: list[str]) -> str:
-    """`/redde-push follow list`, `follow set <switch> on|off`, `follow drop <id>`."""
+    """`/redde-push follow list`, `follow set <switch> on|off`, `follow drop <id>`, and `follow appts
+    <device> <base64url JSON>`, a phone's appointments (`appointments.py`, 1.54.0)."""
     if words == ["list"]:
         from . import arrivals
         from . import paper
@@ -1012,4 +1013,9 @@ def slash(home: Path, words: list[str]) -> str:
                 item.update(state="dropped", settled=time.time())
             save(home, data)
         return wire.reply("follow", listing(home))
+    if words and words[0] == "appts":
+        from . import appointments
+        kept = appointments.slash(home, words)
+        if kept is not None:
+            return wire.reply("follow", {"appointments": kept})
     return "redde-push follow: this command is for the Redde app."

@@ -211,7 +211,8 @@ class SlashTests(unittest.TestCase):
             follow.from_sent(data, sent("bo@example.com", "Could you confirm?"), ME, TUESDAY)
             follow.save(home, data)
             shown = json.loads(follow.slash(home, ["list"]).removeprefix("redde-push follow "))
-            self.assertEqual(shown["switches"], {"mail": True, "orders": True, "trips": True, "arrivals": True, "habits": True, "outings": True})
+            self.assertEqual(shown["switches"], {"mail": True, "orders": True, "trips": True, "arrivals": True, "habits": True, "outings": True,
+                                             "appointments": True})
             self.assertEqual(shown["jellyfin"], {"found": False})
             (item,) = shown["items"]
             self.assertEqual((item["kind"], item["who"], item["subject"]), ("waiting", "bo@example.com", "Lease renewal"))

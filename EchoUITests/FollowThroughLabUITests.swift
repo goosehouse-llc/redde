@@ -46,7 +46,7 @@ final class FollowThroughLabUITests: XCTestCase {
                       "the trip's flight")
         keep(app.screenshot(), as: "follow-through-items")
 
-        for name in ["mail", "orders", "trips", "habits", "arrivals"] {
+        for name in ["mail", "orders", "trips", "habits", "outings", "appointments", "arrivals"] {
             let toggle = app.switches["follow-switch-\(name)"]
             for _ in 0..<4 where !toggle.isHittable { app.swipeUp() }
             XCTAssertTrue(toggle.exists, "no \(name) switch")

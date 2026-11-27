@@ -3,6 +3,16 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.54.0 (2026-11-26)
+
+- Appointments that come round again (`appointments.py`): Redde on the phone reads its calendar
+  for a few kinds of appointment (haircut, dentist, doctor, eye exam, dermatologist, physio, vet,
+  grooming, nails, massage, car service) and sends each kind's visits, where, and the next one
+  booked (`follow appts`); nothing else of the calendar. From three visits with a fairly steady gap,
+  one about due with nothing booked gets a card offering times that fit; a visit to a doctor,
+  dentist, vet and the like gets one the same day or the morning after, asking what to follow up.
+  Follow-Through's new Appointments switch; off, what was sent is forgotten.
+
 ## 1.53.0 (2026-11-26)
 
 - A plan for the evening (a film night, or anything from 5 pm) is now checked at 7 the next morning,
