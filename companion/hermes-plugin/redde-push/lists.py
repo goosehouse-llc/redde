@@ -73,6 +73,12 @@ PLAN_TAG = "[redde-plan:"
 #: A plan this far ahead at most; the follow-through this long after a daytime plan, or the next
 #: morning at this hour for one from 5 pm.
 PLAN_AHEAD, PLAN_AFTER, PLAN_MORNING = timedelta(days=60), timedelta(hours=3), 10
+#: The morning after an evening plan, the hour it's checked (1.53.0, asked 2026-11-26: "check at 7am
+#: instead of 10"); the reminder on the day stays at PLAN_MORNING.
+PLAN_CHECK_MORNING = 7
+#: The version of a dated item's reminder and check: one set before 1.53.0 (an evening plan checked
+#: at 10) is set again once, at 7 (`replan`).
+PLAN_V = 2
 KINDS = ("watch", "todo", "shopping", "reading", "packing", "gifts", "other")
 COLORS = ("red", "orange", "yellow", "green", "mint", "teal", "blue", "indigo", "purple", "pink", "brown", "gray")
 #: A list's look from its title, the first that fits: (words, kind or None, emoji, color). A
@@ -558,10 +564,11 @@ def _moment(text) -> datetime | str:
 
 def plan_times(when: datetime, now: datetime) -> tuple[datetime | None, datetime]:
     """When to remind them (the morning of the day, or two hours before a morning plan; none once
-    past) and when to follow through (three hours after, or the next morning for an evening plan)."""
+    past) and when to follow through (three hours after, or the next morning at 7 for an evening plan)."""
     morning = when.replace(hour=PLAN_MORNING, minute=0, second=0, microsecond=0)
     before = morning if when.hour >= 13 else when - timedelta(hours=2)
-    after = (morning + timedelta(days=1)) if when.hour >= 17 else when + PLAN_AFTER
+    early = when.replace(hour=PLAN_CHECK_MORNING, minute=0, second=0, microsecond=0)
+    after = (early + timedelta(days=1)) if when.hour >= 17 else when + PLAN_AFTER
     return (before if before > now else None), after
 
 
@@ -608,6 +615,7 @@ def _date(kept: dict, item: dict, when: datetime, with_: str, at: int, home: Pat
         except Exception:
             pass
     item["when"], item["with"], item["plan_jobs"] = when.isoformat(timespec="minutes"), with_ or None, []
+    item["plan_v"] = PLAN_V
     before, after = plan_times(when, now)
     if make is None:
         return "Kept on the list; this Hermes can't schedule the reminder or the check (no cron). " + calendar
@@ -646,6 +654,37 @@ def _edit(kept: dict, args: dict, at: int, home: Path | None = None) -> dict:
     return {"edited": before, "now": item["text"]}
 
 
+def replan(home: Path, at: float | None = None) -> int:
+    """An evening plan's check set before 1.53.0 (the morning after at 10) set again at 7, once, while
+    it's still ahead; the reminder with it set again as it was. How many were."""
+    at = int(time.time() if at is None else at)
+    now = datetime.fromtimestamp(at, timezone.utc)
+
+    def older(item: dict) -> bool:
+        return bool(item.get("when") and item.get("plan_jobs") and not item.get("done")
+                    and (item["plan_v"] if isinstance(item.get("plan_v"), int) else 1) < PLAN_V)
+
+    if not any(older(i) for k in load(home) for i in k.get("items") or []):
+        return 0
+    moved = 0
+    with _locked(home):
+        lists = load(home)
+        for k in lists:
+            for i in k.get("items") or []:
+                if not older(i):
+                    continue
+                try:
+                    when = datetime.fromisoformat(i["when"])
+                except (TypeError, ValueError):
+                    when = None
+                if when and when.tzinfo and when.hour >= 17 and plan_times(when, now)[1] > now:
+                    _date(k, i, when, i.get("with") or "", at, home)
+                    moved += 1
+                i["plan_v"] = PLAN_V
+        save(home, lists)
+    return moved
+
+
 def _unplan(kept: dict, args: dict) -> dict:
     """Takes the date off one item (Remove Date in Redde, 1.42.0), with its reminder and check."""
     found, _ = _picked(kept.get("items") or [], args.get("items"))
@@ -658,7 +697,7 @@ def _unplan(kept: dict, args: dict) -> dict:
             remove and remove(old)
         except Exception:
             pass
-    for field in ("when", "with", "plan_jobs"):
+    for field in ("when", "with", "plan_jobs", "plan_v"):
         item.pop(field, None)
     return {"unplanned": item["text"], "said": "Its date, reminder and check are gone."}
 
@@ -703,7 +742,12 @@ CAN = ["help"]
 
 def listing(home: Path) -> list[dict]:
     """Every list, as kept, for the phone's Today row: oldest first (the order they were made). A
-    watch list with titles not yet looked up sets their posters looking."""
+    watch list with titles not yet looked up sets their posters looking, and an evening plan's check
+    from before 1.53.0 is moved to 7 the morning after (`replan`)."""
+    try:
+        replan(home)
+    except Exception:   # never the listing's undoing
+        pass
     kept = load(home)
     for k in kept:
         _posters_later(home, k)

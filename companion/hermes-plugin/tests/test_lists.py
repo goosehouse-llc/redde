@@ -372,7 +372,7 @@ class PlanTests(unittest.TestCase):
         self.assertIn("calendar", said["said"])
         (remind, at1, name1), (check, at2, _) = self.jobs
         self.assertEqual(at1, "2026-11-26T10:00-05:00")
-        self.assertEqual(at2, "2026-11-27T10:00-05:00", "an evening plan: checked the next morning")
+        self.assertEqual(at2, "2026-11-27T07:00-05:00", "an evening plan: checked the next morning at 7 (1.53.0)")
         self.assertTrue(name1.startswith("[redde-plan:"))
         self.assertIn("7:30 PM: Donnie Brasco with Robin", remind)
         self.assertIn("Get Donnie Brasco ready to play", remind)
@@ -444,6 +444,32 @@ class PlanTests(unittest.TestCase):
         self.assertEqual((said["by"], said["mine"]), ("padrm-rf", True))
         self.assertIn('"mine": false', lists.slash(self.home, ["nights", "on", "phone"]))
 
+    def test_an_evening_check_set_before_is_moved_to_seven_once(self):
+        # 1.53.0, 2026-11-26: "can you set it to check at 7am instead of 10?"
+        lists.save(self.home, [{"id": "w", "title": "Movies", "kind": "watch", "items": [
+            {"id": "d", "text": "Donnie Brasco", "done": False, "when": "2026-11-29T19:30-05:00", "with": "Robin", "plan_jobs": ["old1", "old2"]},
+            {"id": "m", "text": "Matinee", "done": False, "when": "2026-11-29T14:00-05:00", "plan_jobs": ["old3", "old4"]},
+            {"id": "p", "text": "Last week's", "done": False, "when": "2026-11-10T20:00-05:00", "plan_jobs": ["old5"]},
+            {"id": "e", "text": "Elf", "done": False}]}])
+        self.assertEqual(lists.replan(self.home, at=self.now), 1)
+        self.assertEqual(self.removed, ["old1", "old2"], "only the evening plan still ahead")
+        self.assertEqual([at for _, at, _ in self.jobs], ["2026-11-29T10:00-05:00", "2026-11-30T07:00-05:00"],
+                         "the reminder as it was, the check at 7")
+        donnie, matinee, past, elf = lists.load(self.home)[0]["items"]
+        self.assertEqual((donnie["when"], donnie["with"], donnie["plan_jobs"], donnie["plan_v"]),
+                         ("2026-11-29T19:30-05:00", "Robin", ["j1", "j2"], lists.PLAN_V))
+        self.assertEqual((matinee["plan_jobs"], matinee["plan_v"]), (["old3", "old4"], lists.PLAN_V), "a daytime check is as it was")
+        self.assertEqual(past["plan_jobs"], ["old5"])
+        self.assertNotIn("plan_v", elf)
+        self.assertEqual(lists.replan(self.home, at=self.now), 0, "once")
+        self.assertEqual(len(self.jobs), 2)
+
+    def test_a_plan_made_now_is_not_moved_again(self):
+        lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
+        self.plan(items=["Elf"], when="2026-11-26T19:30:00-05:00")
+        self.assertEqual(lists.replan(self.home, at=self.now), 0)
+        self.assertEqual(len(self.jobs), 2)
+
     def test_planning_again_drops_the_old_jobs(self):
         lists.change(self.home, {"action": "make", "title": "Movies", "items": ["Elf"]}, now=self.now)
         self.plan(items=["1"], when="2026-11-26T19:30:00-05:00")
@@ -486,7 +512,7 @@ class PlanTests(unittest.TestCase):
         stretch, sale = lists.load(self.home)[0]["items"]
         self.assertNotIn("when", stretch)
         self.assertEqual((sale["when"], sale["plan_jobs"]), ("2026-11-26T19:00-05:00", ["j1", "j2"]))
-        self.assertEqual([at for _, at, _ in self.jobs], ["2026-11-26T10:00-05:00", "2026-11-27T10:00-05:00"])
+        self.assertEqual([at for _, at, _ in self.jobs], ["2026-11-26T10:00-05:00", "2026-11-27T07:00-05:00"])
         self.assertIn("(planned 2026-11-26T19:00-05:00)", said["items"][1])
 
     def test_a_date_only_in_the_words_is_said_back(self):

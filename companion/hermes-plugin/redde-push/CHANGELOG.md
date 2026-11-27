@@ -3,6 +3,12 @@
 What changed in each version of the Redde plugin (`redde-push`). Redde offers an update, in
 Settings › Redde Plugin, to a Hermes whose plugin is older than the one the app goes with.
 
+## 1.53.0 (2026-11-26)
+
+- A plan for the evening (a film night, or anything from 5 pm) is now checked at 7 the next morning,
+  not 10; the reminder on the day stays at 10. A check already set for an evening still ahead is
+  moved to 7 once, the next time Redde looks at the lists.
+
 ## 1.52.0 (2026-11-26)
 
 - A watch list's films and series now keep what they're about and their page with their poster:
