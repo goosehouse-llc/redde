@@ -132,7 +132,9 @@ extension ConversationsList {
 
     /// On a bridge with more than one agent, the title's menu is its agents', as a Hermes's is its
     /// profiles' (asked 2026-11-14: All Agents was out of sight in the connection's setup).
-    var showsAgentMenu: Bool { settings.transport == .acp && bridgeAgents.count > 1 }
+    var showsAgentMenu: Bool {
+        settings.transport == .acp && (bridgeAgents.count > 1 || !bridgeAgents.isEmpty && settings.servers.contains { $0.transport.kind == .hermes })
+    }
 
     var profileMenu: some View { profileMenu(inTitle: false) }
 
@@ -161,6 +163,21 @@ extension ConversationsList {
                     if moved, conversation.serverSessionID != nil || conversation.hasMessages { conversation.reset() }
                 } label: {
                     if !all, agent.id == settings.acpAgent { Label(agent.name, systemImage: "checkmark") } else { Text(agent.name) }
+                }
+            }
+            // And the Hermes servers, one tap away (2026-11-27, on the iPad: "the agents selection
+            // does not list Hermes, only the Other agents").
+            let hermes = settings.servers.filter { $0.transport.kind == .hermes }
+            if !hermes.isEmpty {
+                Section(Transport.Kind.hermes.title) {
+                    ForEach(hermes) { server in
+                        Button {
+                            allServers = false
+                            ServerSwitcher.switchTo(server.id, conversation: conversation)
+                        } label: {
+                            Label(server.title, systemImage: Transport.Kind.hermes.symbol)
+                        }
+                    }
                 }
             }
         } label: {
@@ -424,7 +441,9 @@ extension ConversationsList {
         // which stays up).
         // Not while the iPhone's panel is closed: it loads when it opens (isShowing below).
         // (All Profiles turned on or off loads the list again too.)
-        .task(id: "\(settings.connectionKey)|\(allProfiles)|\(allServers)|\(settings.acpAllAgents ? "*" : settings.acpAgent)") { if usesLedger, isShowing { await refresh() } }
+        .task(id: listKey) { if usesLedger, isShowing { await refresh() } }
+        // All Servers off: the other servers' chats go at once, as their bots do.
+        .onChange(of: allServers) { dropOtherServers() }
         // With All Servers on, a Hermes server's bots stay in the list while the app is on a bridge.
         .task(id: "\(allServers)|\(settings.activeServerID)|\(settings.showBots)") { await readAwayBots() }
         // A bridge's agents, for the title's agent menu.

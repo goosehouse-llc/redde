@@ -3,12 +3,29 @@ import SwiftUI
 // The chat list's refresh and what its rows do to a chat: rename, pin, archive, fork, delete, open.
 
 extension ConversationsList {
+    /// What the list is of: the server and profile, All Profiles, All Servers, a bridge's agent.
+    /// A change loads it again, and a refresh begun for another is dropped (2026-11-27, the iPad:
+    /// All Servers turned off for Claude Code, and a merged refresh still under way put the Hermes
+    /// chats back; the sidebar, always showing, never reloaded on its own).
+    var listKey: String {
+        "\(settings.connectionKey)|\(allProfiles)|\(allServers)|\(settings.acpAllAgents ? "*" : settings.acpAgent)"
+    }
+
+    /// With All Servers off, no other server's chats stay, whatever a refresh comes to: they go
+    /// when its bots do.
+    func dropOtherServers() {
+        guard !allServers else { return }
+        if ledger.contains(where: { $0.otherServer != nil }) { ledger.removeAll { $0.otherServer != nil } }
+        serversUnreachable = []
+    }
+
     func refresh() async {
         loading = true
         defer { loading = false }
-        // An answer from before a server or profile switch belongs to the old list: drop it.
-        let key = settings.connectionKey
-        var current: Bool { key == settings.connectionKey && !Task.isCancelled }
+        // An answer from before a switch (a server, a profile, All Servers) belongs to the old list: drop it.
+        let key = listKey
+        let connection = settings.connectionKey
+        var current: Bool { key == listKey && !Task.isCancelled }
         #if DEBUG
         // Dev hook: `-echo.demoProjects` fills the list from a fixture, so the project-folder
         // path can be driven without a gateway.
@@ -63,9 +80,11 @@ extension ConversationsList {
         do {
             guard let backend = SessionBackend.list(conversation) else {
                 ledgerError = TransportError.addKeyText
+                dropOtherServers()
                 return
             }
-            let sessions = allProfiles
+            // (All Profiles is a Hermes's: a bridge's record may still hold a Dashboard address.)
+            let sessions = allProfiles && settings.transport != .acp
                 ? try await SessionBackend.everyProfile(conversation, bots: botDirectory.roster)
                 : settings.transport == .acp && settings.acpAllAgents
                 ? try await AcpAgents.everyAgent(settings)
@@ -103,7 +122,7 @@ extension ConversationsList {
                 let all = (try? await HermesServeClient.shared.projectTree()) ?? []
                 let tree = HermesServeClient.Project.listed(all)
                 guard current else { return }
-                ProjectDirectory.shared.set(all, key: key)
+                ProjectDirectory.shared.set(all, key: connection)
                 projects = tree
                 folders = all.sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
             }
@@ -112,6 +131,7 @@ extension ConversationsList {
             // A refresh cut short (tab switched, server changed) is not an error to show.
             guard current, !(error is CancellationError), (error as? URLError)?.code != .cancelled else { return }
             ledgerError = error.localizedDescription
+            dropOtherServers()
         }
     }
 
