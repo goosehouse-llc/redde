@@ -340,6 +340,45 @@ extension Conversation {
         await rejoinIfWaiting()
     }
 
+    /// Conservatively replaces the server-backed suffix of a local transcript with a newest page.
+    /// The page's first row must identify one unique local boundary; otherwise keeping the local
+    /// transcript is safer than duplicating or dropping rows.
+    nonisolated static func mergingRefreshedPage(_ page: [Message], into local: [Message]) -> [Message]? {
+        guard let first = page.first else { return nil }
+        func isSameServerRow(_ lhs: Message, _ rhs: Message) -> Bool {
+            lhs.role == rhs.role && lhs.text == rhs.text
+                && abs(lhs.createdAt.timeIntervalSince(rhs.createdAt)) < 0.001
+        }
+        let candidates = local.indices.filter { isSameServerRow(local[$0], first) }
+        guard candidates.count == 1, let boundary = candidates.first else { return nil }
+        return Array(local[..<boundary]) + page
+    }
+
+    /// Foreground/catch-up refresh for a Dashboard bot chat that is already open. Bind the runtime
+    /// without returning its lineage, then replace the server-backed local suffix only when the
+    /// bounded page has one unambiguous overlap. Failure or uncertainty leaves the local copy whole.
+    func refreshOpenDashboardBot(_ summary: HermesSessionsAPI.SessionSummary, bot: BotRef) async throws {
+        let stored = summary.id
+        let identity = identity
+        let local = messages
+        dashboard.noteProfile(bot.profile, forStored: stored)
+        _ = try await dashboard.resume(stored: stored, withMessages: false)
+        let page = try await dashboard.transcript(stored: stored)
+        var refreshed = await Self.readied(stored: page)
+        guard self.identity == identity, !isStreaming, serverSessionID == stored, messages == local else {
+            throw CancellationError()
+        }
+        guard let merged = Self.mergingRefreshedPage(refreshed, into: local) else {
+            await rejoinIfWaiting()
+            return
+        }
+        refreshed = merged
+        ReplyCards.restoreAnswers(in: &refreshed, from: local)
+        TodoList.reconcile(&refreshed, with: dashboard.hostTodos[stored])
+        adopt(serverSession: summary, messages: refreshed, bot: bot, localMessages: local)
+        await rejoinIfWaiting()
+    }
+
     /// An API bot's chat (`APIBot`): its profile's "Bot Chat" at /p/<profile>/, found by its title or
     /// made the first time, as Hermes Desktop and the Dashboard keep a bot's chat, and the same one
     /// they show.
