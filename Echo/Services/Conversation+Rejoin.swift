@@ -73,6 +73,10 @@ extension Conversation {
     /// stayed as it was (2026-11-11, the iPad not showing the newest message).
     func reloadOpen(_ stored: String) async throws {
         let summary = HermesSessionsAPI.SessionSummary(id: stored, title: name)
+        if Self.usesBoundedDashboardBotRefresh(connection: connection, bot: bot), let bot {
+            try await refreshOpenDashboardBot(summary, bot: bot)
+            return
+        }
         if connection == .acp {
             try await loadAcpSession(summary)
         } else if connection == .hermesSessions {
@@ -80,6 +84,12 @@ extension Conversation {
         } else {
             try await loadServeSession(summary, bot: bot, elsewhere: elsewhere)
         }
+    }
+
+    /// Only returning to an already-open Dashboard bot chat takes the bounded refresh path.
+    /// Initial opens and every other backend retain their established loading behavior.
+    nonisolated static func usesBoundedDashboardBotRefresh(connection: Transport, bot: BotRef?) -> Bool {
+        connection == .hermesServe && bot != nil
     }
 
     /// Tries again, a little later each time, while what failed was the connection: just after

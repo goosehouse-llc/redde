@@ -340,6 +340,20 @@ extension Conversation {
         await rejoinIfWaiting()
     }
 
+    /// Foreground/catch-up refresh for a Dashboard bot chat that is already open. Bind the runtime
+    /// without returning its lineage, then replace the local display only after the bounded newest
+    /// page succeeds. A failed read leaves the persisted/local transcript untouched.
+    func refreshOpenDashboardBot(_ summary: HermesSessionsAPI.SessionSummary, bot: BotRef) async throws {
+        let stored = summary.id
+        _ = try await dashboard.resume(stored: stored, withMessages: false)
+        let page = try await dashboard.transcript(stored: stored)
+        var refreshed = await Self.readied(stored: page)
+        ReplyCards.restoreAnswers(in: &refreshed, from: messages)
+        TodoList.reconcile(&refreshed, with: dashboard.hostTodos[stored])
+        adopt(serverSession: summary, messages: refreshed, bot: bot, localMessages: messages)
+        await rejoinIfWaiting()
+    }
+
     /// An API bot's chat (`APIBot`): its profile's "Bot Chat" at /p/<profile>/, found by its title or
     /// made the first time, as Hermes Desktop and the Dashboard keep a bot's chat, and the same one
     /// they show.
